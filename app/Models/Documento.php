@@ -1,0 +1,34 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+
+class Documento extends Model
+{
+    protected $keyType = 'string';
+    public $incrementing = false;
+
+    protected $fillable = [
+        'empleado_id',
+        'tipo',
+        'archivo',
+        'firmado_por',
+        'codigo_firma',
+        'fecha_firma',
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            $model->id = Str::uuid();
+        });
+    }
+
+    public function empleado()
+    {
+        return $this->belongsTo(Empleado::class);
+    }
+}
