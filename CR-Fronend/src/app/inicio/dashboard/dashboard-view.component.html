@@ -1,0 +1,118 @@
+<div class="page-title">
+  <div>
+    <h1>¡Buenos días, Carlos!</h1>
+    <p>Aquí tienes un resumen de tus documentos laborales.</p>
+  </div>
+  <button class="btn-primary">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2"><path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/>
+      <path d="M17 8h4"/><path d="M17 12h4"/><path d="M17 16h4"/></svg>
+    Firmar Pendientes (2)
+  </button>
+</div>
+
+<!-- Metrics Grid -->
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-info">
+      <h3>Documentos Pendientes</h3>
+      <div class="metric-value">2</div>
+      <div class="metric-trend trend-neutral">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/></svg>
+        Requieren tu firma
+      </div>
+    </div>
+    <div class="metric-icon red">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"><path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/>
+        <path d="M17 8h4"/></svg>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-info">
+      <h3>Último Recibo</h3>
+      <div class="metric-value">Marzo</div>
+      <div class="metric-trend trend-up">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+          <polyline points="16 7 22 7 22 13"/></svg>
+        Disponible hace 3 días
+      </div>
+    </div>
+    <div class="metric-icon blue">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+        <polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-info">
+      <h3>Días de Vacaciones</h3>
+      <div class="metric-value">14</div>
+      <div class="metric-trend">Disponibles para 2026</div>
+    </div>
+    <div class="metric-icon green">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+        <line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/>
+        <line x1="3" x2="21" y1="10" y2="10"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- Documents Table -->
+<div class="section-panel">
+  <div class="panel-header">
+    <h2>Documentos Recientes</h2>
+    <button class="filter-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      Filtrar
+    </button>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Tipo de Documento</th>
+        <th>Período</th>
+        <th>Fecha de Emisión</th>
+        <th>Estado</th>
+        <th style="text-align: right;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let doc of recentDocs">
+        <td>
+          <div class="doc-name">
+            <svg class="doc-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+              <polyline points="14 2 14 8 20 8"/></svg>
+            {{ doc.tipo }}
+          </div>
+        </td>
+        <td>{{ doc.periodo }}</td>
+        <td>{{ doc.fecha }}</td>
+        <td>
+          <span class="status-badge" [class.status-pending]="doc.estado === 'pending'" [class.status-signed]="doc.estado === 'signed'">
+            {{ doc.estado === 'pending' ? 'Pendiente de Firma' : 'Firmado' }}
+          </span>
+        </td>
+        <td>
+          <div class="action-btns" style="justify-content: flex-end;">
+            <button class="btn-secondary">Ver</button>
+            <button *ngIf="doc.estado === 'pending'" class="btn-sign">Firmar</button>
+            <button *ngIf="doc.estado === 'signed'" class="btn-secondary" style="padding: 6px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

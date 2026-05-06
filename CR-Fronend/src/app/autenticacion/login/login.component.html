@@ -1,0 +1,106 @@
+<div class="login-container">
+  <!-- Left: Branding -->
+  <div class="login-branding">
+    <div class="branding-content">
+      <div class="brand-logo white-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8" />
+          <path d="M17 8h4" /><path d="M17 12h4" /><path d="M17 16h4" />
+          <path d="M12 8H8" /><path d="M12 12H8" /><path d="M12 16H8" />
+        </svg>
+        Colegio <span>Túpac Amaru</span>
+      </div>
+
+      <h1>Gestión Documental Escolar</h1>
+      <p>Accede a recibos, firma documentos y gestiona la información del personal desde un solo lugar.</p>
+
+      <div class="branding-decorations">
+        <div class="circle-dec circle-1"></div>
+        <div class="circle-dec circle-2"></div>
+        <div class="glass-card">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke="#5dbced" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+          <div>
+            <strong>Plataforma Oficial</strong>
+            <span>Colegio Adventista Túpac Amaru — Juliaca</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Form -->
+  <div class="login-form-area">
+    <div class="login-form-wrapper">
+      <div class="mobile-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+          stroke="#1B4282" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8" />
+          <path d="M17 8h4" /><path d="M17 12h4" /><path d="M17 16h4" />
+        </svg>
+        Colegio <span>Túpac Amaru</span>
+      </div>
+
+      <div class="form-header">
+        <h2>Iniciar Sesión</h2>
+        <p>Ingresa tus credenciales institucionales para continuar.</p>
+      </div>
+
+      <form class="login-form" (ngSubmit)="onLogin()">
+        <div class="input-group">
+          <label for="email">Usuario o Correo Electrónico</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <input type="text" id="email" [(ngModel)]="email" name="email" placeholder="docente@catupacamaru.edu.pe" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="label-row">
+            <label for="password">Contraseña</label>
+            <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+          </div>
+          <div class="input-wrapper">
+            <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input [type]="showPassword ? 'text' : 'password'" id="password" [(ngModel)]="password"
+              name="password" placeholder="••••••••" />
+            <button type="button" class="toggle-password" (click)="togglePassword()">
+              <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                <circle cx="12" cy="12" r="3"/></svg>
+              <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                <line x1="2" x2="22" y1="2" y2="22"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="remember" name="remember" />
+          <label for="remember">Mantener sesión iniciada</label>
+        </div>
+
+        <button type="submit" class="btn-primary btn-full">
+          Ingresar
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </form>
+
+      <div class="form-footer">
+        <p>¿Es tu primer ingreso? <a href="#" (click)="$event.preventDefault(); goToRegister()">Regístrate y completa tu perfil</a>.</p>
+        <p style="margin-top: 12px;">¿Problemas para acceder? <a href="#">Contacta a Soporte o RR.HH.</a></p>
+      </div>
+    </div>
+  </div>
+</div>
