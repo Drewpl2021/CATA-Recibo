@@ -5,19 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class Documento extends Model
+class Descuento extends Model
 {
-    protected $table = 'documentos';
-    protected $keyType = 'string';
     public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $fillable = [
         'empleado_id',
         'tipo',
-        'archivo',
-        'firmado_por',
-        'codigo_firma',
-        'fecha_firma',
+        'monto',
+        'mes',
+        'anio',
     ];
 
     protected static function boot()
@@ -30,6 +28,6 @@ class Documento extends Model
 
     public function empleado()
     {
-        return $this->belongsTo(Empleado::class);
+        return $this->belongsTo(Empleado::class, 'empleado_id');
     }
 }

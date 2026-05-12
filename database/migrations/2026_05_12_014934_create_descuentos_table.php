@@ -8,20 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('documentos', function (Blueprint $table) {
+        Schema::create('descuentos', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('empleado_id');
-            $table->string('tipo', 50);
-            $table->string('archivo', 255);
-            $table->string('firmado_por', 100)->nullable();
-            $table->string('codigo_firma', 100)->nullable();
-            $table->timestamp('fecha_firma')->nullable();
+            $table->string('tipo', 100);
+            $table->decimal('monto', 10, 2);
+            $table->integer('mes');
+            $table->integer('anio');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('documentos');
+        Schema::dropIfExists('descuentos');
     }
 };

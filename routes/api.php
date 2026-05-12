@@ -6,6 +6,8 @@ use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\VacacionController;
 use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\DocumentoController;
+use App\Http\Controllers\DescuentoController;
+use App\Http\Controllers\BoletaController;
 
 // Preflight CORS
 Route::options('{any}', function () {
@@ -26,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('empleados',  EmpleadoController::class);
         Route::apiResource('planilla',   PlanillaController::class);
         Route::apiResource('documentos', DocumentoController::class);
+        Route::apiResource('descuentos', DescuentoController::class);
     });
 
     Route::get('vacaciones',             [VacacionController::class, 'index']);
@@ -36,4 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('vacaciones/{id}',    [VacacionController::class, 'update']);
         Route::delete('vacaciones/{id}', [VacacionController::class, 'destroy']);
     });
+
+    // Boleta de pago — admin/rrhh pueden generar cualquier boleta
+    Route::get('boleta/{empleado_id}/{mes}/{anio}', [BoletaController::class, 'generar']);
 });

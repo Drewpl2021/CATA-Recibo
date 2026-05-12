@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 
 class Vacacion extends Model
 {
+    protected $table = 'vacaciones';
     protected $keyType = 'string';
     public $incrementing = false;
 
