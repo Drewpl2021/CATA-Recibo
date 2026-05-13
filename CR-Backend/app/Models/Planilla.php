@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 
 class Planilla extends Model
 {
+    protected $table = 'planilla';
     protected $keyType = 'string';
     public $incrementing = false;
 
