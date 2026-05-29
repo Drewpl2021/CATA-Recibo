@@ -10,12 +10,17 @@ import { CommonModule } from '@angular/common';
   styleUrl: './layout.component.scss'
 })
 export class LayoutComponent {
-  activeMenu = 'home';
+  activeMenu = 'mis-boletas';
+  isBoletasOpen = true;
 
   constructor(private router: Router) {}
 
   setActive(menu: string) {
     this.activeMenu = menu;
+  }
+
+  toggleBoletas() {
+    this.isBoletasOpen = !this.isBoletasOpen;
   }
 
   logout() {

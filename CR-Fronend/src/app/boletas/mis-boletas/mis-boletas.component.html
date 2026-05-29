@@ -1,0 +1,119 @@
+<div class="boletas-container">
+  <div class="page-title">
+    <h2>MIS BOLETAS DE PAGO</h2>
+  </div>
+
+  <div class="toolbar">
+    <div class="filter-group">
+      <select class="form-select" [(ngModel)]="selectedAnio">
+        <option *ngFor="let anio of anios" [value]="anio">{{ anio }}</option>
+      </select>
+      <button class="btn-primary" (click)="visualizar()" [disabled]="isLoading">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        {{ isLoading ? 'Cargando...' : 'Visualizar' }}
+      </button>
+    </div>
+
+    <button class="btn-secondary outline-blue">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Act. Email - Celular
+    </button>
+  </div>
+
+  <!-- Mensaje de error -->
+  <div *ngIf="errorMsg" class="alert-error">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    {{ errorMsg }}
+  </div>
+
+  <div class="section-panel">
+    <div class="panel-header-small">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      <span>Lista</span>
+    </div>
+
+    <!-- Loading spinner -->
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <span>Cargando boletas...</span>
+    </div>
+
+    <!-- Tabla principal -->
+    <div class="table-responsive" *ngIf="!isLoading">
+      <table class="data-table complex-table">
+        <thead>
+          <tr>
+            <th rowspan="2" class="col-id">#</th>
+            <th rowspan="2">Entidad</th>
+            <th rowspan="2">Mes</th>
+            <th colspan="4" class="text-center group-header">Estados</th>
+            <th rowspan="2">Correo</th>
+            <th rowspan="2">Celular</th>
+            <th rowspan="2" class="text-center">Ver</th>
+          </tr>
+          <tr class="sub-header">
+            <th class="text-center">Firmado</th>
+            <th class="text-center">Aviso Enviado</th>
+            <th class="text-center">Revisado</th>
+            <th class="text-center">Descargado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Sin resultados -->
+          <tr *ngIf="boletas.length === 0">
+            <td colspan="10" class="empty-state">
+              No se encontraron boletas para el año {{ selectedAnio }}.
+            </td>
+          </tr>
+
+          <tr *ngFor="let boleta of boletas; let i = index">
+            <td class="col-id">{{ i + 1 }}</td>
+            <td>{{ boleta.entidad }}</td>
+            <td>{{ boleta.mes }}</td>
+
+            <td class="text-center state-cell">
+              <ng-container *ngIf="boleta.firmado">
+                <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <div class="state-date">{{ boleta.firmado.fecha }}</div>
+              </ng-container>
+            </td>
+
+            <td class="text-center state-cell">
+              <ng-container *ngIf="boleta.avisoEnviado">
+                <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <div class="state-date">{{ boleta.avisoEnviado.fecha }}</div>
+                <div class="state-email">{{ boleta.avisoEnviado.correo }}</div>
+              </ng-container>
+            </td>
+
+            <td class="text-center state-cell">
+              <ng-container *ngIf="boleta.revisado">
+                <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <div class="state-date">{{ boleta.revisado.fecha }}</div>
+              </ng-container>
+            </td>
+
+            <td class="text-center state-cell">
+              <ng-container *ngIf="boleta.descargado">
+                <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <div class="state-date">{{ boleta.descargado.fecha }}</div>
+              </ng-container>
+            </td>
+
+            <td>{{ boleta.correo }}</td>
+            <td>{{ boleta.celular }}</td>
+            <td class="text-center">
+              <button class="btn-icon-blue" (click)="verBoleta(boleta)" title="Descargar boleta PDF">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

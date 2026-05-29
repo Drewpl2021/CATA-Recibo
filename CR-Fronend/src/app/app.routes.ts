@@ -12,7 +12,8 @@ export const routes: Routes = [
     path: 'inicio',
     component: LayoutComponent,
     children: [
-      { path: '', component: DashboardViewComponent }
+      { path: '', component: DashboardViewComponent },
+      { path: 'mis-boletas', loadComponent: () => import('./boletas/mis-boletas/mis-boletas.component').then(m => m.MisBoletasComponent) }
     ]
   }
 ];
