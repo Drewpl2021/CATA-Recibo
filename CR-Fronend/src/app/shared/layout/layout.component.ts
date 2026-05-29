@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-layout',
@@ -13,7 +14,7 @@ export class LayoutComponent {
   activeMenu = 'mis-boletas';
   isBoletasOpen = true;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private authService: AuthService) {}
 
   setActive(menu: string) {
     this.activeMenu = menu;
@@ -24,6 +25,6 @@ export class LayoutComponent {
   }
 
   logout() {
-    this.router.navigate(['/login']);
+    this.authService.logout();
   }
 }

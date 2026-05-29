@@ -2,18 +2,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-export interface Documento {
-  id: string;
-  empleado_id: string;
-  tipo: string;
-  archivo: string;
-  firmado_por: string | null;
-  codigo_firma: string | null;
-  fecha_firma: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface Planilla {
   id: string;
   empleado_id: string;
@@ -27,14 +15,9 @@ export interface Planilla {
   updated_at: string;
 }
 
-export interface DocumentosResponse {
-  data: Documento[];
-  [key: string]: any;
-}
-
-export interface PlanillaResponse {
-  data: Planilla[];
-  [key: string]: any;
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -43,23 +26,17 @@ export class BoletasService {
 
   constructor(private http: HttpClient) {}
 
-  /** Obtiene todas las boletas (documentos tipo=boleta) de un empleado */
-  getMisDocumentos(empleadoId: string, tipo: string = 'boleta'): Observable<any> {
-    return this.http.get(`${this.apiUrl}/documentos`, {
-      params: { empleado_id: empleadoId, tipo }
-    });
+  /** Planilla del empleado autenticado (token). Filtro opcional por año. */
+  getMiPlanilla(anio?: string): Observable<ApiResponse<Planilla[]>> {
+    const params: Record<string, string> = {};
+    if (anio) {
+      params['anio'] = anio;
+    }
+    return this.http.get<ApiResponse<Planilla[]>>(`${this.apiUrl}/mi-planilla`, { params });
   }
 
-  /** Obtiene los registros de planilla de un empleado filtrados por año */
-  getPlanilla(empleadoId: string, anio: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/planilla`, {
-      params: { empleado_id: empleadoId, anio }
-    });
-  }
-
-  /** Descarga el PDF de una boleta */
-  descargarBoleta(empleadoId: string, mes: number, anio: string): Observable<Blob> {
-    const url = `${this.apiUrl}/boleta/${empleadoId}/${mes}/${anio}`;
-    return this.http.get(url, { responseType: 'blob' });
+  /** PDF de boleta del empleado autenticado. */
+  descargarBoleta(mes: number, anio: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/mis-boletas/${mes}/${anio}`, { responseType: 'blob' });
   }
 }

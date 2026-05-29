@@ -48,20 +48,24 @@ export class MisBoletasComponent implements OnInit {
   }
 
   cargarBoletas(): void {
-    const empleadoId = this.authService.getEmpleadoId();
-    if (!empleadoId) {
-      this.errorMsg = 'No se pudo identificar al empleado. Por favor vuelve a iniciar sesión.';
+    if (!this.authService.isLoggedIn()) {
+      this.errorMsg = 'Sesión expirada. Por favor vuelve a iniciar sesión.';
       return;
     }
 
     this.isLoading = true;
     this.errorMsg = '';
 
-    this.boletasService.getPlanilla(empleadoId, this.selectedAnio).subscribe({
+    this.boletasService.getMiPlanilla(this.selectedAnio).subscribe({
       next: (res) => {
         this.isLoading = false;
-        const planillas = Array.isArray(res) ? res : (res.data ?? []);
-        this.boletas = planillas.map((p: any) => ({
+        if (!res.success) {
+          this.boletas = [];
+          this.errorMsg = 'No se pudieron cargar las boletas.';
+          return;
+        }
+        const planillas = res.data ?? [];
+        this.boletas = planillas.map((p) => ({
           id: p.id,
           entidad: 'Colegio',
           mes: MESES[p.mes] ?? `Mes ${p.mes}`,
@@ -87,24 +91,25 @@ export class MisBoletasComponent implements OnInit {
   }
 
   verBoleta(boleta: BoletaRow): void {
-    const empleadoId = this.authService.getEmpleadoId();
-    if (empleadoId) {
-      this.isLoading = true;
-      this.errorMsg = '';
-      
-      this.boletasService.descargarBoleta(empleadoId, boleta.mesNum, String(boleta.anio)).subscribe({
-        next: (blob) => {
-          this.isLoading = false;
-          // Crear una URL local a partir del Blob descargado y abrirla en nueva pestaña
-          const fileURL = URL.createObjectURL(blob);
-          window.open(fileURL, '_blank');
-        },
-        error: () => {
-          this.isLoading = false;
-          this.errorMsg = `Error al generar la boleta de ${boleta.mes} ${boleta.anio}.`;
-        }
-      });
+    if (!this.authService.isLoggedIn()) {
+      this.errorMsg = 'Sesión expirada. Por favor vuelve a iniciar sesión.';
+      return;
     }
+
+    this.isLoading = true;
+    this.errorMsg = '';
+
+    this.boletasService.descargarBoleta(boleta.mesNum, String(boleta.anio)).subscribe({
+      next: (blob) => {
+        this.isLoading = false;
+        const fileURL = URL.createObjectURL(blob);
+        window.open(fileURL, '_blank');
+      },
+      error: () => {
+        this.isLoading = false;
+        this.errorMsg = `Error al generar la boleta de ${boleta.mes} ${boleta.anio}.`;
+      }
+    });
   }
 
   private formatFecha(isoDate: string): string {
