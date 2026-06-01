@@ -13,7 +13,8 @@ export const routes: Routes = [
     component: LayoutComponent,
     children: [
       { path: '', component: DashboardViewComponent },
-      { path: 'mis-boletas', loadComponent: () => import('./boletas/mis-boletas/mis-boletas.component').then(m => m.MisBoletasComponent) }
+      { path: 'mis-boletas', loadComponent: () => import('./boletas/mis-boletas/mis-boletas.component').then(m => m.MisBoletasComponent) },
+      { path: 'empleados', loadComponent: () => import('./empleados/empleados-list/empleados-list.component').then(m => m.EmpleadosListComponent) }
     ]
   }
 ];

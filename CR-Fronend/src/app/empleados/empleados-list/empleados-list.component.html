@@ -1,0 +1,71 @@
+<div class="boletas-container">
+  <div class="page-title">
+    <h2>LISTA DE EMPLEADOS</h2>
+  </div>
+
+  <div class="toolbar">
+    <div class="filter-group">
+      <input type="text" class="form-control" placeholder="Buscar por nombre, cargo o nivel..." [(ngModel)]="searchTerm" style="min-width: 300px;">
+    </div>
+
+    <button class="btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nuevo Empleado
+    </button>
+  </div>
+
+  <div class="section-panel">
+    <div class="panel-header-small">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Empleados Registrados</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-id">#</th>
+            <th>Nombres y Apellidos</th>
+            <th>Cargo</th>
+            <th>Nivel</th>
+            <th>N° Celular</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Sin resultados -->
+          <tr *ngIf="filteredEmpleados.length === 0">
+            <td colspan="7" class="empty-state">
+              No se encontraron empleados.
+            </td>
+          </tr>
+
+          <tr *ngFor="let emp of filteredEmpleados; let i = index">
+            <td class="col-id">{{ i + 1 }}</td>
+            <td style="font-weight: 500;">{{ emp.nombresApellidos }}</td>
+            <td>{{ emp.cargo }}</td>
+            <td>{{ emp.nivel }}</td>
+            <td>{{ emp.celular }}</td>
+            
+            <td class="text-center">
+              <span class="badge" [ngClass]="emp.estado === 'Activo' ? 'badge-active' : 'badge-vacaciones'">
+                {{ emp.estado }}
+              </span>
+            </td>
+
+            <td class="text-center">
+              <button class="btn-icon-blue" (click)="verHistorial(emp)" title="Ver Historial">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

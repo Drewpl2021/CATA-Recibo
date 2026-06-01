@@ -12,9 +12,12 @@ const MESES: Record<number, string> = {
 
 export interface BoletaRow {
   id: string;
-  entidad: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  fechaEmision: string;
   mes: string;
   mesNum: number;
+  montoTotal: number;
   anio: number;
   firmado: { fecha: string } | null;
   avisoEnviado: { fecha: string; correo: string } | null;
@@ -37,6 +40,7 @@ export class MisBoletasComponent implements OnInit {
   boletas: BoletaRow[] = [];
   isLoading = false;
   errorMsg = '';
+  isEmpleado = false;
 
   constructor(
     private authService: AuthService,
@@ -44,12 +48,19 @@ export class MisBoletasComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.isEmpleado = this.authService.getUser()?.rol === 'empleado';
     this.cargarBoletas();
   }
 
   cargarBoletas(): void {
     if (!this.authService.isLoggedIn()) {
       this.errorMsg = 'Sesión expirada. Por favor vuelve a iniciar sesión.';
+      return;
+    }
+
+    const user = this.authService.getUser();
+    if (!user?.empleado_id) {
+      this.errorMsg = 'Esta cuenta no tiene un perfil de empleado asociado para mostrar boletas.';
       return;
     }
 
@@ -67,9 +78,12 @@ export class MisBoletasComponent implements OnInit {
         const planillas = res.data ?? [];
         this.boletas = planillas.map((p) => ({
           id: p.id,
-          entidad: 'Colegio',
+          tipoDocumento: 'Boleta de Pago',
+          numeroDocumento: `BP-${p.anio}-${String(p.mes).padStart(2, '0')}`,
+          fechaEmision: p.created_at ? this.formatFecha(p.created_at).split(' ')[0] : '',
           mes: MESES[p.mes] ?? `Mes ${p.mes}`,
           mesNum: p.mes,
+          montoTotal: p.total ?? 0,
           anio: p.anio,
           firmado: p.created_at ? { fecha: this.formatFecha(p.created_at) } : null,
           avisoEnviado: null,
@@ -110,6 +124,14 @@ export class MisBoletasComponent implements OnInit {
         this.errorMsg = `Error al generar la boleta de ${boleta.mes} ${boleta.anio}.`;
       }
     });
+  }
+
+  firmarBoleta(boleta: BoletaRow): void {
+    if (!this.authService.isLoggedIn()) {
+      this.errorMsg = 'Sesión expirada. Por favor vuelve a iniciar sesión.';
+      return;
+    }
+    alert(`Pronto podrás firmar la boleta de ${boleta.mes} ${boleta.anio}`);
   }
 
   private formatFecha(isoDate: string): string {

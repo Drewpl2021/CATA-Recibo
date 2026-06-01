@@ -47,16 +47,19 @@
         <thead>
           <tr>
             <th rowspan="2" class="col-id">#</th>
-            <th rowspan="2">Entidad</th>
+            <th rowspan="2">N° Documento</th>
+            <th rowspan="2">Tipo de Doc.</th>
+            <th rowspan="2">Emisión</th>
             <th rowspan="2">Mes</th>
-            <th colspan="4" class="text-center group-header">Estados</th>
-            <th rowspan="2">Correo</th>
-            <th rowspan="2">Celular</th>
-            <th rowspan="2" class="text-center">Ver</th>
+            <th rowspan="2" class="text-right">Monto Neto</th>
+            <th [attr.colspan]="isEmpleado ? 3 : 4" class="text-center group-header">Estados</th>
+            <th rowspan="2" *ngIf="!isEmpleado">Correo</th>
+            <th rowspan="2" *ngIf="!isEmpleado">Celular</th>
+            <th rowspan="2" class="text-center">Acciones</th>
           </tr>
           <tr class="sub-header">
             <th class="text-center">Firmado</th>
-            <th class="text-center">Aviso Enviado</th>
+            <th class="text-center" *ngIf="!isEmpleado">Aviso Enviado</th>
             <th class="text-center">Revisado</th>
             <th class="text-center">Descargado</th>
           </tr>
@@ -64,15 +67,18 @@
         <tbody>
           <!-- Sin resultados -->
           <tr *ngIf="boletas.length === 0">
-            <td colspan="10" class="empty-state">
+            <td [attr.colspan]="isEmpleado ? 10 : 13" class="empty-state">
               No se encontraron boletas para el año {{ selectedAnio }}.
             </td>
           </tr>
 
           <tr *ngFor="let boleta of boletas; let i = index">
             <td class="col-id">{{ i + 1 }}</td>
-            <td>{{ boleta.entidad }}</td>
+            <td>{{ boleta.numeroDocumento }}</td>
+            <td>{{ boleta.tipoDocumento }}</td>
+            <td>{{ boleta.fechaEmision }}</td>
             <td>{{ boleta.mes }}</td>
+            <td class="text-right" style="white-space: nowrap; font-weight: 500;">{{ boleta.montoTotal | currency:'PEN':'S/ ' }}</td>
 
             <td class="text-center state-cell">
               <ng-container *ngIf="boleta.firmado">
@@ -81,7 +87,7 @@
               </ng-container>
             </td>
 
-            <td class="text-center state-cell">
+            <td class="text-center state-cell" *ngIf="!isEmpleado">
               <ng-container *ngIf="boleta.avisoEnviado">
                 <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                 <div class="state-date">{{ boleta.avisoEnviado.fecha }}</div>
@@ -103,12 +109,16 @@
               </ng-container>
             </td>
 
-            <td>{{ boleta.correo }}</td>
-            <td>{{ boleta.celular }}</td>
-            <td class="text-center">
-              <button class="btn-icon-blue" (click)="verBoleta(boleta)" title="Descargar boleta PDF">
+            <td *ngIf="!isEmpleado">{{ boleta.correo }}</td>
+            <td *ngIf="!isEmpleado">{{ boleta.celular }}</td>
+            <td class="text-center" style="white-space: nowrap;">
+              <button class="btn-icon-blue" (click)="verBoleta(boleta)" title="Descargar boleta PDF" style="margin-right: 8px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+              <button class="btn-icon-blue" (click)="firmarBoleta(boleta)" title="Firmar Boleta">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
               </button>
             </td>
           </tr>

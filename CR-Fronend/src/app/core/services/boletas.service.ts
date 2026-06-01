@@ -22,7 +22,7 @@ export interface ApiResponse<T> {
 
 @Injectable({ providedIn: 'root' })
 export class BoletasService {
-  private readonly apiUrl = 'http://127.0.0.1:8000/api';
+  private readonly apiUrl = 'http://cr-backend.test/api';
 
   constructor(private http: HttpClient) {}
 

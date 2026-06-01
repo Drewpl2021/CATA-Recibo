@@ -13,8 +13,12 @@ import { AuthService } from '../../core/services/auth.service';
 export class LayoutComponent {
   activeMenu = 'mis-boletas';
   isBoletasOpen = true;
+  isAdmin = false;
 
-  constructor(private router: Router, private authService: AuthService) {}
+  constructor(private router: Router, private authService: AuthService) {
+    const rol = this.authService.getUser()?.rol;
+    this.isAdmin = rol === 'admin' || rol === 'rrhh';
+  }
 
   setActive(menu: string) {
     this.activeMenu = menu;
