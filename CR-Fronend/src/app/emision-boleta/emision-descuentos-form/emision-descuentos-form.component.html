@@ -1,0 +1,84 @@
+<div class="boletas-container">
+  <div class="page-title" style="display: flex; align-items: center; gap: 16px;">
+    <button class="btn-icon-blue" (click)="volver()" title="Volver a la lista">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+    </button>
+    <h2>AÑADIR DESCUENTOS Y BONIFICACIONES</h2>
+  </div>
+
+  <div class="section-panel" style="max-width: 800px;">
+    <div class="panel-header-small">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      <span>Empleado Seleccionado: <strong style="color: #2c3e50;">{{ nombreEmpleado }}</strong></span>
+    </div>
+
+    <div class="form-content" style="padding: 24px;">
+      
+      <!-- Sección Descuentos -->
+      <h3 style="font-size: 1.1rem; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 16px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" style="vertical-align: text-bottom; margin-right: 6px;">
+          <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>
+        </svg>
+        Descuentos Aplicables
+      </h3>
+      
+      <div class="checkbox-group" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px;">
+        <label class="checkbox-container">
+          <input type="checkbox" [(ngModel)]="descPredeterminado">
+          <span class="checkmark"></span>
+          Descuento Predeterminado (10%)
+        </label>
+        
+        <label class="checkbox-container">
+          <input type="checkbox" [(ngModel)]="descAfp">
+          <span class="checkmark"></span>
+          Descuento por AFP
+        </label>
+        
+        <label class="checkbox-container">
+          <input type="checkbox" [(ngModel)]="descSeguro">
+          <span class="checkmark"></span>
+          Descuento por Seguro
+        </label>
+      </div>
+
+      <!-- Sección Bonificaciones -->
+      <h3 style="font-size: 1.1rem; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 16px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2" style="vertical-align: text-bottom; margin-right: 6px;">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+        </svg>
+        Bonificaciones Adicionales
+      </h3>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 32px;">
+        <div class="form-group">
+          <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9rem;">Monto de Bonificación (S/)</label>
+          <input type="number" class="form-control" placeholder="Ej. 150.00" [(ngModel)]="montoBonificacion">
+        </div>
+        
+        <div class="form-group">
+          <label style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9rem;">Concepto de Bonificación</label>
+          <input type="text" class="form-control" placeholder="Ej. Bono de puntualidad" [(ngModel)]="conceptoBonificacion">
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div style="display: flex; justify-content: flex-end; gap: 16px; margin-top: 20px;">
+        <button class="btn-secondary" (click)="volver()" style="padding: 10px 20px; border: 1px solid #ccc; background: white; border-radius: 6px; cursor: pointer;">
+          Cancelar
+        </button>
+        <button class="btn-primary" (click)="guardar()" style="padding: 10px 24px; font-size: 1rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Guardar y Asignar
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

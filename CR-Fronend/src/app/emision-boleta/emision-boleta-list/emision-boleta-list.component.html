@@ -1,0 +1,62 @@
+<div class="boletas-container">
+  <div class="page-title">
+    <h2>EMISIÓN DE BOLETA</h2>
+  </div>
+
+  <div class="toolbar">
+    <div class="filter-group">
+      <input type="text" class="form-control" placeholder="Buscar empleado por nombre o cargo..." [(ngModel)]="searchTerm" style="min-width: 300px;">
+    </div>
+  </div>
+
+  <div class="section-panel">
+    <div class="panel-header-small">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+      </svg>
+      <span>Seleccionar Empleado</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-id">#</th>
+            <th>Nombres y Apellidos</th>
+            <th>Cargo</th>
+            <th>Nivel</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredEmpleados.length === 0">
+            <td colspan="6" class="empty-state">No se encontraron empleados.</td>
+          </tr>
+
+          <tr *ngFor="let emp of filteredEmpleados; let i = index">
+            <td class="col-id">{{ i + 1 }}</td>
+            <td style="font-weight: 500;">{{ emp.nombresApellidos }}</td>
+            <td>{{ emp.cargo }}</td>
+            <td>{{ emp.nivel }}</td>
+            
+            <td class="text-center">
+              <span class="badge" [ngClass]="emp.estado === 'Activo' ? 'badge-active' : 'badge-vacaciones'">
+                {{ emp.estado }}
+              </span>
+            </td>
+
+            <td class="text-center">
+              <button class="btn-primary" style="padding: 6px 12px; font-size: 0.85rem;" (click)="irADescuentos(emp)" title="Añadir Descuentos">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Añadir Descuentos
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
