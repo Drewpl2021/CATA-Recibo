@@ -150,6 +150,7 @@
             <h1>Asociación Educativa Colegio Adventista Túpac Amaru</h1>
             <h2>Boleta de Pago — {{ $mes_nombre }} {{ $anio }}</h2>
             <p>Documento generado el {{ now()->format('d/m/Y') }}</p>
+            <p>N° Boleta: {{ $numero_boleta }}</p>
         </div>
     </div>
 
@@ -247,6 +248,7 @@
             <h1>Asociación Educativa Colegio Adventista Túpac Amaru</h1>
             <h2>Boleta de Pago — {{ $mes_nombre }} {{ $anio }}</h2>
             <p>Documento generado el {{ now()->format('d/m/Y') }}</p>
+            <p>N° Boleta: {{ $numero_boleta }}</p>
         </div>
     </div>
 

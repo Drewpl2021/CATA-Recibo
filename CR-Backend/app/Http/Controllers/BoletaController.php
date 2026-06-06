@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\Planilla;
 use App\Models\Empleado;
 use App\Models\Descuento;
@@ -38,16 +36,22 @@ class BoletaController extends Controller
             10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
         ];
 
+        // Número de boleta autogenerado
+        $correlativo = Planilla::where('empleado_id', $empleado_id)
+            ->whereYear('created_at', $anio)
+            ->count();
+        $numero_boleta = 'BOL-' . $anio . '-' . str_pad($correlativo, 4, '0', STR_PAD_LEFT);
+
         $data = [
-            'empleado'  => $empleado,
-            'planilla'  => $planilla,
-            'descuentos'=> $descuentos,
-            'mes_nombre'=> $meses[(int)$mes],
-            'anio'      => $anio,
+            'empleado'      => $empleado,
+            'planilla'      => $planilla,
+            'descuentos'    => $descuentos,
+            'mes_nombre'    => $meses[(int)$mes],
+            'anio'          => $anio,
+            'numero_boleta' => $numero_boleta,
         ];
 
-        $pdf = Pdf::loadView('boleta', $data)
-            ->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'portrait');
 
         return $pdf->download("boleta_{$empleado->dni}_{$mes}_{$anio}.pdf");
     }

@@ -13,24 +13,21 @@ class AuthController extends Controller
     {
         $request->validate([
             'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users',
+            'email'    => 'required|email|unique:users|ends_with:@cata.edu.pe',
             'password' => 'required|string|min:6|confirmed',
         ]);
 
-        // Buscar rol empleado automáticamente
         $rolEmpleado = Rol::where('nombre', 'empleado')->first();
 
-        // Crear empleado básico
         $empleado = Empleado::create([
-                'nombre'       => $request->name,
-                'apellido'     => '',
-                'dni'          => '00000000',
-                'cargo'        => 'Sin asignar',
-                'area'         => 'Sin asignar',
-                'fecha_ingreso'=> now()->toDateString(),
-            ]);
+            'nombre'       => $request->name,
+            'apellido'     => '',
+            'dni' => substr(time(), -8),
+            'cargo'        => 'Sin asignar',
+            'area'         => 'Sin asignar',
+            'fecha_ingreso'=> now()->toDateString(),
+        ]);
 
-                    // Crear usuario vinculado
         $user = User::create([
             'name'        => $request->name,
             'email'       => $request->email,
@@ -67,7 +64,11 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => ['user' => $user->load('rol', 'empleado'), 'token' => $token],
+            'data'    => [
+                'user'            => $user->load('rol', 'empleado'),
+                'token'           => $token,
+                'es_institucional'=> str_ends_with($user->email, '@cata.edu.pe'),
+            ],
         ]);
     }
 
