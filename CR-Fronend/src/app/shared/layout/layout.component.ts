@@ -16,8 +16,12 @@ export class LayoutComponent {
   isAdmin = false;
 
   constructor(private router: Router, private authService: AuthService) {
-    const rol = this.authService.getUser()?.rol;
-    this.isAdmin = rol === 'admin' || rol === 'rrhh';
+    const user = this.authService.getUser();
+    const rol = user?.rol?.toLowerCase() || '';
+    const email = user?.email?.toLowerCase() || '';
+    
+    console.log('User Data:', user);
+    this.isAdmin = rol === 'admin' || rol === 'rrhh' || email === 'admin@colegio.com' || email === 'rrhh@colegio.com';
   }
 
   setActive(menu: string) {

@@ -1,0 +1,104 @@
+<div class="boletas-container">
+  <div class="page-title" style="display: flex; align-items: center; gap: 16px;">
+    <button class="btn-icon btn-icon-blue" (click)="cancelar()" title="Volver">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+    </button>
+    <h2>{{ titulo }}</h2>
+  </div>
+
+  <div class="section-panel" style="max-width: 900px;">
+    <div class="panel-header-small">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+      <span>Datos del Empleado <span style="color:#e74c3c;">*</span> = Obligatorio</span>
+    </div>
+
+    <div class="form-body">
+
+      <!-- Fila 1: Nombre y Apellido -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre <span class="required">*</span></label>
+          <input type="text" class="form-control" placeholder="Ej. Carlos" [(ngModel)]="nombre">
+        </div>
+        <div class="form-group">
+          <label>Apellido <span class="required">*</span></label>
+          <input type="text" class="form-control" placeholder="Ej. Mamani" [(ngModel)]="apellido">
+        </div>
+      </div>
+
+      <!-- Fila 2: DNI y Email -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>DNI <span class="required">*</span></label>
+          <input type="text" class="form-control" placeholder="Ej. 12345678" maxlength="8" [(ngModel)]="dni">
+        </div>
+        <div class="form-group">
+          <label>Correo Electrónico</label>
+          <input type="email" class="form-control" placeholder="Ej. cmamani@colegio.com" [(ngModel)]="email">
+        </div>
+      </div>
+
+      <!-- Fila 3: Teléfono y Dirección -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Teléfono / Celular</label>
+          <input type="text" class="form-control" placeholder="Ej. 987654321" [(ngModel)]="telefono">
+        </div>
+        <div class="form-group">
+          <label>Dirección</label>
+          <input type="text" class="form-control" placeholder="Ej. Av. Principal 123" [(ngModel)]="direccion">
+        </div>
+      </div>
+
+      <!-- Fila 4: Cargo y Nivel -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cargo <span class="required">*</span></label>
+          <select class="form-control" [(ngModel)]="cargo">
+            <option value="">-- Seleccionar Cargo --</option>
+            <option *ngFor="let c of cargosDisponibles" [value]="c">{{ c }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nivel</label>
+          <select class="form-control" [(ngModel)]="nivel">
+            <option value="">-- Seleccionar Nivel --</option>
+            <option *ngFor="let n of nivelesDisponibles" [value]="n">{{ n }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fila 5: Fecha Ingreso y Estado -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha de Ingreso</label>
+          <input type="date" class="form-control" [(ngModel)]="fechaIngreso">
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select class="form-control" [(ngModel)]="estado">
+            <option value="Activo">Activo</option>
+            <option value="Vacaciones">Vacaciones</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="form-footer">
+        <button class="btn-secondary-modal" (click)="cancelar()">Cancelar</button>
+        <button class="btn-warning" (click)="guardar()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+          </svg>
+          {{ esEdicion ? 'Actualizar Empleado' : 'Guardar Empleado' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

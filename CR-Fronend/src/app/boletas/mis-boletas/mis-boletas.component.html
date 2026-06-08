@@ -46,28 +46,20 @@
       <table class="data-table complex-table">
         <thead>
           <tr>
-            <th rowspan="2" class="col-id">#</th>
-            <th rowspan="2">N° Documento</th>
-            <th rowspan="2">Tipo de Doc.</th>
-            <th rowspan="2">Emisión</th>
-            <th rowspan="2">Mes</th>
-            <th rowspan="2" class="text-right">Monto Neto</th>
-            <th [attr.colspan]="isEmpleado ? 3 : 4" class="text-center group-header">Estados</th>
-            <th rowspan="2" *ngIf="!isEmpleado">Correo</th>
-            <th rowspan="2" *ngIf="!isEmpleado">Celular</th>
-            <th rowspan="2" class="text-center">Acciones</th>
-          </tr>
-          <tr class="sub-header">
-            <th class="text-center">Firmado</th>
-            <th class="text-center" *ngIf="!isEmpleado">Aviso Enviado</th>
-            <th class="text-center">Revisado</th>
-            <th class="text-center">Descargado</th>
+            <th class="col-id">#</th>
+            <th>N° Documento</th>
+            <th>Tipo de Doc.</th>
+            <th>Emisión</th>
+            <th>Mes</th>
+            <th class="text-right">Monto Neto</th>
+            <th class="text-center">Estado (Firmado)</th>
+            <th class="text-center">Acciones</th>
           </tr>
         </thead>
         <tbody>
           <!-- Sin resultados -->
           <tr *ngIf="boletas.length === 0">
-            <td [attr.colspan]="isEmpleado ? 10 : 13" class="empty-state">
+            <td colspan="8" class="empty-state">
               No se encontraron boletas para el año {{ selectedAnio }}.
             </td>
           </tr>
@@ -80,37 +72,16 @@
             <td>{{ boleta.mes }}</td>
             <td class="text-right" style="white-space: nowrap; font-weight: 500;">{{ boleta.montoTotal | currency:'PEN':'S/ ' }}</td>
 
-            <td class="text-center state-cell">
-              <ng-container *ngIf="boleta.firmado">
-                <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                <div class="state-date">{{ boleta.firmado.fecha }}</div>
+            <td class="text-center state-cell" style="font-size: 1.5em;" [title]="boleta.firmado ? 'Firmado' : 'Pendiente'">
+              <ng-container *ngIf="boleta.firmado; else noFirmado">
+                ✅
+                <div class="state-date" style="font-size: 0.5em;">{{ boleta.firmado.fecha }}</div>
               </ng-container>
+              <ng-template #noFirmado>
+                ❌
+              </ng-template>
             </td>
 
-            <td class="text-center state-cell" *ngIf="!isEmpleado">
-              <ng-container *ngIf="boleta.avisoEnviado">
-                <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                <div class="state-date">{{ boleta.avisoEnviado.fecha }}</div>
-                <div class="state-email">{{ boleta.avisoEnviado.correo }}</div>
-              </ng-container>
-            </td>
-
-            <td class="text-center state-cell">
-              <ng-container *ngIf="boleta.revisado">
-                <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                <div class="state-date">{{ boleta.revisado.fecha }}</div>
-              </ng-container>
-            </td>
-
-            <td class="text-center state-cell">
-              <ng-container *ngIf="boleta.descargado">
-                <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                <div class="state-date">{{ boleta.descargado.fecha }}</div>
-              </ng-container>
-            </td>
-
-            <td *ngIf="!isEmpleado">{{ boleta.correo }}</td>
-            <td *ngIf="!isEmpleado">{{ boleta.celular }}</td>
             <td class="text-center" style="white-space: nowrap;">
               <button class="btn-icon-blue" (click)="verBoleta(boleta)" title="Descargar boleta PDF" style="margin-right: 8px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"

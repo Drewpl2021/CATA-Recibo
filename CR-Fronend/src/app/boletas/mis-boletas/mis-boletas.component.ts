@@ -48,7 +48,14 @@ export class MisBoletasComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.isEmpleado = this.authService.getUser()?.rol === 'empleado';
+    const user = this.authService.getUser();
+    const rol = user?.rol?.toLowerCase() || '';
+    const email = user?.email?.toLowerCase() || '';
+    
+    // Si es administrador o rrhh por correo, NO es empleado (a nivel de vista).
+    const isAdmin = rol === 'admin' || rol === 'rrhh' || email === 'admin@colegio.com' || email === 'rrhh@colegio.com';
+    this.isEmpleado = !isAdmin;
+    
     this.cargarBoletas();
   }
 

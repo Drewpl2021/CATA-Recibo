@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 export interface EmpleadoMock {
   id: string;
@@ -21,9 +22,12 @@ export interface EmpleadoMock {
 export class EmpleadosListComponent implements OnInit {
   empleados: EmpleadoMock[] = [];
   searchTerm = '';
+  mostrarConfirmacion = false;
+  empleadoAEliminar: EmpleadoMock | null = null;
+
+  constructor(private router: Router) {}
 
   ngOnInit(): void {
-    // Datos simulados (mock)
     this.empleados = [
       {
         id: 'EMP-001',
@@ -55,14 +59,40 @@ export class EmpleadosListComponent implements OnInit {
   get filteredEmpleados(): EmpleadoMock[] {
     if (!this.searchTerm) return this.empleados;
     const lower = this.searchTerm.toLowerCase();
-    return this.empleados.filter(e => 
-      e.nombresApellidos.toLowerCase().includes(lower) || 
+    return this.empleados.filter(e =>
+      e.nombresApellidos.toLowerCase().includes(lower) ||
       e.cargo.toLowerCase().includes(lower) ||
       e.nivel.toLowerCase().includes(lower)
     );
   }
 
-  verHistorial(empleado: EmpleadoMock): void {
-    alert(`Historial de acciones próximamente disponible para: ${empleado.nombresApellidos}`);
+  nuevoEmpleado(): void {
+    this.router.navigate(['/inicio/empleados/nuevo']);
+  }
+
+  verPerfil(emp: EmpleadoMock): void {
+    this.router.navigate(['/inicio/empleados/ver', emp.id]);
+  }
+
+  editarEmpleado(emp: EmpleadoMock): void {
+    this.router.navigate(['/inicio/empleados/editar', emp.id]);
+  }
+
+  confirmarEliminar(emp: EmpleadoMock): void {
+    this.empleadoAEliminar = emp;
+    this.mostrarConfirmacion = true;
+  }
+
+  cancelarEliminar(): void {
+    this.empleadoAEliminar = null;
+    this.mostrarConfirmacion = false;
+  }
+
+  eliminarEmpleado(): void {
+    if (this.empleadoAEliminar) {
+      this.empleados = this.empleados.filter(e => e.id !== this.empleadoAEliminar!.id);
+      this.empleadoAEliminar = null;
+      this.mostrarConfirmacion = false;
+    }
   }
 }

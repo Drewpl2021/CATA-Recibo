@@ -302,6 +302,43 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+.btn-warning {
+  background-color: #F4B41A;
+  color: #112A54;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.btn-warning:hover {
+  background-color: #D49A12;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(244, 180, 26, 0.4);
+}
+
+.btn-icon-blue {
+  background-color: rgba(52, 152, 219, 0.12);
+  color: #3498db;
+  border: none;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  &:hover { background-color: rgba(52, 152, 219, 0.25); transform: translateY(-1px); }
+}
+
+
 /* Metrics Cards */
 .metrics-grid {
   display: grid;
