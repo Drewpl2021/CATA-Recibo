@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -14,8 +12,8 @@ class Empleado extends Model
         'dni',
         'nombre',
         'apellido',
-        'cargo',
-        'area',
+        'cargo_id',
+        'area_id',
         'telefono',
         'direccion',
         'fecha_ingreso',
@@ -28,5 +26,15 @@ class Empleado extends Model
         static::creating(function ($model) {
             $model->id = Str::uuid();
         });
+    }
+
+    public function area()
+    {
+        return $this->belongsTo(Area::class);
+    }
+
+    public function cargo()
+    {
+        return $this->belongsTo(Cargo::class);
     }
 }

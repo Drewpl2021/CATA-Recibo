@@ -1,10 +1,9 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\Planilla;
 use App\Models\Empleado;
 use App\Models\Descuento;
+use App\Models\Documento;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -13,7 +12,6 @@ class MiBoletaController extends Controller
     public function descargar(Request $request, $mes, $anio)
     {
         $empleado_id = $request->user()->empleado_id;
-
         if (!$empleado_id) {
             return response()->json([
                 'success' => false,
@@ -22,7 +20,6 @@ class MiBoletaController extends Controller
         }
 
         $empleado = Empleado::findOrFail($empleado_id);
-
         $planilla = Planilla::where('empleado_id', $empleado_id)
             ->where('mes', $mes)
             ->where('anio', $anio)
@@ -47,6 +44,24 @@ class MiBoletaController extends Controller
             10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
         ];
 
+        $archivo = "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf";
+
+        // Guardar documento si no existe
+        $existe = Documento::where('empleado_id', $empleado_id)
+            ->where('planilla_id', $planilla->id)
+            ->where('tipo', 'boleta')
+            ->first();
+
+        if (!$existe) {
+            Documento::create([
+                'empleado_id'  => $empleado_id,
+                'planilla_id'  => $planilla->id,
+                'tipo'         => 'boleta',
+                'archivo'      => $archivo,
+                'estado_firma' => 'pendiente',
+            ]);
+        }
+
         $data = [
             'empleado'   => $empleado,
             'planilla'   => $planilla,
@@ -56,7 +71,6 @@ class MiBoletaController extends Controller
         ];
 
         $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'portrait');
-
-        return $pdf->download("boleta_{$empleado->dni}_{$mes}_{$anio}.pdf");
+        return $pdf->download($archivo);
     }
 }

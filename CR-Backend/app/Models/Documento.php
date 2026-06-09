@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -18,6 +16,9 @@ class Documento extends Model
         'firmado_por',
         'codigo_firma',
         'fecha_firma',
+        'estado_firma',
+        'planilla_id',
+        'fecha_visto',
     ];
 
     protected static function boot()
@@ -31,5 +32,10 @@ class Documento extends Model
     public function empleado()
     {
         return $this->belongsTo(Empleado::class);
+    }
+
+    public function planilla()
+    {
+        return $this->belongsTo(Planilla::class);
     }
 }
