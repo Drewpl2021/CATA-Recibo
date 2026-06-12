@@ -11,6 +11,13 @@
       </svg>
       <input type="text" class="form-control search-input" placeholder="Buscar por nombre, cargo o DNI..." [(ngModel)]="searchTerm">
     </div>
+    <button class="btn-primary" style="margin-left: auto; display: flex; align-items: center; gap: 8px;" (click)="emitirTodasLasBoletas()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+        <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+      </svg>
+      Emitir todas las boletas
+    </button>
   </div>
 
   <!-- Tabla de empleados -->
@@ -39,24 +46,46 @@
           <tr *ngIf="filteredEmpleados.length === 0">
             <td colspan="7" class="empty-state">No se encontraron empleados.</td>
           </tr>
-          <tr *ngFor="let emp of filteredEmpleados; let i = index">
+          <tr *ngFor="let emp of filteredEmpleados; let i = index" [class.fila-editada]="empleadosEditados.has(emp.id)">
             <td class="col-id">{{ i + 1 }}</td>
-            <td style="font-weight: 500;">{{ emp.nombresApellidos }}</td>
+            <td style="font-weight: 500;">
+              <div class="nombre-con-badge">
+                {{ emp.nombresApellidos }}
+              </div>
+            </td>
             <td style="font-family: monospace; font-size: 13px;">{{ emp.dni }}</td>
             <td>{{ emp.cargo }}</td>
             <td>{{ emp.nivel }}</td>
             <td class="text-center">
-              <span class="badge" [ngClass]="emp.estado === 'Activo' ? 'badge-active' : 'badge-vacaciones'">
+              <span class="badge-estado" [ngClass]="emp.estado === 'Activo' ? 'badge-active' : 'badge-vacaciones'">
                 {{ emp.estado }}
               </span>
             </td>
-            <td class="text-center">
-              <button class="btn-emitir" (click)="abrirModal(emp)" title="Emitir Boleta">
+            <td class="text-center" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+              <ng-container *ngIf="empleadosEditados.has(emp.id); else sinEditar">
+                <span class="badge-boleta badge-editado" title="Esta boleta ha sido editada">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  Editado
+                </span>
+              </ng-container>
+              <ng-template #sinEditar>
+                <span class="badge-boleta badge-pendiente" title="No se ha editado">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  Pendiente
+                </span>
+              </ng-template>
+
+              <button class="btn-emitir" (click)="abrirModal(emp)" title="Editar Boleta">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                  <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
-                Emitir Boleta
+                Editar
               </button>
             </td>
           </tr>
@@ -132,8 +161,11 @@
           <input type="number" class="form-input-sm" [(ngModel)]="formulario.anio" min="2020" max="2030">
         </div>
         <div class="form-group-inline">
-          <label>Ciudad:</label>
-          <input type="text" class="form-input-sm" [(ngModel)]="formulario.ciudad" placeholder="Ej: Juliaca">
+          <label>Sede:</label>
+          <select class="form-select-sm" [(ngModel)]="formulario.ciudad">
+            <option value="CATA">CATA</option>
+            <option value="Jerusalén">Jerusalén</option>
+          </select>
         </div>
       </div>
 
@@ -144,7 +176,6 @@
             <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
           </svg>
           Detalle Financiero
-          <span class="tag-editable">Editable por Admin / RRHH</span>
         </div>
 
         <div class="tabla-financiera">

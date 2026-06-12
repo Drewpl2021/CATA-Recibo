@@ -72,10 +72,14 @@ export class EmisionBoletaListComponent implements OnInit {
   empleados: EmpleadoParaBoleta[] = [];
   searchTerm = '';
 
+  // Tracking de ediciones por empleado
+  empleadosEditados = new Set<string>();       // tiene cualquier cambio
+
   // Modal state
   showModal = false;
   empleadoSeleccionado: EmpleadoParaBoleta | null = null;
   formulario!: FormularioBoleta;
+  private _formularioOriginal: string = '';
 
   mesesDisponibles = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -174,14 +178,34 @@ export class EmisionBoletaListComponent implements OnInit {
   abrirModal(empleado: EmpleadoParaBoleta): void {
     this.empleadoSeleccionado = empleado;
     this.formulario = this.getFormularioVacio();
+    // Guardar estado inicial para detectar cambios al cerrar
+    this._formularioOriginal = JSON.stringify(this.formulario);
     this.showModal = true;
     document.body.style.overflow = 'hidden';
   }
 
   cerrarModal(): void {
+    // Si hay cambios al cerrar sin guardar, igual marcar como editado
+    if (this.empleadoSeleccionado) {
+      const actual = JSON.stringify(this.formulario);
+      if (actual !== this._formularioOriginal) {
+        this.empleadosEditados.add(this.empleadoSeleccionado.id);
+      }
+    }
     this.showModal = false;
     this.empleadoSeleccionado = null;
     document.body.style.overflow = '';
+  }
+
+  /** Devuelve true si el formulario tiene al menos un descuento cargado */
+  private _tieneDescuentos(): boolean {
+    const f = this.formulario;
+    return [
+      f.onp13, f.sppFondoPensiones, f.sppPrimaSeguro, f.sppComision,
+      f.ir5taCategoria, f.descuentoAlimentacion, f.descuentoBazar,
+      f.descuentoAutorizadoDiezmo, f.descuentoOtros, f.descuentoEscolaridad,
+      f.adelanto
+    ].some(v => v !== null && v > 0);
   }
 
   // Totales calculados en tiempo real
@@ -216,6 +240,10 @@ export class EmisionBoletaListComponent implements OnInit {
   }
 
   guardarBorrador(): void {
+    if (this.empleadoSeleccionado) {
+      // Marcar como editado
+      this.empleadosEditados.add(this.empleadoSeleccionado.id);
+    }
     console.log('Guardando borrador:', { empleado: this.empleadoSeleccionado?.id, formulario: this.formulario });
     alert(`✅ Borrador guardado para ${this.empleadoSeleccionado?.nombresApellidos}`);
   }
@@ -225,9 +253,27 @@ export class EmisionBoletaListComponent implements OnInit {
       alert('⚠️ El Total Neto a Pagar debe ser mayor a 0 para emitir la boleta.');
       return;
     }
+    if (this.empleadoSeleccionado) {
+      // Marcar como editado al emitir
+      this.empleadosEditados.add(this.empleadoSeleccionado.id);
+    }
     console.log('Emitiendo boleta:', { empleado: this.empleadoSeleccionado?.id, formulario: this.formulario });
     alert(`🎉 Boleta de ${this.formulario.mes} ${this.formulario.anio} emitida correctamente para ${this.empleadoSeleccionado?.nombresApellidos}`);
     this.cerrarModal();
+  }
+
+  emitirTodasLasBoletas(): void {
+    if (this.filteredEmpleados.length === 0) {
+      alert('⚠️ No hay empleados en la lista para emitir boletas.');
+      return;
+    }
+    
+    const confirmacion = confirm(`¿Estás seguro de emitir las boletas de los ${this.filteredEmpleados.length} empleados en la lista actual?`);
+    
+    if (confirmacion) {
+      console.log('Emitiendo boletas masivamente para:', this.filteredEmpleados.map(e => e.id));
+      alert(`🎉 Se han emitido ${this.filteredEmpleados.length} boletas correctamente.`);
+    }
   }
 
   private getFormularioVacio(): FormularioBoleta {
@@ -244,7 +290,7 @@ export class EmisionBoletaListComponent implements OnInit {
       ir5taCategoria: null, descuentoAlimentacion: null, descuentoBazar: null,
       descuentoAutorizadoDiezmo: null, descuentoOtros: null, descuentoEscolaridad: null,
       essalud9: null, sctr: null, adelanto: null,
-      ciudad: 'Juliaca',
+      ciudad: 'CATA',
       fechaEmision: now.toLocaleDateString('es-PE'),
       mes: meses[now.getMonth()],
       anio: now.getFullYear()

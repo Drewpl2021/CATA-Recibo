@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { PdfViewerModule } from 'ng2-pdf-viewer';
+import { GlobalWorkerOptions } from 'pdfjs-dist';
 import { AuthService } from '../../core/services/auth.service';
 import { BoletasService } from '../../core/services/boletas.service';
 
@@ -51,6 +52,13 @@ export class MisBoletasComponent implements OnInit {
   pdfBoletaName = '';
   private currentPdfBlob: Blob | null = null;
 
+  // Sign Modal state
+  showSignModal = false;
+  signPassword = '';
+  boletaAFirmar: BoletaRow | null = null;
+  signErrorMsg = '';
+  isSigning = false;
+
   constructor(
     private authService: AuthService,
     private boletasService: BoletasService,
@@ -58,6 +66,9 @@ export class MisBoletasComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Configurar el worker de PDF.js apuntando al archivo estático
+    GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+
     const user = this.authService.getUser();
     const rol = user?.rol?.toLowerCase() || '';
     const email = user?.email?.toLowerCase() || '';
@@ -104,7 +115,8 @@ export class MisBoletasComponent implements OnInit {
           mesNum: p.mes,
           montoTotal: p.total ?? 0,
           anio: p.anio,
-          firmado: p.created_at ? { fecha: this.formatFecha(p.created_at) } : null,
+          // Temporal para pruebas: Solo los primeros 3 meses están firmados, el resto pendiente
+          firmado: (p.created_at && p.mes <= 3) ? { fecha: this.formatFecha(p.created_at) } : null,
           avisoEnviado: null,
           revisado: null,
           descargado: null,
@@ -169,11 +181,52 @@ export class MisBoletasComponent implements OnInit {
   }
 
   firmarBoleta(boleta: BoletaRow): void {
-    if (!this.authService.isLoggedIn()) {
-      this.errorMsg = 'Sesión expirada. Por favor vuelve a iniciar sesión.';
+    if (boleta.firmado) {
+      alert(`Esta boleta ya fue firmada el ${boleta.firmado.fecha}.`);
       return;
     }
-    alert(`Pronto podrás firmar la boleta de ${boleta.mes} ${boleta.anio}`);
+    this.boletaAFirmar = boleta;
+    this.signPassword = '';
+    this.signErrorMsg = '';
+    this.showSignModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeSignModal(): void {
+    this.showSignModal = false;
+    this.boletaAFirmar = null;
+    this.signPassword = '';
+    this.signErrorMsg = '';
+    this.isSigning = false;
+    document.body.style.overflow = '';
+  }
+
+  confirmarFirma(): void {
+    if (!this.signPassword) {
+      this.signErrorMsg = 'Por favor, ingresa tu contraseña para firmar.';
+      return;
+    }
+
+    this.isSigning = true;
+    this.signErrorMsg = '';
+
+    // Simular llamada a API para verificar contraseña y firmar
+    setTimeout(() => {
+      this.isSigning = false;
+      // Aquí se validaría contra el backend real. Por ahora simulamos éxito:
+      if (this.signPassword.length < 4) {
+        this.signErrorMsg = 'Contraseña incorrecta. (Simulado: usa más de 3 caracteres)';
+        return;
+      }
+      
+      if (this.boletaAFirmar) {
+        this.boletaAFirmar.firmado = { 
+          fecha: new Date().toLocaleDateString('es-PE') + ' ' + new Date().toLocaleTimeString('es-PE') 
+        };
+        alert(`¡Éxito! Boleta de ${this.boletaAFirmar.mes} firmada correctamente.`);
+      }
+      this.closeSignModal();
+    }, 1000);
   }
 
   private formatFecha(isoDate: string): string {
