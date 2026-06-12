@@ -1,5 +1,72 @@
 <div class="boletas-container">
-  <div class="page-title">
+  <!-- Top Section (from Dashboard) -->
+  <div class="page-title" style="margin-bottom: 24px;">
+    <div>
+      <h1>¡Buenos días, {{ userName }}!</h1>
+      <p>Aquí tienes un resumen de tus documentos laborales y boletas de pago.</p>
+    </div>
+    <button class="btn-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"><path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/>
+        <path d="M17 8h4"/><path d="M17 12h4"/><path d="M17 16h4"/></svg>
+      Firmar Pendientes (2)
+    </button>
+  </div>
+
+  <!-- Metrics Grid -->
+  <div class="metrics-grid" style="margin-bottom: 32px;">
+    <div class="metric-card">
+      <div class="metric-info">
+        <h3>Documentos Pendientes</h3>
+        <div class="metric-value">2</div>
+        <div class="metric-trend trend-neutral">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/></svg>
+          Requieren tu firma
+        </div>
+      </div>
+      <div class="metric-icon red">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"><path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/>
+          <path d="M17 8h4"/></svg>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-info">
+        <h3>Último Recibo</h3>
+        <div class="metric-value">Marzo</div>
+        <div class="metric-trend trend-up">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+            <polyline points="16 7 22 7 22 13"/></svg>
+          Disponible hace 3 días
+        </div>
+      </div>
+      <div class="metric-icon blue">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+          <polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-info">
+        <h3>Días de Vacaciones</h3>
+        <div class="metric-value">14</div>
+        <div class="metric-trend">Disponibles para 2026</div>
+      </div>
+      <div class="metric-icon green">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+          <line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/>
+          <line x1="3" x2="21" y1="10" y2="10"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-header-small" style="margin-bottom: 16px;">
     <h2>MIS BOLETAS DE PAGO</h2>
   </div>
 
@@ -95,6 +162,35 @@
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Modal para visor de PDF -->
+  <div class="pdf-modal-overlay" *ngIf="showPdfModal" (click)="closePdfModal()">
+    <div class="pdf-modal-container" (click)="$event.stopPropagation()">
+      <div class="pdf-modal-header">
+        <h3>{{ pdfBoletaName }}</h3>
+        <div class="modal-actions" style="display: flex; gap: 12px;">
+          <button class="btn-primary" (click)="descargarPdfDirecto()" style="padding: 6px 12px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar
+          </button>
+          <button class="btn-close" (click)="closePdfModal()" title="Cerrar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="pdf-modal-body">
+        <pdf-viewer *ngIf="pdfUrl" 
+                    [src]="pdfUrl" 
+                    [render-text]="true" 
+                    [original-size]="false" 
+                    [fit-to-page]="true"
+                    style="display: block; width: 100%; height: 100%;">
+        </pdf-viewer>
+      </div>
     </div>
   </div>
 </div>

@@ -20,7 +20,7 @@ export interface LoginResponse {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly apiUrl = 'http://cr-backend.test/api';
+  private readonly apiUrl = 'http://127.0.0.1:8000/api';
 
   constructor(private http: HttpClient, private router: Router) {}
 

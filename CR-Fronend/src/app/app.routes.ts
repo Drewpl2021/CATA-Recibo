@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './autenticacion/login/login.component';
 import { RegistroComponent } from './autenticacion/registro/registro.component';
 import { LayoutComponent } from './shared/layout/layout.component';
-import { DashboardViewComponent } from './inicio/dashboard/dashboard-view.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -12,7 +11,7 @@ export const routes: Routes = [
     path: 'inicio',
     component: LayoutComponent,
     children: [
-      { path: '', component: DashboardViewComponent },
+      { path: '', redirectTo: 'mis-boletas', pathMatch: 'full' },
       { path: 'mis-boletas', loadComponent: () => import('./boletas/mis-boletas/mis-boletas.component').then(m => m.MisBoletasComponent) },
       { path: 'documentos', loadComponent: () => import('./documentos/documentos-list/documentos-list.component').then(m => m.DocumentosListComponent) },
       { path: 'empleados', loadComponent: () => import('./empleados/empleados-list/empleados-list.component').then(m => m.EmpleadosListComponent) },

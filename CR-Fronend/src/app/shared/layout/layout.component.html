@@ -100,10 +100,10 @@
         </button>
 
         <div class="user-profile">
-          <div class="avatar">CM</div>
+          <div class="avatar">{{ userName.substring(0, 2).toUpperCase() }}</div>
           <div class="user-info">
-            <span class="user-name">Carlos Mamani</span>
-            <span class="user-role">Docente de Matemáticas</span>
+            <span class="user-name">{{ userName }}</span>
+            <span class="user-role">{{ userRole }}</span>
           </div>
         </div>
       </div>

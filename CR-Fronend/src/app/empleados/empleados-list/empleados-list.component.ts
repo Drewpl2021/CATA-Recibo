@@ -22,8 +22,6 @@ export interface EmpleadoMock {
 export class EmpleadosListComponent implements OnInit {
   empleados: EmpleadoMock[] = [];
   searchTerm = '';
-  mostrarConfirmacion = false;
-  empleadoAEliminar: EmpleadoMock | null = null;
 
   constructor(private router: Router) {}
 
@@ -72,27 +70,5 @@ export class EmpleadosListComponent implements OnInit {
 
   verPerfil(emp: EmpleadoMock): void {
     this.router.navigate(['/inicio/empleados/ver', emp.id]);
-  }
-
-  editarEmpleado(emp: EmpleadoMock): void {
-    this.router.navigate(['/inicio/empleados/editar', emp.id]);
-  }
-
-  confirmarEliminar(emp: EmpleadoMock): void {
-    this.empleadoAEliminar = emp;
-    this.mostrarConfirmacion = true;
-  }
-
-  cancelarEliminar(): void {
-    this.empleadoAEliminar = null;
-    this.mostrarConfirmacion = false;
-  }
-
-  eliminarEmpleado(): void {
-    if (this.empleadoAEliminar) {
-      this.empleados = this.empleados.filter(e => e.id !== this.empleadoAEliminar!.id);
-      this.empleadoAEliminar = null;
-      this.mostrarConfirmacion = false;
-    }
   }
 }

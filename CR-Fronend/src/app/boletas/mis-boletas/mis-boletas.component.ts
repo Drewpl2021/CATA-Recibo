@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer } from '@angular/platform-browser';
+import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { AuthService } from '../../core/services/auth.service';
 import { BoletasService } from '../../core/services/boletas.service';
 
@@ -30,7 +32,7 @@ export interface BoletaRow {
 @Component({
   selector: 'app-mis-boletas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PdfViewerModule],
   templateUrl: './mis-boletas.component.html',
   styleUrl: './mis-boletas.component.scss'
 })
@@ -41,10 +43,18 @@ export class MisBoletasComponent implements OnInit {
   isLoading = false;
   errorMsg = '';
   isEmpleado = false;
+  userName = '';
+  
+  // Modal states
+  showPdfModal = false;
+  pdfUrl: string | null = null;
+  pdfBoletaName = '';
+  private currentPdfBlob: Blob | null = null;
 
   constructor(
     private authService: AuthService,
-    private boletasService: BoletasService
+    private boletasService: BoletasService,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -55,6 +65,8 @@ export class MisBoletasComponent implements OnInit {
     // Si es administrador o rrhh por correo, NO es empleado (a nivel de vista).
     const isAdmin = rol === 'admin' || rol === 'rrhh' || email === 'admin@colegio.com' || email === 'rrhh@colegio.com';
     this.isEmpleado = !isAdmin;
+    
+    this.userName = user?.name ? user.name.split(' ')[0] : 'Usuario';
     
     this.cargarBoletas();
   }
@@ -123,14 +135,37 @@ export class MisBoletasComponent implements OnInit {
     this.boletasService.descargarBoleta(boleta.mesNum, String(boleta.anio)).subscribe({
       next: (blob) => {
         this.isLoading = false;
-        const fileURL = URL.createObjectURL(blob);
-        window.open(fileURL, '_blank');
+        this.currentPdfBlob = blob;
+        // Para ng2-pdf-viewer pasamos el object URL directo (como string)
+        this.pdfUrl = URL.createObjectURL(blob);
+        this.pdfBoletaName = `Boleta de ${boleta.mes} ${boleta.anio}`;
+        this.showPdfModal = true;
       },
       error: () => {
         this.isLoading = false;
         this.errorMsg = `Error al generar la boleta de ${boleta.mes} ${boleta.anio}.`;
       }
     });
+  }
+
+  closePdfModal(): void {
+    this.showPdfModal = false;
+    if (this.pdfUrl) {
+      URL.revokeObjectURL(this.pdfUrl); // Liberar memoria
+    }
+    this.pdfUrl = null;
+    this.currentPdfBlob = null;
+  }
+
+  descargarPdfDirecto(): void {
+    if (this.currentPdfBlob && this.pdfUrl) {
+      const a = document.createElement('a');
+      a.href = this.pdfUrl;
+      a.download = `${this.pdfBoletaName.replace(/ /g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   }
 
   firmarBoleta(boleta: BoletaRow): void {

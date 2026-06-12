@@ -1,11 +1,33 @@
 <div class="boletas-container">
-  <div class="page-title" style="display: flex; align-items: center; gap: 16px;">
-    <button class="btn-icon btn-icon-blue" (click)="cancelar()" title="Volver">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-      </svg>
-    </button>
-    <h2>{{ titulo }}</h2>
+  <div class="page-title" style="display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <button class="btn-icon btn-icon-blue" (click)="cancelar()" title="Volver">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </svg>
+      </button>
+      <h2>{{ titulo }}</h2>
+    </div>
+
+    <div *ngIf="modo === 'ver'" style="display: flex; gap: 8px;">
+      <!-- Editar -->
+      <button class="btn-icon-green" (click)="irAEditar()" title="Editar Empleado" style="padding: 8px 16px; border-radius: 6px; border: none; display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; color: #27ae60; background-color: rgba(46, 204, 113, 0.12);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Editar
+      </button>
+
+      <!-- Eliminar -->
+      <button class="btn-icon-red" (click)="confirmarEliminar()" title="Eliminar Empleado" style="padding: 8px 16px; border-radius: 6px; border: none; display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; color: #e74c3c; background-color: rgba(231, 76, 60, 0.12);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
+        Eliminar
+      </button>
+    </div>
   </div>
 
   <div class="section-panel" style="max-width: 900px;">
@@ -22,11 +44,11 @@
       <div class="form-row">
         <div class="form-group">
           <label>Nombre <span class="required">*</span></label>
-          <input type="text" class="form-control" placeholder="Ej. Carlos" [(ngModel)]="nombre">
+          <input type="text" class="form-control" placeholder="Ej. Carlos" [(ngModel)]="nombre" [disabled]="modo === 'ver'">
         </div>
         <div class="form-group">
           <label>Apellido <span class="required">*</span></label>
-          <input type="text" class="form-control" placeholder="Ej. Mamani" [(ngModel)]="apellido">
+          <input type="text" class="form-control" placeholder="Ej. Mamani" [(ngModel)]="apellido" [disabled]="modo === 'ver'">
         </div>
       </div>
 
@@ -34,11 +56,11 @@
       <div class="form-row">
         <div class="form-group">
           <label>DNI <span class="required">*</span></label>
-          <input type="text" class="form-control" placeholder="Ej. 12345678" maxlength="8" [(ngModel)]="dni">
+          <input type="text" class="form-control" placeholder="Ej. 12345678" maxlength="8" [(ngModel)]="dni" [disabled]="modo === 'ver'">
         </div>
         <div class="form-group">
           <label>Correo Electrónico</label>
-          <input type="email" class="form-control" placeholder="Ej. cmamani@colegio.com" [(ngModel)]="email">
+          <input type="email" class="form-control" placeholder="Ej. cmamani@colegio.com" [(ngModel)]="email" [disabled]="modo === 'ver'">
         </div>
       </div>
 
@@ -46,11 +68,11 @@
       <div class="form-row">
         <div class="form-group">
           <label>Teléfono / Celular</label>
-          <input type="text" class="form-control" placeholder="Ej. 987654321" [(ngModel)]="telefono">
+          <input type="text" class="form-control" placeholder="Ej. 987654321" [(ngModel)]="telefono" [disabled]="modo === 'ver'">
         </div>
         <div class="form-group">
           <label>Dirección</label>
-          <input type="text" class="form-control" placeholder="Ej. Av. Principal 123" [(ngModel)]="direccion">
+          <input type="text" class="form-control" placeholder="Ej. Av. Principal 123" [(ngModel)]="direccion" [disabled]="modo === 'ver'">
         </div>
       </div>
 
@@ -58,14 +80,14 @@
       <div class="form-row">
         <div class="form-group">
           <label>Cargo <span class="required">*</span></label>
-          <select class="form-control" [(ngModel)]="cargo">
+          <select class="form-control" [(ngModel)]="cargo" [disabled]="modo === 'ver'">
             <option value="">-- Seleccionar Cargo --</option>
             <option *ngFor="let c of cargosDisponibles" [value]="c">{{ c }}</option>
           </select>
         </div>
         <div class="form-group">
           <label>Nivel</label>
-          <select class="form-control" [(ngModel)]="nivel">
+          <select class="form-control" [(ngModel)]="nivel" [disabled]="modo === 'ver'">
             <option value="">-- Seleccionar Nivel --</option>
             <option *ngFor="let n of nivelesDisponibles" [value]="n">{{ n }}</option>
           </select>
@@ -76,11 +98,11 @@
       <div class="form-row">
         <div class="form-group">
           <label>Fecha de Ingreso</label>
-          <input type="date" class="form-control" [(ngModel)]="fechaIngreso">
+          <input type="date" class="form-control" [(ngModel)]="fechaIngreso" [disabled]="modo === 'ver'">
         </div>
         <div class="form-group">
           <label>Estado</label>
-          <select class="form-control" [(ngModel)]="estado">
+          <select class="form-control" [(ngModel)]="estado" [disabled]="modo === 'ver'">
             <option value="Activo">Activo</option>
             <option value="Vacaciones">Vacaciones</option>
           </select>
@@ -88,17 +110,35 @@
       </div>
 
       <!-- Botones -->
-      <div class="form-footer">
+      <div class="form-footer" *ngIf="modo !== 'ver'">
         <button class="btn-secondary-modal" (click)="cancelar()">Cancelar</button>
         <button class="btn-warning" (click)="guardar()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px">
             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
             <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
           </svg>
-          {{ esEdicion ? 'Actualizar Empleado' : 'Guardar Empleado' }}
+          {{ modo === 'editar' ? 'Actualizar Empleado' : 'Guardar Empleado' }}
         </button>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminar -->
+<div class="modal-overlay" *ngIf="mostrarConfirmacion" (click)="cancelarEliminar()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-icon-danger">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+        <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+      </svg>
+    </div>
+    <h3>¿Eliminar Empleado?</h3>
+    <p>¿Estás seguro de que deseas eliminar a este empleado? Esta acción no se puede deshacer.</p>
+    <div class="modal-actions">
+      <button class="btn-secondary-modal" (click)="cancelarEliminar()">Cancelar</button>
+      <button class="btn-danger-modal" (click)="eliminarEmpleado()">Sí, Eliminar</button>
     </div>
   </div>
 </div>

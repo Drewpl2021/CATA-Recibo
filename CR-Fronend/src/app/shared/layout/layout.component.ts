@@ -14,6 +14,8 @@ export class LayoutComponent {
   activeMenu = 'mis-boletas';
   isBoletasOpen = true;
   isAdmin = false;
+  userName = '';
+  userRole = '';
 
   constructor(private router: Router, private authService: AuthService) {
     const user = this.authService.getUser();
@@ -22,6 +24,13 @@ export class LayoutComponent {
     
     console.log('User Data:', user);
     this.isAdmin = rol === 'admin' || rol === 'rrhh' || email === 'admin@colegio.com' || email === 'rrhh@colegio.com';
+    
+    this.userName = user?.name || 'Usuario';
+    if (this.isAdmin) {
+      this.userRole = rol === 'admin' ? 'Administrador' : 'Recursos Humanos';
+    } else {
+      this.userRole = 'Empleado';
+    }
   }
 
   setActive(menu: string) {
