@@ -4,11 +4,14 @@ use App\Models\Planilla;
 use App\Models\Empleado;
 use App\Models\Descuento;
 use App\Models\Documento;
+use App\Traits\CalculaConceptosPlanilla;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class BoletaController extends Controller
 {
+    use CalculaConceptosPlanilla;
+
     private array $meses = [
         1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo',
         4 => 'Abril', 5 => 'Mayo', 6 => 'Junio',
@@ -18,7 +21,7 @@ class BoletaController extends Controller
 
     public function generar(Request $request, $empleado_id, $mes, $anio)
     {
-        $empleado = Empleado::findOrFail($empleado_id);
+        $empleado = Empleado::with('area', 'cargo')->findOrFail($empleado_id);
         $planilla = Planilla::where('empleado_id', $empleado_id)
             ->where('mes', $mes)
             ->where('anio', $anio)
@@ -43,6 +46,12 @@ class BoletaController extends Controller
 
         $archivo = "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf";
 
+        // Cálculos previsionales
+        $pension          = $this->calcularDescuentoPension($empleado, $planilla->sueldo_base);
+        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
+        $gratificacion    = $this->calcularGratificacion($planilla->sueldo_base, $mes);
+        $essalud          = $this->calcularEssalud($planilla->sueldo_base);
+
         // Guardar documento si no existe
         $existe = Documento::where('empleado_id', $empleado_id)
             ->where('planilla_id', $planilla->id)
@@ -60,15 +69,20 @@ class BoletaController extends Controller
         }
 
         $data = [
-            'empleado'      => $empleado,
-            'planilla'      => $planilla,
-            'descuentos'    => $descuentos,
-            'mes_nombre'    => $this->meses[(int)$mes],
-            'anio'          => $anio,
-            'numero_boleta' => $numero_boleta,
+            'empleado'           => $empleado,
+            'planilla'           => $planilla,
+            'descuentos'         => $descuentos,
+            'mes_nombre'         => $this->meses[(int)$mes],
+            'mes'                => $mes,
+            'anio'               => $anio,
+            'numero_boleta'      => $numero_boleta,
+            'pension'            => $pension,
+            'asignacionFamiliar' => $asignacionFamiliar,
+            'gratificacion'      => $gratificacion,
+            'essalud'            => $essalud,
         ];
 
-        $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'landscape');
         return $pdf->download($archivo);
     }
 

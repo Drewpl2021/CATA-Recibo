@@ -23,6 +23,12 @@ class EmpleadoController extends Controller
             'direccion'    => 'nullable|string|max:255',
             'fecha_ingreso'=> 'required|date',
             'estado'       => 'nullable|string|max:20',
+            'sistema_pensiones'  => 'nullable|in:AFP,ONP',
+            'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo|required_if:sistema_pensiones,AFP',
+            'cuspp'              => 'nullable|string|max:20',
+            'entidad_financiera' => 'nullable|string|max:100',
+            'numero_cuenta'      => 'nullable|string|max:50',
+            'tiene_hijos'        => 'nullable|boolean',
         ]);
 
         $empleado = Empleado::create($request->all());
@@ -49,6 +55,12 @@ class EmpleadoController extends Controller
             'direccion'    => 'nullable|string|max:255',
             'fecha_ingreso'=> 'sometimes|date',
             'estado'       => 'nullable|string|max:20',
+            'sistema_pensiones'  => 'sometimes|in:AFP,ONP',
+            'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo',
+            'cuspp'              => 'nullable|string|max:20',
+            'entidad_financiera' => 'nullable|string|max:100',
+            'numero_cuenta'      => 'nullable|string|max:50',
+            'tiene_hijos'        => 'nullable|boolean',
         ]);
 
         $empleado->update($request->all());

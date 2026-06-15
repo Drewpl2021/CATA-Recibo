@@ -18,6 +18,12 @@ class Empleado extends Model
         'direccion',
         'fecha_ingreso',
         'estado',
+        'sistema_pensiones',
+        'afp',
+        'cuspp',
+        'entidad_financiera',
+        'numero_cuenta',
+        'tiene_hijos',
     ];
 
     protected static function boot()

@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 use App\Models\Documento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 
 class MisDocumentosController extends Controller
 {
@@ -45,9 +46,21 @@ class MisDocumentosController extends Controller
 
     public function firmar(Request $request, $id)
     {
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
         $user        = $request->user();
         $empleado_id = $user->empleado_id;
-        $documento   = Documento::where('id', $id)
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Contraseña incorrecta. No se pudo firmar el documento.'
+            ], 401);
+        }
+
+        $documento = Documento::where('id', $id)
             ->where('empleado_id', $empleado_id)
             ->firstOrFail();
 
@@ -68,6 +81,10 @@ class MisDocumentosController extends Controller
             'codigo_firma' => strtoupper(Str::random(8)) . '-' . time(),
         ]);
 
-        return response()->json(['success' => true, 'data' => $documento]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Documento firmado correctamente.',
+            'data'    => $documento
+        ]);
     }
 }
