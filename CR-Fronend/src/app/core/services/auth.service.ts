@@ -11,7 +11,7 @@ export interface LoginResponse {
       id: number;
       name: string;
       email: string;
-      rol: string;
+      rol: any;
       empleado_id: string;
     };
     token: string;
@@ -29,6 +29,14 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { email, password }).pipe(
       tap((res) => {
         if (res.success) {
+          // PARCHE: Extraer el rol si viene como objeto desde el backend
+          if (res.data.user && typeof res.data.user.rol === 'object' && res.data.user.rol !== null) {
+            res.data.user.rol = res.data.user.rol.nombre || 'empleado';
+          }
+          if (typeof res.data.rol === 'object' && res.data.rol !== null) {
+            res.data.rol = (res.data.rol as any).nombre || 'empleado';
+          }
+
           localStorage.setItem('auth_token', res.data.token);
           localStorage.setItem('auth_user', JSON.stringify(res.data.user));
         }
