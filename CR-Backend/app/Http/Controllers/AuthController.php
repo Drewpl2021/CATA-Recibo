@@ -22,10 +22,9 @@ class AuthController extends Controller
         $empleado = Empleado::create([
             'nombre'       => $request->name,
             'apellido'     => '',
-            'dni' => substr(time(), -8),
-            'cargo'        => 'Sin asignar',
-            'area'         => 'Sin asignar',
+            'dni'          => substr(time(), -8),
             'fecha_ingreso'=> now()->toDateString(),
+            'estado'       => 'activo',
         ]);
 
         $user = User::create([
