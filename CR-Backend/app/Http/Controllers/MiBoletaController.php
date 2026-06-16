@@ -1,19 +1,20 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\Planilla;
 use App\Models\Empleado;
 use App\Models\Descuento;
+use App\Models\Documento;
+use App\Traits\CalculaConceptosPlanilla;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class MiBoletaController extends Controller
 {
+    use CalculaConceptosPlanilla;
+
     public function descargar(Request $request, $mes, $anio)
     {
         $empleado_id = $request->user()->empleado_id;
-
         if (!$empleado_id) {
             return response()->json([
                 'success' => false,
@@ -21,8 +22,7 @@ class MiBoletaController extends Controller
             ], 403);
         }
 
-        $empleado = Empleado::findOrFail($empleado_id);
-
+        $empleado = Empleado::with('area', 'cargo')->findOrFail($empleado_id);
         $planilla = Planilla::where('empleado_id', $empleado_id)
             ->where('mes', $mes)
             ->where('anio', $anio)
@@ -47,16 +47,50 @@ class MiBoletaController extends Controller
             10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
         ];
 
+        $archivo = "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf";
+
+        $correlativo = Planilla::where('empleado_id', $empleado_id)
+            ->whereYear('created_at', $anio)
+            ->count();
+        $numero_boleta = 'BOL-' . $anio . '-' . str_pad($correlativo, 4, '0', STR_PAD_LEFT);
+
+        // Cálculos previsionales
+        $pension            = $this->calcularDescuentoPension($empleado, $planilla->sueldo_base);
+        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
+        $gratificacion      = $this->calcularGratificacion($planilla->sueldo_base, $mes);
+        $essalud            = $this->calcularEssalud($planilla->sueldo_base);
+
+        // Guardar documento si no existe
+        $existe = Documento::where('empleado_id', $empleado_id)
+            ->where('planilla_id', $planilla->id)
+            ->where('tipo', 'boleta')
+            ->first();
+
+        if (!$existe) {
+            Documento::create([
+                'empleado_id'  => $empleado_id,
+                'planilla_id'  => $planilla->id,
+                'tipo'         => 'boleta',
+                'archivo'      => $archivo,
+                'estado_firma' => 'pendiente',
+            ]);
+        }
+
         $data = [
-            'empleado'   => $empleado,
-            'planilla'   => $planilla,
-            'descuentos' => $descuentos,
-            'mes_nombre' => $meses[(int)$mes],
-            'anio'       => $anio,
+            'empleado'           => $empleado,
+            'planilla'           => $planilla,
+            'descuentos'         => $descuentos,
+            'mes_nombre'         => $meses[(int)$mes],
+            'mes'                => $mes,
+            'anio'               => $anio,
+            'numero_boleta'      => $numero_boleta,
+            'pension'            => $pension,
+            'asignacionFamiliar' => $asignacionFamiliar,
+            'gratificacion'      => $gratificacion,
+            'essalud'            => $essalud,
         ];
 
-        $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'portrait');
-
-        return $pdf->download("boleta_{$empleado->dni}_{$mes}_{$anio}.pdf");
+        $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'landscape');
+        return $pdf->download($archivo);
     }
 }

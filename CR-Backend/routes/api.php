@@ -16,6 +16,7 @@ use App\Http\Controllers\RolController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\PaymentConceptController;
 use App\Http\Controllers\PayrollDetalleController;
+use App\Http\Controllers\MisDocumentosController;
 
 // Preflight CORS
 Route::options('{any}', function () {
@@ -59,4 +60,14 @@ Route::apiResource('payroll-detalles', PayrollDetalleController::class);
 
     // Boleta de pago — admin/rrhh pueden generar cualquier boleta
     Route::get('boleta/{empleado_id}/{mes}/{anio}', [BoletaController::class, 'generar']);
+    // Boleta masiva
+    Route::middleware('rol:admin,rrhh')->group(function () {
+        Route::post('boletas/generar-masivo', [BoletaController::class, 'generarMasivo']);
+    });
+
+    // Mis documentos — empleado
+    Route::get('mis-documentos',                    [MisDocumentosController::class, 'index']);
+    Route::patch('mis-documentos/{id}/visto',       [MisDocumentosController::class, 'visto']);
+    Route::post('mis-documentos/{id}/firmar',       [MisDocumentosController::class, 'firmar']);
+
 });

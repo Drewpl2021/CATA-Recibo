@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Middleware;
-
 use Closure;
 use Illuminate\Http\Request;
 
@@ -16,7 +14,9 @@ class CheckRol
             ], 401);
         }
 
-        if (! in_array($request->user()->rol, $roles)) {
+        $rolNombre = $request->user()->rol?->nombre;
+
+        if (! in_array($rolNombre, $roles)) {
             return response()->json([
                 'success' => false,
                 'data'    => ['message' => 'No tienes permiso para esta acción.'],

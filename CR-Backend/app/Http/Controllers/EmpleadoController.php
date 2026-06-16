@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\Empleado;
 use Illuminate\Http\Request;
 
@@ -9,51 +7,64 @@ class EmpleadoController extends Controller
 {
     public function index()
     {
-        $empleados = Empleado::all();
+        $empleados = Empleado::with('area', 'cargo')->get();
         return response()->json(['success' => true, 'data' => $empleados]);
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'dni'          => 'required|string|max:8|unique:empleados',
+            'dni'          => 'required|string|regex:/^[0-9]{8}$/|unique:empleados',
             'nombre'       => 'required|string|max:100',
             'apellido'     => 'required|string|max:100',
-            'cargo'        => 'required|string|max:100',
-            'area'         => 'required|string|max:100',
+            'cargo_id'     => 'required|uuid|exists:cargos,id',
+            'area_id'      => 'required|uuid|exists:areas,id',
             'telefono'     => 'nullable|string|max:15',
             'direccion'    => 'nullable|string|max:255',
-            'fecha_ingreso'=> 'required|date',
+            'fecha_ingreso'=> 'required|date|before_or_equal:today',
+            'estado'       => 'nullable|string|max:20',
+            'sistema_pensiones'  => 'nullable|in:AFP,ONP',
+            'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo|required_if:sistema_pensiones,AFP',
+            'cuspp'              => 'nullable|string|size:11',
+            'entidad_financiera' => 'nullable|string|max:100',
+            'numero_cuenta'      => 'nullable|string|max:50',
+            'tiene_hijos'        => 'nullable|boolean',
         ]);
 
         $empleado = Empleado::create($request->all());
-
+        $empleado->load('area', 'cargo');
         return response()->json(['success' => true, 'data' => $empleado], 201);
     }
 
     public function show(string $id)
     {
-        $empleado = Empleado::findOrFail($id);
+        $empleado = Empleado::with('area', 'cargo')->findOrFail($id);
         return response()->json(['success' => true, 'data' => $empleado]);
     }
 
     public function update(Request $request, string $id)
     {
         $empleado = Empleado::findOrFail($id);
-
         $request->validate([
-            'dni'          => 'sometimes|string|max:8|unique:empleados,dni,'.$id,
+            'dni'          => 'sometimes|string|regex:/^[0-9]{8}$/|unique:empleados,dni,'.$id,
             'nombre'       => 'sometimes|string|max:100',
             'apellido'     => 'sometimes|string|max:100',
-            'cargo'        => 'sometimes|string|max:100',
-            'area'         => 'sometimes|string|max:100',
+            'cargo_id'     => 'sometimes|uuid|exists:cargos,id',
+            'area_id'      => 'sometimes|uuid|exists:areas,id',
             'telefono'     => 'nullable|string|max:15',
             'direccion'    => 'nullable|string|max:255',
-            'fecha_ingreso'=> 'sometimes|date',
+            'fecha_ingreso'=> 'sometimes|date|before_or_equal:today',
+            'estado'       => 'nullable|string|max:20',
+            'sistema_pensiones'  => 'sometimes|in:AFP,ONP',
+            'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo',
+            'cuspp'              => 'nullable|string|size:11',
+            'entidad_financiera' => 'nullable|string|max:100',
+            'numero_cuenta'      => 'nullable|string|max:50',
+            'tiene_hijos'        => 'nullable|boolean',
         ]);
 
         $empleado->update($request->all());
-
+        $empleado->load('area', 'cargo');
         return response()->json(['success' => true, 'data' => $empleado]);
     }
 
@@ -61,7 +72,6 @@ class EmpleadoController extends Controller
     {
         $empleado = Empleado::findOrFail($id);
         $empleado->delete();
-
         return response()->json(['success' => true, 'data' => ['message' => 'Empleado eliminado correctamente.']]);
     }
 }
