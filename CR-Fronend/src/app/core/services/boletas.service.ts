@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface Planilla {
   id: string;
@@ -22,7 +23,7 @@ export interface ApiResponse<T> {
 
 @Injectable({ providedIn: 'root' })
 export class BoletasService {
-  private readonly apiUrl = 'http://127.0.0.1:8000/api';
+  private readonly apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
@@ -38,5 +39,17 @@ export class BoletasService {
   /** PDF de boleta del empleado autenticado. */
   descargarBoleta(mes: number, anio: string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/mis-boletas/${mes}/${anio}`, { responseType: 'blob' });
+  }
+
+  /** PDF de boleta de cualquier empleado (Admin/RRHH). */
+  generarBoletaAdmin(empleadoId: string, mes: number, anio: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/boleta/${empleadoId}/${mes}/${anio}`, { responseType: 'blob' });
+  }
+
+  /** Generar boletas masivamente para todos los empleados activos (Admin/RRHH). */
+  generarMasivo(mes: number, anio: number): Observable<{ success: boolean; message: string; generadas: number; omitidas: number }> {
+    return this.http.post<{ success: boolean; message: string; generadas: number; omitidas: number }>(
+      `${this.apiUrl}/boletas/generar-masivo`, { mes, anio }
+    );
   }
 }

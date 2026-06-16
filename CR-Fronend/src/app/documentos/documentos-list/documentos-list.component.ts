@@ -1,14 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-export interface DocumentoMock {
-  id: string;
-  periodo: string;
-  fechaEmision: string;
-  estadoFirma: 'Firmado' | 'Pendiente';
-  estadoRevisado: 'Revisado' | 'Pendiente';
-}
+import { MisDocumentosService, MiDocumento } from '../../core/services/mis-documentos.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-documentos-list',
@@ -18,88 +12,120 @@ export interface DocumentoMock {
   styleUrl: './documentos-list.component.scss'
 })
 export class DocumentosListComponent implements OnInit {
-  documentos: DocumentoMock[] = [];
+  documentos: MiDocumento[] = [];
   searchTerm = '';
-  mostrarConfirmacion = false;
-  docAEliminar: DocumentoMock | null = null;
+  cargando = false;
 
-  // Modal de nuevo documento
-  mostrarModal = false;
-  nuevoPeriodo = '';
-  nuevaFechaEmision = '';
+  // Modal de firmar
+  mostrarModalFirmar = false;
+  docAFirmar: MiDocumento | null = null;
+  passwordFirma = '';
+  firmando = false;
+
+  constructor(
+    private misDocumentosService: MisDocumentosService,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
-    this.documentos = [
-      { id: 'DOC-001', periodo: 'Enero 2026',   fechaEmision: '2026-01-15', estadoFirma: 'Firmado',  estadoRevisado: 'Revisado' },
-      { id: 'DOC-002', periodo: 'Febrero 2026',  fechaEmision: '2026-02-15', estadoFirma: 'Firmado',  estadoRevisado: 'Revisado' },
-      { id: 'DOC-003', periodo: 'Marzo 2026',    fechaEmision: '2026-03-15', estadoFirma: 'Pendiente', estadoRevisado: 'Pendiente' }
-    ];
+    this.cargarDocumentos();
   }
 
-  get filteredDocumentos(): DocumentoMock[] {
+  cargarDocumentos(): void {
+    this.cargando = true;
+    this.misDocumentosService.getMisDocumentos().subscribe({
+      next: (res) => {
+        if (res.success) this.documentos = res.data;
+        this.cargando = false;
+      },
+      error: (err) => {
+        console.error('Error cargando documentos', err);
+        this.cargando = false;
+      }
+    });
+  }
+
+  get filteredDocumentos(): MiDocumento[] {
     if (!this.searchTerm) return this.documentos;
     const lower = this.searchTerm.toLowerCase();
-    return this.documentos.filter(d =>
-      d.periodo.toLowerCase().includes(lower) ||
-      d.fechaEmision.toLowerCase().includes(lower)
-    );
+    return this.documentos.filter(d => {
+      const periodo = this.getPeriodo(d).toLowerCase();
+      return periodo.includes(lower);
+    });
   }
 
-  // Helper to return simple signed status
-  firmaIcon(doc: DocumentoMock): string {
-    return doc.estadoFirma === 'Firmado' ? '✅' : '❌';
+  getPeriodo(doc: MiDocumento): string {
+    if (!doc.planilla) return doc.tipo;
+    const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return `${meses[doc.planilla.mes] || doc.planilla.mes} ${doc.planilla.anio}`;
   }
 
-
-  abrirModalNuevo(): void {
-    this.nuevoPeriodo = '';
-    this.nuevaFechaEmision = '';
-    this.mostrarModal = true;
+  getEstadoLabel(doc: MiDocumento): string {
+    switch (doc.estado_firma) {
+      case 'firmado':  return 'Firmado';
+      case 'visto':    return 'Visto';
+      default:         return 'Pendiente';
+    }
   }
 
-  cerrarModal(): void {
-    this.mostrarModal = false;
+  getEstadoClass(doc: MiDocumento): string {
+    switch (doc.estado_firma) {
+      case 'firmado':  return 'badge-active';
+      case 'visto':    return 'badge-visto';
+      default:         return 'badge-vacaciones';
+    }
   }
 
-  guardarNuevo(): void {
-    if (!this.nuevoPeriodo || !this.nuevaFechaEmision) {
-      alert('Por favor completa el Periodo y la Fecha de Emisión.');
+  marcarVisto(doc: MiDocumento): void {
+    if (doc.estado_firma !== 'pendiente') return;
+    this.misDocumentosService.marcarVisto(doc.id).subscribe({
+      next: (res) => {
+        if (res.success) {
+          doc.estado_firma = 'visto';
+          doc.fecha_visto = res.data.fecha_visto;
+        }
+      },
+      error: (err) => {
+        console.error('Error marcando como visto', err);
+        this.toastService.error('Error', err?.error?.message || 'Error al marcar como visto.');
+      }
+    });
+  }
+
+  abrirModalFirmar(doc: MiDocumento): void {
+    this.docAFirmar = doc;
+    this.passwordFirma = '';
+    this.mostrarModalFirmar = true;
+  }
+
+  cerrarModalFirmar(): void {
+    this.docAFirmar = null;
+    this.passwordFirma = '';
+    this.mostrarModalFirmar = false;
+  }
+
+  confirmarFirma(): void {
+    if (!this.docAFirmar || !this.passwordFirma) {
+      this.toastService.warning('Atención', 'Por favor, ingresa tu contraseña para firmar.');
       return;
     }
-    const nuevo: DocumentoMock = {
-      id: `DOC-00${this.documentos.length + 1}`,
-      periodo: this.nuevoPeriodo,
-      fechaEmision: this.nuevaFechaEmision,
-      estadoFirma: 'Pendiente',
-      estadoRevisado: 'Pendiente'
-    };
-    this.documentos.unshift(nuevo);
-    this.cerrarModal();
-  }
-
-  descargarDoc(doc: DocumentoMock): void {
-    alert(`Descargando documento: ${doc.periodo}\n(Próximamente conectado al backend)`);
-  }
-
-  firmarDoc(doc: DocumentoMock): void {
-    doc.estadoFirma = 'Firmado';
-  }
-
-  confirmarEliminar(doc: DocumentoMock): void {
-    this.docAEliminar = doc;
-    this.mostrarConfirmacion = true;
-  }
-
-  cancelarEliminar(): void {
-    this.docAEliminar = null;
-    this.mostrarConfirmacion = false;
-  }
-
-  eliminarDoc(): void {
-    if (this.docAEliminar) {
-      this.documentos = this.documentos.filter(d => d.id !== this.docAEliminar!.id);
-      this.docAEliminar = null;
-      this.mostrarConfirmacion = false;
-    }
+    this.firmando = true;
+    this.misDocumentosService.firmar(this.docAFirmar.id, this.passwordFirma).subscribe({
+      next: (res) => {
+        if (res.success) {
+          const idx = this.documentos.findIndex(d => d.id === this.docAFirmar!.id);
+          if (idx !== -1) this.documentos[idx] = res.data;
+          this.toastService.success('¡Firma Exitosa!', 'Documento firmado correctamente.');
+          this.cerrarModalFirmar();
+        }
+        this.firmando = false;
+      },
+      error: (err) => {
+        console.error('Error firmando documento', err);
+        this.toastService.error('Error de Firma', err?.error?.message || 'Error al firmar el documento.');
+        this.firmando = false;
+      }
+    });
   }
 }

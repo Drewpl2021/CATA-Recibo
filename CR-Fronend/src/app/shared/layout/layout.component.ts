@@ -19,17 +19,26 @@ export class LayoutComponent {
 
   constructor(private router: Router, private authService: AuthService) {
     const user = this.authService.getUser();
-    const rol = user?.rol?.toLowerCase() || '';
-    const email = user?.email?.toLowerCase() || '';
-    
-    console.log('User Data:', user);
-    this.isAdmin = rol === 'admin' || rol === 'rrhh' || email === 'admin@colegio.com' || email === 'rrhh@colegio.com';
-    
-    this.userName = user?.name || 'Usuario';
-    if (this.isAdmin) {
-      this.userRole = rol === 'admin' ? 'Administrador' : 'Recursos Humanos';
-    } else {
-      this.userRole = 'Empleado';
+    if (user) {
+      this.userName = user.name;
+      const email = user.email;
+      
+      // Manejar si rol es un string o un objeto { nombre: string }
+      let rolName = '';
+      if (typeof user.rol === 'string') {
+        rolName = user.rol;
+      } else if (user.rol && typeof user.rol === 'object') {
+        rolName = (user.rol as any).nombre || '';
+      }
+      
+      const rol = rolName.toLowerCase();
+      this.isAdmin = rol === 'admin' || rol === 'rrhh' || email === 'admin@colegio.com' || email === 'rrhh@colegio.com';
+      
+      if (this.isAdmin) {
+        this.userRole = rol === 'admin' || email === 'admin@colegio.com' ? 'Administrador' : 'Recursos Humanos';
+      } else {
+        this.userRole = 'Empleado';
+      }
     }
   }
 

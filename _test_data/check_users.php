@@ -17,7 +17,10 @@ use Illuminate\Support\Str;
 echo "👥 Usuarios existentes en la BD:\n";
 echo str_repeat("-", 60) . "\n";
 
-$users = DB::table('users')->get(['name', 'email', 'rol', 'empleado_id']);
+$users = DB::table('users')
+    ->leftJoin('roles', 'users.rol_id', '=', 'roles.id')
+    ->select('users.name', 'users.email', 'roles.nombre as rol', 'users.empleado_id')
+    ->get();
 
 if ($users->isEmpty()) {
     echo "⚠️  No hay usuarios en la BD.\n";

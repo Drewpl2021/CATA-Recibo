@@ -50,12 +50,12 @@
             <td class="col-id">{{ i + 1 }}</td>
             <td style="font-weight: 500;">
               <div class="nombre-con-badge">
-                {{ emp.nombresApellidos }}
+                {{ emp.nombre }} {{ emp.apellido }}
               </div>
             </td>
             <td style="font-family: monospace; font-size: 13px;">{{ emp.dni }}</td>
-            <td>{{ emp.cargo }}</td>
-            <td>{{ emp.nivel }}</td>
+            <td>{{ emp.cargo?.nombre || '—' }}</td>
+            <td>{{ emp.area?.nombre || '—' }}</td>
             <td class="text-center">
               <span class="badge-estado" [ngClass]="emp.estado === 'Activo' ? 'badge-active' : 'badge-vacaciones'">
                 {{ emp.estado }}
@@ -110,7 +110,7 @@
         </svg>
         <div>
           <h2>Emisión de Boleta de Pago</h2>
-          <span class="modal-subtitle">{{ empleadoSeleccionado?.nombresApellidos }}</span>
+          <span class="modal-subtitle">{{ empleadoSeleccionado?.nombre }} {{ empleadoSeleccionado?.apellido }}</span>
         </div>
       </div>
       <button class="btn-modal-close" (click)="cerrarModal()" title="Cerrar">
@@ -133,18 +133,16 @@
           <span class="tag-auto">Carga automática del sistema</span>
         </div>
         <div class="datos-grid" *ngIf="empleadoSeleccionado">
-          <div class="dato-item"><span class="dato-label">Empleado</span><span class="dato-valor">{{ empleadoSeleccionado.nombresApellidos }}</span></div>
-          <div class="dato-item"><span class="dato-label">Fecha de Ingreso</span><span class="dato-valor">{{ empleadoSeleccionado.fechaIngreso }}</span></div>
-          <div class="dato-item"><span class="dato-label">Fecha de Cese</span><span class="dato-valor">{{ empleadoSeleccionado.fechaCese }}</span></div>
+          <div class="dato-item"><span class="dato-label">Empleado</span><span class="dato-valor">{{ empleadoSeleccionado.nombre }} {{ empleadoSeleccionado.apellido }}</span></div>
+          <div class="dato-item"><span class="dato-label">Fecha de Ingreso</span><span class="dato-valor">{{ empleadoSeleccionado.fecha_ingreso }}</span></div>
           <div class="dato-item"><span class="dato-label">DNI</span><span class="dato-valor">{{ empleadoSeleccionado.dni }}</span></div>
-          <div class="dato-item"><span class="dato-label">Días Trabajados</span><span class="dato-valor">{{ empleadoSeleccionado.diasTrabajados }}</span></div>
-          <div class="dato-item"><span class="dato-label">SPP / SNP</span><span class="dato-valor">{{ empleadoSeleccionado.sppSnp }}</span></div>
-          <div class="dato-item"><span class="dato-label">Categoría</span><span class="dato-valor">{{ empleadoSeleccionado.categoria }}</span></div>
-          <div class="dato-item"><span class="dato-label">Días No Trabajados</span><span class="dato-valor">{{ empleadoSeleccionado.diasNoTrabajados }}</span></div>
+          <div class="dato-item"><span class="dato-label">Sistema Pensiones</span><span class="dato-valor">{{ empleadoSeleccionado.sistema_pensiones || '—' }}</span></div>
+          <div class="dato-item"><span class="dato-label">AFP</span><span class="dato-valor">{{ empleadoSeleccionado.afp || '—' }}</span></div>
           <div class="dato-item"><span class="dato-label">CUSPP</span><span class="dato-valor">{{ empleadoSeleccionado.cuspp || '—' }}</span></div>
-          <div class="dato-item"><span class="dato-label">Cargo</span><span class="dato-valor">{{ empleadoSeleccionado.cargo }}</span></div>
-          <div class="dato-item"><span class="dato-label">Entidad Financiera</span><span class="dato-valor">{{ empleadoSeleccionado.entidadFinanciera }}</span></div>
-          <div class="dato-item"><span class="dato-label">N° de Cuenta</span><span class="dato-valor" style="font-family: monospace; font-size: 12px;">{{ empleadoSeleccionado.numeroCuenta }}</span></div>
+          <div class="dato-item"><span class="dato-label">Cargo</span><span class="dato-valor">{{ empleadoSeleccionado.cargo?.nombre || '—' }}</span></div>
+          <div class="dato-item"><span class="dato-label">Área</span><span class="dato-valor">{{ empleadoSeleccionado.area?.nombre || '—' }}</span></div>
+          <div class="dato-item"><span class="dato-label">Entidad Financiera</span><span class="dato-valor">{{ empleadoSeleccionado.entidad_financiera || '—' }}</span></div>
+          <div class="dato-item"><span class="dato-label">N° de Cuenta</span><span class="dato-valor" style="font-family: monospace; font-size: 12px;">{{ empleadoSeleccionado.numero_cuenta || '—' }}</span></div>
         </div>
       </div>
 
@@ -153,7 +151,7 @@
         <div class="form-group-inline">
           <label>Mes:</label>
           <select class="form-select-sm" [(ngModel)]="formulario.mes">
-            <option *ngFor="let m of mesesDisponibles" [value]="m">{{ m }}</option>
+            <option *ngFor="let m of mesesDisponibles" [value]="m.num">{{ m.nombre }}</option>
           </select>
         </div>
         <div class="form-group-inline">
@@ -261,7 +259,7 @@
           <div class="firma-bloque">
             <div class="firma-linea"></div>
             <p class="firma-titulo">Firma del Trabajador</p>
-            <p class="firma-subtitulo">{{ empleadoSeleccionado?.nombresApellidos }}</p>
+            <p class="firma-subtitulo">{{ empleadoSeleccionado?.nombre }} {{ empleadoSeleccionado?.apellido }}</p>
           </div>
         </div>
         <p class="firma-nota">{{ formulario.ciudad }}, {{ formulario.fechaEmision }}</p>
@@ -278,13 +276,38 @@
         </svg>
         Guardar Borrador
       </button>
-      <button class="btn-emitir-final" (click)="emitirBoleta()">
+      <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
-        Emitir Boleta Oficial
+        {{ generandoPDF ? 'Generando PDF...' : 'Emitir Boleta Oficial' }}
       </button>
     </div>
 
   </div><!-- fin boleta-modal -->
 </div><!-- fin overlay -->
+
+<!-- ============================================================ -->
+<!--  MODAL DE CONFIRMACIÓN: EMISIÓN MASIVA                       -->
+<!-- ============================================================ -->
+<div class="boleta-modal-overlay" *ngIf="showConfirmMasivo" style="z-index: 9999;" (click)="cancelarEmisionMasiva()">
+  <div class="boleta-modal" style="max-width: 400px; padding: 24px; text-align: center;" (click)="$event.stopPropagation()">
+    <div style="color: #f39c12; margin-bottom: 16px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <h3 style="margin-top: 0; color: #1a1f36; font-size: 1.25rem;">¿Emitir Boletas Masivas?</h3>
+    <p style="color: #4a5568; margin-bottom: 24px; line-height: 1.5;">
+      ¿Estás seguro que deseas generar y enviar las boletas del mes <strong>{{ nombreMes(formulario.mes) }} {{ formulario.anio }}</strong> para todos los empleados activos?
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button class="btn-cancelar" (click)="cancelarEmisionMasiva()" style="flex: 1; padding: 10px; border: 1px solid #e2e8f0; background: white; border-radius: 8px; cursor: pointer; font-weight: 500;">
+        Cancelar
+      </button>
+      <button class="btn-primary" (click)="confirmarEmisionMasiva()" style="flex: 1; padding: 10px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+        Sí, emitir todas
+      </button>
+    </div>
+  </div>
+</div>

@@ -3,14 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-export interface EmpleadoMock {
-  id: string;
-  nombresApellidos: string;
-  cargo: string;
-  nivel: string;
-  celular: string;
-  estado: 'Activo' | 'Vacaciones';
-}
+import { EmpleadoService, Empleado } from '../../core/services/empleado.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-empleados-list',
@@ -20,55 +14,48 @@ export interface EmpleadoMock {
   styleUrl: './empleados-list.component.scss'
 })
 export class EmpleadosListComponent implements OnInit {
-  empleados: EmpleadoMock[] = [];
+  empleados: Empleado[] = [];
   searchTerm = '';
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private empleadoService: EmpleadoService,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
-    this.empleados = [
-      {
-        id: 'EMP-001',
-        nombresApellidos: 'Carlos Mamani',
-        cargo: 'Docente',
-        nivel: 'Secundaria',
-        celular: '987654321',
-        estado: 'Activo'
-      },
-      {
-        id: 'EMP-002',
-        nombresApellidos: 'Maria Quispe',
-        cargo: 'Directora',
-        nivel: 'Colegio',
-        celular: '912345678',
-        estado: 'Activo'
-      },
-      {
-        id: 'EMP-003',
-        nombresApellidos: 'Juan Perez',
-        cargo: 'Auxiliar',
-        nivel: 'Primaria',
-        celular: '998877665',
-        estado: 'Vacaciones'
-      }
-    ];
+    this.cargarEmpleados();
   }
 
-  get filteredEmpleados(): EmpleadoMock[] {
+  cargarEmpleados(): void {
+    this.empleadoService.getEmpleados().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.empleados = res.data;
+        }
+      },
+      error: (err) => {
+        console.error('Error cargando empleados', err);
+        this.toastService.error('Error', 'Hubo un error al cargar los empleados.');
+      }
+    });
+  }
+
+  get filteredEmpleados(): Empleado[] {
     if (!this.searchTerm) return this.empleados;
     const lower = this.searchTerm.toLowerCase();
-    return this.empleados.filter(e =>
-      e.nombresApellidos.toLowerCase().includes(lower) ||
-      e.cargo.toLowerCase().includes(lower) ||
-      e.nivel.toLowerCase().includes(lower)
-    );
+    return this.empleados.filter(e => {
+      const nombreCompleto = `${e.nombre} ${e.apellido}`.toLowerCase();
+      const cargoStr = e.cargo?.nombre?.toLowerCase() || '';
+      return nombreCompleto.includes(lower) || cargoStr.includes(lower);
+    });
   }
 
   nuevoEmpleado(): void {
     this.router.navigate(['/inicio/empleados/nuevo']);
   }
 
-  verPerfil(emp: EmpleadoMock): void {
+  verPerfil(emp: Empleado): void {
     this.router.navigate(['/inicio/empleados/ver', emp.id]);
   }
 }

@@ -6,6 +6,8 @@ import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { GlobalWorkerOptions } from 'pdfjs-dist';
 import { AuthService } from '../../core/services/auth.service';
 import { BoletasService } from '../../core/services/boletas.service';
+import { MisDocumentosService } from '../../core/services/mis-documentos.service';
+import { ToastService } from '../../core/services/toast.service';
 
 const MESES: Record<number, string> = {
   1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
@@ -52,6 +54,12 @@ export class MisBoletasComponent implements OnInit {
   pdfBoletaName = '';
   private currentPdfBlob: Blob | null = null;
 
+  // Metrics
+  boletasPendientes: number = 0;
+  ultimoReciboMes: string = '-';
+  ultimoReciboDias: string = '';
+  vacacionesDisponibles: number = 14;
+
   // Sign Modal state
   showSignModal = false;
   signPassword = '';
@@ -62,7 +70,9 @@ export class MisBoletasComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private boletasService: BoletasService,
-    private sanitizer: DomSanitizer
+    private misDocumentosService: MisDocumentosService,
+    private sanitizer: DomSanitizer,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -97,7 +107,7 @@ export class MisBoletasComponent implements OnInit {
     this.isLoading = true;
     this.errorMsg = '';
 
-    this.boletasService.getMiPlanilla(this.selectedAnio).subscribe({
+    this.misDocumentosService.getMisDocumentos().subscribe({
       next: (res) => {
         this.isLoading = false;
         if (!res.success) {
@@ -105,30 +115,62 @@ export class MisBoletasComponent implements OnInit {
           this.errorMsg = 'No se pudieron cargar las boletas.';
           return;
         }
-        const planillas = res.data ?? [];
-        this.boletas = planillas.map((p) => ({
-          id: p.id,
+        
+        const todos = res.data ?? [];
+        // Filtrar por tipo boleta y el año seleccionado
+        const boletasDocs = todos.filter(d => 
+          d.tipo === 'boleta' && 
+          d.planilla && 
+          String(d.planilla.anio) === this.selectedAnio
+        );
+
+        this.boletas = boletasDocs.map((d) => ({
+          id: d.id, // usamos el id del Documento para poder firmarlo
           tipoDocumento: 'Boleta de Pago',
-          numeroDocumento: `BP-${p.anio}-${String(p.mes).padStart(2, '0')}`,
-          fechaEmision: p.created_at ? this.formatFecha(p.created_at).split(' ')[0] : '',
-          mes: MESES[p.mes] ?? `Mes ${p.mes}`,
-          mesNum: p.mes,
-          montoTotal: p.total ?? 0,
-          anio: p.anio,
-          // Temporal para pruebas: Solo los primeros 3 meses están firmados, el resto pendiente
-          firmado: (p.created_at && p.mes <= 3) ? { fecha: this.formatFecha(p.created_at) } : null,
+          numeroDocumento: `BP-${d.planilla?.anio}-${String(d.planilla?.mes).padStart(2, '0')}`,
+          fechaEmision: d.created_at ? this.formatFecha(d.created_at).split(' ')[0] : '',
+          mes: MESES[d.planilla?.mes!] ?? `Mes ${d.planilla?.mes}`,
+          mesNum: d.planilla?.mes || 0,
+          montoTotal: (d.planilla as any)?.total ?? 0,
+          anio: d.planilla?.anio || 0,
+          // Estado de firma real que viene del backend
+          firmado: d.estado_firma === 'firmado' ? { fecha: d.fecha_firma ? this.formatFecha(d.fecha_firma) : this.formatFecha(d.created_at) } : null,
           avisoEnviado: null,
           revisado: null,
           descargado: null,
           correo: '',
           celular: ''
         }));
+        
+        this.calcularMetricas(boletasDocs);
       },
       error: () => {
         this.isLoading = false;
         this.errorMsg = 'Error al cargar las boletas. Verifica tu conexión con el servidor.';
       }
     });
+  }
+
+  calcularMetricas(planillas: any[]): void {
+    this.boletasPendientes = this.boletas.filter(b => !b.firmado).length;
+    
+    if (this.boletas.length > 0) {
+      const ultima = [...this.boletas].sort((a, b) => b.mesNum - a.mesNum)[0];
+      this.ultimoReciboMes = ultima.mes;
+      
+      const planillaOriginal = planillas.find(p => p.id === ultima.id);
+      if (planillaOriginal && planillaOriginal.created_at) {
+        const createdDate = new Date(planillaOriginal.created_at);
+        const diffTime = Math.abs(new Date().getTime() - createdDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        this.ultimoReciboDias = `Disponible hace ${diffDays} día(s)`;
+      } else {
+        this.ultimoReciboDias = 'Disponible recientemente';
+      }
+    } else {
+      this.ultimoReciboMes = '-';
+      this.ultimoReciboDias = '';
+    }
   }
 
   visualizar(): void {
@@ -182,7 +224,7 @@ export class MisBoletasComponent implements OnInit {
 
   firmarBoleta(boleta: BoletaRow): void {
     if (boleta.firmado) {
-      alert(`Esta boleta ya fue firmada el ${boleta.firmado.fecha}.`);
+      this.toastService.info('Información', `Esta boleta ya fue firmada el ${boleta.firmado.fecha}.`);
       return;
     }
     this.boletaAFirmar = boleta;
@@ -210,27 +252,29 @@ export class MisBoletasComponent implements OnInit {
     this.isSigning = true;
     this.signErrorMsg = '';
 
-    // Simular llamada a API para verificar contraseña y firmar
-    setTimeout(() => {
-      this.isSigning = false;
-      // Aquí se validaría contra el backend real. Por ahora simulamos éxito:
-      if (this.signPassword.length < 4) {
-        this.signErrorMsg = 'Contraseña incorrecta. (Simulado: usa más de 3 caracteres)';
-        return;
+    if (!this.boletaAFirmar) return;
+
+    this.misDocumentosService.firmar(this.boletaAFirmar.id, this.signPassword).subscribe({
+      next: (res) => {
+        this.isSigning = false;
+        if (res.success) {
+          this.toastService.success('¡Firma Exitosa!', `Boleta de ${this.boletaAFirmar!.mes} firmada correctamente.`);
+          this.closeSignModal();
+          this.cargarBoletas(); // Recargar para actualizar estados
+        } else {
+          this.signErrorMsg = res.message || 'Error al firmar.';
+        }
+      },
+      error: (err) => {
+        this.isSigning = false;
+        this.signErrorMsg = err.error?.message || 'Contraseña incorrecta o error del servidor.';
       }
-      
-      if (this.boletaAFirmar) {
-        this.boletaAFirmar.firmado = { 
-          fecha: new Date().toLocaleDateString('es-PE') + ' ' + new Date().toLocaleTimeString('es-PE') 
-        };
-        alert(`¡Éxito! Boleta de ${this.boletaAFirmar.mes} firmada correctamente.`);
-      }
-      this.closeSignModal();
-    }, 1000);
+    });
   }
 
   private formatFecha(isoDate: string): string {
     const d = new Date(isoDate);
+    if (isNaN(d.getTime())) return '';
     const dd = String(d.getDate()).padStart(2, '0');
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const yyyy = d.getFullYear();

@@ -52,44 +52,40 @@
         </div>
       </div>
 
-      <!-- Fila 2: DNI y Email -->
+      <!-- Fila 2: DNI y Teléfono -->
       <div class="form-row">
         <div class="form-group">
           <label>DNI <span class="required">*</span></label>
           <input type="text" class="form-control" placeholder="Ej. 12345678" maxlength="8" [(ngModel)]="dni" [disabled]="modo === 'ver'">
         </div>
         <div class="form-group">
-          <label>Correo Electrónico</label>
-          <input type="email" class="form-control" placeholder="Ej. cmamani@colegio.com" [(ngModel)]="email" [disabled]="modo === 'ver'">
-        </div>
-      </div>
-
-      <!-- Fila 3: Teléfono y Dirección -->
-      <div class="form-row">
-        <div class="form-group">
           <label>Teléfono / Celular</label>
           <input type="text" class="form-control" placeholder="Ej. 987654321" [(ngModel)]="telefono" [disabled]="modo === 'ver'">
         </div>
+      </div>
+
+      <!-- Fila 3: Dirección -->
+      <div class="form-row">
         <div class="form-group">
           <label>Dirección</label>
           <input type="text" class="form-control" placeholder="Ej. Av. Principal 123" [(ngModel)]="direccion" [disabled]="modo === 'ver'">
         </div>
       </div>
 
-      <!-- Fila 4: Cargo y Nivel -->
+      <!-- Fila 4: Cargo y Área -->
       <div class="form-row">
         <div class="form-group">
           <label>Cargo <span class="required">*</span></label>
-          <select class="form-control" [(ngModel)]="cargo" [disabled]="modo === 'ver'">
+          <select class="form-control" [(ngModel)]="cargo_id" [disabled]="modo === 'ver'">
             <option value="">-- Seleccionar Cargo --</option>
-            <option *ngFor="let c of cargosDisponibles" [value]="c">{{ c }}</option>
+            <option *ngFor="let c of cargosDisponibles" [value]="c.id">{{ c.nombre }}</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Nivel</label>
-          <select class="form-control" [(ngModel)]="nivel" [disabled]="modo === 'ver'">
-            <option value="">-- Seleccionar Nivel --</option>
-            <option *ngFor="let n of nivelesDisponibles" [value]="n">{{ n }}</option>
+          <label>Área <span class="required">*</span></label>
+          <select class="form-control" [(ngModel)]="area_id" [disabled]="modo === 'ver'">
+            <option value="">-- Seleccionar Área --</option>
+            <option *ngFor="let a of areasDisponibles" [value]="a.id">{{ a.nombre }}</option>
           </select>
         </div>
       </div>
@@ -111,13 +107,13 @@
 
       <!-- Botones -->
       <div class="form-footer" *ngIf="modo !== 'ver'">
-        <button class="btn-secondary-modal" (click)="cancelar()">Cancelar</button>
-        <button class="btn-warning" (click)="guardar()">
+        <button class="btn-secondary-modal" (click)="cancelar()" [disabled]="guardando">Cancelar</button>
+        <button class="btn-warning" (click)="guardar()" [disabled]="guardando">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px">
             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
             <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
           </svg>
-          {{ modo === 'editar' ? 'Actualizar Empleado' : 'Guardar Empleado' }}
+          {{ guardando ? 'Guardando...' : (modo === 'editar' ? 'Actualizar Empleado' : 'Guardar Empleado') }}
         </button>
       </div>
 

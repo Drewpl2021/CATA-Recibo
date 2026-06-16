@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-emision-descuentos-form',
@@ -26,7 +27,8 @@ export class EmisionDescuentosFormComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private location: Location
+    private location: Location,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -56,7 +58,7 @@ export class EmisionDescuentosFormComponent implements OnInit {
     };
     
     console.log('Guardando datos de emisión:', data);
-    alert(`Se guardaron los descuentos y bonificaciones para ${this.nombreEmpleado} exitosamente.`);
+    this.toastService.success('Guardado', `Se guardaron los descuentos y bonificaciones para ${this.nombreEmpleado} exitosamente.`);
     this.volver();
   }
 

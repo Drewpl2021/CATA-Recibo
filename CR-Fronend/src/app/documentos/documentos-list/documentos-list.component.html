@@ -5,14 +5,8 @@
 
   <div class="toolbar">
     <div class="filter-group">
-      <input type="text" class="form-control" placeholder="Buscar por periodo o fecha..." [(ngModel)]="searchTerm" style="min-width: 300px;">
+      <input type="text" class="form-control" placeholder="Buscar por periodo..." [(ngModel)]="searchTerm" style="min-width: 300px;">
     </div>
-    <button class="btn-warning" (click)="abrirModalNuevo()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      Nuevo Documento
-    </button>
   </div>
 
   <div class="section-panel">
@@ -24,13 +18,19 @@
       <span>Lista de Documentos</span>
     </div>
 
-    <div class="table-responsive">
+    <!-- Estado de carga -->
+    <div *ngIf="cargando" style="text-align:center; padding: 40px; color: #888;">
+      Cargando documentos...
+    </div>
+
+    <div class="table-responsive" *ngIf="!cargando">
       <table class="data-table">
         <thead>
           <tr>
             <th class="col-id">#</th>
             <th>Periodo</th>
-            <th>Fecha de Emisión</th>
+            <th>Tipo</th>
+            <th>Fecha Emisión</th>
             <th class="text-center">Estado</th>
             <th class="text-center">Acciones</th>
           </tr>
@@ -41,31 +41,32 @@
           </tr>
           <tr *ngFor="let doc of filteredDocumentos; let i = index">
             <td class="col-id">{{ i + 1 }}</td>
-            <td style="font-weight: 500;">{{ doc.periodo }}</td>
-            <td>{{ doc.fechaEmision }}</td>
-            <td class="text-center" style="font-size: 1.5em;" [title]="doc.estadoFirma === 'Firmado' ? 'Firmado' : 'Pendiente'">
-              {{ firmaIcon(doc) }}
+            <td style="font-weight: 500;">{{ getPeriodo(doc) }}</td>
+            <td style="text-transform: capitalize;">{{ doc.tipo }}</td>
+            <td>{{ doc.created_at | date:'dd/MM/yyyy' }}</td>
+            <td class="text-center">
+              <span class="badge-estado" [ngClass]="getEstadoClass(doc)">
+                {{ getEstadoLabel(doc) }}
+              </span>
             </td>
             <td class="text-center">
               <div class="action-buttons">
-                <!-- Descargar -->
-                <button class="btn-icon btn-icon-blue" (click)="descargarDoc(doc)" title="Descargar Documento">
+                <!-- Marcar Visto -->
+                <button class="btn-icon btn-icon-blue"
+                  (click)="marcarVisto(doc)"
+                  [disabled]="doc.estado_firma !== 'pendiente'"
+                  title="Marcar como Visto">
                   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                   </svg>
                 </button>
                 <!-- Firmar -->
-                <button class="btn-icon btn-icon-green" (click)="firmarDoc(doc)" title="Marcar como Firmado" [disabled]="doc.estadoFirma === 'Firmado'">
+                <button class="btn-icon btn-icon-green"
+                  (click)="abrirModalFirmar(doc)"
+                  [disabled]="doc.estado_firma === 'firmado'"
+                  title="Firmar Documento">
                   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </button>
-                <!-- Eliminar -->
-                <button class="btn-icon btn-icon-red" (click)="confirmarEliminar(doc)" title="Eliminar Documento">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-                    <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
                   </svg>
                 </button>
               </div>
@@ -77,38 +78,22 @@
   </div>
 </div>
 
-<!-- Modal: Nuevo Documento -->
-<div class="modal-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
+<!-- Modal: Firmar Documento -->
+<div class="modal-overlay" *ngIf="mostrarModalFirmar" (click)="cerrarModalFirmar()">
   <div class="modal-card" style="text-align:left;" (click)="$event.stopPropagation()">
-    <h3 style="margin-bottom:20px; color:#1B4282;">Nuevo Documento</h3>
-    <div class="form-group" style="margin-bottom:16px;">
-      <label style="font-weight:500; display:block; margin-bottom:6px;">Periodo <span style="color:#e74c3c">*</span></label>
-      <input type="text" class="form-control" placeholder="Ej. Abril 2026" [(ngModel)]="nuevoPeriodo">
-    </div>
+    <h3 style="margin-bottom:8px; color:#1B4282;">Firmar Documento</h3>
+    <p style="margin-bottom:20px; color:#666; font-size:0.9em;">
+      Ingresa tu contraseña para confirmar la firma del documento de <strong>{{ getPeriodo(docAFirmar!) }}</strong>.
+    </p>
     <div class="form-group" style="margin-bottom:24px;">
-      <label style="font-weight:500; display:block; margin-bottom:6px;">Fecha de Emisión <span style="color:#e74c3c">*</span></label>
-      <input type="date" class="form-control" [(ngModel)]="nuevaFechaEmision">
+      <label style="font-weight:500; display:block; margin-bottom:6px;">Contraseña <span style="color:#e74c3c">*</span></label>
+      <input type="password" class="form-control" placeholder="Tu contraseña..." [(ngModel)]="passwordFirma">
     </div>
     <div class="modal-actions">
-      <button class="btn-secondary-modal" (click)="cerrarModal()">Cancelar</button>
-      <button class="btn-warning" (click)="guardarNuevo()">Guardar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Confirmar Eliminar -->
-<div class="modal-overlay" *ngIf="mostrarConfirmacion" (click)="cancelarEliminar()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
-    <div class="modal-icon-danger">
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-      </svg>
-    </div>
-    <h3>¿Eliminar Documento?</h3>
-    <p>¿Estás seguro de que deseas eliminar el documento del periodo <strong>{{ docAEliminar?.periodo }}</strong>? Esta acción no se puede deshacer.</p>
-    <div class="modal-actions">
-      <button class="btn-secondary-modal" (click)="cancelarEliminar()">Cancelar</button>
-      <button class="btn-danger-modal" (click)="eliminarDoc()">Sí, Eliminar</button>
+      <button class="btn-secondary-modal" (click)="cerrarModalFirmar()" [disabled]="firmando">Cancelar</button>
+      <button class="btn-warning" (click)="confirmarFirma()" [disabled]="firmando">
+        {{ firmando ? 'Firmando...' : 'Confirmar Firma' }}
+      </button>
     </div>
   </div>
 </div>
