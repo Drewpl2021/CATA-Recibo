@@ -20,6 +20,11 @@ class VacacionController extends Controller
         if ($request->has('estado'))
             $query->where('estado', $request->estado);
 
+        $rolNombre = $request->user()->rol?->nombre;
+        if ($rolNombre !== 'admin') {
+            $query->where('estado_registro', 'activo');
+        }
+
         return response()->json(['success' => true, 'data' => $query->get()]);
     }
 
@@ -83,7 +88,7 @@ class VacacionController extends Controller
     public function destroy(string $id)
     {
         $vacacion = Vacacion::findOrFail($id);
-        $vacacion->delete();
+        $vacacion->update(['estado_registro' => 'inactivo']);
 
         return response()->json(['success' => true, 'data' => ['message' => 'Vacación eliminada correctamente.']]);
     }

@@ -20,6 +20,11 @@ class DescuentoController extends Controller
         if ($request->has('anio'))
             $query->where('anio', $request->anio);
 
+        $rolNombre = $request->user()->rol?->nombre;
+        if ($rolNombre !== 'admin') {
+            $query->where('estado_registro', 'activo');
+        }
+
         return response()->json(['success' => true, 'data' => $query->get()]);
     }
 
@@ -61,10 +66,10 @@ class DescuentoController extends Controller
     }
 
     public function destroy($id)
-    {
-        $descuento = Descuento::findOrFail($id);
-        $descuento->delete();
+        {
+            $descuento = Descuento::findOrFail($id);
+            $descuento->update(['estado_registro' => 'inactivo']);
 
-        return response()->json(['success' => true, 'data' => ['message' => 'Descuento eliminado correctamente.']]);
-    }
+            return response()->json(['success' => true, 'data' => ['message' => 'Descuento eliminado correctamente.']]);
+        }
 }

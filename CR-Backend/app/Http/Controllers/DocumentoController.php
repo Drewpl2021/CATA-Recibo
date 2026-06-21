@@ -18,6 +18,11 @@ class DocumentoController extends Controller
         if ($request->has('tipo'))
             $query->where('tipo', $request->tipo);
 
+        $rolNombre = $request->user()->rol?->nombre;
+        if ($rolNombre !== 'admin') {
+            $query->where('estado_registro', 'activo');
+        }
+
         return response()->json(['success' => true, 'data' => $query->get()]);
     }
 
@@ -63,7 +68,7 @@ class DocumentoController extends Controller
     public function destroy(string $id)
     {
         $documento = Documento::findOrFail($id);
-        $documento->delete();
+        $documento->update(['estado_registro' => 'inactivo']);
 
         return response()->json(['success' => true, 'data' => ['message' => 'Documento eliminado correctamente.']]);
     }

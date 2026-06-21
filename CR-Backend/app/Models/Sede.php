@@ -1,25 +1,19 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class Vacacion extends Model
+class Sede extends Model
 {
-    protected $table = 'vacaciones';
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
-        'empleado_id',
-        'fecha_inicio',
-        'fecha_fin',
-        'dias_solicitados',
-        'motivo',
+        'nombre',
+        'direccion',
+        'telefono',
         'estado',
-        'aprobado_por',
-        'estado_registro',
     ];
 
     protected static function boot()
@@ -28,10 +22,5 @@ class Vacacion extends Model
         static::creating(function ($model) {
             $model->id = Str::uuid();
         });
-    }
-
-    public function empleado()
-    {
-        return $this->belongsTo(Empleado::class);
     }
 }
