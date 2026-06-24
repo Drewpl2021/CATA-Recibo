@@ -8,6 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { BoletasService } from '../../core/services/boletas.service';
 import { MisDocumentosService } from '../../core/services/mis-documentos.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ActivatedRoute } from '@angular/router';
 
 const MESES: Record<number, string> = {
   1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
@@ -66,13 +67,15 @@ export class MisBoletasComponent implements OnInit {
   boletaAFirmar: BoletaRow | null = null;
   signErrorMsg = '';
   isSigning = false;
+  pendingSignatureId: string | null = null;
 
   constructor(
     private authService: AuthService,
     private boletasService: BoletasService,
     private misDocumentosService: MisDocumentosService,
     private sanitizer: DomSanitizer,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -89,7 +92,25 @@ export class MisBoletasComponent implements OnInit {
     
     this.userName = user?.name ? user.name.split(' ')[0] : 'Usuario';
     
+    // Suscribirse a los queryParams para reaccionar a la campanita incluso sin recargar
+    this.route.queryParams.subscribe(params => {
+      if (params['firmar']) {
+        this.pendingSignatureId = params['firmar'];
+        this.verificarFirmaPendiente();
+      }
+    });
+
     this.cargarBoletas();
+  }
+
+  verificarFirmaPendiente(): void {
+    if (this.pendingSignatureId && this.boletas.length > 0) {
+      const boleta = this.boletas.find(b => b.id === this.pendingSignatureId);
+      if (boleta && !boleta.firmado) {
+        setTimeout(() => this.firmarBoleta(boleta), 100);
+      }
+      this.pendingSignatureId = null; // Limpiar para no volver a disparar
+    }
   }
 
   cargarBoletas(): void {
@@ -143,6 +164,7 @@ export class MisBoletasComponent implements OnInit {
         }));
         
         this.calcularMetricas(boletasDocs);
+        this.verificarFirmaPendiente();
       },
       error: () => {
         this.isLoading = false;

@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { EmpleadoService } from '../../core/services/empleado.service';
 import { AreaService, Area } from '../../core/services/area.service';
 import { CargoService, Cargo } from '../../core/services/cargo.service';
+import { SedeService, Sede } from '../../core/services/sede.service';
 import { ToastService } from '../../core/services/toast.service';
 
 @Component({
@@ -33,10 +34,23 @@ export class EmpleadoFormComponent implements OnInit {
   estado = 'Activo';
   fechaIngreso = '';
   direccion = '';
+  
+  // Campos de contrato
+  sueldo_base: number | null = null;
+  sede_id = '';
+
+  // Campos de planilla
+  sistema_pensiones = 'ONP';
+  afp = '';
+  cuspp = '';
+  entidad_financiera = '';
+  numero_cuenta = '';
+  tiene_hijos = false;
 
   // Datos reales de la BD
   areasDisponibles: Area[] = [];
   cargosDisponibles: Cargo[] = [];
+  sedesDisponibles: Sede[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -45,6 +59,7 @@ export class EmpleadoFormComponent implements OnInit {
     private empleadoService: EmpleadoService,
     private areaService: AreaService,
     private cargoService: CargoService,
+    private sedeService: SedeService,
     private toastService: ToastService
   ) {}
 
@@ -63,14 +78,24 @@ export class EmpleadoFormComponent implements OnInit {
       this.titulo = 'NUEVO EMPLEADO';
     }
 
-    // Cargar áreas y cargos desde el backend
+    // Cargar áreas, cargos y sedes desde el backend
     this.cargarAreas();
     this.cargarCargos();
+    this.cargarSedes();
 
     // Si es ver o editar, cargar datos del empleado
     if (this.modo !== 'nuevo' && this.empleadoId) {
       this.cargarEmpleado(this.empleadoId);
     }
+  }
+
+  cargarSedes(): void {
+    this.sedeService.getSedes().subscribe({
+      next: (res) => {
+        if (res.success) this.sedesDisponibles = res.data;
+      },
+      error: (err) => console.error('Error cargando sedes', err)
+    });
   }
 
   cargarAreas(): void {
@@ -104,8 +129,17 @@ export class EmpleadoFormComponent implements OnInit {
           this.cargo_id = e.cargo_id || '';
           this.area_id = e.area_id || '';
           this.estado = e.estado || 'Activo';
-          this.fechaIngreso = e.fecha_ingreso || '';
+          this.fechaIngreso = e.fecha_ingreso ? e.fecha_ingreso.split('T')[0] : '';
           this.direccion = e.direccion || '';
+          this.sueldo_base = e.sueldo_base !== undefined ? e.sueldo_base : null;
+          this.sede_id = e.sede_id || '';
+          
+          this.sistema_pensiones = e.sistema_pensiones || 'ONP';
+          this.afp = e.afp || '';
+          this.cuspp = e.cuspp || '';
+          this.entidad_financiera = e.entidad_financiera || '';
+          this.numero_cuenta = e.numero_cuenta || '';
+          this.tiene_hijos = e.tiene_hijos || false;
         }
         this.cargando = false;
       },
@@ -119,8 +153,8 @@ export class EmpleadoFormComponent implements OnInit {
   }
 
   guardar(): void {
-    if (!this.nombre || !this.apellido || !this.dni || !this.cargo_id || !this.area_id) {
-      this.toastService.warning('Campos Incompletos', 'Por favor, completa los campos obligatorios: Nombre, Apellido, DNI, Cargo y Área.');
+    if (!this.nombre || !this.apellido || !this.dni || !this.cargo_id || !this.area_id || !this.sede_id || !this.sueldo_base) {
+      this.toastService.warning('Campos Incompletos', 'Por favor, completa los campos obligatorios: Nombre, Apellido, DNI, Cargo, Área, Sede y Sueldo.');
       return;
     }
 
@@ -133,7 +167,15 @@ export class EmpleadoFormComponent implements OnInit {
       area_id: this.area_id,
       estado: this.estado,
       fecha_ingreso: this.fechaIngreso,
-      direccion: this.direccion
+      direccion: this.direccion,
+      sistema_pensiones: this.sistema_pensiones,
+      afp: this.sistema_pensiones === 'AFP' ? this.afp : null,
+      cuspp: this.sistema_pensiones === 'AFP' ? this.cuspp : null,
+      entidad_financiera: this.entidad_financiera,
+      numero_cuenta: this.numero_cuenta,
+      tiene_hijos: this.tiene_hijos,
+      sueldo_base: this.sueldo_base,
+      sede_id: this.sede_id
     };
 
     this.guardando = true;
@@ -149,8 +191,16 @@ export class EmpleadoFormComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error actualizando empleado', err);
-          const msg = err?.error?.message || 'Error al actualizar el empleado. Verifica los datos e intenta de nuevo.';
-          this.toastService.error('Error', msg);
+          let msg = 'Error al actualizar el empleado.';
+          if (err?.error?.errors) {
+            const errores = Object.values(err.error.errors).flat() as string[];
+            msg = errores.join(' | ');
+          } else if (err?.error?.message) {
+            msg = err.error.message;
+          } else if (err?.message) {
+            msg = err.message;
+          }
+          this.toastService.error('Error de validación', msg);
           this.guardando = false;
         }
       });
@@ -165,8 +215,14 @@ export class EmpleadoFormComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error creando empleado', err);
-          const msg = err?.error?.message || 'Error al crear el empleado. Verifica los datos e intenta de nuevo.';
-          this.toastService.error('Error', msg);
+          let msg = 'Error al crear el empleado.';
+          if (err?.error?.errors) {
+            const errores = Object.values(err.error.errors).flat() as string[];
+            msg = errores.join(' | ');
+          } else if (err?.error?.message) {
+            msg = err.error.message;
+          }
+          this.toastService.error('Error de validación', msg);
           this.guardando = false;
         }
       });
