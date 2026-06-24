@@ -26,13 +26,15 @@ export interface Empleado {
   cargo_id?: string;
   area?: Area;
   cargo?: Cargo;
-  // Campos de pensiones y datos financieros
   sistema_pensiones?: string;
   afp?: string;
   cuspp?: string;
   entidad_financiera?: string;
   numero_cuenta?: string;
   tiene_hijos?: boolean;
+  sueldo_base?: number;
+  sede_id?: string;
+  sede?: { id: string; nombre: string };
 }
 
 export interface EmpleadoResponse {

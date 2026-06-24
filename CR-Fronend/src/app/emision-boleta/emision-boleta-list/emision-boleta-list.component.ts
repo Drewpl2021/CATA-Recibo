@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmpleadoService, Empleado } from '../../core/services/empleado.service';
 import { BoletasService } from '../../core/services/boletas.service';
+import { PlanillaService, Planilla } from '../../core/services/planilla.service';
 import { ToastService } from '../../core/services/toast.service';
+import { Observable } from 'rxjs';
 
 export interface FormularioBoleta {
   remuneracionBasica: number | null;
@@ -53,6 +55,7 @@ export class EmisionBoletaListComponent implements OnInit {
   showModal = false;
   empleadoSeleccionado: Empleado | null = null;
   formulario!: FormularioBoleta;
+  planillaActual: Planilla | null = null;
   private _formularioOriginal: string = '';
 
   generandoPDF = false;
@@ -73,6 +76,7 @@ export class EmisionBoletaListComponent implements OnInit {
   constructor(
     private empleadoService: EmpleadoService,
     private boletasService: BoletasService,
+    private planillaService: PlanillaService,
     private toastService: ToastService
   ) {}
 
@@ -112,9 +116,116 @@ export class EmisionBoletaListComponent implements OnInit {
   abrirModal(empleado: Empleado): void {
     this.empleadoSeleccionado = empleado;
     this.formulario = this.getFormularioVacio();
-    this._formularioOriginal = JSON.stringify(this.formulario);
     this.showModal = true;
     document.body.style.overflow = 'hidden';
+    
+    // Cargar la planilla del empleado para el periodo actual
+    this.cargarPlanillaDelEmpleado(empleado.id, this.formulario.mes, this.formulario.anio, empleado);
+  }
+
+  cargarPlanillaDelEmpleado(empleadoId: string, mes: number, anio: number, empleado: Empleado): void {
+    this.planillaService.getPlanillas({ empleado_id: empleadoId, mes, anio }).subscribe({
+      next: (res) => {
+        if (res.success && res.data.length > 0) {
+          this.planillaActual = res.data[0];
+          // Rellenar formulario con los montos guardados
+          this.formulario.remuneracionBasica = this.planillaActual.sueldo_base;
+          this.formulario.bonificacion = this.planillaActual.bonificaciones;
+          this.formulario.descuentoOtros = this.planillaActual.descuentos;
+
+          // Limpiar otros campos específicos
+          this.formulario.bonificacionCargo = null;
+          this.formulario.vacacionesTruncas = null;
+          this.formulario.bonifExtraordTemporal = null;
+          this.formulario.otrosConceptosSubsidio = null;
+          this.formulario.compensacionTiempoServicios = null;
+          this.formulario.ir5taCategoria = null;
+          this.formulario.descuentoAlimentacion = null;
+          this.formulario.descuentoBazar = null;
+          this.formulario.descuentoAutorizadoDiezmo = null;
+          this.formulario.descuentoEscolaridad = null;
+          this.formulario.adelanto = null;
+        } else {
+          this.planillaActual = null;
+          // Si no existe, cargar el sueldo_base inicial del empleado
+          this.formulario.remuneracionBasica = empleado.sueldo_base ?? null;
+          this.formulario.bonificacion = null;
+          this.formulario.descuentoOtros = null;
+          this.formulario.bonificacionCargo = null;
+          this.formulario.vacacionesTruncas = null;
+          this.formulario.bonifExtraordTemporal = null;
+          this.formulario.otrosConceptosSubsidio = null;
+          this.formulario.compensacionTiempoServicios = null;
+          this.formulario.ir5taCategoria = null;
+          this.formulario.descuentoAlimentacion = null;
+          this.formulario.descuentoBazar = null;
+          this.formulario.descuentoAutorizadoDiezmo = null;
+          this.formulario.descuentoEscolaridad = null;
+          this.formulario.adelanto = null;
+        }
+
+        // Recalcular montos dinámicos/previsionales
+        this.recalcularMontosDinamicos();
+        this._formularioOriginal = JSON.stringify(this.formulario);
+      },
+      error: (err) => {
+        console.error('Error cargando planilla del empleado', err);
+        // Fallback simple
+        this.formulario.remuneracionBasica = empleado.sueldo_base ?? null;
+        this.recalcularMontosDinamicos();
+        this._formularioOriginal = JSON.stringify(this.formulario);
+      }
+    });
+  }
+
+  onPeriodoChange(): void {
+    if (this.empleadoSeleccionado) {
+      this.cargarPlanillaDelEmpleado(
+        this.empleadoSeleccionado.id,
+        this.formulario.mes,
+        this.formulario.anio,
+        this.empleadoSeleccionado
+      );
+    }
+  }
+
+  recalcularMontosDinamicos(): void {
+    if (!this.empleadoSeleccionado) return;
+    const sueldo = this.formulario.remuneracionBasica ?? 0;
+    const mes = this.formulario.mes;
+
+    // Asignación Familiar S/ 113.00 si tiene hijos
+    this.formulario.asignacionFamiliar = this.empleadoSeleccionado.tiene_hijos ? 113.00 : 0.00;
+    
+    // Gratificación de julio y diciembre
+    this.formulario.gratificacionesFiestas = [7, 12].includes(Number(mes)) ? sueldo : 0.00;
+
+    // Aportes de Pensión (ONP / AFP)
+    if (this.empleadoSeleccionado.sistema_pensiones === 'ONP') {
+      this.formulario.onp13 = Number((sueldo * 0.13).toFixed(2));
+      this.formulario.sppFondoPensiones = null;
+      this.formulario.sppPrimaSeguro = null;
+      this.formulario.sppComision = null;
+    } else if (this.empleadoSeleccionado.sistema_pensiones === 'AFP') {
+      this.formulario.onp13 = null;
+      this.formulario.sppFondoPensiones = Number((sueldo * 0.10).toFixed(2));
+      this.formulario.sppPrimaSeguro = Number((sueldo * 0.0137).toFixed(2));
+      
+      const afp = this.empleadoSeleccionado.afp;
+      const tasaComision = afp === 'Habitat' ? 0.0147 :
+                           afp === 'Integra' ? 0.0155 :
+                           afp === 'Prima' ? 0.0160 :
+                           afp === 'Profuturo' ? 0.0169 : 0;
+      this.formulario.sppComision = Number((sueldo * tasaComision).toFixed(2));
+    } else {
+      this.formulario.onp13 = null;
+      this.formulario.sppFondoPensiones = null;
+      this.formulario.sppPrimaSeguro = null;
+      this.formulario.sppComision = null;
+    }
+
+    // Essalud (9%)
+    this.formulario.essalud9 = Number((sueldo * 0.09).toFixed(2));
   }
 
   cerrarModal(): void {
@@ -126,39 +237,92 @@ export class EmisionBoletaListComponent implements OnInit {
     }
     this.showModal = false;
     this.empleadoSeleccionado = null;
+    this.planillaActual = null;
     document.body.style.overflow = '';
   }
 
   get totalIngresos(): number {
     const f = this.formulario;
-    return [f.remuneracionBasica, f.bonificacionCargo, f.asignacionFamiliar,
+    return [
+      f.remuneracionBasica, f.bonificacionCargo, f.asignacionFamiliar,
       f.vacacionesTruncas, f.gratificacionesFiestas, f.bonifExtraordTemporal,
       f.otrosConceptosSubsidio, f.compensacionTiempoServicios, f.bonificacion
-    ].reduce((sum: number, v) => sum + (v ?? 0), 0);
+    ].reduce((sum: number, v) => sum + (v ? Number(v) : 0), 0);
   }
 
   get totalDescuentos(): number {
     const f = this.formulario;
-    return [f.onp13, f.sppFondoPensiones, f.sppPrimaSeguro, f.sppComision,
+    return [
+      f.onp13, f.sppFondoPensiones, f.sppPrimaSeguro, f.sppComision,
       f.ir5taCategoria, f.descuentoAlimentacion, f.descuentoBazar,
-      f.descuentoAutorizadoDiezmo, f.descuentoOtros, f.descuentoEscolaridad
-    ].reduce((sum: number, v) => sum + (v ?? 0), 0);
+      f.descuentoAutorizadoDiezmo, f.descuentoOtros, f.descuentoEscolaridad,
+      f.adelanto
+    ].reduce((sum: number, v) => sum + (v ? Number(v) : 0), 0);
   }
 
   get totalAportaciones(): number {
     return [(this.formulario.essalud9), (this.formulario.sctr)]
-      .reduce((sum: number, v) => sum + (v ?? 0), 0);
+      .reduce((sum: number, v) => sum + (v ? Number(v) : 0), 0);
   }
 
   get totalNetoPagar(): number {
     return this.totalIngresos - this.totalDescuentos;
   }
 
-  guardarBorrador(): void {
-    if (this.empleadoSeleccionado) {
-      this.empleadosEditados.add(this.empleadoSeleccionado.id);
+  guardarPlanillaEnServidor(): Observable<{ success: boolean; data: Planilla }> {
+    const total_bonificaciones = [
+      this.formulario.bonificacionCargo,
+      this.formulario.vacacionesTruncas,
+      this.formulario.bonifExtraordTemporal,
+      this.formulario.otrosConceptosSubsidio,
+      this.formulario.compensacionTiempoServicios,
+      this.formulario.bonificacion
+    ].reduce((sum: number, v) => sum + (v ? Number(v) : 0), 0);
+
+    const total_descuentos = [
+      this.formulario.ir5taCategoria,
+      this.formulario.descuentoAlimentacion,
+      this.formulario.descuentoBazar,
+      this.formulario.descuentoAutorizadoDiezmo,
+      this.formulario.descuentoOtros,
+      this.formulario.descuentoEscolaridad,
+      this.formulario.adelanto
+    ].reduce((sum: number, v) => sum + (v ? Number(v) : 0), 0);
+
+    const body: Planilla = {
+      empleado_id: this.empleadoSeleccionado!.id,
+      mes: Number(this.formulario.mes),
+      anio: Number(this.formulario.anio),
+      sueldo_base: this.formulario.remuneracionBasica ?? 0,
+      bonificaciones: total_bonificaciones,
+      descuentos: total_descuentos
+    };
+
+    if (this.planillaActual && this.planillaActual.id) {
+      return this.planillaService.actualizarPlanilla(this.planillaActual.id, body);
+    } else {
+      return this.planillaService.crearPlanilla(body);
     }
-    this.toastService.success('Borrador Guardado', `Se guardó el borrador para ${this.empleadoSeleccionado?.nombre} ${this.empleadoSeleccionado?.apellido}`);
+  }
+
+  guardarBorrador(): void {
+    if (!this.empleadoSeleccionado) return;
+
+    this.guardarPlanillaEnServidor().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.planillaActual = res.data;
+          this._formularioOriginal = JSON.stringify(this.formulario);
+          this.empleadosEditados.add(this.empleadoSeleccionado!.id);
+          this.toastService.success('Borrador Guardado', `Se guardó la planilla para ${this.empleadoSeleccionado?.nombre} ${this.empleadoSeleccionado?.apellido} en la base de datos.`);
+        }
+      },
+      error: (err) => {
+        console.error('Error guardando planilla', err);
+        const msg = err?.error?.message || 'No se pudo guardar los datos de la planilla en el servidor.';
+        this.toastService.error('Error al guardar', msg);
+      }
+    });
   }
 
   emitirBoleta(): void {
@@ -167,22 +331,38 @@ export class EmisionBoletaListComponent implements OnInit {
     this.generandoPDF = true;
     const { mes, anio } = this.formulario;
 
-    this.boletasService.generarBoletaAdmin(this.empleadoSeleccionado.id, mes, anio).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `boleta_${this.empleadoSeleccionado!.dni}_${mes}_${anio}.pdf`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-        this.empleadosEditados.add(this.empleadoSeleccionado!.id);
-        this.generandoPDF = false;
-        this.cerrarModal();
+    // Primero guardamos en la BD para asegurarnos de que el PDF tenga los datos correctos
+    this.guardarPlanillaEnServidor().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.planillaActual = res.data;
+          this.empleadosEditados.add(this.empleadoSeleccionado!.id);
+
+          // Ahora generamos y descargamos el PDF
+          this.boletasService.generarBoletaAdmin(this.empleadoSeleccionado!.id, mes, anio).subscribe({
+            next: (blob) => {
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `boleta_${this.empleadoSeleccionado!.dni}_${mes}_${anio}.pdf`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+              this.generandoPDF = false;
+              this.cerrarModal();
+            },
+            error: (err) => {
+              console.error('Error generando boleta', err);
+              const msg = err?.error?.message || `No existe planilla para el mes ${this.nombreMes(mes)} ${anio}.`;
+              this.toastService.error('Error al generar', msg);
+              this.generandoPDF = false;
+            }
+          });
+        }
       },
       error: (err) => {
-        console.error('Error generando boleta', err);
-        const msg = err?.error?.message || `No existe planilla para el mes ${this.nombreMes(mes)} ${anio}.`;
-        this.toastService.error('Error al generar', msg);
+        console.error('Error al registrar planilla antes de emitir', err);
+        const msg = err?.error?.message || 'No se pudo registrar la planilla en la base de datos.';
+        this.toastService.error('Error de registro', msg);
         this.generandoPDF = false;
       }
     });
@@ -205,16 +385,16 @@ export class EmisionBoletaListComponent implements OnInit {
     this.generandoMasivo = true;
     const f = this.formulario;
     this.boletasService.generarMasivo(f.mes, f.anio).subscribe({
-        next: (res) => {
-          this.toastService.success('Proceso completado', `${res.message}<br/>Generadas: ${res.generadas}<br/>Omitidas (sin planilla): ${res.omitidas}`);
-          this.generandoMasivo = false;
-        },
-        error: (err) => {
-          console.error('Error generando masivo', err);
-          this.toastService.error('Error', 'Hubo un problema al generar las boletas masivamente.');
-          this.generandoMasivo = false;
-        }
-      });
+      next: (res) => {
+        this.toastService.success('Proceso completado', `${res.message}<br/>Generadas: ${res.generadas}<br/>Omitidas (sin planilla): ${res.omitidas}`);
+        this.generandoMasivo = false;
+      },
+      error: (err) => {
+        console.error('Error generando masivo', err);
+        this.toastService.error('Error', 'Hubo un problema al generar las boletas masivamente.');
+        this.generandoMasivo = false;
+      }
+    });
   }
 
   private getFormularioVacio(): FormularioBoleta {
