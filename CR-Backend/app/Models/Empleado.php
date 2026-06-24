@@ -24,6 +24,10 @@ class Empleado extends Model
         'entidad_financiera',
         'numero_cuenta',
         'tiene_hijos',
+        'sueldo_base',        
+        'tipo_contrato',     
+        'forma_pago',        
+        'sede_id',           
     ];
 
     protected static function boot()
@@ -42,5 +46,9 @@ class Empleado extends Model
     public function cargo()
     {
         return $this->belongsTo(Cargo::class);
+    }
+    public function sede()
+    {
+        return $this->belongsTo(Sede::class);
     }
 }

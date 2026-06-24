@@ -19,6 +19,7 @@ class Documento extends Model
         'estado_firma',
         'planilla_id',
         'fecha_visto',
+        'estado_registro',
     ];
 
     protected static function boot()

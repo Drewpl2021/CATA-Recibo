@@ -7,7 +7,7 @@ class EmpleadoController extends Controller
 {
     public function index()
     {
-        $empleados = Empleado::with('area', 'cargo')->get();
+        $empleados = Empleado::with('area', 'cargo', 'sede')->get();
         return response()->json(['success' => true, 'data' => $empleados]);
     }
 
@@ -29,16 +29,20 @@ class EmpleadoController extends Controller
             'entidad_financiera' => 'nullable|string|max:100',
             'numero_cuenta'      => 'nullable|string|max:50',
             'tiene_hijos'        => 'nullable|boolean',
+            'sueldo_base'   => 'nullable|numeric|min:0',
+            'tipo_contrato' => 'nullable|in:por_hora,necesidad_servicio,indeterminado',
+            'forma_pago'    => 'nullable|in:banco,efectivo,otro',
+            'sede_id'       => 'nullable|uuid|exists:sedes,id',
         ]);
 
         $empleado = Empleado::create($request->all());
-        $empleado->load('area', 'cargo');
+        $empleado->load('area', 'cargo', 'sede');
         return response()->json(['success' => true, 'data' => $empleado], 201);
     }
 
     public function show(string $id)
     {
-        $empleado = Empleado::with('area', 'cargo')->findOrFail($id);
+        $empleado = Empleado::with('area', 'cargo', 'sede')->findOrFail($id);
         return response()->json(['success' => true, 'data' => $empleado]);
     }
 
@@ -61,10 +65,14 @@ class EmpleadoController extends Controller
             'entidad_financiera' => 'nullable|string|max:100',
             'numero_cuenta'      => 'nullable|string|max:50',
             'tiene_hijos'        => 'nullable|boolean',
+            'sueldo_base'   => 'nullable|numeric|min:0',
+            'tipo_contrato' => 'nullable|in:por_hora,necesidad_servicio,indeterminado',
+            'forma_pago'    => 'nullable|in:banco,efectivo,otro',
+            'sede_id'       => 'nullable|uuid|exists:sedes,id',
         ]);
 
         $empleado->update($request->all());
-        $empleado->load('area', 'cargo');
+        $empleado->load('area', 'cargo', 'sede');
         return response()->json(['success' => true, 'data' => $empleado]);
     }
 

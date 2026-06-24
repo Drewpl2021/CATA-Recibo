@@ -14,9 +14,14 @@ class PlanillaController extends Controller
             $query->where('mes', $request->mes);
         if ($request->has('anio'))
             $query->where('anio', $request->anio);
+
+        $rolNombre = $request->user()->rol?->nombre;
+        if ($rolNombre !== 'admin') {
+            $query->where('estado_registro', 'activo');
+        }
+
         return response()->json(['success' => true, 'data' => $query->get()]);
     }
-
     public function store(Request $request)
     {
         $request->validate([
@@ -70,7 +75,7 @@ class PlanillaController extends Controller
     public function destroy(string $id)
     {
         $planilla = Planilla::findOrFail($id);
-        $planilla->delete();
+        $planilla->update(['estado_registro' => 'inactivo']);
         return response()->json(['success' => true, 'data' => ['message' => 'Planilla eliminada correctamente.']]);
     }
 }

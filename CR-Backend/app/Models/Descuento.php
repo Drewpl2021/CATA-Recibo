@@ -16,6 +16,7 @@ class Descuento extends Model
         'monto',
         'mes',
         'anio',
+        'estado_registro',
     ];
 
     protected static function boot()
