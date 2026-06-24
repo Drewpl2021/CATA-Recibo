@@ -19,6 +19,7 @@ class Planilla extends Model
         'bonificaciones',
         'descuentos',
         'total',
+        'estado_registro',
     ];
 
     protected static function boot()

@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
             AreaSeeder::class,
             CargoSeeder::class,
             PaymentConceptSeeder::class,
+            ModuloSeeder::class,
         ]);
     }
 }
