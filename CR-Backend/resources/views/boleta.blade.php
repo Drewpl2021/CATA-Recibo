@@ -16,11 +16,16 @@
             color: #222;
             zoom: 0.75;
         }
+
         .boleta {
             width: 96%;
             margin: 0 auto;
             padding: 15px;
             border: 2px solid #1565C0;
+        }
+
+        .boleta + .boleta {
+            page-break-before: always;
         }
 
         .encabezado {
@@ -136,16 +141,17 @@
         }
 
         .firma-section {
-            margin-top: 20px;
+            margin-top: 8px;
             display: table;
             width: 100%;
+            page-break-inside: avoid;
         }
 
         .firma-box {
             display: table-cell;
             width: 48%;
             text-align: center;
-            padding-top: 35px;
+            padding-top: 10px;
             border-top: 1px solid #333;
             font-size: 9px;
             color: #555;
@@ -179,13 +185,11 @@
 <body>
 
 @php
-    // Total de ingresos (haberes) incluyendo conceptos nuevos
     $totalIngresos = (float)$planilla->sueldo_base
         + (float)$planilla->bonificaciones
         + $asignacionFamiliar
         + $gratificacion;
 
-    // Total de descuentos: descuentos registrados manualmente + pensión calculada
     $totalDescuentosManual = (float)$planilla->descuentos;
     $totalDescuentos = $totalDescuentosManual + $pension['total'];
 
@@ -332,38 +336,36 @@
         </table>
     </div>
 
-<div class="firma-section">
-    <div class="firma-box" style="margin-right:4%;">
-        @if (isset($documento) && $documento->estado_firma === 'firmado' && $empleado->firma_imagen)
-            <img src="{{ storage_path('app/public/' . $empleado->firma_imagen) }}" style="height:50px; margin-bottom:5px;"><br>
-        @endif
-        <div style="border-top:1px solid #333; padding-top:5px; margin-top:5px;">
-            Firma del Trabajador<br>
-            {{ $empleado->apellido }}, {{ $empleado->nombre }}
+    <div class="firma-section">
+        <div class="firma-box" style="margin-right:4%;">
+            @if (isset($documento) && $documento->estado_firma === 'firmado' && $empleado->firma_imagen)
+                <img src="{{ storage_path('app/public/' . $empleado->firma_imagen) }}" style="height:50px; margin-bottom:5px;"><br>
+            @endif
+            <div style="border-top:1px solid #333; padding-top:5px; margin-top:5px;">
+                Firma del Trabajador<br>
+                {{ $empleado->apellido }}, {{ $empleado->nombre }}
+            </div>
+        </div>
+        <div class="firma-box">
+            @if (file_exists(storage_path('app/public/firmas/rrhh.png')))
+                <img src="{{ storage_path('app/public/firmas/rrhh.png') }}" style="height:50px; margin-bottom:5px;"><br>
+            @endif
+            <div style="border-top:1px solid #333; padding-top:5px; margin-top:5px;">
+                Firma Empleador<br>
+                Colegio Adventista Túpac Amaru
+            </div>
         </div>
     </div>
-    <div class="firma-box">
-        @if (file_exists(storage_path('app/public/firmas/rrhh.png')))
-            <img src="{{ storage_path('app/public/firmas/rrhh.png') }}" style="height:50px; margin-bottom:5px;"><br>
-        @endif
-        <div style="border-top:1px solid #333; padding-top:5px; margin-top:5px;">
-            Firma Empleador<br>
-            Colegio Adventista Túpac Amaru
-        </div>
+
+    @if (isset($documento) && $documento->estado_firma === 'firmado')
+    <div class="firma-digital">
+        Documento firmado digitalmente por {{ $documento->firmado_por }}
+        el {{ \Carbon\Carbon::parse($documento->fecha_firma)->format('d/m/Y H:i') }} —
+        Código de verificación: {{ $documento->codigo_firma }}
     </div>
-</div>
+    @endif
 
-@if (isset($documento) && $documento->estado_firma === 'firmado')
-<div class="firma-digital">
-    Documento firmado digitalmente por {{ $documento->firmado_por }}
-    el {{ \Carbon\Carbon::parse($documento->fecha_firma)->format('d/m/Y H:i') }} —
-    Código de verificación: {{ $documento->codigo_firma }}
 </div>
-@endif
-
-@if ($copia == 1)
-<hr class="separador">
-@endif
 @endfor
 
 </body>
