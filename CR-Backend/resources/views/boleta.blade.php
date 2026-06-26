@@ -4,8 +4,18 @@
     <meta charset="UTF-8">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; font-size: 11px; color: #222; }
 
+        @page {
+            size: A4 landscape;
+            margin: 5mm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            color: #222;
+            zoom: 0.75;
+        }
         .boleta {
             width: 96%;
             margin: 0 auto;
@@ -322,25 +332,34 @@
         </table>
     </div>
 
-    <div class="firma-section">
-        <div class="firma-box" style="margin-right:4%;">
+<div class="firma-section">
+    <div class="firma-box" style="margin-right:4%;">
+        @if (isset($documento) && $documento->estado_firma === 'firmado' && $empleado->firma_imagen)
+            <img src="{{ storage_path('app/public/' . $empleado->firma_imagen) }}" style="height:50px; margin-bottom:5px;"><br>
+        @endif
+        <div style="border-top:1px solid #333; padding-top:5px; margin-top:5px;">
             Firma del Trabajador<br>
             {{ $empleado->apellido }}, {{ $empleado->nombre }}
         </div>
-        <div class="firma-box">
+    </div>
+    <div class="firma-box">
+        @if (file_exists(storage_path('app/public/firmas/rrhh.png')))
+            <img src="{{ storage_path('app/public/firmas/rrhh.png') }}" style="height:50px; margin-bottom:5px;"><br>
+        @endif
+        <div style="border-top:1px solid #333; padding-top:5px; margin-top:5px;">
             Firma Empleador<br>
             Colegio Adventista Túpac Amaru
         </div>
     </div>
-
-    @if (isset($documento) && $documento->estado_firma === 'firmado')
-    <div class="firma-digital">
-        Documento firmado digitalmente por {{ $documento->firmado_por }}
-        el {{ \Carbon\Carbon::parse($documento->fecha_firma)->format('d/m/Y H:i') }} —
-        Código de verificación: {{ $documento->codigo_firma }}
-    </div>
-    @endif
 </div>
+
+@if (isset($documento) && $documento->estado_firma === 'firmado')
+<div class="firma-digital">
+    Documento firmado digitalmente por {{ $documento->firmado_por }}
+    el {{ \Carbon\Carbon::parse($documento->fecha_firma)->format('d/m/Y H:i') }} —
+    Código de verificación: {{ $documento->codigo_firma }}
+</div>
+@endif
 
 @if ($copia == 1)
 <hr class="separador">
