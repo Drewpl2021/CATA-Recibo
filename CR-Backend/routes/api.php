@@ -55,7 +55,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Solo admin/rrhh ───────────────────────────────
     Route::middleware('rol:admin,rrhh')->group(function () {
+        
         Route::apiResource('users', UserController::class)->except(['store']);
+        Route::post('empleados/{id}/firma', [EmpleadoController::class, 'subirFirma']);
         Route::apiResource('empleados',        EmpleadoController::class);
         Route::apiResource('planilla',         PlanillaController::class);
         Route::apiResource('documentos',       DocumentoController::class);

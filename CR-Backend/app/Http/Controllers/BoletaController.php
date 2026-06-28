@@ -46,20 +46,19 @@ class BoletaController extends Controller
 
         $archivo = "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf";
 
-        // Cálculos previsionales
-        $pension          = $this->calcularDescuentoPension($empleado, $planilla->sueldo_base);
+        $pension            = $this->calcularDescuentoPension($empleado, $planilla->sueldo_base);
         $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
-        $gratificacion    = $this->calcularGratificacion($planilla->sueldo_base, $mes);
-        $essalud          = $this->calcularEssalud($planilla->sueldo_base);
+        $gratificacion      = $this->calcularGratificacion($planilla->sueldo_base, $mes);
+        $essalud            = $this->calcularEssalud($planilla->sueldo_base);
 
-        // Guardar documento si no existe
-        $existe = Documento::where('empleado_id', $empleado_id)
+        // Buscar o crear documento
+        $documento = Documento::where('empleado_id', $empleado_id)
             ->where('planilla_id', $planilla->id)
             ->where('tipo', 'boleta')
             ->first();
 
-        if (!$existe) {
-            Documento::create([
+        if (!$documento) {
+            $documento = Documento::create([
                 'empleado_id'  => $empleado_id,
                 'planilla_id'  => $planilla->id,
                 'tipo'         => 'boleta',
@@ -80,6 +79,7 @@ class BoletaController extends Controller
             'asignacionFamiliar' => $asignacionFamiliar,
             'gratificacion'      => $gratificacion,
             'essalud'            => $essalud,
+            'documento'          => $documento,
         ];
 
         $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'landscape');

@@ -82,4 +82,26 @@ class EmpleadoController extends Controller
         $empleado->delete();
         return response()->json(['success' => true, 'data' => ['message' => 'Empleado eliminado correctamente.']]);
     }
+            public function subirFirma(Request $request, string $id)
+    {
+        $empleado = Empleado::findOrFail($id);
+
+        $request->validate([
+            'firma' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+        ]);
+
+        $archivo = $request->file('firma');
+        $extension = $archivo->getClientOriginalExtension();
+        $nombre = 'firma_' . $empleado->dni . '.' . $extension;
+        
+        $destino = storage_path('app/public/firmas');
+        $archivo->move($destino, $nombre);
+
+        $empleado->update(['firma_imagen' => 'firmas/' . $nombre]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => ['firma_imagen' => 'firmas/' . $nombre]
+        ]);
+    }
 }

@@ -9,27 +9,27 @@ class Empleado extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'dni',
-        'nombre',
-        'apellido',
-        'cargo_id',
-        'area_id',
-        'telefono',
-        'direccion',
-        'fecha_ingreso',
-        'estado',
-        'sistema_pensiones',
-        'afp',
-        'cuspp',
-        'entidad_financiera',
-        'numero_cuenta',
-        'tiene_hijos',
-        'sueldo_base',        
-        'tipo_contrato',     
-        'forma_pago',        
-        'sede_id',           
-    ];
-
+    'dni',
+    'nombre',
+    'apellido',
+    'cargo_id',
+    'area_id',
+    'telefono',
+    'direccion',
+    'fecha_ingreso',
+    'estado',
+    'sistema_pensiones',
+    'afp',
+    'cuspp',
+    'entidad_financiera',
+    'numero_cuenta',
+    'tiene_hijos',
+    'sueldo_base',
+    'tipo_contrato',
+    'forma_pago',
+    'sede_id',
+    'firma_imagen',
+];
     protected static function boot()
     {
         parent::boot();

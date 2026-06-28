@@ -47,9 +47,9 @@ class ModuloSeeder extends Seeder
             ['padre' => $idConfig, 'nombre' => 'Módulos',        'ruta' => '/modulos',        'icono' => 'view_module', 'orden' => 6, 'roles' => [$admin]],
             ['padre' => $idConfig, 'nombre' => 'Módulos Padre',  'ruta' => '/modulos-padre',  'icono' => 'folder_open', 'orden' => 7, 'roles' => [$admin]],
 
-            // Mi Espacio — solo empleado
-            ['padre' => $idEspacio, 'nombre' => 'Mis Boletas',    'ruta' => '/mis-boletas',    'icono' => 'receipt_long', 'orden' => 1, 'roles' => [$empleado]],
-            ['padre' => $idEspacio, 'nombre' => 'Mis Documentos', 'ruta' => '/mis-documentos', 'icono' => 'folder_shared', 'orden' => 2, 'roles' => [$empleado]],
+            // Mi Espacio — admin, rrhh y empleado
+            ['padre' => $idEspacio, 'nombre' => 'Mis Boletas',    'ruta' => '/mis-boletas',    'icono' => 'receipt_long',  'orden' => 1, 'roles' => [$admin, $rrhh, $empleado]],
+            ['padre' => $idEspacio, 'nombre' => 'Mis Documentos', 'ruta' => '/mis-documentos', 'icono' => 'folder_shared', 'orden' => 2, 'roles' => [$admin, $rrhh, $empleado]],
         ];
 
         foreach ($modulos as $m) {
