@@ -67,7 +67,7 @@ class MiBoletaController extends Controller
             ->first();
 
         if (!$existe) {
-            Documento::create([
+            $existe = Documento::create([
                 'empleado_id'  => $empleado_id,
                 'planilla_id'  => $planilla->id,
                 'tipo'         => 'boleta',
@@ -88,6 +88,7 @@ class MiBoletaController extends Controller
             'asignacionFamiliar' => $asignacionFamiliar,
             'gratificacion'      => $gratificacion,
             'essalud'            => $essalud,
+            'documento'          => $existe,
         ];
 
         $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'landscape');

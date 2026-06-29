@@ -35,6 +35,7 @@ export interface Empleado {
   sueldo_base?: number;
   sede_id?: string;
   sede?: { id: string; nombre: string };
+  firma_imagen?: string;
 }
 
 export interface EmpleadoResponse {
@@ -68,5 +69,11 @@ export class EmpleadoService {
 
   deleteEmpleado(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  subirFirma(id: string, file: File): Observable<{ success: boolean, data: { firma_imagen: string } }> {
+    const formData = new FormData();
+    formData.append('firma', file);
+    return this.http.post<{ success: boolean, data: { firma_imagen: string } }>(`${this.apiUrl}/${id}/firma`, formData);
   }
 }

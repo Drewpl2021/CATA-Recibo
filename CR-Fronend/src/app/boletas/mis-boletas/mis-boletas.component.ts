@@ -100,6 +100,37 @@ export class MisBoletasComponent implements OnInit {
       }
     });
 
+    // Suscribirse a los documentos de forma reactiva
+    this.misDocumentosService.documentos$.subscribe({
+      next: (todos) => {
+        const boletasDocs = (todos || []).filter(d => 
+          d.tipo === 'boleta' && 
+          d.planilla && 
+          String(d.planilla.anio) === this.selectedAnio
+        );
+
+        this.boletas = boletasDocs.map((d) => ({
+          id: d.id,
+          tipoDocumento: 'Boleta de Pago',
+          numeroDocumento: `BP-${d.planilla?.anio}-${String(d.planilla?.mes).padStart(2, '0')}`,
+          fechaEmision: d.created_at ? this.formatFecha(d.created_at).split(' ')[0] : '',
+          mes: MESES[d.planilla?.mes!] ?? `Mes ${d.planilla?.mes}`,
+          mesNum: d.planilla?.mes || 0,
+          montoTotal: (d.planilla as any)?.total ?? 0,
+          anio: d.planilla?.anio || 0,
+          firmado: d.estado_firma === 'firmado' ? { fecha: d.fecha_firma ? this.formatFecha(d.fecha_firma) : this.formatFecha(d.created_at) } : null,
+          avisoEnviado: null,
+          revisado: null,
+          descargado: null,
+          correo: '',
+          celular: ''
+        }));
+        
+        this.calcularMetricas(boletasDocs);
+        this.verificarFirmaPendiente();
+      }
+    });
+
     this.cargarBoletas();
   }
 
@@ -129,42 +160,8 @@ export class MisBoletasComponent implements OnInit {
     this.errorMsg = '';
 
     this.misDocumentosService.getMisDocumentos().subscribe({
-      next: (res) => {
+      next: () => {
         this.isLoading = false;
-        if (!res.success) {
-          this.boletas = [];
-          this.errorMsg = 'No se pudieron cargar las boletas.';
-          return;
-        }
-        
-        const todos = res.data ?? [];
-        // Filtrar por tipo boleta y el año seleccionado
-        const boletasDocs = todos.filter(d => 
-          d.tipo === 'boleta' && 
-          d.planilla && 
-          String(d.planilla.anio) === this.selectedAnio
-        );
-
-        this.boletas = boletasDocs.map((d) => ({
-          id: d.id, // usamos el id del Documento para poder firmarlo
-          tipoDocumento: 'Boleta de Pago',
-          numeroDocumento: `BP-${d.planilla?.anio}-${String(d.planilla?.mes).padStart(2, '0')}`,
-          fechaEmision: d.created_at ? this.formatFecha(d.created_at).split(' ')[0] : '',
-          mes: MESES[d.planilla?.mes!] ?? `Mes ${d.planilla?.mes}`,
-          mesNum: d.planilla?.mes || 0,
-          montoTotal: (d.planilla as any)?.total ?? 0,
-          anio: d.planilla?.anio || 0,
-          // Estado de firma real que viene del backend
-          firmado: d.estado_firma === 'firmado' ? { fecha: d.fecha_firma ? this.formatFecha(d.fecha_firma) : this.formatFecha(d.created_at) } : null,
-          avisoEnviado: null,
-          revisado: null,
-          descargado: null,
-          correo: '',
-          celular: ''
-        }));
-        
-        this.calcularMetricas(boletasDocs);
-        this.verificarFirmaPendiente();
       },
       error: () => {
         this.isLoading = false;

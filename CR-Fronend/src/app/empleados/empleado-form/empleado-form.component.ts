@@ -46,6 +46,11 @@ export class EmpleadoFormComponent implements OnInit {
   entidad_financiera = '';
   numero_cuenta = '';
   tiene_hijos = false;
+  
+  // Firma del empleado
+  firma_imagen = '';
+  archivoFirma: File | null = null;
+  subiendoFirma = false;
 
   // Datos reales de la BD
   areasDisponibles: Area[] = [];
@@ -140,6 +145,7 @@ export class EmpleadoFormComponent implements OnInit {
           this.entidad_financiera = e.entidad_financiera || '';
           this.numero_cuenta = e.numero_cuenta || '';
           this.tiene_hijos = e.tiene_hijos || false;
+          this.firma_imagen = e.firma_imagen || '';
         }
         this.cargando = false;
       },
@@ -261,5 +267,39 @@ export class EmpleadoFormComponent implements OnInit {
 
   cancelar(): void {
     this.router.navigate(['/inicio/empleados']);
+  }
+
+  onFirmaSeleccionada(event: any): void {
+    const file = event.target?.files?.[0];
+    if (file) {
+      this.archivoFirma = file;
+    }
+  }
+
+  subirFirma(): void {
+    if (!this.empleadoId || !this.archivoFirma) {
+      this.toastService.warning('Archivo requerido', 'Por favor, selecciona un archivo de imagen primero.');
+      return;
+    }
+
+    this.subiendoFirma = true;
+    this.empleadoService.subirFirma(this.empleadoId, this.archivoFirma).subscribe({
+      next: (res) => {
+        this.subiendoFirma = false;
+        if (res.success) {
+          this.firma_imagen = res.data.firma_imagen;
+          this.archivoFirma = null;
+          this.toastService.success('Firma cargada', 'La firma del empleado se ha subido exitosamente.');
+        } else {
+          this.toastService.error('Error', 'No se pudo subir la firma.');
+        }
+      },
+      error: (err) => {
+        this.subiendoFirma = false;
+        console.error('Error subiendo firma', err);
+        const msg = err?.error?.message || 'Error al subir el archivo de firma.';
+        this.toastService.error('Error', msg);
+      }
+    });
   }
 }
