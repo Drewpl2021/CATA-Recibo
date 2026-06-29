@@ -4,6 +4,8 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { MisModulosService, ModuloPadre } from '../../core/services/mis-modulos.service';
 import { MisDocumentosService, MiDocumento } from '../../core/services/mis-documentos.service';
+import { ToastService } from '../../core/services/toast.service';
+import { FormsModule } from '@angular/forms';
 
 // Mapa de iconos SVG por nombre (del seeder de Jordan)
 const ICON_MAP: Record<string, string> = {
@@ -29,7 +31,7 @@ const ICON_MAP: Record<string, string> = {
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss'
 })
@@ -47,11 +49,19 @@ export class LayoutComponent implements OnInit {
   documentosPendientes: MiDocumento[] = [];
   showNotifications = false;
 
+  // Firma rápida
+  showSignModal = false;
+  boletaAFirmar: MiDocumento | null = null;
+  passwordFirma = '';
+  signErrorMsg = '';
+  firmandoDoc = false;
+
   constructor(
     private router: Router,
     private authService: AuthService,
     private misModulosService: MisModulosService,
-    private misDocumentosService: MisDocumentosService
+    private misDocumentosService: MisDocumentosService,
+    private toastService: ToastService
   ) {
     const user = this.authService.getUser();
     if (user) {
@@ -103,13 +113,13 @@ export class LayoutComponent implements OnInit {
       }
     });
 
-    // 2. Cargar boletas pendientes para notificaciones
+    // 2. Suscribirse a boletas pendientes
+    this.misDocumentosService.documentos$.subscribe({
+      next: (docs) => {
+        this.documentosPendientes = docs.filter(doc => doc.estado_firma !== 'firmado');
+      }
+    });
     this.misDocumentosService.getMisDocumentos().subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.documentosPendientes = res.data.filter(doc => doc.estado_firma !== 'firmado');
-        }
-      },
       error: () => {
         // Ignorar si falla, por ej. si el usuario es un admin sin documentos
       }
@@ -145,5 +155,59 @@ export class LayoutComponent implements OnInit {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  iniciarFirmaRapida(doc: MiDocumento, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.boletaAFirmar = doc;
+    this.passwordFirma = '';
+    this.signErrorMsg = '';
+    this.showSignModal = true;
+  }
+
+  closeSignModal(): void {
+    this.showSignModal = false;
+    this.boletaAFirmar = null;
+    this.passwordFirma = '';
+    this.signErrorMsg = '';
+  }
+
+  confirmarFirmaRapidaModal(): void {
+    if (!this.passwordFirma) {
+      this.signErrorMsg = 'Por favor, ingresa tu contraseña para firmar.';
+      return;
+    }
+
+    if (!this.boletaAFirmar) return;
+
+    this.firmandoDoc = true;
+    this.signErrorMsg = '';
+
+    this.misDocumentosService.firmar(this.boletaAFirmar.id, this.passwordFirma).subscribe({
+      next: (res) => {
+        this.firmandoDoc = false;
+        if (res.success) {
+          this.toastService.success('¡Firma Exitosa!', `Boleta firmada correctamente.`);
+          this.closeSignModal();
+        } else {
+          this.signErrorMsg = res.message || 'Error al firmar.';
+        }
+      },
+      error: (err) => {
+        this.firmandoDoc = false;
+        console.error('Error firmando boleta', err);
+        this.signErrorMsg = err?.error?.message || 'Contraseña incorrecta o error del servidor.';
+      }
+    });
+  }
+
+  getMesNombre(mesNum?: number): string {
+    if (!mesNum) return '';
+    const meses: { [key: number]: string } = {
+      1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
+      7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+    };
+    return meses[mesNum] ?? `Mes ${mesNum}`;
   }
 }

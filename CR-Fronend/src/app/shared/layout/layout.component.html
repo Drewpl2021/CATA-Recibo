@@ -163,16 +163,63 @@
         <div *ngIf="documentosPendientes.length === 0" class="no-notifications" style="padding: 40px; text-align: center; color: #6c757d; font-size: 16px;">
           ¡Todo al día! No tienes boletas pendientes de firma.
         </div>
-        <a *ngFor="let doc of documentosPendientes" class="notification-item" [routerLink]="['/inicio/mis-boletas']" [queryParams]="{ firmar: doc.id }" (click)="showNotifications = false" style="display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f0f0f0; text-decoration: none; color: #333; transition: background 0.2s; cursor: pointer;">
-          <div class="notification-icon" style="margin-right: 16px; color: #f4b223; background: #fff8e6; padding: 12px; border-radius: 50%;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <div *ngFor="let doc of documentosPendientes" class="notification-item" style="display: flex; flex-direction: column; padding: 16px 20px; border-bottom: 1px solid #f0f0f0; color: #333; transition: background 0.2s;">
+          <div style="display: flex; align-items: center; width: 100%;">
+            <div class="notification-icon" style="margin-right: 16px; color: #f4b223; background: #fff8e6; padding: 12px; border-radius: 50%;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <div class="notification-content" style="flex: 1;">
+              <p style="margin: 0 0 4px; font-size: 16px; font-weight: 600;">Boleta de Pago</p>
+              <p style="margin: 0 0 4px; font-size: 14px; color: #555;">Periodo: {{ doc.planilla?.mes }}/{{ doc.planilla?.anio || 'Reciente' }}</p>
+            </div>
           </div>
-          <div class="notification-content" style="flex: 1;">
-            <p style="margin: 0 0 4px; font-size: 16px; font-weight: 600;">Boleta de Pago</p>
-            <p style="margin: 0 0 4px; font-size: 14px; color: #555;">Periodo: {{ doc.planilla?.mes }}/{{ doc.planilla?.anio || 'Reciente' }}</p>
-            <span style="font-size: 13px; color: #1e40af; font-weight: 500;">Haz clic para ir a revisarla y firmar →</span>
+          
+          <!-- Botones de Acción -->
+          <div style="display: flex; gap: 8px; margin-top: 12px; padding-left: 56px;">
+            <button (click)="iniciarFirmaRapida(doc, $event)" style="font-size: 13px; color: #fff; font-weight: 600; border: none; border-radius: 4px; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px; background: #112d59; cursor: pointer; transition: background 0.2s;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>
+              </svg>
+              Firmar Boleta
+            </button>
           </div>
-        </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Firmar Boleta (Flotante) -->
+  <div class="pdf-modal-overlay" *ngIf="showSignModal" (click)="closeSignModal()">
+    <div class="sign-modal-container" (click)="$event.stopPropagation()">
+      <div class="pdf-modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background-color: white; border-bottom: 1px solid #e3e8ee; color: #112d59;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #112d59;">Firmar Boleta</h3>
+        <button class="btn-close" (click)="closeSignModal()" title="Cerrar" style="background: none; border: none; color: #666; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 50%;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="pdf-modal-body" style="padding: 24px; background-color: white;">
+        <p style="margin-bottom: 20px; color: #555; font-size: 14px; line-height: 1.5;">
+          Para firmar la boleta de <strong>{{ getMesNombre(boletaAFirmar?.planilla?.mes) }} {{ boletaAFirmar?.planilla?.anio }}</strong>, por favor ingresa tu contraseña de acceso:
+        </p>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #333;">Contraseña:</label>
+          <input type="password" [(ngModel)]="passwordFirma" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box;" placeholder="Ingresa tu contraseña" (keyup.enter)="confirmarFirmaRapidaModal()">
+        </div>
+
+        <div *ngIf="signErrorMsg" style="color: #e74c3c; font-size: 13px; margin-top: 8px; margin-bottom: 8px;">
+          {{ signErrorMsg }}
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+          <button class="btn-secondary" (click)="closeSignModal()" style="padding: 8px 16px; border: 1px solid #cbd5e1; background: white; border-radius: 4px; cursor: pointer; color: #333; font-weight: 500;">Cancelar</button>
+          <button class="btn-primary" (click)="confirmarFirmaRapidaModal()" [disabled]="firmandoDoc" style="padding: 8px 16px; background: #112d59; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+            <span *ngIf="firmandoDoc">Procesando...</span>
+            <span *ngIf="!firmandoDoc">Firmar Boleta</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
