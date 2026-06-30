@@ -20,6 +20,12 @@ export interface MiDocumento {
     mes: number;
     anio: number;
   };
+  empleado?: {
+    id: string;
+    nombre: string;
+    apellido: string;
+    dni: string;
+  };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -65,6 +71,15 @@ export class MisDocumentosService {
           this.getMisDocumentos().subscribe();
         }
       })
+    );
+  }
+
+  getDocumentosAdmin(empleadoId?: string, tipo?: string): Observable<{ success: boolean; data: MiDocumento[] }> {
+    let params: any = {};
+    if (empleadoId) params.empleado_id = empleadoId;
+    if (tipo) params.tipo = tipo;
+    return this.http.get<{ success: boolean; data: MiDocumento[] }>(
+      `${this.apiUrl}/documentos`, { params }
     );
   }
 }
