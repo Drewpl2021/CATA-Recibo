@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MisDocumentosService, MiDocumento } from '../../core/services/mis-documentos.service';
 import { ToastService } from '../../core/services/toast.service';
+import { AuthService } from '../../core/services/auth.service';
+import { EmpleadoService, Empleado } from '../../core/services/empleado.service';
+import { BoletasService } from '../../core/services/boletas.service';
 
 @Component({
   selector: 'app-documentos-list',
@@ -22,13 +25,40 @@ export class DocumentosListComponent implements OnInit {
   passwordFirma = '';
   firmando = false;
 
+  // Propiedades de Admin/RRHH
+  isEmpleado = true;
+  empleados: Empleado[] = [];
+  selectedEmpleadoId = '';
+  descargandoPdf = false;
+
   constructor(
     private misDocumentosService: MisDocumentosService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private authService: AuthService,
+    private empleadoService: EmpleadoService,
+    private boletasService: BoletasService
   ) {}
 
   ngOnInit(): void {
-    this.cargarDocumentos();
+    const user = this.authService.getUser();
+    if (user) {
+      let rolName = '';
+      if (typeof user.rol === 'string') {
+        rolName = user.rol;
+      } else if (user.rol && typeof user.rol === 'object') {
+        rolName = (user.rol as any).nombre || '';
+      }
+      const rol = rolName.toLowerCase();
+      if (rol === 'admin' || rol === 'rrhh') {
+        this.isEmpleado = false;
+      }
+    }
+
+    if (this.isEmpleado) {
+      this.cargarDocumentos();
+    } else {
+      this.cargarEmpleados();
+    }
   }
 
   cargarDocumentos(): void {
@@ -41,6 +71,86 @@ export class DocumentosListComponent implements OnInit {
       error: (err) => {
         console.error('Error cargando documentos', err);
         this.cargando = false;
+      }
+    });
+  }
+
+  cargarEmpleados(): void {
+    this.cargando = true;
+    this.empleadoService.getEmpleados().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.empleados = res.data;
+          // Si hay empleados, seleccionamos el primero por defecto para cargar sus boletas
+          if (this.empleados.length > 0) {
+            this.selectedEmpleadoId = this.empleados[0].id;
+            this.cargarDocumentosAdmin();
+          } else {
+            this.cargando = false;
+          }
+        } else {
+          this.cargando = false;
+        }
+      },
+      error: (err) => {
+        console.error('Error cargando empleados', err);
+        this.cargando = false;
+        this.toastService.error('Error', 'No se pudo cargar la lista de empleados.');
+      }
+    });
+  }
+
+  cargarDocumentosAdmin(): void {
+    if (!this.selectedEmpleadoId) return;
+    this.cargando = true;
+    this.misDocumentosService.getDocumentosAdmin(this.selectedEmpleadoId).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.documentos = res.data;
+        }
+        this.cargando = false;
+      },
+      error: (err) => {
+        console.error('Error cargando documentos del empleado', err);
+        this.cargando = false;
+        this.toastService.error('Error', 'No se pudieron cargar las boletas del empleado seleccionado.');
+      }
+    });
+  }
+
+  onEmpleadoChange(): void {
+    this.searchTerm = '';
+    this.cargarDocumentosAdmin();
+  }
+
+  descargarPdfAdmin(doc: MiDocumento): void {
+    if (!doc.planilla) {
+      this.toastService.error('Error', 'El documento no tiene planilla asociada para generar PDF.');
+      return;
+    }
+    
+    this.descargandoPdf = true;
+    const mes = doc.planilla.mes;
+    const anio = doc.planilla.anio;
+    const empleadoId = doc.empleado_id;
+
+    const nombreEmp = doc.empleado ? `${doc.empleado.nombre}_${doc.empleado.apellido}` : doc.empleado_id;
+
+    this.boletasService.generarBoletaAdmin(empleadoId, mes, anio).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `boleta_${nombreEmp}_${mes}_${anio}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.descargandoPdf = false;
+        this.toastService.success('Descarga Exitosa', 'La boleta PDF ha sido descargada.');
+      },
+      error: (err) => {
+        console.error('Error generando boleta para admin', err);
+        this.descargandoPdf = false;
+        this.toastService.error('Error de Generación', 'No se pudo descargar la boleta PDF.');
       }
     });
   }

@@ -1,21 +1,42 @@
 <div class="boletas-container">
   <div class="page-title">
-    <h2>MIS DOCUMENTOS</h2>
+    <h2>{{ isEmpleado ? 'MIS DOCUMENTOS' : 'DOCUMENTOS DE EMPLEADOS' }}</h2>
   </div>
 
   <div class="toolbar">
-    <div class="filter-group">
+    <!-- Toolbar para Empleado -->
+    <div class="filter-group" *ngIf="isEmpleado">
       <input type="text" class="form-control" placeholder="Buscar por periodo..." [(ngModel)]="searchTerm" style="min-width: 300px;">
+    </div>
+
+    <!-- Toolbar para Admin/RRHH -->
+    <div class="filter-group" *ngIf="!isEmpleado" style="display: flex; gap: 16px; align-items: center; width: 100%; flex-wrap: wrap;">
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 250px;">
+        <label style="font-size: 13px; font-weight: 600; color: #475569;">Seleccionar Empleado:</label>
+        <select class="form-control" [(ngModel)]="selectedEmpleadoId" (change)="onEmpleadoChange()" style="width: 100%; padding: 8px 12px; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; background-color: white;">
+          <option value="" disabled>Seleccione un empleado...</option>
+          <option *ngFor="let emp of empleados" [value]="emp.id">
+            {{ emp.nombre }} {{ emp.apellido }} (DNI: {{ emp.dni }})
+          </option>
+        </select>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 200px;" *ngIf="selectedEmpleadoId">
+        <label style="font-size: 13px; font-weight: 600; color: #475569;">Buscar Periodo:</label>
+        <input type="text" class="form-control" placeholder="Buscar por periodo..." [(ngModel)]="searchTerm" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #cbd5e1; outline: none;">
+      </div>
     </div>
   </div>
 
   <div class="section-panel">
-    <div class="panel-header-small">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-      </svg>
-      <span>Lista de Documentos</span>
+    <div class="panel-header-small" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span>{{ isEmpleado ? 'Mis Documentos' : 'Historial de Boletas del Empleado' }}</span>
+      </div>
     </div>
 
     <!-- Estado de carga -->
@@ -23,7 +44,12 @@
       Cargando documentos...
     </div>
 
-    <div class="table-responsive" *ngIf="!cargando">
+    <!-- No empleado seleccionado -->
+    <div *ngIf="!cargando && !isEmpleado && !selectedEmpleadoId" style="text-align:center; padding: 40px; color: #64748b; font-size: 14px;">
+      Por favor, selecciona un empleado de la lista para ver sus documentos.
+    </div>
+
+    <div class="table-responsive" *ngIf="!cargando && (isEmpleado || selectedEmpleadoId)">
       <table class="data-table">
         <thead>
           <tr>
@@ -50,25 +76,42 @@
               </span>
             </td>
             <td class="text-center">
-              <div class="action-buttons">
-                <!-- Marcar Visto -->
-                <button class="btn-icon btn-icon-blue"
-                  (click)="marcarVisto(doc)"
-                  [disabled]="doc.estado_firma !== 'pendiente'"
-                  title="Marcar como Visto">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                  </svg>
-                </button>
-                <!-- Firmar -->
-                <button class="btn-icon btn-icon-green"
-                  (click)="abrirModalFirmar(doc)"
-                  [disabled]="doc.estado_firma === 'firmado'"
-                  title="Firmar Documento">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </button>
+              <div class="action-buttons" style="justify-content: center; gap: 8px;">
+                <!-- Acciones para Empleado -->
+                <ng-container *ngIf="isEmpleado">
+                  <!-- Marcar Visto -->
+                  <button class="btn-icon btn-icon-blue"
+                    (click)="marcarVisto(doc)"
+                    [disabled]="doc.estado_firma !== 'pendiente'"
+                    title="Marcar como Visto">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                  <!-- Firmar -->
+                  <button class="btn-icon btn-icon-green"
+                    (click)="abrirModalFirmar(doc)"
+                    [disabled]="doc.estado_firma === 'firmado'"
+                    title="Firmar Documento">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </button>
+                </ng-container>
+
+                <!-- Acciones para Admin/RRHH -->
+                <ng-container *ngIf="!isEmpleado">
+                  <!-- Descargar/Ver PDF -->
+                  <button class="btn-icon btn-icon-blue"
+                    (click)="descargarPdfAdmin(doc)"
+                    [disabled]="descargandoPdf"
+                    title="Descargar Boleta PDF"
+                    style="padding: 6px; display: inline-flex; align-items: center; justify-content: center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </button>
+                </ng-container>
               </div>
             </td>
           </tr>
