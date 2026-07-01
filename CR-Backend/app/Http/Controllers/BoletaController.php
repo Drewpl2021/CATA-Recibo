@@ -4,9 +4,12 @@ use App\Models\Planilla;
 use App\Models\Empleado;
 use App\Models\Descuento;
 use App\Models\Documento;
+use App\Models\User;
 use App\Traits\CalculaConceptosPlanilla;
+use App\Mail\BoletaGenerada;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class BoletaController extends Controller
 {
@@ -71,6 +74,17 @@ class BoletaController extends Controller
             ]);
         }
 
+        // Enviar correo al empleado
+        $user = User::where('empleado_id', $empleado_id)->first();
+        if ($user && $user->email) {
+            Mail::to($user->email)->send(new BoletaGenerada(
+                $empleado->nombre . ' ' . $empleado->apellido,
+                $this->meses[(int)$mes],
+                (int)$anio,
+                $numero_boleta
+            ));
+        }
+
         $data = [
             'empleado'           => $empleado,
             'planilla'           => $planilla,
@@ -116,6 +130,11 @@ class BoletaController extends Controller
                 continue;
             }
 
+            $correlativo = Planilla::where('empleado_id', $empleado->id)
+                ->whereYear('created_at', $anio)
+                ->count();
+            $numero_boleta = 'BOL-' . $anio . '-' . str_pad($correlativo, 4, '0', STR_PAD_LEFT);
+
             $existe = Documento::where('empleado_id', $empleado->id)
                 ->where('planilla_id', $planilla->id)
                 ->where('tipo', 'boleta')
@@ -129,6 +148,18 @@ class BoletaController extends Controller
                     'archivo'      => "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf",
                     'estado_firma' => 'pendiente',
                 ]);
+
+                // Enviar correo al empleado
+                $user = User::where('empleado_id', $empleado->id)->first();
+                if ($user && $user->email) {
+                    Mail::to($user->email)->send(new BoletaGenerada(
+                        $empleado->nombre . ' ' . $empleado->apellido,
+                        $this->meses[(int)$mes],
+                        (int)$anio,
+                        $numero_boleta
+                    ));
+                }
+
                 $generadas++;
             } else {
                 $omitidas++;

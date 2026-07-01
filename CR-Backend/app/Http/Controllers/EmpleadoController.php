@@ -28,7 +28,7 @@ class EmpleadoController extends Controller
             'estado'             => 'nullable|string|max:20',
             'sistema_pensiones'  => 'nullable|in:AFP,ONP',
             'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo|required_if:sistema_pensiones,AFP',
-            'cuspp'              => 'nullable|string|size:11',
+            'cuspp'              => 'nullable|regex:/^[0-9]{11}$/|required_if:sistema_pensiones,AFP',
             'entidad_financiera' => 'nullable|string|max:100',
             'numero_cuenta'      => 'nullable|string|max:50',
             'tiene_hijos'        => 'nullable|boolean',
@@ -36,7 +36,6 @@ class EmpleadoController extends Controller
             'tipo_contrato'      => 'nullable|in:por_hora,necesidad_servicio,indeterminado',
             'forma_pago'         => 'nullable|in:banco,efectivo,otro',
             'sede_id'            => 'nullable|uuid|exists:sedes,id',
-            // Campos para crear usuario automáticamente
             'email'              => 'required|email|unique:users,email',
             'rol_id'             => 'required|uuid|exists:roles,id',
         ]);
@@ -82,7 +81,7 @@ class EmpleadoController extends Controller
             'estado'             => 'nullable|string|max:20',
             'sistema_pensiones'  => 'sometimes|in:AFP,ONP',
             'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo',
-            'cuspp'              => 'nullable|string|size:11',
+            'cuspp'              => 'nullable|regex:/^[0-9]{11}$/|required_if:sistema_pensiones,AFP',
             'entidad_financiera' => 'nullable|string|max:100',
             'numero_cuenta'      => 'nullable|string|max:50',
             'tiene_hijos'        => 'nullable|boolean',
