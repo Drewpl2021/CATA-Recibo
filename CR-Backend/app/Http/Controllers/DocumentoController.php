@@ -10,7 +10,7 @@ class DocumentoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Documento::with(['empleado', 'planilla']);
+        $query = Documento::with('empleado');
 
         if ($request->has('empleado_id'))
             $query->where('empleado_id', $request->empleado_id);
