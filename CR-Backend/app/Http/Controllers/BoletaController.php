@@ -50,8 +50,12 @@ class BoletaController extends Controller
         $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
         $gratificacion      = $this->calcularGratificacion($planilla->sueldo_base, $mes);
         $essalud            = $this->calcularEssalud($planilla->sueldo_base);
+        $renta5ta           = $this->calcularRenta5taCategoria(
+            $planilla->sueldo_base,
+            $planilla->bonificaciones,
+            $mes
+        );
 
-        // Buscar o crear documento
         $documento = Documento::where('empleado_id', $empleado_id)
             ->where('planilla_id', $planilla->id)
             ->where('tipo', 'boleta')
@@ -79,6 +83,7 @@ class BoletaController extends Controller
             'asignacionFamiliar' => $asignacionFamiliar,
             'gratificacion'      => $gratificacion,
             'essalud'            => $essalud,
+            'renta5ta'           => $renta5ta,
             'documento'          => $documento,
         ];
 
