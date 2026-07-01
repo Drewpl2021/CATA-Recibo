@@ -107,16 +107,24 @@ class BoletaController extends Controller
                 ->first();
 
             if (!$planilla) {
-                $omitidas++;
-                continue;
+                // INICIALIZAR LA PLANILLA PARA EL MES (usando el sueldo del contrato)
+                $planilla = Planilla::create([
+                    'empleado_id' => $empleado->id,
+                    'mes' => $mes,
+                    'anio' => $anio,
+                    'sueldo_base' => $empleado->sueldo_base ?? 0,
+                    'bonificaciones' => 0,
+                    'descuentos' => 0,
+                    'total' => $empleado->sueldo_base ?? 0
+                ]);
             }
 
-            $existe = Documento::where('empleado_id', $empleado->id)
+            $existeDocumento = Documento::where('empleado_id', $empleado->id)
                 ->where('planilla_id', $planilla->id)
                 ->where('tipo', 'boleta')
                 ->first();
 
-            if (!$existe) {
+            if (!$existeDocumento) {
                 Documento::create([
                     'empleado_id'  => $empleado->id,
                     'planilla_id'  => $planilla->id,

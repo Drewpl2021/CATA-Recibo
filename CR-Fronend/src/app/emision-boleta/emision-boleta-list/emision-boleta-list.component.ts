@@ -61,6 +61,11 @@ export class EmisionBoletaListComponent implements OnInit {
   generandoPDF = false;
   generandoMasivo = false;
 
+  // Global Period State
+  mesGlobal: number = new Date().getMonth() + 1;
+  anioGlobal: number = new Date().getFullYear();
+  aniosDisponibles: number[] = [];
+
   // Mass emission modal
   showConfirmMasivo = false;
 
@@ -81,6 +86,10 @@ export class EmisionBoletaListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    const currentYear = new Date().getFullYear();
+    for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+      this.aniosDisponibles.push(i);
+    }
     this.formulario = this.getFormularioVacio();
     this.cargarEmpleados();
   }
@@ -89,11 +98,38 @@ export class EmisionBoletaListComponent implements OnInit {
     this.cargandoEmpleados = true;
     this.empleadoService.getEmpleados().subscribe({
       next: (res) => {
-        if (res.success) this.empleados = res.data;
-        this.cargandoEmpleados = false;
+        if (res.success) {
+          this.empleados = res.data;
+          this.cargarEstadoBoletas();
+        } else {
+          this.cargandoEmpleados = false;
+        }
       },
       error: (err) => {
         console.error('Error cargando empleados', err);
+        this.cargandoEmpleados = false;
+      }
+    });
+  }
+
+  onGlobalPeriodChange(): void {
+    this.cargarEstadoBoletas();
+  }
+
+  cargarEstadoBoletas(): void {
+    this.cargandoEmpleados = true;
+    this.planillaService.getPlanillas({ mes: this.mesGlobal, anio: this.anioGlobal }).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.empleadosEditados.clear();
+          res.data.forEach(p => {
+            this.empleadosEditados.add(p.empleado_id);
+          });
+        }
+        this.cargandoEmpleados = false;
+      },
+      error: (err) => {
+        console.error('Error cargando estado de boletas', err);
         this.cargandoEmpleados = false;
       }
     });
@@ -119,8 +155,8 @@ export class EmisionBoletaListComponent implements OnInit {
     this.showModal = true;
     document.body.style.overflow = 'hidden';
     
-    // Cargar la planilla del empleado para el periodo actual
-    this.cargarPlanillaDelEmpleado(empleado.id, this.formulario.mes, this.formulario.anio, empleado);
+    // Cargar la planilla del empleado para el periodo GLOBAL seleccionado
+    this.cargarPlanillaDelEmpleado(empleado.id, this.mesGlobal, this.anioGlobal, empleado);
   }
 
   cargarPlanillaDelEmpleado(empleadoId: string, mes: number, anio: number, empleado: Empleado): void {
@@ -368,6 +404,14 @@ export class EmisionBoletaListComponent implements OnInit {
     });
   }
 
+  aplicarBonosMasivos(): void {
+    // Solo un botón dummy por ahora para la demo
+    this.toastService.info(
+      'Función en desarrollo',
+      'La asignación masiva de Gratificación y CTS se implementará en la próxima versión del sistema.'
+    );
+  }
+
   emitirTodasLasBoletas(): void {
     if (this.filteredEmpleados.length === 0) {
       this.toastService.warning('Aviso', 'No hay empleados en la lista para emitir boletas.');
@@ -383,11 +427,12 @@ export class EmisionBoletaListComponent implements OnInit {
   confirmarEmisionMasiva(): void {
     this.showConfirmMasivo = false;
     this.generandoMasivo = true;
-    const f = this.formulario;
-    this.boletasService.generarMasivo(f.mes, f.anio).subscribe({
+    this.boletasService.generarMasivo(this.mesGlobal, this.anioGlobal).subscribe({
       next: (res) => {
         this.toastService.success('Proceso completado', `${res.message}<br/>Generadas: ${res.generadas}<br/>Omitidas (sin planilla): ${res.omitidas}`);
         this.generandoMasivo = false;
+        // Recargar la lista para que aparezca la tabla
+        this.cargarEstadoBoletas();
       },
       error: (err) => {
         console.error('Error generando masivo', err);
@@ -409,8 +454,8 @@ export class EmisionBoletaListComponent implements OnInit {
       essalud9: null, sctr: null, adelanto: null,
       ciudad: 'CATA',
       fechaEmision: now.toLocaleDateString('es-PE'),
-      mes: now.getMonth() + 1,
-      anio: now.getFullYear()
+      mes: this.mesGlobal,
+      anio: this.anioGlobal
     };
   }
 }

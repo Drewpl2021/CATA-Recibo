@@ -14,6 +14,7 @@ export const routes: Routes = [
       { path: '', redirectTo: 'mis-boletas', pathMatch: 'full' },
       { path: 'mis-boletas', loadComponent: () => import('./boletas/mis-boletas/mis-boletas.component').then(m => m.MisBoletasComponent) },
       { path: 'documentos', loadComponent: () => import('./documentos/documentos-list/documentos-list.component').then(m => m.DocumentosListComponent) },
+      { path: 'historial-boletas', loadComponent: () => import('./documentos/historial-boletas/historial-boletas.component').then(m => m.HistorialBoletasComponent) },
       { path: 'empleados', loadComponent: () => import('./empleados/empleados-list/empleados-list.component').then(m => m.EmpleadosListComponent) },
       { path: 'empleados/nuevo', loadComponent: () => import('./empleados/empleado-form/empleado-form.component').then(m => m.EmpleadoFormComponent) },
       { path: 'empleados/editar/:id', loadComponent: () => import('./empleados/empleado-form/empleado-form.component').then(m => m.EmpleadoFormComponent) },

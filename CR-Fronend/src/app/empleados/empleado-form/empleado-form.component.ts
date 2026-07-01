@@ -38,6 +38,8 @@ export class EmpleadoFormComponent implements OnInit {
   // Campos de contrato
   sueldo_base: number | null = null;
   sede_id = '';
+  tipo_contrato = '';
+  forma_pago = '';
 
   // Campos de planilla
   sistema_pensiones = 'ONP';
@@ -115,10 +117,26 @@ export class EmpleadoFormComponent implements OnInit {
   cargarCargos(): void {
     this.cargoService.getCargos().subscribe({
       next: (res) => {
-        if (res.success) this.cargosDisponibles = res.data;
+        if (res.success) {
+          this.cargosDisponibles = res.data;
+          // Recalcular esDocente después de cargar (útil en modo ver/editar)
+          this.onCargoChange();
+        }
       },
       error: (err) => console.error('Error cargando cargos', err)
     });
+  }
+
+  get esDocente(): boolean {
+    const cargo = this.cargosDisponibles.find(c => c.id === this.cargo_id);
+    return cargo ? cargo.nombre.toLowerCase().includes('docente') : false;
+  }
+
+  onCargoChange(): void {
+    // Si el cargo ya no es Docente, limpiamos area_id
+    if (!this.esDocente) {
+      this.area_id = '';
+    }
   }
 
   cargarEmpleado(id: string): void {
@@ -138,7 +156,9 @@ export class EmpleadoFormComponent implements OnInit {
           this.direccion = e.direccion || '';
           this.sueldo_base = e.sueldo_base !== undefined ? e.sueldo_base : null;
           this.sede_id = e.sede_id || '';
-          
+          this.tipo_contrato = (e as any).tipo_contrato || '';
+          this.forma_pago = (e as any).forma_pago || '';
+
           this.sistema_pensiones = e.sistema_pensiones || 'ONP';
           this.afp = e.afp || '';
           this.cuspp = e.cuspp || '';
@@ -159,8 +179,12 @@ export class EmpleadoFormComponent implements OnInit {
   }
 
   guardar(): void {
-    if (!this.nombre || !this.apellido || !this.dni || !this.cargo_id || !this.area_id || !this.sede_id || !this.sueldo_base) {
-      this.toastService.warning('Campos Incompletos', 'Por favor, completa los campos obligatorios: Nombre, Apellido, DNI, Cargo, Área, Sede y Sueldo.');
+    if (!this.nombre || !this.apellido || !this.dni || !this.cargo_id || !this.sede_id || !this.sueldo_base) {
+      this.toastService.warning('Campos Incompletos', 'Por favor, completa los campos obligatorios: Nombre, Apellido, DNI, Cargo, Sede y Sueldo.');
+      return;
+    }
+    if (this.esDocente && !this.area_id) {
+      this.toastService.warning('Campos Incompletos', 'El cargo Docente requiere seleccionar un Área.');
       return;
     }
 
@@ -181,7 +205,9 @@ export class EmpleadoFormComponent implements OnInit {
       numero_cuenta: this.numero_cuenta,
       tiene_hijos: this.tiene_hijos,
       sueldo_base: this.sueldo_base,
-      sede_id: this.sede_id
+      sede_id: this.sede_id,
+      tipo_contrato: this.tipo_contrato || null,
+      forma_pago: this.forma_pago || null
     };
 
     this.guardando = true;

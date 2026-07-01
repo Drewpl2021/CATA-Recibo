@@ -72,16 +72,16 @@
         </div>
       </div>
 
-      <!-- Fila 4: Cargo y Área -->
+      <!-- Fila 4: Cargo y Área (Área solo si Cargo es Docente) -->
       <div class="form-row">
         <div class="form-group">
           <label>Cargo <span class="required">*</span></label>
-          <select class="form-control" [(ngModel)]="cargo_id" [disabled]="modo === 'ver'">
+          <select class="form-control" [(ngModel)]="cargo_id" (ngModelChange)="onCargoChange()" [disabled]="modo === 'ver'">
             <option value="">-- Seleccionar Cargo --</option>
             <option *ngFor="let c of cargosDisponibles" [value]="c.id">{{ c.nombre }}</option>
           </select>
         </div>
-        <div class="form-group">
+        <div class="form-group" *ngIf="esDocente">
           <label>Área <span class="required">*</span></label>
           <select class="form-control" [(ngModel)]="area_id" [disabled]="modo === 'ver'">
             <option value="">-- Seleccionar Área --</option>
@@ -117,6 +117,105 @@
             <option value="Activo">Activo</option>
             <option value="Vacaciones">Vacaciones</option>
           </select>
+        </div>
+      </div>
+
+      <!-- Fila 6: Tipo de Contrato y Forma de Pago -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo de Contrato</label>
+          <select class="form-control" [(ngModel)]="tipo_contrato" [disabled]="modo === 'ver'">
+            <option value="">-- Seleccionar --</option>
+            <option value="por_hora">Por Hora</option>
+            <option value="necesidad_servicio">Necesidad de Servicio</option>
+            <option value="indeterminado">Indeterminado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Forma de Pago</label>
+          <select class="form-control" [(ngModel)]="forma_pago" [disabled]="modo === 'ver'">
+            <option value="">-- Seleccionar --</option>
+            <option value="banco">Banco</option>
+            <option value="efectivo">Efectivo</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Sección: Información Previsional -->
+      <div style="margin-top: 24px; border-top: 1px solid #f0f0f0; padding-top: 20px; width: 100%;">
+        <div class="panel-header-small" style="margin-bottom: 16px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          <span>Información Previsional</span>
+        </div>
+
+        <!-- Sistema de Pensiones -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Sistema de Pensiones</label>
+            <select class="form-control" [(ngModel)]="sistema_pensiones" [disabled]="modo === 'ver'">
+              <option value="ONP">ONP</option>
+              <option value="AFP">AFP</option>
+            </select>
+          </div>
+          <div class="form-group" *ngIf="sistema_pensiones === 'AFP'">
+            <label>AFP</label>
+            <select class="form-control" [(ngModel)]="afp" [disabled]="modo === 'ver'">
+              <option value="">-- Seleccionar AFP --</option>
+              <option value="Habitat">Habitat</option>
+              <option value="Integra">Integra</option>
+              <option value="Prima">Prima</option>
+              <option value="Profuturo">Profuturo</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- CUSPP (solo si AFP) -->
+        <div class="form-row" *ngIf="sistema_pensiones === 'AFP'">
+          <div class="form-group">
+            <label>CUSPP</label>
+            <input type="text" class="form-control" placeholder="Cód. Único de Seguro Social" maxlength="11" [(ngModel)]="cuspp" [disabled]="modo === 'ver'">
+          </div>
+          <div class="form-group">
+            <label>¿Tiene Hijos?</label>
+            <select class="form-control" [(ngModel)]="tiene_hijos" [disabled]="modo === 'ver'">
+              <option [ngValue]="false">No</option>
+              <option [ngValue]="true">Sí</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tiene hijos (si es ONP) -->
+        <div class="form-row" *ngIf="sistema_pensiones !== 'AFP'">
+          <div class="form-group">
+            <label>¿Tiene Hijos?</label>
+            <select class="form-control" [(ngModel)]="tiene_hijos" [disabled]="modo === 'ver'">
+              <option [ngValue]="false">No</option>
+              <option [ngValue]="true">Sí</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Datos Bancarios -->
+      <div style="margin-top: 24px; border-top: 1px solid #f0f0f0; padding-top: 20px; width: 100%;">
+        <div class="panel-header-small" style="margin-bottom: 16px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
+          <span>Datos Bancarios</span>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Entidad Financiera</label>
+            <input type="text" class="form-control" placeholder="Ej. BCP, BBVA, Interbank..." [(ngModel)]="entidad_financiera" [disabled]="modo === 'ver'">
+          </div>
+          <div class="form-group">
+            <label>Número de Cuenta</label>
+            <input type="text" class="form-control" placeholder="Ej. 1234567890" maxlength="50" [(ngModel)]="numero_cuenta" [disabled]="modo === 'ver'">
+          </div>
         </div>
       </div>
 
