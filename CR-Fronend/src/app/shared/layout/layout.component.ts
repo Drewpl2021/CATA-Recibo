@@ -84,7 +84,7 @@ export class LayoutComponent implements OnInit {
   }
 
   // Rutas que sí hemos construido en el frontend
-  rutasPermitidas = ['/mis-boletas', '/documentos', '/empleados', '/boletas'];
+  rutasPermitidas = ['/mis-boletas', '/documentos', '/empleados', '/boletas', '/historial-boletas'];
 
   ngOnInit(): void {
     // 1. Cargar menú dinámico
