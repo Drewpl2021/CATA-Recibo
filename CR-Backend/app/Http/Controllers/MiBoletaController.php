@@ -54,20 +54,23 @@ class MiBoletaController extends Controller
             ->count();
         $numero_boleta = 'BOL-' . $anio . '-' . str_pad($correlativo, 4, '0', STR_PAD_LEFT);
 
-        // Cálculos previsionales
         $pension            = $this->calcularDescuentoPension($empleado, $planilla->sueldo_base);
         $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
         $gratificacion      = $this->calcularGratificacion($planilla->sueldo_base, $mes);
         $essalud            = $this->calcularEssalud($planilla->sueldo_base);
+        $renta5ta           = $this->calcularRenta5taCategoria(
+            $planilla->sueldo_base,
+            $planilla->bonificaciones,
+            $mes
+        );
 
-        // Guardar documento si no existe
-        $existe = Documento::where('empleado_id', $empleado_id)
+        $documento = Documento::where('empleado_id', $empleado_id)
             ->where('planilla_id', $planilla->id)
             ->where('tipo', 'boleta')
             ->first();
 
-        if (!$existe) {
-            $existe = Documento::create([
+        if (!$documento) {
+            $documento = Documento::create([
                 'empleado_id'  => $empleado_id,
                 'planilla_id'  => $planilla->id,
                 'tipo'         => 'boleta',
@@ -88,7 +91,8 @@ class MiBoletaController extends Controller
             'asignacionFamiliar' => $asignacionFamiliar,
             'gratificacion'      => $gratificacion,
             'essalud'            => $essalud,
-            'documento'          => $existe,
+            'renta5ta'           => $renta5ta,
+            'documento'          => $documento,
         ];
 
         $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'landscape');

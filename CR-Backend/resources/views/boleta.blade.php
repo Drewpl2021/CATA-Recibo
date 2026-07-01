@@ -12,9 +12,9 @@
 
         body {
             font-family: Arial, sans-serif;
-            font-size: 11px;
+            font-size: 10px;
             color: #222;
-            zoom: 0.75;
+            zoom: 0.68;
         }
 
         .boleta {
@@ -83,7 +83,7 @@
             letter-spacing: 1px;
         }
 
-        .seccion { margin-bottom: 10px; }
+        .seccion { margin-bottom: 4px; }
 
         .seccion-titulo {
             background: #1565C0;
@@ -141,10 +141,11 @@
         }
 
         .firma-section {
-            margin-top: 8px;
+            margin-top: 4px;
             display: table;
             width: 100%;
             page-break-inside: avoid;
+            page-break-before: avoid;
         }
 
         .firma-box {
@@ -191,7 +192,7 @@
         + $gratificacion;
 
     $totalDescuentosManual = (float)$planilla->descuentos;
-    $totalDescuentos = $totalDescuentosManual + $pension['total'];
+    $totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta;
 
     $totalNeto = $totalIngresos - $totalDescuentos;
 @endphp
@@ -305,6 +306,12 @@
             <tr>
                 <td class="label">Otros Descuentos</td>
                 <td class="monto">S/ {{ number_format($totalDescuentosManual, 2) }}</td>
+            </tr>
+            @endif
+            @if($renta5ta > 0)
+            <tr>
+                <td class="label">I.R. 5ta Categoría</td>
+                <td class="monto">S/ {{ number_format($renta5ta, 2) }}</td>
             </tr>
             @endif
             <tr class="fila-subtotal">

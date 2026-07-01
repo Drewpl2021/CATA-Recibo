@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Planilla;
+use App\Models\Empleado;
 use Illuminate\Http\Request;
 
 class PlanillaController extends Controller
@@ -22,15 +23,16 @@ class PlanillaController extends Controller
 
         return response()->json(['success' => true, 'data' => $query->get()]);
     }
+
     public function store(Request $request)
     {
         $request->validate([
-            'empleado_id'   => 'required|exists:empleados,id',
-            'mes'           => 'required|integer|min:1|max:12',
-            'anio'          => 'required|integer|min:2000',
-            'sueldo_base'   => 'required|numeric|min:0',
-            'bonificaciones'=> 'nullable|numeric|min:0',
-            'descuentos'    => 'nullable|numeric|min:0',
+            'empleado_id'    => 'required|exists:empleados,id',
+            'mes'            => 'required|integer|min:1|max:12',
+            'anio'           => 'required|integer|min:2000',
+            'bonificaciones' => 'nullable|numeric|min:0',
+            'descuentos'     => 'nullable|numeric|min:0',
+            'periodo_id'     => 'nullable|uuid|exists:periodos,id',
         ]);
 
         $existe = Planilla::where('empleado_id', $request->empleado_id)
@@ -45,9 +47,24 @@ class PlanillaController extends Controller
             ], 422);
         }
 
-        $data = $request->all();
-        $data['total'] = ($data['sueldo_base'] + ($data['bonificaciones'] ?? 0)) - ($data['descuentos'] ?? 0);
-        $planilla = Planilla::create($data);
+        // Jalar sueldo_base directamente del empleado — no se puede editar
+        $empleado       = Empleado::findOrFail($request->empleado_id);
+        $sueldo_base    = (float) $empleado->sueldo_base;
+        $bonificaciones = (float) ($request->bonificaciones ?? 0);
+        $descuentos     = (float) ($request->descuentos ?? 0);
+        $total          = $sueldo_base + $bonificaciones - $descuentos;
+
+        $planilla = Planilla::create([
+            'empleado_id'    => $request->empleado_id,
+            'mes'            => $request->mes,
+            'anio'           => $request->anio,
+            'periodo_id'     => $request->periodo_id ?? null,
+            'sueldo_base'    => $sueldo_base,
+            'bonificaciones' => $bonificaciones,
+            'descuentos'     => $descuentos,
+            'total'          => $total,
+        ]);
+
         return response()->json(['success' => true, 'data' => $planilla], 201);
     }
 
@@ -61,14 +78,22 @@ class PlanillaController extends Controller
     {
         $planilla = Planilla::findOrFail($id);
         $request->validate([
-            'sueldo_base'   => 'sometimes|numeric|min:0',
-            'bonificaciones'=> 'nullable|numeric|min:0',
-            'descuentos'    => 'nullable|numeric|min:0',
+            'bonificaciones' => 'nullable|numeric|min:0',
+            'descuentos'     => 'nullable|numeric|min:0',
         ]);
 
-        $data = $request->all();
-        $data['total'] = (($data['sueldo_base'] ?? $planilla->sueldo_base) + ($data['bonificaciones'] ?? $planilla->bonificaciones)) - ($data['descuentos'] ?? $planilla->descuentos);
-        $planilla->update($data);
+        // sueldo_base NO se puede editar — siempre viene del empleado
+        $sueldo_base    = (float) $planilla->sueldo_base;
+        $bonificaciones = (float) ($request->bonificaciones ?? $planilla->bonificaciones);
+        $descuentos     = (float) ($request->descuentos ?? $planilla->descuentos);
+        $total          = $sueldo_base + $bonificaciones - $descuentos;
+
+        $planilla->update([
+            'bonificaciones' => $bonificaciones,
+            'descuentos'     => $descuentos,
+            'total'          => $total,
+        ]);
+
         return response()->json(['success' => true, 'data' => $planilla]);
     }
 

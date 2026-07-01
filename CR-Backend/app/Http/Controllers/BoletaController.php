@@ -4,9 +4,12 @@ use App\Models\Planilla;
 use App\Models\Empleado;
 use App\Models\Descuento;
 use App\Models\Documento;
+use App\Models\User;
 use App\Traits\CalculaConceptosPlanilla;
+use App\Mail\BoletaGenerada;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class BoletaController extends Controller
 {
@@ -50,8 +53,12 @@ class BoletaController extends Controller
         $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
         $gratificacion      = $this->calcularGratificacion($planilla->sueldo_base, $mes);
         $essalud            = $this->calcularEssalud($planilla->sueldo_base);
+        $renta5ta           = $this->calcularRenta5taCategoria(
+            $planilla->sueldo_base,
+            $planilla->bonificaciones,
+            $mes
+        );
 
-        // Buscar o crear documento
         $documento = Documento::where('empleado_id', $empleado_id)
             ->where('planilla_id', $planilla->id)
             ->where('tipo', 'boleta')
@@ -67,6 +74,17 @@ class BoletaController extends Controller
             ]);
         }
 
+        // Enviar correo al empleado
+        $user = User::where('empleado_id', $empleado_id)->first();
+        if ($user && $user->email) {
+            Mail::to($user->email)->send(new BoletaGenerada(
+                $empleado->nombre . ' ' . $empleado->apellido,
+                $this->meses[(int)$mes],
+                (int)$anio,
+                $numero_boleta
+            ));
+        }
+
         $data = [
             'empleado'           => $empleado,
             'planilla'           => $planilla,
@@ -79,6 +97,7 @@ class BoletaController extends Controller
             'asignacionFamiliar' => $asignacionFamiliar,
             'gratificacion'      => $gratificacion,
             'essalud'            => $essalud,
+            'renta5ta'           => $renta5ta,
             'documento'          => $documento,
         ];
 
@@ -119,12 +138,17 @@ class BoletaController extends Controller
                 ]);
             }
 
-            $existeDocumento = Documento::where('empleado_id', $empleado->id)
+            $correlativo = Planilla::where('empleado_id', $empleado->id)
+                ->whereYear('created_at', $anio)
+                ->count();
+            $numero_boleta = 'BOL-' . $anio . '-' . str_pad($correlativo, 4, '0', STR_PAD_LEFT);
+
+            $existe = Documento::where('empleado_id', $empleado->id)
                 ->where('planilla_id', $planilla->id)
                 ->where('tipo', 'boleta')
                 ->first();
 
-            if (!$existeDocumento) {
+            if (!$existe) {
                 Documento::create([
                     'empleado_id'  => $empleado->id,
                     'planilla_id'  => $planilla->id,
@@ -132,6 +156,18 @@ class BoletaController extends Controller
                     'archivo'      => "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf",
                     'estado_firma' => 'pendiente',
                 ]);
+
+                // Enviar correo al empleado
+                $user = User::where('empleado_id', $empleado->id)->first();
+                if ($user && $user->email) {
+                    Mail::to($user->email)->send(new BoletaGenerada(
+                        $empleado->nombre . ' ' . $empleado->apellido,
+                        $this->meses[(int)$mes],
+                        (int)$anio,
+                        $numero_boleta
+                    ));
+                }
+
                 $generadas++;
             } else {
                 $omitidas++;
