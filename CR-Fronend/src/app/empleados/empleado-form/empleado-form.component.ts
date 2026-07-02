@@ -96,6 +96,15 @@ export class EmpleadoFormComponent implements OnInit {
     }
   }
 
+  cerrarModal(): void {
+    // Implementación original si existiera, caso contrario vacío
+  }
+
+  onTelefonoInput(event: any): void {
+    const input = event.target.value;
+    this.telefono = input.replace(/[^0-9]/g, '');
+  }
+
   cargarSedes(): void {
     this.sedeService.getSedes().subscribe({
       next: (res) => {

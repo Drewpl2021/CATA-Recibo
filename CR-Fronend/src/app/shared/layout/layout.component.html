@@ -2,14 +2,13 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <div class="brand-logo">
-        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/>
-          <path d="M17 8h4"/><path d="M17 12h4"/><path d="M17 16h4"/>
-        </svg>
-        Colegio <span>Túpac Amaru</span>
-      </div>
+      <a class="brand-logo" routerLink="/inicio/dashboard" title="Ir al Panel Principal" style="cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 12px; color: inherit;">
+        <img src="logo-colegio.png" alt="Logo Colegio Adventista Túpac Amaru" style="height: 46px; width: 46px; object-fit: contain; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); background: transparent; flex-shrink: 0;">
+        <div style="display: flex; flex-direction: column; line-height: 1.2;">
+          <span style="font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap;">Colegio Adventista</span>
+          <span style="font-size: 13px; font-weight: 600; color: #F4B41A; white-space: nowrap;">"Túpac Amaru"</span>
+        </div>
+      </a>
     </div>
 
     <nav class="nav-menu">

@@ -11,7 +11,8 @@ export const routes: Routes = [
     path: 'inicio',
     component: LayoutComponent,
     children: [
-      { path: '', redirectTo: 'mis-boletas', pathMatch: 'full' },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', loadComponent: () => import('./inicio/dashboard/dashboard-view.component').then(m => m.DashboardViewComponent) },
       { path: 'mis-boletas', loadComponent: () => import('./boletas/mis-boletas/mis-boletas.component').then(m => m.MisBoletasComponent) },
       { path: 'documentos', loadComponent: () => import('./documentos/documentos-list/documentos-list.component').then(m => m.DocumentosListComponent) },
       { path: 'historial-boletas', loadComponent: () => import('./documentos/historial-boletas/historial-boletas.component').then(m => m.HistorialBoletasComponent) },

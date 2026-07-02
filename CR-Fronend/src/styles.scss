@@ -80,6 +80,18 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  user-select: none;
+
+  &:hover {
+    opacity: 0.85;
+    transform: scale(1.03);
+  }
+
+  &:active {
+    transform: scale(0.97);
+    opacity: 0.7;
+  }
 }
 
 .brand-logo span {

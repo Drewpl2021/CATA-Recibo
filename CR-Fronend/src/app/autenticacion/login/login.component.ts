@@ -32,7 +32,16 @@ export class LoginComponent {
       next: (res) => {
         this.isLoading = false;
         if (res.success) {
-          this.router.navigate(['/inicio']);
+          const user = this.authService.getUser();
+          let rolName = '';
+          if (typeof user?.rol === 'string') rolName = user.rol;
+          else if (user?.rol && typeof user.rol === 'object') rolName = (user.rol as any).nombre || '';
+          const rol = rolName.toLowerCase();
+          if (rol === 'admin' || rol === 'rrhh') {
+            this.router.navigate(['/inicio/dashboard']);
+          } else {
+            this.router.navigate(['/inicio/mis-boletas']);
+          }
         }
       },
       error: (err) => {

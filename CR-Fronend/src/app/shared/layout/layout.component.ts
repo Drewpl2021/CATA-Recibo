@@ -25,6 +25,7 @@ const ICON_MAP: Record<string, string> = {
   view_module:    `<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>`,
   folder_open:    `<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><polyline points="8 10 12 14 16 10"/>`,
   receipt_long:   `<path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/><path d="M17 8h4"/><path d="M17 12h4"/><path d="M17 16h4"/><path d="M12 8H8"/><path d="M12 12H8"/><path d="M12 16H8"/>`,
+  dashboard:      `<rect x="3" y="3" width="8" height="9" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="12" width="8" height="9" rx="1"/><rect x="3" y="16" width="8" height="5" rx="1"/>`,
   folder_shared:  `<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11a2 2 0 1 0 4 0 2 2 0 0 0-4 0"/><path d="M10 19c0-2.2 1.8-4 4-4s4 1.8 4 4"/>`,
 };
 
@@ -84,7 +85,7 @@ export class LayoutComponent implements OnInit {
   }
 
   // Rutas que sí hemos construido en el frontend
-  rutasPermitidas = ['/mis-boletas', '/documentos', '/empleados', '/boletas', '/historial-boletas'];
+  rutasPermitidas = ['/dashboard', '/mis-boletas', '/documentos', '/empleados', '/boletas', '/historial-boletas'];
 
   ngOnInit(): void {
     // 1. Cargar menú dinámico
