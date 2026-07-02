@@ -192,7 +192,8 @@
         + $gratificacion;
 
     $totalDescuentosManual = (float)$planilla->descuentos;
-    $totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta;
+$totalDescuentosOtros = $descuentos->sum('monto');
+$totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta + $totalDescuentosOtros;
 
     $totalNeto = $totalIngresos - $totalDescuentos;
 @endphp

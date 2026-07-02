@@ -44,6 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('mis-documentos/{id}/visto',  [MisDocumentosController::class, 'visto']);
     Route::post('mis-documentos/{id}/firmar',  [MisDocumentosController::class, 'firmar']);
     Route::get('mis-modulos', [MisModulosController::class, 'index']);
+    Route::put('cambiar-password', [AuthController::class, 'cambiarPassword']);
 
     // Vacaciones — cualquier autenticado puede ver y solicitar
     Route::get('vacaciones',          [VacacionController::class, 'index']);
