@@ -56,7 +56,7 @@ trait CalculaConceptosPlanilla
 
     protected function calcularGratificacion($sueldoBase, $mes): float
     {
-        return in_array((int) $mes, [7, 12]) ? round((float) $sueldoBase, 2) : 0.00;
+        return 0.00;
     }
 
     protected function calcularEssalud($sueldoBase): float

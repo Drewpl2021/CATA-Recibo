@@ -38,6 +38,9 @@ class EmpleadoController extends Controller
             'sede_id'            => 'nullable|uuid|exists:sedes,id',
             'email'              => 'required|email|unique:users,email',
             'rol_id'             => 'required|uuid|exists:roles,id',
+            'nivel_estudios'       => 'nullable|in:primaria,secundaria,tecnico,universitario,maestria,doctorado',
+            'especialidad'         => 'nullable|string|max:150',
+            'institucion_estudios' => 'nullable|string|max:150',
         ]);
 
         // Crear empleado
@@ -89,6 +92,9 @@ class EmpleadoController extends Controller
             'tipo_contrato'      => 'nullable|in:por_hora,necesidad_servicio,indeterminado',
             'forma_pago'         => 'nullable|in:banco,efectivo,otro',
             'sede_id'            => 'nullable|uuid|exists:sedes,id',
+            'nivel_estudios'       => 'nullable|in:primaria,secundaria,tecnico,universitario,maestria,doctorado',
+            'especialidad'         => 'nullable|string|max:150',
+            'institucion_estudios' => 'nullable|string|max:150',
         ]);
 
         $empleado->update($request->except(['email', 'rol_id']));

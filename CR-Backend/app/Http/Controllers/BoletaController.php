@@ -49,11 +49,16 @@ class BoletaController extends Controller
 
         $archivo = "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf";
 
-        $pension            = $this->calcularDescuentoPension($empleado, $planilla->sueldo_base);
+        // Base afecta a AFP/ONP/ESSALUD = sueldo_base + asignación familiar
+        // (confirmado contra boleta física — la gratificación NO entra aquí,
+        // está exonerada por Ley 29351/30334)
         $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
-        $gratificacion      = $this->calcularGratificacion($planilla->sueldo_base, $mes);
-        $essalud            = $this->calcularEssalud($planilla->sueldo_base);
-        $renta5ta           = $this->calcularRenta5taCategoria(
+        $baseAfecta         = (float) $planilla->sueldo_base + $asignacionFamiliar;
+
+        $pension       = $this->calcularDescuentoPension($empleado, $baseAfecta);
+        $gratificacion = $this->calcularGratificacion($planilla->sueldo_base, $mes);
+        $essalud       = $this->calcularEssalud($baseAfecta);
+        $renta5ta      = $this->calcularRenta5taCategoria(
             $planilla->sueldo_base,
             $planilla->bonificaciones,
             $mes
