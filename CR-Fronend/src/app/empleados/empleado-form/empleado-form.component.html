@@ -60,7 +60,7 @@
         </div>
         <div class="form-group">
           <label>Teléfono / Celular</label>
-          <input type="text" class="form-control" placeholder="Ej. 987654321" [(ngModel)]="telefono" [disabled]="modo === 'ver'">
+          <input type="tel" class="form-control" placeholder="Ej. 987654321" [(ngModel)]="telefono" [disabled]="modo === 'ver'" pattern="[0-9]*" maxlength="15" (input)="onTelefonoInput($event)">
         </div>
       </div>
 

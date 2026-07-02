@@ -316,7 +316,6 @@ export class EmisionBoletaListComponent implements OnInit {
     ].reduce((sum: number, v) => sum + (v ? Number(v) : 0), 0);
 
     const total_descuentos = [
-      this.formulario.ir5taCategoria,
       this.formulario.descuentoAlimentacion,
       this.formulario.descuentoBazar,
       this.formulario.descuentoAutorizadoDiezmo,

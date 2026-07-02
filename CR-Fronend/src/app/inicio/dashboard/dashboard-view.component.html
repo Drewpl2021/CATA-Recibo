@@ -1,118 +1,184 @@
-<div class="page-title">
-  <div>
-    <h1>¡Buenos días, Carlos!</h1>
-    <p>Aquí tienes un resumen de tus documentos laborales.</p>
-  </div>
-  <button class="btn-primary">
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" stroke-width="2"><path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/>
-      <path d="M17 8h4"/><path d="M17 12h4"/><path d="M17 16h4"/></svg>
-    Firmar Pendientes (2)
-  </button>
-</div>
+<div class="dashboard-wrapper">
 
-<!-- Metrics Grid -->
-<div class="metrics-grid">
-  <div class="metric-card">
-    <div class="metric-info">
-      <h3>Documentos Pendientes</h3>
-      <div class="metric-value">2</div>
-      <div class="metric-trend trend-neutral">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/></svg>
-        Requieren tu firma
+  <!-- ══ HEADER ═══════════════════════════════════════════════════════ -->
+  <div class="dash-header">
+    <div>
+      <h1 class="dash-title">Panel de Control — RRHH</h1>
+      <p class="dash-subtitle">{{ fechaHoy | titlecase }} &nbsp;·&nbsp; Resumen general del personal educativo</p>
+    </div>
+    <div class="header-badge">
+      <span class="badge-dot"></span>
+      Sistema Activo
+    </div>
+  </div>
+
+  <!-- ══ KPIs ════════════════════════════════════════════════════════ -->
+  <div class="kpi-grid">
+    <div class="kpi-card" *ngFor="let k of kpis">
+      <div class="kpi-icon-wrap" [style.background]="k.bg">
+        <!-- Empleados -->
+        <svg *ngIf="k.icon === 'people'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" [attr.stroke]="k.color" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <!-- Nómina -->
+        <svg *ngIf="k.icon === 'money'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" [attr.stroke]="k.color" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <!-- Boletas -->
+        <svg *ngIf="k.icon === 'file'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" [attr.stroke]="k.color" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <!-- Warning -->
+        <svg *ngIf="k.icon === 'warning'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" [attr.stroke]="k.color" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">{{ k.label }}</span>
+        <span class="kpi-value" [style.color]="k.color">{{ k.value }}</span>
+        <span class="kpi-sub">{{ k.sub }}</span>
       </div>
     </div>
-    <div class="metric-icon red">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2"><path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/>
-        <path d="M17 8h4"/></svg>
-    </div>
   </div>
 
-  <div class="metric-card">
-    <div class="metric-info">
-      <h3>Último Recibo</h3>
-      <div class="metric-value">Marzo</div>
-      <div class="metric-trend trend-up">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-          <polyline points="16 7 22 7 22 13"/></svg>
-        Disponible hace 3 días
+  <!-- ══ FILA 1: Barras + Dona + Radial ══════════════════════════════ -->
+  <div class="charts-row">
+
+    <!-- Remuneración por Área -->
+    <div class="chart-card wide">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">Remuneración por Área</h3>
+          <p class="card-desc">Distribución mensual del presupuesto en nómina</p>
+        </div>
+        <span class="chip chip-blue">Julio 2026</span>
+      </div>
+      <apx-chart
+        [series]="barChartSeries"
+        [chart]="barChartOptions"
+        [xaxis]="barChartXaxis"
+        [yaxis]="barChartYaxis"
+        [plotOptions]="barChartPlot"
+        [dataLabels]="barChartDataLabels"
+        [colors]="barChartColors"
+        [grid]="barChartGrid"
+        [tooltip]="barChartTooltip"
+        [fill]="barChartFill">
+      </apx-chart>
+    </div>
+
+    <!-- Distribución por Sexo -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">Distribución por Sexo</h3>
+          <p class="card-desc">Total de personal activo</p>
+        </div>
+      </div>
+      <apx-chart
+        [series]="donutSeries"
+        [chart]="donutChart"
+        [labels]="donutLabels"
+        [colors]="donutColors"
+        [legend]="donutLegend"
+        [dataLabels]="donutDataLabels"
+        [responsive]="donutResponsive">
+      </apx-chart>
+    </div>
+
+    <!-- Nivel Educativo (Radial) -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">Distribución por Nivel</h3>
+          <p class="card-desc">Inicial · Primaria · Secundaria</p>
+        </div>
+      </div>
+      <apx-chart
+        [series]="nivelSeries"
+        [chart]="nivelChart"
+        [labels]="nivelLabels"
+        [colors]="nivelColors"
+        [plotOptions]="nivelPlot">
+      </apx-chart>
+    </div>
+
+  </div>
+
+  <!-- ══ FILA 2: Línea de Tendencia + Tipo Contrato + Tabla ══════════ -->
+  <div class="charts-row-2">
+
+    <!-- Tendencia de nómina -->
+    <div class="chart-card trend-card">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">Tendencia de Nómina 2026</h3>
+          <p class="card-desc">Evolución del gasto en planillas por mes</p>
+        </div>
+        <div class="trend-stat">
+          <span class="trend-up">▲ 1.7%</span>
+          <span class="trend-label">vs mes anterior</span>
+        </div>
+      </div>
+      <apx-chart
+        [series]="lineNominaSeries"
+        [chart]="lineNominaChart"
+        [xaxis]="lineNominaXaxis"
+        [yaxis]="lineNominaYaxis"
+        [colors]="lineNominaColors"
+        [stroke]="lineNominaStroke"
+        [fill]="lineNominaFill"
+        [dataLabels]="lineNominaDataLabels"
+        [grid]="lineNominaGrid"
+        [tooltip]="lineNominaTooltip">
+      </apx-chart>
+    </div>
+
+    <!-- Tipo de Contrato -->
+    <div class="chart-card">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">Tipo de Contrato</h3>
+          <p class="card-desc">Modalidades de vínculo laboral</p>
+        </div>
+      </div>
+      <apx-chart
+        [series]="pieContrato"
+        [chart]="pieContratoChart"
+        [labels]="pieContratoLabels"
+        [colors]="pieContratoColors"
+        [legend]="pieLegend">
+      </apx-chart>
+    </div>
+
+    <!-- Tabla: Vencimientos de Contratos -->
+    <div class="chart-card vencimientos-card">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">Contratos por Vencer</h3>
+          <p class="card-desc">Próximos 60 días</p>
+        </div>
+        <button class="btn-ver-todos">Ver todos</button>
+      </div>
+
+      <div class="table-scroll">
+        <table class="venc-table">
+          <thead>
+            <tr>
+              <th>EMPLEADO</th>
+              <th>CARGO</th>
+              <th>VENCE</th>
+              <th>ESTADO</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let v of vencimientos">
+              <td class="emp-name">{{ v.nombre }}</td>
+              <td class="emp-cargo">{{ v.cargo }}</td>
+              <td class="emp-fecha">{{ v.fecha }}</td>
+              <td>
+                <span class="urgencia-badge" [ngClass]="v.urgencia">
+                  {{ v.urgencia === 'urgente' ? '🔴 Urgente' : v.urgencia === 'proximo' ? '🟡 Próximo' : '🟢 Normal' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
-    <div class="metric-icon blue">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-        <polyline points="14 2 14 8 20 8"/></svg>
-    </div>
+
   </div>
 
-  <div class="metric-card">
-    <div class="metric-info">
-      <h3>Días de Vacaciones</h3>
-      <div class="metric-value">14</div>
-      <div class="metric-trend">Disponibles para 2026</div>
-    </div>
-    <div class="metric-icon green">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
-        <line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/>
-        <line x1="3" x2="21" y1="10" y2="10"/></svg>
-    </div>
-  </div>
-</div>
-
-<!-- Documents Table -->
-<div class="section-panel">
-  <div class="panel-header">
-    <h2>Documentos Recientes</h2>
-    <button class="filter-btn">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-      Filtrar
-    </button>
-  </div>
-
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Tipo de Documento</th>
-        <th>Período</th>
-        <th>Fecha de Emisión</th>
-        <th>Estado</th>
-        <th style="text-align: right;">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let doc of recentDocs">
-        <td>
-          <div class="doc-name">
-            <svg class="doc-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-              <polyline points="14 2 14 8 20 8"/></svg>
-            {{ doc.tipo }}
-          </div>
-        </td>
-        <td>{{ doc.periodo }}</td>
-        <td>{{ doc.fecha }}</td>
-        <td>
-          <span class="status-badge" [class.status-pending]="doc.estado === 'pending'" [class.status-signed]="doc.estado === 'signed'">
-            {{ doc.estado === 'pending' ? 'Pendiente de Firma' : 'Firmado' }}
-          </span>
-        </td>
-        <td>
-          <div class="action-btns" style="justify-content: flex-end;">
-            <button class="btn-secondary">Ver</button>
-            <button *ngIf="doc.estado === 'pending'" class="btn-sign">Firmar</button>
-            <button *ngIf="doc.estado === 'signed'" class="btn-secondary" style="padding: 6px;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-            </button>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
 </div>
