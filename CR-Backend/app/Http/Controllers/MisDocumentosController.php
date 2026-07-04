@@ -4,6 +4,7 @@ use App\Models\Documento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 
 class MisDocumentosController extends Controller
 {
@@ -52,13 +53,33 @@ class MisDocumentosController extends Controller
 
         $user        = $request->user();
         $empleado_id = $user->empleado_id;
+        $intentosKey = 'intentos_firma_' . $user->id;
+        $intentos    = Cache::get($intentosKey, 0);
 
         if (!Hash::check($request->password, $user->password)) {
+            $intentos++;
+            Cache::put($intentosKey, $intentos, now()->addMinutes(15));
+
+            if ($intentos >= 3) {
+                // Cierra la sesión tras el tercer intento fallido
+                $user->tokens()->delete();
+                Cache::forget($intentosKey);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Se superó el límite de 3 intentos. Su sesión ha sido cerrada.'
+                ], 403);
+            }
+
+            $intentosRestantes = 3 - $intentos;
             return response()->json([
                 'success' => false,
-                'message' => 'Contraseña incorrecta. No se pudo firmar el documento.'
+                'message' => "Contraseña incorrecta. Le quedan {$intentosRestantes} intento(s).",
             ], 401);
         }
+
+        // Contraseña correcta: reinicia el contador
+        Cache::forget($intentosKey);
 
         $documento = Documento::where('id', $id)
             ->where('empleado_id', $empleado_id)
@@ -87,4 +108,5 @@ class MisDocumentosController extends Controller
             'data'    => $documento
         ]);
     }
+    
 }
