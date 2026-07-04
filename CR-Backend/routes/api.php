@@ -21,6 +21,7 @@ use App\Http\Controllers\SedeController;
 use App\Http\Controllers\MisModulosController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ModuloPadreController;
+use App\Http\Controllers\ModuloController;
 
 // Preflight CORS
 Route::options('{any}', function () {
@@ -54,8 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Boleta individual — cualquier autenticado con empleado vinculado
     Route::get('boleta/{empleado_id}/{mes}/{anio}', [BoletaController::class, 'generar']);
 
-    // ── Solo admin/rrhh ───────────────────────────────
-    Route::middleware('rol:admin,rrhh')->group(function () {
+    // ── Solo RRHH ───────────────────────────────
+    Route::middleware('rol:rrhh')->group(function () {
         
         Route::apiResource('users', UserController::class)->except(['store']);
         Route::post('empleados/{id}/firma', [EmpleadoController::class, 'subirFirma']);
@@ -75,11 +76,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('vacaciones/{id}', [VacacionController::class, 'destroy']);
 
         Route::post('boletas/generar-masivo', [BoletaController::class, 'generarMasivo']);
-    });
 
-    // ── Solo admin (Configuración avanzada) ───────────
-    Route::middleware('rol:admin')->group(function () {
+        // Configuración de módulos y roles
         Route::apiResource('modulos-padre', ModuloPadreController::class);
+        Route::apiResource('modulos', ModuloController::class);
+        Route::post('modulos/{id}/roles', [ModuloController::class, 'asignarRoles']);
     });
 
 });
