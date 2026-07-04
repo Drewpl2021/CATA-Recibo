@@ -21,7 +21,7 @@ class EmpleadoController extends Controller
             'nombre'             => 'required|string|max:100',
             'apellido'           => 'required|string|max:100',
             'cargo_id'           => 'required|uuid|exists:cargos,id',
-            'area_id'            => 'required|uuid|exists:areas,id',
+            'area_id'            => 'nullable|uuid|exists:areas,id',
             'telefono'           => 'nullable|regex:/^[0-9]+$/|max:15',
             'direccion'          => 'nullable|string|max:255',
             'fecha_ingreso'      => 'required|date|before_or_equal:today',
@@ -41,6 +41,9 @@ class EmpleadoController extends Controller
             'nivel_estudios'       => 'nullable|in:primaria,secundaria,tecnico,universitario,maestria,doctorado',
             'especialidad'         => 'nullable|string|max:150',
             'institucion_estudios' => 'nullable|string|max:150',
+            'contacto_emergencia_nombre'    => 'nullable|string|max:150',
+            'contacto_emergencia_telefono'  => 'nullable|regex:/^[0-9]+$/|max:15',
+            'fecha_nacimiento'              => 'nullable|date|before:today',
         ]);
 
         // Crear empleado
@@ -77,7 +80,7 @@ class EmpleadoController extends Controller
             'nombre'             => 'sometimes|string|max:100',
             'apellido'           => 'sometimes|string|max:100',
             'cargo_id'           => 'sometimes|uuid|exists:cargos,id',
-            'area_id'            => 'sometimes|uuid|exists:areas,id',
+            'area_id'            => 'nullable|uuid|exists:areas,id',
             'telefono'           => 'nullable|regex:/^[0-9]+$/|max:15',
             'direccion'          => 'nullable|string|max:255',
             'fecha_ingreso'      => 'sometimes|date|before_or_equal:today',
@@ -95,6 +98,9 @@ class EmpleadoController extends Controller
             'nivel_estudios'       => 'nullable|in:primaria,secundaria,tecnico,universitario,maestria,doctorado',
             'especialidad'         => 'nullable|string|max:150',
             'institucion_estudios' => 'nullable|string|max:150',
+            'contacto_emergencia_nombre'    => 'nullable|string|max:150',
+            'contacto_emergencia_telefono'  => 'nullable|regex:/^[0-9]+$/|max:15',
+            'fecha_nacimiento'              => 'nullable|date|before:today',
         ]);
 
         $empleado->update($request->except(['email', 'rol_id']));

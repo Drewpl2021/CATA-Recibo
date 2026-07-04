@@ -32,6 +32,9 @@ class Empleado extends Model
     'nivel_estudios',
     'especialidad',
     'institucion_estudios',
+    'contacto_emergencia_nombre',
+    'contacto_emergencia_telefono',
+    'fecha_nacimiento',
     ];
     protected static function boot()
     {

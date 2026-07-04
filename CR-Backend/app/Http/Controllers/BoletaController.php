@@ -56,7 +56,7 @@ class BoletaController extends Controller
         $baseAfecta         = (float) $planilla->sueldo_base + $asignacionFamiliar;
 
         $pension       = $this->calcularDescuentoPension($empleado, $baseAfecta);
-        $gratificacion = $this->calcularGratificacion($planilla->sueldo_base, $mes);
+        $gratificacion = $this->calcularGratificacion($empleado, $planilla->sueldo_base, $mes, $anio);
         $essalud       = $this->calcularEssalud($baseAfecta);
         $renta5ta      = $this->calcularRenta5taCategoria(
             $planilla->sueldo_base,
