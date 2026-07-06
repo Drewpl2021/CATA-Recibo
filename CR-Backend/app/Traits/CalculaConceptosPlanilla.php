@@ -54,11 +54,68 @@ trait CalculaConceptosPlanilla
         return $empleado->tiene_hijos ? $this->asignacionFamiliarMonto : 0.00;
     }
 
-    protected function calcularGratificacion($sueldoBase, $mes): float
+    private float $bonificacionExtraordinariaEssalud = 9.00;
+
+    protected function calcularGratificacion($empleado, $sueldoBase, $mes, $anio): array
     {
-        // El administrador de RRHH aplicará la gratificación manualmente o mediante el botón masivo
-        // para poder calcular los proporcionales (ej: si entró recién este mes).
-        return 0.00;
+        $mes  = (int) $mes;
+        $anio = (int) $anio;
+
+        if (!in_array($mes, [7, 12])) {
+            return [
+                'aplica'                    => false,
+                'meses_trabajados'          => 0,
+                'monto_base'                => 0.00,
+                'asignacion_familiar'       => 0.00,
+                'bonificacion_extraordinaria' => 0.00,
+                'total'                     => 0.00,
+            ];
+        }
+
+        $sueldoBase = (float) $sueldoBase;
+
+        if ($mes === 7) {
+            $inicioSemestre = \Carbon\Carbon::create($anio, 1, 1);
+            $finSemestre    = \Carbon\Carbon::create($anio, 6, 30);
+        } else {
+            $inicioSemestre = \Carbon\Carbon::create($anio, 7, 1);
+            $finSemestre    = \Carbon\Carbon::create($anio, 12, 31);
+        }
+
+        $fechaIngreso = \Carbon\Carbon::parse($empleado->fecha_ingreso);
+
+        // Si ingresó después del semestre correspondiente, no le corresponde esta gratificación
+        if ($fechaIngreso->gt($finSemestre)) {
+            return [
+                'aplica'                    => false,
+                'meses_trabajados'          => 0,
+                'monto_base'                => 0.00,
+                'asignacion_familiar'       => 0.00,
+                'bonificacion_extraordinaria' => 0.00,
+                'total'                     => 0.00,
+            ];
+        }
+
+        $inicioEfectivo = $fechaIngreso->gt($inicioSemestre) ? $fechaIngreso : $inicioSemestre;
+
+        $mesesTrabajados = $finSemestre->month - $inicioEfectivo->month + 1;
+        $mesesTrabajados = min(6, max(0, $mesesTrabajados));
+
+        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
+
+        $montoBase               = round(($sueldoBase * $mesesTrabajados) / 6, 2);
+        $asignacionProrrateada   = round(($asignacionFamiliar * $mesesTrabajados) / 6, 2);
+        $subtotal                = $montoBase + $asignacionProrrateada;
+        $bonificacionExtraordinaria = round($subtotal * ($this->bonificacionExtraordinariaEssalud / 100), 2);
+
+        return [
+            'aplica'                    => true,
+            'meses_trabajados'          => $mesesTrabajados,
+            'monto_base'                => $montoBase,
+            'asignacion_familiar'       => $asignacionProrrateada,
+            'bonificacion_extraordinaria' => $bonificacionExtraordinaria,
+            'total'                     => round($subtotal + $bonificacionExtraordinaria, 2),
+        ];
     }
 
     protected function calcularEssalud($sueldoBase): float

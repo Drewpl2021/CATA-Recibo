@@ -189,10 +189,11 @@
     $totalIngresos = (float)$planilla->sueldo_base
         + (float)$planilla->bonificaciones
         + $asignacionFamiliar
-        + $gratificacion;
+        + $gratificacion['total'];
 
     $totalDescuentosManual = (float)$planilla->descuentos;
-    $totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta;
+$totalDescuentosOtros = $descuentos->sum('monto');
+$totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta + $totalDescuentosOtros;
 
     $totalNeto = $totalIngresos - $totalDescuentos;
 @endphp
@@ -272,10 +273,14 @@
                 <td class="label">Asignación Familiar</td>
                 <td class="monto">S/ {{ number_format($asignacionFamiliar, 2) }}</td>
             </tr>
-            @if ($gratificacion > 0)
+            @if ($gratificacion['aplica'])
             <tr>
-                <td class="label">Gratificación ({{ $mes_nombre }})</td>
-                <td class="monto">S/ {{ number_format($gratificacion, 2) }}</td>
+                <td class="label">Gratificación ({{ $mes_nombre }}) — {{ $gratificacion['meses_trabajados'] }}/6 meses</td>
+                <td class="monto">S/ {{ number_format($gratificacion['monto_base'] + $gratificacion['asignacion_familiar'], 2) }}</td>
+            </tr>
+            <tr>
+                <td class="label">Bonificación Extraordinaria (Ley 30334, 9%)</td>
+                <td class="monto">S/ {{ number_format($gratificacion['bonificacion_extraordinaria'], 2) }}</td>
             </tr>
             @endif
             <tr class="fila-subtotal">
