@@ -49,11 +49,16 @@ class BoletaController extends Controller
 
         $archivo = "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf";
 
-        $pension            = $this->calcularDescuentoPension($empleado, $planilla->sueldo_base);
+        // Base afecta a AFP/ONP/ESSALUD = sueldo_base + asignación familiar
+        // (confirmado contra boleta física — la gratificación NO entra aquí,
+        // está exonerada por Ley 29351/30334)
         $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
-        $gratificacion      = $this->calcularGratificacion($planilla->sueldo_base, $mes);
-        $essalud            = $this->calcularEssalud($planilla->sueldo_base);
-        $renta5ta           = $this->calcularRenta5taCategoria(
+        $baseAfecta         = (float) $planilla->sueldo_base + $asignacionFamiliar;
+
+        $pension       = $this->calcularDescuentoPension($empleado, $baseAfecta);
+        $gratificacion = $this->calcularGratificacion($empleado, $planilla->sueldo_base, $mes, $anio);
+        $essalud       = $this->calcularEssalud($baseAfecta);
+        $renta5ta      = $this->calcularRenta5taCategoria(
             $planilla->sueldo_base,
             $planilla->bonificaciones,
             $mes
@@ -126,16 +131,8 @@ class BoletaController extends Controller
                 ->first();
 
             if (!$planilla) {
-                // INICIALIZAR LA PLANILLA PARA EL MES (usando el sueldo del contrato)
-                $planilla = Planilla::create([
-                    'empleado_id' => $empleado->id,
-                    'mes' => $mes,
-                    'anio' => $anio,
-                    'sueldo_base' => $empleado->sueldo_base ?? 0,
-                    'bonificaciones' => 0,
-                    'descuentos' => 0,
-                    'total' => $empleado->sueldo_base ?? 0
-                ]);
+                $omitidas++;
+                continue;
             }
 
             $correlativo = Planilla::where('empleado_id', $empleado->id)

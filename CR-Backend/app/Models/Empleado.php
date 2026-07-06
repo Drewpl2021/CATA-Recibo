@@ -29,7 +29,13 @@ class Empleado extends Model
     'forma_pago',
     'sede_id',
     'firma_imagen',
-];
+    'nivel_estudios',
+    'especialidad',
+    'institucion_estudios',
+    'contacto_emergencia_nombre',
+    'contacto_emergencia_telefono',
+    'fecha_nacimiento',
+    ];
     protected static function boot()
     {
         parent::boot();
