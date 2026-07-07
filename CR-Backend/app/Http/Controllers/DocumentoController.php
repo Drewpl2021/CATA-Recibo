@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class DocumentoController extends Controller
 {
-    public function index(Request $request)
+        public function index(Request $request)
     {
         $query = Documento::with('empleado');
 
@@ -19,7 +19,7 @@ class DocumentoController extends Controller
             $query->where('tipo', $request->tipo);
 
         $rolNombre = $request->user()->rol?->nombre;
-        if ($rolNombre !== 'admin') {
+        if ($rolNombre !== 'rrhh') {
             $query->where('estado_registro', 'activo');
         }
 
@@ -30,7 +30,7 @@ class DocumentoController extends Controller
     {
         $request->validate([
             'empleado_id' => 'required|exists:empleados,id',
-            'tipo'        => 'required|string|max:50',
+            'tipo' => 'required|in:boleta,contrato,cts,vacaciones_truncas,comprobante_transferencia',
             'archivo'     => 'required|string|max:255',
             'firmado_por' => 'nullable|string',
         ]);
@@ -55,7 +55,7 @@ class DocumentoController extends Controller
         $documento = Documento::findOrFail($id);
 
         $request->validate([
-            'tipo'        => 'sometimes|string|max:50',
+            'tipo' => 'sometimes|in:boleta,contrato,cts,vacaciones_truncas,comprobante_transferencia',
             'archivo'     => 'sometimes|string|max:255',
             'firmado_por' => 'nullable|string',
         ]);
