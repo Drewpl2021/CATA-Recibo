@@ -22,6 +22,7 @@ use App\Http\Controllers\MisModulosController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ModuloPadreController;
 use App\Http\Controllers\ModuloController;
+use App\Http\Controllers\ContratoController;
 
 // Preflight CORS
 Route::options('{any}', function () {
@@ -57,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Solo RRHH ───────────────────────────────
     Route::middleware('rol:rrhh')->group(function () {
+        Route::apiResource('contratos', ContratoController::class);
         
         Route::apiResource('users', UserController::class)->except(['store']);
         Route::post('empleados/{id}/firma', [EmpleadoController::class, 'subirFirma']);
