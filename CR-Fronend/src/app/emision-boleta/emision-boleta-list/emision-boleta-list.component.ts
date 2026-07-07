@@ -165,7 +165,7 @@ export class EmisionBoletaListComponent implements OnInit {
         if (res.success && res.data.length > 0) {
           this.planillaActual = res.data[0];
           // Rellenar formulario con los montos guardados
-          this.formulario.remuneracionBasica = this.planillaActual.sueldo_base;
+          this.formulario.remuneracionBasica = this.planillaActual.sueldo_base ?? null;
           this.formulario.bonificacion = this.planillaActual.bonificaciones;
           this.formulario.descuentoOtros = this.planillaActual.descuentos;
 
