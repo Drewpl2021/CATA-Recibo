@@ -1,0 +1,227 @@
+<div class="form-page">
+
+  <!-- Header -->
+  <div class="form-header">
+    <button class="btn-back" (click)="cancelar()">
+      <span class="material-icons">arrow_back</span>
+    </button>
+    <div class="header-icon">
+      <span class="material-icons">{{ modoEdicion ? 'edit' : 'add_circle' }}</span>
+    </div>
+    <div>
+      <h1 class="form-title">{{ modoEdicion ? 'Editar Planilla' : 'Nueva Planilla' }}</h1>
+      <p class="form-subtitle">{{ modoEdicion ? 'Modifica las bonificaciones y descuentos' : 'Registra la planilla mensual de un empleado' }}</p>
+    </div>
+  </div>
+
+  <!-- Estado de carga -->
+  <div class="loading-state" *ngIf="cargando">
+    <div class="spinner"></div>
+    <p>Cargando datos...</p>
+  </div>
+
+  <div class="form-layout" *ngIf="!cargando">
+
+    <!-- Columna izquierda: formulario -->
+    <div class="form-card">
+
+      <!-- Sección: Datos del periodo -->
+      <div class="form-section">
+        <div class="section-label">
+          <span class="material-icons">calendar_month</span>
+          Periodo
+        </div>
+
+        <div class="fields-row">
+          <div class="field-group">
+            <label class="field-label">Mes <span class="required">*</span></label>
+            <select class="field-select" [(ngModel)]="planilla.mes" [disabled]="modoEdicion">
+              <option *ngFor="let m of meses" [value]="m.num">{{ m.nombre }}</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Año <span class="required">*</span></label>
+            <select class="field-select" [(ngModel)]="planilla.anio" [disabled]="modoEdicion">
+              <option *ngFor="let a of aniosDisponibles" [value]="a">{{ a }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Empleado -->
+      <div class="form-section">
+        <div class="section-label">
+          <span class="material-icons">person</span>
+          Empleado
+        </div>
+
+        <div class="field-group full-width">
+          <label class="field-label">Seleccionar empleado <span class="required">*</span></label>
+          <select
+            class="field-select"
+            [(ngModel)]="planilla.empleado_id"
+            (change)="onEmpleadoChange()"
+            [disabled]="modoEdicion"
+          >
+            <option value="" disabled>-- Selecciona un empleado --</option>
+            <option *ngFor="let e of empleados" [value]="e.id">
+              {{ e.apellido + ', ' + e.nombre }} — {{ e.dni }}
+            </option>
+          </select>
+          <p class="field-hint" *ngIf="modoEdicion">El empleado no puede modificarse una vez creada la planilla.</p>
+        </div>
+
+        <!-- Chip de info del empleado -->
+        <div class="empleado-chip" *ngIf="empleadoSeleccionado">
+          <div class="chip-avatar">{{ empleadoSeleccionado.nombre[0] }}{{ empleadoSeleccionado.apellido[0] }}</div>
+          <div class="chip-info">
+            <span class="chip-name">{{ empleadoSeleccionado.nombre }} {{ empleadoSeleccionado.apellido }}</span>
+            <span class="chip-meta">{{ empleadoSeleccionado.cargo?.nombre || 'Sin cargo' }} · {{ empleadoSeleccionado.area?.nombre || 'Sin área' }}</span>
+          </div>
+          <div class="chip-sueldo">
+            <span class="chip-sueldo-label">Sueldo base</span>
+            <span class="chip-sueldo-valor">S/ {{ empleadoSeleccionado.sueldo_base | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Conceptos -->
+      <div class="form-section">
+        <div class="section-label">
+          <span class="material-icons">attach_money</span>
+          Conceptos de la planilla
+        </div>
+
+        <!-- Sueldo base (solo lectura) -->
+        <div class="concept-row readonly">
+          <div class="concept-info">
+            <span class="material-icons concept-icon readonly-icon">lock</span>
+            <div>
+              <span class="concept-name">Sueldo Base</span>
+              <span class="concept-desc">Obtenido automáticamente del registro del empleado</span>
+            </div>
+          </div>
+          <span class="concept-amount readonly-amount">S/ {{ sueldoBaseEstimado | number:'1.2-2' }}</span>
+        </div>
+
+        <!-- Bonificaciones -->
+        <div class="concept-row">
+          <div class="concept-info">
+            <span class="material-icons concept-icon pos-icon">add_circle</span>
+            <div>
+              <span class="concept-name">Bonificaciones</span>
+              <span class="concept-desc">Bonificaciones generales del periodo (gratificaciones, extras, etc.)</span>
+            </div>
+          </div>
+          <div class="amount-input-wrapper">
+            <span class="currency-prefix">S/</span>
+            <input
+              type="number"
+              class="amount-input"
+              [(ngModel)]="planilla.bonificaciones"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+            >
+          </div>
+        </div>
+
+        <!-- Descuentos -->
+        <div class="concept-row">
+          <div class="concept-info">
+            <span class="material-icons concept-icon neg-icon">remove_circle</span>
+            <div>
+              <span class="concept-name">Descuentos</span>
+              <span class="concept-desc">Descuentos generales del periodo (aplica sobre el total de la planilla)</span>
+            </div>
+          </div>
+          <div class="amount-input-wrapper">
+            <span class="currency-prefix">S/</span>
+            <input
+              type="number"
+              class="amount-input neg-input"
+              [(ngModel)]="planilla.descuentos"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+            >
+          </div>
+        </div>
+
+        <div class="info-box">
+          <span class="material-icons">info</span>
+          Los descuentos detallados (AFP/ONP, adelantos, diezmo, etc.) se gestionan en el módulo
+          <strong>Descuentos</strong> y se aplican automáticamente al generar la boleta.
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="form-actions">
+        <button class="btn-cancel" (click)="cancelar()" [disabled]="guardando">
+          Cancelar
+        </button>
+        <button class="btn-save" (click)="guardar()" [disabled]="!formularioValido || guardando">
+          <span class="material-icons" *ngIf="!guardando">{{ modoEdicion ? 'save' : 'add' }}</span>
+          <div class="mini-spinner" *ngIf="guardando"></div>
+          {{ guardando ? 'Guardando...' : (modoEdicion ? 'Guardar cambios' : 'Crear planilla') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Columna derecha: resumen -->
+    <div class="summary-panel">
+      <div class="summary-card">
+        <div class="summary-header">
+          <span class="material-icons">summarize</span>
+          Resumen del cálculo
+        </div>
+
+        <div class="summary-periodo" *ngIf="planilla.mes && planilla.anio">
+          {{ nombreMesSeleccionado }} {{ planilla.anio }}
+        </div>
+
+        <div class="summary-lines">
+          <div class="summary-line">
+            <span class="sl-label">Sueldo base</span>
+            <span class="sl-value">S/ {{ sueldoBaseEstimado | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-line positive">
+            <span class="sl-label">+ Bonificaciones</span>
+            <span class="sl-value">S/ {{ (planilla.bonificaciones ?? 0) | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-line negative">
+            <span class="sl-label">- Descuentos planilla</span>
+            <span class="sl-value">S/ {{ (planilla.descuentos ?? 0) | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-line total">
+            <span class="sl-label">Total planilla</span>
+            <span class="sl-value">S/ {{ totalEstimado | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <div class="summary-note">
+          <span class="material-icons">receipt_long</span>
+          El neto final de la boleta se calcula sumando los descuentos individuales (AFP/ONP, etc.) al generar la boleta.
+        </div>
+      </div>
+
+      <!-- Guía rápida -->
+      <div class="guide-card">
+        <div class="guide-title">
+          <span class="material-icons">help_outline</span>
+          ¿Cómo funciona?
+        </div>
+        <ol class="guide-steps">
+          <li>Selecciona el <strong>empleado</strong> y el <strong>periodo</strong> (mes/año).</li>
+          <li>El sistema toma automáticamente el <strong>sueldo base</strong> del empleado.</li>
+          <li>Agrega <strong>bonificaciones</strong> (gratificación, extras, etc.) si aplica.</li>
+          <li>Registra <strong>descuentos generales</strong> del periodo en este campo.</li>
+          <li>Los descuentos detallados se gestionan en el módulo <strong>Descuentos</strong>.</li>
+          <li>Al generar la boleta, el sistema junta la planilla + descuentos detallados.</li>
+        </ol>
+      </div>
+    </div>
+
+  </div>
+</div>

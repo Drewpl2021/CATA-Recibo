@@ -6,12 +6,19 @@ import { environment } from '../../../environments/environment';
 export interface Planilla {
   id?: string;
   empleado_id: string;
+  periodo_id?: string;
   mes: number;
   anio: number;
-  sueldo_base: number;
+  sueldo_base?: number; // Es opcional en el form, lo auto-asigna el backend
   bonificaciones: number;
   descuentos: number;
   total?: number;
+  empleado?: {
+    id: string;
+    nombres: string;
+    apellidos: string;
+    numero_documento: string;
+  };
 }
 
 @Injectable({

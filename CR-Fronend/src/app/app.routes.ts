@@ -22,6 +22,9 @@ export const routes: Routes = [
       { path: 'empleados/ver/:id', loadComponent: () => import('./empleados/empleado-form/empleado-form.component').then(m => m.EmpleadoFormComponent) },
       { path: 'emision-boleta', loadComponent: () => import('./emision-boleta/emision-boleta-list/emision-boleta-list.component').then(m => m.EmisionBoletaListComponent) },
       { path: 'emision-boleta/descuentos/:id', loadComponent: () => import('./emision-boleta/emision-descuentos-form/emision-descuentos-form.component').then(m => m.EmisionDescuentosFormComponent) },
+      { path: 'planillas', loadComponent: () => import('./planillas/planillas-list/planillas-list.component').then(m => m.PlanillasListComponent) },
+      { path: 'planillas/nuevo', loadComponent: () => import('./planillas/planilla-form/planilla-form.component').then(m => m.PlanillaFormComponent) },
+      { path: 'planillas/editar/:id', loadComponent: () => import('./planillas/planilla-form/planilla-form.component').then(m => m.PlanillaFormComponent) },
       { path: '**', redirectTo: 'dashboard' }
     ]
   },
