@@ -110,8 +110,13 @@ export class LayoutComponent implements OnInit {
     }
   }
 
-  // Rutas que sí hemos construido en el frontend
-  rutasPermitidas = ['/dashboard', '/mis-boletas', '/documentos', '/empleados', '/boletas', '/historial-boletas'];
+  // Rutas habilitadas para mostrar en el menú (incluye los nuevos módulos del backend)
+  rutasPermitidas = [
+    '/dashboard', '/mis-boletas', '/mis-documentos', '/documentos', 
+    '/empleados', '/boletas', '/historial-boletas', '/planillas', 
+    '/descuentos', '/areas', '/cargos', '/roles', '/periodos', 
+    '/sedes', '/modulos', '/modulos-padre', '/contratos'
+  ];
 
   ngOnInit(): void {
     // 1. Cargar menú dinámico
@@ -253,12 +258,14 @@ export class LayoutComponent implements OnInit {
   }
 
   openProfile(): void {
-    this.showProfileModal = true;
-    if (this.showProfileModal) {
-      this.showUserMenu = false;
-      this.showPasswordModal = false;
-      this.showNotifications = false;
-    }
+    setTimeout(() => {
+      this.showProfileModal = true;
+      if (this.showProfileModal) {
+        this.showUserMenu = false;
+        this.showPasswordModal = false;
+        this.showNotifications = false;
+      }
+    }, 0);
     
     const empleadoId = this.authService.getEmpleadoId();
     if (empleadoId && !this.empleadoData) {
@@ -279,12 +286,14 @@ export class LayoutComponent implements OnInit {
   }
 
   openPassword(): void {
-    this.showPasswordModal = true;
-    if (this.showPasswordModal) {
-      this.showUserMenu = false;
-      this.showProfileModal = false;
-      this.showNotifications = false;
-    }
+    setTimeout(() => {
+      this.showPasswordModal = true;
+      if (this.showPasswordModal) {
+        this.showUserMenu = false;
+        this.showProfileModal = false;
+        this.showNotifications = false;
+      }
+    }, 0);
     
     this.currentPassword = '';
     this.newPassword = '';
