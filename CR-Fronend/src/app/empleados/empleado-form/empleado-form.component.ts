@@ -24,6 +24,10 @@ export class EmpleadoFormComponent implements OnInit {
   cargando = false;
   guardando = false;
 
+  // Wizard
+  currentStep = 1;
+  totalSteps = 4;
+
   // Campos del formulario
   nombre = '';
   apellido = '';
@@ -40,6 +44,14 @@ export class EmpleadoFormComponent implements OnInit {
   sede_id = '';
   tipo_contrato = '';
   forma_pago = '';
+
+  // Datos Adicionales (JordanDev)
+  nivel_estudios = '';
+  especialidad = '';
+  institucion_estudios = '';
+  contacto_emergencia_nombre = '';
+  contacto_emergencia_telefono = '';
+  fecha_nacimiento = '';
 
   // Campos de planilla
   sistema_pensiones = 'ONP';
@@ -98,6 +110,30 @@ export class EmpleadoFormComponent implements OnInit {
 
   cerrarModal(): void {
     // Implementación original si existiera, caso contrario vacío
+  }
+
+  nextStep(): void {
+    if (this.currentStep < this.totalSteps) {
+      // Basic validation before proceeding from step 1
+      if (this.currentStep === 1 && (!this.nombre || !this.apellido || !this.dni)) {
+        this.toastService.warning('Campos incompletos', 'Completa Nombre, Apellido y DNI antes de avanzar.');
+        return;
+      }
+      this.currentStep++;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  prevStep(): void {
+    if (this.currentStep > 1) {
+      this.currentStep--;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  setStep(step: number): void {
+    this.currentStep = step;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   onTelefonoInput(event: any): void {
@@ -168,6 +204,13 @@ export class EmpleadoFormComponent implements OnInit {
           this.tipo_contrato = (e as any).tipo_contrato || '';
           this.forma_pago = (e as any).forma_pago || '';
 
+          this.nivel_estudios = (e as any).nivel_estudios || '';
+          this.especialidad = (e as any).especialidad || '';
+          this.institucion_estudios = (e as any).institucion_estudios || '';
+          this.contacto_emergencia_nombre = (e as any).contacto_emergencia_nombre || '';
+          this.contacto_emergencia_telefono = (e as any).contacto_emergencia_telefono || '';
+          this.fecha_nacimiento = (e as any).fecha_nacimiento ? (e as any).fecha_nacimiento.split('T')[0] : '';
+
           this.sistema_pensiones = e.sistema_pensiones || 'ONP';
           this.afp = e.afp || '';
           this.cuspp = e.cuspp || '';
@@ -192,10 +235,6 @@ export class EmpleadoFormComponent implements OnInit {
       this.toastService.warning('Campos Incompletos', 'Por favor, completa los campos obligatorios: Nombre, Apellido, DNI, Cargo, Sede y Sueldo.');
       return;
     }
-    if (this.esDocente && !this.area_id) {
-      this.toastService.warning('Campos Incompletos', 'El cargo Docente requiere seleccionar un Área.');
-      return;
-    }
 
     const datos = {
       nombre: this.nombre,
@@ -216,7 +255,13 @@ export class EmpleadoFormComponent implements OnInit {
       sueldo_base: this.sueldo_base,
       sede_id: this.sede_id,
       tipo_contrato: this.tipo_contrato || null,
-      forma_pago: this.forma_pago || null
+      forma_pago: this.forma_pago || null,
+      nivel_estudios: this.nivel_estudios || null,
+      especialidad: this.especialidad || null,
+      institucion_estudios: this.institucion_estudios || null,
+      contacto_emergencia_nombre: this.contacto_emergencia_nombre || null,
+      contacto_emergencia_telefono: this.contacto_emergencia_telefono || null,
+      fecha_nacimiento: this.fecha_nacimiento || null
     };
 
     this.guardando = true;

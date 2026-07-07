@@ -51,6 +51,7 @@ body {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
 /* Sidebar */
@@ -60,10 +61,29 @@ body {
   border-right: none;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
-  z-index: 10;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
   box-shadow: 4px 0 12px rgba(0,0,0,0.15);
+  position: relative;
 }
+
+.sidebar.sidebar-hidden {
+  transform: translateX(-100%);
+  position: absolute;
+  height: 100%;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: absolute;
+    height: 100%;
+    transform: translateX(-100%);
+  }
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+}
+
 
 .sidebar-header {
   height: var(--header-height);
@@ -489,6 +509,12 @@ body {
 .filter-btn:hover {
   background-color: var(--bg-color);
   color: var(--text-main);
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {

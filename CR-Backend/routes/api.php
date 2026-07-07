@@ -55,8 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Boleta individual — cualquier autenticado con empleado vinculado
     Route::get('boleta/{empleado_id}/{mes}/{anio}', [BoletaController::class, 'generar']);
 
-    // ── Solo RRHH ───────────────────────────────
-    Route::middleware('rol:rrhh')->group(function () {
+    // ── Solo RRHH y Administrador ───────────────────────────────
+    Route::middleware('rol:rrhh,Administrador')->group(function () {
         
         Route::apiResource('users', UserController::class)->except(['store']);
         Route::post('empleados/{id}/firma', [EmpleadoController::class, 'subirFirma']);
