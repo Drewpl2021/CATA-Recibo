@@ -63,6 +63,10 @@ export class AuthService {
     return !!this.getToken();
   }
 
+  cambiarPassword(data: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/cambiar-password`, data);
+  }
+
   getEmpleadoId(): string | null {
     return this.getUser()?.empleado_id ?? null;
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
@@ -6,6 +6,7 @@ import { MisModulosService, ModuloPadre } from '../../core/services/mis-modulos.
 import { MisDocumentosService, MiDocumento } from '../../core/services/mis-documentos.service';
 import { ToastService } from '../../core/services/toast.service';
 import { FormsModule } from '@angular/forms';
+import { EmpleadoService, Empleado } from '../../core/services/empleado.service';
 
 // Mapa de iconos SVG por nombre (del seeder de Jordan)
 const ICON_MAP: Record<string, string> = {
@@ -40,6 +41,7 @@ export class LayoutComponent implements OnInit {
   activeMenu = '';
   userName = '';
   userRole = '';
+  isSidebarOpen = false;
 
   // Módulos dinámicos del backend
   modulosPadre: ModuloPadre[] = [];
@@ -57,16 +59,35 @@ export class LayoutComponent implements OnInit {
   signErrorMsg = '';
   firmandoDoc = false;
 
+  // User Dropdown & Profile
+  showUserMenu = false;
+  showProfileModal = false;
+  showPasswordModal = false;
+  
+  userEmail = '';
+  userInitials = '';
+  empleadoData: Empleado | null = null;
+  
+  // Cambiar password form
+  currentPassword = '';
+  newPassword = '';
+  newPasswordConfirm = '';
+  changingPassword = false;
+
   constructor(
     private router: Router,
     private authService: AuthService,
     private misModulosService: MisModulosService,
     private misDocumentosService: MisDocumentosService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private empleadoService: EmpleadoService,
+    private cdr: ChangeDetectorRef
   ) {
     const user = this.authService.getUser();
     if (user) {
       this.userName = user.name;
+      this.userEmail = user.email || '';
+      this.userInitials = this.userName.substring(0, 2).toUpperCase();
       let rolName = '';
       if (typeof user.rol === 'string') {
         rolName = user.rol;
@@ -82,6 +103,11 @@ export class LayoutComponent implements OnInit {
 
   toggleNotifications(): void {
     this.showNotifications = !this.showNotifications;
+    if (this.showNotifications) {
+      this.showUserMenu = false;
+      this.showProfileModal = false;
+      this.showPasswordModal = false;
+    }
   }
 
   // Rutas que sí hemos construido en el frontend
@@ -125,6 +151,10 @@ export class LayoutComponent implements OnInit {
         // Ignorar si falla, por ej. si el usuario es un admin sin documentos
       }
     });
+  }
+
+  toggleSidebar(): void {
+    this.isSidebarOpen = !this.isSidebarOpen;
   }
 
   toggleGroup(id: string): void {
@@ -210,5 +240,88 @@ export class LayoutComponent implements OnInit {
       7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
     };
     return meses[mesNum] ?? `Mes ${mesNum}`;
+  }
+
+  // ── USER MENU & PROFILE ──
+
+  toggleUserMenu(): void {
+    // Cerrar todos primero, luego toggle
+    this.showProfileModal = false;
+    this.showPasswordModal = false;
+    this.showNotifications = false;
+    this.showUserMenu = !this.showUserMenu;
+  }
+
+  openProfile(): void {
+    this.showProfileModal = true;
+    if (this.showProfileModal) {
+      this.showUserMenu = false;
+      this.showPasswordModal = false;
+      this.showNotifications = false;
+    }
+    
+    const empleadoId = this.authService.getEmpleadoId();
+    if (empleadoId && !this.empleadoData) {
+      this.empleadoService.getEmpleado(empleadoId).subscribe({
+        next: (res) => { 
+          if (res.success) {
+            this.empleadoData = res.data; 
+          }
+        },
+        error: (err) => { console.error('Error fetching empleado data:', err); }
+      });
+    }
+  }
+
+  closeProfile(): void {
+    this.showProfileModal = false;
+    this.cdr.detectChanges();
+  }
+
+  openPassword(): void {
+    this.showPasswordModal = true;
+    if (this.showPasswordModal) {
+      this.showUserMenu = false;
+      this.showProfileModal = false;
+      this.showNotifications = false;
+    }
+    
+    this.currentPassword = '';
+    this.newPassword = '';
+    this.newPasswordConfirm = '';
+  }
+
+  closePassword(): void {
+    this.showPasswordModal = false;
+    this.cdr.detectChanges();
+  }
+
+  submitPasswordChange(): void {
+    if (!this.currentPassword || !this.newPassword || !this.newPasswordConfirm) {
+      this.toastService.warning('Aviso', 'Completa todos los campos.');
+      return;
+    }
+    if (this.newPassword !== this.newPasswordConfirm) {
+      this.toastService.error('Error', 'Las nuevas contraseñas no coinciden.');
+      return;
+    }
+    this.changingPassword = true;
+    this.authService.cambiarPassword({
+      current_password: this.currentPassword,
+      new_password: this.newPassword,
+      new_password_confirmation: this.newPasswordConfirm
+    }).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.toastService.success('Éxito', 'Contraseña actualizada correctamente.');
+          this.closePassword();
+        }
+        this.changingPassword = false;
+      },
+      error: (err) => {
+        this.toastService.error('Error', err.error?.message || 'Error al cambiar contraseña.');
+        this.changingPassword = false;
+      }
+    });
   }
 }
