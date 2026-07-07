@@ -21,7 +21,9 @@ export const routes: Routes = [
       { path: 'empleados/editar/:id', loadComponent: () => import('./empleados/empleado-form/empleado-form.component').then(m => m.EmpleadoFormComponent) },
       { path: 'empleados/ver/:id', loadComponent: () => import('./empleados/empleado-form/empleado-form.component').then(m => m.EmpleadoFormComponent) },
       { path: 'emision-boleta', loadComponent: () => import('./emision-boleta/emision-boleta-list/emision-boleta-list.component').then(m => m.EmisionBoletaListComponent) },
-      { path: 'emision-boleta/descuentos/:id', loadComponent: () => import('./emision-boleta/emision-descuentos-form/emision-descuentos-form.component').then(m => m.EmisionDescuentosFormComponent) }
+      { path: 'emision-boleta/descuentos/:id', loadComponent: () => import('./emision-boleta/emision-descuentos-form/emision-descuentos-form.component').then(m => m.EmisionDescuentosFormComponent) },
+      { path: '**', redirectTo: 'dashboard' }
     ]
-  }
+  },
+  { path: '**', redirectTo: 'login' }
 ];
