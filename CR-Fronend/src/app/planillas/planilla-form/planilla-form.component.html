@@ -187,11 +187,11 @@
           </div>
           <div class="summary-line positive">
             <span class="sl-label">+ Bonificaciones</span>
-            <span class="sl-value">S/ {{ (planilla.bonificaciones ?? 0) | number:'1.2-2' }}</span>
+            <span class="sl-value">S/ {{ planilla.bonificaciones | number:'1.2-2' }}</span>
           </div>
           <div class="summary-line negative">
             <span class="sl-label">- Descuentos planilla</span>
-            <span class="sl-value">S/ {{ (planilla.descuentos ?? 0) | number:'1.2-2' }}</span>
+            <span class="sl-value">S/ {{ planilla.descuentos | number:'1.2-2' }}</span>
           </div>
           <div class="summary-divider"></div>
           <div class="summary-line total">

@@ -5,6 +5,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { MisModulosService, ModuloPadre } from '../../core/services/mis-modulos.service';
 import { MisDocumentosService, MiDocumento } from '../../core/services/mis-documentos.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { FormsModule } from '@angular/forms';
 import { EmpleadoService, Empleado } from '../../core/services/empleado.service';
 
@@ -81,6 +82,7 @@ export class LayoutComponent implements OnInit {
     private misDocumentosService: MisDocumentosService,
     private toastService: ToastService,
     private empleadoService: EmpleadoService,
+    public themeService: ThemeService,
     private cdr: ChangeDetectorRef
   ) {
     const user = this.authService.getUser();
@@ -303,6 +305,10 @@ export class LayoutComponent implements OnInit {
   closePassword(): void {
     this.showPasswordModal = false;
     this.cdr.detectChanges();
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
 
   submitPasswordChange(): void {

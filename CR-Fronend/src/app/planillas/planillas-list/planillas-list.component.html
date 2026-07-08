@@ -92,12 +92,15 @@
           <tr *ngFor="let p of planillasFiltradas" class="table-row">
             <td>
               <div class="empleado-cell">
-                <div class="empleado-avatar">
-                  {{ (p.empleado?.nombres?.[0] ?? '?') + (p.empleado?.apellidos?.[0] ?? '') }}
+                <div class="empleado-avatar" *ngIf="p.empleado">
+                  {{ (p.empleado.nombre[0] || '?') + (p.empleado.apellido[0] || '') }}
+                </div>
+                <div class="empleado-avatar" *ngIf="!p.empleado">
+                  ?
                 </div>
                 <div>
                   <div class="empleado-nombre">{{ nombreEmpleado(p) }}</div>
-                  <div class="empleado-doc">{{ p.empleado?.numero_documento || '' }}</div>
+                  <div class="empleado-doc">{{ p.empleado?.dni || p.empleado_id }}</div>
                 </div>
               </div>
             </td>
@@ -120,9 +123,11 @@
               <div class="action-buttons">
                 <button class="btn-action btn-edit" title="Editar" (click)="editarPlanilla(p.id!)">
                   <span class="material-icons">edit</span>
+                  Editar
                 </button>
                 <button class="btn-action btn-delete" title="Eliminar" (click)="confirmarEliminar(p)">
                   <span class="material-icons">delete</span>
+                  Eliminar
                 </button>
               </div>
             </td>
