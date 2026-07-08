@@ -21,21 +21,29 @@ export interface Empleado {
   telefono: string;
   direccion: string;
   fecha_ingreso: string;
+  fecha_nacimiento?: string | null;
   estado: string;
   area_id?: string;
   cargo_id?: string;
   area?: Area;
   cargo?: Cargo;
+  sede_id?: string;
+  sede?: { id: string; nombre: string };
+  sueldo_base?: number;
+  tipo_contrato?: string | null;
+  forma_pago?: string | null;
   sistema_pensiones?: string;
   afp?: string;
   cuspp?: string;
   entidad_financiera?: string;
   numero_cuenta?: string;
   tiene_hijos?: boolean;
-  sueldo_base?: number;
-  sede_id?: string;
-  sede?: { id: string; nombre: string };
   firma_imagen?: string;
+  nivel_estudios?: string | null;
+  especialidad?: string | null;
+  institucion_estudios?: string | null;
+  contacto_emergencia_nombre?: string | null;
+  contacto_emergencia_telefono?: string | null;
 }
 
 export interface EmpleadoResponse {

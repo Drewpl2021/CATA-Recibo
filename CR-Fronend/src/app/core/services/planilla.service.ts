@@ -6,19 +6,42 @@ import { environment } from '../../../environments/environment';
 export interface Planilla {
   id?: string;
   empleado_id: string;
-  periodo_id?: string;
+  periodo_id?: string | null;
   mes: number;
   anio: number;
-  sueldo_base?: number; // Es opcional en el form, lo auto-asigna el backend
+  sueldo_base?: number; // Convertimos de string a number al recibir
   bonificaciones: number;
   descuentos: number;
   total?: number;
+  estado_registro?: string;
   empleado?: {
     id: string;
-    nombres: string;
-    apellidos: string;
-    numero_documento: string;
-  };
+    nombre: string;
+    apellido: string;
+    dni: string;
+    cargo_id?: string | null;
+    area_id?: string | null;
+    telefono?: string;
+    direccion?: string;
+    fecha_ingreso?: string;
+    estado?: string;
+    sueldo_base?: number;
+    tipo_contrato?: string | null;
+    forma_pago?: string | null;
+    sede_id?: string | null;
+    entidad_financiera?: string | null;
+    numero_cuenta?: string | null;
+    tiene_hijos?: number;
+    firma_imagen?: string | null;
+    nivel_estudios?: string | null;
+    especialidad?: string | null;
+    institucion_estudios?: string | null;
+    contacto_emergencia_nombre?: string | null;
+    contacto_emergencia_telefono?: string | null;
+    fecha_nacimiento?: string | null;
+    created_at?: string;
+    updated_at?: string;
+  } | null;
 }
 
 @Injectable({

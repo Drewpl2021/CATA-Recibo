@@ -4,20 +4,20 @@
   --visma-red-hover: #D49A12;
   --visma-blue: #1B4282; /* Navy Blue */
   --visma-blue-light: #3AB0E2; /* Sky Blue */
-  
+
   /* Neutrals */
   --bg-color: #f4f6f8;
   --surface-color: #ffffff;
   --text-main: #1a1f36;
   --text-muted: #697386;
   --border-color: #e3e8ee;
-  
+
   /* Status Colors */
   --success: #10b981;
   --success-bg: #d1fae5;
   --warning: #f59e0b;
   --warning-bg: #fef3c7;
-  
+
   /* Shadows & Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -26,10 +26,15 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  
+
   /* Layout */
   --sidebar-width: 260px;
   --header-height: 70px;
+
+  /* Semantic Variables */
+  --table-hover-bg: rgba(244, 246, 248, 0.5);
+  --input-placeholder: #9ca3af;
+  --input-focus-shadow: 0 0 0 3px rgba(0, 64, 100, 0.1);
 }
 
 * {
@@ -547,7 +552,7 @@ body {
 }
 
 .data-table tbody tr:hover {
-  background-color: rgba(244, 246, 248, 0.5);
+  background-color: var(--table-hover-bg);
 }
 
 .doc-name {
@@ -856,7 +861,7 @@ body {
 }
 
 .input-wrapper input::placeholder {
-  color: #9ca3af;
+  color: var(--input-placeholder);
 }
 
 .toggle-password {
@@ -923,7 +928,7 @@ body {
   .login-branding {
     display: none;
   }
-  
+
   .mobile-logo {
     display: flex;
   }
@@ -1072,4 +1077,206 @@ body {
     flex-direction: column;
     text-align: center;
   }
+}
+
+/* ============================================
+   DARK MODE SYSTEM
+   ============================================ */
+.dark-mode {
+  /* Core variables override */
+  --bg-color: #0f172a;
+  --surface-color: #1e293b;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --success-bg: #064e3b;
+  --warning-bg: #713f12;
+  
+  /* Shadows for dark */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  
+  /* Body and main containers */
+  body { background-color: var(--bg-color) !important; }
+  .content-area { background-color: var(--bg-color) !important; }
+  
+  /* Sidebar */
+  .sidebar { background-color: #0f172a !important; border-right-color: #334155 !important; }
+  .sidebar-header { border-bottom-color: #334155 !important; }
+  .navbar { background-color: #0f172a !important; }
+  
+  /* Navigation */
+  .nav-item { color: #94a3b8 !important; }
+  .nav-item:hover { background-color: rgba(255,255,255,0.05) !important; color: #e2e8f0 !important; }
+  .nav-item.active { background-color: #F4B41A !important; color: #112A54 !important; }
+  .nav-submenu { border-left-color: rgba(255,255,255,0.1) !important; }
+  
+  /* Header */
+  .top-header { background-color: #1e293b !important; box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important; }
+  .header-search input { background-color: #334155 !important; border-color: #475569 !important; color: #e2e8f0 !important; }
+  .header-search .search-icon { color: #94a3b8 !important; }
+  .header-search input:focus { background-color: #475569 !important; border-color: #60a5fa !important; }
+  .icon-btn { background: rgba(255,255,255,0.1) !important; color: #e2e8f0 !important; }
+ ‏ .user-name { color: #e2e8f0 !important; }
+  .user-role { color: #94a3b8 !important; }
+  
+  /* Tables */
+  .data-table th { background-color: #1e293b !important; color: #e2e8f0 !important; border-bottom-color: #334155 !important; }
+  .data-table tbody tr { background-color: #1e293b !important; }
+  .data-table tbody tr:hover { background-color: rgba(255,255,255,0.05) !important; }
+  .data-table tbody tr:last-child td { border-bottom-color: #334155 !important; }
+  
+  /* Cards and panels */
+  .metric-card, .section-panel, .card, .panel, .content-wrapper { 
+    background-color: var(--surface-color) !important; 
+    color: var(--text-main) !important; 
+    border-color: var(--border-color) !important;
+  }
+  
+  metric-card:hover, .card:hover, .content-wrapper:hover { border-color: rgba(255,255,255,0.1) !important; }
+  
+  /* Forms */
+  .form-control, input, select, textarea {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+  }
+  .form-control::placeholder, input::placeholder, select::placeholder, textarea::placeholder { color: #64748b !important; }
+  .form-control:focus, input:focus, select:focus, textarea:focus {
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25) !important;
+    outline: none !important;
+  }
+  .form-group label { color: #e2e8f0 !important; }
+  
+  /* Buttons */
+  .btn-secondary { background-color: #1e293b !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+  .btn-secondary:hover { background-color: #334155 !important; }
+  
+  /* Modals */
+  .modal-overlay { background-color: rgba(0,0,0,0.7) !important; }
+  .modal-card, .modal-content { background-color: #1e293b !important; color: #e2e8f0 !important; }
+  .modal-header, .modal-body, .modal-footer { border-color: #334155 !important; }
+  .confirm-modal { background-color: #1e293b !important; color: #e2e8f0 !important; }
+  
+  /* Links */
+  a:not(.nav-item):not(.btn):not(.brand-logo) { color: #60a5fa !important; }
+  
+  /* Status badges */
+  .status-pending { background-color: #713f12 !important; color: #fef3c7 !important; }
+  .status-signed { background-color: #064e3b !important; color: #d1fae5 !important; }
+  
+  /* Component wrapper overrides */
+  .page-wrapper, .boletas-container, .planillas-list-wrapper, .planilla-form-wrapper,
+  .empleado-form-wrapper, .empleados-list-container, .dashboard-wrapper,
+  .emision-boleta-wrapper, .documentos-list-wrapper, .historial-boletas-wrapper,
+  .mis-boletas-wrapper { 
+    background-color: var(--bg-color) !important;
+    color: var(--text-main) !important;
+  }
+  
+  .card, .panel, .form-card, .info-card, .detail-card {
+    background-color: var(--surface-color) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  /* Table cells in dark mode */
+  td { color: #e2e8f0 !important; }
+  tr:hover td { background-color: rgba(255,255,255,0.03) !important; }
+}
+
+/* --- DARK MODE --- */
+.dark-mode {
+  /* Redefine CSS Variables */
+  --visma-red: #F4B41A;
+  --visma-red-hover: #D49A12;
+  --visma-blue: #60a5fa;
+  --visma-blue-light: #3AB0E2;
+
+  --bg-color: #0f172a;
+  --surface-color: #1e293b;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+
+  --success: #10b981;
+  --success-bg: #064e3b;
+  --warning: #f59e0b;
+  --warning-bg: #451a03;
+
+  --table-hover-bg: rgba(30, 41, 59, 0.8);
+  --input-placeholder: #94a3b8;
+  --input-focus-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark Mode Overrides */
+.dark-mode .content-area {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+.dark-mode .data-table th {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-bottom-color: #334155;
+}
+
+.dark-mode .data-table td {
+  color: #e2e8f0;
+  border-bottom-color: #334155;
+}
+
+.dark-mode .data-table tbody tr:hover {
+  background-color: rgba(30, 41, 59, 0.8);
+}
+
+.dark-mode .form-control,
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+  background-color: #1e293b;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+.dark-mode .form-control:focus,
+.dark-mode input:focus,
+.dark-mode select:focus,
+.dark-mode textarea:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
+.dark-mode .nav-item {
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.dark-mode .nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.dark-mode .modal-card,
+.dark-mode .metric-card,
+.dark-mode .section-panel {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+.dark-mode .btn-secondary {
+  background-color: #1e293b;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+.dark-mode .btn-secondary:hover {
+  background-color: #334155;
+  border-color: #64748b;
 }

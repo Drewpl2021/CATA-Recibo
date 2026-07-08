@@ -82,8 +82,9 @@ export class PlanillasListComponent implements OnInit {
     if (!this.searchTerm) return this.planillas;
     const lower = this.searchTerm.toLowerCase();
     return this.planillas.filter(p => {
-      const nombre = `${p.empleado?.nombres ?? ''} ${p.empleado?.apellidos ?? ''}`.toLowerCase();
-      const doc = p.empleado?.numero_documento ?? '';
+      if (!p.empleado) return false;
+      const nombre = `${p.empleado.nombre ?? ''} ${p.empleado.apellido ?? ''}`.toLowerCase();
+      const doc = p.empleado.dni ?? '';
       return nombre.includes(lower) || doc.includes(lower);
     });
   }
@@ -129,8 +130,11 @@ export class PlanillasListComponent implements OnInit {
   }
 
   nombreEmpleado(p: Planilla): string {
-    if (p.empleado) return `${p.empleado.nombres} ${p.empleado.apellidos}`;
-    return p.empleado_id;
+    if (p.empleado && (p.empleado.nombre || p.empleado.apellido)) {
+      return `${p.empleado.nombre ?? ''} ${p.empleado.apellido ?? ''}`.trim();
+    }
+    // Si no hay empleado, mostrar que es un empleado no encontrado
+    return 'Empleado no encontrado';
   }
 
   get totalBonificaciones(): number {
