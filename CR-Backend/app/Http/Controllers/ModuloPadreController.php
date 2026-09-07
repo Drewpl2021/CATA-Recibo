@@ -3,18 +3,35 @@ namespace App\Http\Controllers;
 
 use App\Models\ModuloPadre;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use App\Traits\ListadoPaginado;
 
 class ModuloPadreController extends Controller
 {
-    public function index()
+    use ListadoPaginado;
+
+    /**
+     * GET /modulo-padres?page=&size=&search=
+     *
+     * Solo los vivos: destroy() hace baja lógica. Sin ?page devuelve todo,
+     * que es como lo pide el menú lateral.
+     */
+    public function index(Request $request)
     {
-        return response()->json(['success' => true, 'data' => ModuloPadre::with('modulos')->orderBy('orden')->get()]);
+        return $this->responderListado(
+            $request,
+            ModuloPadre::with('modulos')
+                ->where('estado_registro', 'activo')
+                ->orderBy('orden'),
+            ['nombre']
+        );
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string|max:100',
+            'nombre' => ['required', 'string', 'max:100',
+                Rule::unique('modulo_padre', 'nombre')->where('estado_registro', 'activo')],
             'icono'  => 'nullable|string|max:100',
             'orden'  => 'nullable|integer|min:0',
         ]);
@@ -35,7 +52,8 @@ class ModuloPadreController extends Controller
         $moduloPadre = ModuloPadre::findOrFail($id);
 
         $request->validate([
-            'nombre' => 'sometimes|string|max:100',
+            'nombre' => ['sometimes', 'string', 'max:100',
+                Rule::unique('modulo_padre', 'nombre')->where('estado_registro', 'activo')->ignore($id)],
             'icono'  => 'nullable|string|max:100',
             'orden'  => 'nullable|integer|min:0',
         ]);

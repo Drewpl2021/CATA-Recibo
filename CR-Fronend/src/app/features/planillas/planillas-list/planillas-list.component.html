@@ -1,0 +1,231 @@
+<app-page-header
+  icono="table_chart"
+  titulo="Planillas"
+  subtitulo="Cálculo del sueldo de cada empleado, mes a mes."
+>
+  <div headerActions style="display: flex; gap: 12px;">
+    <button class="btn-primary" (click)="abrirGenerar()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+      </svg>
+      Generar planillas
+    </button>
+
+    <button class="btn-secondary" (click)="abrirBoletas()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      Emitir boletas
+    </button>
+
+    <button class="btn-secondary" (click)="nueva()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Una sola
+    </button>
+  </div>
+</app-page-header>
+
+<section class="panel-filtros">
+  <header class="panel-filtros__cabecera">
+    <div>
+      <h2 class="panel-filtros__titulo">Mostrando</h2>
+      <p class="panel-filtros__periodo">{{ etiquetaPeriodo }}</p>
+    </div>
+
+    <div class="panel-filtros__cifras">
+      <div class="cifra">
+        <strong>{{ total | number }}</strong>
+        <span>Planillas</span>
+      </div>
+      <div class="cifra cifra--destacada">
+        <strong>S/ {{ masaSalarial | number: '1.2-2' }}</strong>
+        <span>Masa salarial (neto)</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="panel-filtros__campos">
+    <div class="campo-filtro">
+      <label for="filtroMes">Mes</label>
+      <select id="filtroMes" class="form-control" [(ngModel)]="filtroMes" (ngModelChange)="alFiltrar()">
+        <option [ngValue]="''">Todos</option>
+        <option *ngFor="let m of meses" [ngValue]="m.value">{{ m.label }}</option>
+      </select>
+    </div>
+
+    <div class="campo-filtro campo-filtro--corto">
+      <label for="filtroAnio">Año</label>
+      <input type="number" id="filtroAnio" class="form-control" [(ngModel)]="filtroAnio"
+        (ngModelChange)="alFiltrar()" min="2000" placeholder="Todos" />
+    </div>
+
+    <div class="campo-filtro">
+      <label for="filtroEmpleado">Empleado</label>
+      <select id="filtroEmpleado" class="form-control" [(ngModel)]="filtroEmpleado" (ngModelChange)="alFiltrar()">
+        <option value="">Todos</option>
+        <option *ngFor="let e of empleados" [value]="e.id">{{ e.nombre }} {{ e.apellido }}</option>
+      </select>
+    </div>
+
+    <div class="campo-filtro">
+      <label for="filtroPeriodo">Periodo</label>
+      <select id="filtroPeriodo" class="form-control" [(ngModel)]="filtroPeriodo" (ngModelChange)="alFiltrar()">
+        <option value="">Todos</option>
+        <option *ngFor="let p of periodos" [value]="p.id">{{ p.nombre }}</option>
+      </select>
+    </div>
+
+    <button type="button" class="btn-limpiar" [disabled]="!hayFiltros" (click)="limpiarFiltros()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+      Limpiar
+    </button>
+  </div>
+</section>
+
+<app-data-table
+  [columnas]="columnas"
+  [datos]="planillas"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'empleado.dni']"
+  [acciones]="['editar', 'eliminar']"
+  [accionesPersonalizadas]="accionesExtra"
+  [filasPorPagina]="15"
+  mensajeVacio="No hay planillas para este filtro. Puedes generarlas todas desde Periodos."
+  (editarFila)="editar($event)"
+  (eliminarFila)="eliminar($event)"
+  (accionPersonalizada)="alAccionar($event)"
+></app-data-table>
+
+<!-- ── Generar las planillas del mes ── -->
+<app-form-modal
+  [(visible)]="modalGenerarVisible"
+  titulo="Generar planillas del mes"
+  ancho="640px"
+  [guardando]="generando"
+  [textoGuardar]="resultadoGeneracion ? 'Generar otra vez' : 'Generar planillas'"
+  (guardar)="generar()"
+  (cancelar)="cerrarGenerar()"
+>
+  <form [formGroup]="formGenerar" class="form-fields">
+    <div class="form-group">
+      <label for="genPeriodo">Periodo *</label>
+      <select id="genPeriodo" class="form-control" formControlName="periodo_id"
+        (change)="alCambiarPeriodo()">
+        <option value="">— Elige el periodo —</option>
+        <option *ngFor="let p of periodos" [value]="p.id">{{ p.nombre }}</option>
+      </select>
+      <small class="form-ayuda" *ngIf="rangoDelPeriodo">{{ rangoDelPeriodo }}</small>
+      <small class="form-error" *ngIf="!periodos.length">
+        No hay periodos creados. Crea uno primero en Configuración → Periodos.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="genMes">Mes a generar *</label>
+      <select id="genMes" class="form-control" formControlName="mesAnio"
+        [attr.disabled]="mesesDelPeriodo.length ? null : true">
+        <option value="">— Elige primero el periodo —</option>
+        <option *ngFor="let m of mesesDelPeriodo" [value]="m.valor">{{ m.etiqueta }}</option>
+      </select>
+      <small class="form-ayuda" *ngIf="mesesDelPeriodo.length">
+        Solo aparecen los meses que cubre el periodo, así no se puede pedir uno que
+        el sistema vaya a rechazar.
+      </small>
+    </div>
+
+    <app-selector-empleados
+      *ngIf="!resultadoGeneracion"
+      [empleados]="empleadosActivos"
+      [areas]="areas"
+      [cargos]="cargos"
+      [sedes]="sedes"
+      [(alcance)]="alcance"
+      [(seleccion)]="empleadosElegidos"
+    ></app-selector-empleados>
+
+    <p class="form-nota" *ngIf="!resultadoGeneracion">
+      Se creará la planilla para <strong>{{ cuantosAlcanzados }} empleado(s)</strong>,
+      con sus conceptos de ley ya calculados. A quien ya tenga planilla de ese mes
+      se le omite, así que puedes repetirlo sin duplicar nada.
+    </p>
+
+    <!-- Qué pasó con cada empleado -->
+    <ng-container *ngIf="resultadoGeneracion">
+      <div class="resumen-masivo">
+        <div class="resumen-masivo__dato" *ngIf="resultadoGeneracion.resumen.evaluados !== undefined">
+          <strong>{{ resultadoGeneracion.resumen.evaluados }}</strong>
+          <span>Evaluados</span>
+        </div>
+        <div class="resumen-masivo__dato">
+          <strong>{{ resultadoGeneracion.resumen.generadas }}</strong>
+          <span>Generadas</span>
+        </div>
+        <div class="resumen-masivo__dato">
+          <strong>{{ resultadoGeneracion.resumen.omitidas }}</strong>
+          <span>Omitidas</span>
+        </div>
+      </div>
+
+      <div class="detalle-masivo">
+        <div class="detalle-masivo__fila" *ngFor="let d of resultadoGeneracion.detalle">
+          <span>{{ d.empleado }}</span>
+          <span *ngIf="d.estado === 'generada'" class="status-badge status-badge-success">Generada</span>
+          <span *ngIf="d.estado !== 'generada'" class="detalle-masivo__motivo">{{ d.motivo }}</span>
+        </div>
+      </div>
+    </ng-container>
+  </form>
+</app-form-modal>
+
+<!-- ── Emisión masiva de boletas ── -->
+<app-form-modal
+  [(visible)]="modalBoletasVisible"
+  titulo="Emitir boletas del mes"
+  [guardando]="emitiendo"
+  [textoGuardar]="resultadoBoletas ? 'Emitir otra vez' : 'Emitir boletas'"
+  (guardar)="emitirBoletas()"
+  (cancelar)="cerrarBoletas()"
+>
+  <div class="form-fields">
+    <p class="form-nota" *ngIf="!resultadoBoletas">
+      Se generará el PDF de la boleta de
+      <strong>{{ nombreMes(mesAEmitir) }} {{ anioAEmitir }}</strong> para cada
+      empleado que ya tenga planilla de ese mes. A quien no la tenga se le omite,
+      y las boletas ya emitidas no se duplican.
+    </p>
+
+    <p class="form-ayuda" *ngIf="!resultadoBoletas">
+      El mes sale del filtro de la lista: cámbialo ahí si quieres emitir otro.
+    </p>
+
+    <ng-container *ngIf="resultadoBoletas">
+      <div class="resumen-masivo">
+        <div class="resumen-masivo__dato">
+          <strong>{{ resultadoBoletas.generadas }}</strong>
+          <span>Emitidas</span>
+        </div>
+        <div class="resumen-masivo__dato">
+          <strong>{{ resultadoBoletas.omitidas }}</strong>
+          <span>Omitidas</span>
+        </div>
+      </div>
+      <p class="form-ayuda">
+        Las omitidas son empleados sin planilla de ese mes, o que ya tenían su
+        boleta emitida.
+      </p>
+    </ng-container>
+  </div>
+</app-form-modal>

@@ -47,7 +47,25 @@ return [
     |
     */
 
-    'expiration' => 1440,
+    /*
+     * Apagado a propósito. Este valor es un tope por ANTIGÜEDAD: cuenta
+     * desde que se emitió el token y no le importa si lo estás usando, así
+     * que botaba a la gente a media faena a las 24 h del login.
+     *
+     * La caducidad ahora vive en cada token (expires_at) y la empuja el
+     * middleware RenovarSesionActiva en cada petición: se cierra por estar
+     * sin usarse, no por antigüedad. Sanctum evalúa las dos condiciones con
+     * un AND (Guard.php), así que dejar esto en un número volvería a
+     * imponer el corte duro por encima de la ventana de inactividad.
+     */
+    'expiration' => null,
+
+    /*
+     * Minutos que una sesión aguanta SIN actividad antes de cerrarse.
+     * Cada petición la reinicia. Dos horas cubre de sobra una jornada de
+     * planillas con pausas, y deja fuera la computadora que quedó abierta.
+     */
+    'ventana_inactividad' => env('SESION_INACTIVIDAD_MINUTOS', 120),
 
     /*
     |--------------------------------------------------------------------------

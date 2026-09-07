@@ -1,0 +1,120 @@
+<div class="seccion-form" [formGroup]="form">
+  <h2 class="seccion-form__titulo">Datos laborales</h2>
+
+  <div class="rejilla-campos">
+    <div class="form-group">
+      <label for="area_id">Área *</label>
+      <select id="area_id" class="form-control" formControlName="area_id"
+        [class.is-invalid]="invalido('area_id')">
+        <option value="">— Elige un área —</option>
+        <option *ngFor="let a of areas" [value]="a.id">{{ a.nombre }}</option>
+      </select>
+      <small class="form-error" *ngIf="invalido('area_id')">{{ error('area_id') }}</small>
+    </div>
+
+    <div class="form-group">
+      <label for="cargo_id">Cargo *</label>
+      <select id="cargo_id" class="form-control" formControlName="cargo_id"
+        [class.is-invalid]="invalido('cargo_id')">
+        <option value="">— Elige un cargo —</option>
+        <option *ngFor="let c of cargos" [value]="c.id">{{ c.nombre }}</option>
+      </select>
+      <small class="form-error" *ngIf="invalido('cargo_id')">{{ error('cargo_id') }}</small>
+    </div>
+
+    <div class="form-group">
+      <label for="sede_id">Sede *</label>
+      <select id="sede_id" class="form-control" formControlName="sede_id"
+        [class.is-invalid]="invalido('sede_id')">
+        <option value="">— Elige una sede —</option>
+        <option *ngFor="let s of sedes" [value]="s.id">{{ s.nombre }}</option>
+      </select>
+      <small class="form-error" *ngIf="invalido('sede_id')">{{ error('sede_id') }}</small>
+    </div>
+
+    <div class="form-group">
+      <label for="fecha_ingreso">Fecha de ingreso *</label>
+      <input type="date" id="fecha_ingreso" class="form-control" formControlName="fecha_ingreso"
+        [class.is-invalid]="invalido('fecha_ingreso')" />
+      <small class="form-error" *ngIf="invalido('fecha_ingreso')">{{ error('fecha_ingreso') }}</small>
+    </div>
+
+    <div class="form-group">
+      <label for="tipo_contrato">Tipo de contrato *</label>
+      <select id="tipo_contrato" class="form-control" formControlName="tipo_contrato"
+        [class.is-invalid]="invalido('tipo_contrato')">
+        <option value="">— Elige un tipo —</option>
+        <option *ngFor="let t of tiposContrato" [value]="t.value">{{ t.label }}</option>
+      </select>
+      <small class="form-error" *ngIf="invalido('tipo_contrato')">{{ error('tipo_contrato') }}</small>
+      <small class="form-ayuda" *ngIf="!invalido('tipo_contrato')">
+        Con esto se le crea su primer contrato, con fecha de inicio el día de ingreso.
+      </small>
+    </div>
+
+    <!-- Solo los contratos con plazo llevan fecha de término; el indeterminado no. -->
+    <div class="form-group" *ngIf="llevaFechaFin">
+      <label for="fecha_fin_contrato">Fecha de término del contrato *</label>
+      <input type="date" id="fecha_fin_contrato" class="form-control"
+        formControlName="fecha_fin_contrato"
+        [class.is-invalid]="invalido('fecha_fin_contrato')" />
+      <small class="form-error" *ngIf="invalido('fecha_fin_contrato')">{{ error('fecha_fin_contrato') }}</small>
+      <small class="form-ayuda" *ngIf="!invalido('fecha_fin_contrato')">
+        Cuándo acaba este contrato. Al renovarlo se crea uno nuevo y este queda cerrado.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="sueldo_base">Sueldo base (S/) *</label>
+      <input type="number" id="sueldo_base" class="form-control" formControlName="sueldo_base"
+        min="0" step="0.01" placeholder="2500.00"
+        [class.is-invalid]="invalido('sueldo_base')" />
+      <small class="form-error" *ngIf="invalido('sueldo_base')">{{ error('sueldo_base') }}</small>
+      <small class="form-ayuda" *ngIf="!invalido('sueldo_base')">
+        Base para calcular su planilla.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="estado">Estado</label>
+      <select id="estado" class="form-control" formControlName="estado">
+        <option *ngFor="let e of estados" [value]="e.value">{{ e.label }}</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- ── Sus contratos ──────────────────────────────────────────────────
+     Solo en una ficha que ya existe: en un alta todavía no hay ninguno,
+     y el de arriba se crea al guardar. Las renovaciones no se hacen acá
+     porque cambiar el tipo en la ficha NO abre un contrato nuevo: eso se
+     hace en Contratos, que además cierra el anterior. -->
+<div class="seccion-form" *ngIf="!esNuevo">
+  <h3 class="seccion-form__titulo">Sus contratos</h3>
+
+  <p class="form-ayuda" *ngIf="cargandoContratos">Cargando sus contratos…</p>
+
+  <p class="form-nota" *ngIf="!cargandoContratos && !contratos.length">
+    Este trabajador no tiene ningún contrato registrado. Créaselo desde
+    <strong>Boletas y Finanzas → Contratos</strong>.
+  </p>
+
+  <ul class="lista-contratos" *ngIf="!cargandoContratos && contratos.length">
+    <li class="lista-contratos__item" *ngFor="let c of contratos">
+      <span class="status-badge" [ngClass]="'status-badge-' + severidadEstado(c.estado)">
+        {{ c.estado }}
+      </span>
+      <strong>{{ c.tipo_contrato.replace('_', ' ') }}</strong>
+      <span class="lista-contratos__fechas">
+        desde {{ fecha(c.fecha_inicio) }}
+        <ng-container *ngIf="c.fecha_fin"> hasta {{ fecha(c.fecha_fin) }}</ng-container>
+        <ng-container *ngIf="!c.fecha_fin"> — sin fecha de término</ng-container>
+      </span>
+    </li>
+  </ul>
+
+  <p class="form-ayuda" *ngIf="!cargandoContratos && contratos.length">
+    Para renovarlo o darlo por terminado ve a <strong>Contratos</strong>: al crear
+    uno nuevo, el vigente se cierra solo.
+  </p>
+</div>

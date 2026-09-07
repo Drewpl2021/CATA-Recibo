@@ -1,7 +1,4 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-Route::get('/', function () {
-    return view('welcome');
-});
+// Este backend solo expone API (ver routes/api.php).
+// El health check vive en /up (declarado en bootstrap/app.php).

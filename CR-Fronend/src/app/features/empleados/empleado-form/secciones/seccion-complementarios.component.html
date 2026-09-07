@@ -1,0 +1,44 @@
+<div class="seccion-form" [formGroup]="form">
+  <h2 class="seccion-form__titulo">Estudios y contacto de emergencia</h2>
+  <p class="seccion-form__ayuda">
+    Ninguno es obligatorio: se pueden completar más adelante.
+  </p>
+
+  <div class="rejilla-campos">
+    <div class="form-group">
+      <label for="nivel_estudios">Nivel de estudios</label>
+      <select id="nivel_estudios" class="form-control" formControlName="nivel_estudios">
+        <option value="">— Sin especificar —</option>
+        <option *ngFor="let n of niveles" [value]="n.value">{{ n.label }}</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="especialidad">Especialidad</label>
+      <input type="text" id="especialidad" class="form-control" formControlName="especialidad"
+        placeholder="Ej. Educación Primaria" />
+    </div>
+
+    <div class="form-group">
+      <label for="institucion_estudios">Institución donde estudió</label>
+      <input type="text" id="institucion_estudios" class="form-control"
+        formControlName="institucion_estudios" placeholder="Ej. UNA Puno" />
+    </div>
+
+    <div class="form-group">
+      <label for="contacto_emergencia_nombre">Contacto de emergencia</label>
+      <input type="text" id="contacto_emergencia_nombre" class="form-control"
+        formControlName="contacto_emergencia_nombre" placeholder="Nombre de un familiar" />
+    </div>
+
+    <div class="form-group">
+      <label for="contacto_emergencia_telefono">Teléfono del contacto</label>
+      <input type="tel" id="contacto_emergencia_telefono" class="form-control"
+        formControlName="contacto_emergencia_telefono" inputmode="numeric" maxlength="15"
+        placeholder="951234567" [class.is-invalid]="invalido('contacto_emergencia_telefono')" />
+      <small class="form-error" *ngIf="invalido('contacto_emergencia_telefono')">
+        Solo números, hasta 15 dígitos.
+      </small>
+    </div>
+  </div>
+</div>

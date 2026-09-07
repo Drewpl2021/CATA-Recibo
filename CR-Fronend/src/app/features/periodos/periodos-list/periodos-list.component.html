@@ -1,0 +1,145 @@
+<app-page-header
+  icono="date_range"
+  titulo="Periodos"
+  subtitulo="Tramos de tiempo de la campaña de planillas. Desde aquí se generan las planillas de todo el personal."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <button headerActions class="btn-primary" (click)="nuevo()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Nuevo Periodo
+  </button>
+</app-page-header>
+
+<app-data-table
+  [columnas]="columnas"
+  [datos]="periodos"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['nombre']"
+  [acciones]="['editar', 'eliminar']"
+  [accionesPersonalizadas]="accionesExtra"
+  mensajeVacio="Todavía no hay periodos registrados."
+  (editarFila)="editar($event)"
+  (eliminarFila)="eliminar($event)"
+  (accionPersonalizada)="abrirGenerar($event.fila)"
+></app-data-table>
+
+<!-- ── Alta / edición ── -->
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="periodoEditando ? 'Editar Periodo' : 'Nuevo Periodo'"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="nombre">Nombre *</label>
+      <input type="text" id="nombre" class="form-control" formControlName="nombre"
+        placeholder="Ej. Año Escolar 2026" [class.is-invalid]="invalido('nombre')" />
+      <small class="form-error" *ngIf="invalido('nombre')">
+        El nombre es obligatorio (máximo 45 caracteres).
+      </small>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="fecha_inicio">Desde *</label>
+        <input type="date" id="fecha_inicio" class="form-control" formControlName="fecha_inicio"
+          [class.is-invalid]="invalido('fecha_inicio')" />
+        <small class="form-error" *ngIf="invalido('fecha_inicio')">Indica la fecha de inicio.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_fin">Hasta *</label>
+        <input type="date" id="fecha_fin" class="form-control" formControlName="fecha_fin"
+          [class.is-invalid]="invalido('fecha_fin') || rangoInvertido" />
+        <small class="form-error" *ngIf="invalido('fecha_fin')">Indica la fecha de fin.</small>
+        <small class="form-error" *ngIf="rangoInvertido">
+          La fecha de fin no puede ser anterior a la de inicio.
+        </small>
+      </div>
+    </div>
+
+    <p class="form-nota">
+      Solo se podrán generar planillas de los meses que caigan dentro de este rango.
+    </p>
+  </form>
+</app-form-modal>
+
+<!-- ── Generación masiva de planillas ── -->
+<app-form-modal
+  [(visible)]="modalGenerarVisible"
+  [titulo]="'Generar planillas — ' + (periodoAGenerar?.nombre || '')"
+  ancho="640px"
+  [guardando]="generando"
+  [textoGuardar]="resultado ? 'Generar otra vez' : 'Generar'"
+  (guardar)="generar()"
+  (cancelar)="cerrarGenerar()"
+>
+  <form [formGroup]="formGenerar" class="form-fields">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="mes">Mes *</label>
+        <select id="mes" class="form-control" formControlName="mes">
+          <option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="anio">Año *</label>
+        <input type="number" id="anio" class="form-control" formControlName="anio" min="2000" />
+      </div>
+    </div>
+
+    <app-selector-empleados
+      *ngIf="!resultado"
+      [empleados]="empleados"
+      [areas]="areas"
+      [cargos]="cargos"
+      [sedes]="sedes"
+      [(alcance)]="alcance"
+      [(seleccion)]="empleadosElegidos"
+    ></app-selector-empleados>
+
+    <p class="form-nota" *ngIf="!resultado">
+      Se creará la planilla de ese mes para
+      <strong>{{ cuantosAlcanzados }} empleado(s)</strong>, con sus conceptos
+      automáticos ya calculados. A quien ya tenga planilla de ese mes se le omite,
+      así que puedes repetirlo sin miedo a duplicar.
+    </p>
+
+    <!-- Qué pasó con cada empleado -->
+    <ng-container *ngIf="resultado">
+      <div class="resumen-masivo">
+        <div class="resumen-masivo__dato" *ngIf="resultado.resumen.evaluados !== undefined">
+          <strong>{{ resultado.resumen.evaluados }}</strong>
+          <span>Evaluados</span>
+        </div>
+        <div class="resumen-masivo__dato">
+          <strong>{{ resultado.resumen.generadas }}</strong>
+          <span>Generadas</span>
+        </div>
+        <div class="resumen-masivo__dato">
+          <strong>{{ resultado.resumen.omitidas }}</strong>
+          <span>Omitidas</span>
+        </div>
+      </div>
+
+      <div class="detalle-masivo">
+        <div class="detalle-masivo__fila" *ngFor="let d of resultado.detalle">
+          <span>{{ d.empleado }}</span>
+          <span *ngIf="d.estado === 'generada'" class="status-badge status-badge-success">Generada</span>
+          <span *ngIf="d.estado !== 'generada'" class="detalle-masivo__motivo">{{ d.motivo }}</span>
+        </div>
+      </div>
+    </ng-container>
+  </form>
+</app-form-modal>

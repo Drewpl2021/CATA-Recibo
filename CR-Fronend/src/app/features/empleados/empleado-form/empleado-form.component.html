@@ -1,0 +1,60 @@
+<app-page-header icono="people" [titulo]="titulo" [subtitulo]="subtitulo">
+  <button headerActions class="btn-secondary" type="button" (click)="volver()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+    </svg>
+    Volver a la lista
+  </button>
+</app-page-header>
+
+<div class="section-panel" style="padding: 24px;">
+  <p *ngIf="cargando" class="data-table-empty">Cargando…</p>
+
+  <ng-container *ngIf="!cargando">
+    <app-wizard [pasos]="pasos" [(actual)]="paso" [form]="form" #wizard></app-wizard>
+
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <app-seccion-personales *ngIf="pasoActual === 'personales'"
+        [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"></app-seccion-personales>
+
+      <app-seccion-laborales *ngIf="pasoActual === 'laborales'"
+        [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"
+        [areas]="areas" [cargos]="cargos" [sedes]="sedes"
+        [contratos]="contratos" [cargandoContratos]="cargandoContratos"></app-seccion-laborales>
+
+      <app-seccion-planilla *ngIf="pasoActual === 'planilla'"
+        [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"></app-seccion-planilla>
+
+      <app-seccion-complementarios *ngIf="pasoActual === 'complementarios'"
+        [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"></app-seccion-complementarios>
+
+      <app-seccion-acceso *ngIf="pasoActual === 'acceso'"
+        [form]="form" [soloLectura]="soloLectura"
+        [roles]="roles" [esNuevo]="esNuevo"></app-seccion-acceso>
+
+      <div class="form-pie">
+        <button type="button" class="btn-secondary" *ngIf="!wizard.esPrimero"
+          (click)="wizard.anterior()">
+          Anterior
+        </button>
+
+        <div class="form-pie__derecha">
+          <button type="button" class="btn-secondary" (click)="volver()">
+            {{ soloLectura ? 'Cerrar' : 'Cancelar' }}
+          </button>
+
+          <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo"
+            (click)="wizard.siguiente()">
+            Siguiente
+          </button>
+
+          <button type="submit" class="btn-primary" *ngIf="wizard.esUltimo && !soloLectura"
+            [disabled]="guardando">
+            {{ guardando ? 'Guardando…' : (esNuevo ? 'Registrar empleado' : 'Guardar cambios') }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </ng-container>
+</div>

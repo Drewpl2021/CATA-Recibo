@@ -3,28 +3,42 @@ namespace App\Http\Controllers;
 
 use App\Models\Modulo;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use App\Traits\ListadoPaginado;
 
 class ModuloController extends Controller
 {
+    use ListadoPaginado;
+
+    /**
+     * GET /modulos?modulo_padre_id=&page=&size=&search=
+     *
+     * Solo los vivos: destroy() hace baja lógica, y sin este filtro la
+     * pantalla de administración seguía listando módulos ya eliminados.
+     * Sin ?page devuelve todo — el sidebar necesita el árbol completo.
+     */
     public function index(Request $request)
     {
-        $query = Modulo::with('moduloPadre', 'roles');
+        $query = Modulo::with('moduloPadre', 'roles')
+            ->where('estado_registro', 'activo');
 
-        if ($request->has('modulo_padre_id')) {
+        if ($request->filled('modulo_padre_id')) {
             $query->where('modulo_padre_id', $request->modulo_padre_id);
         }
 
-        return response()->json([
-            'success' => true,
-            'data'    => $query->orderBy('orden')->get()
-        ]);
+        return $this->responderListado(
+            $request,
+            $query->orderBy('orden'),
+            ['nombre', 'ruta']
+        );
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'modulo_padre_id' => 'required|uuid|exists:modulo_padre,id',
-            'nombre'          => 'required|string|max:255',
+            'nombre'          => ['required', 'string', 'max:255',
+                Rule::unique('modulos', 'nombre')->where('estado_registro', 'activo')],
             'ruta'            => 'nullable|string|max:255',
             'icono'           => 'nullable|string|max:255',
             'orden'           => 'nullable|integer|min:0',
@@ -47,7 +61,8 @@ class ModuloController extends Controller
 
         $request->validate([
             'modulo_padre_id' => 'sometimes|uuid|exists:modulo_padre,id',
-            'nombre'          => 'sometimes|string|max:255',
+            'nombre'          => ['sometimes', 'string', 'max:255',
+                Rule::unique('modulos', 'nombre')->where('estado_registro', 'activo')->ignore($id)],
             'ruta'            => 'nullable|string|max:255',
             'icono'           => 'nullable|string|max:255',
             'orden'           => 'nullable|integer|min:0',
@@ -67,8 +82,9 @@ class ModuloController extends Controller
     }
 
     /**
-     * Asigna o reemplaza los roles que pueden ver este módulo.
-     * Recibe un array de rol_id y sincroniza la tabla pivote rol_modulo.
+     * Asigna o reemplaza los roles que pueden VER este módulo en el sidebar (mis-modulos).
+     * Esto NO otorga permisos reales sobre los endpoints del módulo: el acceso a las
+     * rutas sigue controlado aparte por el middleware `rol:` en routes/api.php.
      */
     public function asignarRoles(Request $request, string $id)
     {
@@ -76,7 +92,7 @@ class ModuloController extends Controller
 
         $request->validate([
             'roles'   => 'required|array',
-            'roles.*' => 'uuid|exists:roles,id',
+            'roles.*' => 'uuid|exists:roles,id|distinct',
         ]);
 
         $modulo->roles()->sync($request->roles);

@@ -1,0 +1,459 @@
+/* ================================================================
+   ACCESO — login y registro
+   ================================================================
+   Las dos pantallas comparten esta hoja: son la misma tarjeta con el
+   panel de color de un lado o del otro. Viven fuera del layout (sin
+   barra lateral ni cabecera), por eso necesitan su propio contenedor
+   a pantalla completa.
+
+   La forma: una tarjeta ancha partida en dos por una CURVA. El panel
+   azul se mete en el papel con un arco elíptico —no con una línea
+   recta— y desde ahí se cruza a la otra pantalla con un botón de
+   contorno. En el login el panel va a la izquierda; en el registro se
+   voltea a la derecha, para que se note que son dos caras de lo
+   mismo.
+
+   Los campos son píldoras con el ícono adentro y el texto de ayuda
+   como marcador; la etiqueta sigue existiendo para el lector de
+   pantalla (.solo-lectores), que si no, el campo no se anuncia.
+
+   El botón, el aviso de error y los textos de ayuda son los de toda
+   la app (.btn-primary, .auth-alert, .form-error, .form-ayuda): acá
+   solo se define lo que no existe en ningún otro lado.
+   ================================================================ */
+
+.acceso {
+  /* Únicos colores fijos de la app: el paño y el panel son identidad
+     institucional, no tema. Se apagan en oscuro, pero nunca dejan de
+     ser el azul del colegio. */
+  --acceso-pano: #081A3A;
+  --acceso-panel: #143567;
+  --acceso-panel-texto: #FFFFFF;
+  --acceso-panel-apoyo: rgba(255, 255, 255, 0.76);
+  --acceso-papel: var(--surface);
+  --acceso-sombra: rgba(2, 10, 28, 0.55);
+
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 48px) clamp(12px, 4vw, 40px);
+  background-color: var(--acceso-pano);
+}
+
+:host-context(.dark-mode) .acceso {
+  --acceso-pano: #05090F;
+  --acceso-panel: #14294A;
+  --acceso-sombra: rgba(0, 0, 0, 0.7);
+}
+
+.acceso__ticket {
+  position: relative;
+  display: flex;
+  width: min(var(--acceso-ancho, 920px), 100%);
+  border-radius: 28px;
+  overflow: hidden;
+  background-color: var(--acceso-papel);
+  box-shadow: 0 30px 70px -20px var(--acceso-sombra);
+  /* Un solo momento al cargar: la tarjeta aparece una vez y se queda
+     quieta. Nada de entradas encadenadas. */
+  animation: acceso-entra 0.45s ease-out both;
+}
+
+@keyframes acceso-entra {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* El registro pide seis datos y los acomoda de dos en dos: necesita
+   más papel que el login, que solo pide dos. */
+.acceso--ancho .acceso__ticket {
+  --acceso-ancho: 1060px;
+}
+
+/* En el registro el panel se voltea al otro lado. */
+.acceso--invertido .acceso__ticket {
+  flex-direction: row-reverse;
+}
+
+/* ── Panel de color ────────────────────────────────────────────── */
+/* La curva es una elipse anclada al borde exterior: su lado interior
+   queda como un arco que se mete en el papel. El margen negativo es
+   lo que deja que ese arco invada, y el padding interior guarda el
+   contenido dentro de la zona que nunca se recorta. */
+.acceso__panel {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 45%;
+  margin-right: -74px;
+  padding: 46px 100px 46px 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  clip-path: ellipse(100% 104% at 0% 50%);
+  background-color: var(--acceso-panel);
+  /* Guilloché: los anillos finos de los documentos que valen. Es lo
+     único que decora el panel, y a esta opacidad no compite con el
+     escudo. */
+  background-image:
+    repeating-radial-gradient(circle at 30% 30%,
+      rgba(244, 180, 26, 0.11) 0 1px, transparent 1px 11px),
+    repeating-linear-gradient(115deg,
+      rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 16px);
+}
+
+.acceso--invertido .acceso__panel {
+  margin-right: 0;
+  margin-left: -74px;
+  padding: 46px 44px 46px 100px;
+  clip-path: ellipse(100% 104% at 100% 50%);
+}
+
+/* El archivo del escudo viene con fondo blanco cuadrado, así que el
+   recorte circular va sobre la propia imagen: si se pusiera un disco
+   blanco por detrás, las esquinas del PNG asomarían por fuera. */
+.sello {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #FFFFFF;
+  box-shadow:
+    0 0 0 2px rgba(244, 180, 26, 0.7),
+    0 0 0 8px rgba(255, 255, 255, 0.07),
+    0 16px 34px rgba(0, 0, 0, 0.35);
+}
+
+.sello img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* el escudo llena casi todo el PNG; encogerlo un pelo le da aire
+     dentro del disco y evita que la banderola roce el aro */
+  transform: scale(0.9);
+}
+
+.acceso__institucion {
+  margin: 22px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--acceso-panel-apoyo);
+}
+
+.acceso__colegio {
+  margin: 3px 0 0;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--acceso-panel-texto);
+}
+
+.acceso__filo {
+  display: block;
+  width: 44px;
+  height: 3px;
+  margin: 18px 0 26px;
+  border-radius: 2px;
+  background-color: var(--accent);
+}
+
+.acceso__invitacion {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--acceso-panel-texto);
+}
+
+.acceso__motivo {
+  margin: 8px 0 20px;
+  max-width: 30ch;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--acceso-panel-apoyo);
+}
+
+/* Botón de contorno: la puerta a la otra pantalla. No compite con el
+   botón macizo del formulario, que es la acción de verdad. */
+.acceso__cruzar {
+  padding: 11px 30px;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--acceso-panel-texto);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.acceso__cruzar:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+  border-color: #FFFFFF;
+}
+
+/* ── Hoja del formulario ───────────────────────────────────────── */
+.acceso__hoja {
+  flex: 1;
+  min-width: 0;
+  /* del lado de la curva hace falta más aire: la panza del panel
+     invade el papel y si no, los campos quedan pegados al arco */
+  padding: 52px 52px 52px 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.acceso__titulo {
+  margin: 0 0 6px;
+  text-align: center;
+  font-size: 31px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--heading);
+}
+
+.acceso__intro {
+  margin: 0 auto 26px;
+  max-width: 46ch;
+  text-align: center;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.acceso--invertido .acceso__hoja {
+  padding: 52px 92px 52px 52px;
+}
+
+/* El ritmo vertical lo lleva el formulario con un solo gap. */
+.acceso form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.acceso .form-row {
+  gap: 16px;
+}
+
+.acceso .form-row .campo {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Campo píldora ─────────────────────────────────────────────── */
+.campo {
+  position: relative;
+}
+
+.campo__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.campo__icono {
+  position: absolute;
+  left: 19px;
+  display: flex;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.campo input {
+  width: 100%;
+  padding: 14px 20px 14px 50px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background-color: var(--surface-hover);
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--text);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.campo input::placeholder {
+  color: var(--input-placeholder);
+}
+
+.campo input:focus {
+  outline: none;
+  border-color: var(--brand-500);
+  background-color: var(--surface);
+  box-shadow: var(--input-focus-shadow);
+}
+
+.campo input.is-invalid {
+  border-color: var(--danger);
+}
+
+/* El ojo de la contraseña, al otro extremo de la píldora. */
+.campo__ojo {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.campo__ojo:hover {
+  color: var(--text);
+  background-color: var(--surface-hover);
+}
+
+.campo--con-ojo input {
+  padding-right: 48px;
+}
+
+.campo .form-error,
+.campo .form-ayuda {
+  display: block;
+  margin-top: 7px;
+  padding-left: 20px;
+}
+
+/* Etiqueta que solo existe para el lector de pantalla: el diseño usa
+   el marcador del campo, pero un input sin etiqueta no se anuncia. */
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Botón y pie ───────────────────────────────────────────────── */
+.acceso__enviar {
+  align-self: center;
+  margin-top: 6px;
+  padding: 13px 46px;
+  border-radius: 999px;
+  font-size: 15px;
+}
+
+.acceso__pie {
+  margin: 26px auto 0;
+  max-width: 42ch;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.acceso__pie p {
+  margin: 0;
+}
+
+.acceso__pie a {
+  color: var(--brand-500);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.acceso__pie a:hover {
+  text-decoration: underline;
+}
+
+/* ── Foco visible ──────────────────────────────────────────────── */
+.acceso a:focus-visible,
+.acceso button:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+.acceso__cruzar:focus-visible {
+  outline-color: #FFFFFF;
+}
+
+/* ── Apilado: tablet y celular ─────────────────────────────────── */
+/* La tarjeta se pone de pie: el panel pasa arriba y la curva se
+   acuesta, igual que en la referencia. */
+@media (max-width: 880px) {
+  .acceso__ticket,
+  .acceso--ancho .acceso__ticket,
+  .acceso--invertido .acceso__ticket {
+    --acceso-ancho: 520px;
+    flex-direction: column;
+  }
+
+  .acceso__panel,
+  .acceso--invertido .acceso__panel {
+    width: auto;
+    margin: 0 0 -46px;
+    padding: 38px 32px 78px;
+    clip-path: ellipse(140% 100% at 50% 0%);
+  }
+
+  .sello {
+    width: 104px;
+    height: 104px;
+  }
+
+  .acceso__colegio {
+    margin-top: 18px;
+    font-size: 17px;
+  }
+
+  .acceso__filo {
+    margin: 14px 0 20px;
+  }
+
+  .acceso__invitacion {
+    font-size: 18px;
+  }
+
+  /* la panza del panel baja 46px sobre el papel: el formulario tiene
+     que arrancar por debajo. El selector invertido se repite porque si
+     no, su padding de escritorio gana por especificidad. */
+  .acceso__hoja,
+  .acceso--invertido .acceso__hoja {
+    padding: 66px 30px 36px;
+  }
+
+  .acceso__titulo {
+    font-size: 27px;
+  }
+}
+
+@media (max-width: 560px) {
+  .acceso__panel,
+  .acceso--invertido .acceso__panel {
+    padding: 30px 22px 66px;
+  }
+
+  .acceso__motivo {
+    margin-bottom: 16px;
+  }
+
+  .acceso__hoja,
+  .acceso--invertido .acceso__hoja {
+    padding: 58px 22px 30px;
+  }
+
+  .acceso__titulo {
+    font-size: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acceso__ticket {
+    animation: none;
+  }
+}

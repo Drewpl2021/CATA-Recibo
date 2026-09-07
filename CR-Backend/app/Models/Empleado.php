@@ -28,7 +28,6 @@ class Empleado extends Model
     'tipo_contrato',
     'forma_pago',
     'sede_id',
-    'firma_imagen',
     'nivel_estudios',
     'especialidad',
     'institucion_estudios',
@@ -56,5 +55,20 @@ class Empleado extends Model
     public function sede()
     {
         return $this->belongsTo(Sede::class);
+    }
+
+    public function usuario()
+    {
+        return $this->hasOne(User::class, 'empleado_id');
+    }
+
+    public function contratos()
+    {
+        return $this->hasMany(Contrato::class);
+    }
+
+    public function identidadFirma()
+    {
+        return $this->hasOne(IdentidadFirma::class);
     }
 }

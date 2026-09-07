@@ -1,0 +1,63 @@
+<app-page-header
+  icono="domain"
+  titulo="Áreas"
+  subtitulo="Áreas académicas y administrativas a las que puede pertenecer un empleado."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <button headerActions class="btn-primary" (click)="nueva()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Nueva Área
+  </button>
+</app-page-header>
+
+<app-data-table
+  [columnas]="columnas"
+  [datos]="areas"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['nombre', 'descripcion']"
+  [acciones]="['editar', 'eliminar']"
+  mensajeVacio="Todavía no hay áreas registradas."
+  (editarFila)="editar($event)"
+  (eliminarFila)="eliminar($event)"
+></app-data-table>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="areaEditando ? 'Editar Área' : 'Nueva Área'"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="nombre">Nombre *</label>
+      <input type="text" id="nombre" class="form-control" formControlName="nombre" placeholder="Ej. Comunicación"
+        [class.is-invalid]="invalido('nombre')" />
+      <small class="form-error" *ngIf="invalido('nombre')">
+        El nombre es obligatorio (máximo 100 caracteres).
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="descripcion">Descripción</label>
+      <textarea id="descripcion" class="form-control" formControlName="descripcion" rows="3"
+        placeholder="Descripción opcional del área" [class.is-invalid]="invalido('descripcion')"></textarea>
+      <small class="form-error" *ngIf="invalido('descripcion')">Máximo 255 caracteres.</small>
+    </div>
+
+    <div class="form-group">
+      <label for="estado">Estado</label>
+      <select id="estado" class="form-control" formControlName="estado">
+        <option *ngFor="let op of estadoOpciones" [value]="op.value">{{ op.label }}</option>
+      </select>
+    </div>
+  </form>
+</app-form-modal>

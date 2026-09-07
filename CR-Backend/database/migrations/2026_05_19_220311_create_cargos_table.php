@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('cargos', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('nombre', 100);
+            $table->string('nombre', 100)->unique();
             $table->string('descripcion', 255)->nullable();
             $table->timestamps();
         });

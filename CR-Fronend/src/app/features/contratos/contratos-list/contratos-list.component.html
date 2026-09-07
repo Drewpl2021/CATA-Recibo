@@ -1,0 +1,130 @@
+<app-page-header
+  icono="description"
+  titulo="Contratos"
+  subtitulo="Vínculo laboral de cada empleado. Cada uno tiene un solo contrato vigente a la vez."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <button headerActions class="btn-primary" (click)="nuevo()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Nuevo Contrato
+  </button>
+</app-page-header>
+
+<app-data-table
+  [columnas]="columnas"
+  [datos]="contratos"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'observaciones']"
+  [acciones]="['editar', 'eliminar']"
+  mensajeVacio="No hay contratos que coincidan con el filtro."
+  (editarFila)="editar($event)"
+  (eliminarFila)="eliminar($event)"
+>
+  <div tableActions class="filtros-linea">
+    <div class="filtros-linea__campo">
+      <label for="filtroEmpleado">Empleado</label>
+      <select id="filtroEmpleado" class="form-control" [(ngModel)]="filtroEmpleado" (ngModelChange)="alFiltrar()">
+        <option value="">Todos</option>
+        <option *ngFor="let e of empleados" [value]="e.id">{{ e.nombre }} {{ e.apellido }}</option>
+      </select>
+    </div>
+
+    <div class="filtros-linea__campo">
+      <label for="filtroEstado">Estado</label>
+      <select id="filtroEstado" class="form-control" [(ngModel)]="filtroEstado" (ngModelChange)="alFiltrar()">
+        <option value="">Todos</option>
+        <option *ngFor="let e of estados" [value]="e.value">{{ e.label }}</option>
+      </select>
+    </div>
+  </div>
+</app-data-table>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="contratoEditando ? 'Editar Contrato' : 'Nuevo Contrato'"
+  [guardando]="guardando"
+  ancho="560px"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="empleado_id">Empleado *</label>
+      <select id="empleado_id" class="form-control" formControlName="empleado_id"
+        [class.is-invalid]="invalido('empleado_id')">
+        <option value="">— Elige un empleado —</option>
+        <option *ngFor="let e of empleados" [value]="e.id">{{ e.nombre }} {{ e.apellido }}</option>
+      </select>
+      <small class="form-error" *ngIf="invalido('empleado_id')">Elige a quién pertenece el contrato.</small>
+    </div>
+
+    <!-- Aviso de la renovación automática -->
+    <p class="form-nota form-nota--aviso" *ngIf="contratoQueSeCerrara as anterior">
+      Este empleado ya tiene un contrato vigente desde
+      <strong>{{ anterior.fecha_inicio }}</strong>. Al guardar, ese contrato se
+      cerrará automáticamente y el nuevo pasará a ser el vigente.
+    </p>
+
+    <div class="form-group">
+      <label for="tipo_contrato">Tipo de contrato *</label>
+      <select id="tipo_contrato" class="form-control" formControlName="tipo_contrato">
+        <option *ngFor="let t of tipos" [value]="t.value">{{ t.label }}</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="fecha_inicio">Desde *</label>
+        <input type="date" id="fecha_inicio" class="form-control" formControlName="fecha_inicio"
+          [class.is-invalid]="invalido('fecha_inicio')" />
+        <small class="form-error" *ngIf="invalido('fecha_inicio')">Indica cuándo empieza.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_fin">Hasta</label>
+        <input type="date" id="fecha_fin" class="form-control" formControlName="fecha_fin"
+          [class.is-invalid]="rangoInvertido" />
+        <small class="form-error" *ngIf="rangoInvertido">
+          No puede terminar antes de empezar.
+        </small>
+        <small class="form-ayuda" *ngIf="!rangoInvertido">
+          Déjalo vacío si es indeterminado.
+        </small>
+      </div>
+    </div>
+
+    <!-- Solo al editar: el alta siempre nace vigente -->
+    <ng-container *ngIf="contratoEditando">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="estado">Estado</label>
+          <select id="estado" class="form-control" formControlName="estado">
+            <option *ngFor="let e of estados" [value]="e.value">{{ e.label }}</option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="pideMotivo">
+          <label for="motivo_fin">Motivo de fin</label>
+          <select id="motivo_fin" class="form-control" formControlName="motivo_fin">
+            <option value="">— Sin especificar —</option>
+            <option *ngFor="let m of motivos" [value]="m.value">{{ m.label }}</option>
+          </select>
+        </div>
+      </div>
+    </ng-container>
+
+    <div class="form-group">
+      <label for="observaciones">Observaciones</label>
+      <textarea id="observaciones" class="form-control" formControlName="observaciones" rows="2"
+        placeholder="Notas internas sobre este contrato"></textarea>
+    </div>
+  </form>
+</app-form-modal>

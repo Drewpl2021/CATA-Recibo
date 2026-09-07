@@ -8,7 +8,7 @@ class Cargo extends Model
     protected $table = 'cargos';
     protected $keyType = 'string';
     public $incrementing = false;
-    protected $fillable = ['id', 'nombre', 'descripcion'];
+    protected $fillable = ['id', 'nombre', 'descripcion', 'estado'];
 
     protected static function boot()
     {

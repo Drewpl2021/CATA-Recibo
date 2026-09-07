@@ -15,7 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(CorsMiddleware::class);
         $middleware->alias([
-            'rol' => \App\Http\Middleware\CheckRol::class,
+            'rol'    => \App\Http\Middleware\CheckRol::class,
+            'sesion' => \App\Http\Middleware\RenovarSesionActiva::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -15,4 +15,9 @@ class Periodo extends Model
         parent::boot();
         static::creating(fn($m) => $m->id = $m->id ?: Str::uuid());
     }
+
+    public function planillas()
+    {
+        return $this->hasMany(Planilla::class, 'periodo_id');
+    }
 }

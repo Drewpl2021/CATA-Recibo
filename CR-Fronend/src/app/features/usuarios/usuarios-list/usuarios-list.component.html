@@ -1,0 +1,88 @@
+<app-page-header
+  icono="people"
+  titulo="Usuarios"
+  subtitulo="Cuentas de acceso al sistema: su rol, el empleado al que pertenecen y si pueden entrar."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+></app-page-header>
+
+<app-data-table
+  [columnas]="columnas"
+  [datos]="usuarios"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['name', 'email']"
+  [acciones]="['editar', 'eliminar']"
+  [accionesPersonalizadas]="accionesExtra"
+  mensajeVacio="Todavía no hay usuarios."
+  (editarFila)="editar($event)"
+  (eliminarFila)="desactivar($event)"
+  (accionPersonalizada)="alAccionar($event)"
+></app-data-table>
+
+<p class="form-nota" style="margin-top: 16px;">
+  Las cuentas no se crean desde aquí: nacen cuando alguien se registra o cuando
+  das de alta un empleado. Lo que sí se decide acá es el <strong>rol</strong>
+  (a qué puede entrar) y el <strong>empleado vinculado</strong> (de quién son
+  las boletas que verá).
+</p>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  titulo="Editar Usuario"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="name">Nombre *</label>
+      <input type="text" id="name" class="form-control" formControlName="name"
+        [class.is-invalid]="invalido('name')" />
+      <small class="form-error" *ngIf="invalido('name')">El nombre es obligatorio.</small>
+    </div>
+
+    <div class="form-group">
+      <label for="email">Correo *</label>
+      <input type="email" id="email" class="form-control" formControlName="email"
+        placeholder="docente@cata.edu.pe" [class.is-invalid]="invalido('email')" />
+      <small class="form-error" *ngIf="invalido('email')">
+        Escribe un correo válido; es con el que entra al sistema.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="rol_id">Rol *</label>
+      <select id="rol_id" class="form-control" formControlName="rol_id"
+        [class.is-invalid]="invalido('rol_id')">
+        <option value="">— Elige un rol —</option>
+        <option *ngFor="let r of roles" [value]="r.id">{{ r.nombre }}</option>
+      </select>
+      <small class="form-error" *ngIf="invalido('rol_id')">El usuario necesita un rol.</small>
+      <small class="form-ayuda" *ngIf="!invalido('rol_id')">
+        Decide qué módulos ve y a qué endpoints llega.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="empleado_id">Empleado vinculado</label>
+      <select id="empleado_id" class="form-control" formControlName="empleado_id">
+        <option value="">— Sin vincular —</option>
+        <option *ngFor="let e of empleados" [value]="e.id">{{ e.nombre }} {{ e.apellido }}</option>
+      </select>
+      <small class="form-ayuda">
+        Sin vincular, la cuenta entra al sistema pero no tiene boletas propias
+        que consultar en "Mi Espacio".
+      </small>
+    </div>
+
+    <p class="form-nota" *ngIf="usuarioEditando && esMiCuenta(usuarioEditando)">
+      Esta es tu propia cuenta. Si te cambias el rol puedes perder el acceso a
+      esta pantalla.
+    </p>
+  </form>
+</app-form-modal>

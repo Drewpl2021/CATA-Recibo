@@ -18,7 +18,6 @@ class Contrato extends Model
         'fecha_fin',
         'estado',
         'motivo_fin',
-        'documento_id',
         'observaciones',
         'estado_registro',
     ];
@@ -36,8 +35,8 @@ class Contrato extends Model
         return $this->belongsTo(Empleado::class);
     }
 
-    public function documento()
+    public function documentos()
     {
-        return $this->belongsTo(Documento::class);
+        return $this->hasMany(Documento::class, 'contrato_id');
     }
 }

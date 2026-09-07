@@ -1,0 +1,16 @@
+<div class="modal-overlay" *ngIf="request as r" (click)="cancelar()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-icon-danger" *ngIf="r.options.variante !== 'default'">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+        <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+      </svg>
+    </div>
+    <h3>{{ r.options.titulo }}</h3>
+    <p>{{ r.options.mensaje }}</p>
+    <div class="modal-actions">
+      <button class="btn-secondary-modal" (click)="cancelar()">{{ r.options.cancelarTexto ?? 'Cancelar' }}</button>
+      <button class="btn-danger-modal" (click)="aceptar()">{{ r.options.aceptarTexto ?? 'Confirmar' }}</button>
+    </div>
+  </div>
+</div>

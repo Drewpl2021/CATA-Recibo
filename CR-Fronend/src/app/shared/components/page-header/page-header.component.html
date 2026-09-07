@@ -1,0 +1,24 @@
+<header class="page-header">
+  <div class="page-header__title">
+    <span class="page-header__icon">
+      <app-icon [nombreModulo]="titulo" [icono]="icono" [tamano]="24"></app-icon>
+    </span>
+    <div>
+      <h1>{{ titulo }}</h1>
+      <p *ngIf="subtitulo">{{ subtitulo }}</p>
+    </div>
+  </div>
+
+  <div class="cifras-cabecera" *ngIf="cifras.length">
+    <div class="cifras-cabecera__dato" *ngFor="let c of cifras"
+      [ngClass]="'cifras-cabecera__dato--' + (c.tono || 'brand')">
+      <app-icon [icono]="c.icono" [tamano]="15"></app-icon>
+      <strong>{{ cargandoCifras ? '—' : (c.valor | number) }}</strong>
+      <span>{{ c.etiqueta }}</span>
+    </div>
+  </div>
+
+  <div class="page-header__actions">
+    <ng-content select="[headerActions]"></ng-content>
+  </div>
+</header>

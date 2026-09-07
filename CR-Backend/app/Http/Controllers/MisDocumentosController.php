@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Documento;
+use App\Models\Planilla;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
@@ -101,6 +102,23 @@ class MisDocumentosController extends Controller
             'firmado_por'  => $nombre_completo,
             'codigo_firma' => strtoupper(Str::random(8)) . '-' . time(),
         ]);
+
+        // Si es una boleta, se vuelve a armar el PDF ahora que ya quedó firmada —
+        // así el archivo congelado en disco sí incluye el sello de firma+huella y
+        // el texto de verificación (si no se regenerara aquí, quedaría archivada
+        // para siempre la versión de ANTES de firmar).
+        if ($documento->tipo === 'boleta' && $documento->planilla_id) {
+            $planilla = Planilla::find($documento->planilla_id);
+            if ($planilla) {
+                app(BoletaController::class)->construirBoleta(
+                    $empleado->load('area', 'cargo', 'identidadFirma'),
+                    $planilla,
+                    (int) $planilla->mes,
+                    (int) $planilla->anio,
+                    forzarGuardado: true
+                );
+            }
+        }
 
         return response()->json([
             'success' => true,

@@ -1,0 +1,109 @@
+<app-page-header
+  icono="receipt_long"
+  [titulo]="nombreEmpleado ? 'Planilla de ' + nombreEmpleado : 'Detalle de planilla'"
+  [subtitulo]="tituloPeriodo ? 'Conceptos de ' + tituloPeriodo + '. Son las líneas que salen en su boleta.' : ''"
+>
+  <div headerActions style="display: flex; gap: 12px;">
+    <button class="btn-secondary" type="button" (click)="volver()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Volver
+    </button>
+
+    <button class="btn-primary" (click)="nuevo()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Agregar concepto
+    </button>
+  </div>
+</app-page-header>
+
+<!-- Resumen de la planilla -->
+<div class="resumen-masivo" *ngIf="planilla">
+  <div class="resumen-masivo__dato">
+    <strong>S/ {{ (planilla.sueldo_base || 0) | number: '1.2-2' }}</strong>
+    <span>Sueldo base</span>
+  </div>
+  <div class="resumen-masivo__dato">
+    <strong style="color: var(--success-text);">+ S/ {{ totalSuma | number: '1.2-2' }}</strong>
+    <span>Suman al sueldo</span>
+  </div>
+  <div class="resumen-masivo__dato">
+    <strong style="color: var(--danger-text);">− S/ {{ totalResta | number: '1.2-2' }}</strong>
+    <span>Descuentos</span>
+  </div>
+  <div class="resumen-masivo__dato">
+    <strong>S/ {{ (planilla.total || 0) | number: '1.2-2' }}</strong>
+    <span>Neto a pagar</span>
+  </div>
+</div>
+
+<p class="form-ayuda" *ngIf="totalAportaciones > 0" style="margin: -4px 0 16px;">
+  Además, el colegio aporta <strong>S/ {{ totalAportaciones | number: '1.2-2' }}</strong>
+  (EsSalud y similares). No se descuentan del sueldo del trabajador.
+</p>
+
+<app-data-table
+  [columnas]="columnas"
+  [datos]="detalles"
+  [cargando]="cargando"
+  [camposBusqueda]="['payment_concept.nombre', 'descripcion']"
+  [acciones]="['editar', 'eliminar']"
+  [filasPorPagina]="20"
+  mensajeVacio="Esta planilla todavía no tiene conceptos."
+  (editarFila)="editar($event)"
+  (eliminarFila)="eliminar($event)"
+></app-data-table>
+
+<p class="form-nota" style="margin-top: 16px;">
+  Los conceptos de ley (pensión, EsSalud, Asignación Familiar, Renta de 5ta) se
+  calculan solos al crear la planilla. Agrega aquí solo lo que sea de esta
+  persona en este mes: un adelanto, un descuento puntual, una bonificación.
+</p>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="detalleEditando ? 'Editar concepto' : 'Agregar concepto'"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="payment_concept_id">Concepto *</label>
+      <select id="payment_concept_id" class="form-control" formControlName="payment_concept_id"
+        [attr.disabled]="detalleEditando ? true : null"
+        (change)="alElegirConcepto()"
+        [class.is-invalid]="invalido('payment_concept_id')">
+        <option value="">— Elige un concepto —</option>
+        <option *ngFor="let c of conceptos" [value]="c.id">{{ c.nombre }}</option>
+      </select>
+      <small class="form-error" *ngIf="invalido('payment_concept_id')">Elige qué concepto agregar.</small>
+      <small class="form-ayuda" *ngIf="detalleEditando">
+        El concepto no se cambia: si te equivocaste, quita la línea y agrégala de nuevo.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="monto_calculado">Monto (S/) *</label>
+      <input type="number" id="monto_calculado" class="form-control" formControlName="monto_calculado"
+        min="0" step="0.01" placeholder="0.00" [class.is-invalid]="invalido('monto_calculado')" />
+      <small class="form-error" *ngIf="invalido('monto_calculado')">
+        Indica el monto, sin signo: el tipo de concepto ya dice si suma o resta.
+      </small>
+      <small class="form-ayuda" *ngIf="!invalido('monto_calculado')">
+        Si el concepto tiene valor en el catálogo, se propone solo; puedes cambiarlo.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="descripcion">Detalle</label>
+      <input type="text" id="descripcion" class="form-control" formControlName="descripcion"
+        placeholder="Ej. Adelanto solicitado el 12/03" />
+      <small class="form-ayuda">Aparece junto al concepto en la boleta.</small>
+    </div>
+  </form>
+</app-form-modal>

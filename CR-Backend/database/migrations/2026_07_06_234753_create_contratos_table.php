@@ -19,12 +19,11 @@ return new class extends Migration
                 'renuncia', 'despido', 'fin_contrato_plazo',
                 'fin_año_escolar', 'no_renovacion', 'jubilacion', 'otro'
             ])->nullable();
-            $table->uuid('documento_id')->nullable();
             $table->text('observaciones')->nullable();
+            $table->string('estado_registro')->default('activo');
             $table->timestamps();
 
             $table->foreign('empleado_id')->references('id')->on('empleados')->onDelete('cascade');
-            $table->foreign('documento_id')->references('id')->on('documentos')->onDelete('set null');
         });
     }
 

@@ -1,0 +1,81 @@
+<div class="form-group">
+  <label>¿A quiénes?</label>
+
+  <!-- Todo el personal, o solo algunos -->
+  <div class="opciones-alcance" *ngIf="permiteTodos">
+    <label class="check-item" [class.is-activo]="esTodos">
+      <input type="radio" name="alcance" [checked]="esTodos" (change)="cambiarAlcance('todos')" />
+      <span>Todo el personal activo ({{ empleados.length }})</span>
+    </label>
+
+    <label class="check-item" [class.is-activo]="!esTodos">
+      <input type="radio" name="alcance" [checked]="!esTodos" (change)="cambiarAlcance('elegidos')" />
+      <span>Solo a quienes yo elija</span>
+    </label>
+  </div>
+</div>
+
+<ng-container *ngIf="!esTodos || !permiteTodos">
+  <!-- Los filtros marcan de golpe; no esconden a nadie -->
+  <div class="form-group">
+    <div class="filtros-linea">
+      <div class="filtros-linea__campo" *ngIf="areas.length">
+        <label for="selArea">Área</label>
+        <select id="selArea" class="form-control" [(ngModel)]="filtroArea">
+          <option value="">Cualquiera</option>
+          <option *ngFor="let a of areas" [value]="a.id">{{ a.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="filtros-linea__campo" *ngIf="cargos.length">
+        <label for="selCargo">Cargo</label>
+        <select id="selCargo" class="form-control" [(ngModel)]="filtroCargo">
+          <option value="">Cualquiera</option>
+          <option *ngFor="let c of cargos" [value]="c.id">{{ c.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="filtros-linea__campo" *ngIf="sedes.length">
+        <label for="selSede">Sede</label>
+        <select id="selSede" class="form-control" [(ngModel)]="filtroSede">
+          <option value="">Cualquiera</option>
+          <option *ngFor="let s of sedes" [value]="s.id">{{ s.nombre }}</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn-secondary" [disabled]="!hayFiltros"
+        (click)="marcarLosDelFiltro()">
+        Marcar los {{ cuantosCoinciden }} que coinciden
+      </button>
+    </div>
+    <small class="form-ayuda">
+      Los filtros solo sirven para marcar rápido: no ocultan a nadie de la lista.
+    </small>
+  </div>
+
+  <div class="form-group">
+    <label>
+      Empleados
+      <span class="form-ayuda" style="display: inline; margin-left: 6px;">
+        {{ cuantosMarcados }} de {{ empleados.length }} marcados
+      </span>
+      <button type="button" class="enlace-sutil" *ngIf="cuantosMarcados" (click)="limpiarSeleccion()">
+        Limpiar
+      </button>
+    </label>
+
+    <div class="lista-checks lista-checks--alta">
+      <label class="check-item check-item--bloque" *ngIf="empleados.length">
+        <input type="checkbox" [checked]="todosMarcados" (change)="alternarTodos()" />
+        <span><strong>Marcar a todos</strong></span>
+      </label>
+
+      <label class="check-item" *ngFor="let e of empleados">
+        <input type="checkbox" [checked]="estaMarcado(e.id)" (change)="alternar(e.id)" />
+        <span>{{ e.nombre }} {{ e.apellido }}</span>
+      </label>
+
+      <p class="form-ayuda" *ngIf="!empleados.length">No hay empleados activos.</p>
+    </div>
+  </div>
+</ng-container>
