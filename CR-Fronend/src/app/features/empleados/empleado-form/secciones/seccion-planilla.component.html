@@ -1,0 +1,74 @@
+<div class="seccion-form" [formGroup]="form">
+  <h2 class="seccion-form__titulo">Planilla y pagos</h2>
+  <p class="seccion-form__ayuda">
+    Con estos datos el sistema calcula sus aportes y descuentos de ley.
+  </p>
+
+  <div class="rejilla-campos">
+    <div class="form-group">
+      <label for="sistema_pensiones">Sistema de pensiones *</label>
+      <select id="sistema_pensiones" class="form-control" formControlName="sistema_pensiones">
+        <option *ngFor="let s of sistemas" [value]="s.value">{{ s.label }}</option>
+      </select>
+      <small class="form-ayuda">
+        ONP descuenta el 13%; en AFP el porcentaje depende de la entidad.
+      </small>
+    </div>
+
+    <!-- Solo con AFP: el backend los exige justo en ese caso -->
+    <ng-container *ngIf="esAfp">
+      <div class="form-group">
+        <label for="afp">AFP *</label>
+        <select id="afp" class="form-control" formControlName="afp"
+          [class.is-invalid]="invalido('afp')">
+          <option value="">— Elige la AFP —</option>
+          <option *ngFor="let a of afps" [value]="a.value">{{ a.label }}</option>
+        </select>
+        <small class="form-error" *ngIf="invalido('afp')">{{ error('afp') }}</small>
+      </div>
+
+      <div class="form-group">
+        <label for="cuspp">CUSPP *</label>
+        <input type="text" id="cuspp" class="form-control" formControlName="cuspp"
+          inputmode="numeric" maxlength="11" placeholder="11 dígitos"
+          [class.is-invalid]="invalido('cuspp')" />
+        <small class="form-error" *ngIf="invalido('cuspp')">Son 11 dígitos.</small>
+        <small class="form-ayuda" *ngIf="!invalido('cuspp')">
+          Código único del afiliado al sistema privado.
+        </small>
+      </div>
+    </ng-container>
+
+    <div class="form-group">
+      <label for="forma_pago">Forma de pago</label>
+      <select id="forma_pago" class="form-control" formControlName="forma_pago">
+        <option value="">— Sin definir —</option>
+        <option *ngFor="let f of formasPago" [value]="f.value">{{ f.label }}</option>
+      </select>
+    </div>
+
+    <ng-container *ngIf="pagaPorBanco">
+      <div class="form-group">
+        <label for="entidad_financiera">Banco</label>
+        <input type="text" id="entidad_financiera" class="form-control"
+          formControlName="entidad_financiera" placeholder="Ej. BCP" />
+      </div>
+
+      <div class="form-group">
+        <label for="numero_cuenta">Número de cuenta</label>
+        <input type="text" id="numero_cuenta" class="form-control"
+          formControlName="numero_cuenta" placeholder="Cuenta de abono del sueldo" />
+      </div>
+    </ng-container>
+
+    <div class="form-group rejilla-campos--completo">
+      <label class="check-item check-item--bloque">
+        <input type="checkbox" formControlName="tiene_hijos" />
+        <span>Tiene hijos menores a cargo</span>
+      </label>
+      <small class="form-ayuda">
+        Da derecho a la Asignación Familiar, que se suma sola a su boleta.
+      </small>
+    </div>
+  </div>
+</div>

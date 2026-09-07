@@ -1,0 +1,33 @@
+<app-page-header
+  icono="people"
+  titulo="Empleados"
+  subtitulo="Personal del colegio. Al dar de alta a uno se le crea su cuenta de acceso."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <button headerActions class="btn-primary" (click)="nuevo()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Nuevo Empleado
+  </button>
+</app-page-header>
+
+<app-data-table
+  [columnas]="columnas"
+  [datos]="empleados"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['dni', 'nombre', 'apellido', 'cargo.nombre', 'area.nombre', 'usuario.email']"
+  [acciones]="['editar', 'eliminar']"
+  [accionesPersonalizadas]="accionesExtra"
+  [filasPorPagina]="15"
+  mensajeVacio="Todavía no hay empleados registrados."
+  (editarFila)="editar($event)"
+  (eliminarFila)="darDeBaja($event)"
+  (accionPersonalizada)="alAccionar($event)"
+></app-data-table>

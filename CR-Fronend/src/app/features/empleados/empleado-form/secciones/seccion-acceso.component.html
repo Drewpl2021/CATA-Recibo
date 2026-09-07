@@ -1,0 +1,43 @@
+<div class="seccion-form" [formGroup]="form">
+  <h2 class="seccion-form__titulo">Cuenta de acceso</h2>
+  <p class="seccion-form__ayuda" *ngIf="esNuevo">
+    Al guardar se le creará su cuenta para entrar al sistema.
+  </p>
+  <p class="seccion-form__ayuda" *ngIf="!esNuevo">
+    Su cuenta ya existe. Desde aquí solo se corrige el correo; el rol se
+    cambia en <strong>Usuarios</strong>.
+  </p>
+
+  <div class="rejilla-campos">
+    <div class="form-group">
+      <label for="email">Correo institucional {{ esNuevo ? '*' : '' }}</label>
+      <input type="email" id="email" class="form-control" formControlName="email"
+        placeholder="nombre.apellido@cata.edu.pe"
+        [class.is-invalid]="invalido('email')" />
+      <small class="form-error" *ngIf="invalido('email')">{{ error('email') }}</small>
+      <small class="form-ayuda" *ngIf="!invalido('email')">
+        Con este correo iniciará sesión. Si todavía no tiene el institucional,
+        pon uno provisional y cámbialo después.
+      </small>
+    </div>
+
+    <div class="form-group" *ngIf="esNuevo">
+      <label for="rol_id">Rol *</label>
+      <select id="rol_id" class="form-control" formControlName="rol_id"
+        [class.is-invalid]="invalido('rol_id')">
+        <option value="">— Elige un rol —</option>
+        <option *ngFor="let r of roles" [value]="r.id">{{ r.nombre }}</option>
+      </select>
+      <small class="form-error" *ngIf="invalido('rol_id')">{{ error('rol_id') }}</small>
+      <small class="form-ayuda" *ngIf="!invalido('rol_id')">
+        Decide qué verá en el menú. Lo normal para un docente es "empleado".
+      </small>
+    </div>
+  </div>
+
+  <!-- Lo que RR.HH. debe comunicarle al trabajador -->
+  <p class="form-nota form-nota--aviso" *ngIf="esNuevo">
+    Su contraseña inicial será su <strong>DNI</strong>{{ dni ? ': ' + dni : '' }}.
+    Pídele que la cambie la primera vez que entre.
+  </p>
+</div>

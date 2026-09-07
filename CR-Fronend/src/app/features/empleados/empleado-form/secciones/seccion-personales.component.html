@@ -1,0 +1,55 @@
+<div class="seccion-form" [formGroup]="form">
+  <h2 class="seccion-form__titulo">Datos personales</h2>
+
+  <div class="rejilla-campos">
+    <div class="form-group">
+      <label for="dni">DNI *</label>
+      <input type="text" id="dni" class="form-control" formControlName="dni"
+        inputmode="numeric" maxlength="8" placeholder="12345678"
+        [class.is-invalid]="invalido('dni')" />
+      <small class="form-error" *ngIf="invalido('dni')">
+        Son 8 dígitos, sin puntos ni espacios.
+      </small>
+      <small class="form-ayuda" *ngIf="!invalido('dni') && esNuevo">
+        Será la contraseña inicial de su cuenta.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="nombre">Nombres *</label>
+      <input type="text" id="nombre" class="form-control" formControlName="nombre"
+        placeholder="Ej. María Elena" [class.is-invalid]="invalido('nombre')" />
+      <small class="form-error" *ngIf="invalido('nombre')">{{ error('nombre') }}</small>
+    </div>
+
+    <div class="form-group">
+      <label for="apellido">Apellidos *</label>
+      <input type="text" id="apellido" class="form-control" formControlName="apellido"
+        placeholder="Ej. Quispe Mamani" [class.is-invalid]="invalido('apellido')" />
+      <small class="form-error" *ngIf="invalido('apellido')">{{ error('apellido') }}</small>
+    </div>
+
+    <div class="form-group">
+      <label for="fecha_nacimiento">Fecha de nacimiento *</label>
+      <input type="date" id="fecha_nacimiento" class="form-control" formControlName="fecha_nacimiento"
+        [class.is-invalid]="invalido('fecha_nacimiento')" />
+      <small class="form-error" *ngIf="invalido('fecha_nacimiento')">{{ error('fecha_nacimiento') }}</small>
+    </div>
+
+    <div class="form-group">
+      <label for="telefono">Teléfono *</label>
+      <input type="tel" id="telefono" class="form-control" formControlName="telefono"
+        inputmode="numeric" maxlength="15" placeholder="951234567"
+        [class.is-invalid]="invalido('telefono')" />
+      <small class="form-error" *ngIf="invalido('telefono')">Solo números, hasta 15 dígitos.</small>
+    </div>
+
+    <div class="form-group rejilla-campos--completo">
+      <label for="direccion">Dirección *</label>
+      <input type="text" id="direccion" class="form-control" formControlName="direccion"
+        placeholder="Ej. Jr. Moquegua N° 852 — Juliaca"
+        [class.is-invalid]="invalido('direccion')" />
+      <small class="form-error" *ngIf="invalido('direccion')">{{ error('direccion') }}</small>
+    </div>
+  </div>
+</div>

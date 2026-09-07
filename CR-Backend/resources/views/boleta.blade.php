@@ -32,8 +32,8 @@
             display: table;
             width: 100%;
             border-bottom: 2px solid #1565C0;
-            padding-bottom: 10px;
-            margin-bottom: 12px;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .encabezado-logo {
@@ -60,10 +60,16 @@
             letter-spacing: 1px;
         }
 
+        .encabezado-texto .ruc {
+            font-size: 9px;
+            color: #666;
+            margin-top: 1px;
+        }
+
         .encabezado-texto h2 {
             font-size: 11px;
             color: #B8860B;
-            margin-top: 3px;
+            margin-top: 4px;
             font-weight: bold;
         }
 
@@ -78,7 +84,7 @@
             font-size: 12px;
             font-weight: bold;
             color: #1565C0;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -95,13 +101,9 @@
             margin-bottom: 6px;
         }
 
-        .seccion-titulo.descuento {
-            background: #B71C1C;
-        }
-
-        .seccion-titulo.aporte {
-            background: #2E7D32;
-        }
+        .seccion-titulo.descuento { background: #B71C1C; }
+        .seccion-titulo.aporte { background: #2E7D32; }
+        .seccion-titulo.adelanto { background: #B8860B; }
 
         table {
             width: 100%;
@@ -117,9 +119,7 @@
             overflow-wrap: break-word;
         }
 
-        table td.monto {
-            text-align: right;
-        }
+        table td.monto { text-align: right; }
 
         .fila-total td {
             background: #B8860B;
@@ -140,12 +140,40 @@
             font-style: italic;
         }
 
+        /* ── Layout de 2 columnas lado a lado (Ingresos | Descuentos, y Aportaciones | Adelanto) ── */
+        .fila-columnas {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+            margin-bottom: 4px;
+        }
+
+        .columna {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 6px;
+        }
+
+        .columna:last-child {
+            padding-right: 0;
+            padding-left: 6px;
+        }
+
         .firma-section {
-            margin-top: 4px;
+            margin-top: 6px;
             display: table;
             width: 100%;
             page-break-inside: avoid;
             page-break-before: avoid;
+        }
+
+        .fecha-lugar {
+            text-align: right;
+            font-size: 9px;
+            color: #555;
+            margin-top: 10px;
+            margin-bottom: 4px;
         }
 
         .firma-box {
@@ -167,12 +195,6 @@
             font-weight: bold;
         }
 
-        .separador {
-            border: none;
-            border-top: 2px dashed #aaa;
-            margin: 18px 0;
-        }
-
         .firma-digital {
             margin-top: 8px;
             padding: 6px 8px;
@@ -186,16 +208,31 @@
 <body>
 
 @php
+    $totalConceptosIngreso = $conceptosIngreso->sum('monto_calculado');
+
     $totalIngresos = (float)$planilla->sueldo_base
         + (float)$planilla->bonificaciones
         + $asignacionFamiliar
-        + $gratificacion['total'];
+        + $gratificacion['total']
+        + $totalConceptosIngreso;
 
-    $totalDescuentosManual = (float)$planilla->descuentos;
-$totalDescuentosOtros = $descuentos->sum('monto');
-$totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta + $totalDescuentosOtros;
+    $totalDescuentosManual    = (float)$planilla->descuentos;
+    $totalConceptosDescuento  = $conceptosDescuento->sum('monto_calculado');
+    $totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta + $totalConceptosDescuento;
 
-    $totalNeto = $totalIngresos - $totalDescuentos;
+    $totalConceptosAportacion = $conceptosAportacion->sum('monto_calculado');
+    $totalAportes = $essalud + $totalConceptosAportacion;
+
+    $totalAdelantos = $conceptosAdelanto->sum('monto_calculado');
+
+    // Total Neto = Ingresos - Descuentos - Adelantos (los Aportes del empleador NO se restan,
+    // son informativos — verificado contra la boleta física del colegio).
+    $totalNeto = $totalIngresos - $totalDescuentos - $totalAdelantos;
+
+    // Datos institucionales fijos (no hay un módulo de "datos del colegio" en el sistema).
+    $colegioRuc = '20156630733';
+    $colegioDireccion = 'Jr. Moquegua N° 852';
+    $ciudadFirma = 'Juliaca';
 @endphp
 
 @for ($copia = 1; $copia <= 2; $copia++)
@@ -214,9 +251,10 @@ $totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta + $tot
         </div>
         <div class="encabezado-texto">
             <h1>Asociación Educativa Colegio Adventista Túpac Amaru</h1>
-            <h2>Boleta de Pago — {{ $mes_nombre }} {{ $anio }}</h2>
-            <p>Documento generado el {{ now()->format('d/m/Y') }}</p>
-            <p>N° Boleta: {{ $numero_boleta }}</p>
+            <p class="ruc">RUC: {{ $colegioRuc }} — {{ $colegioDireccion }}</p>
+            <h2>Boleta de Pago de Remuneraciones — {{ $mes_nombre }} {{ $anio }}</h2>
+            <p>Documento generado el {{ now()->format('d/m/Y') }} — N° Boleta: {{ $numero_boleta }}</p>
+            <p>Del {{ $cabecera['rango_inicio'] }} al {{ $cabecera['rango_fin'] }} (expresado en Soles)</p>
         </div>
     </div>
 
@@ -226,30 +264,40 @@ $totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta + $tot
         <div class="seccion-titulo">Datos del Trabajador</div>
         <table>
             <tr>
-                <td class="label">Apellidos y Nombres</td>
+                <td class="label">Empleado</td>
                 <td>{{ $empleado->apellido }}, {{ $empleado->nombre }}</td>
                 <td class="label">DNI</td>
                 <td>{{ $empleado->dni }}</td>
+                <td class="label">Categoría</td>
+                <td>{{ $cabecera['categoria'] }}</td>
             </tr>
             <tr>
                 <td class="label">Cargo</td>
                 <td>{{ $empleado->cargo->nombre ?? 'Sin asignar' }}</td>
                 <td class="label">Área</td>
                 <td>{{ $empleado->area->nombre ?? 'Sin asignar' }}</td>
+                <td class="label">Sede</td>
+                <td>{{ $empleado->sede->nombre ?? 'Sin asignar' }}</td>
             </tr>
             <tr>
                 <td class="label">Fecha de Ingreso</td>
                 <td>{{ \Carbon\Carbon::parse($empleado->fecha_ingreso)->format('d/m/Y') }}</td>
+                <td class="label">Días Trabajados</td>
+                <td>{{ $cabecera['dias_trabajados'] }}</td>
+                <td class="label">Días No Trabajados</td>
+                <td>{{ $cabecera['dias_no_trabajados'] }}</td>
+            </tr>
+            <tr>
                 <td class="label">Estado</td>
                 <td>{{ ucfirst($empleado->estado) }}</td>
-            </tr>
-            <tr>
+                <td class="label">Fecha de Cese</td>
+                <td>{{ $cabecera['fecha_cese'] ? \Carbon\Carbon::parse($cabecera['fecha_cese'])->format('d/m/Y') : '-' }}</td>
                 <td class="label">Sistema de Pensión</td>
                 <td>{{ $pension['tipo'] }}</td>
-                <td class="label">CUSPP</td>
-                <td>{{ $empleado->cuspp ?? '-' }}</td>
             </tr>
             <tr>
+                <td class="label">CUSPP</td>
+                <td>{{ $empleado->cuspp ?? '-' }}</td>
                 <td class="label">Entidad Financiera</td>
                 <td>{{ $empleado->entidad_financiera ?? '-' }}</td>
                 <td class="label">N° de Cuenta</td>
@@ -258,84 +306,120 @@ $totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta + $tot
         </table>
     </div>
 
-    <div class="seccion">
-        <div class="seccion-titulo">Ingresos</div>
-        <table>
-            <tr>
-                <td class="label">Remuneración Básica</td>
-                <td class="monto">S/ {{ number_format($planilla->sueldo_base, 2) }}</td>
-            </tr>
-            <tr>
-                <td class="label">Bonificaciones</td>
-                <td class="monto">S/ {{ number_format($planilla->bonificaciones, 2) }}</td>
-            </tr>
-            <tr>
-                <td class="label">Asignación Familiar</td>
-                <td class="monto">S/ {{ number_format($asignacionFamiliar, 2) }}</td>
-            </tr>
-            @if ($gratificacion['aplica'])
-            <tr>
-                <td class="label">Gratificación ({{ $mes_nombre }}) — {{ $gratificacion['meses_trabajados'] }}/6 meses</td>
-                <td class="monto">S/ {{ number_format($gratificacion['monto_base'] + $gratificacion['asignacion_familiar'], 2) }}</td>
-            </tr>
-            <tr>
-                <td class="label">Bonificación Extraordinaria (Ley 30334, 9%)</td>
-                <td class="monto">S/ {{ number_format($gratificacion['bonificacion_extraordinaria'], 2) }}</td>
-            </tr>
-            @endif
-            <tr class="fila-subtotal">
-                <td class="label">Total Ingresos</td>
-                <td class="monto">S/ {{ number_format($totalIngresos, 2) }}</td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="seccion">
-        <div class="seccion-titulo descuento">Descuentos</div>
-        <table>
-            @foreach ($pension['detalle'] as $item)
-            <tr>
-                <td class="label">{{ $item['concepto'] }}</td>
-                <td class="monto">S/ {{ number_format($item['monto'], 2) }}</td>
-            </tr>
-            @endforeach
-            @if($descuentos->count() > 0)
-                @foreach($descuentos as $desc)
+    <div class="fila-columnas">
+        <div class="columna">
+            <div class="seccion-titulo">Ingresos</div>
+            <table>
                 <tr>
-                    <td class="label">{{ ucfirst($desc->tipo) }}</td>
-                    <td class="monto">S/ {{ number_format($desc->monto, 2) }}</td>
+                    <td class="label">Remuneración Básica</td>
+                    <td class="monto">S/ {{ number_format($planilla->sueldo_base, 2) }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Bonificaciones</td>
+                    <td class="monto">S/ {{ number_format($planilla->bonificaciones, 2) }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Asignación Familiar</td>
+                    <td class="monto">S/ {{ number_format($asignacionFamiliar, 2) }}</td>
+                </tr>
+                @foreach ($conceptosIngreso as $concepto)
+                <tr>
+                    <td class="label">{{ $concepto->etiqueta }}</td>
+                    <td class="monto">S/ {{ number_format($concepto->monto_calculado, 2) }}</td>
                 </tr>
                 @endforeach
-            @endif
-            @if($totalDescuentosManual > 0)
-            <tr>
-                <td class="label">Otros Descuentos</td>
-                <td class="monto">S/ {{ number_format($totalDescuentosManual, 2) }}</td>
-            </tr>
-            @endif
-            @if($renta5ta > 0)
-            <tr>
-                <td class="label">I.R. 5ta Categoría</td>
-                <td class="monto">S/ {{ number_format($renta5ta, 2) }}</td>
-            </tr>
-            @endif
-            <tr class="fila-subtotal">
-                <td class="label">Total Descuentos</td>
-                <td class="monto">S/ {{ number_format($totalDescuentos, 2) }}</td>
-            </tr>
-        </table>
-        <p class="nota">El descuento por {{ $pension['tipo'] }} se calcula sobre la remuneración básica según tasas vigentes 2026.</p>
+                @if ($gratificacion['aplica'])
+                <tr>
+                    <td class="label">Gratificación ({{ $mes_nombre }}) — {{ $gratificacion['meses_trabajados'] }}/6 meses</td>
+                    <td class="monto">S/ {{ number_format($gratificacion['monto_base'] + $gratificacion['asignacion_familiar'], 2) }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Bonificación Extraordinaria (Ley 30334, 9%)</td>
+                    <td class="monto">S/ {{ number_format($gratificacion['bonificacion_extraordinaria'], 2) }}</td>
+                </tr>
+                @endif
+                <tr class="fila-subtotal">
+                    <td class="label">Total Ingresos</td>
+                    <td class="monto">S/ {{ number_format($totalIngresos, 2) }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="columna">
+            <div class="seccion-titulo descuento">Descuentos</div>
+            <table>
+                @foreach ($pension['detalle'] as $item)
+                <tr>
+                    <td class="label">{{ $item['concepto'] }}</td>
+                    <td class="monto">S/ {{ number_format($item['monto'], 2) }}</td>
+                </tr>
+                @endforeach
+                @foreach($conceptosDescuento as $concepto)
+                <tr>
+                    <td class="label">{{ $concepto->etiqueta }}</td>
+                    <td class="monto">S/ {{ number_format($concepto->monto_calculado, 2) }}</td>
+                </tr>
+                @endforeach
+                @if($totalDescuentosManual > 0)
+                <tr>
+                    <td class="label">Otros Descuentos</td>
+                    <td class="monto">S/ {{ number_format($totalDescuentosManual, 2) }}</td>
+                </tr>
+                @endif
+                @if($renta5ta > 0)
+                <tr>
+                    <td class="label">I.R. 5ta Categoría</td>
+                    <td class="monto">S/ {{ number_format($renta5ta, 2) }}</td>
+                </tr>
+                @endif
+                <tr class="fila-subtotal">
+                    <td class="label">Total Descuentos</td>
+                    <td class="monto">S/ {{ number_format($totalDescuentos, 2) }}</td>
+                </tr>
+            </table>
+            <p class="nota">El descuento por {{ $pension['tipo'] }} se calcula sobre la remuneración básica según tasas vigentes {{ $anio }}.</p>
+        </div>
     </div>
 
-    <div class="seccion">
-        <div class="seccion-titulo aporte">Aportaciones del Empleador (Informativo)</div>
-        <table>
-            <tr>
-                <td class="label">ESSALUD (9%)</td>
-                <td class="monto">S/ {{ number_format($essalud, 2) }}</td>
-            </tr>
-        </table>
-        <p class="nota">Este monto es asumido íntegramente por el empleador y no afecta el sueldo neto del trabajador.</p>
+    <div class="fila-columnas">
+        <div class="columna">
+            <div class="seccion-titulo aporte">Aportaciones del Empleador (Informativo)</div>
+            <table>
+                <tr>
+                    <td class="label">ESSALUD 9%</td>
+                    <td class="monto">S/ {{ number_format($essalud, 2) }}</td>
+                </tr>
+                @foreach ($conceptosAportacion as $concepto)
+                <tr>
+                    <td class="label">{{ $concepto->etiqueta }}</td>
+                    <td class="monto">S/ {{ number_format($concepto->monto_calculado, 2) }}</td>
+                </tr>
+                @endforeach
+                <tr class="fila-subtotal">
+                    <td class="label">Total Aportes</td>
+                    <td class="monto">S/ {{ number_format($totalAportes, 2) }}</td>
+                </tr>
+            </table>
+            <p class="nota">Este monto es asumido íntegramente por el empleador y no afecta el sueldo neto del trabajador.</p>
+        </div>
+
+        <div class="columna">
+            @if ($conceptosAdelanto->count() > 0)
+            <div class="seccion-titulo adelanto">Adelanto</div>
+            <table>
+                @foreach ($conceptosAdelanto as $concepto)
+                <tr>
+                    <td class="label">{{ $concepto->etiqueta }}</td>
+                    <td class="monto">S/ {{ number_format($concepto->monto_calculado, 2) }}</td>
+                </tr>
+                @endforeach
+                <tr class="fila-subtotal">
+                    <td class="label">Total Adelanto</td>
+                    <td class="monto">S/ {{ number_format($totalAdelantos, 2) }}</td>
+                </tr>
+            </table>
+            @endif
+        </div>
     </div>
 
     <div class="seccion">
@@ -348,26 +432,45 @@ $totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta + $tot
         </table>
     </div>
 
+    <div class="fecha-lugar">
+        {{ $ciudadFirma }}, {{ now()->translatedFormat('d \d\e F \d\e Y') }}
+    </div>
+
     <div class="firma-section">
         <div class="firma-box" style="margin-right:4%;">
-            @if (isset($documento) && $documento->estado_firma === 'firmado' && $empleado->firma_imagen)
-                <img src="{{ storage_path('app/public/' . $empleado->firma_imagen) }}" style="height:50px; margin-bottom:5px;"><br>
+            @if (isset($documento) && $documento->estado_firma_empleador === 'firmado' && $documento->empleador?->identidadFirma?->firma_imagen)
+                <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($documento->empleador->identidadFirma->firma_imagen) }}" style="height:50px; margin-bottom:5px;"><br>
             @endif
-            <div style="border-top:1px solid #333; padding-top:5px; margin-top:5px;">
-                Firma del Trabajador<br>
-                {{ $empleado->apellido }}, {{ $empleado->nombre }}
-            </div>
-        </div>
-        <div class="firma-box">
-            @if (file_exists(storage_path('app/public/firmas/rrhh.png')))
-                <img src="{{ storage_path('app/public/firmas/rrhh.png') }}" style="height:50px; margin-bottom:5px;"><br>
+            @if (isset($documento) && $documento->estado_firma_empleador === 'firmado' && $documento->empleador?->identidadFirma?->huella_imagen)
+                <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($documento->empleador->identidadFirma->huella_imagen) }}" style="height:35px; margin-left:10px;">
             @endif
             <div style="border-top:1px solid #333; padding-top:5px; margin-top:5px;">
                 Firma Empleador<br>
                 Colegio Adventista Túpac Amaru
             </div>
         </div>
+        <div class="firma-box">
+            @if (isset($documento) && $documento->estado_firma === 'firmado' && $empleado->identidadFirma?->firma_imagen)
+                <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($empleado->identidadFirma->firma_imagen) }}" style="height:50px; margin-bottom:5px;"><br>
+            @endif
+            @if (isset($documento) && $documento->estado_firma === 'firmado' && $empleado->identidadFirma?->huella_imagen)
+                {{-- Igual que en un documento físico peruano, la huella va junto a la firma. --}}
+                <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($empleado->identidadFirma->huella_imagen) }}" style="height:35px; margin-left:10px;">
+            @endif
+            <div style="border-top:1px solid #333; padding-top:5px; margin-top:5px;">
+                Firma del Trabajador<br>
+                {{ $empleado->apellido }}, {{ $empleado->nombre }}
+            </div>
+        </div>
     </div>
+
+    @if (isset($documento) && $documento->estado_firma_empleador === 'firmado')
+    <div class="firma-digital">
+        Firmado por el empleador: {{ $documento->firmado_por_empleador }}
+        el {{ \Carbon\Carbon::parse($documento->fecha_firma_empleador)->format('d/m/Y H:i') }} —
+        Código de verificación: {{ $documento->codigo_firma_empleador }}
+    </div>
+    @endif
 
     @if (isset($documento) && $documento->estado_firma === 'firmado')
     <div class="firma-digital">

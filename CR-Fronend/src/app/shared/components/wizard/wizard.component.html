@@ -1,0 +1,40 @@
+<nav class="wizard" [attr.aria-label]="'Paso ' + (actual + 1) + ' de ' + pasos.length">
+  <div class="wizard__linea">
+    <div class="wizard__linea-avance" [style.width.%]="progreso"></div>
+  </div>
+
+  <ol class="wizard__pasos">
+    <li *ngFor="let paso of pasos; let i = index" class="wizard__paso">
+      <button
+        type="button"
+        class="wizard__boton"
+        [class.is-actual]="i === actual"
+        [class.is-completado]="completado(i)"
+        [class.is-error]="tieneErrores(i)"
+        [attr.aria-current]="i === actual ? 'step' : null"
+        (click)="irA(i)"
+      >
+        <span class="wizard__circulo">
+          <app-icon *ngIf="paso.icono && !completado(i) && !tieneErrores(i)"
+            [icono]="paso.icono" [tamano]="16"></app-icon>
+
+          <svg *ngIf="completado(i)" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+
+          <svg *ngIf="tieneErrores(i)" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round">
+            <line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+
+          <span *ngIf="!paso.icono && !completado(i) && !tieneErrores(i)">{{ i + 1 }}</span>
+        </span>
+        <span class="wizard__titulo">{{ paso.titulo }}</span>
+      </button>
+    </li>
+  </ol>
+</nav>

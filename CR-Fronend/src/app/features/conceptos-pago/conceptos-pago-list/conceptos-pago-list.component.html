@@ -1,0 +1,193 @@
+<app-page-header
+  icono="money"
+  titulo="Conceptos de Pago"
+  subtitulo="Catálogo de bonificaciones, descuentos, aportaciones y adelantos que pueden aparecer en una boleta."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <button headerActions class="btn-primary" (click)="nuevo()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Nuevo Concepto
+  </button>
+</app-page-header>
+
+<app-data-table
+  [columnas]="columnas"
+  [datos]="conceptos"
+  [cargando]="cargando"
+  [camposBusqueda]="['nombre', 'descripcion']"
+  [acciones]="['editar', 'eliminar']"
+  [accionesPersonalizadas]="accionesExtra"
+  [mensajeVacio]="mensajeVacio"
+  [paginacionServidor]="true"
+  [totalElementos]="totalConceptos"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  (editarFila)="editar($event)"
+  (eliminarFila)="eliminar($event)"
+  (accionPersonalizada)="alAccionar($event)"
+>
+  <div tableActions class="chips-filtro">
+    <button type="button" class="chip-filtro" [class.chip-filtro--activo]="!filtroTipo"
+      (click)="filtrarPorTipo('')">
+      <app-icon icono="layers" [tamano]="15"></app-icon>
+      Todos
+    </button>
+    <button type="button" *ngFor="let t of tiposChip" class="chip-filtro"
+      [class.chip-filtro--activo]="filtroTipo === t.value" (click)="filtrarPorTipo(t.value)">
+      <app-icon [icono]="t.icono" [tamano]="15"></app-icon>
+      {{ t.label }}
+    </button>
+  </div>
+</app-data-table>
+
+<p class="form-nota" style="margin-top: 16px;">
+  Los conceptos con monto definido se pueden aplicar de golpe a varios
+  empleados con el botón de grupo, sobre la planilla que ya tengan de ese mes.
+</p>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="conceptoEditando ? 'Editar Concepto' : 'Nuevo Concepto'"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="nombre">Nombre *</label>
+      <input type="text" id="nombre" class="form-control" formControlName="nombre"
+        placeholder="Ej. Asignación Familiar" [class.is-invalid]="invalido('nombre')" />
+      <small class="form-error" *ngIf="invalido('nombre')">
+        El nombre es obligatorio (máximo 150 caracteres).
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="tipo">Tipo *</label>
+      <select id="tipo" class="form-control" formControlName="tipo">
+        <option *ngFor="let t of tipos" [value]="t.value">{{ t.label }}</option>
+      </select>
+      <small class="form-ayuda">
+        Una bonificación suma al sueldo; un descuento y un adelanto restan; una
+        aportación la paga el empleador y no se le descuenta al trabajador.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label class="check-item check-item--bloque">
+        <input type="checkbox" formControlName="aplica_a_todos" />
+        <span>Aplicar automáticamente a todos los empleados</span>
+      </label>
+      <small class="form-ayuda">
+        Si lo marcas, el concepto entrará solo en la planilla de cada empleado al
+        generarla — por eso hay que indicarle cómo se calcula.
+      </small>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="calculo">Cálculo {{ esAutomatico ? '*' : '' }}</label>
+        <select id="calculo" class="form-control" formControlName="calculo"
+          [class.is-invalid]="invalido('calculo')">
+          <option value="">— Sin definir —</option>
+          <option *ngFor="let c of calculos" [value]="c.value">{{ c.label }}</option>
+        </select>
+        <small class="form-error" *ngIf="invalido('calculo')">
+          Un concepto automático necesita saber cómo se calcula.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="valor">Valor {{ esAutomatico ? '*' : '' }}</label>
+        <input type="number" id="valor" class="form-control" formControlName="valor"
+          min="0" step="0.01" placeholder="Ej. 113.00" [class.is-invalid]="invalido('valor')" />
+        <small class="form-error" *ngIf="invalido('valor')">
+          Indica el monto (o el porcentaje) del concepto.
+        </small>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="descripcion">Descripción</label>
+      <textarea id="descripcion" class="form-control" formControlName="descripcion" rows="2"
+        placeholder="Para qué se usa este concepto" [class.is-invalid]="invalido('descripcion')"></textarea>
+      <small class="form-error" *ngIf="invalido('descripcion')">Máximo 255 caracteres.</small>
+    </div>
+
+    <p class="form-nota">
+      La pensión (ONP/AFP), EsSalud y la Renta de 5ta las calcula el sistema por
+      empleado según su régimen: no se configuran acá.
+    </p>
+  </form>
+</app-form-modal>
+
+<!-- ── Aplicar el concepto a un grupo de empleados ── -->
+<app-form-modal
+  [(visible)]="modalGrupoVisible"
+  [titulo]="'Aplicar «' + (conceptoAAplicar?.nombre || '') + '» a un grupo'"
+  [guardando]="aplicando"
+  ancho="620px"
+  [textoGuardar]="resultadoGrupo ? 'Aplicar otra vez' : 'Aplicar al grupo'"
+  (guardar)="aplicarAGrupo()"
+  (cancelar)="cerrarGrupo()"
+>
+  <form [formGroup]="formGrupo" class="form-fields">
+    <p class="form-nota" *ngIf="!resultadoGrupo">
+      Se agregará <strong>{{ montoDelGrupo }}</strong> a la planilla que
+      <strong>{{ cuantosAlcanzados }} empleado(s)</strong> ya tengan del mes
+      elegido. A quien no tenga planilla de ese mes se le omite.
+    </p>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="grupoMes">Mes *</label>
+        <select id="grupoMes" class="form-control" formControlName="mes">
+          <option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="grupoAnio">Año *</label>
+        <input type="number" id="grupoAnio" class="form-control" formControlName="anio" min="2000" />
+      </div>
+    </div>
+
+    <app-selector-empleados
+      *ngIf="!resultadoGrupo"
+      [empleados]="empleados"
+      [areas]="areas"
+      [cargos]="cargos"
+      [sedes]="sedes"
+      [(alcance)]="alcance"
+      [(seleccion)]="empleadosElegidos"
+    ></app-selector-empleados>
+
+    <!-- Qué pasó con cada uno -->
+    <ng-container *ngIf="resultadoGrupo">
+      <div class="resumen-masivo">
+        <div class="resumen-masivo__dato">
+          <strong>{{ resultadoGrupo.resumen.aplicadas }}</strong>
+          <span>Aplicadas</span>
+        </div>
+        <div class="resumen-masivo__dato">
+          <strong>{{ resultadoGrupo.resumen.omitidas }}</strong>
+          <span>Omitidas</span>
+        </div>
+      </div>
+
+      <div class="detalle-masivo">
+        <div class="detalle-masivo__fila" *ngFor="let d of resultadoGrupo.detalle">
+          <span>{{ d.empleado }}</span>
+          <span *ngIf="d.estado === 'aplicada'" class="status-badge status-badge-success">
+            S/ {{ d.monto | number: '1.2-2' }}
+          </span>
+          <span *ngIf="d.estado !== 'aplicada'" class="detalle-masivo__motivo">{{ d.motivo }}</span>
+        </div>
+      </div>
+    </ng-container>
+  </form>
+</app-form-modal>

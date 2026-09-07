@@ -1,0 +1,61 @@
+<app-page-header
+  icono="shield"
+  titulo="Roles"
+  subtitulo="Perfiles del sistema. El rol decide qué módulos ve cada usuario y a qué puede entrar."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <button headerActions class="btn-primary" (click)="nuevo()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Nuevo Rol
+  </button>
+</app-page-header>
+
+<app-data-table
+  [columnas]="columnas"
+  [datos]="roles"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['nombre', 'descripcion']"
+  [acciones]="['editar', 'eliminar']"
+  mensajeVacio="Todavía no hay roles registrados."
+  (editarFila)="editar($event)"
+  (eliminarFila)="eliminar($event)"
+></app-data-table>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="rolEditando ? 'Editar Rol' : 'Nuevo Rol'"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="nombre">Nombre *</label>
+      <input type="text" id="nombre" class="form-control" formControlName="nombre" placeholder="Ej. Coordinador"
+        [class.is-invalid]="invalido('nombre')" />
+      <small class="form-error" *ngIf="invalido('nombre')">
+        El nombre es obligatorio (máximo 45 caracteres).
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="descripcion">Descripción</label>
+      <textarea id="descripcion" class="form-control" formControlName="descripcion" rows="3"
+        placeholder="Para qué sirve este rol" [class.is-invalid]="invalido('descripcion')"></textarea>
+      <small class="form-error" *ngIf="invalido('descripcion')">Máximo 255 caracteres.</small>
+    </div>
+
+    <p class="form-nota">
+      Después de crear el rol, entra a <strong>Módulos</strong> para elegir qué
+      ítems del menú verá.
+    </p>
+  </form>
+</app-form-modal>

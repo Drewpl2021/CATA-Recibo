@@ -1,0 +1,75 @@
+<app-page-header
+  icono="folder_open"
+  titulo="Módulos Padre"
+  subtitulo="Los grupos de la barra lateral. Cada módulo cuelga de uno de estos."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <button headerActions class="btn-primary" (click)="nuevo()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Nuevo Grupo
+  </button>
+</app-page-header>
+
+<app-data-table
+  [columnas]="columnas"
+  [datos]="padres"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['nombre']"
+  [acciones]="['editar', 'eliminar']"
+  mensajeVacio="Todavía no hay grupos de menú."
+  (editarFila)="editar($event)"
+  (eliminarFila)="eliminar($event)"
+></app-data-table>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="padreEditando ? 'Editar Grupo' : 'Nuevo Grupo'"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="nombre">Nombre del grupo *</label>
+      <input type="text" id="nombre" class="form-control" formControlName="nombre"
+        placeholder="Ej. Reportes" [class.is-invalid]="invalido('nombre')" />
+      <small class="form-error" *ngIf="invalido('nombre')">
+        El nombre es obligatorio (máximo 100 caracteres).
+      </small>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="icono">Ícono</label>
+        <div class="campo-con-icono">
+          <span class="campo-con-icono__vista">
+            <app-icon [icono]="iconoElegido" [tamano]="20"></app-icon>
+          </span>
+          <select id="icono" class="form-control" formControlName="icono">
+            <option *ngFor="let ic of iconos" [value]="ic">{{ ic }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="orden">Orden</label>
+        <input type="number" id="orden" class="form-control" formControlName="orden" min="0"
+          [class.is-invalid]="invalido('orden')" />
+        <small class="form-error" *ngIf="invalido('orden')">Debe ser un número igual o mayor que 0.</small>
+      </div>
+    </div>
+
+    <p class="form-nota">
+      El <strong>orden</strong> decide la posición en la barra lateral: menor número, más arriba.
+      El grupo solo aparece si el usuario tiene al menos un módulo suyo asignado.
+    </p>
+  </form>
+</app-form-modal>

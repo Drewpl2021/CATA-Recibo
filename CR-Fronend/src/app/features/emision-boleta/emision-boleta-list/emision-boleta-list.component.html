@@ -1,0 +1,355 @@
+<div class="boletas-container">
+  <div class="page-title">
+    <h2>EMISIÓN DE BOLETA</h2>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar" style="flex-wrap: wrap; gap: 16px;">
+    <!-- Selector de Periodo Global -->
+    <div class="filter-group" style="display: flex; gap: 12px; align-items: center; background: var(--surface-alt); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);">
+      <span style="font-weight: 600; color: var(--text-soft); font-size: 14px;">Periodo:</span>
+      <select class="form-control" [(ngModel)]="mesGlobal" (change)="onGlobalPeriodChange()" style="min-width: 120px; border-color: var(--border-strong);">
+        <option *ngFor="let m of mesesDisponibles" [value]="m.num">{{ m.nombre }}</option>
+      </select>
+      <select class="form-control" [(ngModel)]="anioGlobal" (change)="onGlobalPeriodChange()" style="min-width: 100px; border-color: var(--border-strong);">
+        <option *ngFor="let a of aniosDisponibles" [value]="a">{{ a }}</option>
+      </select>
+    </div>
+
+    <!-- Buscador -->
+    <div class="filter-group" style="flex: 1; min-width: 250px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" class="form-control search-input" placeholder="Buscar por nombre, cargo o DNI..." [(ngModel)]="searchTerm">
+    </div>
+
+    <!-- Acciones Masivas -->
+    <div *ngIf="empleadosEditados.size > 0" style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
+      <!-- Botón de Bonos (Grati / CTS) -->
+      <button class="btn-outline" style="display: flex; align-items: center; gap: 8px; border: 1px solid var(--info); color: var(--info); background: var(--surface); padding: 8px 16px; border-radius: 6px; font-weight: 500;" (click)="aplicarBonosMasivos()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+        Aplicar Grati / CTS
+      </button>
+
+      <!-- Emitir Boletas PDF -->
+      <button class="btn-primary" style="display: flex; align-items: center; gap: 8px;" (click)="emitirTodasLasBoletas()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+          <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+        Emitir Masivamente
+      </button>
+    </div>
+  </div>
+
+  <!-- Banner de Nuevo Mes (Aparece si no hay planillas generadas en el mes actual) -->
+  <div *ngIf="!cargandoEmpleados && empleados.length > 0 && empleadosEditados.size === 0" 
+       style="background: linear-gradient(135deg, var(--info-bg) 0%, var(--info-bg) 100%); border: 1px solid var(--info); border-radius: 12px; padding: 24px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.1);">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <div style="background: var(--brand-600); color: var(--text-on-brand); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.3);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <div>
+        <h3 style="margin: 0 0 4px 0; color: var(--info); font-size: 18px;">Nuevo Periodo Seleccionado</h3>
+        <p style="margin: 0; color: var(--info); font-size: 14px;">No hay boletas generadas para <strong>{{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</strong>. ¿Deseas inicializar las boletas de todos los empleados?</p>
+      </div>
+    </div>
+    <button class="btn-primary" style="padding: 12px 24px; font-size: 15px; background: var(--brand-700); border-color: var(--brand-700);" (click)="emitirTodasLasBoletas()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+        <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+      </svg>
+      Generar Planilla del Mes
+    </button>
+  </div>
+
+  <!-- Tabla de empleados (Solo se muestra si hay boletas generadas en este periodo) -->
+  <div class="section-panel" *ngIf="empleadosEditados.size > 0 || empleados.length === 0">
+    <div class="panel-header-small">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+      </svg>
+      <span>Seleccionar Empleado</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="col-id">#</th>
+            <th>Nombres y Apellidos</th>
+            <th>DNI</th>
+            <th>Cargo</th>
+            <th>Nivel / Área</th>
+            <th class="text-center">Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredEmpleados.length === 0">
+            <td colspan="7" class="empty-state">No se encontraron empleados.</td>
+          </tr>
+          <tr *ngFor="let emp of filteredEmpleados; let i = index" [class.fila-editada]="empleadosEditados.has(emp.id)">
+            <td class="col-id">{{ i + 1 }}</td>
+            <td style="font-weight: 500;">
+              <div class="nombre-con-badge">
+                {{ emp.nombre }} {{ emp.apellido }}
+              </div>
+            </td>
+            <td style="font-family: monospace; font-size: 13px;">{{ emp.dni }}</td>
+            <td>{{ emp.cargo?.nombre || '—' }}</td>
+            <td>{{ emp.area?.nombre || '—' }}</td>
+            <td class="text-center">
+              <span class="badge-estado" [ngClass]="(emp.estado | lowercase) === 'activo' ? 'badge-active' : 'badge-vacaciones'">
+                {{ emp.estado }}
+              </span>
+            </td>
+            <td class="text-center" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+              <ng-container *ngIf="empleadosEditados.has(emp.id); else sinEditar">
+                <span class="badge-boleta badge-editado" title="Esta boleta ha sido editada">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  Editado
+                </span>
+              </ng-container>
+              <ng-template #sinEditar>
+                <span class="badge-boleta badge-pendiente" title="No se ha editado">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  Pendiente
+                </span>
+              </ng-template>
+
+              <button class="btn-emitir" (click)="abrirModal(emp)" title="Editar Boleta">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Editar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--  MODAL: FORMULARIO DE EMISIÓN DE BOLETA                      -->
+<!-- ============================================================ -->
+<div class="boleta-modal-overlay" *ngIf="showModal" (click)="cerrarModal()">
+  <div class="boleta-modal" (click)="$event.stopPropagation()">
+
+    <!-- HEADER DEL MODAL -->
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <div>
+          <h2>Emisión de Boleta de Pago</h2>
+          <span class="modal-subtitle">{{ empleadoSeleccionado?.nombre }} {{ empleadoSeleccionado?.apellido }}</span>
+        </div>
+      </div>
+      <button class="btn-modal-close" (click)="cerrarModal()" title="Cerrar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- CUERPO DEL MODAL -->
+    <div class="modal-body">
+
+      <!-- === SECCIÓN AZUL: Datos del Empleado (solo lectura) === -->
+      <div class="seccion-datos-empleado">
+        <div class="seccion-titulo azul">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          Datos del Trabajador
+          <span class="tag-auto">Carga automática del sistema</span>
+        </div>
+        <div class="datos-grid" *ngIf="empleadoSeleccionado">
+          <div class="dato-item"><span class="dato-label">Empleado</span><span class="dato-valor">{{ empleadoSeleccionado.nombre }} {{ empleadoSeleccionado.apellido }}</span></div>
+          <div class="dato-item"><span class="dato-label">Fecha de Ingreso</span><span class="dato-valor">{{ empleadoSeleccionado.fecha_ingreso }}</span></div>
+          <div class="dato-item"><span class="dato-label">DNI</span><span class="dato-valor">{{ empleadoSeleccionado.dni }}</span></div>
+          <div class="dato-item"><span class="dato-label">Sistema Pensiones</span><span class="dato-valor">{{ empleadoSeleccionado.sistema_pensiones || '—' }}</span></div>
+          <div class="dato-item"><span class="dato-label">AFP</span><span class="dato-valor">{{ empleadoSeleccionado.afp || '—' }}</span></div>
+          <div class="dato-item"><span class="dato-label">CUSPP</span><span class="dato-valor">{{ empleadoSeleccionado.cuspp || '—' }}</span></div>
+          <div class="dato-item"><span class="dato-label">Cargo</span><span class="dato-valor">{{ empleadoSeleccionado.cargo?.nombre || '—' }}</span></div>
+          <div class="dato-item"><span class="dato-label">Área</span><span class="dato-valor">{{ empleadoSeleccionado.area?.nombre || '—' }}</span></div>
+          <div class="dato-item"><span class="dato-label">Entidad Financiera</span><span class="dato-valor">{{ empleadoSeleccionado.entidad_financiera || '—' }}</span></div>
+          <div class="dato-item"><span class="dato-label">N° de Cuenta</span><span class="dato-valor" style="font-family: monospace; font-size: 12px;">{{ empleadoSeleccionado.numero_cuenta || '—' }}</span></div>
+        </div>
+      </div>
+
+      <!-- Selector de periodo -->
+      <div class="periodo-selector">
+        <div class="form-group-inline">
+          <label>Periodo:</label>
+          <span style="font-weight: 600; color: var(--text); padding: 4px 8px; background: var(--surface-hover); border-radius: 4px;">{{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</span>
+        </div>
+        <div class="form-group-inline">
+          <label>Sede:</label>
+          <select class="form-select-sm" [(ngModel)]="formulario.ciudad">
+            <option value="CATA">CATA</option>
+            <option value="Jerusalén">Jerusalén</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- === SECCIÓN ROJA: Ingresos, Descuentos, Aportaciones (editable) === -->
+      <div class="seccion-financiera">
+        <div class="seccion-titulo rojo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          Detalle Financiero
+        </div>
+
+        <div class="tabla-financiera">
+          <!-- CABECERAS -->
+          <div class="fin-header fin-col-ingresos">INGRESOS</div>
+          <div class="fin-header fin-col-descuentos">DESCUENTOS</div>
+          <div class="fin-header fin-col-aportaciones">APORTACIONES</div>
+
+          <!-- FILAS -->
+          <div class="fin-col fin-col-ingresos">
+            <div class="fin-fila"><span class="fin-concepto">Remuneración Básica</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.remuneracionBasica" (ngModelChange)="recalcularMontosDinamicos()" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Bonificación por Cargo</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonificacionCargo" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Asignación Familiar</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.asignacionFamiliar" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Vacaciones Truncas</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.vacacionesTruncas" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Gratificaciones Fiestas Patrias</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.gratificacionesFiestas" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Bonif. Extraord. Temporal</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonifExtraordTemporal" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Otros Conceptos / Subsidio</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.otrosConceptosSubsidio" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Compensación por Tiempo de Serv.</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.compensacionTiempoServicios" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Bonificación</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonificacion" min="0" step="0.01"></div>
+          </div>
+
+          <div class="fin-col fin-col-descuentos">
+            <div class="fin-fila"><span class="fin-concepto">ONP 13%</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.onp13" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">SPP: Fondo Pensiones</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sppFondoPensiones" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">SPP: Prima de Seguro</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sppPrimaSeguro" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">SPP: Comisión</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sppComision" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto" title="Se calcula automáticamente en la boleta oficial según las retenciones de Ley">I.R. 5ta Categoría <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color: var(--text-muted); margin-left: 4px;" stroke-width="2" ><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span><input type="text" class="fin-input" placeholder="Automático en PDF" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed; text-align: right;"></div>
+            <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Alimentación</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoAlimentacion" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Bazar</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoBazar" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Descuento Autorizado - Diezmo</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoAutorizadoDiezmo" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Descuento Otros Conceptos</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoOtros" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Desc. Pago Escolaridad Mensual</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoEscolaridad" min="0" step="0.01"></div>
+
+            <!-- ADELANTO -->
+            <div class="fin-fila adelanto-row">
+              <span class="fin-concepto adelanto-label">ADELANTO</span>
+              <input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.adelanto" min="0" step="0.01">
+            </div>
+          </div>
+
+          <div class="fin-col fin-col-aportaciones">
+            <div class="fin-fila"><span class="fin-concepto">ESSALUD 9%</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.essalud9" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">SCTR</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sctr" min="0" step="0.01"></div>
+          </div>
+
+          <!-- TOTALES -->
+          <div class="fin-total fin-col-ingresos">
+            <span>TOTAL INGRESOS</span>
+            <strong>S/ {{ totalIngresos | number:'1.2-2' }}</strong>
+          </div>
+          <div class="fin-total fin-col-descuentos">
+            <span>TOTAL DESCUENTOS</span>
+            <strong>S/ {{ totalDescuentos | number:'1.2-2' }}</strong>
+          </div>
+          <div class="fin-total fin-col-aportaciones">
+            <span>TOTAL APORTES</span>
+            <strong>S/ {{ totalAportaciones | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+
+        <!-- NETO A PAGAR -->
+        <div class="neto-a-pagar">
+          <span class="neto-label">TOTAL NETO A PAGAR</span>
+          <span class="neto-valor">S/ {{ totalNetoPagar | number:'1.2-2' }}</span>
+          <span class="neto-moneda">Soles</span>
+        </div>
+      </div>
+
+      <!-- === SECCIÓN AMARILLA: Firmas y Emisión === -->
+      <div class="seccion-firmas">
+        <div class="seccion-titulo amarillo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Confirmación y Firmas
+        </div>
+        <div class="firmas-content">
+          <div class="firma-bloque">
+            <div class="firma-linea"></div>
+            <p class="firma-titulo">Firma del Empleador</p>
+            <p class="firma-subtitulo">Presidente del Consejo Directivo</p>
+          </div>
+          <div class="firma-bloque">
+            <div class="firma-linea"></div>
+            <p class="firma-titulo">Firma del Trabajador</p>
+            <p class="firma-subtitulo">{{ empleadoSeleccionado?.nombre }} {{ empleadoSeleccionado?.apellido }}</p>
+          </div>
+        </div>
+        <p class="firma-nota">{{ formulario.ciudad }}, {{ formulario.fechaEmision }}</p>
+      </div>
+
+    </div><!-- fin modal-body -->
+
+    <!-- FOOTER CON BOTONES -->
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn-borrador" (click)="guardarBorrador()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+        </svg>
+        Guardar Borrador
+      </button>
+      <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        {{ generandoPDF ? 'Generando PDF...' : 'Emitir Boleta Oficial' }}
+      </button>
+    </div>
+
+  </div><!-- fin boleta-modal -->
+</div><!-- fin overlay -->
+
+<!-- ============================================================ -->
+<!--  MODAL DE CONFIRMACIÓN: EMISIÓN MASIVA                       -->
+<!-- ============================================================ -->
+<div class="boleta-modal-overlay" *ngIf="showConfirmMasivo" style="z-index: 9999;" (click)="cancelarEmisionMasiva()">
+  <div class="boleta-modal" style="max-width: 400px; padding: 24px; text-align: center;" (click)="$event.stopPropagation()">
+    <div style="color: var(--warning-text); margin-bottom: 16px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <h3 style="margin-top: 0; color: var(--text); font-size: 1.25rem;">¿Generar Planillas Masivamente?</h3>
+    <p style="color: var(--text-soft); margin-bottom: 24px; line-height: 1.5;">
+      ¿Estás seguro que deseas calcular y generar las planillas del mes <strong>{{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</strong> para todos los empleados activos?
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button class="btn-cancelar" (click)="cancelarEmisionMasiva()" style="flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; cursor: pointer; font-weight: 500;">
+        Cancelar
+      </button>
+      <button class="btn-primary" (click)="confirmarEmisionMasiva()" style="flex: 1; padding: 10px; background: var(--brand-700); color: var(--text-on-brand); border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+        Sí, generar todas
+      </button>
+    </div>
+  </div>
+</div>
