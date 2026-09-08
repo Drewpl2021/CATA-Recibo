@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './features/autenticacion/login/login.component';
 import { RegistroComponent } from './features/autenticacion/registro/registro.component';
 import { LayoutComponent } from './layout/layout.component';
-import { authGuard, guestGuard, roleGuard } from './core/guards/auth.guard';
+import { authGuard, guestGuard, roleGuard, sesionGuard } from './core/guards/auth.guard';
 
 const soloRrhhOAdmin = roleGuard(['admin', 'rrhh']);
 const soloAdmin = roleGuard(['admin']);
@@ -11,6 +11,27 @@ export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
   { path: 'registro', component: RegistroComponent, canActivate: [guestGuard] },
+
+  // ── Recuperar el acceso ──
+  // Van sin sesión: quien las necesita es justo quien no puede entrar.
+  {
+    path: 'olvide-password',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./features/autenticacion/olvide-password/olvide-password.component').then(m => m.OlvidePasswordComponent),
+  },
+  {
+    // Acá aterriza el enlace del correo, con ?token= y ?email=.
+    path: 'restablecer-password',
+    loadComponent: () => import('./features/autenticacion/restablecer-password/restablecer-password.component').then(m => m.RestablecerPasswordComponent),
+  },
+  {
+    // El cambio obligatorio del primer ingreso. Pide sesión pero NO exige
+    // tener la contraseña al día: es la pantalla donde se arregla eso, así
+    // que usa sesionGuard y no authGuard (que mandaría acá otra vez).
+    path: 'cambiar-clave',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/autenticacion/cambiar-clave/cambiar-clave.component').then(m => m.CambiarClaveComponent),
+  },
   {
     path: 'inicio',
     component: LayoutComponent,
@@ -104,6 +125,17 @@ export const routes: Routes = [
         path: 'planillas/detalle/:id',
         canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/planillas/planilla-detalle/planilla-detalle.component').then(m => m.PlanillaDetalleComponent),
+      },
+      {
+        path: 'vacaciones',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/vacaciones/vacaciones-list/vacaciones-list.component').then(m => m.VacacionesListComponent),
+      },
+      // Las de cada quien: la ve cualquiera con sesión, y el backend recorta
+      // el listado al empleado del token.
+      {
+        path: 'mis-vacaciones',
+        loadComponent: () => import('./features/vacaciones/mis-vacaciones/mis-vacaciones.component').then(m => m.MisVacacionesComponent),
       },
       {
         path: 'contratos',

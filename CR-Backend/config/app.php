@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Dirección del frontend
+    |--------------------------------------------------------------------------
+    |
+    | Dónde vive la aplicación en Angular. Se usa para armar los enlaces que
+    | salen por correo (el de restablecer la contraseña): el usuario tiene que
+    | aterrizar en la pantalla, no en el API.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:4200'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

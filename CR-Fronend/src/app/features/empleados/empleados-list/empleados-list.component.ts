@@ -68,8 +68,13 @@ export class EmpleadosListComponent implements OnInit {
     { campo: 'cargo.nombre', header: 'Cargo', ancho: '15%' },
     { campo: 'area.nombre', header: 'Área', ancho: '15%' },
     {
+      // Con ancho fijo a propósito: un correo es una cadena larga y sin
+      // espacios, así que sin tope se comía la fila y dejaba los nombres
+      // partidos en tres líneas.
       campo: 'usuario.email',
       header: 'Correo',
+      ancho: '23%',
+      romperTexto: true,
       formatear: (valor) => valor || 'Sin cuenta',
     },
     {

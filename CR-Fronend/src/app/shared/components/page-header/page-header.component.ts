@@ -22,7 +22,7 @@ export interface CifraCabecera {
   /** Qué se está contando: "Total", "Activas", "De baja". */
   etiqueta: string;
   /** Colorea el ícono; por defecto el azul de marca. */
-  tono?: 'brand' | 'success' | 'muted';
+  tono?: 'brand' | 'success' | 'muted' | 'warning';
 }
 
 @Component({

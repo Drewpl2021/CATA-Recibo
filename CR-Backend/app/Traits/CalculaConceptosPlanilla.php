@@ -412,9 +412,16 @@ trait CalculaConceptosPlanilla
      * Datos de cabecera de la boleta que no vienen directos de Empleado/Planilla,
      * sino que hay que derivarlos: la categoría real (del Contrato vigente, no del
      * campo suelto y potencialmente desactualizado Empleado.tipo_contrato), la fecha
-     * de cese (del último Contrato finalizado, si lo hay), y el rango de fechas del
-     * mes de la boleta. "Días no trabajados" queda en 0 porque el sistema todavía no
-     * tiene un módulo de asistencia — es un valor honesto, no inventado.
+     * de cese (del último Contrato finalizado, si lo hay), el rango de fechas del
+     * mes, y los días que el trabajador estuvo de vacaciones.
+     *
+     * Los días de vacaciones antes iban en 0 fijo porque no había de dónde
+     * sacarlos. Ahora sí los hay, y dejarlos en cero era firmar un dato falso:
+     * a quien se fue tres semanas la boleta le decía "Días Trabajados: 30".
+     *
+     * Ojo con lo que esto NO hace: no cambia ni un sol. Las vacaciones son
+     * remuneradas — el trabajador cobra su sueldo completo el mes que las toma.
+     * Acá solo se cuenta cómo se repartieron sus días.
      */
     protected function datosCabeceraBoleta($empleado, int $mes, int $anio): array
     {
@@ -427,13 +434,125 @@ trait CalculaConceptosPlanilla
         $tipoContrato = $contratoVigente->tipo_contrato ?? $empleado->tipo_contrato;
         $categoria    = $tipoContrato ? ucfirst(str_replace('_', ' ', $tipoContrato)) : '-';
 
+        $reparto = $this->repartoDeDiasDelMes($empleado, $mes, $anio);
+
         return [
-            'dias_trabajados'    => $inicioMes->daysInMonth,
-            'dias_no_trabajados' => 0,
-            'fecha_cese'         => $contratoFinalizado?->fecha_fin,
-            'categoria'          => $categoria,
-            'rango_inicio'       => $inicioMes->format('d/m/Y'),
-            'rango_fin'          => $finMes->format('d/m/Y'),
+            'dias_trabajados'  => $reparto['dias_trabajados'],
+            'dias_vacaciones'  => $reparto['dias_vacaciones'],
+            'fecha_cese'       => $contratoFinalizado?->fecha_fin,
+            'categoria'        => $categoria,
+            'rango_inicio'     => $inicioMes->format('d/m/Y'),
+            'rango_fin'        => $finMes->format('d/m/Y'),
         ];
+    }
+
+    /**
+     * Cómo se reparten los días de un mes para un trabajador concreto.
+     *
+     * Devuelve tres cosas y la proporción que sale de ellas:
+     *
+     *   dias_del_mes   los que tiene el mes (28, 30, 31)
+     *   dias_pagados   por los que le toca cobrar: si entró el día 20, son 11,
+     *                  no 30. Antes se le pagaba el mes entero aunque hubiera
+     *                  entrado la semana pasada.
+     *   dias_vacaciones  los que estuvo de descanso, que TAMBIÉN se pagan
+     *   dias_trabajados  los que realmente vino, que es lo que va en la boleta
+     *
+     * La proporción es dias_pagados / dias_del_mes, y con ella se prorratea el
+     * sueldo al crear la planilla. Las vacaciones NO entran en esa proporción:
+     * son remuneradas, así que quien las toma cobra igual.
+     *
+     * Nota de lo que todavía no cubre: el cese a mitad de mes. Cuando a alguien
+     * se le termina el contrato el día 12, esto le sigue pagando hasta fin de
+     * mes. Hace falta lo mismo pero por el otro extremo.
+     */
+    protected function repartoDeDiasDelMes($empleado, int $mes, int $anio): array
+    {
+        $inicioMes = \Carbon\Carbon::create($anio, $mes, 1)->startOfMonth();
+        $finMes    = \Carbon\Carbon::create($anio, $mes, 1)->endOfMonth();
+        $diasDelMes = $inicioMes->daysInMonth;
+
+        $ingreso = $empleado->fecha_ingreso
+            ? \Carbon\Carbon::parse($empleado->fecha_ingreso)->startOfDay()
+            : null;
+
+        // Todavía no había entrado: no le corresponde nada de este mes.
+        if ($ingreso && $ingreso->gt($finMes)) {
+            return [
+                'dias_del_mes'    => $diasDelMes,
+                'dias_pagados'    => 0,
+                'dias_vacaciones' => 0,
+                'dias_trabajados' => 0,
+                'proporcion'      => 0.0,
+                'entro_este_mes'  => false,
+            ];
+        }
+
+        // Desde cuándo cuenta: su fecha de ingreso si cae dentro del mes, o el
+        // día 1 si ya estaba desde antes.
+        $desde = ($ingreso && $ingreso->gt($inicioMes)) ? $ingreso : $inicioMes;
+        $diasPagados = (int) $desde->diffInDays($finMes) + 1;
+
+        $diasVacaciones = $this->diasDeVacacionesEnElMes($empleado->id, $desde, $finMes);
+
+        return [
+            'dias_del_mes'    => $diasDelMes,
+            'dias_pagados'    => $diasPagados,
+            'dias_vacaciones' => $diasVacaciones,
+            'dias_trabajados' => max(0, $diasPagados - $diasVacaciones),
+            'proporcion'      => round($diasPagados / $diasDelMes, 6),
+            'entro_este_mes'  => $ingreso && $ingreso->gt($inicioMes),
+        ];
+    }
+
+    /**
+     * El sueldo que le toca este mes, ya prorrateado si entró a mitad.
+     *
+     * Devuelve null cuando el trabajador todavía no había ingresado: eso no es
+     * "cero soles", es que no hay planilla que armarle.
+     */
+    protected function sueldoDelMes($empleado, int $mes, int $anio): ?float
+    {
+        $reparto = $this->repartoDeDiasDelMes($empleado, $mes, $anio);
+
+        if ($reparto['dias_pagados'] === 0) {
+            return null;
+        }
+
+        return round((float) $empleado->sueldo_base * $reparto['proporcion'], 2);
+    }
+
+    /**
+     * Cuántos días de este mes cayeron dentro de unas vacaciones APROBADAS.
+     *
+     * Solo cuentan las aprobadas y vigentes: una solicitud pendiente todavía
+     * puede rechazarse, y una boleta no se arma con algo que quizá no pase.
+     *
+     * Se recorta contra el mes porque un periodo puede cruzar el cambio de mes
+     * (del 28 de junio al 5 de julio): a la boleta de junio le tocan 3 días y a
+     * la de julio 5, no los 8 a cada una.
+     */
+    protected function diasDeVacacionesEnElMes(string $empleadoId, \Carbon\Carbon $inicioMes, \Carbon\Carbon $finMes): int
+    {
+        $periodos = \App\Models\Vacacion::where('empleado_id', $empleadoId)
+            ->where('estado', 'aprobado')
+            ->where('estado_registro', 'activo')
+            ->where('fecha_inicio', '<=', $finMes->toDateString())
+            ->where('fecha_fin', '>=', $inicioMes->toDateString())
+            ->get();
+
+        $dias = 0;
+
+        foreach ($periodos as $periodo) {
+            $desde = \Carbon\Carbon::parse($periodo->fecha_inicio)->startOfDay()->max($inicioMes);
+            $hasta = \Carbon\Carbon::parse($periodo->fecha_fin)->startOfDay()->min($finMes);
+
+            // Ambos extremos incluidos, igual que al pedirlas.
+            $dias += (int) $desde->diffInDays($hasta) + 1;
+        }
+
+        // Tope defensivo: si hubiera solicitudes solapadas mal grabadas, la
+        // boleta no puede decir que trabajó días negativos.
+        return min($dias, $inicioMes->daysInMonth);
     }
 }

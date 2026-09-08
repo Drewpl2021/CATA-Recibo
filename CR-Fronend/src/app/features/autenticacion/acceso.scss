@@ -325,19 +325,9 @@
   padding-left: 20px;
 }
 
-/* Etiqueta que solo existe para el lector de pantalla: el diseño usa
-   el marcador del campo, pero un input sin etiqueta no se anuncia. */
-.solo-lectores {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}
+/* .solo-lectores (la etiqueta que solo oye el lector de pantalla) se mudó
+   a styles.scss: la necesitan también el menú y las pantallas de lista, y
+   acá dentro estaba encapsulada. */
 
 /* ── Botón y pie ───────────────────────────────────────────────── */
 .acceso__enviar {

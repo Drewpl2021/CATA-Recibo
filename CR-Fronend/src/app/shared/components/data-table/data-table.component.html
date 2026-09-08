@@ -20,9 +20,15 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngIf="cargando">
-          <td [attr.colspan]="columnas.length + (acciones.length || accionesPersonalizadas.length ? 1 : 0)" class="data-table-empty">
-            Cargando...
+        <!-- Mientras llegan las filas se pinta la silueta de la tabla: tantas
+             como vayan a caber, con una celda por columna. La tabla no
+             cambia de alto cuando llegan los datos. -->
+        <tr *ngFor="let f of filasEsqueleto" class="fila-esqueleto">
+          <td *ngFor="let col of columnas">
+            <span class="esqueleto esqueleto--linea" [style.width]="anchoEsqueleto(col)"></span>
+          </td>
+          <td *ngIf="acciones.length || accionesPersonalizadas.length">
+            <span class="esqueleto esqueleto--linea" style="width: 60px;"></span>
           </td>
         </tr>
         <tr *ngIf="!cargando && filaPagina.length === 0">
@@ -31,7 +37,7 @@
           </td>
         </tr>
         <tr *ngFor="let fila of filaPagina">
-          <td *ngFor="let col of columnas">
+          <td *ngFor="let col of columnas" [class.celda-rompe]="col.romperTexto">
             <ng-container [ngSwitch]="col.tipo">
               <span *ngSwitchCase="'badge'" [ngClass]="claseBadge(fila, col)">
                 {{ valorCelda(fila, col) }}
@@ -48,23 +54,26 @@
               <button *ngFor="let extra of accionesVisibles(fila)"
                 class="btn-icon-accion" [ngClass]="'btn-icon-' + (extra.severidad || 'brand')"
                 [class.btn-icon-accion--con-texto]="!!extra.etiqueta"
-                [title]="extra.titulo" [attr.aria-label]="extra.titulo"
+                [appPista]="extra.titulo" [attr.aria-label]="extra.titulo"
                 (click)="accionPersonalizada.emit({ accion: extra.id, fila })">
                 <app-icon [icono]="extra.icono" [tamano]="16"></app-icon>
                 <span *ngIf="extra.etiqueta">{{ extra.etiqueta }}</span>
               </button>
-              <button *ngIf="acciones.includes('ver')" class="btn-icon-blue" title="Ver" (click)="verFila.emit(fila)">
+              <button *ngIf="acciones.includes('ver')" class="btn-icon-blue"
+                [appPista]="pistaVer" [attr.aria-label]="pistaVer" (click)="verFila.emit(fila)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                 </svg>
               </button>
-              <button *ngIf="acciones.includes('editar')" class="btn-icon-blue" title="Editar" (click)="editarFila.emit(fila)">
+              <button *ngIf="acciones.includes('editar')" class="btn-icon-blue"
+                [appPista]="pistaEditar" [attr.aria-label]="pistaEditar" (click)="editarFila.emit(fila)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
               </button>
-              <button *ngIf="acciones.includes('eliminar')" class="btn-icon-red" title="Eliminar" (click)="eliminarFila.emit(fila)">
+              <button *ngIf="acciones.includes('eliminar')" class="btn-icon-red"
+                [appPista]="pistaEliminar" [attr.aria-label]="pistaEliminar" (click)="eliminarFila.emit(fila)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
                 </svg>

@@ -76,9 +76,20 @@ class PlanillaController extends Controller
             ], 422);
         }
 
-        // Jalar sueldo_base directamente del empleado — no se puede editar
-        $empleado       = Empleado::findOrFail($request->empleado_id);
-        $sueldo_base    = (float) $empleado->sueldo_base;
+        // Jalar sueldo_base directamente del empleado — no se puede editar.
+        // Si entró a mitad de mes se prorratea por los días que le tocan: darle
+        // el mes entero a quien empezó el día 28 es pagarle de más.
+        $empleado    = Empleado::findOrFail($request->empleado_id);
+        $sueldo_base = $this->sueldoDelMes($empleado, (int) $request->mes, (int) $request->anio);
+
+        if ($sueldo_base === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este empleado todavía no había ingresado en ' . $request->mes . '/' . $request->anio .
+                             ' (ingresó el ' . \Carbon\Carbon::parse($empleado->fecha_ingreso)->format('d/m/Y') . ').',
+            ], 422);
+        }
+
         $bonificaciones = (float) ($request->bonificaciones ?? 0);
         $descuentos     = (float) ($request->descuentos ?? 0);
 

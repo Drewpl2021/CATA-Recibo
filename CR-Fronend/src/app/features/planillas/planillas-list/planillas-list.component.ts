@@ -443,7 +443,14 @@ export class PlanillasListComponent implements OnInit {
         if (!res.success) return;
         this.resultadoGeneracion = res.data;
         const { generadas, omitidas } = res.data.resumen;
-        this.toastService.success('Planillas generadas', `${generadas} generada(s), ${omitidas} omitida(s).`);
+        this.toastService.resultadoMasivo({
+          hechas: generadas,
+          omitidas,
+          exito: 'Planillas generadas',
+          nada: 'No se generó ninguna planilla',
+          cosas: 'planilla(s)',
+          motivo: 'esos empleados ya tenían planilla de ese mes, o no tienen sueldo básico',
+        });
         // La lista se pone al día con lo recién creado.
         this.filtroMes = Number(mes);
         this.filtroAnio = Number(anio);
@@ -491,10 +498,14 @@ export class PlanillasListComponent implements OnInit {
       next: (res) => {
         this.emitiendo = false;
         this.resultadoBoletas = { generadas: res.generadas ?? 0, omitidas: res.omitidas ?? 0 };
-        this.toastService.success(
-          'Boletas emitidas',
-          `${this.resultadoBoletas.generadas} generada(s), ${this.resultadoBoletas.omitidas} omitida(s).`
-        );
+        this.toastService.resultadoMasivo({
+          hechas: this.resultadoBoletas.generadas,
+          omitidas: this.resultadoBoletas.omitidas,
+          exito: 'Boletas emitidas',
+          nada: 'No se emitió ninguna boleta',
+          cosas: 'boleta(s)',
+          motivo: 'esos empleados no tienen planilla de ese mes, o ya tenían su boleta',
+        });
       },
       error: (err) => {
         this.emitiendo = false;

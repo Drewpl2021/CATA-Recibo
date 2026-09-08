@@ -5,6 +5,7 @@ import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs'
 import { AccionPersonalizada, ColumnaTabla, leerCampo } from './data-table.models';
 import { fechaLegible } from '../../../core/utils';
 import { IconComponent } from '../icon/icon.component';
+import { PistaDirective } from '../../directives/pista.directive';
 
 export type AccionFila = 'ver' | 'editar' | 'eliminar';
 
@@ -27,7 +28,7 @@ export type AccionFila = 'ver' | 'editar' | 'eliminar';
 @Component({
   selector: 'app-data-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent],
+  imports: [CommonModule, FormsModule, IconComponent, PistaDirective],
   templateUrl: './data-table.component.html',
 })
 export class DataTableComponent<T = any> implements OnChanges, OnDestroy {
@@ -41,6 +42,33 @@ export class DataTableComponent<T = any> implements OnChanges, OnDestroy {
   @Input() mostrarBuscador = true;
   /** Botones extra de la pantalla, además de ver/editar/eliminar. */
   @Input() accionesPersonalizadas: AccionPersonalizada<T>[] = [];
+
+  /**
+   * Qué guarda esta tabla, en singular y con su artículo: "el área",
+   * "este empleado", "la solicitud".
+   *
+   * Sirve para que las pistas de los botones digan qué hacen de verdad
+   * ("Editar este empleado") en vez de un "Editar" suelto que no dice sobre
+   * qué. Sin esto los textos quedan genéricos, que es como estaban.
+   */
+  @Input() entidad = '';
+
+  get pistaVer(): string {
+    return this.entidad ? `Ver ${this.entidad}` : 'Ver el detalle';
+  }
+
+  get pistaEditar(): string {
+    return this.entidad ? `Editar ${this.entidad}` : 'Editar este registro';
+  }
+
+  /**
+   * Casi todo el sistema da de baja en vez de borrar, pero el diálogo de
+   * confirmación dice "Eliminar": la pista usa la misma palabra para que no
+   * parezcan dos acciones distintas.
+   */
+  get pistaEliminar(): string {
+    return this.entidad ? `Eliminar ${this.entidad}` : 'Eliminar este registro';
+  }
 
   /**
    * Con `true`, quien pagina y busca es el backend: `datos` trae SOLO las
@@ -88,6 +116,27 @@ export class DataTableComponent<T = any> implements OnChanges, OnDestroy {
 
   ngOnDestroy(): void {
     this.suscripcion?.unsubscribe();
+  }
+
+  /**
+   * Cuántas filas de silueta pintar mientras carga: las mismas que va a
+   * traer la página, hasta un tope, para que la tabla no dé un salto de
+   * alto cuando lleguen los datos de verdad.
+   */
+  get filasEsqueleto(): number[] {
+    if (!this.cargando) return [];
+    const cuantas = Math.min(this.filasPorPagina, 8);
+    return Array.from({ length: cuantas }, (_, i) => i);
+  }
+
+  /**
+   * Ancho de cada barra de la silueta. Se varía a propósito: barras todas
+   * iguales parecen una tabla rota, no un texto que está por llegar.
+   */
+  anchoEsqueleto(columna: ColumnaTabla<T>): string {
+    const anchos = ['85%', '60%', '72%', '45%', '90%', '55%'];
+    const posicion = this.columnas.indexOf(columna);
+    return anchos[posicion % anchos.length];
   }
 
   /** ¿Hay algo que pintar en la columna de acciones de esta fila? */

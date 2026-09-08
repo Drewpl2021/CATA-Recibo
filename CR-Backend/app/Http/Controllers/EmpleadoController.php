@@ -93,6 +93,10 @@ class EmpleadoController extends Controller
                 'password'    => Hash::make($request->dni),
                 'rol_id'      => $request->rol_id,
                 'empleado_id' => $empleado->id,
+                // Entra con su DNI, y el sistema no le deja hacer nada más
+                // hasta que ponga una contraseña suya: el DNI está a la vista
+                // de todos en la ficha y en la boleta.
+                'debe_cambiar_password' => true,
             ]);
 
             // El primer contrato sale de lo que ya se pide en el alta: el tipo y la

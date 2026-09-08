@@ -25,6 +25,15 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Con `migrate:refresh` o `migrate:fresh` esto corre ANTES de los
+        // seeders, sobre una base sin roles: no hay a quién darle el módulo, y
+        // insertarlo igual dejaba una fila colgada sin dueño. Cuando la base se
+        // siembra de cero, el menú lo arma el ModuloSeeder, que ya lo incluye.
+        if (DB::table('roles')->count() === 0) {
+            echo "   base vacía: el menú lo siembra ModuloSeeder\n";
+            return;
+        }
+
         $yaExiste = DB::table('modulos')->where('ruta', '/dashboard')->exists();
 
         if ($yaExiste) {

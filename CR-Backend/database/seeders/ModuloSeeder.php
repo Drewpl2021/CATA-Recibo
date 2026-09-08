@@ -45,6 +45,9 @@ class ModuloSeeder extends Seeder
             ['padre' => $idBoletas, 'nombre' => 'Boletas',    'ruta' => '/boletas',    'icono' => 'description',   'orden' => 3, 'roles' => [$admin, $rrhh]],
             ['padre' => $idBoletas, 'nombre' => 'Documentos', 'ruta' => '/documentos', 'icono' => 'folder',        'orden' => 4, 'roles' => [$admin, $rrhh]],
             ['padre' => $idBoletas, 'nombre' => 'Contratos',  'ruta' => '/contratos',  'icono' => 'description',   'orden' => 5, 'roles' => [$admin, $rrhh]],
+            // Las solicitudes de todo el personal, para aprobar o rechazar.
+            // El trabajador tiene la suya en Mi Espacio.
+            ['padre' => $idBoletas, 'nombre' => 'Vacaciones', 'ruta' => '/vacaciones', 'icono' => 'beach', 'orden' => 6, 'roles' => [$admin, $rrhh]],
 
             // Configuración — RRHH tiene los catálogos; Roles/Módulos siguen
             // siendo exclusivos de Admin (igual que el middleware rol: en routes/api.php).
@@ -61,6 +64,7 @@ class ModuloSeeder extends Seeder
             // Mi Espacio — admin, rrhh y empleado
             ['padre' => $idEspacio, 'nombre' => 'Mis Boletas',    'ruta' => '/mis-boletas',    'icono' => 'receipt_long',  'orden' => 1, 'roles' => [$admin, $rrhh, $empleado]],
             ['padre' => $idEspacio, 'nombre' => 'Mis Documentos', 'ruta' => '/mis-documentos', 'icono' => 'folder_shared', 'orden' => 2, 'roles' => [$admin, $rrhh, $empleado]],
+            ['padre' => $idEspacio, 'nombre' => 'Mis Vacaciones', 'ruta' => '/mis-vacaciones', 'icono' => 'beach', 'orden' => 3, 'roles' => [$admin, $rrhh, $empleado]],
         ];
 
         foreach ($modulos as $m) {

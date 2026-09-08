@@ -1,0 +1,106 @@
+<app-page-header
+  icono="beach"
+  titulo="Mis Vacaciones"
+  subtitulo="Los días que te quedan este año y en qué va cada solicitud que hiciste."
+  [cifras]="cifras"
+  [cargandoCifras]="!saldo"
+>
+  <button headerActions class="btn-primary" (click)="pedir()" *ngIf="!sinEmpleado">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Pedir vacaciones
+  </button>
+</app-page-header>
+
+<p class="form-nota form-nota--alerta" *ngIf="sinEmpleado">
+  Tu cuenta no está vinculada a ninguna ficha de empleado, así que no tiene
+  días de vacaciones. Pídele a Recursos Humanos que la vincule.
+</p>
+
+<app-data-table
+  entidad="mi solicitud"
+  *ngIf="!sinEmpleado"
+  [columnas]="columnas"
+  [datos]="vacaciones"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  [acciones]="['eliminar']"
+  mensajeVacio="Todavía no has pedido vacaciones."
+  (eliminarFila)="anular($event)"
+></app-data-table>
+
+<p class="form-nota" style="margin-top: 16px;" *ngIf="!sinEmpleado">
+  <ng-container *ngIf="esProporcional; else anioCompleto">
+    Llevas {{ saldo?.mesesTrabajados }} meses en el colegio, así que por ahora te
+    corresponden {{ saldo?.diasGanados }} días. Al cumplir el año pasas a los 30.
+  </ng-container>
+  <ng-template #anioCompleto>
+    Te corresponden 30 días al año. Los que pides cuentan desde que los
+    solicitas, aunque Recursos Humanos todavía no los haya aprobado.
+  </ng-template>
+  Puedes retirar una solicitud mientras siga <strong>pendiente</strong>; una vez
+  resuelta, habla con Recursos Humanos. Tomar vacaciones <strong>no te descuenta
+  sueldo</strong>: cobras igual, y en la boleta de ese mes salen contadas aparte.
+</p>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  titulo="Pedir vacaciones"
+  [guardando]="guardando"
+  textoGuardar="Enviar solicitud"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <p class="form-nota" *ngIf="saldo">
+      Te quedan <strong>{{ saldo.diasDisponibles }}</strong> días este año.
+    </p>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="fecha_inicio">Desde *</label>
+        <input type="date" id="fecha_inicio" class="form-control" formControlName="fecha_inicio"
+          [class.is-invalid]="invalido('fecha_inicio')" />
+        <small class="form-error" *ngIf="invalido('fecha_inicio')">Falta el primer día.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_fin">Hasta *</label>
+        <input type="date" id="fecha_fin" class="form-control" formControlName="fecha_fin"
+          [class.is-invalid]="invalido('fecha_fin')" />
+        <small class="form-error" *ngIf="invalido('fecha_fin')">Falta el último día.</small>
+      </div>
+    </div>
+
+    <div class="form-nota" *ngIf="diasDelFormulario > 0">
+      Son <strong>{{ diasDelFormulario }}</strong> día(s), contando el primero y
+      el último.
+    </div>
+
+    <div class="form-nota form-nota--alerta" *ngIf="seExcedeDelSaldo">
+      No te alcanzan: estás pidiendo {{ diasDelFormulario }} y te quedan
+      {{ saldo?.diasDisponibles }}.
+    </div>
+
+    <div class="form-group">
+      <label for="motivo">Motivo</label>
+      <textarea id="motivo" class="form-control" formControlName="motivo" rows="3"
+        placeholder="Opcional: ayuda a Recursos Humanos a decidir"></textarea>
+    </div>
+
+    <p class="form-ayuda">
+      La solicitud queda <strong>pendiente</strong> hasta que Recursos Humanos la
+      apruebe. Los días se descuentan de tu saldo desde ahora.
+    </p>
+
+    <p class="form-ayuda">
+      <strong>No se te descuenta sueldo.</strong> Las vacaciones son pagadas: ese
+      mes cobras igual que siempre. En tu boleta aparecen como días de
+      vacaciones, nada más.
+    </p>
+  </form>
+</app-form-modal>

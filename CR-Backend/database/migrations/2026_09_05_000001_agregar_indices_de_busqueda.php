@@ -63,25 +63,67 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Deshacer esto tiene una trampa que costó un `migrate:refresh` fallido.
+     *
+     * Cuando un índice compuesto EMPIEZA por una columna que tiene clave
+     * foránea, MySQL borra en silencio el índice que se había fabricado para
+     * esa foránea, porque el nuevo le sirve igual. A partir de ahí la foránea
+     * se apoya en el compuesto, y al intentar quitarlo el motor responde
+     * "Cannot drop index ...: needed in a foreign key constraint".
+     *
+     * Pasa en tres de los índices de arriba:
+     *   payroll_detalles_planilla_concepto_idx  (empieza por planilla_id)
+     *   documentos_empleado_tipo_idx            (empieza por empleado_id)
+     *   documentos_planilla_tipo_idx            (empieza por planilla_id)
+     *
+     * En esos hay que soltar la foránea, quitar el índice y volver a ponerla
+     * con la misma regla de borrado que tenía. Los de `planilla` y
+     * `payment_concepts` no tienen el problema: planilla.empleado_id nunca
+     * tuvo foránea, y periodo_id conserva su propio índice.
+     */
     public function down(): void
     {
         Schema::table('planilla', function (Blueprint $table) {
-            $table->dropIndex('planilla_empleado_periodo_idx');
-            $table->dropIndex('planilla_periodo_idx');
-        });
-
-        Schema::table('payroll_detalles', function (Blueprint $table) {
-            $table->dropIndex('payroll_detalles_planilla_concepto_idx');
+            $this->quitarIndice($table, 'planilla', 'planilla_empleado_periodo_idx');
+            $this->quitarIndice($table, 'planilla', 'planilla_periodo_idx');
         });
 
         Schema::table('payment_concepts', function (Blueprint $table) {
-            $table->dropIndex('payment_concepts_tipo_idx');
-            $table->dropIndex('payment_concepts_aplica_a_todos_idx');
+            $this->quitarIndice($table, 'payment_concepts', 'payment_concepts_tipo_idx');
+            $this->quitarIndice($table, 'payment_concepts', 'payment_concepts_aplica_a_todos_idx');
         });
 
-        Schema::table('documentos', function (Blueprint $table) {
-            $table->dropIndex('documentos_empleado_tipo_idx');
-            $table->dropIndex('documentos_planilla_tipo_idx');
+        // payroll_detalles.planilla_id — sin acción al borrar, como la creó
+        // su migración original.
+        Schema::table('payroll_detalles', fn (Blueprint $table) => $table->dropForeign(['planilla_id']));
+        Schema::table('payroll_detalles', function (Blueprint $table) {
+            $this->quitarIndice($table, 'payroll_detalles', 'payroll_detalles_planilla_concepto_idx');
         });
+        Schema::table('payroll_detalles', function (Blueprint $table) {
+            $table->foreign('planilla_id')->references('id')->on('planilla');
+        });
+
+        // documentos: empleado_id cae en cascada, planilla_id queda en null.
+        Schema::table('documentos', function (Blueprint $table) {
+            $table->dropForeign(['empleado_id']);
+            $table->dropForeign(['planilla_id']);
+        });
+        Schema::table('documentos', function (Blueprint $table) {
+            $this->quitarIndice($table, 'documentos', 'documentos_empleado_tipo_idx');
+            $this->quitarIndice($table, 'documentos', 'documentos_planilla_tipo_idx');
+        });
+        Schema::table('documentos', function (Blueprint $table) {
+            $table->foreign('empleado_id')->references('id')->on('empleados')->cascadeOnDelete();
+            $table->foreign('planilla_id')->references('id')->on('planilla')->nullOnDelete();
+        });
+    }
+
+    /** Quita un índice solo si está: así el down() se puede repetir. */
+    private function quitarIndice(Blueprint $table, string $tabla, string $indice): void
+    {
+        if (Schema::hasIndex($tabla, $indice)) {
+            $table->dropIndex($indice);
+        }
     }
 };

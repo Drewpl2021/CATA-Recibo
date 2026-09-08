@@ -321,10 +321,14 @@ export class PeriodosListComponent implements OnInit {
         if (res.success) {
           this.resultado = res.data;
           const { generadas, omitidas } = res.data.resumen;
-          this.toastService.success(
-            'Planillas generadas',
-            `${generadas} generada(s), ${omitidas} omitida(s).`
-          );
+          this.toastService.resultadoMasivo({
+            hechas: generadas,
+            omitidas,
+            exito: 'Planillas generadas',
+            nada: 'No se generó ninguna planilla',
+            cosas: 'planilla(s)',
+            motivo: 'esos empleados ya tenían planilla de ese mes, o no tienen sueldo básico',
+          });
         }
       },
       error: (err) => {

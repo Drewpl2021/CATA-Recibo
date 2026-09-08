@@ -99,6 +99,7 @@ const ICONO_POR_NOMBRE: Record<string, string> = {
   // ── Autoservicio ──
   'mis boletas': 'receipt_long',
   'mis documentos': 'folder_shared',
+  'mis vacaciones': 'beach',
   'mi perfil': 'person',
   'historial de boletas': 'receipt_long',
   notificaciones: 'bell',

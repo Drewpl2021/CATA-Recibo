@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use App\Traits\ListadoPaginado;
 
 class UserController extends Controller
@@ -89,5 +91,65 @@ class UserController extends Controller
         $user->tokens()->delete();
 
         return response()->json(['success' => true, 'data' => ['message' => 'Usuario eliminado correctamente.']]);
+    }
+
+    /**
+     * POST /users/{id}/restablecer-password
+     *
+     * Para cuando un docente se queda fuera y no puede usar el correo (que en
+     * este colegio pasa seguido: muchos entran solo a firmar su boleta y no
+     * revisan el buzón). RR.HH. le repone la contraseña en el momento y se la
+     * dice; el sistema le obliga a cambiarla en cuanto entre.
+     *
+     * La nueva es su DNI, que es la misma regla del alta y la que RR.HH. ya
+     * sabe explicar. Si el usuario no tiene empleado con DNI, se inventa una
+     * temporal y se devuelve UNA sola vez en la respuesta.
+     */
+    public function restablecerPassword(Request $request, string $id)
+    {
+        $user = User::with('rol', 'empleado')->findOrFail($id);
+        $quienPide = $request->user();
+
+        // Reponerse la contraseña a uno mismo por acá cerraría la sesión con
+        // la que se está trabajando. Para eso está "Cambiar contraseña".
+        if ($quienPide->id === $user->id) {
+            return response()->json([
+                'success' => false,
+                'data'    => ['message' => 'Para tu propia cuenta usa Cambiar contraseña, en tu perfil.'],
+            ], 422);
+        }
+
+        // RR.HH. no puede reponerle la contraseña a un Administrador: sería
+        // ponérsela él mismo y entrar con esa cuenta. Solo un Administrador
+        // repone a otro Administrador.
+        if ($user->rol?->nombre === 'admin' && $quienPide->rol?->nombre !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'data'    => ['message' => 'Solo un Administrador puede restablecer la contraseña de otro Administrador.'],
+            ], 403);
+        }
+
+        $dni = $user->empleado?->dni;
+        $nueva = $dni ?: Str::upper(Str::random(4)) . random_int(1000, 9999);
+
+        $user->update([
+            'password'              => Hash::make($nueva),
+            'debe_cambiar_password' => true,
+        ]);
+
+        // Se le cierran las sesiones abiertas: si se le repone la contraseña
+        // es porque algo pasó con la cuenta.
+        $user->tokens()->delete();
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'message'           => $dni
+                    ? 'Contraseña restablecida. Ahora entra con su DNI y el sistema le pedirá cambiarla.'
+                    : 'Contraseña restablecida. Entrégale la contraseña temporal: el sistema le pedirá cambiarla al entrar.',
+                'password_temporal' => $nueva,
+                'es_dni'            => (bool) $dni,
+            ],
+        ]);
     }
 }
