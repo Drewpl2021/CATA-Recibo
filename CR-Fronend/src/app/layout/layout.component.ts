@@ -16,12 +16,13 @@ import { EmpleadoService } from '../core/services';
 import { Empleado } from '../core/models';
 import { NOMBRE_ROL_LEGIBLE } from '../shared/constants';
 import { IconComponent } from '../shared/components/icon/icon.component';
+import { PistaDirective } from '../shared/directives/pista.directive';
 import { fechaLegible } from '../core/utils';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, IconComponent],
+  imports: [CommonModule, RouterModule, FormsModule, IconComponent, PistaDirective],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss'
 })
@@ -116,9 +117,9 @@ export class LayoutComponent implements OnInit {
               padre.modulos.some((hijo) => this.getRouterLink(hijo.ruta) === this.activeMenu)
             );
             if (grupoActivo) {
-              this.openGroups.add(grupoActivo.id);
+              this.abrirSoloGrupo(grupoActivo.id);
             } else if (this.modulosPadre.length > 0) {
-              this.openGroups.add(this.modulosPadre[0].id);
+              this.abrirSoloGrupo(this.modulosPadre[0].id);
             }
           }
           this.cargandoModulos = false;
@@ -296,12 +297,26 @@ export class LayoutComponent implements OnInit {
     this.sidebarVisible = !this.sidebarVisible;
   }
 
+  /**
+   * Los grupos funcionan como acordeón: abrir uno cierra los demás.
+   *
+   * Antes cada grupo se abría por su cuenta y ninguno se cerraba, así que
+   * bastaba con pasear por tres pantallas de grupos distintos para tener
+   * TODO el menú desplegado: la barra se hacía más alta que la pantalla y
+   * el "Cerrar sesión" se iba fuera de vista.
+   */
   toggleGroup(id: string): void {
     if (this.openGroups.has(id)) {
       this.openGroups.delete(id);
-    } else {
-      this.openGroups.add(id);
+      return;
     }
+    this.abrirSoloGrupo(id);
+  }
+
+  /** Deja abierto ese grupo y ningún otro. */
+  private abrirSoloGrupo(id: string): void {
+    this.openGroups.clear();
+    this.openGroups.add(id);
   }
 
   isGroupOpen(id: string): boolean {
@@ -325,7 +340,9 @@ export class LayoutComponent implements OnInit {
       padre.modulos.some((hijo) => this.esRutaActiva(hijo.ruta))
     );
     if (grupoActivo) {
-      this.openGroups.add(grupoActivo.id);
+      // Solo el del sitio donde se está: si se fueran sumando, al cabo de
+      // unas pantallas el menú entero quedaría desplegado.
+      this.abrirSoloGrupo(grupoActivo.id);
     }
   }
 

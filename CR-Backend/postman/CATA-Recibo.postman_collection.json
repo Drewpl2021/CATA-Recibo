@@ -269,6 +269,58 @@
     {
       "key": "aviso_id",
       "value": ""
+    },
+    {
+      "key": "user_admin_id",
+      "value": ""
+    },
+    {
+      "key": "password_temporal",
+      "value": ""
+    },
+    {
+      "key": "descartable_token",
+      "value": ""
+    },
+    {
+      "key": "empleado_autoservicio_id",
+      "value": ""
+    },
+    {
+      "key": "vacacion_propia_id",
+      "value": ""
+    },
+    {
+      "key": "empleado_password",
+      "value": ""
+    },
+    {
+      "key": "empleado_tardio_dni",
+      "value": ""
+    },
+    {
+      "key": "empleado_tardio_email",
+      "value": ""
+    },
+    {
+      "key": "empleado_tardio_id",
+      "value": ""
+    },
+    {
+      "key": "planilla_tardia_id",
+      "value": ""
+    },
+    {
+      "key": "empleado_sin_sueldo_dni",
+      "value": ""
+    },
+    {
+      "key": "empleado_sin_sueldo_email",
+      "value": ""
+    },
+    {
+      "key": "empleado_sin_sueldo_id",
+      "value": ""
     }
   ],
   "item": [
@@ -559,6 +611,96 @@
             },
             "description": "El minimo subio de 6 a 8 caracteres."
           }
+        },
+        {
+          "name": "Olvide mi contrasena (pide el enlace)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/olvide-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "olvide-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@colegio.com\"\n}"
+            },
+            "description": "El correo sale por la cola (QUEUE_CONNECTION=database) con un enlace de un solo uso que vence en una hora. Con MAIL_MAILER=log el enlace queda en storage/logs/laravel.log."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('No confirma ni niega que el correo exista', () => pm.expect(pm.response.text()).to.include('Si el correo'));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Olvide mi contrasena con un correo que no existe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/olvide-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "olvide-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nadie{{$timestamp}}@cata.edu.pe\"\n}"
+            },
+            "description": "A proposito responde lo mismo: si dijera \"ese correo no esta registrado\", cualquiera podria ir probando direcciones para averiguar quien trabaja en el colegio."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('Status 200: responde igual que con uno real', () => pm.response.to.have.status(200));",
+                  "  pm.test('Mismo mensaje exacto', () => pm.expect(pm.response.text()).to.include('Si el correo'));",
+                  "})();"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -4720,6 +4862,68 @@
               ]
             },
             {
+              "name": "Crear Empleado sin sueldo asignado",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{rrhh_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/empleados",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "empleados"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dni\": \"{{empleado_sin_sueldo_dni}}\",\n  \"nombre\": \"Postman\",\n  \"apellido\": \"SinSueldo\",\n  \"cargo_id\": \"{{cargo_id}}\",\n  \"area_id\": \"{{area_id}}\",\n  \"sede_id\": \"{{sede_id}}\",\n  \"telefono\": \"987222333\",\n  \"direccion\": \"Av. Sin Sueldo 1\",\n  \"fecha_ingreso\": \"2020-03-01\",\n  \"fecha_nacimiento\": \"1993-07-19\",\n  \"sistema_pensiones\": \"ONP\",\n  \"sueldo_base\": 0,\n  \"tipo_contrato\": \"indeterminado\",\n  \"forma_pago\": \"banco\",\n  \"email\": \"{{empleado_sin_sueldo_email}}\",\n  \"rol_id\": \"{{rol_empleado_id}}\"\n}"
+                },
+                "description": "Alguien dado de alta antes de que se le fije el sueldo — pasa con los practicantes. Sirve para comprobar que la generacion masiva lo salta en vez de armarle una planilla en cero. Antes este caso salia del seeder (el Administrador venia sin sueldo); ahora el personal sembrado tiene su ficha completa, asi que la prueba se fabrica el suyo."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "(function () {",
+                      "  const dni = String(Date.now() + 7).slice(-8);",
+                      "  pm.collectionVariables.set('empleado_sin_sueldo_dni', dni);",
+                      "  pm.collectionVariables.set('empleado_sin_sueldo_email', `sinsueldo.${dni}@test.com`);",
+                      "})();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "(function () {",
+                      "  pm.test('Status 201', () => pm.response.to.have.status(201));",
+                      "  pm.collectionVariables.set('empleado_sin_sueldo_id', pm.response.json().data.id);",
+                      "})();"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
               "name": "Generar Planilla Masiva: mes fuera de rango (debe fallar)",
               "request": {
                 "method": "POST",
@@ -4818,31 +5022,29 @@
                     "type": "text/javascript",
                     "exec": [
                       "(function () {",
-                      "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                      "const data = pm.response.json().data;",
-                      "pm.test('Trae resumen y detalle', () => { pm.expect(data.resumen).to.not.be.undefined; pm.expect(data.detalle).to.be.an('array'); });",
+                      "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "  const data = pm.response.json().data;",
+                      "  pm.test('Trae resumen y detalle', () => { pm.expect(data.resumen).to.not.be.undefined; pm.expect(data.detalle).to.be.an('array'); });",
                       "",
-                      "const deivi = data.detalle.find(d => d.empleado === 'Deivi Apaza Lucana');",
-                      "pm.test('Deivi (tiene sueldo, sin planilla previa) queda generada', () => pm.expect(deivi?.estado).to.eql('generada'));",
-                      "if (deivi) {",
-                      "  pm.collectionVariables.set('planilla_deivi_id', deivi.planilla_id);",
-                      "  pm.collectionVariables.set('empleado_id_deivi', deivi.empleado_id);",
-                      "}",
+                      "  const deivi = data.detalle.find(d => d.empleado === 'Deivi Apaza Lucana');",
+                      "  pm.test('Deivi (tiene sueldo, sin planilla previa) queda generada', () => pm.expect(deivi?.estado).to.eql('generada'));",
+                      "  if (deivi) {",
+                      "    pm.collectionVariables.set('planilla_deivi_id', deivi.planilla_id);",
+                      "    pm.collectionVariables.set('empleado_id_deivi', deivi.empleado_id);",
+                      "  }",
                       "",
-                      "// Antes este empleado llegaba con una planilla ya sembrada por",
-                      "// PlanillaDemoSeeder y el caso comprobaba la omisión. Ese seeder se quitó:",
-                      "// la base arranca sin ninguna planilla, así que ahora se genera igual que",
-                      "// los demás. La omisión por duplicado se comprueba en 'Generar otra vez'.",
-                      "const testUsuario = data.detalle.find(d => d.empleado === 'Test Usuario');",
-                      "pm.test('Test Usuario (tiene sueldo y no tenia planilla) queda generada', () => {",
-                      "  pm.expect(testUsuario?.estado).to.eql('generada');",
-                      "});",
+                      "  // Docente sembrada con ficha completa: entra como cualquiera.",
+                      "  const docente = data.detalle.find(d => d.empleado === 'Elena Rosario Chávez Ticona');",
+                      "  pm.test('La docente (tiene sueldo y no tenia planilla) queda generada', () => {",
+                      "    pm.expect(docente?.estado).to.eql('generada');",
+                      "  });",
                       "",
-                      "const admin = data.detalle.find(d => d.empleado === 'Administrador Apellidos');",
-                      "pm.test('Administrador (sin sueldo_base) queda omitido', () => {",
-                      "  pm.expect(admin?.estado).to.eql('omitida');",
-                      "  pm.expect(admin?.motivo).to.eql('Empleado sin sueldo_base configurado');",
-                      "});",
+                      "  // A quien no se le fijo el sueldo se le salta, y se dice por que.",
+                      "  const sinSueldo = data.detalle.find(d => d.empleado === 'Postman SinSueldo');",
+                      "  pm.test('El que no tiene sueldo queda omitido', () => {",
+                      "    pm.expect(sinSueldo?.estado).to.eql('omitida');",
+                      "    pm.expect(sinSueldo?.motivo).to.eql('Empleado sin sueldo_base configurado');",
+                      "  });",
                       "})();"
                     ]
                   }
@@ -4942,6 +5144,220 @@
                 },
                 "description": "Sin empleado_ids la generacion alcanza a TODO el personal activo. Con la lista, solo a esos: es lo que usa la pantalla cuando se elige un grupo. Tambien se puede acotar con area_id, cargo_id o sede_id en vez de la lista."
               }
+            },
+            {
+              "name": "Crear Empleado que entra a mitad de Agosto",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{rrhh_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/empleados",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "empleados"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dni\": \"{{empleado_tardio_dni}}\",\n  \"nombre\": \"Postman\",\n  \"apellido\": \"MitadDeMes\",\n  \"cargo_id\": \"{{cargo_id}}\",\n  \"area_id\": \"{{area_id}}\",\n  \"sede_id\": \"{{sede_id}}\",\n  \"telefono\": \"987000111\",\n  \"direccion\": \"Av. Tardía 456\",\n  \"fecha_ingreso\": \"{{anio}}-08-21\",\n  \"fecha_nacimiento\": \"1998-04-10\",\n  \"sistema_pensiones\": \"ONP\",\n  \"sueldo_base\": 3000,\n  \"tipo_contrato\": \"indeterminado\",\n  \"forma_pago\": \"banco\",\n  \"email\": \"{{empleado_tardio_email}}\",\n  \"rol_id\": \"{{rol_empleado_id}}\"\n}"
+                },
+                "description": "Entra el 21 de agosto con sueldo 3000: le tocan 11 de 31 dias."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "(function () {",
+                      "  const dni = String(Date.now()).slice(-8);",
+                      "  pm.collectionVariables.set('empleado_tardio_dni', dni);",
+                      "  pm.collectionVariables.set('empleado_tardio_email', `tardio.${dni}@test.com`);",
+                      "})();"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "(function () {",
+                      "  pm.test('Status 201', () => pm.response.to.have.status(201));",
+                      "  pm.collectionVariables.set('empleado_tardio_id', pm.response.json().data.id);",
+                      "})();"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Su planilla se prorratea por los dias trabajados",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{rrhh_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/periodos/{{periodo_masivo_id}}/generar-planilla",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "periodos",
+                    "{{periodo_masivo_id}}",
+                    "generar-planilla"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mes\": 8,\n  \"anio\": \"{{anio}}\",\n  \"empleado_ids\": [\n    \"{{empleado_tardio_id}}\"\n  ]\n}"
+                },
+                "description": "Antes se le pagaba el mes entero aunque hubiera entrado el dia 21."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "(function () {",
+                      "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "  const data = pm.response.json().data;",
+                      "  pm.test('Se le genero', () => pm.expect(data.resumen.generadas).to.eql(1));",
+                      "  const fila = data.detalle[0];",
+                      "  pm.collectionVariables.set('planilla_tardia_id', fila.planilla_id);",
+                      "  pm.test('El detalle explica el prorrateo', () => pm.expect(fila.motivo).to.include('11 de 31'));",
+                      "})();"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "La planilla trae el sueldo proporcional, no el completo",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{rrhh_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/planilla/{{planilla_tardia_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "planilla",
+                    "{{planilla_tardia_id}}"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "(function () {",
+                      "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "  const p = pm.response.json().data;",
+                      "  // 3000 * 11/31 = 1064.52",
+                      "  pm.test('sueldo_base prorrateado a 11 de 31 dias', () => pm.expect(Number(p.sueldo_base)).to.be.closeTo(1064.52, 0.02));",
+                      "  pm.test('Y no el sueldo entero de su ficha', () => pm.expect(Number(p.sueldo_base)).to.be.below(3000));",
+                      "})();"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Relanzar la generacion no duplica su planilla",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{rrhh_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/periodos/{{periodo_masivo_id}}/generar-planilla",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "periodos",
+                    "{{periodo_masivo_id}}",
+                    "generar-planilla"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mes\": 8,\n  \"anio\": \"{{anio}}\",\n  \"empleado_ids\": [\n    \"{{empleado_tardio_id}}\"\n  ]\n}"
+                },
+                "description": "Reintentar la generacion es seguro: al que ya la tiene se le salta, que es como se suma un docente nuevo a un mes ya generado."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "(function () {",
+                      "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "  const data = pm.response.json().data;",
+                      "  pm.test('No se duplica: ya tenia planilla de ese mes', () => pm.expect(data.resumen.omitidas).to.eql(1));",
+                      "  pm.test('Y lo dice', () => pm.expect(data.detalle[0].motivo).to.include('Ya existe'));",
+                      "})();"
+                    ]
+                  }
+                }
+              ]
             },
             {
               "name": "Generar Planilla a un grupo vacio (debe fallar)",
@@ -5636,7 +6052,7 @@
       "name": "09 - Vacaciones",
       "item": [
         {
-          "name": "Solicitar Vacaciones",
+          "name": "Solicitar Vacaciones (los dias y el estado los pone el servidor)",
           "event": [
             {
               "listen": "test",
@@ -5644,8 +6060,12 @@
                 "type": "text/javascript",
                 "exec": [
                   "(function () {",
-                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                  "pm.collectionVariables.set('vacacion_id', pm.response.json().data.id);",
+                  "  pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "  const data = pm.response.json().data;",
+                  "  pm.collectionVariables.set('vacacion_id', data.id);",
+                  "  pm.test('Los dias se cuentan de las fechas, no del cuerpo (5, no 1)', () => pm.expect(data.dias_solicitados).to.eql(5));",
+                  "  pm.test('Nace pendiente aunque se pidiera aprobada', () => pm.expect(data.estado).to.eql('pendiente'));",
+                  "  pm.test('Nadie se firma la aprobacion', () => pm.expect(data.aprobado_por).to.be.null);",
                   "})();"
                 ]
               }
@@ -5669,7 +6089,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"empleado_id\": \"{{empleado_id}}\",\n  \"fecha_inicio\": \"2026-09-01\",\n  \"fecha_fin\": \"2026-09-05\",\n  \"dias_solicitados\": 5,\n  \"motivo\": \"Vacaciones de prueba Postman\"\n}",
+              "raw": "{\n  \"empleado_id\": \"{{empleado_id}}\",\n  \"fecha_inicio\": \"2026-09-01\",\n  \"fecha_fin\": \"2026-09-05\",\n  \"dias_solicitados\": 1,\n  \"estado\": \"aprobado\",\n  \"aprobado_por\": \"yo mismo\",\n  \"motivo\": \"Vacaciones de prueba Postman\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5684,7 +6104,8 @@
               "path": [
                 "vacaciones"
               ]
-            }
+            },
+            "description": "Se mandan a proposito dias_solicitados=1, estado=aprobado y aprobado_por: antes se creaban tal cual (mass assignment) y cualquiera podia darse vacaciones ya aprobadas. Ahora los dias salen de las fechas y el estado lo pone el sistema."
           }
         },
         {
@@ -5740,7 +6161,11 @@
                 "type": "text/javascript",
                 "exec": [
                   "(function () {",
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  const data = pm.response.json().data;",
+                  "  pm.test('Queda aprobada', () => pm.expect(data.estado).to.eql('aprobado'));",
+                  "  pm.test('Quien aprueba sale del token, no del cuerpo', () => pm.expect(data.aprobado_por).to.not.eql('yo mismo'));",
+                  "  pm.test('Queda la fecha de la resolucion', () => pm.expect(data.aprobado_at).to.not.be.null);",
                   "})();"
                 ]
               }
@@ -5764,7 +6189,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"estado\": \"aprobado\",\n  \"aprobado_por\": \"RRHH Postman\"\n}",
+              "raw": "{\n  \"estado\": \"aprobado\",\n  \"aprobado_por\": \"yo mismo\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5782,6 +6207,106 @@
               ]
             }
           }
+        },
+        {
+          "name": "Saldo de vacaciones del empleado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vacaciones/saldo?empleado_id={{empleado_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vacaciones",
+                "saldo"
+              ],
+              "query": [
+                {
+                  "key": "empleado_id",
+                  "value": "{{empleado_id}}"
+                }
+              ]
+            },
+            "description": "Lo que pinta la pantalla antes de dejar pedir."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  const s = pm.response.json().data;",
+                  "  pm.test('No da mas de 30 dias al año', () => pm.expect(s.diasGanados).to.be.at.most(30));",
+                  "  pm.test('Cuenta los 5 recien pedidos', () => pm.expect(s.diasUsados).to.be.at.least(5));",
+                  "  pm.test('Disponibles = ganados - usados', () => pm.expect(s.diasDisponibles).to.eql(Math.max(0, s.diasGanados - s.diasUsados)));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vacaciones con fechas cruzadas (debe fallar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vacaciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vacaciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empleado_id\": \"{{empleado_id}}\",\n  \"fecha_inicio\": \"2026-09-03\",\n  \"fecha_fin\": \"2026-09-08\",\n  \"motivo\": \"Se cruza con la anterior\"\n}"
+            },
+            "description": "Sin esto se gastaba el saldo por duplicado sin que nadie lo notara."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422: no se puede pedir dos veces la misma semana', function () {",
+                  "  pm.response.to.have.status(422);",
+                  "  pm.expect(pm.response.text()).to.include('cruzan');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -5797,8 +6322,11 @@
                 "type": "text/javascript",
                 "exec": [
                   "(function () {",
-                  "pm.test('Login empleado OK', () => pm.response.to.have.status(200));",
-                  "pm.collectionVariables.set('empleado_token', pm.response.json().data.token);",
+                  "  pm.test('Login empleado OK', () => pm.response.to.have.status(200));",
+                  "  const data = pm.response.json().data;",
+                  "  pm.collectionVariables.set('empleado_token', data.token);",
+                  "  pm.test('Entra con su DNI y queda obligado a cambiarlo', () => pm.expect(data.debe_cambiar_password).to.be.true);",
+                  "  pm.collectionVariables.set('empleado_password', pm.collectionVariables.get('empleado_dni'));",
                   "})();"
                 ]
               }
@@ -5834,8 +6362,102 @@
                 "login"
               ]
             },
-            "description": "La contraseña inicial del empleado es su propio DNI (así lo genera EmpleadoController::store)."
+            "description": "Al dar de alta un empleado su contrasena inicial es su DNI, que sabe medio colegio. El login lo dice de entrada y el backend traba la cuenta hasta que ponga una suya."
           }
+        },
+        {
+          "name": "Con la cuenta trabada no entra a ninguna pantalla",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{empleado_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mis-modulos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mis-modulos"
+              ]
+            },
+            "description": "Sin este freno bastaba con llamar al API por fuera para seguir usando la contrasena publica."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('423: la sesion vale, la cuenta esta trabada', () => pm.response.to.have.status(423));",
+                  "  pm.test('Y dice por que', () => pm.expect(pm.response.text()).to.include('cambiar tu contrase'));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cambiar Mi Contraseña",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{empleado_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password_actual\": \"{{empleado_dni}}\",\n  \"password_nuevo\": \"NuevaClave123\",\n  \"password_nuevo_confirmation\": \"NuevaClave123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/cambiar-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "cambiar-password"
+              ]
+            },
+            "description": "Va aqui arriba a proposito: mientras la cuenta siga con el DNI, el resto de la seccion responderia 423. OJO: si vuelves a correr solo el login del empleado sin reseed, la contrasena ya es NuevaClave123."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  pm.collectionVariables.set('empleado_password', 'NuevaClave123');",
+                  "})();"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Me (Empleado)",
@@ -5847,6 +6469,7 @@
                 "exec": [
                   "(function () {",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  pm.collectionVariables.set('empleado_autoservicio_id', pm.response.json().data.empleado_id);",
                   "})();"
                 ]
               }
@@ -6075,7 +6698,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"password\": \"{{empleado_dni}}\"\n}",
+              "raw": "{\n  \"password\": \"{{empleado_password}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -6093,7 +6716,7 @@
                 "firmar"
               ]
             },
-            "description": "Pide la contraseña actual del empleado para 're-autenticar' la firma. Ojo: tiene un límite de 3 intentos fallidos antes de cerrar la sesión."
+            "description": "Pide la contrasena actual del empleado para 're-autenticar' la firma. Va por variable porque para entonces ya la cambio: mandar el DNI gastaba los 3 intentos y cerraba la sesion. Ojo: tiene un limite de 3 intentos fallidos antes de cerrar la sesion."
           }
         },
         {
@@ -6213,9 +6836,52 @@
           }
         },
         {
-          "name": "Cambiar Mi Contraseña",
+          "name": "Mis Vacaciones: solo salen las suyas",
           "request": {
-            "method": "PUT",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{empleado_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vacaciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vacaciones"
+              ]
+            },
+            "description": "Antes este mismo GET le devolvia a cualquiera con sesion las vacaciones de todo el colegio."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  const filas = pm.response.json().data;",
+                  "  const mio = pm.collectionVariables.get('empleado_autoservicio_id');",
+                  "  pm.test('Ninguna fila es de otro trabajador', () => pm.expect(filas.every(v => v.empleado_id === mio)).to.be.true);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pedir vacaciones a nombre de otro (el servidor lo ignora)",
+          "request": {
+            "method": "POST",
             "header": [
               {
                 "key": "Authorization",
@@ -6230,26 +6896,79 @@
                 "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"password_actual\": \"{{empleado_dni}}\",\n  \"password_nuevo\": \"NuevaClave123\",\n  \"password_nuevo_confirmation\": \"NuevaClave123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "{{base_url}}/cambiar-password",
+              "raw": "{{base_url}}/vacaciones",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "cambiar-password"
+                "vacaciones"
               ]
             },
-            "description": "OJO: si ejecutas este request, la próxima vez que corras 'Login - Empleado nuevo' debes usar 'NuevaClave123' en vez de {{empleado_dni}}."
-          }
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empleado_id\": \"{{empleado_id}}\",\n  \"fecha_inicio\": \"2026-10-05\",\n  \"fecha_fin\": \"2026-10-07\",\n  \"estado\": \"aprobado\",\n  \"motivo\": \"Prueba: no debe quedar a nombre de otro\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "  const data = pm.response.json().data;",
+                  "  pm.collectionVariables.set('vacacion_propia_id', data.id);",
+                  "  pm.test('Queda a su nombre, no al del otro', () => pm.expect(data.empleado_id).to.eql(pm.collectionVariables.get('empleado_autoservicio_id')));",
+                  "  pm.test('Y nace pendiente, no aprobada', () => pm.expect(data.estado).to.eql('pendiente'));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Retirar su propia solicitud pendiente",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{empleado_token}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/vacaciones/{{vacacion_propia_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vacaciones",
+                "{{vacacion_propia_id}}"
+              ]
+            },
+            "description": "Una vez resuelta ya no: borrarla dejaria a RR.HH. sin rastro de lo que aprobo."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200: puede retirar la suya mientras siga pendiente', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Mis Avisos: llega el de la boleta, con su fecha",
@@ -6604,6 +7323,8 @@
                       "const usuario = data.find(u => u.empleado_id === empleadoId);",
                       "pm.test('Se encontro su usuario', () => pm.expect(usuario).to.not.be.undefined);",
                       "if (usuario) pm.collectionVariables.set('user_descartable_id', usuario.id);",
+                      "  const admin = data.find(u => (u.rol && u.rol.nombre) === 'admin');",
+                      "  if (admin) pm.collectionVariables.set('user_admin_id', admin.id);",
                       "})();"
                     ]
                   }
@@ -6841,6 +7562,265 @@
                 },
                 "description": "Sin esto, un usuario dado de baja se quedaba sin forma de recuperarse desde la API."
               }
+            },
+            {
+              "name": "RRHH no puede reponerle la contrasena a un Administrador",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{rrhh_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/users/{{user_admin_id}}/restablecer-password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "users",
+                    "{{user_admin_id}}",
+                    "restablecer-password"
+                  ]
+                },
+                "description": "Escalada de privilegios: solo un Administrador repone a otro Administrador."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "(function () {",
+                      "  pm.test('403: seria ponersela el mismo y entrar con esa cuenta', () => pm.response.to.have.status(403));",
+                      "})();"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "RRHH repone la contrasena del usuario descartable",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{rrhh_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/users/{{user_descartable_id}}/restablecer-password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "users",
+                    "{{user_descartable_id}}",
+                    "restablecer-password"
+                  ]
+                },
+                "description": "Para el docente que se quedo fuera y no puede usar el correo. Se le cierran las sesiones y queda obligado a cambiarla."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "(function () {",
+                      "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "  const data = pm.response.json().data;",
+                      "  pm.collectionVariables.set('password_temporal', data.password_temporal);",
+                      "  pm.test('La temporal es su DNI', () => pm.expect(data.password_temporal).to.eql(pm.collectionVariables.get('empleado_descartable_dni')));",
+                      "  pm.test('Y lo dice', () => pm.expect(data.es_dni).to.be.true);",
+                      "})();"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "El usuario repuesto entra, pero con la cuenta trabada",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{empleado_descartable_email}}\",\n  \"password\": \"{{password_temporal}}\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "(function () {",
+                      "  pm.test('Login OK', () => pm.response.to.have.status(200));",
+                      "  const data = pm.response.json().data;",
+                      "  pm.collectionVariables.set('descartable_token', data.token);",
+                      "  pm.test('Viene obligado a cambiar la contrasena', () => pm.expect(data.debe_cambiar_password).to.be.true);",
+                      "})();"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Con la cuenta repuesta tampoco entra a nada",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{descartable_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/mis-modulos",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "mis-modulos"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('423: primero cambia la contrasena', function () {",
+                      "  pm.response.to.have.status(423);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Cambia la contrasena y se destraba",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{descartable_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/cambiar-password",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "cambiar-password"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"password_actual\": \"{{password_temporal}}\",\n  \"password_nuevo\": \"ClaveRepuesta123\",\n  \"password_nuevo_confirmation\": \"ClaveRepuesta123\"\n}"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "(function () {",
+                      "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                      "})();"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ya destrabada, el sistema le responde",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{descartable_token}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/mis-modulos",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "mis-modulos"
+                  ]
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200: ya puede trabajar', function () {",
+                      "  pm.response.to.have.status(200);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         },

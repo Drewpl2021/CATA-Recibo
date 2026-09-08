@@ -42,13 +42,19 @@ export interface Pagina<T> {
    * ListadoPaginado::conteoPorEstado en el backend). Van opcionales porque
    * cada entidad manda los suyos: áreas, cargos, sedes, empleados y
    * usuarios cuentan activos e inactivos; los contratos, vigentes y
-   * finalizados; los demás no mandan ninguno.
+   * finalizados; las vacaciones, en qué estado están; los demás no mandan
+   * ninguno.
    */
   total?: number;
   activos?: number;
   inactivos?: number;
   vigentes?: number;
   finalizados?: number;
+  pendientes?: number;
+  aprobadas?: number;
+  rechazadas?: number;
+  /** Notificaciones sin leer, para el globito de la campana. */
+  noLeidas?: number;
 }
 
 /** Lo que el frontend le pide al backend para armar una página. */

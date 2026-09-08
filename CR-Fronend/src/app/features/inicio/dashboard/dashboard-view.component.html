@@ -13,7 +13,18 @@
   </div>
 
   <!-- ══ KPIs ════════════════════════════════════════════════════════ -->
-  <div class="kpi-grid">
+  <div class="kpi-grid" *ngIf="cargando" aria-hidden="true">
+    <div class="kpi-card" *ngFor="let n of [1, 2, 3, 4]">
+      <span class="esqueleto esqueleto--circulo" style="width: 44px; height: 44px;"></span>
+      <div class="kpi-info" style="flex: 1;">
+        <span class="esqueleto esqueleto--linea" style="width: 55%;"></span>
+        <span class="esqueleto esqueleto--linea" style="height: 22px; width: 70%;"></span>
+        <span class="esqueleto esqueleto--linea" style="width: 40%; margin: 0;"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-grid" *ngIf="!cargando">
     <div class="kpi-card" *ngFor="let k of kpis">
       <div class="kpi-icon-wrap" [style.background]="k.bg">
         <!-- Empleados -->
@@ -33,8 +44,28 @@
     </div>
   </div>
 
+  <!-- Mientras llegan las cifras se pinta la silueta de los seis paneles:
+       la pantalla queda con su forma y no salta cuando aparecen. -->
+  <ng-container *ngIf="cargando">
+    <div class="cargando-caja cargando-caja--linea" role="status">
+      <span class="cargador cargador--chico"></span>
+      Trayendo las cifras del mes…
+    </div>
+
+    <div class="charts-row" aria-hidden="true">
+      <div class="chart-card wide"><span class="esqueleto esqueleto--bloque" style="min-height: 300px;"></span></div>
+      <div class="chart-card"><span class="esqueleto esqueleto--bloque" style="min-height: 300px;"></span></div>
+      <div class="chart-card"><span class="esqueleto esqueleto--bloque" style="min-height: 300px;"></span></div>
+    </div>
+    <div class="charts-row-2" aria-hidden="true">
+      <div class="chart-card trend-card"><span class="esqueleto esqueleto--bloque" style="min-height: 240px;"></span></div>
+      <div class="chart-card"><span class="esqueleto esqueleto--bloque" style="min-height: 240px;"></span></div>
+      <div class="chart-card"><span class="esqueleto esqueleto--bloque" style="min-height: 240px;"></span></div>
+    </div>
+  </ng-container>
+
   <!-- ══ FILA 1: Barras + Dona + Radial ══════════════════════════════ -->
-  <div class="charts-row">
+  <div class="charts-row" *ngIf="!cargando">
 
     <!-- Remuneración por Área -->
     <div class="chart-card wide">
@@ -98,7 +129,7 @@
   </div>
 
   <!-- ══ FILA 2: Línea de Tendencia + Tipo Contrato + Tabla ══════════ -->
-  <div class="charts-row-2">
+  <div class="charts-row-2" *ngIf="!cargando">
 
     <!-- Tendencia de nómina -->
     <div class="chart-card trend-card">

@@ -13,10 +13,21 @@
 
     <nav class="nav-menu">
 
-      <!-- Estado de carga -->
-      <div *ngIf="cargandoModulos" style="padding: 20px; text-align: center; opacity: 0.5; font-size: 13px;">
-        Cargando menú...
+      <!-- Mientras llega el menú se pinta su silueta: tres grupos con sus
+           ítems. Así la barra no salta de vacía a llena, y se ve que hay
+           algo en camino sin tener que leer "Cargando...". -->
+      <div class="menu-esqueleto" *ngIf="cargandoModulos" aria-hidden="true">
+        <div class="menu-esqueleto__grupo" *ngFor="let g of [1, 2, 3]">
+          <div class="menu-esqueleto__padre">
+            <span class="esqueleto esqueleto--circulo" style="width: 20px; height: 20px;"></span>
+            <span class="esqueleto esqueleto--linea" style="width: 55%; margin: 0;"></span>
+          </div>
+          <div class="menu-esqueleto__hijo" *ngFor="let h of [1, 2]">
+            <span class="esqueleto esqueleto--linea" style="width: 70%; margin: 0;"></span>
+          </div>
+        </div>
       </div>
+      <span class="solo-lectores" *ngIf="cargandoModulos" role="status">Cargando el menú…</span>
 
       <!-- Módulos dinámicos del backend -->
       <ng-container *ngFor="let padre of modulosPadre">
@@ -47,20 +58,22 @@
 
       </ng-container>
 
-      <!-- Parte inferior: Cerrar sesión -->
-      <div style="margin-top: auto; padding-top: 20px;">
-        <a class="nav-item" (click)="logout()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" x2="9" y1="12" y2="12"/>
-          </svg>
-          Cerrar sesión
-        </a>
-      </div>
-
     </nav>
+
+    <!-- Cerrar sesión va fuera del menú, no dentro: el menú se desplaza
+         cuando hay muchos módulos, y esto tiene que seguir a la vista sin
+         que haya que bajar hasta el final para encontrarlo. -->
+    <div class="nav-pie">
+      <a class="nav-item" (click)="logout()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" x2="9" y1="12" y2="12"/>
+        </svg>
+        Cerrar sesión
+      </a>
+    </div>
   </aside>
 
   <!-- Main Area -->
@@ -68,7 +81,8 @@
     <header class="top-header">
       <div style="display: flex; align-items: center; gap: 16px;">
         <button class="icon-btn" (click)="toggleSidebar()" type="button"
-          [title]="sidebarVisible ? 'Ocultar el menú' : 'Mostrar el menú'"
+          [appPista]="sidebarVisible ? 'Ocultar el menú lateral' : 'Mostrar el menú lateral'"
+          pistaLado="abajo"
           [attr.aria-label]="sidebarVisible ? 'Ocultar el menú' : 'Mostrar el menú'"
           [attr.aria-expanded]="sidebarVisible">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -81,7 +95,10 @@
 
       <div class="header-actions">
         <!-- Toggle Modo Oscuro -->
-        <button class="icon-btn" (click)="toggleTheme()" title="Cambiar modo oscuro/claro" style="position: relative;">
+        <button class="icon-btn" (click)="toggleTheme()" style="position: relative;"
+          [appPista]="themeService.isDarkMode() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+          pistaLado="abajo"
+          [attr.aria-label]="themeService.isDarkMode() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
           <svg *ngIf="!themeService.isDarkMode()" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
@@ -98,7 +115,10 @@
           </svg>
         </button>
 
-        <button class="icon-btn" (click)="toggleNotifications()" style="position: relative;">
+        <button class="icon-btn" (click)="toggleNotifications()" style="position: relative;"
+          [appPista]="noLeidas > 0 ? 'Tus avisos (' + noLeidas + ' sin leer)' : 'Tus avisos'"
+          pistaLado="abajo"
+          [attr.aria-label]="noLeidas > 0 ? 'Avisos, ' + noLeidas + ' sin leer' : 'Avisos'">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2">
             <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>

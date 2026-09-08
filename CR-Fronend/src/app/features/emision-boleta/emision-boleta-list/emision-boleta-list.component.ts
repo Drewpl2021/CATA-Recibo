@@ -431,7 +431,14 @@ export class EmisionBoletaListComponent implements OnInit {
     this.generandoMasivo = true;
     this.boletaService.generarMasivo(this.mesGlobal, this.anioGlobal).subscribe({
       next: (res) => {
-        this.toastService.success('Proceso completado', `${res.message}<br/>Generadas: ${res.generadas}<br/>Omitidas (sin planilla): ${res.omitidas}`);
+        this.toastService.resultadoMasivo({
+          hechas: res.generadas ?? 0,
+          omitidas: res.omitidas ?? 0,
+          exito: 'Boletas emitidas',
+          nada: 'No se emitió ninguna boleta',
+          cosas: 'boleta(s)',
+          motivo: 'esos empleados no tienen planilla de ese mes, o ya tenían su boleta',
+        });
         this.generandoMasivo = false;
         // Recargar la lista para que aparezca la tabla
         this.cargarEstadoBoletas();

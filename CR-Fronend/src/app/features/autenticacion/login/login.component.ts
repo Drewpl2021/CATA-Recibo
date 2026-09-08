@@ -42,7 +42,11 @@ export class LoginComponent {
           // Si la sesión se le cayó a media faena, se le devuelve a donde
           // estaba en vez de soltarlo en el inicio.
           const retorno = this.authService.consumirRetorno();
-          this.router.navigateByUrl(retorno ?? this.authService.rutaInicioSegunRol());
+          // Si la cuenta sigue con la contraseña que le dieron, no hay
+          // retorno que valga: primero la cambia.
+          this.router.navigateByUrl(
+            this.authService.debeCambiarPassword() ? '/cambiar-clave' : (retorno ?? this.authService.rutaInicioSegunRol())
+          );
         }
       },
       error: (err) => {
@@ -67,6 +71,10 @@ export class LoginComponent {
 
   goToRegister(): void {
     this.router.navigate(['/registro']);
+  }
+
+  irAOlvide(): void {
+    this.router.navigate(['/olvide-password']);
   }
 
   togglePassword(): void {

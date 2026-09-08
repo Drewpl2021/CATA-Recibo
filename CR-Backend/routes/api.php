@@ -35,13 +35,27 @@ Route::options('{any}', function () {
 // Con límite de intentos: son las únicas rutas abiertas a internet, y sin
 // esto se podía probar contraseñas contra /login sin ningún freno.
 // El contador es por IP; al pasarse, Laravel responde 429 con Retry-After.
-Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
-Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:8,1');
+//
+// Cada una lleva un limitador CON NOMBRE (AppServiceProvider) y no un
+// 'throttle:5,1' pelado: sin nombre, todas las rutas públicas comparten el
+// mismo contador — la clave que arma Laravel para un visitante sin sesión es
+// dominio + IP, sin la URL — y errar la contraseña unas veces te dejaba sin
+// poder pedir el enlace para reponerla.
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:registro');
+Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:ingreso');
+
+// "Olvide mi contrasena": pedir el enlace y usarlo. Van con freno aparte
+// porque son las otras dos puertas abiertas a internet; el broker de Laravel
+// ademas no deja pedir dos enlaces seguidos (auth.passwords.users.throttle).
+Route::post('/olvide-password',      [AuthController::class, 'olvidePassword'])->middleware('throttle:recuperacion');
+Route::post('/restablecer-password', [AuthController::class, 'restablecerPassword'])->middleware('throttle:recuperacion');
 
 // ── Protegidas ────────────────────────────────────────
 // 'sesion' empuja la caducidad del token en cada petición: mientras se
 // esté trabajando la sesión no se cae. Ver RenovarSesionActiva.
-Route::middleware(['auth:sanctum', 'sesion'])->group(function () {
+// 'clave_nueva' traba a quien sigue con la contrasena que le dieron: solo le
+// deja /me, /logout y /cambiar-password hasta que ponga una suya.
+Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva'])->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me',      [AuthController::class, 'me']);
@@ -68,10 +82,16 @@ Route::middleware(['auth:sanctum', 'sesion'])->group(function () {
     // propio endpoint equivalente para hacerlo por cualquier empleado, más abajo).
     Route::post('mi-identidad-firma', [IdentidadFirmaController::class, 'subirMia']);
 
-    // Vacaciones — cualquier autenticado puede ver y solicitar
+    // Vacaciones — el trabajador ve y pide LAS SUYAS; RR.HH. ve las de todos.
+    // El recorte se hace dentro del controlador, con el empleado del token.
+    // 'saldo' va antes que '{id}' o la ruta con parametro se lo comeria.
+    Route::get('vacaciones/saldo',    [VacacionController::class, 'saldo']);
     Route::get('vacaciones',          [VacacionController::class, 'index']);
     Route::post('vacaciones',         [VacacionController::class, 'store']);
     Route::get('vacaciones/{id}',     [VacacionController::class, 'show']);
+    // Retirar una solicitud: RR.HH. cualquiera; el trabajador solo la suya y
+    // mientras siga pendiente (se comprueba dentro del controlador).
+    Route::delete('vacaciones/{id}',  [VacacionController::class, 'destroy']);
 
     // Descarga de un Documento ya generado (boleta, contrato, etc.) — el propio
     // empleado dueño del documento, o RRHH/admin sobre cualquiera. La verificación
@@ -94,6 +114,9 @@ Route::middleware(['auth:sanctum', 'sesion'])->group(function () {
         Route::apiResource('contratos', ContratoController::class);
 
         Route::apiResource('users', UserController::class)->except(['store']);
+        // RR.HH. le repone la contrasena a quien se quedo fuera. Queda obligado
+        // a cambiarla al entrar, y se le cierran las sesiones abiertas.
+        Route::post('users/{id}/restablecer-password', [UserController::class, 'restablecerPassword']);
         Route::post('empleados/{id}/identidad-firma', [IdentidadFirmaController::class, 'subir']);
         Route::apiResource('empleados',        EmpleadoController::class);
         Route::apiResource('planilla',         PlanillaController::class);
@@ -108,8 +131,8 @@ Route::middleware(['auth:sanctum', 'sesion'])->group(function () {
         Route::apiResource('payroll-detalles', PayrollDetalleController::class);
         Route::apiResource('sedes',            SedeController::class);
 
+        // Aprobar o rechazar: solo RR.HH. y Administración.
         Route::put('vacaciones/{id}',    [VacacionController::class, 'update']);
-        Route::delete('vacaciones/{id}', [VacacionController::class, 'destroy']);
 
         Route::post('boletas/generar-masivo', [BoletaController::class, 'generarMasivo']);
     });

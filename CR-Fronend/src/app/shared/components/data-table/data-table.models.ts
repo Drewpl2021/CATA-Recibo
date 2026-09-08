@@ -12,6 +12,12 @@ export interface ColumnaTabla<T = any> {
   badgeSeveridad?: (valor: any, fila: T) => 'success' | 'info' | 'warning' | 'danger' | 'secondary';
   /** Transforma el valor crudo antes de mostrarlo (ej. traducir un enum a texto legible). */
   formatear?: (valor: any, fila: T) => string;
+  /**
+   * Deja partir el contenido por cualquier sitio. Para lo que viene en una
+   * sola palabra larga —un correo, una ruta—, que si no ensancha su columna
+   * hasta estrujar a las vecinas.
+   */
+  romperTexto?: boolean;
   ordenable?: boolean;
 }
 

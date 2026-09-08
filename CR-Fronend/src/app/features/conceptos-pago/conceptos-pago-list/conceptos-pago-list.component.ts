@@ -480,10 +480,14 @@ export class ConceptosPagoListComponent implements OnInit {
           if (!res.success) return;
           this.resultadoGrupo = res.data;
           const { aplicadas, omitidas } = res.data.resumen;
-          this.toastService.success(
-            'Concepto aplicado',
-            `${aplicadas} planilla(s) actualizada(s), ${omitidas} omitida(s).`
-          );
+          this.toastService.resultadoMasivo({
+            hechas: aplicadas,
+            omitidas,
+            exito: 'Concepto aplicado',
+            nada: 'No se aplicó a ninguna planilla',
+            cosas: 'planilla(s)',
+            motivo: 'esos empleados no tienen planilla de ese mes',
+          });
         },
         error: (err) => {
           this.aplicando = false;

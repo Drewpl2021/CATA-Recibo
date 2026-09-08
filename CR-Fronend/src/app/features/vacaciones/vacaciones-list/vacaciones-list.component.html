@@ -1,0 +1,145 @@
+<app-page-header
+  icono="beach"
+  titulo="Vacaciones"
+  subtitulo="Solicitudes de todo el personal. Acá se aprueban o se rechazan."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <button headerActions class="btn-primary" (click)="nueva()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Registrar solicitud
+  </button>
+</app-page-header>
+
+<app-data-table
+  entidad="la solicitud"
+  [columnas]="columnas"
+  [datos]="vacaciones"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['motivo']"
+  [acciones]="['eliminar']"
+  [accionesPersonalizadas]="accionesExtra"
+  [mensajeVacio]="mensajeVacio"
+  (eliminarFila)="eliminar($event)"
+  (accionPersonalizada)="alAccionar($event)"
+>
+  <div tableActions class="chips-filtro">
+    <button type="button" *ngFor="let c of chipsEstado" class="chip-filtro"
+      [class.chip-filtro--activo]="filtroEstado === c.value" (click)="filtrarPorEstado(c.value)">
+      <app-icon [icono]="c.icono" [tamano]="15"></app-icon>
+      {{ c.label }}
+    </button>
+  </div>
+</app-data-table>
+
+<p class="form-nota" style="margin-top: 16px;">
+  Cada trabajador tiene <strong>30 días al año</strong> una vez cumplido su año
+  de servicio; antes de eso le corresponde la parte proporcional. Al resolver no
+  se cambian las fechas: si están mal, recházala explicando por qué y vuelve a
+  pedirla con las correctas.
+</p>
+
+<p class="form-nota" style="margin-top: 12px;">
+  Aprobar unas vacaciones <strong>no cambia lo que se le paga</strong>: son
+  remuneradas, el trabajador cobra su sueldo completo ese mes. Lo único que
+  cambia en su boleta es que esos días salen contados como
+  <strong>Días de Vacaciones</strong> en vez de días trabajados.
+</p>
+
+<!-- Registrar una solicitud a nombre de alguien -->
+<app-form-modal
+  [(visible)]="modalVisible"
+  titulo="Registrar solicitud de vacaciones"
+  [guardando]="guardando"
+  textoGuardar="Registrar"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="empleado_id">Empleado *</label>
+      <select id="empleado_id" class="form-control" formControlName="empleado_id"
+        (change)="alElegirEmpleado()" [class.is-invalid]="invalido('empleado_id')">
+        <option value="">Elige al trabajador</option>
+        <option *ngFor="let e of empleados" [value]="e.id">
+          {{ e.nombre }} {{ e.apellido }} — {{ e.dni }}
+        </option>
+      </select>
+      <small class="form-error" *ngIf="invalido('empleado_id')">Elige de quién es la solicitud.</small>
+    </div>
+
+    <div class="form-nota" *ngIf="saldoElegido">
+      Le quedan <strong>{{ saldoElegido.diasDisponibles }}</strong> de
+      {{ saldoElegido.diasGanados }} días este año
+      <span *ngIf="saldoElegido.mesesTrabajados < 12">
+        (lleva {{ saldoElegido.mesesTrabajados }} meses en el colegio, todavía no cumple el año).
+      </span>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="fecha_inicio">Desde *</label>
+        <input type="date" id="fecha_inicio" class="form-control" formControlName="fecha_inicio"
+          [class.is-invalid]="invalido('fecha_inicio')" />
+        <small class="form-error" *ngIf="invalido('fecha_inicio')">Falta la fecha de inicio.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="fecha_fin">Hasta *</label>
+        <input type="date" id="fecha_fin" class="form-control" formControlName="fecha_fin"
+          [class.is-invalid]="invalido('fecha_fin')" />
+        <small class="form-error" *ngIf="invalido('fecha_fin')">Falta la fecha de fin.</small>
+      </div>
+    </div>
+
+    <div class="form-nota" *ngIf="diasDelFormulario > 0">
+      Son <strong>{{ diasDelFormulario }}</strong> día(s) de calendario, contando
+      el primero y el último.
+    </div>
+
+    <div class="form-nota form-nota--alerta" *ngIf="seExcedeDelSaldo">
+      No alcanzan: pide {{ diasDelFormulario }} y le quedan
+      {{ saldoElegido?.diasDisponibles }}.
+    </div>
+
+    <div class="form-group">
+      <label for="motivo">Motivo</label>
+      <textarea id="motivo" class="form-control" formControlName="motivo" rows="3"
+        placeholder="Opcional: por qué pide estos días"></textarea>
+    </div>
+  </form>
+</app-form-modal>
+
+<!-- Rechazar: se pide el motivo, que es lo que verá el trabajador -->
+<app-form-modal
+  [(visible)]="modalRechazo"
+  titulo="Rechazar solicitud"
+  [guardando]="guardando"
+  textoGuardar="Rechazar"
+  (guardar)="confirmarRechazo()"
+  (cancelar)="cerrarRechazo()"
+>
+  <div class="form-fields" *ngIf="rechazando">
+    <p class="form-nota">
+      {{ nombreEmpleado(rechazando) }} pidió {{ rechazando.dias_solicitados }} día(s).
+      Verá lo que escribas acá en su pantalla de Mis Vacaciones.
+    </p>
+
+    <div class="form-group">
+      <label for="motivo_rechazo">¿Por qué se rechaza?</label>
+      <textarea id="motivo_rechazo" class="form-control" rows="3" [(ngModel)]="motivoRechazo"
+        [ngModelOptions]="{ standalone: true }"
+        placeholder="Ej. Esas fechas coinciden con la semana de exámenes."></textarea>
+      <small class="form-ayuda">
+        Sin motivo, al trabajador le aparece solo "Rechazada" y tendrá que venir a preguntar.
+      </small>
+    </div>
+  </div>
+</app-form-modal>

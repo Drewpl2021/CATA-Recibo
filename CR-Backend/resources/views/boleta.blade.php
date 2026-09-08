@@ -284,8 +284,11 @@
                 <td>{{ \Carbon\Carbon::parse($empleado->fecha_ingreso)->format('d/m/Y') }}</td>
                 <td class="label">Días Trabajados</td>
                 <td>{{ $cabecera['dias_trabajados'] }}</td>
-                <td class="label">Días No Trabajados</td>
-                <td>{{ $cabecera['dias_no_trabajados'] }}</td>
+                {{-- Se llama por lo que es. "Días no trabajados" hacía pensar
+                     al docente que eran días sin pagar, y las vacaciones se
+                     pagan igual que un día de trabajo. --}}
+                <td class="label">Días de Vacaciones</td>
+                <td>{{ $cabecera['dias_vacaciones'] }}</td>
             </tr>
             <tr>
                 <td class="label">Estado</td>

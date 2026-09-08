@@ -151,12 +151,27 @@ class PeriodoController extends Controller
                 continue;
             }
 
+            // Lo que le toca cobrar este mes: el sueldo entero si ya estaba, o
+            // la parte proporcional si entró a mitad. Antes se le pagaba el mes
+            // completo aunque hubiera entrado el día 28.
+            $reparto = $this->repartoDeDiasDelMes($empleado, $mes, $anio);
+            $sueldoDelMes = $this->sueldoDelMes($empleado, $mes, $anio);
+
+            if ($sueldoDelMes === null) {
+                $omitidas++;
+                $detalle[] = [
+                    'empleado' => $nombreCompleto, 'empleado_id' => $empleado->id, 'estado' => 'omitida',
+                    'motivo'   => 'Todavía no había ingresado en ese mes (ingresó el ' . \Carbon\Carbon::parse($empleado->fecha_ingreso)->format('d/m/Y') . ')',
+                ];
+                continue;
+            }
+
             $planilla = Planilla::create([
                 'empleado_id'    => $empleado->id,
                 'mes'            => $mes,
                 'anio'           => $anio,
                 'periodo_id'     => $periodo->id,
-                'sueldo_base'    => (float) $empleado->sueldo_base,
+                'sueldo_base'    => $sueldoDelMes,
                 'bonificaciones' => 0,
                 'descuentos'     => 0,
                 'total'          => 0,
@@ -166,7 +181,16 @@ class PeriodoController extends Controller
             $planilla->recalcularTotal();
 
             $generadas++;
-            $detalle[] = ['empleado' => $nombreCompleto, 'empleado_id' => $empleado->id, 'estado' => 'generada', 'planilla_id' => $planilla->id];
+            $fila = ['empleado' => $nombreCompleto, 'empleado_id' => $empleado->id, 'estado' => 'generada', 'planilla_id' => $planilla->id];
+
+            // Si se le prorrateó, se dice: un sueldo distinto al de su ficha
+            // sin explicación parece un error de cálculo.
+            if ($reparto['entro_este_mes']) {
+                $fila['motivo'] = "Ingresó el " . \Carbon\Carbon::parse($empleado->fecha_ingreso)->format('d/m/Y') .
+                    ": se le pagan {$reparto['dias_pagados']} de {$reparto['dias_del_mes']} días";
+            }
+
+            $detalle[] = $fila;
         }
 
         return response()->json([

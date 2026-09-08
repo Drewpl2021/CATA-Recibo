@@ -122,6 +122,11 @@
   --sidebar-width: 260px;
   --header-height: 70px;
 
+  /* El globito que explica los botones de ícono. Va oscuro sobre el lienzo
+     claro para que se despegue de la tarjeta que tiene debajo. */
+  --pista-bg: #16233C;
+  --pista-text: #F2F5FA;
+
 }
 
 /* ================================================================
@@ -145,6 +150,10 @@
   --text-muted: #8E9AB2;
   --text-faint: #6A7590;
   --heading: #E6EBF4;
+
+  /* En oscuro se invierte: un globo negro sobre fondo casi negro no se ve. */
+  --pista-bg: #E8EDF6;
+  --pista-text: #16233C;
 
   --border: #26324A;
   --border-strong: #3A4864;
@@ -292,6 +301,36 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  /* El menú se desplaza solo si no cabe. Sin esto, un colegio con muchos
+     módulos empujaba el "Cerrar sesión" fuera de la pantalla en lugar de
+     dejar rodar la lista. min-height:0 es lo que permite encoger a un
+     hijo flexible; sin él, overflow no llega a activarse. */
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* El pie de la barra lateral: queda fijo mientras los módulos se desplazan.
+   La línea de arriba separa el "Cerrar sesión" del último módulo, para que
+   no se lea como uno más de la lista. */
+.nav-pie {
+  flex-shrink: 0;
+  padding: 12px 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Barra de desplazamiento discreta sobre el azul de la barra lateral. */
+.nav-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nav-menu::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+.nav-menu::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .nav-item {
@@ -672,6 +711,23 @@ body {
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  /* Reparto automático a propósito: se probó `table-layout: fixed` para que
+     los anchos declarados se respetaran al pie de la letra, y obligaba a
+     recuadrar las quince pantallas a mano — en Usuarios la columna del
+     empleado se quedaba en 78px. Los `ancho` de cada columna son pistas, no
+     medidas exactas, y así funciona bien. */
+}
+
+/* Para las celdas con cadenas largas y sin espacios: un correo, una ruta.
+   Sin esto la columna se ensancha hasta comerse la fila y parte los nombres
+   de al lado en tres líneas.
+
+   Va por columna y no en todos los `td` a propósito: aplicado a la tabla
+   entera partía también los DNI ("425581 07") y los cargos
+   ("Administrati vo"), porque `anywhere` deja que el navegador calcule el
+   ancho mínimo de la columna como si cupiera una sola letra. */
+.celda-rompe {
+  overflow-wrap: anywhere;
 }
 
 .data-table th,
@@ -1093,6 +1149,20 @@ body {
   margin: 28px auto 12px;
 }
 
+/* El mismo círculo, para las confirmaciones que NO destruyen nada: aprobar
+   unas vacaciones no puede verse igual que borrar un registro. */
+.modal-icon-brand {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--brand-100);
+  color: var(--brand-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 28px auto 12px;
+}
+
 .modal-card h3 {
   text-align: center;
   margin: 0 24px 8px;
@@ -1228,6 +1298,9 @@ body {
 .cifras-cabecera__dato--brand app-icon { color: var(--brand-600); }
 .cifras-cabecera__dato--success app-icon { color: var(--success-text); }
 .cifras-cabecera__dato--muted app-icon { color: var(--text-faint); }
+/* Para lo que está esperando a que alguien haga algo — las solicitudes de
+   vacaciones sin resolver, por ejemplo. */
+.cifras-cabecera__dato--warning app-icon { color: var(--warning-text); }
 
 /* En pantalla chica bajan a su propia línea y se estiran. */
 @media (max-width: 760px) {
@@ -1653,6 +1726,15 @@ textarea.form-control {
   font-size: 13px;
   line-height: 1.5;
   color: var(--text-soft);
+}
+
+/* La misma caja, pero cuando lo que dice es un problema: el aviso de que no
+   alcanzan los días de vacaciones, por ejemplo. Antes se pintaba solo el
+   texto de rojo y quedaba una advertencia dentro de una caja azul. */
+.form-nota--alerta {
+  color: var(--danger-text);
+  background-color: var(--danger-bg);
+  border-left-color: var(--danger-text);
 }
 
 /* Un <select> con la vista previa del ícono elegido pegada a la izquierda. */
@@ -2493,4 +2575,244 @@ textarea.form-control {
   margin-left: auto;
   font-size: 13px;
   color: var(--text-muted);
+}
+
+/* ============================================
+   ESQUELETOS DE CARGA
+   ============================================
+   Mientras llegan los datos se pinta la FORMA de lo que va a venir, no la
+   palabra "Cargando...". Así la pantalla no salta cuando aparece el
+   contenido: el hueco ya estaba reservado y del tamaño correcto.
+
+   El brillo que recorre cada bloque es lo que dice "esto se está trayendo"
+   sin necesidad de texto. Se apaga con prefers-reduced-motion.
+   ============================================ */
+.esqueleto {
+  /* Bloque a propósito: como <span> dentro de un <td> quedaba inline, y a
+     un inline no se le puede dar alto — las barras salían invisibles. */
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-hover);
+  /* Sin esto, un div vacío mide 0 y no se ve nada. */
+  min-height: 12px;
+}
+
+.esqueleto::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--surface) 55%,
+    transparent
+  );
+  animation: esqueleto-brillo 1.4s infinite;
+}
+
+@keyframes esqueleto-brillo {
+  100% { transform: translateX(100%); }
+}
+
+/* Una línea de texto. El modificador la acorta para que el bloque no
+   parezca un párrafo justificado, que es lo que delata a un esqueleto mal
+   hecho. */
+.esqueleto--linea {
+  height: 12px;
+  margin-bottom: 8px;
+}
+
+.esqueleto--titulo {
+  height: 20px;
+  width: 45%;
+  margin-bottom: 12px;
+}
+
+.esqueleto--corta { width: 60%; }
+.esqueleto--media { width: 80%; }
+
+.esqueleto--circulo {
+  border-radius: 50%;
+  flex: none;
+}
+
+/* Bloque grande: una tarjeta, un gráfico. */
+.esqueleto--bloque {
+  height: 100%;
+  min-height: 120px;
+  border-radius: var(--radius-md);
+}
+
+/* ============================================
+   CÍRCULO DE CARGA
+   ============================================
+   Para esperas cortas donde no hay una forma que imitar (guardar, generar,
+   descargar). Cuando SÍ se sabe qué va a aparecer, es mejor un esqueleto:
+   un círculo girando no dice nada del contenido.
+   ============================================ */
+.cargador {
+  display: inline-block;
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand-600);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.cargador--chico {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+/* Bloque centrado: círculo + su explicación. */
+.cargando-caja {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+/* Quien pidió menos movimiento no ve el brillo ni el giro: se queda el
+   bloque quieto, que sigue comunicando "acá va a haber algo". */
+/* ============================================
+   PISTAS (los globitos de los botones de ícono)
+   ============================================
+   Las pinta la directiva appPista colgándolas del <body>: dentro de la tabla
+   las cortaría el overflow del contenedor, que es donde más falta hacen.
+
+   Son deliberadamente más grandes que el tooltip del navegador — 13px y con
+   aire — porque su trabajo es que alguien que entra por primera vez sepa qué
+   hace cada ícono sin tener que probarlos.
+   ============================================ */
+.pista {
+  position: fixed;
+  z-index: 4000;
+  max-width: 260px;
+  padding: 9px 13px;
+  border-radius: var(--radius-sm);
+  background-color: var(--pista-bg);
+  color: var(--pista-text);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  text-align: center;
+  box-shadow: 0 8px 22px rgba(11, 20, 40, 0.28);
+  /* No debe estorbar: el ratón tiene que seguir llegando al botón. */
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.13s ease, transform 0.13s ease;
+}
+
+.pista--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* La flechita. --pista-flecha la calcula la directiva: apunta al botón
+   aunque el globo se haya corrido para no salirse de la pantalla. */
+.pista::after {
+  content: '';
+  position: absolute;
+  left: var(--pista-flecha, 50%);
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: var(--pista-bg);
+  top: 100%;
+}
+
+.pista--abajo::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--pista-bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .esqueleto::after { animation: none; }
+  .cargador { animation-duration: 2.4s; }
+  .pista { transition: none; transform: none; }
+}
+
+/* ============================================
+   ESQUELETO DEL MENÚ LATERAL
+   ============================================
+   La barra va sobre el azul de marca, así que sus bloques no pueden usar
+   los grises de --surface: se pierden. Van en blanco translúcido, que
+   funciona igual sobre el azul claro y el oscuro.
+   ============================================ */
+.menu-esqueleto {
+  padding: 14px 16px;
+}
+
+.menu-esqueleto__grupo + .menu-esqueleto__grupo {
+  margin-top: 22px;
+}
+
+.menu-esqueleto__padre {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.menu-esqueleto__hijo {
+  padding-left: 32px;
+  margin-bottom: 9px;
+}
+
+.menu-esqueleto .esqueleto {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.menu-esqueleto .esqueleto::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18) 55%, transparent);
+}
+
+/* Las filas de silueta no reaccionan al ratón: no hay nada que tocar. */
+.fila-esqueleto:hover {
+  background-color: transparent;
+}
+
+.fila-esqueleto td {
+  vertical-align: middle;
+}
+
+
+/* ============================================
+   SOLO PARA LECTORES DE PANTALLA
+   ============================================
+   Texto que se anuncia pero no se ve: la etiqueta de un campo que usa
+   marcador, o el aviso de "cargando" que en pantalla ya cuenta el
+   esqueleto. Vivía en la hoja del login, que está encapsulada, así que
+   fuera de ahí el texto aparecía a la vista.
+   ============================================ */
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* En una pantalla larga el aviso va arriba y en una sola línea: al final
+   del todo obligaba a bajar para enterarse de que estaba cargando. */
+.cargando-caja--linea {
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: 0 0 16px;
 }

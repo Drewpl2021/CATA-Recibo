@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { ToastService } from './toast.service';
 import { Observable, tap } from 'rxjs';
-import { AuthUser, CambiarPasswordPayload, RegisterPayload, SesionData } from '../../models';
+import { AuthUser, CambiarPasswordPayload, RegisterPayload, RestablecerPasswordPayload, SesionData } from '../../models';
 import { ApiResponse, END_POINTS } from '../../utils';
 import { environment } from '../../../../environments/environment';
 
@@ -28,7 +28,7 @@ export class AuthService {
   login(email: string, password: string): Observable<ApiResponse<SesionData>> {
     return this.http
       .post<ApiResponse<SesionData>>(`${this.apiUrl}/${END_POINTS.auth.login}`, { email, password })
-      .pipe(tap((res) => { if (res.success) this.guardarSesion(res.data.user, res.data.token); }));
+      .pipe(tap((res) => { if (res.success) this.guardarSesion(res.data.user, res.data.token, res.data.debe_cambiar_password === true); }));
   }
 
   /** Autoregistro (docente sin cuenta creada por RRHH). Requiere correo @cata.edu.pe. */
@@ -51,16 +51,61 @@ export class AuthService {
     return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${END_POINTS.auth.me}`).pipe(
       tap((res) => {
         const datos = (res as any)?.data ?? res;
-        if (datos?.id) this.guardarUsuario(datos);
+        // /me no devuelve la bandera del cambio obligatorio: se conserva la
+        // que ya había, o se perdería el bloqueo al recargar la página.
+        if (datos?.id) this.guardarUsuario({ ...datos, debe_cambiar_password: this.debeCambiarPassword() });
       })
     );
   }
 
   cambiarPassword(payload: CambiarPasswordPayload): Observable<ApiResponse<{ message: string }>> {
-    return this.http.put<ApiResponse<{ message: string }>>(
-      `${this.apiUrl}/${END_POINTS.auth.cambiarPassword}`,
+    return this.http
+      .put<ApiResponse<{ message: string }>>(`${this.apiUrl}/${END_POINTS.auth.cambiarPassword}`, payload)
+      // Si estaba obligada a cambiarla, ya no lo está: se levanta el bloqueo
+      // acá mismo para no tener que volver a preguntarle al backend.
+      .pipe(tap((res) => { if (res.success) this.marcarPasswordAlDia(); }));
+  }
+
+  /** Pide al correo el enlace para reponer la contraseña. */
+  olvidePassword(email: string): Observable<ApiResponse<{ message: string }>> {
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/${END_POINTS.auth.olvidePassword}`,
+      { email }
+    );
+  }
+
+  /** Pone la contraseña nueva con el token que llegó por correo. */
+  restablecerPassword(payload: RestablecerPasswordPayload): Observable<ApiResponse<{ message: string }>> {
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/${END_POINTS.auth.restablecerPassword}`,
       payload
     );
+  }
+
+  /**
+   * La cuenta sigue con la contraseña que le dieron.
+   *
+   * Se sabe por dos vías: el login lo dice de entrada, y el backend responde
+   * 423 a cualquier otra petición mientras dure. Se guarda junto al usuario
+   * para que el guard pueda decidir sin esperar a que falle una llamada.
+   */
+  debeCambiarPassword(): boolean {
+    return this.getUser()?.debe_cambiar_password === true;
+  }
+
+  marcarDebeCambiarPassword(): void {
+    const user = this.getUser();
+    if (user) this.guardarUsuario({ ...user, debe_cambiar_password: true });
+  }
+
+  private marcarPasswordAlDia(): void {
+    const user = this.getUser();
+    if (user) this.guardarUsuario({ ...user, debe_cambiar_password: false });
+  }
+
+  /** A dónde mandar al usuario tras entrar, teniendo en cuenta el bloqueo. */
+  rutaTrasIngresar(): string {
+    return this.debeCambiarPassword() ? '/cambiar-clave' : this.rutaInicioSegunRol();
   }
 
   /** Cierre de sesión a petición del usuario. */
@@ -143,9 +188,9 @@ export class AuthService {
    * El backend manda "rol" como objeto ({id, nombre}) — se normaliza acá,
    * una sola vez, para que el resto de la app siempre reciba un string.
    */
-  private guardarSesion(userCrudo: any, token: string): void {
+  private guardarSesion(userCrudo: any, token: string, debeCambiarPassword = false): void {
     localStorage.setItem(this.TOKEN_KEY, token);
-    this.guardarUsuario(userCrudo);
+    this.guardarUsuario({ ...userCrudo, debe_cambiar_password: debeCambiarPassword });
     // Hay sesión nueva: el próximo 401 vuelve a avisar.
     this.cerrandoPorExpiracion = false;
   }

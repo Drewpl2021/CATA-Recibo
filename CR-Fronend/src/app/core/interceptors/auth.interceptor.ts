@@ -1,5 +1,6 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/sistema/auth.service';
 
@@ -8,6 +9,7 @@ const RUTAS_SIN_SESION = ['/login', '/register'];
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
+  const router = inject(Router);
 
   const token = localStorage.getItem('auth_token');
   const headers: Record<string, string> = {
@@ -45,6 +47,21 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
       if (error.status === 401 && !esRutaDeAcceso && authService.isLoggedIn()) {
         authService.cerrarPorSesionExpirada();
+      }
+
+      /*
+       * 423: la sesión es buena, pero la cuenta está trabada porque todavía
+       * usa la contraseña que le dieron (el DNI). El backend lo responde a
+       * todo salvo /me, /logout y /cambiar-password.
+       *
+       * Pasa aunque el login no lo hubiera avisado: por ejemplo si RR.HH. le
+       * repone la contraseña mientras la persona está trabajando.
+       */
+      if (error.status === 423 && authService.isLoggedIn()) {
+        authService.marcarDebeCambiarPassword();
+        if (!router.url.startsWith('/cambiar-clave')) {
+          router.navigate(['/cambiar-clave']);
+        }
       }
 
       return throwError(() => error);

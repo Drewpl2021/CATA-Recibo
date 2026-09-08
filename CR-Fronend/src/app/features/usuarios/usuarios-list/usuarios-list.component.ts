@@ -77,7 +77,7 @@ export class UsuariosListComponent implements OnInit {
 
   columnas: ColumnaTabla<Usuario>[] = [
     { campo: 'name', header: 'Nombre', ancho: '22%' },
-    { campo: 'email', header: 'Correo', ancho: '26%' },
+    { campo: 'email', header: 'Correo', ancho: '26%', romperTexto: true },
     {
       campo: 'rol',
       header: 'Rol',
@@ -101,8 +101,17 @@ export class UsuariosListComponent implements OnInit {
     },
   ];
 
-  /** Reactivar solo aparece en las cuentas dadas de baja. */
   accionesExtra: AccionPersonalizada<Usuario>[] = [
+    {
+      // Para el docente que se quedó fuera y no puede usar el correo.
+      id: 'restablecer',
+      titulo: 'Restablecer su contraseña',
+      icono: 'lock',
+      severidad: 'warning',
+      // En la cuenta propia no: cerraría la sesión con la que se trabaja.
+      visible: (u) => !this.esMiCuenta(u) && u.estado_registro !== 'inactivo',
+    },
+    /** Reactivar solo aparece en las cuentas dadas de baja. */
     {
       id: 'reactivar',
       titulo: 'Volver a activar esta cuenta',
@@ -111,6 +120,13 @@ export class UsuariosListComponent implements OnInit {
       visible: (u) => u.estado_registro === 'inactivo',
     },
   ];
+
+  /** La contraseña temporal recién puesta, que se enseña UNA vez. */
+  modalPassword = false;
+  usuarioRestablecido: Usuario | null = null;
+  passwordTemporal = '';
+  passwordEsDni = false;
+  restableciendo = false;
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(255)]],
@@ -288,7 +304,54 @@ export class UsuariosListComponent implements OnInit {
     });
   }
 
+  /**
+   * Le repone la contraseña a alguien que se quedó fuera.
+   *
+   * Se avisa antes de lo que va a pasar: se le cierran las sesiones y tendrá
+   * que cambiarla al entrar. La temporal se muestra una sola vez, así que la
+   * pantalla se queda con ella hasta que RR.HH. la cierre.
+   */
+  restablecer(usuario: Usuario): void {
+    this.confirmService
+      .confirmar({
+        titulo: 'Restablecer contraseña',
+        mensaje:
+          `A "${usuario.name}" se le pondrá su DNI como contraseña, se le cerrarán ` +
+          `las sesiones abiertas y el sistema le pedirá cambiarla al entrar. ¿Seguimos?`,
+        aceptarTexto: 'Sí, restablecer',
+        // No se borra nada: el tacho rojo daría a entender otra cosa.
+        variante: 'default',
+      })
+      .then((aceptado) => {
+        if (!aceptado) return;
+
+        this.restableciendo = true;
+        this.usuarioService.restablecerPassword(usuario.id).subscribe({
+          next: (res) => {
+            this.restableciendo = false;
+            if (res.success) {
+              this.usuarioRestablecido = usuario;
+              this.passwordTemporal = res.data.password_temporal;
+              this.passwordEsDni = res.data.es_dni;
+              this.modalPassword = true;
+            }
+          },
+          error: (err) => {
+            this.restableciendo = false;
+            this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo restablecer la contraseña.'));
+          },
+        });
+      });
+  }
+
+  cerrarPasswordTemporal(): void {
+    this.modalPassword = false;
+    this.usuarioRestablecido = null;
+    this.passwordTemporal = '';
+  }
+
   alAccionar(evento: { accion: string; fila: Usuario }): void {
     if (evento.accion === 'reactivar') this.reactivar(evento.fila);
+    if (evento.accion === 'restablecer') this.restablecer(evento.fila);
   }
 }

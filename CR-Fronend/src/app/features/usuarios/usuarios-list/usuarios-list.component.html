@@ -7,6 +7,7 @@
 ></app-page-header>
 
 <app-data-table
+  entidad="esta cuenta"
   [columnas]="columnas"
   [datos]="usuarios"
   [cargando]="cargando"
@@ -85,4 +86,37 @@
       esta pantalla.
     </p>
   </form>
+</app-form-modal>
+
+<!-- La contraseña temporal, para dictársela a quien la pidió. Se ve una sola
+     vez: no queda guardada en ningún lado ni se puede volver a consultar. -->
+<app-form-modal
+  [(visible)]="modalPassword"
+  titulo="Contraseña restablecida"
+  [ocultarBotonesPorDefecto]="true"
+  (cancelar)="cerrarPasswordTemporal()"
+>
+  <div class="form-fields" *ngIf="usuarioRestablecido">
+    <p class="form-nota">
+      La cuenta de <strong>{{ usuarioRestablecido.name }}</strong> ya tiene
+      contraseña nueva y sus sesiones quedaron cerradas.
+    </p>
+
+    <div class="form-group">
+      <label>Contraseña temporal</label>
+      <input type="text" class="form-control" [value]="passwordTemporal" readonly
+        style="font-size: 20px; letter-spacing: 2px; text-align: center;" />
+      <small class="form-ayuda" *ngIf="passwordEsDni">Es su DNI, como cuando se le dio de alta.</small>
+      <small class="form-ayuda" *ngIf="!passwordEsDni">
+        Esta cuenta no tiene un empleado con DNI, así que se generó una al azar.
+        Anótala: no vas a poder volver a verla.
+      </small>
+    </div>
+
+    <p class="form-ayuda">
+      Al entrar con ella, el sistema no le dejará hacer nada hasta que ponga una suya.
+    </p>
+
+    <button type="button" class="btn-primary" (click)="cerrarPasswordTemporal()">Entendido</button>
+  </div>
 </app-form-modal>

@@ -12,6 +12,30 @@ export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
+  if (!authService.isLoggedIn()) {
+    router.navigate(['/login']);
+    return false;
+  }
+
+  // Cuenta trabada por contraseña inicial: no entra a ninguna pantalla hasta
+  // cambiarla. El backend responde 423 igual, esto solo evita cargar una
+  // pantalla que se quedaría vacía.
+  if (authService.debeCambiarPassword()) {
+    router.navigate(['/cambiar-clave']);
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * Para /cambiar-clave: hace falta sesión, pero NO hace falta tener la
+ * contraseña al día — es justo la pantalla donde se arregla eso.
+ */
+export const sesionGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
   if (authService.isLoggedIn()) return true;
 
   router.navigate(['/login']);
@@ -25,7 +49,7 @@ export const guestGuard: CanActivateFn = () => {
 
   if (!authService.isLoggedIn()) return true;
 
-  router.navigate([authService.rutaInicioSegunRol()]);
+  router.navigate([authService.rutaTrasIngresar()]);
   return false;
 };
 
@@ -46,7 +70,7 @@ export const roleGuard = (rolesPermitidos: string[]): CanActivateFn => {
 
     if (rolesPermitidos.includes(authService.getRolNombre())) return true;
 
-    router.navigate([authService.rutaInicioSegunRol()]);
+    router.navigate([authService.rutaTrasIngresar()]);
     return false;
   };
 };

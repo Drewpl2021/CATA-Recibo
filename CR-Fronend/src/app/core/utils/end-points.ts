@@ -10,6 +10,8 @@ export const END_POINTS = {
     logout: 'logout',
     me: 'me',
     cambiarPassword: 'cambiar-password',
+    olvidePassword: 'olvide-password',
+    restablecerPassword: 'restablecer-password',
   },
 
   /** Configuración base — RRHH y Admin (ver routes/api.php, grupo rol:rrhh,admin). */
@@ -83,6 +85,12 @@ export const END_POINTS_ACCIONES = {
 
   /** POST empleados/{id}/identidad-firma */
   identidadFirmaEmpleado: (empleadoId: string) => `empleados/${empleadoId}/identidad-firma`,
+
+  /** GET vacaciones/saldo?empleado_id=&anio= */
+  saldoVacaciones: 'vacaciones/saldo',
+
+  /** POST users/{id}/restablecer-password */
+  restablecerPasswordUsuario: (userId: string) => `users/${userId}/restablecer-password`,
 
   /** POST modulos/{id}/roles */
   asignarRolesModulo: (moduloId: string) => `modulos/${moduloId}/roles`,

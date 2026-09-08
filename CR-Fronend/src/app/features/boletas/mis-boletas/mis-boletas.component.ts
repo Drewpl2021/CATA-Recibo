@@ -59,8 +59,6 @@ export class MisBoletasComponent implements OnInit {
   boletasPendientes: number = 0;
   ultimoReciboMes: string = '-';
   ultimoReciboDias: string = '';
-  vacacionesDisponibles: number = 14;
-
   // Sign Modal state
   showSignModal = false;
   signPassword = '';
