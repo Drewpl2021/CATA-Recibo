@@ -1,0 +1,412 @@
+<div class="catalogos-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-titles">
+      <h1>CONFIGURACIÓN INSTITUCIONAL</h1>
+      <p>Gestión de catálogos, sedes, cargos, áreas y periodos del Colegio Adventista Túpac Amaru</p>
+    </div>
+    <button class="btn-primary" (click)="abrirModalCrear()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nuevo {{ activeTab === 'areas' ? 'Área' : activeTab === 'cargos' ? 'Cargo' : activeTab === 'sedes' ? 'Sede' : activeTab === 'periodos' ? 'Periodo' : 'Concepto' }}
+    </button>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs-nav">
+    <button class="tab-btn" [class.active]="activeTab === 'areas'" (click)="cambiarTab('areas')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 21h18M3 7v14M21 7v14M6 11h4M6 15h4M14 11h4M14 15h4M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4M12 3l9 4H3l9-4z"/>
+      </svg>
+      Áreas
+      <span class="badge-count">{{ areas.length }}</span>
+    </button>
+
+    <button class="tab-btn" [class.active]="activeTab === 'cargos'" (click)="cambiarTab('cargos')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+      </svg>
+      Cargos
+      <span class="badge-count">{{ cargos.length }}</span>
+    </button>
+
+    <button class="tab-btn" [class.active]="activeTab === 'sedes'" (click)="cambiarTab('sedes')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+      </svg>
+      Sedes
+      <span class="badge-count">{{ sedes.length }}</span>
+    </button>
+
+    <button class="tab-btn" [class.active]="activeTab === 'periodos'" (click)="cambiarTab('periodos')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      Periodos
+      <span class="badge-count">{{ periodos.length }}</span>
+    </button>
+
+    <button class="tab-btn" [class.active]="activeTab === 'conceptos'" (click)="cambiarTab('conceptos')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      Conceptos de Pago
+      <span class="badge-count">{{ conceptos.length }}</span>
+    </button>
+  </div>
+
+  <!-- Search & Action Toolbar -->
+  <div class="toolbar">
+    <div class="search-box">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar en {{ activeTab }}...">
+    </div>
+  </div>
+
+  <!-- Content Container -->
+  <div class="table-card">
+    <div *ngIf="cargando" class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando información...</p>
+    </div>
+
+    <!-- TAB 1: ÁREAS -->
+    <div *ngIf="!cargando && activeTab === 'areas'" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">#</th>
+            <th>Nombre del Área</th>
+            <th>Descripción</th>
+            <th style="width: 140px; text-align: center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredAreas.length === 0">
+            <td colspan="4" class="empty-state">No se encontraron áreas registradas.</td>
+          </tr>
+          <tr *ngFor="let area of filteredAreas; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td class="font-semibold">{{ area.nombre }}</td>
+            <td class="text-muted">{{ area.descripcion || 'Sin descripción' }}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-action edit" (click)="abrirModalEditar(area)" title="Editar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-action delete" (click)="confirmarEliminar(area)" title="Eliminar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TAB 2: CARGOS -->
+    <div *ngIf="!cargando && activeTab === 'cargos'" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">#</th>
+            <th>Nombre del Cargo</th>
+            <th>Descripción</th>
+            <th style="width: 140px; text-align: center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredCargos.length === 0">
+            <td colspan="4" class="empty-state">No se encontraron cargos registrados.</td>
+          </tr>
+          <tr *ngFor="let cargo of filteredCargos; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td class="font-semibold">{{ cargo.nombre }}</td>
+            <td class="text-muted">{{ cargo.descripcion || 'Sin descripción' }}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-action edit" (click)="abrirModalEditar(cargo)" title="Editar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-action delete" (click)="confirmarEliminar(cargo)" title="Eliminar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TAB 3: SEDES -->
+    <div *ngIf="!cargando && activeTab === 'sedes'" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">#</th>
+            <th>Nombre de Sede</th>
+            <th>Dirección</th>
+            <th>Teléfono</th>
+            <th style="width: 120px; text-align: center;">Estado</th>
+            <th style="width: 140px; text-align: center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredSedes.length === 0">
+            <td colspan="6" class="empty-state">No se encontraron sedes registradas.</td>
+          </tr>
+          <tr *ngFor="let sede of filteredSedes; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td class="font-semibold">{{ sede.nombre }}</td>
+            <td class="text-muted">{{ sede.direccion || 'Sin dirección' }}</td>
+            <td>{{ sede.telefono || '—' }}</td>
+            <td style="text-align: center;">
+              <span class="status-badge" [class.badge-active]="sede.estado === 'activo'" [class.badge-inactive]="sede.estado !== 'activo'">
+                {{ sede.estado === 'activo' ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-action edit" (click)="abrirModalEditar(sede)" title="Editar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-action delete" (click)="confirmarEliminar(sede)" title="Eliminar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TAB 4: PERIODOS -->
+    <div *ngIf="!cargando && activeTab === 'periodos'" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">#</th>
+            <th>Nombre / Periodo</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Fin</th>
+            <th style="width: 120px; text-align: center;">Estado</th>
+            <th style="width: 140px; text-align: center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredPeriodos.length === 0">
+            <td colspan="6" class="empty-state">No se encontraron periodos registrados.</td>
+          </tr>
+          <tr *ngFor="let per of filteredPeriodos; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td class="font-semibold">{{ per.nombre }}</td>
+            <td>{{ per.fecha_inicio | date:'dd/MM/yyyy' }}</td>
+            <td>{{ per.fecha_fin | date:'dd/MM/yyyy' }}</td>
+            <td style="text-align: center;">
+              <span class="status-badge" [class.badge-active]="per.activo" [class.badge-inactive]="!per.activo">
+                {{ per.activo ? 'Vigente' : 'Cerrado' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-action edit" (click)="abrirModalEditar(per)" title="Editar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-action delete" (click)="confirmarEliminar(per)" title="Eliminar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TAB 5: CONCEPTOS DE PAGO -->
+    <div *ngIf="!cargando && activeTab === 'conceptos'" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 60px;">#</th>
+            <th>Concepto</th>
+            <th>Tipo</th>
+            <th>Descripción</th>
+            <th style="width: 120px; text-align: center;">Estado</th>
+            <th style="width: 140px; text-align: center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="filteredConceptos.length === 0">
+            <td colspan="6" class="empty-state">No se encontraron conceptos de pago registrados.</td>
+          </tr>
+          <tr *ngFor="let c of filteredConceptos; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td class="font-semibold">{{ c.nombre }}</td>
+            <td>
+              <span class="type-badge" [class.type-ingreso]="c.tipo === 'ingreso'" [class.type-descuento]="c.tipo === 'descuento'" [class.type-aporte]="c.tipo === 'aportacion'">
+                {{ c.tipo | uppercase }}
+              </span>
+            </td>
+            <td class="text-muted">{{ c.descripcion || '—' }}</td>
+            <td style="text-align: center;">
+              <span class="status-badge" [class.badge-active]="c.activo" [class.badge-inactive]="!c.activo">
+                {{ c.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-action edit" (click)="abrirModalEditar(c)" title="Editar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button class="btn-action delete" (click)="confirmarEliminar(c)" title="Eliminar">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL: CREAR / EDITAR                      -->
+<!-- ========================================== -->
+<div class="modal-backdrop" *ngIf="showModal" (click)="cerrarModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ modalModo === 'crear' ? 'Nuevo' : 'Editar' }} {{ activeTab === 'areas' ? 'Área' : activeTab === 'cargos' ? 'Cargo' : activeTab === 'sedes' ? 'Sede' : activeTab === 'periodos' ? 'Periodo' : 'Concepto de Pago' }}</h3>
+      <button class="close-btn" (click)="cerrarModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Nombre Común -->
+      <div class="form-group">
+        <label>Nombre <span class="required">*</span></label>
+        <input type="text" [(ngModel)]="nombre" class="form-control" placeholder="Ej. Dirección Académica">
+      </div>
+
+      <!-- Áreas / Cargos: Descripción -->
+      <div class="form-group" *ngIf="activeTab === 'areas' || activeTab === 'cargos'">
+        <label>Descripción</label>
+        <textarea [(ngModel)]="descripcion" class="form-control" rows="3" placeholder="Detalles opcionales..."></textarea>
+      </div>
+
+      <!-- Sedes: Dirección, Teléfono, Estado -->
+      <ng-container *ngIf="activeTab === 'sedes'">
+        <div class="form-group">
+          <label>Dirección</label>
+          <input type="text" [(ngModel)]="direccion" class="form-control" placeholder="Ej. Av. Simón Bolívar 123">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" [(ngModel)]="telefono" class="form-control" placeholder="Ej. 051-321456">
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select [(ngModel)]="sedeEstado" class="form-control">
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Periodos: Fecha Inicio, Fecha Fin, Activo -->
+      <ng-container *ngIf="activeTab === 'periodos'">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha Inicio <span class="required">*</span></label>
+            <input type="date" [(ngModel)]="fechaInicio" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Fecha Fin <span class="required">*</span></label>
+            <input type="date" [(ngModel)]="fechaFin" class="form-control">
+          </div>
+        </div>
+        <div class="form-group checkbox-group">
+          <label class="custom-checkbox">
+            <input type="checkbox" [(ngModel)]="periodoActivo">
+            <span>Periodo Vigente / Activo</span>
+          </label>
+        </div>
+      </ng-container>
+
+      <!-- Conceptos: Tipo, Descripción, Activo -->
+      <ng-container *ngIf="activeTab === 'conceptos'">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo de Concepto <span class="required">*</span></label>
+            <select [(ngModel)]="tipoConcepto" class="form-control">
+              <option value="ingreso">Ingreso (Remuneración / Bono)</option>
+              <option value="descuento">Descuento (Tardanzas / Prestamos)</option>
+              <option value="aportacion">Aportación (Essalud / SCTR)</option>
+            </select>
+          </div>
+          <div class="form-group checkbox-group" style="padding-top: 24px;">
+            <label class="custom-checkbox">
+              <input type="checkbox" [(ngModel)]="conceptoActivo">
+              <span>Concepto Activo</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea [(ngModel)]="descripcion" class="form-control" rows="2" placeholder="Observaciones del concepto..."></textarea>
+        </div>
+      </ng-container>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn-primary" (click)="guardar()" [disabled]="guardando">
+        {{ guardando ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL: CONFIRMACIÓN ELIMINAR              -->
+<!-- ========================================== -->
+<div class="modal-backdrop" *ngIf="showConfirmDelete" (click)="cancelarEliminar()">
+  <div class="modal-content delete-modal" (click)="$event.stopPropagation()">
+    <div class="delete-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <h3>¿Eliminar {{ itemToDelete?.tipo === 'areas' ? 'Área' : itemToDelete?.tipo === 'cargos' ? 'Cargo' : itemToDelete?.tipo === 'sedes' ? 'Sede' : itemToDelete?.tipo === 'periodos' ? 'Periodo' : 'Concepto' }}?</h3>
+    <p>¿Estás seguro de que deseas eliminar <strong>"{{ itemToDelete?.nombre }}"</strong>? Esta acción no se puede deshacer.</p>
+    
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="cancelarEliminar()">Cancelar</button>
+      <button class="btn-danger" (click)="ejecutarEliminar()">Sí, Eliminar</button>
+    </div>
+  </div>
+</div>

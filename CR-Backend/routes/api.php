@@ -57,7 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('boleta/{empleado_id}/{mes}/{anio}', [BoletaController::class, 'generar']);
 
     // ── Solo RRHH y Administrador ───────────────────────────────
-    Route::middleware('rol:rrhh,Administrador')->group(function () {
+    Route::middleware('rol:rrhh,admin,Administrador')->group(function () {
         Route::apiResource('contratos', ContratoController::class);
         
         Route::apiResource('users', UserController::class)->except(['store']);

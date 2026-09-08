@@ -112,12 +112,25 @@ export class LayoutComponent implements OnInit {
     }
   }
 
-  // Rutas habilitadas para mostrar en el menú (incluye los nuevos módulos del backend)
+  get homeRoute(): string {
+    const user = this.authService.getUser();
+    let rol = '';
+    if (typeof user?.rol === 'string') {
+      rol = user.rol.toLowerCase();
+    } else if (user?.rol && typeof user.rol === 'object') {
+      rol = ((user.rol as any).nombre || '').toLowerCase();
+    }
+    const email = user?.email?.toLowerCase() || '';
+    const isAdmin = rol === 'admin' || rol === 'rrhh' || email === 'admin@colegio.com' || email === 'rrhh@colegio.com';
+    return isAdmin ? '/inicio/dashboard' : '/inicio/mis-boletas';
+  }
+
+  // Rutas habilitadas para mostrar en el menú (solo módulos con pantallas programadas y activas)
   rutasPermitidas = [
     '/dashboard', '/mis-boletas', '/mis-documentos', '/documentos', 
     '/empleados', '/boletas', '/historial-boletas', '/planillas', 
-    '/descuentos', '/areas', '/cargos', '/roles', '/periodos', 
-    '/sedes', '/modulos', '/modulos-padre', '/contratos'
+    '/areas', '/cargos', '/periodos', '/sedes', '/vacaciones',
+    '/catalogos', '/conceptos', '/descuentos'
   ];
 
   ngOnInit(): void {
@@ -186,8 +199,9 @@ export class LayoutComponent implements OnInit {
 
   // Convierte "/mis-boletas" → "/inicio/mis-boletas"
   getRouterLink(ruta: string): string {
-    // Parche temporal: Jordan puso '/boletas' en la BD, pero nuestro componente se llama 'emision-boleta'
+    // Redirecciones directas a componentes existentes
     if (ruta === '/boletas') return '/inicio/emision-boleta';
+    if (ruta === '/descuentos') return '/inicio/conceptos';
     return `/inicio${ruta}`;
   }
 

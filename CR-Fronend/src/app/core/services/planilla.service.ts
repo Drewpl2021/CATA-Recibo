@@ -52,8 +52,8 @@ export class PlanillaService {
 
   constructor(private http: HttpClient) {}
 
-  getPlanillas(filtros: { empleado_id?: string; mes?: number; anio?: number }): Observable<{ success: boolean; data: Planilla[] }> {
-    return this.http.get<{ success: boolean; data: Planilla[] }>(this.apiUrl, { params: filtros as any });
+  getPlanillas(filtros?: { empleado_id?: string; mes?: number; anio?: number }): Observable<{ success: boolean; data: Planilla[] }> {
+    return this.http.get<{ success: boolean; data: Planilla[] }>(this.apiUrl, { params: (filtros || {}) as any });
   }
 
   getPlanilla(id: string): Observable<{ success: boolean; data: Planilla }> {

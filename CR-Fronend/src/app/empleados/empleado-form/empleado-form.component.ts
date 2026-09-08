@@ -7,6 +7,7 @@ import { AreaService, Area } from '../../core/services/area.service';
 import { CargoService, Cargo } from '../../core/services/cargo.service';
 import { SedeService, Sede } from '../../core/services/sede.service';
 import { ToastService } from '../../core/services/toast.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-empleado-form',
@@ -381,5 +382,16 @@ export class EmpleadoFormComponent implements OnInit {
         this.toastService.error('Error', msg);
       }
     });
+  }
+
+  getFirmaUrl(): string {
+    if (!this.firma_imagen) return '';
+    if (this.firma_imagen.startsWith('http')) return this.firma_imagen;
+    const backendBase = environment.apiUrl.replace(/\/api$/, '');
+    const cleanPath = this.firma_imagen.startsWith('/') ? this.firma_imagen : '/' + this.firma_imagen;
+    if (!cleanPath.startsWith('/storage/')) {
+      return `${backendBase}/storage${cleanPath}`;
+    }
+    return `${backendBase}${cleanPath}`;
   }
 }

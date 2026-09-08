@@ -1,0 +1,229 @@
+<div class="vacaciones-page">
+  <!-- Encabezado de Página -->
+  <div class="page-header">
+    <div class="header-titles">
+      <h1>Vacaciones y Licencias</h1>
+      <p>Gestión y seguimiento de solicitudes de descanso laboral.</p>
+    </div>
+    <div class="header-actions" *ngIf="!isAdmin">
+      <button class="btn-primary" (click)="abrirModalSolicitud()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Nueva Solicitud
+      </button>
+    </div>
+  </div>
+
+  <!-- Métricas de Balance para Docente -->
+  <div class="metrics-grid" *ngIf="!isAdmin">
+    <div class="metric-card available">
+      <div class="metric-info">
+        <h3>Días Disponibles</h3>
+        <div class="metric-value">{{ diasDisponibles }} <span class="unit">días</span></div>
+        <div class="metric-trend trend-neutral">De {{ diasMaximos }} días anuales</div>
+      </div>
+      <div class="metric-icon green">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+      </div>
+    </div>
+
+    <div class="metric-card pending">
+      <div class="metric-info">
+        <h3>Días en Revisión</h3>
+        <div class="metric-value">{{ diasPendientes }} <span class="unit">días</span></div>
+        <div class="metric-trend trend-neutral">Pendiente de aprobación</div>
+      </div>
+      <div class="metric-icon yellow">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+    </div>
+
+    <div class="metric-card approved">
+      <div class="metric-info">
+        <h3>Días Gozados / Aprobados</h3>
+        <div class="metric-value">{{ diasAprobados }} <span class="unit">días</span></div>
+        <div class="metric-trend trend-neutral">Aprobados por RRHH</div>
+      </div>
+      <div class="metric-icon blue">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+          <line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Principal con Tabla -->
+  <div class="section-panel">
+    <div class="panel-header">
+      <h2>{{ isAdmin ? 'Todas las Solicitudes del Personal' : 'Mis Solicitudes Realizadas' }}</h2>
+      
+      <div class="filter-controls">
+        <div class="search-box">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar por docente, motivo..." />
+        </div>
+
+        <select class="status-select" [(ngModel)]="filtroEstado">
+          <option value="todos">Todos los Estados</option>
+          <option value="pendiente">Pendientes</option>
+          <option value="aprobado">Aprobadas</option>
+          <option value="rechazado">Rechazadas</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="cargando">
+      <div class="spinner"></div>
+      <p>Cargando información de vacaciones...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!cargando && filteredVacaciones.length === 0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.5"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+        <line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <h3>No hay solicitudes encontradas</h3>
+      <p *ngIf="!isAdmin">Aún no has solicitado vacaciones este año.</p>
+      <p *ngIf="isAdmin">No hay registros que coincidan con los filtros de búsqueda.</p>
+      <button class="btn-primary" *ngIf="!isAdmin" (click)="abrirModalSolicitud()">Solicitar Ahora</button>
+    </div>
+
+    <!-- Data Table -->
+    <div class="table-responsive" *ngIf="!cargando && filteredVacaciones.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th *ngIf="isAdmin">Docente / Trabajador</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Fin</th>
+            <th>Días</th>
+            <th>Motivo</th>
+            <th>Estado</th>
+            <th *ngIf="isAdmin">Aprobado Por</th>
+            <th style="text-align: right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of filteredVacaciones">
+            <td *ngIf="isAdmin">
+              <div class="empleado-info-cell">
+                <span class="emp-name">{{ v.empleado ? (v.empleado.apellido + ', ' + v.empleado.nombre) : 'Empleado' }}</span>
+                <span class="emp-dni" *ngIf="v.empleado?.dni">DNI: {{ v.empleado?.dni }}</span>
+              </div>
+            </td>
+            <td><strong>{{ v.fecha_inicio | date:'dd/MM/yyyy' }}</strong></td>
+            <td><strong>{{ v.fecha_fin | date:'dd/MM/yyyy' }}</strong></td>
+            <td>
+              <span class="dias-tag">{{ v.dias_solicitados }} {{ v.dias_solicitados === 1 ? 'día' : 'días' }}</span>
+            </td>
+            <td class="motivo-cell">{{ v.motivo || 'Sin motivo especificado' }}</td>
+            <td>
+              <span class="status-badge"
+                [class.status-pending]="v.estado === 'pendiente'"
+                [class.status-approved]="v.estado === 'aprobado'"
+                [class.status-rejected]="v.estado === 'rechazado'">
+                {{ v.estado | uppercase }}
+              </span>
+            </td>
+            <td *ngIf="isAdmin">
+              <span class="text-muted">{{ v.aprobado_por || '—' }}</span>
+            </td>
+            <td style="text-align: right;">
+              <!-- Acciones Docente -->
+              <div class="action-btns" *ngIf="!isAdmin">
+                <button class="btn-cancel" *ngIf="v.estado === 'pendiente'" (click)="cancelarSolicitudPropia(v)">
+                  Cancelar
+                </button>
+                <span *ngIf="v.estado !== 'pendiente'" class="text-muted">—</span>
+              </div>
+
+              <!-- Acciones Admin/RRHH -->
+              <div class="action-btns" *ngIf="isAdmin">
+                <button class="btn-approve" *ngIf="v.estado === 'pendiente'" (click)="aprobarVacacion(v)">
+                  Aprobar
+                </button>
+                <button class="btn-reject" *ngIf="v.estado === 'pendiente'" (click)="abrirModalRechazo(v)">
+                  Rechazar
+                </button>
+                <span *ngIf="v.estado !== 'pendiente'" class="text-muted">Completado</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Solicitud de Vacaciones (Docente) -->
+  <div class="modal-backdrop" *ngIf="mostrarModalSolicitud">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Solicitud de Vacaciones / Licencia</h2>
+        <button class="close-btn" (click)="cerrarModalSolicitud()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="saldo-alerta">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>Tienes <strong>{{ diasDisponibles }} días disponibles</strong> de vacaciones para este año.</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha de Inicio *</label>
+            <input type="date" [(ngModel)]="nuevaSolicitud.fecha_inicio" (change)="calcularDias()" />
+          </div>
+          <div class="form-group">
+            <label>Fecha de Fin *</label>
+            <input type="date" [(ngModel)]="nuevaSolicitud.fecha_fin" (change)="calcularDias()" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Días Calculados</label>
+          <div class="dias-preview">{{ nuevaSolicitud.dias_solicitados }} días solicitados</div>
+        </div>
+
+        <div class="form-group">
+          <label>Motivo / Observación</label>
+          <textarea rows="3" [(ngModel)]="nuevaSolicitud.motivo" placeholder="Ej. Vacaciones de medio año, descanso médico, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarModalSolicitud()">Cancelar</button>
+        <button class="btn-primary" [disabled]="guardando" (click)="guardarSolicitud()">
+          {{ guardando ? 'Enviando...' : 'Enviar Solicitud' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Rechazo (Admin) -->
+  <div class="modal-backdrop" *ngIf="mostrarModalRechazo">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Rechazar Solicitud</h2>
+        <button class="close-btn" (click)="cerrarModalRechazo()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>¿Indicar motivo del rechazo para este docente?</p>
+        <div class="form-group" style="margin-top: 12px;">
+          <label>Motivo de Rechazo</label>
+          <textarea rows="3" [(ngModel)]="motivoRechazo" placeholder="Ej. Cruce con periodo de evaluaciones, saldo insuficiente..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarModalRechazo()">Cancelar</button>
+        <button class="btn-reject-confirm" (click)="confirmarRechazo()">Confirmar Rechazo</button>
+      </div>
+    </div>
+  </div>
+</div>
