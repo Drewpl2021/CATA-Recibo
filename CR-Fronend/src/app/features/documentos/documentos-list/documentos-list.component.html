@@ -1,8 +1,10 @@
-<div class="boletas-container">
-  <div class="page-title">
-    <h2>MIS DOCUMENTOS</h2>
-  </div>
+<app-page-header
+  icono="folder_shared"
+  titulo="Mis Documentos"
+  subtitulo="Tus boletas y documentos laborales. Acá los revisas y los firmas."
+></app-page-header>
 
+<div class="boletas-container">
   <div class="toolbar">
     <div class="filter-group">
       <input type="text" class="form-control" placeholder="Buscar por periodo..." [(ngModel)]="searchTerm" style="min-width: 300px;">
@@ -50,24 +52,21 @@
               </span>
             </td>
             <td class="text-center">
-              <div class="action-buttons">
-                <!-- Marcar Visto -->
-                <button class="btn-icon btn-icon-blue"
+              <div class="action-btns" style="justify-content: center;">
+                <button class="btn-icon-blue"
                   (click)="marcarVisto(doc)"
                   [disabled]="doc.estado_firma !== 'pendiente'"
-                  title="Marcar como Visto">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                  </svg>
+                  [appPista]="doc.estado_firma === 'pendiente' ? 'Marcar que ya lo viste' : 'Ya lo habías visto'"
+                  [attr.aria-label]="'Marcar como visto'">
+                  <app-icon icono="check_circle" [tamano]="19"></app-icon>
                 </button>
-                <!-- Firmar -->
-                <button class="btn-icon btn-icon-green"
+
+                <button class="btn-icon-accion btn-icon-success"
                   (click)="abrirModalFirmar(doc)"
                   [disabled]="doc.estado_firma === 'firmado'"
-                  title="Firmar Documento">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
+                  [appPista]="doc.estado_firma === 'firmado' ? 'Ya está firmado' : 'Firmar este documento'"
+                  [attr.aria-label]="'Firmar documento'">
+                  <app-icon icono="signature" [tamano]="19"></app-icon>
                 </button>
               </div>
             </td>

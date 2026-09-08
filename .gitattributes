@@ -1,0 +1,7 @@
+# Los scripts que corren dentro de los contenedores van SIEMPRE con saltos de
+# línea Unix, se editen donde se editen. Con CRLF, Linux no encuentra el
+# intérprete del shebang y el contenedor falla con un "no such file or
+# directory" que señala a un archivo que sí existe.
+*.sh text eol=lf
+docker/** text eol=lf
+compose.yaml text eol=lf

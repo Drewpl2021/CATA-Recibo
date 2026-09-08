@@ -78,7 +78,18 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    /*
+     * La hora del colegio, no la de Greenwich.
+     *
+     * Con 'UTC' todo lo que escribía Laravel iba cinco horas adelantado: una
+     * boleta firmada a las 09:56 de la mañana en Juliaca salía impresa como
+     * "14:56". Y peor, MySQL corre con la hora del sistema, así que las dos
+     * mitades de la aplicación estaban en husos distintos.
+     *
+     * Va por env para que un despliegue en otro sitio no tenga que tocar el
+     * código.
+     */
+    'timezone' => env('APP_TIMEZONE', 'America/Lima'),
 
     /*
     |--------------------------------------------------------------------------

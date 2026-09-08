@@ -33,7 +33,7 @@
   <div tableActions class="chips-filtro">
     <button type="button" *ngFor="let c of chipsEstado" class="chip-filtro"
       [class.chip-filtro--activo]="filtroEstado === c.value" (click)="filtrarPorEstado(c.value)">
-      <app-icon [icono]="c.icono" [tamano]="15"></app-icon>
+      <app-icon [icono]="c.icono" [tamano]="17"></app-icon>
       {{ c.label }}
     </button>
   </div>

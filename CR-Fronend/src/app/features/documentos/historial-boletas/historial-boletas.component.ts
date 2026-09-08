@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DocumentoService, ToastService, EmpleadoService, BoletaService } from '../../../core/services';
 import { Documento, Empleado } from '../../../core/models';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 
 @Component({
   selector: 'app-historial-boletas',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PistaDirective],
   templateUrl: './historial-boletas.component.html',
   styleUrl: './historial-boletas.component.scss'
 })

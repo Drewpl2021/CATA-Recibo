@@ -117,15 +117,21 @@ class MiBoletaController extends Controller
             'cabecera'           => $cabecera,
         ];
 
-        $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'landscape');
+        // Al trabajador se le da UNA sola copia: la del colegio no le sirve de
+        // nada y solo le hacía imprimir el doble.
+        $suya = Pdf::loadView('boleta', $data + ['copias' => 1])->setPaper('a4', 'landscape');
 
         // Mientras no esté firmada, cada regeneración sobrescribe la copia en disco
         // para reflejar el último cálculo. Una vez firmada queda congelada como
         // evidencia de lo que el empleado realmente vio y firmó.
+        //
+        // Lo que se archiva son las DOS copias: ese es el ejemplar que se firma
+        // y que baja RR.HH., y no puede depender de quién lo haya pedido antes.
         if ($documento->estado_firma !== 'firmado') {
-            Storage::disk('local')->put($rutaArchivo, $pdf->output());
+            $archivada = Pdf::loadView('boleta', $data + ['copias' => 2])->setPaper('a4', 'landscape');
+            Storage::disk('local')->put($rutaArchivo, $archivada->output());
         }
 
-        return $pdf->download($archivo);
+        return $suya->download($archivo);
     }
 }

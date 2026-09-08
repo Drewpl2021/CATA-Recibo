@@ -87,17 +87,37 @@
       </small>
     </div>
 
-    <div class="form-group">
-      <label for="monto_calculado">Monto (S/) *</label>
-      <input type="number" id="monto_calculado" class="form-control" formControlName="monto_calculado"
-        min="0" step="0.01" placeholder="0.00" [class.is-invalid]="invalido('monto_calculado')" />
-      <small class="form-error" *ngIf="invalido('monto_calculado')">
-        Indica el monto, sin signo: el tipo de concepto ya dice si suma o resta.
-      </small>
-      <small class="form-ayuda" *ngIf="!invalido('monto_calculado')">
-        Si el concepto tiene valor en el catálogo, se propone solo; puedes cambiarlo.
-      </small>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="calculo">Cómo se calcula *</label>
+        <select id="calculo" class="form-control" formControlName="calculo">
+          <option value="fijo">Monto fijo (S/)</option>
+          <option value="porcentaje">Porcentaje del básico</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="valor">{{ esPorcentaje ? 'Porcentaje (%) *' : 'Monto (S/) *' }}</label>
+        <input type="number" id="valor" class="form-control" formControlName="valor"
+          min="0" step="0.01" [placeholder]="esPorcentaje ? '5' : '0.00'"
+          [class.is-invalid]="invalido('valor')" />
+        <small class="form-error" *ngIf="invalido('valor')">
+          Indica el valor, sin signo: el tipo de concepto ya dice si suma o resta.
+        </small>
+      </div>
     </div>
+
+    <div class="form-nota" *ngIf="esPorcentaje && montoPrevisto > 0">
+      {{ form.get('valor')?.value }}% del básico de esta planilla
+      (S/ {{ baseDelPorcentaje | number: '1.2-2' }}) =
+      <strong>S/ {{ montoPrevisto | number: '1.2-2' }}</strong>
+    </div>
+
+    <p class="form-ayuda">
+      Al elegir el concepto se copia lo que tenga en el catálogo, y puedes
+      cambiarlo aquí mismo: el cambio vale <strong>solo para esta planilla</strong>,
+      no toca el catálogo ni a los demás trabajadores.
+    </p>
 
     <div class="form-group">
       <label for="descripcion">Detalle</label>

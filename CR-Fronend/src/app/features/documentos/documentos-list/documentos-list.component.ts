@@ -4,11 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { MisDocumentosService } from '../../../core/services';
 import { Documento } from '../../../core/models';
 import { ToastService } from '../../../core/services';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 
 @Component({
   selector: 'app-documentos-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, IconComponent, PistaDirective],
   templateUrl: './documentos-list.component.html',
   styleUrl: './documentos-list.component.scss'
 })

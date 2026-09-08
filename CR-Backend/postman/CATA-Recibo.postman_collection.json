@@ -321,6 +321,14 @@
     {
       "key": "empleado_sin_sueldo_id",
       "value": ""
+    },
+    {
+      "key": "detalle_porcentaje_id",
+      "value": ""
+    },
+    {
+      "key": "planilla_sueldo_base",
+      "value": ""
     }
   ],
   "item": [
@@ -4099,6 +4107,7 @@
                 "exec": [
                   "(function () {",
                   "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  pm.collectionVariables.set('planilla_sueldo_base', pm.response.json().data.sueldo_base);",
                   "})();"
                 ]
               }
@@ -4744,6 +4753,213 @@
                   "const total = parseFloat(pm.response.json().data.total);",
                   "pm.test('El total volvió a su valor sin el concepto de descuento', () => pm.expect(total).to.be.closeTo(antes, 0.01));",
                   "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Agregar concepto como PORCENTAJE del basico",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payroll-detalles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll-detalles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planilla_id\": \"{{planilla_id}}\",\n  \"payment_concept_id\": \"{{payment_concept_tardanza_id}}\",\n  \"calculo\": \"porcentaje\",\n  \"valor\": 5,\n  \"descripcion\": \"Descuento del 5%\"\n}"
+            },
+            "description": "RR.HH. escribe \"5%\" en la planilla de una persona sin tener que ir a cambiar el catalogo, que se lo cambiaria a todo el colegio."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "  const d = pm.response.json().data;",
+                  "  pm.collectionVariables.set('detalle_porcentaje_id', d.id);",
+                  "  const base = Number(pm.collectionVariables.get('planilla_sueldo_base') || 0);",
+                  "  pm.test('El monto lo saca el servidor: 5% del basico', () => {",
+                  "    pm.expect(Number(d.monto_calculado)).to.be.closeTo(base * 0.05, 0.02);",
+                  "  });",
+                  "  pm.test('Y se queda con la regla, no solo con los soles', () => {",
+                  "    pm.expect(d.calculo).to.eql('porcentaje');",
+                  "    pm.expect(Number(d.valor)).to.eql(5);",
+                  "    pm.expect(d.como_se_calculo).to.eql('5%');",
+                  "  });",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cambiarlo a monto fijo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payroll-detalles/{{detalle_porcentaje_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll-detalles",
+                "{{detalle_porcentaje_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"calculo\": \"fijo\",\n  \"valor\": 80\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  const d = pm.response.json().data;",
+                  "  pm.test('Ahora son 80 soles clavados', () => pm.expect(Number(d.monto_calculado)).to.eql(80));",
+                  "  pm.test('Y la regla dice fijo', () => pm.expect(d.calculo).to.eql('fijo'));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Escribirlo en soles borra la regla anterior",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payroll-detalles/{{detalle_porcentaje_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll-detalles",
+                "{{detalle_porcentaje_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monto_calculado\": 45.5\n}"
+            },
+            "description": "La forma de siempre sigue valiendo, y limpia la regla para que no queden diciendo cosas distintas."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  const d = pm.response.json().data;",
+                  "  pm.test('Queda el monto escrito', () => pm.expect(Number(d.monto_calculado)).to.eql(45.5));",
+                  "  pm.test('Sin regla colgando: diria 5% al lado de un monto que no es ese 5%', () => {",
+                  "    pm.expect(d.calculo).to.be.null;",
+                  "    pm.expect(d.valor).to.be.null;",
+                  "  });",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Quitar la linea de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payroll-detalles/{{detalle_porcentaje_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll-detalles",
+                "{{detalle_porcentaje_id}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
                 ]
               }
             }

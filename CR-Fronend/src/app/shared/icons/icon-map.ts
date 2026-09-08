@@ -37,6 +37,10 @@ export const ICON_MAP: Record<string, string> = {
   bar_chart: `<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>`,
   build: `<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>`,
   lock: `<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`,
+  /* Firmar. Antes se usaba el lápiz de editar y se leía como "corregir esto",
+     que es justo lo contrario de lo que hace: una firma no se edita. Esto es
+     el trazo de una rúbrica sobre la línea de firma. */
+  signature: `<path d="M3 17c1.8-3.6 3.4-5.4 4.8-5.4 2.1 0 1.4 4.2 3.2 4.2 1.4 0 2-2.4 3.4-2.4 1 0 1.3 1.2 2.2 1.2.7 0 1.4-.5 2.4-1.6"/><path d="M3 21h18"/>`,
   circle: `<circle cx="12" cy="12" r="10"/>`,
 
   // ── Tipos de concepto de pago y filtros ──
