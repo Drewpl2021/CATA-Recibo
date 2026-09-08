@@ -37,16 +37,29 @@ export interface PayrollDetalle {
   planilla_id: string;
   payment_concept_id: string;
   monto_calculado: number | string;
+  /** Cómo se escribió la línea. Null en las que se pusieron en soles a secas. */
+  calculo?: 'fijo' | 'porcentaje' | null;
+  /** El 5 de "5%", o los 100 de "S/ 100". */
+  valor?: number | string | null;
+  /** Lo mismo ya legible ("5%"), que arma el backend. */
+  como_se_calculo?: string | null;
   descripcion?: string | null;
   estado?: string;
   payment_concept?: PaymentConcept;
   planilla?: Planilla;
 }
 
+/**
+ * Al crear una línea se manda su regla (calculo + valor) y los soles los saca
+ * el backend. `monto_calculado` sigue aceptándose para escribir el importe a
+ * secas, pero entonces la línea se queda sin regla que enseñar.
+ */
 export interface PayrollDetallePayload {
   planilla_id: string;
   payment_concept_id: string;
-  monto_calculado: number;
+  calculo?: 'fijo' | 'porcentaje';
+  valor?: number;
+  monto_calculado?: number;
   descripcion?: string | null;
 }
 

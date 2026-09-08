@@ -34,12 +34,12 @@
   <div tableActions class="chips-filtro">
     <button type="button" class="chip-filtro" [class.chip-filtro--activo]="!filtroTipo"
       (click)="filtrarPorTipo('')">
-      <app-icon icono="layers" [tamano]="15"></app-icon>
+      <app-icon icono="layers" [tamano]="17"></app-icon>
       Todos
     </button>
     <button type="button" *ngFor="let t of tiposChip" class="chip-filtro"
       [class.chip-filtro--activo]="filtroTipo === t.value" (click)="filtrarPorTipo(t.value)">
-      <app-icon [icono]="t.icono" [tamano]="15"></app-icon>
+      <app-icon [icono]="t.icono" [tamano]="17"></app-icon>
       {{ t.label }}
     </button>
   </div>

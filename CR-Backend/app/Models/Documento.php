@@ -28,6 +28,17 @@ class Documento extends Model
         'estado_firma_empleador',
     ];
 
+    /**
+     * Sin esto salían como texto suelto ("2026-09-08 15:13:30"), sin decir de
+     * qué huso: el navegador lo leía como hora local y pintaba las cifras de
+     * UTC como si fueran de Juliaca.
+     */
+    protected $casts = [
+        'fecha_firma'           => 'datetime',
+        'fecha_firma_empleador' => 'datetime',
+        'fecha_visto'           => 'datetime',
+    ];
+
     protected static function boot()
     {
         parent::boot();

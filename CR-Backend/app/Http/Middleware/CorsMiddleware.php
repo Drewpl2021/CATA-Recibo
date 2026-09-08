@@ -7,9 +7,18 @@ use Illuminate\Http\Request;
 
 class CorsMiddleware
 {
+    /**
+     * Ojo con el origen: sale de config(), no de env().
+     *
+     * En producción se cachea la configuración (`config:cache`) y a partir de
+     * ese momento env() devuelve null fuera de los archivos de config — el
+     * navegador se habría quedado sin cabecera y todas las peticiones del
+     * frontend habrían empezado a fallar por CORS, en el servidor y no en
+     * local, que es la peor forma de descubrirlo.
+     */
     public function handle(Request $request, Closure $next)
     {
-        $origin = env('FRONTEND_URL', 'http://localhost:4200');
+        $origin = config('app.frontend_url');
 
         if ($request->getMethod() === 'OPTIONS') {
             return response()->json([], 200)

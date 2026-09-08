@@ -1,0 +1,44 @@
+# Lo que NO debe entrar en las imágenes.
+#
+# Además de hacerlas más pequeñas, esto evita que un .env de tu
+# máquina —con sus contraseñas— acabe copiado dentro de la imagen
+# que se sube al servidor.
+
+# Secretos y configuración local
+.env
+.env.*
+!.env.example
+CR-Backend/.env
+CR-Backend/.env.*
+!CR-Backend/.env.example
+
+# Dependencias: se instalan dentro de la imagen, ancladas al lock
+CR-Backend/vendor
+CR-Fronend/node_modules
+CR-Fronend/.angular
+CR-Fronend/dist
+
+# Cosas que genera la aplicación al correr
+CR-Backend/storage/app/*
+CR-Backend/storage/logs/*
+CR-Backend/storage/framework/cache/*
+CR-Backend/storage/framework/sessions/*
+CR-Backend/storage/framework/views/*
+CR-Backend/bootstrap/cache/*
+
+# Git, editores y pruebas
+.git
+.gitignore
+.github
+.claude
+.vscode
+.idea
+**/*.md
+!DESPLIEGUE.md
+postman
+_test_data
+*.sql
+
+# Windows
+Thumbs.db
+desktop.ini

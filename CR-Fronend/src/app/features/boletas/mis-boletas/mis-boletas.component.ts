@@ -9,6 +9,9 @@ import { BoletaService } from '../../../core/services';
 import { MisDocumentosService } from '../../../core/services';
 import { ToastService } from '../../../core/services';
 import { ActivatedRoute } from '@angular/router';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 
 const MESES: Record<number, string> = {
   1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
@@ -36,7 +39,7 @@ export interface BoletaRow {
 @Component({
   selector: 'app-mis-boletas',
   standalone: true,
-  imports: [CommonModule, FormsModule, PdfViewerModule],
+  imports: [CommonModule, FormsModule, PdfViewerModule, PageHeaderComponent, IconComponent, PistaDirective],
   templateUrl: './mis-boletas.component.html',
   styleUrl: './mis-boletas.component.scss'
 })

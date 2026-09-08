@@ -96,7 +96,8 @@ export class PlanillaDetalleComponent implements OnInit {
 
   form = this.fb.group({
     payment_concept_id: ['', [Validators.required]],
-    monto_calculado: [null as number | null, [Validators.required, Validators.min(0)]],
+    calculo: ['fijo' as 'fijo' | 'porcentaje', [Validators.required]],
+    valor: [null as number | null, [Validators.required, Validators.min(0)]],
     descripcion: ['', [Validators.maxLength(255)]],
   });
 
@@ -125,11 +126,45 @@ export class PlanillaDetalleComponent implements OnInit {
     return TIPOS_QUE_RESTAN.includes(detalle.payment_concept?.tipo ?? '');
   }
 
-  /** "− S/ 120.00" o "+ S/ 250.00", según lo que haga el concepto. */
+  /**
+   * "− S/ 150.00 (5%)" o "+ S/ 250.00", según lo que haga el concepto.
+   *
+   * El paréntesis solo sale cuando la línea se escribió como porcentaje: un
+   * "S/ 150" suelto no dice de dónde salió, y a los tres meses nadie se
+   * acuerda.
+   */
   montoConSigno(detalle: PayrollDetalle): string {
     const monto = Number(detalle.monto_calculado ?? 0);
     const signo = this.resta(detalle) ? '−' : '+';
-    return `${signo} S/ ${monto.toFixed(2)}`;
+    const regla = detalle.calculo === 'porcentaje' && detalle.como_se_calculo
+      ? ` (${detalle.como_se_calculo})`
+      : '';
+
+    return `${signo} S/ ${monto.toFixed(2)}${regla}`;
+  }
+
+  /** El básico sobre el que se aplican los porcentajes de esta planilla. */
+  get baseDelPorcentaje(): number {
+    return Number(this.planilla?.sueldo_base ?? 0);
+  }
+
+  get esPorcentaje(): boolean {
+    return this.form.get('calculo')?.value === 'porcentaje';
+  }
+
+  /**
+   * Los soles que va a acabar guardando el backend, para enseñarlos mientras
+   * se escribe: nadie debería tener que sacar el 5% de memoria.
+   *
+   * La cuenta de verdad la hace el servidor; esto es solo el anticipo.
+   */
+  get montoPrevisto(): number {
+    const valor = Number(this.form.get('valor')?.value ?? 0);
+    if (!valor) return 0;
+
+    return this.esPorcentaje
+      ? +(this.baseDelPorcentaje * (valor / 100)).toFixed(2)
+      : +valor.toFixed(2);
   }
 
   /** Lo que suman los conceptos que aportan al sueldo. */
@@ -176,26 +211,29 @@ export class PlanillaDetalleComponent implements OnInit {
     });
   }
 
-  /** Al elegir un concepto con valor fijo, se propone su monto de catálogo. */
+  /**
+   * Al elegir un concepto se copia su regla del catálogo — el 5% o los S/ 100
+   * que tenga puestos.
+   *
+   * Es una copia, no un vínculo: cambiarla aquí afecta solo a esta planilla.
+   * Antes, para ponerle otro porcentaje a una persona había que irse a
+   * Conceptos de Pago y cambiar el valor del catálogo, que se lo cambiaba a
+   * todo el colegio.
+   */
   alElegirConcepto(): void {
     const id = this.form.get('payment_concept_id')?.value;
     const concepto = this.conceptos.find((c) => c.id === id);
     if (!concepto || this.detalleEditando) return;
 
-    if (concepto.calculo === 'fijo' && concepto.valor != null) {
-      this.form.patchValue({ monto_calculado: Number(concepto.valor) });
-      return;
-    }
-    if (concepto.calculo === 'porcentaje' && concepto.valor != null && this.planilla) {
-      const base = Number(this.planilla.sueldo_base ?? 0);
-      const monto = +(base * (Number(concepto.valor) / 100)).toFixed(2);
-      this.form.patchValue({ monto_calculado: monto });
-    }
+    this.form.patchValue({
+      calculo: concepto.calculo === 'porcentaje' ? 'porcentaje' : 'fijo',
+      valor: concepto.valor != null ? Number(concepto.valor) : null,
+    });
   }
 
   nuevo(): void {
     this.detalleEditando = null;
-    this.form.reset({ payment_concept_id: '', monto_calculado: null, descripcion: '' });
+    this.form.reset({ payment_concept_id: '', calculo: 'fijo', valor: null, descripcion: '' });
     this.modalVisible = true;
   }
 
@@ -203,7 +241,10 @@ export class PlanillaDetalleComponent implements OnInit {
     this.detalleEditando = detalle;
     this.form.patchValue({
       payment_concept_id: detalle.payment_concept_id,
-      monto_calculado: Number(detalle.monto_calculado ?? 0),
+      // Si la línea se escribió como regla, se reabre con ella; si se puso en
+      // soles a secas, se reabre como monto fijo por esa cantidad.
+      calculo: detalle.calculo ?? 'fijo',
+      valor: Number(detalle.valor ?? detalle.monto_calculado ?? 0),
       descripcion: detalle.descripcion ?? '',
     });
     this.modalVisible = true;
@@ -212,7 +253,7 @@ export class PlanillaDetalleComponent implements OnInit {
   cerrarModal(): void {
     this.modalVisible = false;
     this.detalleEditando = null;
-    this.form.reset({ payment_concept_id: '', monto_calculado: null, descripcion: '' });
+    this.form.reset({ payment_concept_id: '', calculo: 'fijo', valor: null, descripcion: '' });
   }
 
   guardar(): void {
@@ -224,17 +265,22 @@ export class PlanillaDetalleComponent implements OnInit {
     const v = this.form.getRawValue();
     this.guardando = true;
 
-    // El concepto no se cambia al editar: el backend solo acepta monto,
-    // descripción y estado. Para cambiarlo hay que quitar la línea y crearla.
+    // Se manda la regla, no los soles: la cuenta la hace el backend sobre el
+    // básico de ESTA planilla, y así el porcentaje guardado y el monto cobrado
+    // no pueden decir cosas distintas.
+    const regla = { calculo: v.calculo!, valor: Number(v.valor) };
+
+    // El concepto no se cambia al editar: para eso se quita la línea y se
+    // vuelve a agregar, que es lo que dice la pantalla.
     const peticion = this.detalleEditando
       ? this.detalleService.update(this.detalleEditando.id, {
-          monto_calculado: Number(v.monto_calculado),
+          ...regla,
           descripcion: v.descripcion || null,
         })
       : this.detalleService.crear({
           planilla_id: this.planillaId,
           payment_concept_id: v.payment_concept_id!,
-          monto_calculado: Number(v.monto_calculado),
+          ...regla,
           descripcion: v.descripcion || null,
         } as PayrollDetallePayload);
 

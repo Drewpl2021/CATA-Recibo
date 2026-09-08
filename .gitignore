@@ -1,0 +1,12 @@
+# El .env del despliegue lleva las contraseñas del servidor y la
+# llave de la aplicación: nunca va a git. El que sí se versiona es
+# .env.example, que no tiene ningún secreto dentro.
+/.env
+/.env.*
+!/.env.example
+
+# Respaldos y volcados de base que se hacen a mano
+*.sql
+!CR-Backend/database/**/*.sql
+respaldo-*.tar.gz
+archivos-*.tar.gz

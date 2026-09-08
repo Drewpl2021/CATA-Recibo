@@ -8,6 +8,7 @@ import { PlanillaService } from '../../../core/services';
 import { Planilla } from '../../../core/models';
 import { ToastService } from '../../../core/services';
 import { Observable } from 'rxjs';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 
 export interface FormularioBoleta {
   remuneracionBasica: number | null;
@@ -41,7 +42,7 @@ export interface FormularioBoleta {
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PistaDirective],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })

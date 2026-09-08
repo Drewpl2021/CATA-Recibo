@@ -1,0 +1,153 @@
+# ─────────────────────────────────────────────────────────────
+#  CATA-Recibo — todo el sistema, en una sola orden
+# ─────────────────────────────────────────────────────────────
+#      docker compose up -d --build
+#
+#  Cinco piezas:
+#    base      MySQL, con su volumen para que los datos vivan
+#    app       Laravel (php-fpm) — el API
+#    web       nginx — reparte: Angular por "/" y el API por "/api"
+#    cola      manda los correos de aviso de boleta
+#    reloj     las tareas diarias (purgar tokens vencidos)
+#
+#  Las tres de PHP salen de la MISMA imagen, así que no pueden
+#  quedar desincronizadas entre ellas.
+# ─────────────────────────────────────────────────────────────
+name: cata-recibo
+
+services:
+
+  base:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      # La hora del colegio también acá: si MySQL y Laravel van en
+      # husos distintos, las firmas de las boletas no coinciden
+      # con el reloj de pared.
+      TZ: America/Lima
+    volumes:
+      - datos-mysql:/var/lib/mysql
+    healthcheck:
+      # Los demás servicios esperan a que esto pase: sin ello,
+      # Laravel arranca antes que la base y se cae en el primer
+      # `migrate`.
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    # Sin puertos publicados a propósito: la base solo se ve desde
+    # dentro de la red de Docker. Para entrar desde fuera, un túnel
+    # SSH — no un puerto abierto a internet.
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      base:
+        condition: service_healthy
+    environment: &entorno-php
+      APP_NAME: ${APP_NAME:-CATA-Recibo}
+      APP_ENV: production
+      APP_KEY: ${APP_KEY}
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL}
+      APP_TIMEZONE: America/Lima
+      FRONTEND_URL: ${APP_URL}
+
+      DB_CONNECTION: mysql
+      DB_HOST: base
+      DB_PORT: "3306"
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      # Los correos de aviso salen por la cola para que la pantalla
+      # no se quede esperando al servidor de correo.
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+
+      # A la salida estándar: se leen con `docker compose logs`.
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: ${LOG_LEVEL:-warning}
+
+      MAIL_MAILER: ${MAIL_MAILER:-log}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SCHEME: ${MAIL_SCHEME:-tls}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-no-reply@cata.edu.pe}
+      MAIL_FROM_NAME: ${APP_NAME:-CATA-Recibo}
+
+      SESION_INACTIVIDAD_MINUTOS: ${SESION_INACTIVIDAD_MINUTOS:-120}
+
+      # Este es el que hace las migraciones y cachea la config.
+      ROL: api
+    volumes:
+      # Las boletas y documentos generados. Es lo ÚNICO que hay que
+      # respaldar además de la base: si se pierde, los PDF firmados
+      # se van con él.
+      - archivos:/var/www/html/storage/app
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      # Solo esta pieza asoma a internet.
+      - "${PUERTO_HTTP:-80}:80"
+
+  cola:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      base:
+        condition: service_healthy
+      app:
+        condition: service_started
+    environment:
+      <<: *entorno-php
+      # No migra ni cachea: de eso se encarga "app".
+      ROL: trabajador
+    volumes:
+      - archivos:/var/www/html/storage/app
+    # --tries=3: un correo que falla se reintenta tres veces antes
+    # de darse por perdido. --max-time: el proceso se renueva cada
+    # hora, para que una fuga de memoria no crezca sin fin.
+    command: php artisan queue:work --tries=3 --sleep=3 --max-time=3600
+
+  reloj:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      base:
+        condition: service_healthy
+      app:
+        condition: service_started
+    environment:
+      <<: *entorno-php
+      ROL: reloj
+    volumes:
+      - archivos:/var/www/html/storage/app
+    # schedule:work se queda corriendo y dispara solo las tareas de
+    # routes/console.php. Reemplaza al cron del servidor.
+    command: php artisan schedule:work
+
+volumes:
+  datos-mysql:
+  archivos:

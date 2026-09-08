@@ -235,9 +235,17 @@
     $ciudadFirma = 'Juliaca';
 @endphp
 
-@for ($copia = 1; $copia <= 2; $copia++)
+{{--
+    Cuántas copias van en el PDF. Dos para la institución (una la firma y se
+    queda el trabajador, la otra el colegio); una sola cuando el propio
+    trabajador se descarga la suya desde Mis Boletas, que no necesita la copia
+    del colegio y solo le hacía imprimir el doble.
+--}}
+@php $copias = $copias ?? 2; @endphp
+
+@for ($copia = 1; $copia <= $copias; $copia++)
 <div class="boleta">
-    <div class="copia-label">
+    <div class="copia-label" @if ($copias === 1) style="visibility: hidden;" @endif>
         @if ($copia == 1)
             -- COPIA TRABAJADOR --
         @else
