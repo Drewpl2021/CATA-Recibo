@@ -51,12 +51,17 @@ class DocumentoController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'empleado_id' => 'required|exists:empleados,id',
             'contrato_id' => 'nullable|uuid|exists:contratos,id',
             'tipo' => 'required|in:boleta,contrato,cts,vacaciones_truncas,comprobante_transferencia,hoja_de_vida,otro',
-            'archivo'     => 'required|string|max:255',
-            'firmado_por' => 'nullable|string',
+            // Ruta relativa dentro de storage y nada más: sin "..", sin
+            // ruta absoluta y sin barras invertidas. Flysystem ya frena la
+            // travesía de directorios al descargar, pero aceptar la cadena
+            // dejaba el documento apuntando a un archivo que no existe y roto
+            // para siempre.
+            'archivo'     => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9._\/-]+$/', 'not_regex:/\.\./'],
+            'firmado_por' => 'nullable|string|max:120',
         ]);
 
         if ($request->filled('contrato_id')) {
@@ -68,11 +73,26 @@ class DocumentoController extends Controller
             }
         }
 
-        $data = $request->all();
-        $data['codigo_firma'] = Str::upper(Str::random(10)) . '-' . now()->format('Ymd');
-        $data['fecha_firma']  = now();
-
-        $documento = Documento::create($data);
+        // Solo lo validado, y el estado de firma lo pone el sistema.
+        //
+        // Antes esto era `$request->all()` más un código y una fecha de firma
+        // puestos al crear. Dos problemas de golpe:
+        //
+        //  1. Se podía pasar "estado_firma":"firmado" en el cuerpo y nacía un
+        //     documento ya firmado a nombre del trabajador, sin su contraseña.
+        //     Es el mismo agujero que tenía el update, por la otra puerta.
+        //  2. Un documento recién registrado llevaba código y fecha de firma
+        //     sin que nadie hubiera firmado nada. Esos dos datos los genera el
+        //     acto de firmar (MisDocumentosController::firmar para el
+        //     trabajador, firmarComoEmpleador para el colegio), y de hecho los
+        //     sobrescribían — el de aquí no servía para nada.
+        //
+        // `firmado_por` sí se admite: en un documento que se registra a mano
+        // (un contrato en papel, una hoja de vida) es el nombre de quien lo
+        // firmó de puño y letra, no la firma digital del sistema.
+        $documento = Documento::create(array_merge($datos, [
+            'estado_firma' => 'pendiente',
+        ]));
 
         return response()->json(['success' => true, 'data' => $documento], 201);
     }
@@ -83,17 +103,36 @@ class DocumentoController extends Controller
         return response()->json(['success' => true, 'data' => $documento]);
     }
 
+    /**
+     * PUT /documentos/{id} — corregir el tipo o el archivo de un documento.
+     *
+     * Acá NO se toca nada de la firma, y es lo más importante de este método.
+     *
+     * Antes hacía `update($request->all())` validando solo tres campos, pero
+     * `estado_firma`, `firmado_por`, `codigo_firma` y `fecha_firma` son todos
+     * asignables. Probado: bastaba un PUT con
+     *
+     *     {"estado_firma":"firmado","firmado_por":"Elena Chávez",
+     *      "codigo_firma":"…","fecha_firma":"…"}
+     *
+     * para dejar la boleta de un trabajador marcada como firmada por él —sin
+     * su contraseña— y devolvía 200. Eso vacía de sentido la firma entera: es
+     * justamente la prueba de que el trabajador vio y aceptó su boleta.
+     *
+     * Una firma solo se pone por sus dos puertas, y las dos piden contraseña:
+     * POST mis-documentos/{id}/firmar (el trabajador) y
+     * POST documentos/{id}/firmar-empleador (el colegio).
+     */
     public function update(Request $request, string $id)
     {
         $documento = Documento::findOrFail($id);
 
-        $request->validate([
-            'tipo' => 'sometimes|in:boleta,contrato,cts,vacaciones_truncas,comprobante_transferencia,hoja_de_vida,otro',
-            'archivo'     => 'sometimes|string|max:255',
-            'firmado_por' => 'nullable|string',
+        $datos = $request->validate([
+            'tipo'    => 'sometimes|in:boleta,contrato,cts,vacaciones_truncas,comprobante_transferencia,hoja_de_vida,otro',
+            'archivo' => ['sometimes', 'string', 'max:255', 'regex:/^[A-Za-z0-9._\/-]+$/', 'not_regex:/\.\./'],
         ]);
 
-        $documento->update($request->all());
+        $documento->update($datos);
 
         return response()->json(['success' => true, 'data' => $documento]);
     }

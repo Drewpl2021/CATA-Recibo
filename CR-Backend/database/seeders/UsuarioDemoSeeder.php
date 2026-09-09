@@ -130,7 +130,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '81577364', 'nombre' => 'Rubén Alberto', 'apellido' => 'Quispe Mamani',
                 'fecha_nacimiento' => '1975-03-12', 'fecha_ingreso' => '2015-03-01',
-                'area' => 'Religión', 'cargo' => 'Director', 'sede' => 'CATA',
+                'area' => 'Dirección', 'cargo' => 'Director', 'sede' => 'CATA',
                 'telefono' => '951234567', 'direccion' => 'Jr. Túpac Amaru 245, Juliaca',
                 'sistema_pensiones' => 'AFP', 'afp' => 'Prima', 'cuspp' => '751234567890',
                 'entidad_financiera' => 'BCP', 'numero_cuenta' => '19198765432011',
@@ -148,7 +148,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '81577382', 'nombre' => 'Milagros Fabiola', 'apellido' => 'Ccama Huanca',
                 'fecha_nacimiento' => '1988-11-04', 'fecha_ingreso' => '2018-03-01',
-                'area' => 'Comunicación', 'cargo' => 'Administrativo', 'sede' => 'CATA',
+                'area' => 'Administración', 'cargo' => 'Administrativo', 'sede' => 'CATA',
                 'telefono' => '952345678', 'direccion' => 'Av. Huancané 1120, Juliaca',
                 'sistema_pensiones' => 'ONP', 'afp' => null, 'cuspp' => null,
                 'entidad_financiera' => 'BCP', 'numero_cuenta' => '19187654321022',
@@ -166,7 +166,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '12345678', 'nombre' => 'Elena Rosario', 'apellido' => 'Chávez Ticona',
                 'fecha_nacimiento' => '1990-05-15', 'fecha_ingreso' => '2024-01-01',
-                'area' => 'Comunicación', 'cargo' => 'Docente', 'sede' => 'CATA',
+                'area' => 'Plana Docente — Secundaria', 'cargo' => 'Docente', 'sede' => 'CATA',
                 'telefono' => '953456789', 'direccion' => 'Jr. San Martín 480, Juliaca',
                 'sistema_pensiones' => 'AFP', 'afp' => 'Integra', 'cuspp' => '12345678901',
                 'entidad_financiera' => 'BCP', 'numero_cuenta' => '19412345678012',
@@ -184,7 +184,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '60065632', 'nombre' => 'Deivi', 'apellido' => 'Apaza Lucana',
                 'fecha_nacimiento' => '1996-09-08', 'fecha_ingreso' => '2025-05-25',
-                'area' => 'Religión', 'cargo' => 'Auxiliar', 'sede' => 'CATA',
+                'area' => 'Pastoral y Capellanía', 'cargo' => 'Capellán', 'sede' => 'CATA',
                 'telefono' => '954567890', 'direccion' => 'Jr. Gonzales Prada 315, Juliaca',
                 'sistema_pensiones' => null, 'afp' => null, 'cuspp' => null,
                 'entidad_financiera' => 'Interbank', 'numero_cuenta' => '8983216548790',
@@ -194,7 +194,7 @@ class UsuarioDemoSeeder extends Seeder
                 'institucion_estudios' => 'Universidad Peruana Unión',
                 'contacto_emergencia_nombre' => 'Rosa Lucana Quispe',
                 'contacto_emergencia_telefono' => '954567891',
-                'contrato' => ['observaciones' => 'Auxiliar de pastoral escolar.'],
+                'contrato' => ['observaciones' => 'Capellanía escolar y acompañamiento espiritual.'],
                 'cuenta' => ['email' => 'deivi.apaza@cata.edu.pe', 'rol' => 'empleado'],
             ],
 
@@ -202,7 +202,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '44238190', 'nombre' => 'Carlos Enrique', 'apellido' => 'Mamani Flores',
                 'fecha_nacimiento' => '1985-07-22', 'fecha_ingreso' => '2019-03-01',
-                'area' => 'Matemáticas', 'cargo' => 'Docente', 'sede' => 'CATA',
+                'area' => 'Plana Docente — Secundaria', 'cargo' => 'Docente', 'sede' => 'CATA',
                 'telefono' => '955678901', 'direccion' => 'Urb. La Rinconada B-14, Juliaca',
                 'sistema_pensiones' => 'AFP', 'afp' => 'Habitat', 'cuspp' => '442381901234',
                 'entidad_financiera' => 'BBVA', 'numero_cuenta' => '00112233445566',
@@ -218,7 +218,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '46712083', 'nombre' => 'Ana Lucía', 'apellido' => 'Condori Yupanqui',
                 'fecha_nacimiento' => '1992-02-18', 'fecha_ingreso' => '2021-03-01',
-                'area' => 'Ciencias', 'cargo' => 'Docente', 'sede' => 'CATA',
+                'area' => 'Plana Docente — Secundaria', 'cargo' => 'Docente', 'sede' => 'CATA',
                 'telefono' => '956789012', 'direccion' => 'Jr. Ayacucho 762, Juliaca',
                 'sistema_pensiones' => 'ONP', 'afp' => null, 'cuspp' => null,
                 'entidad_financiera' => 'BCP', 'numero_cuenta' => '19455667788099',
@@ -237,7 +237,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '43980215', 'nombre' => 'Jhon Michael', 'apellido' => 'Ramos Cahuana',
                 'fecha_nacimiento' => '1987-12-01', 'fecha_ingreso' => '2017-03-01',
-                'area' => 'Inglés', 'cargo' => 'Docente', 'sede' => 'Jerusalen',
+                'area' => 'Plana Docente — Primaria', 'cargo' => 'Docente', 'sede' => 'Jerusalen',
                 'telefono' => '957890123', 'direccion' => 'Av. Circunvalación 210, Juliaca',
                 'sistema_pensiones' => 'AFP', 'afp' => 'Profuturo', 'cuspp' => '439802151122',
                 'entidad_financiera' => 'Interbank', 'numero_cuenta' => '8987654321000',
@@ -253,7 +253,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '47215639', 'nombre' => 'Rosa María', 'apellido' => 'Huanca Pari',
                 'fecha_nacimiento' => '1994-06-30', 'fecha_ingreso' => '2022-03-01',
-                'area' => 'Historia', 'cargo' => 'Docente', 'sede' => 'CATA',
+                'area' => 'Plana Docente — Secundaria', 'cargo' => 'Docente', 'sede' => 'CATA',
                 'telefono' => '958901234', 'direccion' => 'Jr. Lambayeque 903, Juliaca',
                 'sistema_pensiones' => 'AFP', 'afp' => 'Integra', 'cuspp' => '472156393344',
                 'entidad_financiera' => 'BCP', 'numero_cuenta' => '19433221100987',
@@ -272,7 +272,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '42558107', 'nombre' => 'Wilber', 'apellido' => 'Apaza Ccopa',
                 'fecha_nacimiento' => '1983-04-09', 'fecha_ingreso' => '2016-03-01',
-                'area' => 'Educación Física', 'cargo' => 'Docente', 'sede' => 'CATA',
+                'area' => 'Plana Docente — Primaria', 'cargo' => 'Docente', 'sede' => 'CATA',
                 'telefono' => '959012345', 'direccion' => 'Jr. Cusco 158, Juliaca',
                 'sistema_pensiones' => 'ONP', 'afp' => null, 'cuspp' => null,
                 'entidad_financiera' => 'BCP', 'numero_cuenta' => '19477889900112',
@@ -288,7 +288,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '48963201', 'nombre' => 'Katherine Judith', 'apellido' => 'Vilca Sucari',
                 'fecha_nacimiento' => '1997-10-25', 'fecha_ingreso' => '2024-03-01',
-                'area' => 'Arte', 'cargo' => 'Docente', 'sede' => 'Jerusalen',
+                'area' => 'Plana Docente — Inicial', 'cargo' => 'Docente', 'sede' => 'Jerusalen',
                 'telefono' => '960123456', 'direccion' => 'Jr. Moquegua 640, Juliaca',
                 'sistema_pensiones' => 'AFP', 'afp' => 'Prima', 'cuspp' => '489632015566',
                 'entidad_financiera' => 'BBVA', 'numero_cuenta' => '00998877665544',
@@ -309,7 +309,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '45120388', 'nombre' => 'Sandra Beatriz', 'apellido' => 'Turpo Cutipa',
                 'fecha_nacimiento' => '1991-01-17', 'fecha_ingreso' => '2020-03-01',
-                'area' => 'Ciencias', 'cargo' => 'Psicólogo', 'sede' => 'CATA',
+                'area' => 'Tutoría y Psicopedagogía', 'cargo' => 'Psicólogo', 'sede' => 'CATA',
                 'telefono' => '961234567', 'direccion' => 'Av. Manuel Núñez 55, Juliaca',
                 'sistema_pensiones' => 'AFP', 'afp' => 'Habitat', 'cuspp' => '451203887788',
                 'entidad_financiera' => 'BCP', 'numero_cuenta' => '19466778899001',
@@ -325,7 +325,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '70458812', 'nombre' => 'Yesenia', 'apellido' => 'Coaquira Choque',
                 'fecha_nacimiento' => '1999-08-03', 'fecha_ingreso' => '2023-03-01',
-                'area' => 'Comunicación', 'cargo' => 'Secretaria', 'sede' => 'CATA',
+                'area' => 'Secretaría Académica', 'cargo' => 'Secretaria', 'sede' => 'CATA',
                 'telefono' => '962345678', 'direccion' => 'Jr. Piérola 331, Juliaca',
                 'sistema_pensiones' => 'ONP', 'afp' => null, 'cuspp' => null,
                 'entidad_financiera' => 'BCP', 'numero_cuenta' => '19412309876543',
@@ -343,7 +343,7 @@ class UsuarioDemoSeeder extends Seeder
             [
                 'dni' => '76551204', 'nombre' => 'Brayan Alexis', 'apellido' => 'Quenta Sucasaca',
                 'fecha_nacimiento' => '2003-05-11', 'fecha_ingreso' => '2026-03-01',
-                'area' => 'Matemáticas', 'cargo' => 'Auxiliar', 'sede' => 'CATA',
+                'area' => 'TIC', 'cargo' => 'Practicante Pre-Profesional', 'sede' => 'CATA',
                 'telefono' => '963456789', 'direccion' => 'Jr. Bolívar 128, Juliaca',
                 'sistema_pensiones' => null, 'afp' => null, 'cuspp' => null,
                 'entidad_financiera' => null, 'numero_cuenta' => null,

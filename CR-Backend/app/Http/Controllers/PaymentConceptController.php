@@ -47,7 +47,7 @@ class PaymentConceptController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'nombre' => 'required|string|max:150|unique:payment_concepts,nombre',
             // bonificacion = suma a Ingresos | descuento = resta del neto | aportacion = solo informativo,
             // lo paga el empleador y NO afecta el neto (ej. ESSALUD, SCTR) | adelanto = resta del neto
@@ -60,7 +60,7 @@ class PaymentConceptController extends Controller
             'descripcion' => 'nullable|string|max:255',
             'aplica_a_todos' => 'nullable|boolean',
         ]);
-        $concept = PaymentConcept::create($request->all());
+        $concept = PaymentConcept::create($datos);
         return response()->json(['success' => true, 'data' => $concept], 201);
     }
 
@@ -72,7 +72,7 @@ class PaymentConceptController extends Controller
     public function update(Request $request, string $id)
     {
         $concept = PaymentConcept::findOrFail($id);
-        $request->validate([
+        $datos = $request->validate([
             'nombre' => ['sometimes', 'string', 'max:150', Rule::unique('payment_concepts', 'nombre')->ignore($id)],
             'tipo' => 'sometimes|in:bonificacion,descuento,aportacion,adelanto',
             'calculo' => 'nullable|in:fijo,porcentaje|required_if:aplica_a_todos,true',
@@ -80,7 +80,7 @@ class PaymentConceptController extends Controller
             'descripcion' => 'nullable|string|max:255',
             'aplica_a_todos' => 'nullable|boolean',
         ]);
-        $concept->update($request->all());
+        $concept->update($datos);
         return response()->json(['success' => true, 'data' => $concept]);
     }
 

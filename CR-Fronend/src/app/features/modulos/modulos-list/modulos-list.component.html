@@ -96,7 +96,7 @@
       <div class="lista-checks">
         <label class="check-item" *ngFor="let rol of roles">
           <input type="checkbox" [checked]="tieneRol(rol.id)" (change)="alternarRol(rol.id)" />
-          <span>{{ rol.nombre }}</span>
+          <span>{{ etiquetaRol(rol) }}</span>
         </label>
         <p class="form-ayuda" *ngIf="!roles.length">No hay roles registrados.</p>
       </div>

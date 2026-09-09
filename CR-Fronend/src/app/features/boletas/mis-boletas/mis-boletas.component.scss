@@ -1,151 +1,12 @@
-.boletas-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: var(--surface);
-  padding: 16px 24px;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border);
-}
-
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.form-select {
-  padding: 8px 36px 8px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  color: var(--text);
-  background-color: var(--surface);
-  min-width: 150px;
-  outline: none;
-  cursor: pointer;
-}
-
-.form-select:focus {
-  border-color: var(--brand-700);
-}
-
-.outline-blue {
-  background-color: var(--surface);
-  color: var(--heading);
-  border: 1px solid var(--brand-700);
-}
-
-.outline-blue:hover {
-  background-color: var(--brand-700);
-  color: white;
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-.complex-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.complex-table th, .complex-table td {
-  border: 1px solid var(--border);
-  padding: 12px 16px;
-  font-size: 13px;
-  vertical-align: middle;
-}
-
-/* Mismos tokens de cabecera que el resto de tablas de la app. */
-.complex-table th {
-  background-color: var(--table-head-bg);
-  color: var(--table-head-text);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid var(--table-head-border);
-}
-
-.complex-table .sub-header th {
-  background-color: var(--marca-bg-deep);
-  font-weight: 500;
-  font-size: 12px;
-  color: var(--marca-text-soft);
-  text-transform: none;
-}
-
-.complex-table tbody tr {
-  transition: background-color 0.2s;
-}
-
-.complex-table tbody tr:hover {
-  background-color: rgba(244, 246, 248, 0.5);
-}
-
-.complex-table .text-center {
-  text-align: center;
-}
-
-.col-id {
-  width: 50px;
-  text-align: center;
-}
-
-.group-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.state-cell {
-  position: relative;
-}
-
-.check-icon {
-  color: var(--success); /* Green check */
-  margin-bottom: 4px;
-}
-
-.state-date {
-  font-size: 11px;
-  color: var(--text);
-  white-space: nowrap;
-}
-
-.state-email {
-  font-size: 11px;
-  color: var(--heading);
-  margin-top: 2px;
-  white-space: nowrap;
-  font-weight: 500;
-}
-
-.btn-icon-blue {
-  background: var(--surface);
-  border: 1px solid var(--brand-700);
-  color: var(--heading);
-  border-radius: var(--radius-sm);
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-icon-blue:hover {
-  background-color: var(--brand-100-hover);
-  border-color: var(--brand-500);
-  color: var(--heading);
-}
+/*
+ * Lo único que queda aquí son los dos modales de esta pantalla: el visor de
+ * la boleta en PDF y el de la firma.
+ *
+ * La tabla, la barra de filtros, los recuadros de arriba y los botones de
+ * ícono se fueron a las piezas compartidas (app-data-table, .panel-filtros,
+ * las cifras de app-page-header), que es donde deben estar: eran copias con
+ * pequeñas diferencias de lo que ya existía en styles.scss.
+ */
 
 .alert-error {
   display: flex;
@@ -157,45 +18,9 @@
   padding: 12px 16px;
   border-radius: var(--radius-sm);
   font-size: 14px;
+  margin-bottom: 20px;
 }
 
-.loading-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 40px;
-  color: var(--text-muted);
-  font-size: 14px;
-}
-
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid var(--border);
-  border-top-color: var(--brand-700);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
-  color: var(--text-muted);
-  font-size: 14px;
-  font-style: italic;
-}
-
-.btn-primary:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-/* Modal PDF Styles */
 .pdf-modal-overlay {
   position: fixed;
   top: 0;
@@ -210,6 +35,7 @@
   z-index: 9999;
 }
 
+/* El visor ocupa casi toda la pantalla: una boleta se lee mal en pequeño. */
 .pdf-modal-container {
   background-color: var(--surface);
   width: 90%;
@@ -223,6 +49,7 @@
   animation: modalFadeIn 0.3s ease-out;
 }
 
+/* El de la firma es un cuadro chico: solo pide la contraseña. */
 .sign-modal-container {
   background-color: var(--surface);
   width: 90%;
@@ -249,24 +76,6 @@
   font-size: 18px;
   color: var(--heading);
   font-weight: 600;
-}
-
-.btn-close {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s;
-}
-
-.btn-close:hover {
-  background-color: var(--surface-hover);
-  color: var(--danger-text);
 }
 
 .pdf-modal-body {

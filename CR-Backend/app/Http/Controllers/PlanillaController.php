@@ -12,7 +12,7 @@ class PlanillaController extends Controller
     use ListadoPaginado;
     use CalculaConceptosPlanilla;
     /**
-     * GET /planilla?empleado_id=&mes=&anio=&periodo_id=&page=&size=&search=
+     * GET /planilla?empleado_id=&empleado_ids=&mes=&anio=&periodo_id=&page=&size=&search=
      *
      * Es la tabla que más crece del sistema: un registro por trabajador y
      * por mes. Los filtros van sobre el índice planilla_empleado_periodo_idx
@@ -33,6 +33,16 @@ class PlanillaController extends Controller
         }
         if ($request->filled('periodo_id')) {
             $query->where('periodo_id', $request->periodo_id);
+        }
+
+        // ?empleado_ids=id1,id2,... — solo por los trabajadores que se están
+        // viendo. Lo usa Emisión de Boletas: la pantalla pinta una página de
+        // diez empleados y necesita saber cuáles de ESOS diez ya tienen su
+        // planilla del mes; antes se traía las de todo el colegio para
+        // marcar diez filas. El tope va a juego con el de la paginación.
+        if ($request->filled('empleado_ids')) {
+            $ids = array_slice(array_filter(explode(',', (string) $request->input('empleado_ids'))), 0, 200);
+            $query->whereIn('empleado_id', $ids);
         }
 
         $rolNombre = $request->user()->rol?->nombre;

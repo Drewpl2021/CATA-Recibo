@@ -45,6 +45,11 @@
       <small class="form-error" *ngIf="invalido('nombre')">
         El nombre es obligatorio (máximo 45 caracteres).
       </small>
+      <small class="form-ayuda" *ngIf="editandoRolDelSistema">
+        Este es el nombre interno de un rol del sistema y no se cambia: es con
+        el que el servidor decide los permisos de cada pantalla. En el sistema
+        se lee como <strong>{{ etiquetaRolEditando }}</strong>.
+      </small>
     </div>
 
     <div class="form-group">
@@ -54,7 +59,7 @@
       <small class="form-error" *ngIf="invalido('descripcion')">Máximo 255 caracteres.</small>
     </div>
 
-    <p class="form-nota">
+    <p class="form-nota" *ngIf="!rolEditando">
       Después de crear el rol, entra a <strong>Módulos</strong> para elegir qué
       ítems del menú verá.
     </p>

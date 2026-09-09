@@ -1,91 +1,38 @@
-<div class="boletas-container">
-  <div class="page-title">
-    <h2>HISTORIAL DE BOLETAS DE EMPLEADOS</h2>
-  </div>
+<app-page-header
+  icono="receipt_long"
+  titulo="Historial de Boletas"
+  subtitulo="Todas las boletas emitidas a un trabajador, para consultarlas o volver a descargarlas."
+></app-page-header>
 
-  <div class="toolbar">
-    <div class="filter-group" style="display: flex; gap: 16px; align-items: center; width: 100%; flex-wrap: wrap;">
-      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 250px;">
-        <label style="font-size: 13px; font-weight: 600; color: var(--text-soft);">Seleccionar Empleado:</label>
-        <select class="form-control" [(ngModel)]="selectedEmpleadoId" (change)="onEmpleadoChange()" style="width: 100%; padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-strong); outline: none; background-color: var(--surface);">
-          <option value="" disabled>Seleccione un empleado...</option>
-          <option *ngFor="let emp of empleados" [value]="emp.id">
-            {{ emp.nombre }} {{ emp.apellido }} (DNI: {{ emp.dni }})
-          </option>
-        </select>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 200px;" *ngIf="selectedEmpleadoId">
-        <label style="font-size: 13px; font-weight: 600; color: var(--text-soft);">Buscar Periodo:</label>
-        <input type="text" class="form-control" placeholder="Buscar por periodo..." [(ngModel)]="searchTerm" style="padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-strong); outline: none;">
-      </div>
+<section class="panel-filtros">
+  <div class="panel-filtros__campos">
+    <div class="campo-filtro">
+      <label for="filtroEmpleado">Trabajador</label>
+      <select id="filtroEmpleado" class="form-control" [(ngModel)]="empleadoId"
+        (ngModelChange)="alCambiarEmpleado()">
+        <option value="" disabled>Elige un trabajador...</option>
+        <option *ngFor="let emp of empleados" [value]="emp.id">
+          {{ emp.nombre }} {{ emp.apellido }} — DNI {{ emp.dni }}
+        </option>
+      </select>
     </div>
   </div>
+</section>
 
-  <div class="section-panel">
-    <div class="panel-header-small" style="display: flex; justify-content: space-between; align-items: center;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-        </svg>
-        <span>Historial de Boletas del Empleado</span>
-      </div>
-    </div>
-
-    <!-- Estado de carga -->
-    <div *ngIf="cargando" style="text-align:center; padding: 40px; color: var(--text-faint);">
-      Cargando documentos...
-    </div>
-
-    <!-- No empleado seleccionado -->
-    <div *ngIf="!cargando && !selectedEmpleadoId" style="text-align:center; padding: 40px; color: var(--text-muted); font-size: 14px;">
-      Por favor, selecciona un empleado de la lista para ver sus documentos.
-    </div>
-
-    <div class="table-responsive" *ngIf="!cargando && selectedEmpleadoId">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th class="col-id">#</th>
-            <th>Periodo</th>
-            <th>Tipo</th>
-            <th>Fecha Emisión</th>
-            <th class="text-center">Estado</th>
-            <th class="text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngIf="filteredDocumentos.length === 0">
-            <td colspan="6" class="empty-state">No se encontraron documentos.</td>
-          </tr>
-          <tr *ngFor="let doc of filteredDocumentos; let i = index">
-            <td class="col-id">{{ i + 1 }}</td>
-            <td style="font-weight: 500;">{{ getPeriodo(doc) }}</td>
-            <td style="text-transform: capitalize;">{{ doc.tipo }}</td>
-            <td>{{ doc.created_at | date:'dd/MM/yyyy' }}</td>
-            <td class="text-center">
-              <span class="badge-estado" [ngClass]="getEstadoClass(doc)">
-                {{ getEstadoLabel(doc) }}
-              </span>
-            </td>
-            <td class="text-center">
-              <div class="action-buttons" style="justify-content: center; gap: 8px;">
-                <!-- Descargar/Ver PDF -->
-                <button class="btn-icon btn-icon-blue"
-                  (click)="descargarPdfAdmin(doc)"
-                  [disabled]="descargandoPdf"
-                  appPista="Descargar esta boleta en PDF" aria-label="Descargar boleta en PDF"
-                  style="padding: 6px; display: inline-flex; align-items: center; justify-content: center;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
+<app-data-table
+  entidad="esta boleta"
+  [columnas]="columnas"
+  [datos]="documentos"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  [filasPorPagina]="TAMANO_PAGINA"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['tipo']"
+  [acciones]="[]"
+  [accionesPersonalizadas]="acciones"
+  (accionPersonalizada)="alAccionar($event)"
+  [mensajeVacio]="empleadoId ? 'Este trabajador todavía no tiene boletas emitidas.' : 'Elige un trabajador para ver sus boletas.'"
+></app-data-table>

@@ -3,12 +3,12 @@ import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../../core/services';
-import { PistaDirective } from '../../../shared/directives/pista.directive';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-emision-descuentos-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, PistaDirective],
+  imports: [CommonModule, FormsModule, PageHeaderComponent],
   templateUrl: './emision-descuentos-form.component.html',
   styleUrl: './emision-descuentos-form.component.scss'
 })

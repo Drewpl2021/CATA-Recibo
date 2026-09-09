@@ -329,6 +329,10 @@
     {
       "key": "planilla_sueldo_base",
       "value": ""
+    },
+    {
+      "key": "documento_intento_id",
+      "value": ""
     }
   ],
   "item": [
@@ -954,6 +958,160 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "Rol del sistema: no se le puede cambiar el nombre",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('renombrar rrhh se rechaza con 422', function () {",
+                      "    pm.response.to.have.status(422);",
+                      "    pm.expect(pm.response.json().success).to.eql(false);",
+                      "});",
+                      "pm.test('el mensaje explica por que', function () {",
+                      "    pm.expect(pm.response.json().message).to.include('sistema');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"nombre\": \"RRHH\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/roles/{{rol_rrhh_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles",
+                    "{{rol_rrhh_id}}"
+                  ]
+                },
+                "description": "Los permisos se comparan contra el nombre en texto plano (rol:admin en las rutas, !== rrhh en los controladores). Renombrarlo desde la pantalla de Roles dejaria a Recursos Humanos sin modulos sin que nadie relacione una cosa con la otra. Lo que el usuario lee (\"RRHH\") es una etiqueta del frontend."
+              }
+            },
+            {
+              "name": "Rol del sistema: la descripcion si se puede cambiar",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('cambiar solo la descripcion funciona', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "    const d = pm.response.json().data;",
+                      "    pm.expect(d.nombre, 'el nombre interno no se toca').to.eql('rrhh');",
+                      "    pm.expect(d.descripcion).to.include('Recursos Humanos');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"descripcion\": \"Recursos Humanos: personal, contratos, planillas, boletas y vacaciones.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/roles/{{rol_rrhh_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles",
+                    "{{rol_rrhh_id}}"
+                  ]
+                },
+                "description": "La proteccion es solo sobre el nombre: la descripcion es texto para leer y se edita como en cualquier otro rol."
+              }
+            },
+            {
+              "name": "Rol del sistema: no se puede eliminar",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('borrar un rol del sistema se rechaza con 409', function () {",
+                      "    pm.response.to.have.status(409);",
+                      "    pm.expect(pm.response.json().success).to.eql(false);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/roles/{{rol_empleado_id}}",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "roles",
+                    "{{rol_empleado_id}}"
+                  ]
+                },
+                "description": "Sin los tres roles el sistema no arranca: no se borran ni aunque no tengan usuarios asignados."
+              }
             }
           ]
         },
@@ -6261,6 +6419,200 @@
             },
             "description": "Recorre todos los empleados activos con planilla en ese mes/año: crea el Documento tipo boleta (y envía el correo) al que aún no lo tenga, y cuenta como 'omitida' al que ya lo tenía — idempotente, se puede correr varias veces sin duplicar."
           }
+        },
+        {
+          "name": "No se puede falsificar la firma del trabajador (crear)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documentos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empleado_id\": \"{{empleado_id}}\",\n  \"tipo\": \"otro\",\n  \"archivo\": \"intento_firma_falsa.pdf\",\n  \"estado_firma\": \"firmado\",\n  \"firmado_por\": \"Nombre Ajeno\",\n  \"codigo_firma\": \"FALSO-123\"\n}"
+            },
+            "description": "La firma es la prueba de que el trabajador vio y acepto su boleta. Solo se pone por sus dos puertas, y las dos piden contrasena."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "  const d = pm.response.json().data;",
+                  "  pm.collectionVariables.set('documento_intento_id', d.id);",
+                  "  pm.test('Nace pendiente aunque se pidiera firmado', () => pm.expect(d.estado_firma).to.eql('pendiente'));",
+                  "  pm.test('Sin codigo de firma inventado', () => pm.expect(d.codigo_firma).to.not.eql('FALSO-123'));",
+                  "  pm.test('Y sin fecha de firma', () => pm.expect(d.fecha_firma == null).to.be.true);",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "No se puede falsificar la firma del trabajador (editar)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documentos/{{documento_intento_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documentos",
+                "{{documento_intento_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado_firma\": \"firmado\",\n  \"firmado_por\": \"Nombre Ajeno\",\n  \"codigo_firma\": \"FALSO-456\"\n}"
+            },
+            "description": "Probado antes del arreglo: este PUT devolvia 200 y dejaba la boleta firmada a nombre del trabajador sin su contrasena."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "(function () {",
+                  "  pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "  const d = pm.response.json().data;",
+                  "  pm.test('Sigue pendiente', () => pm.expect(d.estado_firma).to.eql('pendiente'));",
+                  "  pm.test('El codigo no se toca desde aqui', () => pm.expect(d.codigo_firma).to.not.eql('FALSO-456'));",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ruta de archivo con travesia de directorios (debe fallar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documentos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empleado_id\": \"{{empleado_id}}\",\n  \"tipo\": \"otro\",\n  \"archivo\": \"../../.env\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('422: el archivo es una ruta dentro de storage, no cualquier cadena', function () {",
+                  "  pm.response.to.have.status(422);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Quitar el documento del intento",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/documentos/{{documento_intento_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "documentos",
+                "{{documento_intento_id}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -9356,6 +9708,306 @@
               ]
             },
             "description": "Masa salarial y contratos por vencer no son datos para un docente."
+          }
+        },
+        {
+          "name": "Mis Documentos: el trabajador recibe su pagina, no toda su carrera",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('viene una pagina, no un arreglo suelto', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json().data;",
+                  "    pm.expect(d).to.have.property('content');",
+                  "    pm.expect(d).to.have.property('totalElements');",
+                  "    pm.expect(d.content.length, 'la pagina respeta el size').to.be.at.most(2);",
+                  "});",
+                  "pm.test('los conteos son de TODOS sus documentos, no de la pagina', function () {",
+                  "    const d = pm.response.json().data;",
+                  "    pm.expect(d).to.have.property('pendientes');",
+                  "    pm.expect(d).to.have.property('firmados');",
+                  "    pm.expect(d.pendientes + d.firmados, 'pendientes + firmados no puede pasar del total')",
+                  "        .to.be.at.most(d.totalElements);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{empleado_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mis-documentos?page=0&size=2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mis-documentos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "El listado del autoservicio crece una boleta por mes durante toda la carrera del trabajador: va paginado como el resto."
+          }
+        },
+        {
+          "name": "Mis Documentos: el filtro por ano mira la planilla",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('un ano sin planillas devuelve la pagina vacia', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json().data;",
+                  "    pm.expect(d.content).to.be.an('array').that.is.empty;",
+                  "    pm.expect(d.totalElements).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{empleado_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mis-documentos?tipo=boleta&anio=1999&page=0&size=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mis-documentos"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "boleta"
+                },
+                {
+                  "key": "anio",
+                  "value": "1999"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "El ano es el de la planilla, no el de created_at: una boleta de diciembre emitida en enero pertenece al ano trabajado."
+          }
+        },
+        {
+          "name": "Mis Documentos: nadie ve los de otro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('todos los documentos son del mismo trabajador', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json().data;",
+                  "    const duenos = new Set(d.content.map(function (doc) { return doc.empleado_id; }));",
+                  "    pm.expect(duenos.size, 'la lista mezcla documentos de varios empleados').to.be.at.most(1);",
+                  "});",
+                  "pm.test('sin ?page el contrato viejo sigue siendo un arreglo', function () {",
+                  "    const d = pm.response.json().data;",
+                  "    pm.expect(d).to.have.property('content');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{empleado_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mis-documentos?page=0&size=50",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mis-documentos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "El empleado sale del token, nunca de la peticion: el filtro no se puede saltar con un parametro."
+          }
+        },
+        {
+          "name": "Conceptos de una planilla: los totales son de toda la planilla",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('la pagina trae una linea y los tres totales', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json().data;",
+                  "    pm.expect(d.content.length).to.be.at.most(1);",
+                  "    pm.expect(d).to.have.property('sumanAlSueldo');",
+                  "    pm.expect(d).to.have.property('restanDelSueldo');",
+                  "    pm.expect(d).to.have.property('aportaciones');",
+                  "});",
+                  "pm.test('los totales no salen de la pagina', function () {",
+                  "    const d = pm.response.json().data;",
+                  "    const suma = d.sumanAlSueldo + d.restanDelSueldo + d.aportaciones;",
+                  "    const deLaPagina = d.content.reduce(function (s, l) { return s + Number(l.monto_calculado || 0); }, 0);",
+                  "    if (d.totalElements > d.content.length) {",
+                  "        pm.expect(suma, 'sumando solo la pagina el neto saldria mal').to.be.above(deLaPagina - 0.001);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payroll-detalles?planilla_id={{planilla_id}}&page=0&size=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payroll-detalles"
+              ],
+              "query": [
+                {
+                  "key": "planilla_id",
+                  "value": "{{planilla_id}}"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "El pie de la pantalla suma TODAS las lineas: con la lista paginada, sumarlas en el navegador daria un neto que no es el que se paga."
+          }
+        },
+        {
+          "name": "Planillas: se puede preguntar solo por los empleados en pantalla",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('solo devuelve planillas de los ids pedidos', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const d = pm.response.json().data;",
+                  "    const pedido = pm.collectionVariables.get('empleado_id');",
+                  "    d.content.forEach(function (p) {",
+                  "        pm.expect(p.empleado_id, 'se colo la planilla de otro').to.eql(pedido);",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{rrhh_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/planilla?empleado_ids={{empleado_id}}&page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "planilla"
+              ],
+              "query": [
+                {
+                  "key": "empleado_ids",
+                  "value": "{{empleado_id}}"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Emision de Boletas pinta diez trabajadores y necesita saber cuales de ESOS diez ya tienen su planilla del mes."
           }
         }
       ]

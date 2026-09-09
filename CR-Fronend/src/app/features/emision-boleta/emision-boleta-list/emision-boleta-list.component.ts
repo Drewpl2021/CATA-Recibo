@@ -9,6 +9,9 @@ import { Planilla } from '../../../core/models';
 import { ToastService } from '../../../core/services';
 import { Observable } from 'rxjs';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
+import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 
 export interface FormularioBoleta {
   remuneracionBasica: number | null;
@@ -42,17 +45,78 @@ export interface FormularioBoleta {
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, PistaDirective],
+  imports: [CommonModule, FormsModule, PistaDirective, PageHeaderComponent, DataTableComponent],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })
 export class EmisionBoletaListComponent implements OnInit {
   empleados: Empleado[] = [];
-  searchTerm = '';
   cargandoEmpleados = false;
 
-  // Tracking de emitidos
+  /** El corte y el buscador los hace el backend; acá solo se pinta. */
+  readonly TAMANO_PAGINA = 10;
+  pagina = 0;
+  busqueda = '';
+  totalEmpleados = 0;
+
+  /**
+   * De los trabajadores QUE SE ESTÁN VIENDO, cuáles ya tienen planilla de
+   * este mes. Se pregunta solo por los ids de la página.
+   */
   empleadosEditados = new Set<string>();
+
+  /**
+   * Cuantas planillas hay en todo el mes. Es distinto de empleadosEditados:
+   * ese conjunto es de la página, y este número decide si el mes está sin
+   * empezar (y toca enseñar el aviso de "generar la planilla del mes").
+   */
+  planillasDelMes = 0;
+
+  /**
+   * Si ya llegó la cuenta de las planillas del mes.
+   *
+   * El aviso de "este mes está sin empezar" no puede salir antes: la lista de
+   * trabajadores y el conteo llegan por separado, y en ese hueco de medio
+   * segundo planillasDelMes todavía vale 0 y el aviso parpadeaba en meses que
+   * sí tenían boletas.
+   */
+  conteoListo = false;
+
+  columnas: ColumnaTabla<Empleado>[] = [
+    {
+      campo: 'nombre', header: 'Nombres y apellidos', ancho: '28%',
+      formatear: (_v, e) => `${e.nombre} ${e.apellido}`,
+    },
+    { campo: 'dni', header: 'DNI', ancho: '12%' },
+    { campo: 'cargo.nombre', header: 'Cargo', ancho: '20%' },
+    { campo: 'area.nombre', header: 'Área', ancho: '20%' },
+    {
+      campo: 'id', header: 'Boleta del mes', tipo: 'badge', ancho: '15%',
+      formatear: (_v, e) => (this.empleadosEditados.has(e.id) ? 'Armada' : 'Sin armar'),
+      badgeSeveridad: (_v, e) => (this.empleadosEditados.has(e.id) ? 'success' : 'warning'),
+    },
+  ];
+
+  /**
+   * Las cifras de arriba: cuánta gente hay y cuántas boletas van armadas de
+   * ese mes. Las dos salen del backend contando TODO, no la página.
+   */
+  get cifras(): CifraCabecera[] {
+    return [
+      { icono: 'people', valor: this.totalEmpleados, etiqueta: 'Trabajadores', tono: 'brand' },
+      { icono: 'receipt', valor: this.planillasDelMes, etiqueta: 'Boletas armadas', tono: 'success' },
+      {
+        icono: 'clock',
+        valor: Math.max(this.totalEmpleados - this.planillasDelMes, 0),
+        etiqueta: 'Sin armar',
+        tono: 'warning',
+      },
+    ];
+  }
+
+  accionesFila: AccionPersonalizada<Empleado>[] = [
+    { id: 'editar', titulo: 'Revisar y editar los conceptos de su boleta', icono: 'money', etiqueta: 'Editar' },
+  ];
 
   // Modal state
   showModal = false;
@@ -99,53 +163,92 @@ export class EmisionBoletaListComponent implements OnInit {
 
   cargarEmpleados(): void {
     this.cargandoEmpleados = true;
-    this.empleadoService.getAll().subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.empleados = res.data;
-          this.cargarEstadoBoletas();
-        } else {
+    this.empleadoService
+      .getPagina({ page: this.pagina, size: this.TAMANO_PAGINA, search: this.busqueda || undefined })
+      .subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.empleados = res.data.content;
+            this.totalEmpleados = res.data.totalElements;
+            this.cargarEstadoBoletas();
+            return;
+          }
           this.cargandoEmpleados = false;
-        }
-      },
-      error: (err) => {
-        console.error('Error cargando empleados', err);
-        this.cargandoEmpleados = false;
-      }
-    });
+        },
+        error: (err) => {
+          this.toastService.error('Error', err?.error?.message || 'No se pudo cargar la lista de trabajadores.');
+          this.cargandoEmpleados = false;
+        },
+      });
+  }
+
+  irAPagina(pagina: number): void {
+    this.pagina = pagina;
+    this.cargarEmpleados();
+  }
+
+  buscar(termino: string): void {
+    this.busqueda = termino;
+    this.pagina = 0;
+    this.cargarEmpleados();
   }
 
   onGlobalPeriodChange(): void {
-    this.cargarEstadoBoletas();
+    this.pagina = 0;
+    this.cargarEmpleados();
   }
 
+  /**
+   * Cuáles de los trabajadores en pantalla ya tienen planilla del mes.
+   *
+   * Se pregunta por los ids de la página (?empleado_ids=), no por todo el
+   * colegio: antes esto se traía las 150 planillas del mes para marcar diez
+   * filas. Y aparte, un conteo suelto de cuántas hay en total, que es lo que
+   * decide si el mes está sin empezar.
+   */
   cargarEstadoBoletas(): void {
-    this.cargandoEmpleados = true;
-    this.planillaService.listar({ mes: this.mesGlobal, anio: this.anioGlobal }).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.empleadosEditados.clear();
-          res.data.forEach(p => {
-            this.empleadosEditados.add(p.empleado_id);
-          });
-        }
-        this.cargandoEmpleados = false;
-      },
-      error: (err) => {
-        console.error('Error cargando estado de boletas', err);
-        this.cargandoEmpleados = false;
-      }
-    });
-  }
+    const ids = this.empleados.map((e) => e.id);
+    if (ids.length === 0) {
+      this.empleadosEditados.clear();
+      this.cargandoEmpleados = false;
+      return;
+    }
 
-  get filteredEmpleados(): Empleado[] {
-    if (!this.searchTerm) return this.empleados;
-    const lower = this.searchTerm.toLowerCase();
-    return this.empleados.filter(e => {
-      const nombre = `${e.nombre} ${e.apellido}`.toLowerCase();
-      const cargo = e.cargo?.nombre?.toLowerCase() || '';
-      return nombre.includes(lower) || cargo.includes(lower) || e.dni.includes(lower);
-    });
+    this.planillaService
+      .getPagina({
+        mes: this.mesGlobal,
+        anio: this.anioGlobal,
+        empleado_ids: ids.join(','),
+        page: 0,
+        size: ids.length,
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.empleadosEditados = new Set(res.data.content.map((p) => p.empleado_id));
+          }
+          this.cargandoEmpleados = false;
+        },
+        error: () => {
+          // Si falla, las filas salen como "sin armar": se sigue pudiendo editar.
+          this.empleadosEditados.clear();
+          this.cargandoEmpleados = false;
+        },
+      });
+
+    this.conteoListo = false;
+    this.planillaService
+      .getPagina({ mes: this.mesGlobal, anio: this.anioGlobal, page: 0, size: 1 })
+      .subscribe({
+        next: (res) => {
+          if (res.success) this.planillasDelMes = res.data.totalElements;
+          this.conteoListo = true;
+        },
+        error: () => {
+          this.planillasDelMes = 0;
+          this.conteoListo = true;
+        },
+      });
   }
 
   nombreMes(num: number): string {
@@ -269,12 +372,10 @@ export class EmisionBoletaListComponent implements OnInit {
   }
 
   cerrarModal(): void {
-    if (this.empleadoSeleccionado) {
-      const actual = JSON.stringify(this.formulario);
-      if (actual !== this._formularioOriginal) {
-        this.empleadosEditados.add(this.empleadoSeleccionado.id);
-      }
-    }
+    // Cerrar no marca nada. La columna dice si el trabajador YA TIENE su
+    // planilla del mes guardada, y tocar el formulario sin guardar no la
+    // crea: antes bastaba con abrir y cambiar un número para que la fila
+    // dijera "editado" aunque en la base de datos no hubiera nada.
     this.showModal = false;
     this.empleadoSeleccionado = null;
     this.planillaActual = null;
@@ -416,8 +517,8 @@ export class EmisionBoletaListComponent implements OnInit {
   }
 
   emitirTodasLasBoletas(): void {
-    if (this.filteredEmpleados.length === 0) {
-      this.toastService.warning('Aviso', 'No hay empleados en la lista para emitir boletas.');
+    if (this.totalEmpleados === 0) {
+      this.toastService.warning('Aviso', 'No hay trabajadores en la lista para emitir boletas.');
       return;
     }
     this.showConfirmMasivo = true;
@@ -441,7 +542,7 @@ export class EmisionBoletaListComponent implements OnInit {
           motivo: 'esos empleados no tienen planilla de ese mes, o ya tenían su boleta',
         });
         this.generandoMasivo = false;
-        // Recargar la lista para que aparezca la tabla
+        // Recargar para que las filas y el aviso del mes queden al día.
         this.cargarEstadoBoletas();
       },
       error: (err) => {

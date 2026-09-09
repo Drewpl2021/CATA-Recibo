@@ -67,7 +67,7 @@ export class PlanillaFormComponent implements OnInit {
   }
 
   cargarEmpleados(): void {
-    this.empleadoService.getAll().subscribe({
+    this.empleadoService.paraSelector().subscribe({
       next: (res) => {
         if (res.success) this.empleados = res.data;
       }

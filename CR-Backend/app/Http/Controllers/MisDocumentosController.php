@@ -2,6 +2,8 @@
 namespace App\Http\Controllers;
 use App\Models\Documento;
 use App\Models\Planilla;
+use App\Traits\ListadoPaginado;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
@@ -9,6 +11,25 @@ use Illuminate\Support\Facades\Cache;
 
 class MisDocumentosController extends Controller
 {
+    use ListadoPaginado;
+
+    /**
+     * GET /mis-documentos?tipo=&anio=&sin_firmar=&page=&size=&search=
+     *
+     * Los documentos del trabajador de la sesión. El empleado sale del token,
+     * nunca de la petición.
+     *
+     * Con el tiempo esto crece sin parar —una boleta por mes, más contratos y
+     * constancias—, así que va paginado como el resto: sin ?page devolvía la
+     * carrera entera del trabajador de una sola vez.
+     *
+     * Los tres filtros son los que piden las tres pantallas que cuelgan de
+     * aquí, y cada uno ahorra traer documentos que no se van a pintar:
+     *
+     *   Mis Boletas   -> ?tipo=boleta&anio=2026  (la pantalla ya elige el año)
+     *   Mis Documentos-> sin filtro, todo lo suyo
+     *   La campanita  -> ?sin_firmar=1           (solo lo que le falta firmar)
+     */
     public function index(Request $request)
     {
         $empleado_id = $request->user()->empleado_id;
@@ -16,12 +37,50 @@ class MisDocumentosController extends Controller
             return response()->json(['success' => false, 'message' => 'Sin empleado vinculado.'], 403);
         }
 
-        $documentos = Documento::where('empleado_id', $empleado_id)
+        // Ordenado por el periodo que representa, no por cuándo se registró.
+        //
+        // Un documento se ordena por lo que dice ser: la boleta de agosto va
+        // después de la de julio aunque las dos se hayan emitido el mismo día
+        // —que es justo lo que pasa cuando se emiten todas de golpe, y ahí
+        // created_at no desempata nada—. Lo que no tiene planilla (contratos,
+        // constancias) cae al final por su fecha, que es lo único que tiene.
+        // empleado_id lleva su tabla delante porque con el join lo tienen las
+        // dos. Las demás columnas de aquí abajo (tipo, estado_firma) son solo
+        // de documentos, y van sin calificar a propósito: el punto en
+        // ListadoPaginado significa "relación", no "tabla".
+        $query = Documento::where('documentos.empleado_id', $empleado_id)
             ->with('planilla')
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->leftJoin('planilla', 'documentos.planilla_id', '=', 'planilla.id')
+            ->select('documentos.*')
+            ->orderByDesc('planilla.anio')
+            ->orderByDesc('planilla.mes')
+            ->orderByDesc('documentos.created_at');
 
-        return response()->json(['success' => true, 'data' => $documentos]);
+        if ($request->filled('tipo')) {
+            $query->where('tipo', $request->input('tipo'));
+        }
+
+        // El año es el de la planilla, no el de created_at: una boleta de
+        // diciembre emitida en enero pertenece al año que se trabajó.
+        if ($request->filled('anio')) {
+            $query->where('planilla.anio', (int) $request->input('anio'));
+        }
+
+        if ($request->boolean('sin_firmar')) {
+            $query->where('estado_firma', '!=', 'firmado');
+        }
+
+        return $this->responderListado(
+            $request,
+            $query,
+            ['tipo'],
+            // Cuántos le faltan por firmar: es el número del recuadro de
+            // arriba, y tiene que contarse sobre TODOS, no sobre la página.
+            fn (Builder $suyos) => $this->conteoPorEstado($suyos, 'estado_firma', [
+                'pendientes' => 'pendiente',
+                'firmados'   => 'firmado',
+            ])
+        );
     }
 
     public function visto(Request $request, $id)

@@ -136,7 +136,7 @@ export class PeriodosListComponent implements OnInit {
   /** Lo que necesita el selector de grupo; se pide una sola vez. */
   private cargarCatalogos(): void {
     forkJoin({
-      empleados: this.empleadoService.getAll(),
+      empleados: this.empleadoService.paraSelector(),
       areas: this.areaService.getAll(),
       cargos: this.cargoService.getAll(),
       sedes: this.sedeService.getAll(),

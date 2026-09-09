@@ -17,6 +17,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { etiquetaRol, ROL_ADMIN } from '../../../shared/constants';
 
 /**
  * Cuentas de acceso al sistema (solo Admin).
@@ -83,8 +84,8 @@ export class UsuariosListComponent implements OnInit {
       header: 'Rol',
       ancho: '14%',
       tipo: 'badge',
-      formatear: (valor) => this.nombreRol(valor),
-      badgeSeveridad: (valor) => (this.nombreRol(valor) === 'admin' ? 'warning' : 'info'),
+      formatear: (valor) => etiquetaRol(valor),
+      badgeSeveridad: (valor) => (this.nombreRol(valor) === ROL_ADMIN ? 'warning' : 'info'),
     },
     {
       campo: 'empleado_id',
@@ -145,10 +146,17 @@ export class UsuariosListComponent implements OnInit {
     return !!c && c.invalid && c.touched;
   }
 
-  /** El backend manda `rol` a veces como objeto y a veces como texto. */
+  /**
+   * El nombre INTERNO del rol ('rrhh'), que es con el que se compara.
+   *
+   * El backend manda `rol` a veces como objeto y a veces como texto. Para
+   * pintarlo se usa etiquetaRol(), que devuelve "RRHH"; esto es para la
+   * lógica, no para la pantalla.
+   */
   nombreRol(rol: unknown): string {
-    if (!rol) return '—';
-    return typeof rol === 'string' ? rol : ((rol as Rol).nombre ?? '—');
+    if (!rol) return '';
+    const nombre = typeof rol === 'string' ? rol : ((rol as Rol).nombre ?? '');
+    return nombre.trim().toLowerCase();
   }
 
   nombreEmpleadoDe(usuario: Usuario): string {
@@ -183,7 +191,7 @@ export class UsuariosListComponent implements OnInit {
   private cargarCatalogos(): void {
     forkJoin({
       roles: this.rolService.getAll(),
-      empleados: this.empleadoService.getAll(),
+      empleados: this.empleadoService.paraSelector(),
     }).subscribe({
       next: ({ roles, empleados }) => {
         if (roles.success) this.roles = roles.data;

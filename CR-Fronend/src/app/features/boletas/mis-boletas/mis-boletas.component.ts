@@ -1,17 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DomSanitizer } from '@angular/platform-browser';
-import { PdfViewerModule } from 'ng2-pdf-viewer';
-import { GlobalWorkerOptions } from 'pdfjs-dist';
-import { AuthService } from '../../../core/services';
-import { BoletaService } from '../../../core/services';
-import { MisDocumentosService } from '../../../core/services';
-import { ToastService } from '../../../core/services';
 import { ActivatedRoute } from '@angular/router';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
-import { PistaDirective } from '../../../shared/directives/pista.directive';
+import { GlobalWorkerOptions } from 'pdfjs-dist';
+import { AuthService, BoletaService, MisDocumentosService, ToastService } from '../../../core/services';
+import { Documento } from '../../../core/models';
+import { mensajeErrorApi } from '../../../core/utils';
+import { VisorPdfComponent } from '../../../shared/components/visor-pdf/visor-pdf.component';
+import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 
 const MESES: Record<number, string> = {
   1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
@@ -19,6 +17,7 @@ const MESES: Record<number, string> = {
   9: 'Setiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
 };
 
+/** Una fila de la tabla: la boleta ya masticada para pintarla. */
 export interface BoletaRow {
   id: string;
   tipoDocumento: string;
@@ -29,222 +28,222 @@ export interface BoletaRow {
   montoTotal: number;
   anio: number;
   firmado: { fecha: string } | null;
-  avisoEnviado: { fecha: string; correo: string } | null;
-  revisado: { fecha: string } | null;
-  descargado: { fecha: string } | null;
-  correo: string;
-  celular: string;
 }
 
+/**
+ * Mis Boletas: las boletas del trabajador de la sesión, año por año.
+ *
+ * El año NO se filtra en el navegador: se le pide al backend
+ * (?tipo=boleta&anio=), que además corta la página y cuenta cuántas van
+ * firmadas. Antes esta pantalla se traía todos los documentos de todos los
+ * años del trabajador y se quedaba con los doce del año elegido.
+ */
 @Component({
   selector: 'app-mis-boletas',
   standalone: true,
-  imports: [CommonModule, FormsModule, PdfViewerModule, PageHeaderComponent, IconComponent, PistaDirective],
+  imports: [CommonModule, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent],
   templateUrl: './mis-boletas.component.html',
   styleUrl: './mis-boletas.component.scss'
 })
 export class MisBoletasComponent implements OnInit {
-  anios: string[] = ['2026', '2025', '2024', '2023', '2022'];
-  selectedAnio: string = new Date().getFullYear().toString();
+  private authService = inject(AuthService);
+  private boletaService = inject(BoletaService);
+  private misDocumentosService = inject(MisDocumentosService);
+  private toastService = inject(ToastService);
+  private route = inject(ActivatedRoute);
+
+  anios: number[] = [];
+  anioElegido = new Date().getFullYear();
   boletas: BoletaRow[] = [];
-  isLoading = false;
+  cargando = false;
   errorMsg = '';
-  isEmpleado = false;
   userName = '';
-  
-  // Modal states
+
+  /** Doce filas: un año entero cabe en una página. */
+  readonly TAMANO_PAGINA = 12;
+  pagina = 0;
+  total = 0;
+  pendientes = 0;
+  firmados = 0;
+
+  // Visor de PDF
   showPdfModal = false;
   pdfUrl: string | null = null;
   pdfBoletaName = '';
   private currentPdfBlob: Blob | null = null;
 
-  // Metrics
-  boletasPendientes: number = 0;
-  ultimoReciboMes: string = '-';
-  ultimoReciboDias: string = '';
-  // Sign Modal state
+  // Modal de firma
   showSignModal = false;
   signPassword = '';
   boletaAFirmar: BoletaRow | null = null;
   signErrorMsg = '';
   isSigning = false;
-  pendingSignatureId: string | null = null;
+  private firmaPendienteId: string | null = null;
 
-  constructor(
-    private authService: AuthService,
-    private boletaService: BoletaService,
-    private misDocumentosService: MisDocumentosService,
-    private sanitizer: DomSanitizer,
-    private toastService: ToastService,
-    private route: ActivatedRoute
-  ) {}
+  /** Las cifras de la cabecera: del año entero, no de la página. */
+  get cifras(): CifraCabecera[] {
+    return [
+      { icono: 'receipt_long', valor: this.total, etiqueta: 'Boletas del año', tono: 'brand' },
+      { icono: 'signature', valor: this.firmados, etiqueta: 'Firmadas', tono: 'success' },
+      { icono: 'clock', valor: this.pendientes, etiqueta: 'Por firmar', tono: 'warning' },
+    ];
+  }
+
+  columnas: ColumnaTabla<BoletaRow>[] = [
+    { campo: 'numeroDocumento', header: 'N.° de documento', ancho: '18%' },
+    { campo: 'mes', header: 'Mes', ancho: '14%' },
+    { campo: 'fechaEmision', header: 'Emisión', ancho: '14%' },
+    { campo: 'montoTotal', header: 'Neto a pagar', tipo: 'moneda', ancho: '16%' },
+    {
+      campo: 'firmado', header: 'Estado', tipo: 'badge', ancho: '22%',
+      formatear: (_v, fila) => (fila.firmado ? `Firmada el ${fila.firmado.fecha}` : 'Pendiente de firma'),
+      badgeSeveridad: (_v, fila) => (fila.firmado ? 'success' : 'warning'),
+    },
+  ];
+
+  acciones: AccionPersonalizada<BoletaRow>[] = [
+    {
+      id: 'ver', titulo: 'Abrir y descargar tu boleta en PDF', icono: 'receipt_long',
+      // El PDF definitivo es el de la boleta ya firmada.
+      visible: (b) => !!b.firmado,
+    },
+    {
+      id: 'firmar', titulo: 'Firmar esta boleta', icono: 'signature', severidad: 'success',
+      visible: (b) => !b.firmado,
+    },
+  ];
 
   ngOnInit(): void {
-    // Configurar el worker de PDF.js apuntando al archivo estático
-    GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+    // El motor de pdf.js sale de nuestro propio servidor, no de un CDN.
+    GlobalWorkerOptions.workerSrc = 'assets/pdf/pdf.worker.min.mjs';
+
+    const actual = new Date().getFullYear();
+    for (let a = actual; a >= actual - 5; a--) this.anios.push(a);
 
     const user = this.authService.getUser();
-    const rol = user?.rol?.toLowerCase() || '';
-    const email = user?.email?.toLowerCase() || '';
-    
-    // Si es administrador o rrhh por correo, NO es empleado (a nivel de vista).
-    const isAdmin = rol === 'admin' || rol === 'rrhh' || email === 'admin@colegio.com' || email === 'rrhh@colegio.com';
-    this.isEmpleado = !isAdmin;
-    
     this.userName = user?.name ? user.name.split(' ')[0] : 'Usuario';
-    
-    // Suscribirse a los queryParams para reaccionar a la campanita incluso sin recargar
-    this.route.queryParams.subscribe(params => {
+
+    // La campanita manda acá con ?firmar=<id> para abrir la firma de una
+    // boleta concreta sin que el trabajador tenga que buscarla.
+    this.route.queryParams.subscribe((params) => {
       if (params['firmar']) {
-        this.pendingSignatureId = params['firmar'];
-        this.verificarFirmaPendiente();
+        this.firmaPendienteId = params['firmar'];
+        this.abrirFirmaPendiente();
       }
     });
 
-    // Suscribirse a los documentos de forma reactiva
-    this.misDocumentosService.documentos$.subscribe({
-      next: (todos) => {
-        const boletasDocs = (todos || []).filter(d => 
-          d.tipo === 'boleta' && 
-          d.planilla && 
-          String(d.planilla.anio) === this.selectedAnio
-        );
-
-        this.boletas = boletasDocs.map((d) => ({
-          id: d.id,
-          tipoDocumento: 'Boleta de Pago',
-          numeroDocumento: `BP-${d.planilla?.anio}-${String(d.planilla?.mes).padStart(2, '0')}`,
-          fechaEmision: d.created_at ? this.formatFecha(d.created_at).split(' ')[0] : '',
-          mes: MESES[d.planilla?.mes!] ?? `Mes ${d.planilla?.mes}`,
-          mesNum: d.planilla?.mes || 0,
-          montoTotal: (d.planilla as any)?.total ?? 0,
-          anio: d.planilla?.anio || 0,
-          firmado: d.estado_firma === 'firmado' ? { fecha: d.fecha_firma ? this.formatFecha(d.fecha_firma) : this.formatFecha(d.created_at ?? '') } : null,
-          avisoEnviado: null,
-          revisado: null,
-          descargado: null,
-          correo: '',
-          celular: ''
-        }));
-        
-        this.calcularMetricas(boletasDocs);
-        this.verificarFirmaPendiente();
-      }
-    });
-
-    this.cargarBoletas();
+    this.cargar();
   }
 
-  verificarFirmaPendiente(): void {
-    if (this.pendingSignatureId && this.boletas.length > 0) {
-      const boleta = this.boletas.find(b => b.id === this.pendingSignatureId);
-      if (boleta && !boleta.firmado) {
-        setTimeout(() => this.firmarBoleta(boleta), 100);
-      }
-      this.pendingSignatureId = null; // Limpiar para no volver a disparar
-    }
+  alCambiarAnio(): void {
+    this.pagina = 0;
+    this.cargar();
   }
 
-  cargarBoletas(): void {
-    if (!this.authService.isLoggedIn()) {
-      this.errorMsg = 'Sesión expirada. Por favor vuelve a iniciar sesión.';
-      return;
-    }
+  irAPagina(pagina: number): void {
+    this.pagina = pagina;
+    this.cargar();
+  }
 
+  cargar(): void {
     const user = this.authService.getUser();
     if (!user?.empleado_id) {
-      this.errorMsg = 'Esta cuenta no tiene un perfil de empleado asociado para mostrar boletas.';
+      this.errorMsg = 'Esta cuenta no tiene un trabajador vinculado, así que no hay boletas que mostrar.';
       return;
     }
 
-    this.isLoading = true;
+    this.cargando = true;
     this.errorMsg = '';
-
-    this.misDocumentosService.getMisDocumentos().subscribe({
-      next: () => {
-        this.isLoading = false;
-      },
-      error: () => {
-        this.isLoading = false;
-        this.errorMsg = 'Error al cargar las boletas. Verifica tu conexión con el servidor.';
-      }
-    });
+    this.misDocumentosService
+      .paginar({ tipo: 'boleta', anio: this.anioElegido, page: this.pagina, size: this.TAMANO_PAGINA })
+      .subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.boletas = res.data.content.map((d) => this.aFila(d));
+            this.total = res.data.totalElements;
+            this.pendientes = res.data.pendientes ?? 0;
+            this.firmados = res.data.firmados ?? 0;
+          }
+          this.cargando = false;
+          this.abrirFirmaPendiente();
+        },
+        error: () => {
+          this.cargando = false;
+          this.errorMsg = 'No se pudieron cargar tus boletas. Revisa tu conexión e inténtalo de nuevo.';
+        },
+      });
   }
 
-  calcularMetricas(planillas: any[]): void {
-    this.boletasPendientes = this.boletas.filter(b => !b.firmado).length;
-    
-    if (this.boletas.length > 0) {
-      const ultima = [...this.boletas].sort((a, b) => b.mesNum - a.mesNum)[0];
-      this.ultimoReciboMes = ultima.mes;
-      
-      const planillaOriginal = planillas.find(p => p.id === ultima.id);
-      if (planillaOriginal && planillaOriginal.created_at) {
-        const createdDate = new Date(planillaOriginal.created_at);
-        const diffTime = Math.abs(new Date().getTime() - createdDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        this.ultimoReciboDias = `Disponible hace ${diffDays} día(s)`;
-      } else {
-        this.ultimoReciboDias = 'Disponible recientemente';
-      }
-    } else {
-      this.ultimoReciboMes = '-';
-      this.ultimoReciboDias = '';
-    }
+  private aFila(d: Documento): BoletaRow {
+    const mes = d.planilla?.mes ?? 0;
+    const anio = d.planilla?.anio ?? 0;
+    return {
+      id: d.id,
+      tipoDocumento: 'Boleta de pago',
+      numeroDocumento: `BP-${anio}-${String(mes).padStart(2, '0')}`,
+      fechaEmision: d.created_at ? this.formatFecha(d.created_at).split(' ')[0] : '',
+      mes: MESES[mes] ?? `Mes ${mes}`,
+      mesNum: mes,
+      montoTotal: Number((d.planilla as any)?.total ?? 0),
+      anio,
+      firmado: d.estado_firma === 'firmado'
+        ? { fecha: this.formatFecha(d.fecha_firma ?? d.created_at ?? '') }
+        : null,
+    };
   }
 
-  visualizar(): void {
-    this.cargarBoletas();
+  /** Si veníamos de la campanita, abrir la firma de esa boleta. */
+  private abrirFirmaPendiente(): void {
+    if (!this.firmaPendienteId || this.boletas.length === 0) return;
+    const boleta = this.boletas.find((b) => b.id === this.firmaPendienteId);
+    this.firmaPendienteId = null;
+    if (boleta && !boleta.firmado) this.firmarBoleta(boleta);
+  }
+
+  alAccionar(evento: { accion: string; fila: BoletaRow }): void {
+    if (evento.accion === 'ver') this.verBoleta(evento.fila);
+    if (evento.accion === 'firmar') this.firmarBoleta(evento.fila);
   }
 
   verBoleta(boleta: BoletaRow): void {
-    if (!this.authService.isLoggedIn()) {
-      this.errorMsg = 'Sesión expirada. Por favor vuelve a iniciar sesión.';
-      return;
-    }
-
-    this.isLoading = true;
+    this.cargando = true;
     this.errorMsg = '';
 
     this.boletaService.descargarMiBoleta(boleta.mesNum, String(boleta.anio)).subscribe({
       next: (blob) => {
-        this.isLoading = false;
+        this.cargando = false;
         this.currentPdfBlob = blob;
-        // Para ng2-pdf-viewer pasamos el object URL directo (como string)
         this.pdfUrl = URL.createObjectURL(blob);
         this.pdfBoletaName = `Boleta de ${boleta.mes} ${boleta.anio}`;
         this.showPdfModal = true;
       },
       error: () => {
-        this.isLoading = false;
-        this.errorMsg = `Error al generar la boleta de ${boleta.mes} ${boleta.anio}.`;
-      }
+        this.cargando = false;
+        this.errorMsg = `No se pudo abrir la boleta de ${boleta.mes} ${boleta.anio}.`;
+      },
     });
   }
 
   closePdfModal(): void {
     this.showPdfModal = false;
-    if (this.pdfUrl) {
-      URL.revokeObjectURL(this.pdfUrl); // Liberar memoria
-    }
+    if (this.pdfUrl) URL.revokeObjectURL(this.pdfUrl);
     this.pdfUrl = null;
     this.currentPdfBlob = null;
   }
 
   descargarPdfDirecto(): void {
-    if (this.currentPdfBlob && this.pdfUrl) {
-      const a = document.createElement('a');
-      a.href = this.pdfUrl;
-      a.download = `${this.pdfBoletaName.replace(/ /g, '_')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
+    if (!this.currentPdfBlob || !this.pdfUrl) return;
+    const a = document.createElement('a');
+    a.href = this.pdfUrl;
+    a.download = `${this.pdfBoletaName.replace(/ /g, '_')}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   firmarBoleta(boleta: BoletaRow): void {
     if (boleta.firmado) {
-      this.toastService.info('Información', `Esta boleta ya fue firmada el ${boleta.firmado.fecha}.`);
+      this.toastService.info('Ya firmada', `Firmaste esta boleta el ${boleta.firmado.fecha}.`);
       return;
     }
     this.boletaAFirmar = boleta;
@@ -264,31 +263,30 @@ export class MisBoletasComponent implements OnInit {
   }
 
   confirmarFirma(): void {
+    if (!this.boletaAFirmar) return;
     if (!this.signPassword) {
-      this.signErrorMsg = 'Por favor, ingresa tu contraseña para firmar.';
+      this.signErrorMsg = 'Ingresa tu contraseña para firmar.';
       return;
     }
 
     this.isSigning = true;
     this.signErrorMsg = '';
 
-    if (!this.boletaAFirmar) return;
-
     this.misDocumentosService.firmar(this.boletaAFirmar.id, this.signPassword).subscribe({
       next: (res) => {
         this.isSigning = false;
         if (res.success) {
-          this.toastService.success('¡Firma Exitosa!', `Boleta de ${this.boletaAFirmar!.mes} firmada correctamente.`);
+          this.toastService.success('Boleta firmada', `Tu boleta de ${this.boletaAFirmar!.mes} quedó firmada.`);
           this.closeSignModal();
-          this.cargarBoletas(); // Recargar para actualizar estados
-        } else {
-          this.signErrorMsg = res.message || 'Error al firmar.';
+          this.cargar();
+          return;
         }
+        this.signErrorMsg = res.message || 'No se pudo firmar la boleta.';
       },
       error: (err) => {
         this.isSigning = false;
-        this.signErrorMsg = err.error?.message || 'Contraseña incorrecta o error del servidor.';
-      }
+        this.signErrorMsg = mensajeErrorApi(err, 'Contraseña incorrecta o el servidor no respondió.');
+      },
     });
   }
 
@@ -297,9 +295,8 @@ export class MisBoletasComponent implements OnInit {
     if (isNaN(d.getTime())) return '';
     const dd = String(d.getDate()).padStart(2, '0');
     const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const yyyy = d.getFullYear();
     const hh = String(d.getHours()).padStart(2, '0');
     const min = String(d.getMinutes()).padStart(2, '0');
-    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+    return `${dd}/${mm}/${d.getFullYear()} ${hh}:${min}`;
   }
 }

@@ -16,18 +16,32 @@ class EmpleadoController extends Controller
     use ListadoPaginado;
 
     /**
-     * GET /empleados?page=&size=&search=
+     * GET /empleados?page=&size=&search=&formato=selector
      *
      * Sin ?page devuelve la plantilla completa: así la piden el selector de
      * empleados y los desplegables de los formularios. Con ?page la corta el
      * servidor, que es lo que necesita la tabla.
+     *
+     * `formato=selector` devuelve lo mínimo para pintar un desplegable —id,
+     * nombre, apellido y DNI— sin arrastrar área, cargo, sede, usuario ni la
+     * firma. Y no es un detalle: la ficha completa de 150 empleados pesa
+     * 297 KB, y NUEVE pantallas se la bajaban entera solo para llenar un
+     * <select>. Con este formato son ~10 KB, y no crecen con los datos que se
+     * le vayan agregando a la ficha.
      */
     public function index(Request $request)
     {
+        $request->validate(['formato' => 'nullable|in:completo,selector']);
+
+        $paraSelector = $request->input('formato') === 'selector';
+
+        $query = $paraSelector
+            ? Empleado::query()->select('id', 'nombre', 'apellido', 'dni', 'estado', 'area_id', 'cargo_id', 'sede_id')
+            : Empleado::with('area', 'cargo', 'sede', 'usuario', 'identidadFirma');
+
         return $this->responderListado(
             $request,
-            Empleado::with('area', 'cargo', 'sede', 'usuario', 'identidadFirma')
-                ->orderBy('apellido')
+            $query->orderBy('apellido')
                 ->orderBy('nombre'),
             // el correo no vive en empleados sino en users, por eso va por la relacion
             ['nombre', 'apellido', 'dni', 'usuario.email'],

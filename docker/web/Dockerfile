@@ -33,5 +33,6 @@ COPY --from=compilacion /app/dist/turecibo-app/browser /usr/share/nginx/html
 COPY CR-Backend/public /var/www/html/public
 
 COPY docker/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/web/cabeceras-seguridad.conf /etc/nginx/cabeceras-seguridad.conf
 
 EXPOSE 80

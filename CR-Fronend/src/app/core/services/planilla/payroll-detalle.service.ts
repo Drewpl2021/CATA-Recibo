@@ -15,6 +15,17 @@ export class PayrollDetalleService extends EntityDataService<PayrollDetalle> {
     return this.getAll({ planilla_id: planillaId });
   }
 
+  /**
+   * GET /payroll-detalles?planilla_id=&page=&size= — una página de líneas.
+   *
+   * La respuesta trae además los tres totales de la planilla ENTERA
+   * (sumanAlSueldo, restanDelSueldo, aportaciones), porque sumando solo las
+   * líneas de la página el neto saldría mal.
+   */
+  paginaDePlanilla(planillaId: string, pagina: number, tamano: number) {
+    return this.getPagina({ planilla_id: planillaId, page: pagina, size: tamano });
+  }
+
   crear(payload: PayrollDetallePayload) {
     return this.create<PayrollDetallePayload>(payload);
   }

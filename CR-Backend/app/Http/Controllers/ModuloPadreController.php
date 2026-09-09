@@ -29,14 +29,14 @@ class ModuloPadreController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'nombre' => ['required', 'string', 'max:100',
                 Rule::unique('modulo_padre', 'nombre')->where('estado_registro', 'activo')],
             'icono'  => 'nullable|string|max:100',
             'orden'  => 'nullable|integer|min:0',
         ]);
 
-        $moduloPadre = ModuloPadre::create($request->all());
+        $moduloPadre = ModuloPadre::create($datos);
 
         return response()->json(['success' => true, 'data' => $moduloPadre], 201);
     }
@@ -51,14 +51,14 @@ class ModuloPadreController extends Controller
     {
         $moduloPadre = ModuloPadre::findOrFail($id);
 
-        $request->validate([
+        $datos = $request->validate([
             'nombre' => ['sometimes', 'string', 'max:100',
                 Rule::unique('modulo_padre', 'nombre')->where('estado_registro', 'activo')->ignore($id)],
             'icono'  => 'nullable|string|max:100',
             'orden'  => 'nullable|integer|min:0',
         ]);
 
-        $moduloPadre->update($request->all());
+        $moduloPadre->update($datos);
 
         return response()->json(['success' => true, 'data' => $moduloPadre]);
     }

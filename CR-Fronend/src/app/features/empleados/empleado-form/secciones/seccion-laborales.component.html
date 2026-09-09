@@ -102,9 +102,9 @@
   <ul class="lista-contratos" *ngIf="!cargandoContratos && contratos.length">
     <li class="lista-contratos__item" *ngFor="let c of contratos">
       <span class="status-badge" [ngClass]="'status-badge-' + severidadEstado(c.estado)">
-        {{ c.estado }}
+        {{ etiquetaEstadoContrato(c.estado) }}
       </span>
-      <strong>{{ c.tipo_contrato.replace('_', ' ') }}</strong>
+      <strong>{{ etiquetaTipoContrato(c.tipo_contrato) }}</strong>
       <span class="lista-contratos__fechas">
         desde {{ fecha(c.fecha_inicio) }}
         <ng-container *ngIf="c.fecha_fin"> hasta {{ fecha(c.fecha_fin) }}</ng-container>

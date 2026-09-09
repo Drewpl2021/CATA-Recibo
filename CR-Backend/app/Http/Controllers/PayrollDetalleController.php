@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use App\Models\PayrollDetalle;
 use App\Models\Planilla;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use App\Traits\ListadoPaginado;
 
@@ -23,8 +24,42 @@ class PayrollDetalleController extends Controller
         return $this->responderListado(
             $request,
             $query,
-            ['descripcion', 'paymentConcept.nombre']
+            ['descripcion', 'paymentConcept.nombre'],
+            // Los tres totales del pie, sobre TODAS las líneas y no sobre la
+            // página: si se sumaran las diez que se están viendo, una planilla
+            // con doce conceptos enseñaría un neto que no es el que se paga.
+            fn (Builder $lineas) => $this->totalesPorTipo($lineas)
         );
+    }
+
+    /**
+     * Lo que suma, lo que resta y lo que pone el colegio, en una consulta.
+     *
+     *   sumanAlSueldo   ingresos (todo lo que no es descuento, adelanto ni
+     *                   aportación): básico, bonificaciones, asignación...
+     *   restanDelSueldo descuentos y adelantos, lo que se le quita al neto.
+     *   aportaciones    EsSalud y SCTR: los paga el empleador, no salen del
+     *                   sueldo del trabajador y por eso van aparte.
+     *
+     * reorder() quita el ORDER BY, que en una suma no pinta nada.
+     */
+    private function totalesPorTipo(Builder $lineas): array
+    {
+        $porTipo = function (array $tipos, bool $dentro) use ($lineas) {
+            $consulta = (clone $lineas)->reorder();
+            $consulta->whereHas(
+                'paymentConcept',
+                fn (Builder $c) => $dentro ? $c->whereIn('tipo', $tipos) : $c->whereNotIn('tipo', $tipos)
+            );
+
+            return (float) $consulta->sum('monto_calculado');
+        };
+
+        return [
+            'sumanAlSueldo'   => $porTipo(['descuento', 'adelanto', 'aportacion'], false),
+            'restanDelSueldo' => $porTipo(['descuento', 'adelanto'], true),
+            'aportaciones'    => $porTipo(['aportacion'], true),
+        ];
     }
 
     /**

@@ -53,6 +53,14 @@ export interface Pagina<T> {
   pendientes?: number;
   aprobadas?: number;
   rechazadas?: number;
+  /** Documentos ya firmados por el trabajador (Mis Documentos). */
+  firmados?: number;
+  /** Suma de todas las planillas que pasan el filtro, no las de la página. */
+  masaSalarial?: number;
+  /* Totales de los conceptos de UNA planilla, sobre todas sus líneas. */
+  sumanAlSueldo?: number;
+  restanDelSueldo?: number;
+  aportaciones?: number;
   /** Notificaciones sin leer, para el globito de la campana. */
   noLeidas?: number;
 }

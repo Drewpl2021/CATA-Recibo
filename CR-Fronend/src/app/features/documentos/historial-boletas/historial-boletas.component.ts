@@ -1,33 +1,66 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DocumentoService, ToastService, EmpleadoService, BoletaService } from '../../../core/services';
 import { Documento, Empleado } from '../../../core/models';
-import { PistaDirective } from '../../../shared/directives/pista.directive';
+import { mensajeErrorApi } from '../../../core/utils';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 
+const MESES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+/**
+ * Historial de Boletas: todo lo que se le ha emitido a un trabajador.
+ *
+ * RR.HH. elige de quién, y el backend manda la página (DocumentoController
+ * con ?empleado_id&page). Un trabajador con cinco años de casa tiene sesenta
+ * boletas: antes llegaban las sesenta para enseñar diez.
+ */
 @Component({
   selector: 'app-historial-boletas',
   standalone: true,
-  imports: [CommonModule, FormsModule, PistaDirective],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, DataTableComponent],
   templateUrl: './historial-boletas.component.html',
-  styleUrl: './historial-boletas.component.scss'
 })
 export class HistorialBoletasComponent implements OnInit {
+  private documentoService = inject(DocumentoService);
+  private toastService = inject(ToastService);
+  private empleadoService = inject(EmpleadoService);
+  private boletaService = inject(BoletaService);
+
   documentos: Documento[] = [];
-  searchTerm = '';
   cargando = false;
 
-  // Propiedades de Admin/RRHH
+  /** Solo id + nombre + DNI: es para el desplegable, no para una tabla. */
   empleados: Empleado[] = [];
-  selectedEmpleadoId = '';
-  descargandoPdf = false;
+  empleadoId = '';
+  descargando = false;
 
-  constructor(
-    private documentoService: DocumentoService,
-    private toastService: ToastService,
-    private empleadoService: EmpleadoService,
-    private boletaService: BoletaService
-  ) {}
+  readonly TAMANO_PAGINA = 10;
+  pagina = 0;
+  busqueda = '';
+  total = 0;
+
+  columnas: ColumnaTabla<Documento>[] = [
+    { campo: 'planilla', header: 'Periodo', ancho: '22%', formatear: (_v, doc) => this.periodo(doc) },
+    { campo: 'tipo', header: 'Tipo', ancho: '22%', formatear: (v) => this.tipoLegible(v) },
+    { campo: 'created_at', header: 'Fecha de emisión', tipo: 'fecha', ancho: '20%' },
+    {
+      campo: 'estado_firma', header: 'Estado', tipo: 'badge', ancho: '15%',
+      formatear: (v) => this.estadoLegible(v),
+      badgeSeveridad: (v) => (v === 'firmado' ? 'success' : v === 'visto' ? 'info' : 'warning'),
+    },
+  ];
+
+  acciones: AccionPersonalizada<Documento>[] = [
+    {
+      id: 'descargar', titulo: 'Descargar esta boleta en PDF', icono: 'receipt_long',
+      // Sin planilla no hay de dónde armar el PDF; el botón sobra.
+      visible: (doc) => !!doc.planilla,
+    },
+  ];
 
   ngOnInit(): void {
     this.cargarEmpleados();
@@ -35,113 +68,121 @@ export class HistorialBoletasComponent implements OnInit {
 
   cargarEmpleados(): void {
     this.cargando = true;
-    this.empleadoService.getAll().subscribe({
+    this.empleadoService.paraSelector().subscribe({
       next: (res) => {
         if (res.success) {
           this.empleados = res.data;
-          // Seleccionamos el primer empleado por defecto si hay alguno
           if (this.empleados.length > 0) {
-            this.selectedEmpleadoId = this.empleados[0].id;
-            this.cargarDocumentosAdmin();
-          } else {
-            this.cargando = false;
+            this.empleadoId = this.empleados[0].id;
+            this.cargar();
+            return;
           }
-        } else {
-          this.cargando = false;
         }
+        this.cargando = false;
       },
       error: (err) => {
-        console.error('Error cargando empleados', err);
         this.cargando = false;
-        this.toastService.error('Error', 'No se pudo cargar la lista de empleados.');
-      }
+        this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo cargar la lista de empleados.'));
+      },
     });
   }
 
-  cargarDocumentosAdmin(): void {
-    if (!this.selectedEmpleadoId) return;
+  /** Otro trabajador: se vuelve a la primera página y se limpia la búsqueda. */
+  alCambiarEmpleado(): void {
+    this.pagina = 0;
+    this.busqueda = '';
+    this.cargar();
+  }
+
+  irAPagina(pagina: number): void {
+    this.pagina = pagina;
+    this.cargar();
+  }
+
+  buscar(termino: string): void {
+    this.busqueda = termino;
+    this.pagina = 0;
+    this.cargar();
+  }
+
+  cargar(): void {
+    if (!this.empleadoId) return;
     this.cargando = true;
-    this.documentoService.listar({ empleado_id: this.selectedEmpleadoId }).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.documentos = res.data;
-        }
-        this.cargando = false;
-      },
-      error: (err) => {
-        console.error('Error cargando documentos del empleado', err);
-        this.cargando = false;
-        this.toastService.error('Error', 'No se pudieron cargar las boletas del empleado seleccionado.');
-      }
-    });
+    this.documentoService
+      .getPagina({
+        empleado_id: this.empleadoId,
+        page: this.pagina,
+        size: this.TAMANO_PAGINA,
+        search: this.busqueda || undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.documentos = res.data.content;
+            this.total = res.data.totalElements;
+          }
+          this.cargando = false;
+        },
+        error: (err) => {
+          this.cargando = false;
+          this.toastService.error('Error', mensajeErrorApi(err, 'No se pudieron cargar las boletas del empleado.'));
+        },
+      });
   }
 
-  onEmpleadoChange(): void {
-    this.searchTerm = '';
-    this.cargarDocumentosAdmin();
+  alAccionar(evento: { accion: string; fila: Documento }): void {
+    if (evento.accion === 'descargar') this.descargarPdf(evento.fila);
   }
 
-  descargarPdfAdmin(doc: Documento): void {
+  descargarPdf(doc: Documento): void {
     if (!doc.planilla) {
-      this.toastService.error('Error', 'El documento no tiene planilla asociada para generar PDF.');
+      this.toastService.error('Sin planilla', 'Este documento no tiene planilla, así que no se puede armar el PDF.');
       return;
     }
-    
-    this.descargandoPdf = true;
-    const mes = doc.planilla.mes;
-    const anio = doc.planilla.anio;
-    const empleadoId = doc.empleado_id;
 
-    const nombreEmp = doc.empleado ? `${doc.empleado.nombre}_${doc.empleado.apellido}` : doc.empleado_id;
+    this.descargando = true;
+    const { mes, anio } = doc.planilla;
+    const nombre = doc.empleado ? `${doc.empleado.nombre}_${doc.empleado.apellido}` : doc.empleado_id;
 
-    this.boletaService.generarBoletaEmpleado(empleadoId, mes, anio).subscribe({
+    this.boletaService.generarBoletaEmpleado(doc.empleado_id, mes, anio).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `boleta_${nombreEmp}_${mes}_${anio}.pdf`;
+        a.download = `boleta_${nombre}_${mes}_${anio}.pdf`;
         a.click();
         window.URL.revokeObjectURL(url);
-        this.descargandoPdf = false;
-        this.toastService.success('Descarga Exitosa', 'La boleta PDF ha sido descargada.');
+        this.descargando = false;
+        this.toastService.success('Boleta descargada', 'El PDF ya está en tus descargas.');
       },
       error: (err) => {
-        console.error('Error generando boleta para admin', err);
-        this.descargandoPdf = false;
-        this.toastService.error('Error de Generación', 'No se pudo descargar la boleta PDF.');
-      }
+        this.descargando = false;
+        this.toastService.error('No se pudo descargar', mensajeErrorApi(err, 'No se pudo generar el PDF de la boleta.'));
+      },
     });
   }
 
-  get filteredDocumentos(): Documento[] {
-    if (!this.searchTerm) return this.documentos;
-    const lower = this.searchTerm.toLowerCase();
-    return this.documentos.filter(d => {
-      const periodo = this.getPeriodo(d).toLowerCase();
-      return periodo.includes(lower);
-    });
+  periodo(doc: Documento): string {
+    if (!doc.planilla) return this.tipoLegible(doc.tipo);
+    return `${MESES[doc.planilla.mes] || doc.planilla.mes} ${doc.planilla.anio}`;
   }
 
-  getPeriodo(doc: Documento): string {
-    if (!doc.planilla) return doc.tipo;
-    const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    return `${meses[doc.planilla.mes] || doc.planilla.mes} ${doc.planilla.anio}`;
+  tipoLegible(tipo: string): string {
+    const nombres: Record<string, string> = {
+      boleta: 'Boleta',
+      contrato: 'Contrato',
+      cts: 'CTS',
+      vacaciones_truncas: 'Vacaciones truncas',
+      comprobante_transferencia: 'Comprobante de transferencia',
+      hoja_de_vida: 'Hoja de vida',
+      otro: 'Otro',
+    };
+    return nombres[tipo] ?? tipo;
   }
 
-  getEstadoLabel(doc: Documento): string {
-    switch (doc.estado_firma) {
-      case 'firmado':  return 'Firmado';
-      case 'visto':    return 'Visto';
-      default:         return 'Pendiente';
-    }
-  }
-
-  getEstadoClass(doc: Documento): string {
-    switch (doc.estado_firma) {
-      case 'firmado':  return 'badge-active';
-      case 'visto':    return 'badge-visto';
-      default:         return 'badge-vacaciones';
-    }
+  estadoLegible(estado: string): string {
+    if (estado === 'firmado') return 'Firmado';
+    if (estado === 'visto') return 'Visto';
+    return 'Pendiente';
   }
 }

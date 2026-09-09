@@ -9,6 +9,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { esRolDelSistema, etiquetaRol } from '../../../shared/constants';
 
 /**
  * Roles del sistema (solo Admin).
@@ -57,9 +58,29 @@ export class RolesListComponent implements OnInit {
   rolEditando: Rol | null = null;
 
   columnas: ColumnaTabla<Rol>[] = [
-    { campo: 'nombre', header: 'Nombre', ancho: '30%' },
+    // Se pinta la etiqueta, no el nombre guardado: la tabla dice "RRHH"
+    // aunque en la base ponga "rrhh", igual que en el resto de la app.
+    { campo: 'nombre', header: 'Nombre', ancho: '24%', formatear: (v) => etiquetaRol(v) },
     { campo: 'descripcion', header: 'Descripción' },
+    {
+      campo: 'nombre',
+      header: 'Tipo',
+      ancho: '16%',
+      tipo: 'badge',
+      formatear: (v) => (esRolDelSistema(v) ? 'Del sistema' : 'Creado acá'),
+      badgeSeveridad: (v) => (esRolDelSistema(v) ? 'info' : 'secondary'),
+    },
   ];
+
+  /** Al rol del sistema que se está editando no se le toca el nombre. */
+  get editandoRolDelSistema(): boolean {
+    return !!this.rolEditando && esRolDelSistema(this.rolEditando.nombre);
+  }
+
+  /** Cómo se lee el rol que se está editando: "RRHH", no "rrhh". */
+  get etiquetaRolEditando(): string {
+    return this.rolEditando ? etiquetaRol(this.rolEditando) : '';
+  }
 
   form = this.fb.group({
     nombre: ['', [Validators.required, Validators.maxLength(45)]],
@@ -110,12 +131,24 @@ export class RolesListComponent implements OnInit {
   nuevo(): void {
     this.rolEditando = null;
     this.form.reset();
+    this.form.get('nombre')!.enable();
     this.modalVisible = true;
   }
 
   editar(rol: Rol): void {
     this.rolEditando = rol;
     this.form.patchValue({ nombre: rol.nombre, descripcion: rol.descripcion ?? '' });
+
+    // El nombre de admin/rrhh/empleado es la llave con la que el backend
+    // decide permisos, no una etiqueta: se enseña pero no se deja tocar.
+    // El backend lo rechaza igual; esto es para que no se intente.
+    const campoNombre = this.form.get('nombre')!;
+    if (esRolDelSistema(rol.nombre)) {
+      campoNombre.disable();
+    } else {
+      campoNombre.enable();
+    }
+
     this.modalVisible = true;
   }
 
@@ -123,6 +156,7 @@ export class RolesListComponent implements OnInit {
     this.modalVisible = false;
     this.rolEditando = null;
     this.form.reset();
+    this.form.get('nombre')!.enable();
   }
 
   guardar(): void {
@@ -158,12 +192,22 @@ export class RolesListComponent implements OnInit {
   }
 
   eliminar(rol: Rol): void {
+    // Se avisa antes de preguntar. El backend lo rechaza igual, pero hacer
+    // confirmar un borrado que no va a ocurrir es hacerle perder el tiempo.
+    if (esRolDelSistema(rol.nombre)) {
+      this.toastService.warning(
+        'Es un rol del sistema',
+        `"${etiquetaRol(rol)}" no se puede eliminar: los permisos de todas las pantallas dependen de él.`
+      );
+      return;
+    }
+
     this.confirmService.confirmarEliminar(
-      `el rol "${rol.nombre}". Los usuarios que lo tengan asignado se quedarán sin permisos`,
+      `el rol "${etiquetaRol(rol)}". Los usuarios que lo tengan asignado se quedarán sin permisos`,
       () => {
         this.rolService.delete(rol.id).subscribe({
           next: () => {
-            this.toastService.success('Eliminado', `El rol "${rol.nombre}" fue eliminado.`);
+            this.toastService.success('Eliminado', `El rol "${etiquetaRol(rol)}" fue eliminado.`);
             this.cargar();
           },
           error: (err) => {
