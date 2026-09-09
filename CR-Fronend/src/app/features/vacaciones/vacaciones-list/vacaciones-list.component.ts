@@ -248,7 +248,7 @@ export class VacacionesListComponent implements OnInit {
 
   /** Para el desplegable del formulario: la lista completa, sin paginar. */
   private cargarEmpleados(): void {
-    this.empleadoService.getAll().subscribe({
+    this.empleadoService.paraSelector().subscribe({
       next: (res) => { if (res.success) this.empleados = res.data; },
       error: (err) => {
         this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo cargar la lista de empleados.'));

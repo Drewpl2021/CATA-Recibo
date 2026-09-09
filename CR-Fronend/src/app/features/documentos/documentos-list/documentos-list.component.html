@@ -2,96 +2,47 @@
   icono="folder_shared"
   titulo="Mis Documentos"
   subtitulo="Tus boletas y documentos laborales. Acá los revisas y los firmas."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
 ></app-page-header>
 
-<div class="boletas-container">
-  <div class="toolbar">
-    <div class="filter-group">
-      <input type="text" class="form-control" placeholder="Buscar por periodo..." [(ngModel)]="searchTerm" style="min-width: 300px;">
-    </div>
-  </div>
+<app-data-table
+  entidad="este documento"
+  [columnas]="columnas"
+  [datos]="documentos"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  [filasPorPagina]="TAMANO_PAGINA"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['tipo']"
+  [acciones]="[]"
+  [accionesPersonalizadas]="acciones"
+  (accionPersonalizada)="alAccionar($event)"
+  mensajeVacio="Todavía no tienes documentos emitidos."
+></app-data-table>
 
-  <div class="section-panel">
-    <div class="panel-header-small">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-      </svg>
-      <span>Lista de Documentos</span>
-    </div>
-
-    <!-- Estado de carga -->
-    <div *ngIf="cargando" style="text-align:center; padding: 40px; color: var(--text-faint);">
-      Cargando documentos...
-    </div>
-
-    <div class="table-responsive" *ngIf="!cargando">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th class="col-id">#</th>
-            <th>Periodo</th>
-            <th>Tipo</th>
-            <th>Fecha Emisión</th>
-            <th class="text-center">Estado</th>
-            <th class="text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngIf="filteredDocumentos.length === 0">
-            <td colspan="6" class="empty-state">No se encontraron documentos.</td>
-          </tr>
-          <tr *ngFor="let doc of filteredDocumentos; let i = index">
-            <td class="col-id">{{ i + 1 }}</td>
-            <td style="font-weight: 500;">{{ getPeriodo(doc) }}</td>
-            <td style="text-transform: capitalize;">{{ doc.tipo }}</td>
-            <td>{{ doc.created_at | date:'dd/MM/yyyy' }}</td>
-            <td class="text-center">
-              <span class="badge-estado" [ngClass]="getEstadoClass(doc)">
-                {{ getEstadoLabel(doc) }}
-              </span>
-            </td>
-            <td class="text-center">
-              <div class="action-btns" style="justify-content: center;">
-                <button class="btn-icon-blue"
-                  (click)="marcarVisto(doc)"
-                  [disabled]="doc.estado_firma !== 'pendiente'"
-                  [appPista]="doc.estado_firma === 'pendiente' ? 'Marcar que ya lo viste' : 'Ya lo habías visto'"
-                  [attr.aria-label]="'Marcar como visto'">
-                  <app-icon icono="check_circle" [tamano]="19"></app-icon>
-                </button>
-
-                <button class="btn-icon-accion btn-icon-success"
-                  (click)="abrirModalFirmar(doc)"
-                  [disabled]="doc.estado_firma === 'firmado'"
-                  [appPista]="doc.estado_firma === 'firmado' ? 'Ya está firmado' : 'Firmar este documento'"
-                  [attr.aria-label]="'Firmar documento'">
-                  <app-icon icono="signature" [tamano]="19"></app-icon>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- Modal: Firmar Documento -->
+<!-- Modal: firmar el documento con la contraseña de la cuenta -->
 <div class="modal-overlay" *ngIf="mostrarModalFirmar" (click)="cerrarModalFirmar()">
   <div class="modal-card" style="text-align:left;" (click)="$event.stopPropagation()">
-    <h3 style="margin-bottom:8px; color:var(--heading);">Firmar Documento</h3>
+    <h3 style="margin-bottom:8px; color:var(--heading);">Firmar documento</h3>
     <p style="margin-bottom:20px; color:var(--text-muted); font-size:0.9em;">
-      Ingresa tu contraseña para confirmar la firma del documento de <strong>{{ getPeriodo(docAFirmar!) }}</strong>.
+      Ingresa tu contraseña para confirmar la firma del documento de
+      <strong>{{ periodo(docAFirmar) }}</strong>.
     </p>
     <div class="form-group" style="margin-bottom:24px;">
-      <label style="font-weight:500; display:block; margin-bottom:6px;">Contraseña <span style="color:var(--danger-text)">*</span></label>
-      <input type="password" class="form-control" placeholder="Tu contraseña..." [(ngModel)]="passwordFirma">
+      <label style="font-weight:500; display:block; margin-bottom:6px;">
+        Contraseña <span style="color:var(--danger-text)">*</span>
+      </label>
+      <input type="password" class="form-control" placeholder="Tu contraseña..."
+        [(ngModel)]="passwordFirma" (keyup.enter)="confirmarFirma()">
     </div>
     <div class="modal-actions">
       <button class="btn-secondary-modal" (click)="cerrarModalFirmar()" [disabled]="firmando">Cancelar</button>
       <button class="btn-warning" (click)="confirmarFirma()" [disabled]="firmando">
-        {{ firmando ? 'Firmando...' : 'Confirmar Firma' }}
+        {{ firmando ? 'Firmando...' : 'Confirmar firma' }}
       </button>
     </div>
   </div>

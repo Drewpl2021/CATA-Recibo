@@ -1,12 +1,17 @@
+<app-page-header
+  icono="money"
+  titulo="Descuentos y Bonificaciones"
+  subtitulo="Ajustes puntuales de este trabajador para el mes que se está emitiendo."
+>
+  <button headerActions class="btn-secondary" (click)="volver()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+    </svg>
+    Volver
+  </button>
+</app-page-header>
+
 <div class="boletas-container">
-  <div class="page-title" style="display: flex; align-items: center; gap: 16px;">
-    <button class="btn-icon-blue" (click)="volver()" appPista="Volver a la lista" pistaLado="abajo" aria-label="Volver a la lista">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-      </svg>
-    </button>
-    <h2>AÑADIR DESCUENTOS Y BONIFICACIONES</h2>
-  </div>
 
   <div class="section-panel" style="max-width: 800px;">
     <div class="panel-header-small">

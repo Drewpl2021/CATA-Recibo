@@ -1,147 +1,94 @@
-<div class="boletas-container">
-  <div class="page-title">
-    <h2>EMISIÓN DE BOLETA</h2>
-  </div>
-
-  <!-- Toolbar -->
-  <div class="toolbar" style="flex-wrap: wrap; gap: 16px;">
-    <!-- Selector de Periodo Global -->
-    <div class="filter-group" style="display: flex; gap: 12px; align-items: center; background: var(--surface-alt); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);">
-      <span style="font-weight: 600; color: var(--text-soft); font-size: 14px;">Periodo:</span>
-      <select class="form-control" [(ngModel)]="mesGlobal" (change)="onGlobalPeriodChange()" style="min-width: 120px; border-color: var(--border-strong);">
-        <option *ngFor="let m of mesesDisponibles" [value]="m.num">{{ m.nombre }}</option>
-      </select>
-      <select class="form-control" [(ngModel)]="anioGlobal" (change)="onGlobalPeriodChange()" style="min-width: 100px; border-color: var(--border-strong);">
-        <option *ngFor="let a of aniosDisponibles" [value]="a">{{ a }}</option>
-      </select>
-    </div>
-
-    <!-- Buscador -->
-    <div class="filter-group" style="flex: 1; min-width: 250px;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+<app-page-header
+  icono="receipt"
+  titulo="Emisión de Boletas"
+  subtitulo="Arma la boleta de cada trabajador del mes: revisa sus conceptos y emítela."
+  [cifras]="cifras"
+  [cargandoCifras]="cargandoEmpleados"
+>
+  <div headerActions style="display: flex; gap: 12px; align-items: center;">
+    <button class="btn-secondary" (click)="aplicarBonosMasivos()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2">
+        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
       </svg>
-      <input type="text" class="form-control search-input" placeholder="Buscar por nombre, cargo o DNI..." [(ngModel)]="searchTerm">
-    </div>
-
-    <!-- Acciones Masivas -->
-    <div *ngIf="empleadosEditados.size > 0" style="margin-left: auto; display: flex; gap: 12px; align-items: center;">
-      <!-- Botón de Bonos (Grati / CTS) -->
-      <button class="btn-outline" style="display: flex; align-items: center; gap: 8px; border: 1px solid var(--info); color: var(--info); background: var(--surface); padding: 8px 16px; border-radius: 6px; font-weight: 500;" (click)="aplicarBonosMasivos()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-        </svg>
-        Aplicar Grati / CTS
-      </button>
-
-      <!-- Emitir Boletas PDF -->
-      <button class="btn-primary" style="display: flex; align-items: center; gap: 8px;" (click)="emitirTodasLasBoletas()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-          <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
-        </svg>
-        Emitir Masivamente
-      </button>
-    </div>
-  </div>
-
-  <!-- Banner de Nuevo Mes (Aparece si no hay planillas generadas en el mes actual) -->
-  <div *ngIf="!cargandoEmpleados && empleados.length > 0 && empleadosEditados.size === 0" 
-       style="background: linear-gradient(135deg, var(--info-bg) 0%, var(--info-bg) 100%); border: 1px solid var(--info); border-radius: 12px; padding: 24px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.1);">
-    <div style="display: flex; align-items: center; gap: 16px;">
-      <div style="background: var(--brand-600); color: var(--text-on-brand); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(14, 165, 233, 0.3);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-      </div>
-      <div>
-        <h3 style="margin: 0 0 4px 0; color: var(--info); font-size: 18px;">Nuevo Periodo Seleccionado</h3>
-        <p style="margin: 0; color: var(--info); font-size: 14px;">No hay boletas generadas para <strong>{{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</strong>. ¿Deseas inicializar las boletas de todos los empleados?</p>
-      </div>
-    </div>
-    <button class="btn-primary" style="padding: 12px 24px; font-size: 15px; background: var(--brand-700); border-color: var(--brand-700);" (click)="emitirTodasLasBoletas()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+      Aplicar Grati / CTS
+    </button>
+    <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2">
         <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
         <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
       </svg>
-      Generar Planilla del Mes
+      {{ generandoMasivo ? 'Emitiendo...' : 'Emitir masivamente' }}
     </button>
   </div>
+</app-page-header>
 
-  <!-- Tabla de empleados (Solo se muestra si hay boletas generadas en este periodo) -->
-  <div class="section-panel" *ngIf="empleadosEditados.size > 0 || empleados.length === 0">
-    <div class="panel-header-small">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-      </svg>
-      <span>Seleccionar Empleado</span>
+<section class="panel-filtros">
+  <header class="panel-filtros__cabecera">
+    <div>
+      <h2 class="panel-filtros__titulo">Armando las boletas de</h2>
+      <p class="panel-filtros__periodo">{{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</p>
     </div>
 
-    <div class="table-responsive">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th class="col-id">#</th>
-            <th>Nombres y Apellidos</th>
-            <th>DNI</th>
-            <th>Cargo</th>
-            <th>Nivel / Área</th>
-            <th class="text-center">Estado</th>
-            <th class="text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngIf="filteredEmpleados.length === 0">
-            <td colspan="7" class="empty-state">No se encontraron empleados.</td>
-          </tr>
-          <tr *ngFor="let emp of filteredEmpleados; let i = index" [class.fila-editada]="empleadosEditados.has(emp.id)">
-            <td class="col-id">{{ i + 1 }}</td>
-            <td style="font-weight: 500;">
-              <div class="nombre-con-badge">
-                {{ emp.nombre }} {{ emp.apellido }}
-              </div>
-            </td>
-            <td style="font-family: monospace; font-size: 13px;">{{ emp.dni }}</td>
-            <td>{{ emp.cargo?.nombre || '—' }}</td>
-            <td>{{ emp.area?.nombre || '—' }}</td>
-            <td class="text-center">
-              <span class="badge-estado" [ngClass]="(emp.estado | lowercase) === 'activo' ? 'badge-active' : 'badge-vacaciones'">
-                {{ emp.estado }}
-              </span>
-            </td>
-            <td class="text-center" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-              <ng-container *ngIf="empleadosEditados.has(emp.id); else sinEditar">
-                <span class="badge-boleta badge-editado" title="Esta boleta ha sido editada">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                  Editado
-                </span>
-              </ng-container>
-              <ng-template #sinEditar>
-                <span class="badge-boleta badge-pendiente" title="No se ha editado">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                  </svg>
-                  Pendiente
-                </span>
-              </ng-template>
+    <div class="panel-filtros__cifras">
+      <div class="cifra">
+        <strong>{{ totalEmpleados }}</strong>
+        <span>Trabajadores</span>
+      </div>
+      <div class="cifra cifra--destacada">
+        <strong>{{ planillasDelMes }}</strong>
+        <span>Boletas armadas</span>
+      </div>
+    </div>
+  </header>
 
-              <button class="btn-emitir" (click)="abrirModal(emp)" appPista="Editar los conceptos de su boleta" aria-label="Editar boleta">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                Editar
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="panel-filtros__campos">
+    <div class="campo-filtro">
+      <label for="mesGlobal">Mes</label>
+      <select id="mesGlobal" class="form-control" [(ngModel)]="mesGlobal" (ngModelChange)="onGlobalPeriodChange()">
+        <option *ngFor="let m of mesesDisponibles" [ngValue]="m.num">{{ m.nombre }}</option>
+      </select>
+    </div>
+
+    <div class="campo-filtro campo-filtro--corto">
+      <label for="anioGlobal">Año</label>
+      <select id="anioGlobal" class="form-control" [(ngModel)]="anioGlobal" (ngModelChange)="onGlobalPeriodChange()">
+        <option *ngFor="let a of aniosDisponibles" [ngValue]="a">{{ a }}</option>
+      </select>
     </div>
   </div>
+</section>
+
+<!-- El mes está sin empezar: nadie tiene planilla todavía. -->
+<div class="form-nota form-nota--accion" *ngIf="conteoListo && !cargandoEmpleados && totalEmpleados > 0 && planillasDelMes === 0">
+  <div>
+    <strong>Este mes está sin empezar.</strong>
+    No hay ninguna boleta armada para {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}.
+    Puedes armarlas todas de una vez y después corregir las que hagan falta.
+  </div>
+  <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo">
+    Generar la planilla del mes
+  </button>
 </div>
+
+<app-data-table
+  entidad="este trabajador"
+  [columnas]="columnas"
+  [datos]="empleados"
+  [cargando]="cargandoEmpleados"
+  [paginacionServidor]="true"
+  [totalElementos]="totalEmpleados"
+  [pagina]="pagina"
+  [filasPorPagina]="TAMANO_PAGINA"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['nombre', 'apellido', 'dni']"
+  [acciones]="[]"
+  [accionesPersonalizadas]="accionesFila"
+  (accionPersonalizada)="abrirModal($event.fila)"
+  mensajeVacio="No se encontraron trabajadores."
+></app-data-table>
 
 <!-- ============================================================ -->
 <!--  MODAL: FORMULARIO DE EMISIÓN DE BOLETA                      -->

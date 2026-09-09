@@ -32,12 +32,12 @@ class CargoController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'nombre' => 'required|string|max:100|unique:cargos,nombre',
             'descripcion' => 'nullable|string|max:255',
             'estado' => 'nullable|string|in:activo,inactivo',
         ]);
-        $cargo = Cargo::create($request->all());
+        $cargo = Cargo::create($datos);
         return response()->json(['success' => true, 'data' => $cargo], 201);
     }
 
@@ -49,12 +49,12 @@ class CargoController extends Controller
     public function update(Request $request, string $id)
     {
         $cargo = Cargo::findOrFail($id);
-        $request->validate([
+        $datos = $request->validate([
             'nombre' => ['sometimes', 'string', 'max:100', Rule::unique('cargos', 'nombre')->ignore($id)],
             'descripcion' => 'nullable|string|max:255',
             'estado' => 'nullable|string|in:activo,inactivo',
         ]);
-        $cargo->update($request->all());
+        $cargo->update($datos);
         return response()->json(['success' => true, 'data' => $cargo]);
     }
 

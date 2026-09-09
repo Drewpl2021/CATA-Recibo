@@ -394,7 +394,7 @@ export class ConceptosPagoListComponent implements OnInit {
 
   private cargarEmpleados(): void {
     forkJoin({
-      empleados: this.empleadoService.getAll(),
+      empleados: this.empleadoService.paraSelector(),
       areas: this.areaService.getAll(),
       cargos: this.cargoService.getAll(),
       sedes: this.sedeService.getAll(),

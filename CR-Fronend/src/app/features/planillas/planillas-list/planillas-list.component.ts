@@ -164,7 +164,7 @@ export class PlanillasListComponent implements OnInit {
    */
   private cargarCatalogos(): void {
     forkJoin({
-      empleados: this.empleadoService.getAll(),
+      empleados: this.empleadoService.paraSelector(),
       periodos: this.periodoService.getAll(),
       areas: this.areaService.getAll(),
       cargos: this.cargoService.getAll(),

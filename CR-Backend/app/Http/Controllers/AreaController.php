@@ -32,12 +32,12 @@ class AreaController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'nombre' => 'required|string|max:100|unique:areas,nombre',
             'descripcion' => 'nullable|string|max:255',
             'estado' => 'nullable|string|in:activo,inactivo',
         ]);
-        $area = Area::create($request->all());
+        $area = Area::create($datos);
         return response()->json(['success' => true, 'data' => $area], 201);
     }
 
@@ -49,12 +49,12 @@ class AreaController extends Controller
     public function update(Request $request, string $id)
     {
         $area = Area::findOrFail($id);
-        $request->validate([
+        $datos = $request->validate([
             'nombre' => ['sometimes', 'string', 'max:100', Rule::unique('areas', 'nombre')->ignore($id)],
             'descripcion' => 'nullable|string|max:255',
             'estado' => 'nullable|string|in:activo,inactivo',
         ]);
-        $area->update($request->all());
+        $area->update($datos);
         return response()->json(['success' => true, 'data' => $area]);
     }
 

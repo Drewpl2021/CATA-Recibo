@@ -14,7 +14,7 @@ import { ThemeService } from '../core/services';
 import { FormsModule } from '@angular/forms';
 import { EmpleadoService } from '../core/services';
 import { Empleado } from '../core/models';
-import { NOMBRE_ROL_LEGIBLE } from '../shared/constants';
+import { etiquetaEstado, NOMBRE_ROL_LEGIBLE } from '../shared/constants';
 import { IconComponent } from '../shared/components/icon/icon.component';
 import { PistaDirective } from '../shared/directives/pista.directive';
 import { fechaLegible } from '../core/utils';
@@ -74,6 +74,23 @@ export class LayoutComponent implements OnInit {
   userEmail = '';
   userInitials = '';
   empleadoData: Empleado | null = null;
+
+  /**
+   * "Activo" / "Inactivo" para el panel del perfil.
+   *
+   * Antes se pintaba el valor crudo del backend, que viene en minúscula, y
+   * salía "activo" en medio de una ficha donde todo lo demás va con
+   * mayúscula. Sin ficha vinculada se asume activo: la persona está usando
+   * el sistema en ese momento.
+   */
+  get estadoDelPerfil(): string {
+    return etiquetaEstado(this.empleadoData?.estado);
+  }
+
+  /** Un trabajador dado de baja no se pinta en verde. */
+  get perfilDadoDeBaja(): boolean {
+    return this.empleadoData?.estado === 'inactivo';
+  }
   
   // Cambiar password form
   currentPassword = '';
@@ -269,9 +286,10 @@ export class LayoutComponent implements OnInit {
     this.cargarModulos();
 
     // 2. Suscribirse a boletas pendientes
+    // El servicio ya manda solo los que le faltan firmar: acá no se filtra.
     this.misDocumentosService.documentos$.subscribe({
       next: (docs) => {
-        this.documentosPendientes = docs.filter(doc => doc.estado_firma !== 'firmado');
+        this.documentosPendientes = docs;
       }
     });
     // El globito: cuántos avisos hay sin leer. Se pide una vez al entrar y
@@ -286,7 +304,10 @@ export class LayoutComponent implements OnInit {
       },
     });
 
-    this.misDocumentosService.getMisDocumentos().subscribe({
+    // Solo los pendientes, y solo los primeros: la campana no es un listado.
+    // Antes esto se traía TODOS los documentos del trabajador en cada
+    // entrada al sistema para quedarse con los tres que enseña.
+    this.misDocumentosService.refrescarPendientes().subscribe({
       error: () => {
         // Ignorar si falla, por ej. si el usuario es un admin sin documentos
       }

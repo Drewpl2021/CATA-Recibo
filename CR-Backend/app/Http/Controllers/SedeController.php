@@ -32,13 +32,13 @@ class SedeController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'nombre'    => 'required|string|max:100|unique:sedes,nombre',
             'direccion' => 'nullable|string|max:255',
             'telefono'  => 'nullable|string|max:15',
             'estado'    => 'nullable|string|in:activo,inactivo',
         ]);
-        $sede = Sede::create($request->all());
+        $sede = Sede::create($datos);
         return response()->json(['success' => true, 'data' => $sede], 201);
     }
 
@@ -50,13 +50,13 @@ class SedeController extends Controller
     public function update(Request $request, string $id)
     {
         $sede = Sede::findOrFail($id);
-        $request->validate([
+        $datos = $request->validate([
             'nombre'    => ['sometimes', 'string', 'max:100', Rule::unique('sedes', 'nombre')->ignore($id)],
             'direccion' => 'nullable|string|max:255',
             'telefono'  => 'nullable|string|max:15',
             'estado'    => 'nullable|string|in:activo,inactivo',
         ]);
-        $sede->update($request->all());
+        $sede->update($datos);
         return response()->json(['success' => true, 'data' => $sede]);
     }
 

@@ -35,7 +35,7 @@ class ModuloController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'modulo_padre_id' => 'required|uuid|exists:modulo_padre,id',
             'nombre'          => ['required', 'string', 'max:255',
                 Rule::unique('modulos', 'nombre')->where('estado_registro', 'activo')],
@@ -44,7 +44,7 @@ class ModuloController extends Controller
             'orden'           => 'nullable|integer|min:0',
         ]);
 
-        $modulo = Modulo::create($request->all());
+        $modulo = Modulo::create($datos);
 
         return response()->json(['success' => true, 'data' => $modulo], 201);
     }
@@ -59,7 +59,7 @@ class ModuloController extends Controller
     {
         $modulo = Modulo::findOrFail($id);
 
-        $request->validate([
+        $datos = $request->validate([
             'modulo_padre_id' => 'sometimes|uuid|exists:modulo_padre,id',
             'nombre'          => ['sometimes', 'string', 'max:255',
                 Rule::unique('modulos', 'nombre')->where('estado_registro', 'activo')->ignore($id)],
@@ -68,7 +68,7 @@ class ModuloController extends Controller
             'orden'           => 'nullable|integer|min:0',
         ]);
 
-        $modulo->update($request->all());
+        $modulo->update($datos);
 
         return response()->json(['success' => true, 'data' => $modulo]);
     }

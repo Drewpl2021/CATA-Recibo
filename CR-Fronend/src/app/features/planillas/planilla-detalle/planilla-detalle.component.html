@@ -47,12 +47,17 @@
 </p>
 
 <app-data-table
+  entidad="este concepto"
   [columnas]="columnas"
   [datos]="detalles"
   [cargando]="cargando"
-  [camposBusqueda]="['payment_concept.nombre', 'descripcion']"
+  [paginacionServidor]="true"
+  [totalElementos]="totalLineas"
+  [pagina]="pagina"
+  [filasPorPagina]="TAMANO_PAGINA"
+  (cambioPagina)="irAPagina($event)"
+  [mostrarBuscador]="false"
   [acciones]="['editar', 'eliminar']"
-  [filasPorPagina]="20"
   mensajeVacio="Esta planilla todavía no tiene conceptos."
   (editarFila)="editar($event)"
   (eliminarFila)="eliminar($event)"

@@ -70,6 +70,21 @@ export class PlanillaDetalleComponent implements OnInit {
   modalVisible = false;
   detalleEditando: PayrollDetalle | null = null;
 
+  /** El corte lo hace el backend, igual que en el resto de listados. */
+  readonly TAMANO_PAGINA = 10;
+  pagina = 0;
+  totalLineas = 0;
+
+  /*
+   * Los tres totales del pie los manda el backend calculados sobre TODAS las
+   * líneas de la planilla. Antes se sumaban acá recorriendo el arreglo, que
+   * funcionaba solo porque llegaban todas: con la lista paginada, sumar lo
+   * que hay en pantalla daría un neto que no es el que se paga.
+   */
+  totalSuma = 0;
+  totalResta = 0;
+  totalAportaciones = 0;
+
   columnas: ColumnaTabla<PayrollDetalle>[] = [
     {
       campo: 'payment_concept.nombre',
@@ -167,40 +182,30 @@ export class PlanillaDetalleComponent implements OnInit {
       : +valor.toFixed(2);
   }
 
-  /** Lo que suman los conceptos que aportan al sueldo. */
-  get totalSuma(): number {
-    return this.detalles
-      .filter((d) => !this.resta(d) && d.payment_concept?.tipo !== 'aportacion')
-      .reduce((s, d) => s + Number(d.monto_calculado ?? 0), 0);
-  }
-
-  /** Lo que descuentan. */
-  get totalResta(): number {
-    return this.detalles
-      .filter((d) => this.resta(d))
-      .reduce((s, d) => s + Number(d.monto_calculado ?? 0), 0);
-  }
-
-  /**
-   * Las aportaciones (EsSalud, SCTR) las paga el colegio: no salen del
-   * sueldo del trabajador, así que se muestran aparte y no se restan.
-   */
-  get totalAportaciones(): number {
-    return this.detalles
-      .filter((d) => d.payment_concept?.tipo === 'aportacion')
-      .reduce((s, d) => s + Number(d.monto_calculado ?? 0), 0);
+  /** El usuario pidió otra página de conceptos. */
+  irAPagina(pagina: number): void {
+    this.pagina = pagina;
+    this.cargar();
   }
 
   cargar(): void {
     this.cargando = true;
     forkJoin({
       planilla: this.planillaService.getById(this.planillaId),
-      detalles: this.detalleService.listarPorPlanilla(this.planillaId),
+      detalles: this.detalleService.paginaDePlanilla(this.planillaId, this.pagina, this.TAMANO_PAGINA),
+      // El catálogo va entero a propósito: es el desplegable del formulario,
+      // y a un <select> no se le pagina.
       conceptos: this.conceptoService.getAll(),
     }).subscribe({
       next: ({ planilla, detalles, conceptos }) => {
         if (planilla.success) this.planilla = planilla.data;
-        if (detalles.success) this.detalles = detalles.data;
+        if (detalles.success) {
+          this.detalles = detalles.data.content;
+          this.totalLineas = detalles.data.totalElements;
+          this.totalSuma = Number(detalles.data.sumanAlSueldo ?? 0);
+          this.totalResta = Number(detalles.data.restanDelSueldo ?? 0);
+          this.totalAportaciones = Number(detalles.data.aportaciones ?? 0);
+        }
         if (conceptos.success) this.conceptos = conceptos.data;
         this.cargando = false;
       },

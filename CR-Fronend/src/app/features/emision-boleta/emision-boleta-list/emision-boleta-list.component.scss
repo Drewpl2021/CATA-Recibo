@@ -1,121 +1,24 @@
-.boletas-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.search-input {
-  padding-left: 40px !important;
-}
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  background-color: var(--surface);
-  padding: 14px 20px;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border);
-}
-
-.filter-group {
-  position: relative;
-  flex: 1;
-  max-width: 400px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-}
-
-.btn-emitir {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  background-color: var(--brand-700);
-  color: white;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-emitir:hover {
-  background-color: var(--brand-900);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.badge-active {
-  background-color: var(--success-bg);
-  color: var(--success-text);
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.badge-vacaciones {
-  background-color: var(--warning-bg);
-  color: var(--warning-text);
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
+/*
+ * Lo que queda aquí es el modal grande de emisión: la boleta con sus tres
+ * columnas de conceptos, que no se parece a ningún otro formulario del
+ * sistema y por eso tiene estilo propio.
+ *
+ * La tabla, la barra de filtros y los badges de estado se fueron a las
+ * piezas compartidas (app-data-table, .panel-filtros, .status-badge): eran
+ * copias con pequeñas diferencias de lo que ya existía en styles.scss.
+ */
 
 /* ============================================================ */
 /* BADGES DE ESTADO DE BOLETA                                    */
 /* ============================================================ */
-.nombre-con-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.badge-boleta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  animation: badgePop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
 
 @keyframes badgePop {
   from { opacity: 0; transform: scale(0.7); }
   to   { opacity: 1; transform: scale(1); }
 }
 
-.badge-pendiente {
-  background-color: rgba(148, 163, 184, 0.15);
-  color: var(--text-muted);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-}
-
-.badge-editado {
-  background-color: rgba(234, 179, 8, 0.15); /* Yellow transparent */
-  color: var(--warning-text); /* Yellow dark */
-  border: 1px solid rgba(234, 179, 8, 0.4);
-}
-
 /* Resaltar fila entera cuando fue editada. El !important es para ganarle
    al :hover de la tabla, que si no borra el resaltado al pasar el mouse. */
-.fila-editada,
-.fila-editada:hover {
-  background-color: var(--table-selected-bg) !important;
-}
-
 
 /* ============================================================ */
 /* MODAL OVERLAY                                                 */
@@ -242,23 +145,10 @@
 }
 
 .tag-auto,
-.tag-editable {
-  margin-left: auto;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: none;
-}
 
 .tag-auto {
   background: var(--info-bg);
   color: var(--heading);
-}
-
-.tag-editable {
-  background: var(--danger-bg);
-  color: var(--danger-text);
 }
 
 /* GRID DATOS EMPLEADO */
@@ -310,25 +200,8 @@
 }
 
 .form-select-sm,
-.form-input-sm {
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 13px;
-  color: var(--text);
-  background: var(--surface);
-  outline: none;
-}
 
 .form-select-sm:focus,
-.form-input-sm:focus {
-  border-color: var(--brand-700);
-  box-shadow: var(--shadow-md);
-}
-
-.form-input-sm {
-  width: 90px;
-}
 
 /* TABLA FINANCIERA */
 .tabla-financiera {

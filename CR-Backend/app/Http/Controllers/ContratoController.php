@@ -90,7 +90,7 @@ class ContratoController extends Controller
     {
         $contrato = Contrato::findOrFail($id);
 
-        $request->validate([
+        $datos = $request->validate([
             'tipo_contrato' => 'sometimes|in:indeterminado,plazo_fijo,suplencia,practicas',
             'fecha_inicio'  => 'sometimes|date',
             'fecha_fin'     => 'nullable|date|after_or_equal:fecha_inicio',
@@ -99,7 +99,7 @@ class ContratoController extends Controller
             'observaciones' => 'nullable|string',
         ]);
 
-        $contrato->update($request->all());
+        $contrato->update($datos);
         $contrato->load('empleado', 'documentos');
 
         return response()->json(['success' => true, 'data' => $contrato]);

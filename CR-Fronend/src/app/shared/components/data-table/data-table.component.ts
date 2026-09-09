@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { AfterContentInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -31,7 +31,7 @@ export type AccionFila = 'ver' | 'editar' | 'eliminar';
   imports: [CommonModule, FormsModule, IconComponent, PistaDirective],
   templateUrl: './data-table.component.html',
 })
-export class DataTableComponent<T = any> implements OnChanges, OnDestroy {
+export class DataTableComponent<T = any> implements AfterContentInit, OnChanges, OnDestroy {
   @Input() columnas: ColumnaTabla<T>[] = [];
   @Input() datos: T[] = [];
   @Input() cargando = false;
@@ -97,8 +97,24 @@ export class DataTableComponent<T = any> implements OnChanges, OnDestroy {
   /** Se dispara al pulsar uno de los botones de accionesPersonalizadas. */
   @Output() accionPersonalizada = new EventEmitter<{ accion: string; fila: T }>();
 
+  /**
+   * Si la barra de arriba tiene algo que enseñar: el buscador, o los botones
+   * que mete la pantalla ("+ Nueva Área", los chips de filtro...).
+   *
+   * Sin esto, una tabla sin ninguna de las dos cosas —Mis Boletas, el detalle
+   * de una planilla— dejaba una franja blanca vacía encima de la cabecera.
+   */
+  hayBarraSuperior = true;
+
   busqueda = '';
   paginaActual = 1;
+  /**
+   * Lo que hay escrito en el cuadro de "ir a la página". Se mantiene igual
+   * a paginaActual salvo mientras el usuario está tecleando un número
+   * distinto; solo se intenta saltar al confirmar (Enter o al salir del
+   * campo), nunca en cada tecla.
+   */
+  paginaEscrita = 1;
 
   /**
    * El buscador no dispara una petición por tecla: espera a que el usuario
@@ -107,6 +123,19 @@ export class DataTableComponent<T = any> implements OnChanges, OnDestroy {
    */
   private tecleo$ = new Subject<string>();
   private suscripcion?: Subscription;
+
+  private host = inject(ElementRef<HTMLElement>);
+  private cdr = inject(ChangeDetectorRef);
+
+  /**
+   * Los botones llegan como contenido proyectado con el atributo
+   * `tableActions`, así que solo se sabe si los hay cuando ya están puestos.
+   */
+  ngAfterContentInit(): void {
+    const hayBotones = !!(this.host.nativeElement as HTMLElement).querySelector('[tableActions]');
+    this.hayBarraSuperior = (this.mostrarBuscador && this.camposBusqueda.length > 0) || hayBotones;
+    this.cdr.detectChanges();
+  }
 
   constructor() {
     this.suscripcion = this.tecleo$
@@ -151,12 +180,18 @@ export class DataTableComponent<T = any> implements OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['pagina'] && this.paginacionServidor) {
       // La página la manda la pantalla; acá solo se refleja.
-      this.paginaActual = this.pagina + 1;
+      this.establecerPaginaActual(this.pagina + 1);
       return;
     }
     if (changes['datos'] && !this.paginacionServidor) {
-      this.paginaActual = 1;
+      this.establecerPaginaActual(1);
     }
+  }
+
+  /** Cambia de página Y mantiene el cuadro de "ir a la página" al día. */
+  private establecerPaginaActual(pagina: number): void {
+    this.paginaActual = pagina;
+    this.paginaEscrita = pagina;
   }
 
   get filaFiltradas(): T[] {
@@ -196,7 +231,7 @@ export class DataTableComponent<T = any> implements OnChanges, OnDestroy {
       this.tecleo$.next(this.busqueda.trim());
       return;
     }
-    this.paginaActual = 1;
+    this.establecerPaginaActual(1);
   }
 
   irAPagina(pagina: number): void {
@@ -206,7 +241,22 @@ export class DataTableComponent<T = any> implements OnChanges, OnDestroy {
       this.cambioPagina.emit(pagina - 1);
       return;
     }
-    this.paginaActual = pagina;
+    this.establecerPaginaActual(pagina);
+  }
+
+  /**
+   * El usuario escribió un número en el cuadro de "ir a la página" y lo
+   * confirmó (Enter o quitó el foco). Si no es un número válido dentro de
+   * rango, se descarta y el cuadro vuelve a mostrar la página en la que
+   * está — así nunca se llega a pedir una página inexistente.
+   */
+  irAPaginaEscrita(valor: number | string): void {
+    const numero = Math.trunc(Number(valor));
+    if (!Number.isFinite(numero) || numero < 1 || numero > this.totalPaginas || numero === this.paginaActual) {
+      this.paginaEscrita = this.paginaActual;
+      return;
+    }
+    this.irAPagina(numero);
   }
 
   valorCelda(fila: T, columna: ColumnaTabla<T>): any {

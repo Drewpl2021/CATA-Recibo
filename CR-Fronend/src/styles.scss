@@ -1604,6 +1604,28 @@ textarea.form-control {
   font-size: 13px;
   color: var(--text);
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* El cuadro de "ir a la página" dentro de .data-table-pagination-current:
+   mismo look que .form-control, pero angosto y centrado — es un número de
+   pocas cifras, no un campo de texto libre. Sin flechitas de spinner: con
+   un input tan chico estorban más de lo que ayudan. */
+.data-table-pagination-input {
+  width: 48px;
+  padding: 4px 6px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  -moz-appearance: textfield;
+}
+
+.data-table-pagination-input::-webkit-outer-spin-button,
+.data-table-pagination-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .data-table-pagination-btns .btn-secondary:disabled {
@@ -1752,6 +1774,23 @@ textarea.form-control {
   color: var(--danger-text);
   background-color: var(--danger-bg);
   border-left-color: var(--danger-text);
+}
+
+/* La nota que además propone hacer algo: el texto a la izquierda y el botón
+   a la derecha, en la misma línea mientras quepan. La usa Emisión de
+   Boletas para el aviso de "este mes está sin empezar". */
+.form-nota--accion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.form-nota--accion > div {
+  flex: 1;
+  min-width: 260px;
 }
 
 /* Un <select> con la vista previa del ícono elegido pegada a la izquierda. */
@@ -2440,12 +2479,6 @@ textarea.form-control {
   background-color: var(--surface-alt);
   font-size: 13.5px;
   color: var(--text);
-}
-
-/* El tipo de contrato viene del backend en minúscula y con guion bajo
-   (plazo_fijo): se presenta legible sin tener que mapearlo en cada plantilla. */
-.lista-contratos__item strong {
-  text-transform: capitalize;
 }
 
 .lista-contratos__fechas {

@@ -18,6 +18,7 @@ import { ColumnaTabla } from '../../../shared/components/data-table/data-table.m
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { etiquetaRol } from '../../../shared/constants';
 
 /**
  * Módulos = los ÍTEMS de la barra lateral (solo Admin).
@@ -43,6 +44,9 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
   templateUrl: './modulos-list.component.html',
 })
 export class ModulosListComponent implements OnInit {
+  /** 'rrhh' se lee "RRHH": el nombre crudo no se pinta en ningún sitio. */
+  etiquetaRol = etiquetaRol;
+
   private fb = inject(FormBuilder);
   private moduloService = inject(ModuloService);
   private moduloPadreService = inject(ModuloPadreService);

@@ -2,7 +2,12 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Area, Cargo, Contrato, Sede } from '../../../../core/models';
-import { TIPO_CONTRATO_OPCIONES, ESTADO_EMPLEADO_OPCIONES } from '../../../../shared/constants';
+import {
+  TIPO_CONTRATO_OPCIONES,
+  ESTADO_EMPLEADO_OPCIONES,
+  ESTADO_CONTRATO_OPCIONES,
+  TIPO_CONTRATO_CONTRATO_OPCIONES,
+} from '../../../../shared/constants';
 import { fechaLegible } from '../../../../core/utils';
 import { SeccionEmpleadoBase } from './seccion-base';
 
@@ -49,5 +54,22 @@ export class SeccionLaboralesComponent extends SeccionEmpleadoBase {
     if (estado === 'vigente') return 'success';
     if (estado === 'renovado') return 'info';
     return 'secondary';
+  }
+
+  /**
+   * "vigente" → "Vigente", "plazo_fijo" → "Plazo fijo".
+   *
+   * Sale del mismo catálogo que llena los desplegables, así que la lista de
+   * contratos y el formulario dicen exactamente lo mismo. Antes acá se
+   * pintaba el valor crudo del backend y se disimulaba con un
+   * `text-transform: capitalize`, que deja "Plazo Fijo" con dos mayúsculas
+   * y no arregla el guion bajo.
+   */
+  etiquetaEstadoContrato(valor: string): string {
+    return ESTADO_CONTRATO_OPCIONES.find((o) => o.value === valor)?.label ?? valor;
+  }
+
+  etiquetaTipoContrato(valor: string): string {
+    return TIPO_CONTRATO_CONTRATO_OPCIONES.find((o) => o.value === valor)?.label ?? valor;
   }
 }
