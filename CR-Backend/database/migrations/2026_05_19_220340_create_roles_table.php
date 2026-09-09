@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('nombre', 45);
+            $table->string('nombre', 45)->unique();
             $table->string('descripcion', 255)->nullable();
             $table->timestamps();
         });

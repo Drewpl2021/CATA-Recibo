@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Dirección del frontend
+    |--------------------------------------------------------------------------
+    |
+    | Dónde vive la aplicación en Angular. Se usa para armar los enlaces que
+    | salen por correo (el de restablecer la contraseña): el usuario tiene que
+    | aterrizar en la pantalla, no en el API.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:4200'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
@@ -65,7 +78,18 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    /*
+     * La hora del colegio, no la de Greenwich.
+     *
+     * Con 'UTC' todo lo que escribía Laravel iba cinco horas adelantado: una
+     * boleta firmada a las 09:56 de la mañana en Juliaca salía impresa como
+     * "14:56". Y peor, MySQL corre con la hora del sistema, así que las dos
+     * mitades de la aplicación estaban en husos distintos.
+     *
+     * Va por env para que un despliegue en otro sitio no tenga que tocar el
+     * código.
+     */
+    'timezone' => env('APP_TIMEZONE', 'America/Lima'),
 
     /*
     |--------------------------------------------------------------------------

@@ -8,7 +8,7 @@ class Area extends Model
     protected $table = 'areas';
     protected $keyType = 'string';
     public $incrementing = false;
-    protected $fillable = ['id', 'nombre', 'descripcion'];
+    protected $fillable = ['id', 'nombre', 'descripcion', 'estado'];
 
     protected static function boot()
     {

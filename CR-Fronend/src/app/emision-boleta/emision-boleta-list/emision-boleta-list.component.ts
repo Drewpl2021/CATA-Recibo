@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { EmpleadoService, Empleado } from '../../core/services/empleado.service';
 import { BoletasService } from '../../core/services/boletas.service';
 import { PlanillaService, Planilla } from '../../core/services/planilla.service';
+import { PeriodoService } from '../../core/services/periodo.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Observable } from 'rxjs';
 
@@ -82,6 +83,7 @@ export class EmisionBoletaListComponent implements OnInit {
     private empleadoService: EmpleadoService,
     private boletasService: BoletasService,
     private planillaService: PlanillaService,
+    private periodoService: PeriodoService,
     private toastService: ToastService
   ) {}
 
@@ -426,16 +428,78 @@ export class EmisionBoletaListComponent implements OnInit {
   confirmarEmisionMasiva(): void {
     this.showConfirmMasivo = false;
     this.generandoMasivo = true;
-    this.boletasService.generarMasivo(this.mesGlobal, this.anioGlobal).subscribe({
+
+    // 1. Obtener o resolver el Periodo correspondiente al año
+    this.periodoService.getPeriodos().subscribe({
       next: (res) => {
-        this.toastService.success('Proceso completado', `${res.message}<br/>Generadas: ${res.generadas}<br/>Omitidas (sin planilla): ${res.omitidas}`);
-        this.generandoMasivo = false;
-        // Recargar la lista para que aparezca la tabla
-        this.cargarEstadoBoletas();
+        const mesStr = String(this.mesGlobal).padStart(2, '0');
+        const fechaMes = `${this.anioGlobal}-${mesStr}-01`;
+        let periodo = res.data?.find(p => p.fecha_inicio <= fechaMes && p.fecha_fin >= fechaMes);
+
+        const procederGeneracion = (periodoId: string) => {
+          // 2. Generar automáticamente las planillas de todos los empleados activos
+          this.periodoService.generarPlanilla(periodoId, Number(this.mesGlobal), Number(this.anioGlobal)).subscribe({
+            next: (resPlanilla) => {
+              const planillasNuevas = resPlanilla?.data?.resumen?.generadas ?? 0;
+
+              // 3. Emitir masivamente todas las boletas oficiales
+              this.boletasService.generarMasivo(Number(this.mesGlobal), Number(this.anioGlobal)).subscribe({
+                next: (resBoletas) => {
+                  this.generandoMasivo = false;
+                  const boletasGeneradas = resBoletas.generadas ?? 0;
+                  this.toastService.success(
+                    'Emisión Masiva Completada',
+                    `Planillas calculadas: ${planillasNuevas} nuevas.<br/>Boletas emitidas: ${boletasGeneradas} listas para firma.`
+                  );
+                  this.cargarEstadoBoletas();
+                  this.cargarEmpleados();
+                },
+                error: (err) => {
+                  console.error('Error emitiendo boletas masivas', err);
+                  this.toastService.error('Error al emitir boletas', 'Las planillas se generaron pero hubo un problema al emitir los PDFs.');
+                  this.generandoMasivo = false;
+                  this.cargarEstadoBoletas();
+                }
+              });
+            },
+            error: (err) => {
+              console.error('Error generando planillas automáticas', err);
+              const msg = err?.error?.data?.message || err?.error?.message || 'No se pudieron generar las planillas del periodo.';
+              this.toastService.error('Error en planillas', msg);
+              this.generandoMasivo = false;
+            }
+          });
+        };
+
+        if (periodo) {
+          procederGeneracion(periodo.id);
+        } else {
+          // Si no existe un periodo que cubra este año, crear uno por defecto
+          this.periodoService.crearPeriodo({
+            nombre: `Periodo Académico ${this.anioGlobal}`,
+            fecha_inicio: `${this.anioGlobal}-01-01`,
+            fecha_fin: `${this.anioGlobal}-12-31`,
+            activo: true
+          }).subscribe({
+            next: (newPerRes) => {
+              if (newPerRes.success && newPerRes.data?.id) {
+                procederGeneracion(newPerRes.data.id);
+              } else {
+                this.toastService.error('Error', 'No se pudo inicializar el periodo para el cálculo.');
+                this.generandoMasivo = false;
+              }
+            },
+            error: (err) => {
+              console.error('Error creando periodo por defecto', err);
+              this.toastService.error('Error', 'No se encontró un periodo activo registrado para este año.');
+              this.generandoMasivo = false;
+            }
+          });
+        }
       },
       error: (err) => {
-        console.error('Error generando masivo', err);
-        this.toastService.error('Error', 'Hubo un problema al generar las boletas masivamente.');
+        console.error('Error obteniendo periodos', err);
+        this.toastService.error('Error', 'No se pudo conectar con el servicio de periodos.');
         this.generandoMasivo = false;
       }
     });

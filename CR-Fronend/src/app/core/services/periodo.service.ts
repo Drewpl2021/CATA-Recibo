@@ -36,4 +36,17 @@ export class PeriodoService {
   eliminarPeriodo(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
+
+  generarPlanilla(periodoId: string, mes: number, anio: number): Observable<{
+    success: boolean;
+    data: {
+      periodo: string;
+      mes: number;
+      anio: number;
+      resumen: { generadas: number; omitidas: number; evaluados: number };
+      detalle: any[];
+    };
+  }> {
+    return this.http.post<any>(`${this.apiUrl}/${periodoId}/generar-planilla`, { mes, anio });
+  }
 }

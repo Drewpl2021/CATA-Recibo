@@ -11,6 +11,7 @@ class Documento extends Model
 
     protected $fillable = [
         'empleado_id',
+        'contrato_id',
         'tipo',
         'archivo',
         'firmado_por',
@@ -20,6 +21,22 @@ class Documento extends Model
         'planilla_id',
         'fecha_visto',
         'estado_registro',
+        'empleador_id',
+        'firmado_por_empleador',
+        'codigo_firma_empleador',
+        'fecha_firma_empleador',
+        'estado_firma_empleador',
+    ];
+
+    /**
+     * Sin esto salían como texto suelto ("2026-09-08 15:13:30"), sin decir de
+     * qué huso: el navegador lo leía como hora local y pintaba las cifras de
+     * UTC como si fueran de Juliaca.
+     */
+    protected $casts = [
+        'fecha_firma'           => 'datetime',
+        'fecha_firma_empleador' => 'datetime',
+        'fecha_visto'           => 'datetime',
     ];
 
     protected static function boot()
@@ -35,8 +52,18 @@ class Documento extends Model
         return $this->belongsTo(Empleado::class);
     }
 
+    public function contrato()
+    {
+        return $this->belongsTo(Contrato::class);
+    }
+
     public function planilla()
     {
         return $this->belongsTo(Planilla::class);
+    }
+
+    public function empleador()
+    {
+        return $this->belongsTo(Empleado::class, 'empleador_id');
     }
 }

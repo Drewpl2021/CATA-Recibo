@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { PlanillaService, Planilla } from '../../core/services/planilla.service';
 import { EmpleadoService, Empleado } from '../../core/services/empleado.service';
+import { PeriodoService } from '../../core/services/periodo.service';
 import { ToastService } from '../../core/services/toast.service';
 
 @Component({
@@ -17,6 +18,7 @@ export class PlanillasListComponent implements OnInit {
   planillas: Planilla[] = [];
   empleados: Empleado[] = [];
   cargando = false;
+  generandoMasivo = false;
   eliminando: string | null = null;
 
   // Filtros
@@ -42,6 +44,7 @@ export class PlanillasListComponent implements OnInit {
   constructor(
     private planillaService: PlanillaService,
     private empleadoService: EmpleadoService,
+    private periodoService: PeriodoService,
     private toastService: ToastService,
     private router: Router
   ) {}
@@ -147,5 +150,65 @@ export class PlanillasListComponent implements OnInit {
 
   get totalMasa(): number {
     return this.planillasFiltradas.reduce((s, p) => s + Number(p.total ?? 0), 0);
+  }
+
+  generarPlanillasMasivo(): void {
+    this.generandoMasivo = true;
+
+    this.periodoService.getPeriodos().subscribe({
+      next: (res) => {
+        const mesStr = String(this.filtroMes).padStart(2, '0');
+        const fechaMes = `${this.filtroAnio}-${mesStr}-01`;
+        let periodo = res.data?.find(p => p.fecha_inicio <= fechaMes && p.fecha_fin >= fechaMes);
+
+        const proceder = (periodoId: string) => {
+          this.periodoService.generarPlanilla(periodoId, Number(this.filtroMes), Number(this.filtroAnio)).subscribe({
+            next: (resPlanilla) => {
+              this.generandoMasivo = false;
+              const generadas = resPlanilla?.data?.resumen?.generadas ?? 0;
+              const omitidas = resPlanilla?.data?.resumen?.omitidas ?? 0;
+              this.toastService.success(
+                'Planillas Procesadas',
+                `Se generaron ${generadas} nuevas planillas con sus conceptos de ley.<br/>Omitidas (ya existían o sin sueldo): ${omitidas}.`
+              );
+              this.cargarPlanillas();
+            },
+            error: (err) => {
+              this.generandoMasivo = false;
+              const msg = err?.error?.data?.message || err?.error?.message || 'Error al generar las planillas.';
+              this.toastService.error('Error', msg);
+            }
+          });
+        };
+
+        if (periodo) {
+          proceder(periodo.id);
+        } else {
+          this.periodoService.crearPeriodo({
+            nombre: `Periodo Académico ${this.filtroAnio}`,
+            fecha_inicio: `${this.filtroAnio}-01-01`,
+            fecha_fin: `${this.filtroAnio}-12-31`,
+            activo: true
+          }).subscribe({
+            next: (newPer) => {
+              if (newPer.success && newPer.data?.id) {
+                proceder(newPer.data.id);
+              } else {
+                this.generandoMasivo = false;
+                this.toastService.error('Error', 'No se pudo inicializar el periodo para este año.');
+              }
+            },
+            error: () => {
+              this.generandoMasivo = false;
+              this.toastService.error('Error', 'No se pudo inicializar el periodo.');
+            }
+          });
+        }
+      },
+      error: () => {
+        this.generandoMasivo = false;
+        this.toastService.error('Error', 'No se pudo conectar con el servicio de periodos.');
+      }
+    });
   }
 }

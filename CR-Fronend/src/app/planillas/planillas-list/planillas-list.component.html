@@ -11,10 +11,16 @@
         <p class="page-subtitle">Gestión de planillas mensuales de empleados</p>
       </div>
     </div>
-    <button class="btn-new" (click)="nuevaPlanilla()">
-      <span class="material-icons">add</span>
-      Nueva Planilla
-    </button>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <button class="btn-primary" (click)="generarPlanillasMasivo()" [disabled]="generandoMasivo" style="display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 8px; font-weight: 500; cursor: pointer; background: #3b82f6; color: white; border: none;">
+        <span class="material-icons">bolt</span>
+        {{ generandoMasivo ? 'Generando...' : 'Generar Planillas del Mes' }}
+      </button>
+      <button class="btn-new" (click)="nuevaPlanilla()">
+        <span class="material-icons">add</span>
+        Nueva Planilla
+      </button>
+    </div>
   </div>
 
   <!-- Filtros -->
@@ -66,11 +72,17 @@
       <span class="material-icons">inbox</span>
     </div>
     <h3>Sin planillas registradas</h3>
-    <p>No hay planillas para <strong>{{ nombreMes(filtroMes) }} {{ filtroAnio }}</strong>. Crea una nueva para comenzar.</p>
-    <button class="btn-new" (click)="nuevaPlanilla()">
-      <span class="material-icons">add</span>
-      Crear primera planilla
-    </button>
+    <p>No hay planillas para <strong>{{ nombreMes(filtroMes) }} {{ filtroAnio }}</strong>. Puedes generarlas para todos los empleados activos o crear una individual.</p>
+    <div style="display: flex; gap: 12px; justify-content: center; margin-top: 16px;">
+      <button class="btn-primary" (click)="generarPlanillasMasivo()" [disabled]="generandoMasivo" style="display: flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 8px; font-weight: 500; cursor: pointer; background: #3b82f6; color: white; border: none;">
+        <span class="material-icons">bolt</span>
+        {{ generandoMasivo ? 'Generando...' : 'Generar Planillas para Todos' }}
+      </button>
+      <button class="btn-new" (click)="nuevaPlanilla()">
+        <span class="material-icons">add</span>
+        Crear Individual
+      </button>
+    </div>
   </div>
 
   <!-- Tabla -->

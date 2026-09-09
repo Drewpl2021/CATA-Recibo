@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { filter } from 'rxjs/operators';
 import { AuthService } from '../../core/services/auth.service';
 import { MisModulosService, ModuloPadre } from '../../core/services/mis-modulos.service';
 import { MisDocumentosService, MiDocumento } from '../../core/services/mis-documentos.service';
@@ -8,6 +9,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { FormsModule } from '@angular/forms';
 import { EmpleadoService, Empleado } from '../../core/services/empleado.service';
+import { NotificacionService, NotificacionItem } from '../../core/services/notificacion.service';
 
 // Mapa de iconos SVG por nombre (del seeder de Jordan)
 const ICON_MAP: Record<string, string> = {
@@ -50,6 +52,8 @@ export class LayoutComponent implements OnInit {
   cargandoModulos = true;
 
   // Notificaciones (Campanita)
+  notificaciones: NotificacionItem[] = [];
+  noLeidasCount = 0;
   documentosPendientes: MiDocumento[] = [];
   showNotifications = false;
 
@@ -75,11 +79,25 @@ export class LayoutComponent implements OnInit {
   newPasswordConfirm = '';
   changingPassword = false;
 
+  // Total dinámico que unifica notificaciones del sistema y boletas pendientes sin duplicar
+  get totalAvisosCount(): number {
+    const boletasPendientesCount = this.documentosPendientes.length;
+    const docIdsPendientes = new Set(this.documentosPendientes.map(d => d.id));
+    const notifsNoLeidasCount = this.notificaciones.filter(n => {
+      if (n.leida_at) return false;
+      if (n.documento_id && docIdsPendientes.has(n.documento_id)) return false;
+      return true;
+    }).length;
+
+    return boletasPendientesCount + notifsNoLeidasCount;
+  }
+
   constructor(
     private router: Router,
     private authService: AuthService,
     private misModulosService: MisModulosService,
     private misDocumentosService: MisDocumentosService,
+    private notificacionService: NotificacionService,
     private toastService: ToastService,
     private empleadoService: EmpleadoService,
     public themeService: ThemeService,
@@ -101,6 +119,41 @@ export class LayoutComponent implements OnInit {
       else if (rol === 'rrhh') this.userRole = 'Recursos Humanos';
       else this.userRole = 'Empleado';
     }
+
+    // Sincronizar el elemento activo del menú lateral ante cualquier cambio de ruta
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      this.syncActiveMenuWithUrl(event.urlAfterRedirects || event.url);
+    });
+  }
+
+  syncActiveMenuWithUrl(url: string): void {
+    if (!url) return;
+    const cleanUrl = url.split('?')[0].split('#')[0];
+    let subRuta = cleanUrl;
+    if (cleanUrl.startsWith('/inicio/')) {
+      subRuta = '/' + cleanUrl.substring('/inicio/'.length);
+    } else if (cleanUrl === '/inicio') {
+      subRuta = this.homeRoute.replace('/inicio', '');
+    }
+
+    // Mapear rutas alias conocidas
+    if (subRuta === '/emision-boleta') subRuta = '/boletas';
+    if (subRuta === '/conceptos') subRuta = '/descuentos';
+
+    this.activeMenu = subRuta;
+
+    // Asegurar que el grupo padre esté desplegado en el menú lateral
+    if (this.modulosPadre && this.modulosPadre.length > 0) {
+      for (const padre of this.modulosPadre) {
+        if (padre.modulos && padre.modulos.some(m => m.ruta === subRuta)) {
+          this.openGroups.add(padre.id);
+          break;
+        }
+      }
+    }
+    this.cdr.markForCheck();
   }
 
   toggleNotifications(): void {
@@ -109,6 +162,8 @@ export class LayoutComponent implements OnInit {
       this.showUserMenu = false;
       this.showProfileModal = false;
       this.showPasswordModal = false;
+      this.notificacionService.getNotificaciones().subscribe({ error: () => {} });
+      this.misDocumentosService.getMisDocumentos().subscribe({ error: () => {} });
     }
   }
 
@@ -151,6 +206,9 @@ export class LayoutComponent implements OnInit {
           if (this.modulosPadre.length > 0) {
             this.openGroups.add(this.modulosPadre[0].id);
           }
+
+          // Sincronizar el menú activo con la URL actual
+          this.syncActiveMenuWithUrl(this.router.url);
         }
         this.cargandoModulos = false;
       },
@@ -160,7 +218,18 @@ export class LayoutComponent implements OnInit {
       }
     });
 
-    // 2. Suscribirse a boletas pendientes
+    // 2. Suscribirse a notificaciones del backend
+    this.notificacionService.notificaciones$.subscribe({
+      next: (items) => this.notificaciones = items
+    });
+    this.notificacionService.noLeidas$.subscribe({
+      next: (count) => this.noLeidasCount = count
+    });
+    this.notificacionService.getNotificaciones().subscribe({
+      error: () => {}
+    });
+
+    // 3. Suscribirse a boletas pendientes
     this.misDocumentosService.documentos$.subscribe({
       next: (docs) => {
         this.documentosPendientes = docs.filter(doc => doc.estado_firma !== 'firmado');
@@ -169,6 +238,43 @@ export class LayoutComponent implements OnInit {
     this.misDocumentosService.getMisDocumentos().subscribe({
       error: () => {
         // Ignorar si falla, por ej. si el usuario es un admin sin documentos
+      }
+    });
+
+    // Sincronización inicial
+    this.syncActiveMenuWithUrl(this.router.url);
+  }
+
+  irABoletas(): void {
+    this.showNotifications = false;
+    this.syncActiveMenuWithUrl('/inicio/mis-boletas');
+    this.router.navigate(['/inicio/mis-boletas']);
+  }
+
+  clickNotificacion(notif: NotificacionItem): void {
+    if (!notif.leida_at) {
+      this.notificacionService.marcarLeida(notif.id).subscribe();
+    }
+    this.showNotifications = false;
+
+    // Si la notificación apunta a una boleta
+    if (notif.documento_id || notif.tipo === 'boleta_disponible' || notif.tipo === 'boleta_nueva') {
+      let docPendiente = this.documentosPendientes.find(d => d.id === notif.documento_id);
+      if (!docPendiente && this.documentosPendientes.length === 1) {
+        docPendiente = this.documentosPendientes[0];
+      }
+      if (docPendiente) {
+        this.iniciarFirmaRapida(docPendiente);
+      } else {
+        this.irABoletas();
+      }
+    }
+  }
+
+  marcarTodasNotificacionesLeidas(): void {
+    this.notificacionService.marcarTodas().subscribe({
+      next: () => {
+        this.toastService.success('Avisos', 'Todas las notificaciones se marcaron como leídas.');
       }
     });
   }
@@ -209,13 +315,17 @@ export class LayoutComponent implements OnInit {
     this.authService.logout();
   }
 
-  iniciarFirmaRapida(doc: MiDocumento, event: Event): void {
-    event.stopPropagation();
-    event.preventDefault();
+  iniciarFirmaRapida(doc: MiDocumento, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    this.showNotifications = false;
     this.boletaAFirmar = doc;
     this.passwordFirma = '';
     this.signErrorMsg = '';
     this.showSignModal = true;
+    this.cdr.detectChanges();
   }
 
   closeSignModal(): void {
@@ -242,6 +352,8 @@ export class LayoutComponent implements OnInit {
         if (res.success) {
           this.toastService.success('¡Firma Exitosa!', `Boleta firmada correctamente.`);
           this.closeSignModal();
+          this.misDocumentosService.getMisDocumentos().subscribe();
+          this.notificacionService.getNotificaciones().subscribe();
         } else {
           this.signErrorMsg = res.message || 'Error al firmar.';
         }

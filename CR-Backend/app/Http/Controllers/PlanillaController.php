@@ -2,26 +2,55 @@
 namespace App\Http\Controllers;
 use App\Models\Planilla;
 use App\Models\Empleado;
+use App\Traits\CalculaConceptosPlanilla;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use App\Traits\ListadoPaginado;
 
 class PlanillaController extends Controller
 {
+    use ListadoPaginado;
+    use CalculaConceptosPlanilla;
+    /**
+     * GET /planilla?empleado_id=&mes=&anio=&periodo_id=&page=&size=&search=
+     *
+     * Es la tabla que más crece del sistema: un registro por trabajador y
+     * por mes. Los filtros van sobre el índice planilla_empleado_periodo_idx
+     * / planilla_periodo_idx, y con ?page el corte lo hace el servidor.
+     */
     public function index(Request $request)
     {
         $query = Planilla::with('empleado');
-        if ($request->has('empleado_id'))
+
+        if ($request->filled('empleado_id')) {
             $query->where('empleado_id', $request->empleado_id);
-        if ($request->has('mes'))
+        }
+        if ($request->filled('mes')) {
             $query->where('mes', $request->mes);
-        if ($request->has('anio'))
+        }
+        if ($request->filled('anio')) {
             $query->where('anio', $request->anio);
+        }
+        if ($request->filled('periodo_id')) {
+            $query->where('periodo_id', $request->periodo_id);
+        }
 
         $rolNombre = $request->user()->rol?->nombre;
         if ($rolNombre !== 'admin') {
             $query->where('estado_registro', 'activo');
         }
 
-        return response()->json(['success' => true, 'data' => $query->get()]);
+        return $this->responderListado(
+            $request,
+            $query->orderBy('anio', 'desc')->orderBy('mes', 'desc'),
+            ['empleado.nombre', 'empleado.apellido', 'empleado.dni'],
+            // La masa salarial es de TODAS las planillas que pasan el filtro,
+            // no de las diez que se están viendo. reorder() quita el ORDER BY,
+            // que en una consulta de suma no pinta nada y molesta a MySQL.
+            fn (Builder $filtrada) => [
+                'masaSalarial' => (float) $filtrada->reorder()->sum('total'),
+            ]
+        );
     }
 
     public function store(Request $request)
@@ -47,12 +76,22 @@ class PlanillaController extends Controller
             ], 422);
         }
 
-        // Jalar sueldo_base directamente del empleado — no se puede editar
-        $empleado       = Empleado::findOrFail($request->empleado_id);
-        $sueldo_base    = (float) $empleado->sueldo_base;
+        // Jalar sueldo_base directamente del empleado — no se puede editar.
+        // Si entró a mitad de mes se prorratea por los días que le tocan: darle
+        // el mes entero a quien empezó el día 28 es pagarle de más.
+        $empleado    = Empleado::findOrFail($request->empleado_id);
+        $sueldo_base = $this->sueldoDelMes($empleado, (int) $request->mes, (int) $request->anio);
+
+        if ($sueldo_base === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este empleado todavía no había ingresado en ' . $request->mes . '/' . $request->anio .
+                             ' (ingresó el ' . \Carbon\Carbon::parse($empleado->fecha_ingreso)->format('d/m/Y') . ').',
+            ], 422);
+        }
+
         $bonificaciones = (float) ($request->bonificaciones ?? 0);
         $descuentos     = (float) ($request->descuentos ?? 0);
-        $total          = $sueldo_base + $bonificaciones - $descuentos;
 
         $planilla = Planilla::create([
             'empleado_id'    => $request->empleado_id,
@@ -62,10 +101,13 @@ class PlanillaController extends Controller
             'sueldo_base'    => $sueldo_base,
             'bonificaciones' => $bonificaciones,
             'descuentos'     => $descuentos,
-            'total'          => $total,
+            'total'          => 0, // se recalcula abajo (aún no tiene PayrollDetalle, pero centraliza la fórmula)
         ]);
 
-        return response()->json(['success' => true, 'data' => $planilla], 201);
+        $this->generarConceptosAutomaticos($planilla, $empleado);
+        $planilla->recalcularTotal();
+
+        return response()->json(['success' => true, 'data' => $planilla->load('payrollDetalles.paymentConcept')], 201);
     }
 
     public function show(string $id)
@@ -83,16 +125,15 @@ class PlanillaController extends Controller
         ]);
 
         // sueldo_base NO se puede editar — siempre viene del empleado
-        $sueldo_base    = (float) $planilla->sueldo_base;
         $bonificaciones = (float) ($request->bonificaciones ?? $planilla->bonificaciones);
         $descuentos     = (float) ($request->descuentos ?? $planilla->descuentos);
-        $total          = $sueldo_base + $bonificaciones - $descuentos;
 
         $planilla->update([
             'bonificaciones' => $bonificaciones,
             'descuentos'     => $descuentos,
-            'total'          => $total,
         ]);
+
+        $planilla->recalcularTotal();
 
         return response()->json(['success' => true, 'data' => $planilla]);
     }

@@ -1,184 +1,477 @@
 <div class="dashboard-wrapper">
 
-  <!-- ══ HEADER ═══════════════════════════════════════════════════════ -->
-  <div class="dash-header">
-    <div>
-      <h1 class="dash-title">Panel de Control — RRHH</h1>
-      <p class="dash-subtitle">{{ fechaHoy | titlecase }} &nbsp;·&nbsp; Resumen general del personal educativo</p>
-    </div>
-    <div class="header-badge">
-      <span class="badge-dot"></span>
-      Sistema Activo
-    </div>
-  </div>
-
-  <!-- ══ KPIs ════════════════════════════════════════════════════════ -->
-  <div class="kpi-grid">
-    <div class="kpi-card" *ngFor="let k of kpis">
-      <div class="kpi-icon-wrap" [style.background]="k.bg">
-        <!-- Empleados -->
-        <svg *ngIf="k.icon === 'people'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" [attr.stroke]="k.color" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <!-- Nómina -->
-        <svg *ngIf="k.icon === 'money'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" [attr.stroke]="k.color" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        <!-- Boletas -->
-        <svg *ngIf="k.icon === 'file'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" [attr.stroke]="k.color" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <!-- Warning -->
-        <svg *ngIf="k.icon === 'warning'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" [attr.stroke]="k.color" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- 1. TOP POWER BI COMMAND RIBBON                                     -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <header class="pbi-ribbon">
+    <div class="ribbon-brand">
+      <div class="brand-logo-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+        </svg>
       </div>
-      <div class="kpi-info">
-        <span class="kpi-label">{{ k.label }}</span>
-        <span class="kpi-value" [style.color]="k.color">{{ k.value }}</span>
-        <span class="kpi-sub">{{ k.sub }}</span>
+      <div>
+        <div class="brand-eyebrow">COLEGIO ADVENTISTA TÚPAC AMARU · CATA RECIBO</div>
+        <h1 class="brand-title">Panel de Control & Inteligencia Operativa</h1>
+        <p class="brand-meta">
+          <span>{{ fechaHoy | titlecase }}</span>
+          <span class="meta-separator">·</span>
+          <span>Sincronizado: <strong>{{ ultimaSincronizacion }}</strong></span>
+        </p>
       </div>
     </div>
-  </div>
 
-  <!-- ══ FILA 1: Barras + Dona + Radial ══════════════════════════════ -->
-  <div class="charts-row">
+    <!-- Controles de Slicer & Acciones -->
+    <div class="ribbon-actions">
+      <!-- Slicer Periodo -->
+      <div class="slicer-box">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span class="slicer-label">Periodo:</span>
+        <select class="slicer-select" [(ngModel)]="filtroMes" (change)="cargarTodoElDashboard()">
+          <option *ngFor="let m of meses" [value]="m.num">{{ m.nombre }}</option>
+        </select>
+        <select class="slicer-select" [(ngModel)]="filtroAnio" (change)="cargarTodoElDashboard()">
+          <option *ngFor="let a of aniosDisponibles" [value]="a">{{ a }}</option>
+        </select>
+      </div>
 
-    <!-- Remuneración por Área -->
-    <div class="chart-card wide">
-      <div class="card-header">
+      <!-- Botón Actualizar -->
+      <button class="btn-ribbon btn-refresh" (click)="cargarTodoElDashboard()" [disabled]="actualizando" title="Recargar métricas en vivo">
+        <svg class="spin-icon" [class.spinning]="actualizando" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+        <span>{{ actualizando ? 'Actualizando...' : 'Actualizar' }}</span>
+      </button>
+
+      <!-- Botón Imprimir / Exportar -->
+      <button class="btn-ribbon btn-export" (click)="imprimirReporte()" title="Imprimir reporte directivo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        <span>Exportar Reporte</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- 2. POWER BI VIEW TABS (SLICERS DE CATEGORÍA)                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <nav class="pbi-tabs-bar">
+    <button class="tab-pill" [class.active]="activeTab === 'todos'" (click)="cambiarTab('todos')">
+      <span class="tab-dot"></span>
+      Vista Ejecutiva General
+    </button>
+    <button class="tab-pill" [class.active]="activeTab === 'nomina'" (click)="cambiarTab('nomina')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Nómina & Finanzas
+    </button>
+    <button class="tab-pill" [class.active]="activeTab === 'personal'" (click)="cambiarTab('personal')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Personal & Estructura
+    </button>
+    <button class="tab-pill" [class.active]="activeTab === 'vacaciones'" (click)="cambiarTab('vacaciones')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Vacaciones & Control
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- 3. SCORECARD STRIP: 4 TARJETAS KPI TIPO POWER BI                   -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section class="kpi-scorecards">
+
+    <!-- KPI 1: Masa Salarial -->
+    <div class="kpi-tile card-emerald">
+      <div class="tile-header">
+        <span class="tile-title">Nómina Total del Mes</span>
+        <span class="badge-tag" [class.tag-up]="variacionPositiva" [class.tag-down]="!variacionPositiva" *ngIf="kpiNomina.badge">
+          {{ kpiNomina.badge }}
+        </span>
+      </div>
+      <div class="tile-body">
+        <span class="tile-value text-emerald">{{ kpiNomina.valor }}</span>
+        <span class="tile-sub">{{ kpiNomina.sub }}</span>
+      </div>
+      <div class="tile-footer">
+        <div class="tile-progress">
+          <div class="progress-bar bg-emerald" style="width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 2: Personal Activo -->
+    <div class="kpi-tile card-blue">
+      <div class="tile-header">
+        <span class="tile-title">Personal del Colegio</span>
+        <button class="btn-micro-action" (click)="abrirDrilldownGeneral()" title="Ver lista de trabajadores">
+          Ver todos
+        </button>
+      </div>
+      <div class="tile-body">
+        <span class="tile-value text-blue">{{ kpiPersonal.total }}</span>
+        <div class="tile-chips-row">
+          <span class="mini-chip">{{ kpiPersonal.docentes }} Docentes</span>
+          <span class="mini-chip">{{ kpiPersonal.admin }} Administrativos</span>
+        </div>
+      </div>
+      <div class="tile-footer">
+        <span class="tile-sub">+{{ kpiPersonal.altas }} incorporaciones en {{ getNombreMesActual() }}</span>
+      </div>
+    </div>
+
+    <!-- KPI 3: Cumplimiento de Firma de Boletas -->
+    <div class="kpi-tile card-indigo">
+      <div class="tile-header">
+        <span class="tile-title">Cumplimiento de Firmas</span>
+        <span class="badge-tag" [class.tag-up]="kpiFirmas.porcentaje >= 75" [class.tag-warn]="kpiFirmas.porcentaje < 75">
+          {{ kpiFirmas.porcentaje }}% completado
+        </span>
+      </div>
+      <div class="tile-body">
+        <span class="tile-value text-indigo">{{ kpiFirmas.firmadas }} <small class="text-muted">/ {{ kpiFirmas.total }}</small></span>
+        <span class="tile-sub">{{ kpiFirmas.pendientes }} boletas por firmar</span>
+      </div>
+      <div class="tile-footer">
+        <div class="tile-progress">
+          <div class="progress-bar bg-indigo" [style.width.%]="kpiFirmas.porcentaje"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 4: Control de Vacaciones & Alertas -->
+    <div class="kpi-tile card-amber">
+      <div class="tile-header">
+        <span class="tile-title">Vacaciones & Ausentismo</span>
+        <span class="badge-tag" [class.tag-warn]="kpiVacaciones.pendientes > 0" [class.tag-up]="kpiVacaciones.pendientes === 0">
+          {{ kpiVacaciones.pendientes > 0 ? kpiVacaciones.pendientes + ' pendientes' : 'Al día' }}
+        </span>
+      </div>
+      <div class="tile-body">
+        <span class="tile-value text-amber">{{ kpiVacaciones.pendientes }}</span>
+        <span class="tile-sub">Solicitudes por revisar en RRHH</span>
+      </div>
+      <div class="tile-footer">
+        <span class="tile-sub">🌴 {{ kpiVacaciones.enVacaciones }} trabajadores en descanso hoy</span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- 4. GRID PRINCIPAL DE VISUALIZACIONES POWER BI                      -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <main class="visuals-grid">
+
+    <!-- FILA 1: Remuneración por Área + Gauge de Firma -->
+    <div class="row-flex" *ngIf="activeTab === 'todos' || activeTab === 'nomina'">
+      
+      <!-- Visual 1: Remuneración por Área (Horizontal Ranked Bars) -->
+      <div class="pbi-card flex-2">
+        <div class="card-topbar">
+          <div>
+            <h2 class="card-heading">Remuneración por Área de Trabajo</h2>
+            <p class="card-caption">Masa salarial real ejecutada en {{ getNombreMesActual() }} {{ filtroAnio }}</p>
+          </div>
+          <span class="badge-pill-blue">Ranking Financiero</span>
+        </div>
+        
+        <div class="chart-container">
+          <apx-chart
+            [series]="barChartSeries"
+            [chart]="barChartOptions"
+            [xaxis]="barChartXaxis"
+            [yaxis]="barChartYaxis"
+            [plotOptions]="barChartPlot"
+            [dataLabels]="barChartDataLabels"
+            [colors]="barChartColors"
+            [grid]="barChartGrid"
+            [legend]="barChartLegend"
+            [tooltip]="barChartTooltip">
+          </apx-chart>
+        </div>
+
+        <!-- Acciones rápidas de Drilldown por Área -->
+        <div class="area-tag-strip">
+          <span class="tag-title">Explorar área:</span>
+          <button 
+            *ngFor="let cat of barChartXaxis.categories" 
+            class="area-tag-btn"
+            (click)="abrirDrilldownPorArea(cat)">
+            {{ cat }} →
+          </button>
+        </div>
+      </div>
+
+      <!-- Visual 2: Gauge Radial de Cumplimiento de Boletas -->
+      <div class="pbi-card flex-1">
+        <div class="card-topbar">
+          <div>
+            <h2 class="card-heading">Avance de Firmas</h2>
+            <p class="card-caption">Estado legal de entrega de boletas</p>
+          </div>
+        </div>
+
+        <div class="chart-container gauge-wrap">
+          <apx-chart
+            [series]="radialFirmasSeries"
+            [chart]="radialFirmasChart"
+            [plotOptions]="radialFirmasPlot"
+            [colors]="radialFirmasColors">
+          </apx-chart>
+        </div>
+
+        <div class="gauge-breakdown">
+          <div class="breakdown-item">
+            <span class="dot bg-emerald"></span>
+            <span class="item-label">Firmadas:</span>
+            <strong class="item-val">{{ kpiFirmas.firmadas }}</strong>
+          </div>
+          <div class="breakdown-item">
+            <span class="dot bg-amber"></span>
+            <span class="item-label">Pendientes:</span>
+            <strong class="item-val">{{ kpiFirmas.pendientes }}</strong>
+          </div>
+          <div class="breakdown-item">
+            <span class="dot bg-blue"></span>
+            <span class="item-label">Total emitidas:</span>
+            <strong class="item-val">{{ kpiFirmas.total }}</strong>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FILA 2: Tendencia Anual + Sistema de Pensiones + Modalidad -->
+    <div class="row-flex" *ngIf="activeTab === 'todos' || activeTab === 'nomina' || activeTab === 'personal'">
+      
+      <!-- Visual 3: Tendencia Anual de Nómina (General vs Sede vs Área) -->
+      <div class="pbi-card flex-2">
+        <div class="card-topbar">
+          <div>
+            <h2 class="card-heading">Evolución Anual de la Masa Salarial {{ filtroAnio }}</h2>
+            <p class="card-caption">Monitoreo continuo de los 12 meses del año académico</p>
+          </div>
+          <div class="topbar-actions">
+            <!-- Selector de Vista: General vs Por Sede vs Por Área -->
+            <div class="view-toggle-group">
+              <button 
+                type="button" 
+                class="view-toggle-btn" 
+                [class.active]="modoEvolucionAnual === 'general'"
+                (click)="cambiarModoEvolucion('general')">
+                General
+              </button>
+              <button 
+                type="button" 
+                class="view-toggle-btn" 
+                [class.active]="modoEvolucionAnual === 'sede'"
+                (click)="cambiarModoEvolucion('sede')">
+                Por Sede
+              </button>
+              <button 
+                type="button" 
+                class="view-toggle-btn" 
+                [class.active]="modoEvolucionAnual === 'area'"
+                (click)="cambiarModoEvolucion('area')">
+                Por Área
+              </button>
+            </div>
+            <span class="badge-pill-indigo">Historial Presupuestal</span>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <apx-chart
+            [series]="lineNominaSeries"
+            [chart]="lineNominaChart"
+            [xaxis]="lineNominaXaxis"
+            [yaxis]="lineNominaYaxis"
+            [colors]="lineNominaColors"
+            [stroke]="lineNominaStroke"
+            [fill]="lineNominaFill"
+            [dataLabels]="lineNominaDataLabels"
+            [grid]="lineNominaGrid"
+            [legend]="lineNominaLegend"
+            [tooltip]="lineNominaTooltip">
+          </apx-chart>
+        </div>
+      </div>
+
+      <!-- Visual 4: Sistema de Pensiones (AFP vs ONP) -->
+      <div class="pbi-card flex-1">
+        <div class="card-topbar">
+          <div>
+            <h2 class="card-heading">Sistema Previsional</h2>
+            <p class="card-caption">Distribución de personal en AFP u ONP</p>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <apx-chart
+            [series]="donutSeries"
+            [chart]="donutChart"
+            [labels]="donutLabels"
+            [colors]="donutColors"
+            [legend]="donutLegend"
+            [dataLabels]="donutDataLabels"
+            [responsive]="donutResponsive">
+          </apx-chart>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FILA 3: Contratos por Vencer + Solicitudes de Vacaciones -->
+    <div class="row-flex" *ngIf="activeTab === 'todos' || activeTab === 'personal' || activeTab === 'vacaciones'">
+      
+      <!-- Visual 5: Tabla Inteligente de Contratos por Vencer -->
+      <div class="pbi-card flex-1">
+        <div class="card-topbar">
+          <div>
+            <h2 class="card-heading">Contratos por Vencer</h2>
+            <p class="card-caption">Monitoreo preventivo en los próximos 60 días</p>
+          </div>
+          <span class="badge-count">{{ vencimientos.length }}</span>
+        </div>
+
+        <div class="table-scroll-wrap">
+          <table class="pbi-table" *ngIf="vencimientos.length > 0">
+            <thead>
+              <tr>
+                <th>TRABAJADOR</th>
+                <th>CARGO</th>
+                <th>FECHA FIN</th>
+                <th>URGENCIA</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let v of vencimientos">
+                <td class="cell-primary">{{ v.nombre }}</td>
+                <td class="cell-sub">{{ v.cargo }}</td>
+                <td class="cell-sub">{{ v.fecha }}</td>
+                <td>
+                  <span class="status-pill" [ngClass]="v.urgencia">
+                    {{ v.urgencia === 'urgente' ? '🔴 Urgente (' + v.dias + 'd)' : v.urgencia === 'proximo' ? '🟡 Próximo (' + v.dias + 'd)' : '🟢 ' + v.dias + ' días' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div *ngIf="vencimientos.length === 0" class="empty-state-card">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <p>No se registran contratos que venzan en los próximos 60 días.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual 6: Bandeja de Vacaciones & Ausencias -->
+      <div class="pbi-card flex-1">
+        <div class="card-topbar">
+          <div>
+            <h2 class="card-heading">Solicitudes de Vacaciones</h2>
+            <p class="card-caption">Bandeja de personal pendiente de resolución</p>
+          </div>
+          <span class="badge-count" [class.badge-alert]="vacacionesPendientes.length > 0">{{ vacacionesPendientes.length }}</span>
+        </div>
+
+        <div class="table-scroll-wrap">
+          <table class="pbi-table" *ngIf="vacacionesPendientes.length > 0">
+            <thead>
+              <tr>
+                <th>SOLICITANTE</th>
+                <th>PERIODO</th>
+                <th>DÍAS</th>
+                <th>ESTADO</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let vac of vacacionesPendientes">
+                <td class="cell-primary">
+                  {{ vac.empleado ? (vac.empleado.nombre + ' ' + vac.empleado.apellido) : 'Docente' }}
+                </td>
+                <td class="cell-sub">{{ vac.fecha_inicio }} al {{ vac.fecha_fin }}</td>
+                <td><strong>{{ vac.dias_solicitados }}</strong> días</td>
+                <td>
+                  <span class="status-pill proximo">Pendiente</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div *ngIf="vacacionesPendientes.length === 0" class="empty-state-card">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
+            </svg>
+            <p>No hay solicitudes de vacaciones pendientes por resolver.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- 5. MODAL INTERACTIVO DE DRILL-DOWN                                  -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div class="modal-backdrop" *ngIf="showDrilldownModal" (click)="cerrarDrilldown()">
+    <div class="drilldown-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
         <div>
-          <h3 class="card-title">Remuneración por Área</h3>
-          <p class="card-desc">Distribución mensual del presupuesto en nómina</p>
+          <span class="modal-eyebrow">EXPLORADOR DETALLADO</span>
+          <h3 class="modal-title">{{ drilldownTitulo }}</h3>
         </div>
-        <span class="chip chip-blue">{{ kpis[1].sub }}</span>
-      </div>
-      <apx-chart
-        [series]="barChartSeries"
-        [chart]="barChartOptions"
-        [xaxis]="barChartXaxis"
-        [yaxis]="barChartYaxis"
-        [plotOptions]="barChartPlot"
-        [dataLabels]="barChartDataLabels"
-        [colors]="barChartColors"
-        [grid]="barChartGrid"
-        [tooltip]="barChartTooltip"
-        [fill]="barChartFill">
-      </apx-chart>
-    </div>
-
-    <!-- Distribución por Sexo -->
-    <div class="chart-card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Distribución por Sexo</h3>
-          <p class="card-desc">Total de personal activo</p>
-        </div>
-      </div>
-      <apx-chart
-        [series]="donutSeries"
-        [chart]="donutChart"
-        [labels]="donutLabels"
-        [colors]="donutColors"
-        [legend]="donutLegend"
-        [dataLabels]="donutDataLabels"
-        [responsive]="donutResponsive">
-      </apx-chart>
-    </div>
-
-    <!-- Nivel Educativo (Radial) -->
-    <div class="chart-card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Distribución por Nivel</h3>
-          <p class="card-desc">Inicial · Primaria · Secundaria</p>
-        </div>
-      </div>
-      <apx-chart
-        [series]="nivelSeries"
-        [chart]="nivelChart"
-        [labels]="nivelLabels"
-        [colors]="nivelColors"
-        [plotOptions]="nivelPlot">
-      </apx-chart>
-    </div>
-
-  </div>
-
-  <!-- ══ FILA 2: Línea de Tendencia + Tipo Contrato + Tabla ══════════ -->
-  <div class="charts-row-2">
-
-    <!-- Tendencia de nómina -->
-    <div class="chart-card trend-card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Tendencia de Nómina 2026</h3>
-          <p class="card-desc">Evolución del gasto en planillas por mes</p>
-        </div>
-        <div class="trend-stat">
-          <span class="trend-up">▲ 1.7%</span>
-          <span class="trend-label">vs mes anterior</span>
-        </div>
-      </div>
-      <apx-chart
-        [series]="lineNominaSeries"
-        [chart]="lineNominaChart"
-        [xaxis]="lineNominaXaxis"
-        [yaxis]="lineNominaYaxis"
-        [colors]="lineNominaColors"
-        [stroke]="lineNominaStroke"
-        [fill]="lineNominaFill"
-        [dataLabels]="lineNominaDataLabels"
-        [grid]="lineNominaGrid"
-        [tooltip]="lineNominaTooltip">
-      </apx-chart>
-    </div>
-
-    <!-- Tipo de Contrato -->
-    <div class="chart-card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Tipo de Contrato</h3>
-          <p class="card-desc">Modalidades de vínculo laboral</p>
-        </div>
-      </div>
-      <apx-chart
-        [series]="pieContrato"
-        [chart]="pieContratoChart"
-        [labels]="pieContratoLabels"
-        [colors]="pieContratoColors"
-        [legend]="pieLegend">
-      </apx-chart>
-    </div>
-
-    <!-- Tabla: Vencimientos de Contratos -->
-    <div class="chart-card vencimientos-card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Contratos por Vencer</h3>
-          <p class="card-desc">Próximos 60 días</p>
-        </div>
-        <button class="btn-ver-todos">Ver todos</button>
+        <button class="btn-close-modal" (click)="cerrarDrilldown()">✕</button>
       </div>
 
-      <div class="table-scroll">
-        <table class="venc-table">
+      <div class="modal-body">
+        <div class="drilldown-summary-strip">
+          <span>Total identificados: <strong>{{ drilldownEmpleados.length }} trabajadores</strong></span>
+        </div>
+
+        <table class="pbi-table">
           <thead>
             <tr>
-              <th>EMPLEADO</th>
+              <th>DNI</th>
+              <th>NOMBRE COMPLETO</th>
               <th>CARGO</th>
-              <th>VENCE</th>
-              <th>ESTADO</th>
+              <th>ÁREA</th>
+              <th class="text-right">SUELDO BASE</th>
+              <th class="text-center">ESTADO</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let v of vencimientos">
-              <td class="emp-name">{{ v.nombre }}</td>
-              <td class="emp-cargo">{{ v.cargo }}</td>
-              <td class="emp-fecha">{{ v.fecha }}</td>
-              <td>
-                <span class="urgencia-badge" [ngClass]="v.urgencia">
-                  {{ v.urgencia === 'urgente' ? '🔴 Urgente' : v.urgencia === 'proximo' ? '🟡 Próximo' : '🟢 Normal' }}
-                </span>
+            <tr *ngFor="let emp of drilldownEmpleados">
+              <td><code>{{ emp.dni }}</code></td>
+              <td class="cell-primary">{{ emp.nombre }} {{ emp.apellido }}</td>
+              <td class="cell-sub">{{ emp.cargo?.nombre || '—' }}</td>
+              <td class="cell-sub">{{ emp.area?.nombre || '—' }}</td>
+              <td class="text-right">
+                <strong>S/ {{ (emp.sueldo_base || 0) | number:'1.2-2' }}</strong>
+              </td>
+              <td class="text-center">
+                <span class="status-pill normal" *ngIf="emp.estado?.toLowerCase() === 'activo'">Activo</span>
+                <span class="status-pill urgente" *ngIf="emp.estado?.toLowerCase() !== 'activo'">Inactivo</span>
+              </td>
+            </tr>
+            <tr *ngIf="drilldownEmpleados.length === 0">
+              <td colspan="6" style="text-align: center; padding: 24px; color: #94a3b8;">
+                No se encontraron empleados registrados en este criterio.
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
 
+      <div class="modal-footer">
+        <button class="btn-modal-close" (click)="cerrarDrilldown()">Cerrar</button>
+      </div>
+    </div>
   </div>
 
 </div>

@@ -1,19 +1,39 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Sede;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use App\Traits\ListadoPaginado;
 
 class SedeController extends Controller
 {
-    public function index()
+    use ListadoPaginado;
+
+    /**
+     * GET /sedes
+     *
+     * Sin ?page devuelve la lista completa (así la piden los desplegables
+     * de los formularios). Con ?page&size la corta el servidor y manda
+     * además el total, para que el frontend no tenga que traerse todo
+     * para saber cuántos hay. Ver App\Traits\ListadoPaginado.
+     */
+    public function index(Request $request)
     {
-        return response()->json(['success' => true, 'data' => Sede::all()]);
+        return $this->responderListado(
+            $request,
+            Sede::query()->orderBy('nombre'),
+            ['nombre', 'direccion'],
+            // Las cifras de la cabecera: se cuentan sobre todo lo que pasa el
+            // filtro, no sobre la página que se está viendo.
+            fn (Builder $filtrada) => $this->conteoPorEstado($filtrada, 'estado', ['activos' => 'activo', 'inactivos' => 'inactivo'])
+        );
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nombre'    => 'required|string|max:100',
+            'nombre'    => 'required|string|max:100|unique:sedes,nombre',
             'direccion' => 'nullable|string|max:255',
             'telefono'  => 'nullable|string|max:15',
             'estado'    => 'nullable|string|in:activo,inactivo',
@@ -31,7 +51,7 @@ class SedeController extends Controller
     {
         $sede = Sede::findOrFail($id);
         $request->validate([
-            'nombre'    => 'sometimes|string|max:100',
+            'nombre'    => ['sometimes', 'string', 'max:100', Rule::unique('sedes', 'nombre')->ignore($id)],
             'direccion' => 'nullable|string|max:255',
             'telefono'  => 'nullable|string|max:15',
             'estado'    => 'nullable|string|in:activo,inactivo',

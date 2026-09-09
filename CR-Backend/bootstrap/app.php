@@ -15,7 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(CorsMiddleware::class);
         $middleware->alias([
-            'rol' => \App\Http\Middleware\CheckRol::class,
+            'rol'         => \App\Http\Middleware\CheckRol::class,
+            'sesion'      => \App\Http\Middleware\RenovarSesionActiva::class,
+            // Traba la cuenta que todavía usa la contraseña que le dieron.
+            'clave_nueva' => \App\Http\Middleware\ExigirCambioPassword::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
