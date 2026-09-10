@@ -31,7 +31,8 @@
   font-size: 0.85rem;
   color: var(--text-muted);
   margin: 0;
-  text-transform: capitalize;
+  /* Sin capitalize: dejaba la fecha como "10 De Septiembre De 2026". El
+     texto ya viene escrito como toca desde fechaEnPalabras(). */
 }
 
 .header-badge {
@@ -358,13 +359,40 @@
 }
 
 @media (max-width: 768px) {
-  .dashboard-wrapper { padding: 16px; }
-  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .dashboard-wrapper { padding: 16px 0; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .charts-row, .charts-row-2 {
     flex-direction: column;
     .chart-card { flex: 1 1 100% !important; }
   }
   .dash-header { flex-direction: column; gap: 12px; }
+}
+
+/* ── En el celular ──────────────────────────────────────────────
+   Las tarjetas se quedaban en dos columnas de 179px, pero su
+   contenido pedía 276: la mitad de cada una se salía por el borde y
+   el `overflow: hidden` la cortaba. Se pasa a una columna y se les
+   permite encoger (min-width: 0), que es lo que un hijo de grid no
+   hace por su cuenta. */
+@media (max-width: 560px) {
+  .dashboard-wrapper { padding: 0; }
+
+  .kpi-grid { grid-template-columns: 1fr; }
+
+  .kpi-card,
+  .chart-card {
+    min-width: 0;
+    padding: 16px;
+  }
+
+  .kpi-value { font-size: 1.35rem; }
+  .kpi-label { white-space: normal; }
+
+  .dash-title { font-size: 1.35rem; }
+
+  /* Los gráficos ya son anchos de sobra: sin esto, ApexCharts se queda
+     con el ancho que midió al abrir y desborda la tarjeta. */
+  .chart-card .apexcharts-canvas { max-width: 100%; }
 }
 
 /* Una tabla sin filas y sin explicación se lee como que algo falló. */

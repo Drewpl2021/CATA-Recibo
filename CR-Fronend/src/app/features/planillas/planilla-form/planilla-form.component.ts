@@ -7,6 +7,7 @@ import { Planilla } from '../../../core/models';
 import { EmpleadoService } from '../../../core/services';
 import { Empleado } from '../../../core/models';
 import { ToastService } from '../../../core/services';
+import { MESES_OPCIONES } from '../../../shared/constants';
 
 @Component({
   selector: 'app-planilla-form',
@@ -32,14 +33,7 @@ export class PlanillaFormComponent implements OnInit {
     descuentos: 0,
   } as Planilla;
 
-  meses = [
-    { num: 1, nombre: 'Enero' }, { num: 2, nombre: 'Febrero' },
-    { num: 3, nombre: 'Marzo' }, { num: 4, nombre: 'Abril' },
-    { num: 5, nombre: 'Mayo' }, { num: 6, nombre: 'Junio' },
-    { num: 7, nombre: 'Julio' }, { num: 8, nombre: 'Agosto' },
-    { num: 9, nombre: 'Setiembre' }, { num: 10, nombre: 'Octubre' },
-    { num: 11, nombre: 'Noviembre' }, { num: 12, nombre: 'Diciembre' }
-  ];
+  meses = MESES_OPCIONES.map((m) => ({ num: m.value, nombre: m.label }));
 
   aniosDisponibles: number[] = [];
 

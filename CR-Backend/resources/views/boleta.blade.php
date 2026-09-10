@@ -133,6 +133,23 @@
             font-weight: bold;
         }
 
+        /* ── Densidad: la boleta se aprieta segun cuantos conceptos lleve ──
+           Solo se tocan el relleno de las filas y el cuerpo de letra; los
+           títulos, los totales y la cabecera se quedan como están para que
+           la boleta siga leyéndose igual de bien. */
+        .densidad-ajustada table td      { padding: 2px 6px; font-size: 9.5px; }
+        .densidad-apretada table td      { padding: 1.5px 5px; font-size: 9px; line-height: 1.2; }
+        .densidad-muy-apretada table td  { padding: 1px 5px; font-size: 8.5px; line-height: 1.15; }
+
+        .densidad-apretada .seccion-titulo,
+        .densidad-muy-apretada .seccion-titulo { padding: 3px 8px; font-size: 9.5px; }
+
+        .densidad-muy-apretada .encabezado-logo img { width: 52px; height: 52px; }
+
+        /* Si aun así no cupiera, que al menos no se corte a mitad de una
+           sección ni deje las firmas huérfanas en una página sola. */
+        .seccion, .fila-columnas { page-break-inside: avoid; }
+
         .nota {
             font-size: 8px;
             color: #888;
@@ -243,8 +260,33 @@
 --}}
 @php $copias = $copias ?? 2; @endphp
 
+@php
+    /*
+     * Cuántas líneas de concepto lleva esta boleta.
+     *
+     * Con el diseño de siempre caben catorce; en la quince se partía en dos
+     * páginas, y la segunda salía SIN cabecera, sin el nombre del trabajador
+     * y con el marco abierto: impresa era medio documento suelto que no se
+     * sabía de quién era.
+     *
+     * Así que la boleta se aprieta sola: cuantas más líneas lleve, más
+     * ajustados van el interlineado y la letra, para que quepa entera. Es
+     * preferible a partirla, porque una boleta es UN documento y se firma
+     * una vez.
+     */
+    $lineasDeConcepto = count($conceptosIngreso) + count($conceptosDescuento)
+        + count($conceptosAportacion) + count($conceptosAdelanto);
+
+    $densidad = match (true) {
+        $lineasDeConcepto <= 10 => 'holgada',
+        $lineasDeConcepto <= 18 => 'ajustada',
+        $lineasDeConcepto <= 28 => 'apretada',
+        default                 => 'muy-apretada',
+    };
+@endphp
+
 @for ($copia = 1; $copia <= $copias; $copia++)
-<div class="boleta">
+<div class="boleta densidad-{{ $densidad }}">
     <div class="copia-label" @if ($copias === 1) style="visibility: hidden;" @endif>
         @if ($copia == 1)
             -- COPIA TRABAJADOR --
@@ -388,7 +430,13 @@
                     <td class="monto">S/ {{ number_format($totalDescuentos, 2) }}</td>
                 </tr>
             </table>
+            @if ($pension['total'] > 0)
             <p class="nota">El descuento por {{ $pension['tipo'] }} se calcula sobre la remuneración básica según tasas vigentes {{ $anio }}.</p>
+            @else
+            {{-- Sin sistema de pensiones no hay nada que explicar, y la nota
+                 quedaba como "El descuento por No aporta se calcula...". --}}
+            <p class="nota">No se aplica descuento de pensión: el trabajador no aporta a ningún sistema.</p>
+            @endif
         </div>
     </div>
 

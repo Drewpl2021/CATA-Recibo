@@ -1,16 +1,148 @@
 <div class="dashboard-wrapper">
 
-  <!-- ══ HEADER ═══════════════════════════════════════════════════════ -->
+  <!-- ══ CABECERA CON LOS FILTROS DENTRO ══════════════════════════
+       Los filtros van en la misma barra del título y no en un panel aparte:
+       como sección propia ocupaban una franja entera y empujaban todos los
+       gráficos fuera de la pantalla. -->
   <div class="dash-header">
-    <div>
-      <h1 class="dash-title">Panel de Control — RRHH</h1>
-      <p class="dash-subtitle">{{ fechaHoy | titlecase }} &nbsp;·&nbsp; Resumen general del personal educativo</p>
+    <div class="dash-header__titulo">
+      <h1 class="dash-title">Panel de Control</h1>
+      <p class="dash-subtitle">{{ fechaHoy }}{{ sedeElegida ? ' · ' + sedeElegida.nombre : '' }}</p>
     </div>
-    <div class="header-badge">
-      <span class="badge-dot"></span>
-      Sistema Activo
+
+    <!-- Los filtros, con forma de control y no de formulario -->
+    <div class="barra-filtros">
+
+      <!-- Periodo: un paso atrás, un paso adelante, y el calendario -->
+      <div class="filtro-periodo">
+        <button type="button" class="filtro-periodo__paso" (click)="moverMes(-1)"
+          [attr.aria-label]="'Ver ' + etiquetaMesVecino(-1)" [title]="etiquetaMesVecino(-1)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+
+        <button type="button" class="filtro-periodo__valor" (click)="alternarCalendario($event)"
+          [attr.aria-expanded]="calendarioAbierto" aria-label="Elegir el mes">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          {{ nombreMes(filtroMes) }} {{ filtroAnio }}
+          <svg class="filtro-periodo__flecha" [class.filtro-periodo__flecha--abierta]="calendarioAbierto"
+            xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        <button type="button" class="filtro-periodo__paso" (click)="moverMes(1)"
+          [attr.aria-label]="'Ver ' + etiquetaMesVecino(1)" [title]="etiquetaMesVecino(1)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+
+        <!-- Los doce meses de un vistazo, en vez de una lista desplegable -->
+        <div class="selector-mes" *ngIf="calendarioAbierto" (click)="$event.stopPropagation()">
+          <div class="selector-mes__anio">
+            <button type="button" (click)="moverAnioDelCalendario(-1)" aria-label="Año anterior">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            {{ anioDelCalendario }}
+            <button type="button" (click)="moverAnioDelCalendario(1)" aria-label="Año siguiente">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="selector-mes__meses">
+            <button type="button" class="selector-mes__mes" *ngFor="let m of meses"
+              [class.selector-mes__mes--elegido]="esMesElegido(m.value)"
+              [class.selector-mes__mes--hoy]="esMesDeHoy(m.value)"
+              (click)="elegirMes(m.value)">
+              {{ m.label.slice(0, 3) }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sede: con dos o tres se ven todas de golpe; con más, desplegable -->
+      <div class="segmentado" *ngIf="sedes.length && sedes.length <= 3" role="group" aria-label="Sede">
+        <button type="button" class="segmentado__opcion" [class.segmentado__opcion--activa]="!filtroSede"
+          (click)="elegirSede('')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          Todas
+        </button>
+
+        <button type="button" class="segmentado__opcion" *ngFor="let s of sedes"
+          [class.segmentado__opcion--activa]="filtroSede === s.id" (click)="elegirSede(s.id)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+          {{ s.nombre }}
+        </button>
+      </div>
+
+      <div class="filtro-select" *ngIf="sedes.length > 3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+        <select [(ngModel)]="filtroSede" (ngModelChange)="alFiltrar()" aria-label="Sede">
+          <option value="">Todas las sedes</option>
+          <option *ngFor="let s of sedes" [value]="s.id">{{ s.nombre }}</option>
+        </select>
+      </div>
+
+      <!-- Solo aparece cuando hay a dónde volver -->
+      <button type="button" class="chip-filtro" *ngIf="hayFiltros" (click)="limpiarFiltros()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/>
+        </svg>
+        Este mes
+      </button>
     </div>
   </div>
+
+  <!-- ══ LO QUE HAY QUE HACER ══════════════════════════════════════
+       Va antes que los gráficos a propósito: el resto del panel cuenta
+       cosas, y esto señala trabajo que alguien está esperando. -->
+  <section class="pendientes" *ngIf="!cargando">
+    <h2 class="pendientes__titulo">Pendientes de Recursos Humanos</h2>
+
+    <div class="pendientes__lista pendientes__lista--fila" *ngIf="pendientesConTrabajo.length">
+      <button type="button" class="pendiente" *ngFor="let p of pendientesConTrabajo"
+        (click)="irAResolver(p)">
+        <strong class="pendiente__cuantos">{{ p.cuantos }}</strong>
+        <span class="pendiente__texto">{{ p.texto }}</span>
+        <svg class="pendiente__flecha" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </button>
+    </div>
+
+    <p class="pendientes__vacio" *ngIf="todoAlDia">
+      No hay nada pendiente en {{ loQueSeVe }}: las boletas están emitidas y firmadas,
+      no hay vacaciones sin responder y ningún contrato vence este mes.
+    </p>
+  </section>
 
   <!-- ══ KPIs ════════════════════════════════════════════════════════ -->
   <div class="kpi-grid" *ngIf="cargando" aria-hidden="true">
@@ -74,7 +206,6 @@
           <h3 class="card-title">Remuneración por Área</h3>
           <p class="card-desc">Distribución mensual del presupuesto en nómina</p>
         </div>
-        <span class="chip chip-blue">{{ etiquetaPeriodo }}</span>
       </div>
       <apx-chart
         [series]="barChartSeries"
@@ -219,4 +350,88 @@
 
   </div>
 
+
+  <!-- ══ CUMPLEAÑOS DEL MES ════════════════════════════════════════
+       No es una cifra de planilla, pero es de lo que RR.HH. de un colegio
+       mira cada mes y hoy tenía que buscar ficha por ficha. -->
+  <!-- ══ A DÓNDE SE VA LA PLATA Y CÓMO ES LA PLANTILLA ═════════════ -->
+  <div class="dash-grid dash-grid--tres" *ngIf="!cargando">
+    <div class="chart-card chart-card--ancha">
+      <div class="card-head">
+        <div>
+          <h3 class="card-title">A dónde se va la nómina</h3>
+          <p class="card-sub">{{ loQueSeVe }}</p>
+        </div>
+      </div>
+      <apx-chart
+        [series]="composicionSeries" [chart]="composicionChart" [xaxis]="composicionXaxis"
+        [yaxis]="composicionYaxis" [plotOptions]="composicionPlot" [colors]="composicionColores"
+        [dataLabels]="composicionDataLabels" [legend]="composicionLegend"
+        [tooltip]="composicionTooltip" [grid]="composicionGrid">
+      </apx-chart>
+      <p class="card-pie">
+        Lo que <strong>suma</strong> va en azul y verde; lo que <strong>resta</strong>, en rojo y
+        ámbar. Lo que aporta el colegio no sale del sueldo del trabajador.
+      </p>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-head">
+        <div>
+          <h3 class="card-title">Personal por sede</h3>
+          <p class="card-sub">Del personal activo</p>
+        </div>
+      </div>
+      <apx-chart
+        [series]="sedeSeries" [chart]="sedeChart" [labels]="sedeLabels"
+        [colors]="sedeColores" [legend]="sedeLegend" [dataLabels]="sedeDataLabels">
+      </apx-chart>
+    </div>
+  </div>
+
+  <div class="dash-grid dash-grid--dos" *ngIf="!cargando">
+    <div class="chart-card">
+      <div class="card-head">
+        <div>
+          <h3 class="card-title">Antigüedad del personal</h3>
+          <p class="card-sub">Años en el colegio</p>
+        </div>
+      </div>
+      <apx-chart
+        [series]="antiguedadSeries" [chart]="antiguedadChart" [xaxis]="antiguedadXaxis"
+        [yaxis]="antiguedadYaxis" [plotOptions]="antiguedadPlot" [colors]="antiguedadColores"
+        [dataLabels]="antiguedadDataLabels" [legend]="antiguedadLegend">
+      </apx-chart>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-head">
+        <div>
+          <h3 class="card-title">Los conceptos que más pesan</h3>
+          <p class="card-sub">Sin contar pensión, EsSalud ni Renta de 5ta</p>
+        </div>
+      </div>
+      <apx-chart *ngIf="hayTopConceptos"
+        [series]="conceptosSeries" [chart]="conceptosChart" [xaxis]="conceptosXaxis"
+        [yaxis]="conceptosYaxis" [plotOptions]="conceptosPlot" [colors]="conceptosColores"
+        [dataLabels]="conceptosDataLabels" [legend]="conceptosLegend" [tooltip]="conceptosTooltip">
+      </apx-chart>
+      <p class="card-vacio" *ngIf="!hayTopConceptos">
+        Este mes no se aplicó ningún concepto además de los de ley.
+      </p>
+    </div>
+  </div>
+
+  <section class="cumpleanos" *ngIf="!cargando && cumpleanos.length">
+    <h3 class="card-title">Cumpleaños de {{ loQueSeVe.split(' ·')[0] }}</h3>
+    <ul class="cumpleanos__lista">
+      <li class="cumpleanos__item" *ngFor="let c of cumpleanos">
+        <span class="cumpleanos__dia">{{ c.dia }}</span>
+        <span class="cumpleanos__quien">
+          <strong>{{ c.nombre }}</strong>
+          <small>{{ c.cargo }}</small>
+        </span>
+      </li>
+    </ul>
+  </section>
 </div>

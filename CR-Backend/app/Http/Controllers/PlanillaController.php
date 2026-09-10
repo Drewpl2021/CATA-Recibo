@@ -12,7 +12,7 @@ class PlanillaController extends Controller
     use ListadoPaginado;
     use CalculaConceptosPlanilla;
     /**
-     * GET /planilla?empleado_id=&empleado_ids=&mes=&anio=&periodo_id=&page=&size=&search=
+     * GET /planilla?empleado_id=&empleado_ids=&mes=&anio=&periodo_id=&corrida_id=&sin_corrida=&page=&size=&search=
      *
      * Es la tabla que más crece del sistema: un registro por trabajador y
      * por mes. Los filtros van sobre el índice planilla_empleado_periodo_idx
@@ -20,7 +20,7 @@ class PlanillaController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Planilla::with('empleado');
+        $query = Planilla::with('empleado', 'corrida');
 
         if ($request->filled('empleado_id')) {
             $query->where('empleado_id', $request->empleado_id);
@@ -33,6 +33,18 @@ class PlanillaController extends Controller
         }
         if ($request->filled('periodo_id')) {
             $query->where('periodo_id', $request->periodo_id);
+        }
+
+        // ?corrida_id= : las filas de UNA planilla con nombre. Es el segundo
+        // nivel de la pantalla: se entra a "Planilla TIC" y salen los suyos.
+        if ($request->filled('corrida_id')) {
+            $query->where('corrida_id', $request->corrida_id);
+        }
+
+        // ?sin_corrida=1 : el grupo "Sin agrupar". Son las planillas de antes
+        // de que existieran las corridas, que se quedaron como estaban.
+        if ($request->boolean('sin_corrida')) {
+            $query->whereNull('corrida_id');
         }
 
         // ?empleado_ids=id1,id2,... — solo por los trabajadores que se están
@@ -72,6 +84,7 @@ class PlanillaController extends Controller
             'bonificaciones' => 'nullable|numeric|min:0',
             'descuentos'     => 'nullable|numeric|min:0',
             'periodo_id'     => 'nullable|uuid|exists:periodos,id',
+            'corrida_id'     => 'nullable|uuid|exists:planilla_corridas,id',
         ]);
 
         $existe = Planilla::where('empleado_id', $request->empleado_id)
@@ -108,6 +121,7 @@ class PlanillaController extends Controller
             'mes'            => $request->mes,
             'anio'           => $request->anio,
             'periodo_id'     => $request->periodo_id ?? null,
+            'corrida_id'     => $request->corrida_id ?? null,
             'sueldo_base'    => $sueldo_base,
             'bonificaciones' => $bonificaciones,
             'descuentos'     => $descuentos,

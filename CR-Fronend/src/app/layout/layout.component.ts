@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, HostListener, OnInit, ChangeDetectorRef } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
@@ -319,6 +319,55 @@ export class LayoutComponent implements OnInit {
   }
 
   /**
+   * En móvil el menú NO empuja el contenido: flota encima y lo tapa entero.
+   *
+   * Por eso, ahí, entrar a una pantalla tiene que cerrarlo. Sin esto se
+   * elegía un módulo, la pantalla cargaba debajo y el menú se quedaba
+   * delante tapándola — y el botón de la hamburguesa queda justo debajo
+   * del menú, así que tampoco había con qué cerrarlo: la aplicación se
+   * quedaba trabada en el menú.
+   */
+  private get esMovil(): boolean {
+    return window.innerWidth <= 768;
+  }
+
+  cerrarMenuEnMovil(): void {
+    if (this.esMovil) {
+      this.sidebarVisible = false;
+    }
+  }
+
+  /** El fondo oscuro de detrás del menú: pulsarlo lo cierra. */
+  cerrarMenuDesdeElFondo(): void {
+    this.sidebarVisible = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  alPulsarEscape(): void {
+    this.cerrarMenuEnMovil();
+  }
+
+  /**
+   * Al girar el teléfono o cruzar el ancho de tableta, el menú vuelve a lo
+   * que toca en cada caso: abierto en escritorio, cerrado en móvil.
+   *
+   * Solo actúa al CRUZAR el límite, no en cada píxel del arrastre: en
+   * escritorio, colapsar el menú es una decisión —se hace para ganar sitio—
+   * y estirar un poco la ventana no debería deshacerla.
+   */
+  private eraMovil = window.innerWidth <= 768;
+
+  @HostListener('window:resize')
+  alCambiarElAncho(): void {
+    const ahoraEsMovil = this.esMovil;
+
+    if (ahoraEsMovil !== this.eraMovil) {
+      this.eraMovil = ahoraEsMovil;
+      this.sidebarVisible = !ahoraEsMovil;
+    }
+  }
+
+  /**
    * Los grupos funcionan como acordeón: abrir uno cierra los demás.
    *
    * Antes cada grupo se abría por su cuenta y ninguno se cerraba, así que
@@ -346,6 +395,7 @@ export class LayoutComponent implements OnInit {
 
   setActive(ruta: string): void {
     this.activeMenu = ruta;
+    this.cerrarMenuEnMovil();
   }
 
   /**

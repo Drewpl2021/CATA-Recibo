@@ -7,14 +7,12 @@ import { mensajeErrorApi } from '../../../core/utils';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
-
-const MESES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+import { nombreMes } from '../../../shared/constants';
 
 /** "Agosto 2026" a partir de la planilla del documento; si no tiene, su tipo. */
 function periodoDe(doc: Documento): string {
   if (!doc.planilla) return doc.tipo;
-  return `${MESES[doc.planilla.mes] || doc.planilla.mes} ${doc.planilla.anio}`;
+  return `${nombreMes(doc.planilla.mes)} ${doc.planilla.anio}`;
 }
 
 /**

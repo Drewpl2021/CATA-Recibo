@@ -107,7 +107,20 @@ export const routes: Routes = [
         loadComponent: () => import('./features/emision-boleta/emision-descuentos-form/emision-descuentos-form.component').then(m => m.EmisionDescuentosFormComponent),
       },
       {
+        // Primer nivel: las planillas con nombre del mes.
         path: 'planillas',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/planillas/corridas-list/corridas-list.component').then(m => m.CorridasListComponent),
+      },
+      {
+        // Segundo nivel: los trabajadores DENTRO de una planilla.
+        path: 'planillas/corrida/:id',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/planillas/planillas-list/planillas-list.component').then(m => m.PlanillasListComponent),
+      },
+      {
+        // Las que no están en ninguna planilla con nombre.
+        path: 'planillas/sin-agrupar',
         canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/planillas/planillas-list/planillas-list.component').then(m => m.PlanillasListComponent),
       },

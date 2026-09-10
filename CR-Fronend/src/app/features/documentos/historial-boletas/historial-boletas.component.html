@@ -5,7 +5,7 @@
 ></app-page-header>
 
 <section class="panel-filtros">
-  <div class="panel-filtros__campos">
+  <div class="panel-filtros__campos panel-filtros__campos--compacto">
     <div class="campo-filtro">
       <label for="filtroEmpleado">Trabajador</label>
       <select id="filtroEmpleado" class="form-control" [(ngModel)]="empleadoId"
@@ -24,6 +24,7 @@
   [columnas]="columnas"
   [datos]="documentos"
   [cargando]="cargando"
+  [numerarFilas]="true"
   [paginacionServidor]="true"
   [totalElementos]="total"
   [pagina]="pagina"

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
  * Hasta ahora la campanita del menú no guardaba nada: cada vez que se
  * abría la pantalla se pedían los documentos del usuario y se contaban
  * los que no estuvieran firmados. Eso servía para "tienes N pendientes",
- * pero no para "el 3 de setiembre llegó tu boleta de agosto": en cuanto
+ * pero no para "el 3 de septiembre llegó tu boleta de agosto": en cuanto
  * el docente firmaba, el aviso desaparecía sin dejar rastro.
  *
  * Con esta tabla el aviso queda: se puede paginar el historial, ver la

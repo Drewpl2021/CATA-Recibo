@@ -1,11 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ConsultaDniController;
+use App\Http\Controllers\TerminosController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\VacacionController;
 use App\Http\Controllers\PlanillaController;
+use App\Http\Controllers\PlanillaCorridaController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\BoletaController;
 use App\Http\Controllers\MiPlanillaController;
@@ -78,6 +81,12 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva'])->group(function () 
     Route::post('mis-documentos/{id}/firmar',  [MisDocumentosController::class, 'firmar']);
     Route::get('mis-modulos', [MisModulosController::class, 'index']);
     Route::put('cambiar-password', [AuthController::class, 'cambiarPassword']);
+
+    // Los términos de uso: el papel que antes se firmaba a mano. Los firma
+    // cada trabajador desde su cuenta, así que van entre las rutas de
+    // cualquier autenticado y no en el grupo de RR.HH.
+    Route::get('terminos',          [TerminosController::class, 'mostrar']);
+    Route::post('terminos/aceptar', [TerminosController::class, 'aceptar']);
     // El propio empleado registra/actualiza su firma y/o huella (RRHH tiene su
     // propio endpoint equivalente para hacerlo por cualquier empleado, más abajo).
     Route::post('mi-identidad-firma', [IdentidadFirmaController::class, 'subirMia']);
@@ -117,9 +126,24 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva'])->group(function () 
         // RR.HH. le repone la contrasena a quien se quedo fuera. Queda obligado
         // a cambiarla al entrar, y se le cierran las sesiones abiertas.
         Route::post('users/{id}/restablecer-password', [UserController::class, 'restablecerPassword']);
+        // Buscar a la persona por su DNI antes de darla de alta. Va limitada
+        // porque cada consulta que no esté en la base propia se le paga a
+        // Decolecta: sin freno, un script podría vaciar el saldo.
+        Route::get('consulta-dni/{dni}', ConsultaDniController::class)
+            ->middleware('throttle:consulta_dni');
+
         Route::post('empleados/{id}/identidad-firma', [IdentidadFirmaController::class, 'subir']);
         Route::apiResource('empleados',        EmpleadoController::class);
         Route::apiResource('planilla',         PlanillaController::class);
+
+        // Las corridas: la planilla con nombre que agrupa a un grupo de gente
+        // ("Planilla TIC — Septiembre 2026"). Las rutas sueltas van ANTES del
+        // apiResource: si no, "sacar" entraría por show({id}) y devolvería un
+        // 404 buscando una corrida con ese id.
+        Route::post('planilla-corridas/sacar',           [PlanillaCorridaController::class, 'sacar']);
+        Route::post('planilla-corridas/{id}/generar',    [PlanillaCorridaController::class, 'generar']);
+        Route::post('planilla-corridas/{id}/mover',      [PlanillaCorridaController::class, 'mover']);
+        Route::apiResource('planilla-corridas', PlanillaCorridaController::class);
         Route::apiResource('documentos',       DocumentoController::class);
         Route::post('documentos/{id}/firmar-empleador', [DocumentoController::class, 'firmarComoEmpleador']);
         Route::apiResource('areas',            AreaController::class);

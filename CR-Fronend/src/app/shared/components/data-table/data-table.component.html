@@ -17,6 +17,11 @@
     <table class="data-table">
       <thead>
         <tr>
+          <th *ngIf="seleccionable" class="celda-marca">
+            <input type="checkbox" [checked]="todasMarcadas" (change)="alternarTodas()"
+              [attr.aria-label]="'Marcar todas las filas de esta página'" />
+          </th>
+          <th *ngIf="numerarFilas" class="celda-numero">#</th>
           <th *ngFor="let col of columnas" [style.width]="col.ancho">{{ col.header }}</th>
           <th *ngIf="acciones.length || accionesPersonalizadas.length" class="celda-acciones"
             style="width: 1%; white-space: nowrap;">Acciones</th>
@@ -27,6 +32,10 @@
              como vayan a caber, con una celda por columna. La tabla no
              cambia de alto cuando llegan los datos. -->
         <tr *ngFor="let f of filasEsqueleto" class="fila-esqueleto">
+          <td *ngIf="seleccionable" class="celda-marca"></td>
+          <td *ngIf="numerarFilas" class="celda-numero">
+            <span class="esqueleto esqueleto--linea" style="width: 16px;"></span>
+          </td>
           <td *ngFor="let col of columnas">
             <span class="esqueleto esqueleto--linea" [style.width]="anchoEsqueleto(col)"></span>
           </td>
@@ -35,16 +44,42 @@
           </td>
         </tr>
         <tr *ngIf="!cargando && filaPagina.length === 0">
-          <td [attr.colspan]="columnas.length + (acciones.length || accionesPersonalizadas.length ? 1 : 0)" class="data-table-empty">
+          <td [attr.colspan]="columnas.length + (seleccionable ? 1 : 0) + (numerarFilas ? 1 : 0) + (acciones.length || accionesPersonalizadas.length ? 1 : 0)" class="data-table-empty">
             {{ mensajeVacio }}
           </td>
         </tr>
-        <tr *ngFor="let fila of filaPagina">
-          <td *ngFor="let col of columnas" [class.celda-rompe]="col.romperTexto">
+        <tr *ngFor="let fila of filaPagina; let i = index" [class.fila-marcada]="estaMarcada(fila)">
+          <td *ngIf="seleccionable" class="celda-marca">
+            <input type="checkbox" [checked]="estaMarcada(fila)" (change)="alternarFila(fila)"
+              [attr.aria-label]="'Marcar esta fila'" />
+          </td>
+          <td *ngIf="numerarFilas" class="celda-numero">{{ numeroDeFila(i) }}</td>
+          <td *ngFor="let col of columnas"
+            [attr.data-titulo]="col.header"
+            [class.celda-rompe]="col.romperTexto"
+            [class.celda-monto]="col.tipo === 'moneda'">
             <ng-container [ngSwitch]="col.tipo">
               <span *ngSwitchCase="'badge'" [ngClass]="claseBadge(fila, col)">
                 {{ valorCelda(fila, col) }}
               </span>
+              <ng-container *ngSwitchCase="'hito'">
+                <span class="hito" *ngIf="valorCelda(fila, col) as marca; else sinHito">
+                  <span class="hito__marca">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </span>
+                  <span class="hito__fecha">
+                    {{ marca.split(' ')[0] }}
+                    <span class="hito__hora">{{ marca.split(' ')[1] }}</span>
+                    <span class="hito__detalle" *ngIf="col.hitoDetalle && col.hitoDetalle(fila) as detalle">
+                      {{ detalle }}
+                    </span>
+                  </span>
+                </span>
+                <ng-template #sinHito><span class="hito--pendiente">—</span></ng-template>
+              </ng-container>
               <span *ngSwitchCase="'icono'" class="celda-icono">
                 <app-icon [icono]="valorCelda(fila, col)" [tamano]="20"></app-icon>
                 <code>{{ valorCelda(fila, col) ?? '—' }}</code>

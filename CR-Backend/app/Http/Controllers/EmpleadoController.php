@@ -87,6 +87,8 @@ class EmpleadoController extends Controller
             'fecha_nacimiento'              => 'required|date|before:today',
         ]);
 
+        $this->limpiarDatosDeAfp($request);
+
         $rolAsignado = Rol::findOrFail($request->rol_id);
         if ($rolAsignado->nombre === 'admin' && $request->user()->rol?->nombre !== 'admin') {
             return response()->json([
@@ -159,7 +161,7 @@ class EmpleadoController extends Controller
             'direccion'          => 'nullable|string|max:255',
             'fecha_ingreso'      => 'sometimes|date|before_or_equal:today',
             'estado'             => 'nullable|string|max:20',
-            'sistema_pensiones'  => 'sometimes|in:AFP,ONP',
+            'sistema_pensiones'  => 'sometimes|nullable|in:AFP,ONP',
             'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo',
             'cuspp'              => 'nullable|regex:/^[0-9]{11}$/|required_if:sistema_pensiones,AFP',
             'entidad_financiera' => 'nullable|string|max:100',
@@ -181,6 +183,8 @@ class EmpleadoController extends Controller
             'fecha_nacimiento'              => 'nullable|date|before:today',
         ]);
 
+        $this->limpiarDatosDeAfp($request);
+
         $empleado->update($request->except(['email', 'rol_id']));
 
         if ($request->filled('email') && $usuario) {
@@ -189,6 +193,28 @@ class EmpleadoController extends Controller
 
         $empleado->load('area', 'cargo', 'sede', 'usuario');
         return response()->json(['success' => true, 'data' => $empleado]);
+    }
+
+    /**
+     * La AFP y el CUSPP solo tienen sentido con AFP.
+     *
+     * Quien pasa a ONP —o a no aportar a ninguna pensión, que es el caso del
+     * jubilado que vuelve a dictar— tiene que quedarse sin ellos: si no, la
+     * ficha guarda una AFP de alguien que ya no está en el sistema privado y
+     * la boleta acaba enseñando un CUSPP que no viene a cuento.
+     *
+     * Solo actúa cuando el sistema de pensiones viene en la petición: una
+     * edición parcial que ni lo menciona no debe borrar nada.
+     */
+    private function limpiarDatosDeAfp(Request $request): void
+    {
+        if (! $request->has('sistema_pensiones')) {
+            return;
+        }
+
+        if ($request->input('sistema_pensiones') !== 'AFP') {
+            $request->merge(['afp' => null, 'cuspp' => null]);
+        }
     }
 
     public function destroy(string $id)

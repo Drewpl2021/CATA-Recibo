@@ -57,7 +57,15 @@ class PayrollDetalle extends Model
 
     public function getEtiquetaAttribute(): string
     {
-        $nombre = $this->paymentConcept?->nombre ?? '';
+        $concepto = $this->paymentConcept;
+
+        // En la boleta manda `etiqueta_boleta` cuando el concepto la tiene.
+        // Es lo que permite que las dos bolsas genéricas —"Otros Conceptos
+        // (Ingresos)" y "Otros Conceptos (Descuentos)"— se impriman las dos
+        // como "Otros Conceptos", cada una bajo su columna, aunque en el
+        // catálogo tengan que llamarse distinto para no chocar.
+        $nombre = $concepto?->etiqueta_boleta ?: ($concepto?->nombre ?? '');
+
         return $this->descripcion ? "{$nombre}: {$this->descripcion}" : $nombre;
     }
 }

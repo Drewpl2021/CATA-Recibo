@@ -47,5 +47,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Pedir enlaces de reposición en cadena (y llenarle el buzón a alguien).
         RateLimiter::for('recuperacion', fn (Request $peticion) => Limit::perMinute(5)->by($peticion->ip()));
+
+        // Consultar DNIs. Cada uno que no esté en la base propia se le paga a
+        // Decolecta, así que se cuenta por usuario: 30 por minuto es más de
+        // lo que da de alta RR.HH. en una mañana, y corta un bucle.
+        RateLimiter::for('consulta_dni', fn (Request $peticion) => Limit::perMinute(30)
+            ->by($peticion->user()?->id ?: $peticion->ip()));
     }
 }

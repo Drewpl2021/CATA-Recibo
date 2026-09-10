@@ -33,7 +33,7 @@ return new class extends Migration
             // (boletas, mis boletas, aplicar concepto a un grupo, generar).
             $table->index(['empleado_id', 'anio', 'mes'], 'planilla_empleado_periodo_idx');
 
-            // "Todas las planillas de setiembre 2026": es como entra la
+            // "Todas las planillas de septiembre 2026": es como entra la
             // pantalla de Planillas y como se calcula la masa salarial.
             $table->index(['anio', 'mes'], 'planilla_periodo_idx');
         });

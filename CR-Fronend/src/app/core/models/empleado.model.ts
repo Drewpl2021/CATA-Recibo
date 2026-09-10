@@ -74,7 +74,8 @@ export interface EmpleadoPayload {
   email: string;
   rol_id: string;
   estado?: string;
-  sistema_pensiones?: string;
+  /** null = no aporta a ninguna pensión (jubilado, extranjero con convenio). */
+  sistema_pensiones?: string | null;
   afp?: string | null;
   cuspp?: string | null;
   entidad_financiera?: string | null;
@@ -106,4 +107,29 @@ export interface ContratoPayload {
   fecha_inicio: string;
   fecha_fin?: string | null;
   observaciones?: string | null;
+}
+
+/**
+ * Lo que devuelve buscar un DNI antes de dar de alta a alguien.
+ *
+ * Tres desenlaces posibles, y por eso `encontrado` no basta:
+ *   - Está en el padrón      → encontrado, con sus nombres.
+ *   - Ya trabaja en el colegio → no encontrado, pero con `yaEsEmpleado`.
+ *   - No está en ningún lado  → no encontrado, y se escribe a mano.
+ */
+export interface PersonaPorDni {
+  encontrado: boolean;
+  dni?: string;
+  nombres?: string;
+  apellidos?: string;
+  apellido_paterno?: string;
+  apellido_materno?: string;
+  nombre_completo?: string;
+  fecha_nacimiento?: string | null;
+  direccion?: string | null;
+  /** De dónde salieron los datos: "RENIEC" o "Base del colegio". */
+  fuente?: string;
+  /** Si ese DNI ya tiene ficha en el colegio. */
+  yaEsEmpleado?: { id: string; nombre: string; estado: string };
+  mensaje?: string;
 }

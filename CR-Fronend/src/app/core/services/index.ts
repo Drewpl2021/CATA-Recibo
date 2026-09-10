@@ -11,6 +11,7 @@ export * from './personal/empleado.service';
 export * from './personal/contrato.service';
 export * from './personal/usuario.service';
 export * from './personal/identidad-firma.service';
+export * from './personal/consulta-dni.service';
 
 // Planilla y documentos
 export * from './planilla/planilla.service';
@@ -30,3 +31,4 @@ export * from './sistema/modulo.service';
 export * from './sistema/modulo-padre.service';
 export * from './sistema/notificacion.service';
 export * from './sistema/dashboard.service';
+export * from './planilla/planilla-corrida.service';

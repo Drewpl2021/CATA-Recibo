@@ -317,7 +317,7 @@ export class EmpleadoFormComponent implements OnInit {
       tipo_contrato: e.tipo_contrato ?? '',
       sueldo_base: e.sueldo_base ?? null,
       estado: e.estado ?? 'activo',
-      sistema_pensiones: e.sistema_pensiones ?? 'ONP',
+      sistema_pensiones: e.sistema_pensiones ?? '',
       afp: e.afp ?? '',
       cuspp: e.cuspp ?? '',
       forma_pago: e.forma_pago ?? '',
@@ -365,7 +365,10 @@ export class EmpleadoFormComponent implements OnInit {
       fecha_fin_contrato: v.tipo_contrato === 'indeterminado' ? null : oNull(v.fecha_fin_contrato),
       sueldo_base: v.sueldo_base === null ? null : Number(v.sueldo_base),
       estado: v.estado ?? 'activo',
-      sistema_pensiones: v.sistema_pensiones ?? 'ONP',
+      // Vacío es "no aporta a ninguna pensión", y así tiene que llegar al
+      // backend: si se manda 'ONP' por defecto, al jubilado que vuelve a
+      // dictar se le descuenta el 13% que no le toca.
+      sistema_pensiones: oNull(v.sistema_pensiones),
       afp: oNull(v.afp),
       cuspp: oNull(v.cuspp),
       forma_pago: oNull(v.forma_pago),

@@ -10,8 +10,13 @@
       <select id="sistema_pensiones" class="form-control" formControlName="sistema_pensiones">
         <option *ngFor="let s of sistemas" [value]="s.value">{{ s.label }}</option>
       </select>
-      <small class="form-ayuda">
+      <small class="form-ayuda" *ngIf="!sinPension">
         ONP descuenta el 13%; en AFP el porcentaje depende de la entidad.
+      </small>
+      <small class="form-ayuda" *ngIf="sinPension">
+        No se le descontará pensión en ninguna de sus boletas. Es lo que
+        corresponde al jubilado que ya cobra su pensión y al extranjero
+        acogido a un convenio. EsSalud sí se le sigue aportando.
       </small>
     </div>
 

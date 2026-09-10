@@ -77,6 +77,12 @@
     </div>
   </aside>
 
+  <!-- El fondo de detrás del menú. Solo se ve en móvil, donde el menú
+       tapa la pantalla: sin él no había forma de cerrarlo, porque la
+       hamburguesa queda justo debajo del propio menú. -->
+  <div class="sidebar-fondo" *ngIf="sidebarVisible" (click)="cerrarMenuDesdeElFondo()"
+    aria-hidden="true"></div>
+
   <!-- Main Area -->
   <div class="main-wrapper">
     <header class="top-header">

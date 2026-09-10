@@ -1,9 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Periodo;
-use App\Models\Empleado;
-use App\Models\Planilla;
-use App\Traits\CalculaConceptosPlanilla;
+use App\Traits\GeneraPlanillasEnLote;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Traits\ListadoPaginado;
@@ -11,8 +9,7 @@ use App\Traits\ListadoPaginado;
 class PeriodoController extends Controller
 {
     use ListadoPaginado;
-
-    use CalculaConceptosPlanilla;
+    use GeneraPlanillasEnLote;
 
     /**
      * GET /periodos
@@ -76,24 +73,15 @@ class PeriodoController extends Controller
     {
         $periodo = Periodo::findOrFail($id);
 
-        $request->validate([
+        $request->validate(array_merge([
             'mes'  => 'required|integer|min:1|max:12',
             'anio' => 'required|integer|min:2000',
-            // Opcional: a quiénes se les genera. Sin esto va a TODO el
-            // personal activo, que es como se usaba hasta ahora.
-            'empleado_ids'   => 'sometimes|array|min:1',
-            'empleado_ids.*' => 'uuid|exists:empleados,id|distinct',
-            // Filtros para armar el grupo sin listar uno por uno
-            // (se ignoran si ya se mandó empleado_ids).
-            'area_id'  => 'sometimes|uuid|exists:areas,id',
-            'cargo_id' => 'sometimes|uuid|exists:cargos,id',
-            'sede_id'  => 'sometimes|uuid|exists:sedes,id',
-        ]);
+        ], $this->reglasDelGrupo()));
 
         $mes  = (int) $request->mes;
         $anio = (int) $request->anio;
 
-        $fechaDelMes = Carbon::create($anio, $mes, 1);
+        $fechaDelMes   = Carbon::create($anio, $mes, 1);
         $inicioPeriodo = Carbon::parse($periodo->fecha_inicio)->startOfMonth();
         $finPeriodo    = Carbon::parse($periodo->fecha_fin)->endOfMonth();
 
@@ -104,21 +92,7 @@ class PeriodoController extends Controller
             ], 422);
         }
 
-        // A quiénes se les arma la planilla: una lista concreta, un grupo por
-        // área/cargo/sede, o todo el personal activo si no se acota nada.
-        $consulta = Empleado::where('estado', 'activo');
-
-        if ($request->filled('empleado_ids')) {
-            $consulta->whereIn('id', $request->empleado_ids);
-        } else {
-            foreach (['area_id', 'cargo_id', 'sede_id'] as $filtro) {
-                if ($request->filled($filtro)) {
-                    $consulta->where($filtro, $request->input($filtro));
-                }
-            }
-        }
-
-        $empleados = $consulta->orderBy('nombre')->get();
+        $empleados = $this->empleadosDelGrupo($request);
 
         if ($empleados->isEmpty()) {
             return response()->json([
@@ -127,71 +101,7 @@ class PeriodoController extends Controller
             ], 422);
         }
 
-        $generadas = 0;
-        $omitidas  = 0;
-        $detalle   = [];
-
-        foreach ($empleados as $empleado) {
-            $nombreCompleto = trim($empleado->nombre . ' ' . $empleado->apellido);
-
-            $yaExiste = Planilla::where('empleado_id', $empleado->id)
-                ->where('mes', $mes)
-                ->where('anio', $anio)
-                ->exists();
-
-            if ($yaExiste) {
-                $omitidas++;
-                $detalle[] = ['empleado' => $nombreCompleto, 'empleado_id' => $empleado->id, 'estado' => 'omitida', 'motivo' => 'Ya existe planilla para este mes'];
-                continue;
-            }
-
-            if (empty($empleado->sueldo_base) || (float) $empleado->sueldo_base <= 0) {
-                $omitidas++;
-                $detalle[] = ['empleado' => $nombreCompleto, 'empleado_id' => $empleado->id, 'estado' => 'omitida', 'motivo' => 'Empleado sin sueldo_base configurado'];
-                continue;
-            }
-
-            // Lo que le toca cobrar este mes: el sueldo entero si ya estaba, o
-            // la parte proporcional si entró a mitad. Antes se le pagaba el mes
-            // completo aunque hubiera entrado el día 28.
-            $reparto = $this->repartoDeDiasDelMes($empleado, $mes, $anio);
-            $sueldoDelMes = $this->sueldoDelMes($empleado, $mes, $anio);
-
-            if ($sueldoDelMes === null) {
-                $omitidas++;
-                $detalle[] = [
-                    'empleado' => $nombreCompleto, 'empleado_id' => $empleado->id, 'estado' => 'omitida',
-                    'motivo'   => 'Todavía no había ingresado en ese mes (ingresó el ' . \Carbon\Carbon::parse($empleado->fecha_ingreso)->format('d/m/Y') . ')',
-                ];
-                continue;
-            }
-
-            $planilla = Planilla::create([
-                'empleado_id'    => $empleado->id,
-                'mes'            => $mes,
-                'anio'           => $anio,
-                'periodo_id'     => $periodo->id,
-                'sueldo_base'    => $sueldoDelMes,
-                'bonificaciones' => 0,
-                'descuentos'     => 0,
-                'total'          => 0,
-            ]);
-
-            $this->generarConceptosAutomaticos($planilla, $empleado);
-            $planilla->recalcularTotal();
-
-            $generadas++;
-            $fila = ['empleado' => $nombreCompleto, 'empleado_id' => $empleado->id, 'estado' => 'generada', 'planilla_id' => $planilla->id];
-
-            // Si se le prorrateó, se dice: un sueldo distinto al de su ficha
-            // sin explicación parece un error de cálculo.
-            if ($reparto['entro_este_mes']) {
-                $fila['motivo'] = "Ingresó el " . \Carbon\Carbon::parse($empleado->fecha_ingreso)->format('d/m/Y') .
-                    ": se le pagan {$reparto['dias_pagados']} de {$reparto['dias_del_mes']} días";
-            }
-
-            $detalle[] = $fila;
-        }
+        $resultado = $this->generarLote($empleados, $mes, $anio, $periodo->id);
 
         return response()->json([
             'success' => true,
@@ -200,11 +110,11 @@ class PeriodoController extends Controller
                 'mes'     => $mes,
                 'anio'    => $anio,
                 'resumen' => [
-                    'generadas'  => $generadas,
-                    'omitidas'   => $omitidas,
-                    'evaluados'  => $empleados->count(),
+                    'generadas' => $resultado['generadas'],
+                    'omitidas'  => $resultado['omitidas'],
+                    'evaluados' => $resultado['evaluados'],
                 ],
-                'detalle' => $detalle,
+                'detalle' => $resultado['detalle'],
             ],
         ]);
     }

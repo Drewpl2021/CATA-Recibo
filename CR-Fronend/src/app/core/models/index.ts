@@ -6,3 +6,4 @@ export * from './documento.model';
 export * from './modulo.model';
 export * from './notificacion.model';
 export * from './dashboard.model';
+export * from './planilla-corrida.model';

@@ -64,6 +64,26 @@ return [
             ]) : [],
         ],
 
+        /*
+         * La base del padrón del colegio (RENSUN). Solo se lee de ella: se
+         * consulta al dar de alta a un trabajador para traer sus nombres por
+         * el DNI. Vive en otro servidor, así que si no está configurada el
+         * sistema sigue funcionando y consulta a Decolecta.
+         */
+        'rensun' => [
+            'driver'    => 'mysql',
+            'host'      => env('RENSUN_DB_HOST', '127.0.0.1'),
+            'port'      => env('RENSUN_DB_PORT', '3306'),
+            'database'  => env('RENSUN_DB_DATABASE', ''),
+            'username'  => env('RENSUN_DB_USERNAME', ''),
+            'password'  => env('RENSUN_DB_PASSWORD', ''),
+            'charset'   => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix'    => '',
+            'strict'    => false,
+            'engine'    => null,
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

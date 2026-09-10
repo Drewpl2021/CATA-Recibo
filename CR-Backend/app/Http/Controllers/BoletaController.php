@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Traits\CalculaConceptosPlanilla;
 use App\Mail\BoletaGenerada;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\ConceptosDePago;
+use App\Support\Meses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -19,16 +21,11 @@ class BoletaController extends Controller
     // Conceptos que se generan como PayrollDetalle (para que Planilla.total los incluya)
     // pero que en el PDF se muestran aparte, en su propia sección dedicada — para no
     // duplicarlos también en el listado genérico de "Descuentos".
-    private const CONCEPTOS_MOSTRADOS_APARTE = [
-        'ONP', 'SPP Fondo de Pensiones', 'SPP Prima de Seguro', 'SPP Comisión', 'I.R. 5ta Categoría',
-    ];
+    /** La pensión y la Renta de 5ta ya salen en su propia fila de la boleta. */
+    private const CONCEPTOS_MOSTRADOS_APARTE = ConceptosDePago::MOSTRADOS_APARTE;
 
-    private array $meses = [
-        1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo',
-        4 => 'Abril', 5 => 'Mayo', 6 => 'Junio',
-        7 => 'Julio', 8 => 'Agosto', 9 => 'Septiembre',
-        10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
-    ];
+    /** Los nombres viven en App\Support\Meses: aquí solo se usan. */
+    private array $meses = Meses::NOMBRES;
 
     public function generar(Request $request, $empleado_id, $mes, $anio)
     {
@@ -94,7 +91,7 @@ class BoletaController extends Controller
             ->values();
         // ESSALUD ya se muestra aparte (calculado por el trait); aquí solo otras aportaciones (ej. SCTR).
         $conceptosAportacion = $conceptosPlanilla
-            ->filter(fn ($d) => $d->paymentConcept?->tipo === 'aportacion' && $d->paymentConcept?->nombre !== 'ESSALUD')
+            ->filter(fn ($d) => $d->paymentConcept?->tipo === 'aportacion' && $d->paymentConcept?->nombre !== ConceptosDePago::ESSALUD)
             ->values();
         $conceptosAdelanto = $conceptosPlanilla->filter(fn ($d) => $d->paymentConcept?->tipo === 'adelanto')->values();
 
@@ -184,6 +181,13 @@ class BoletaController extends Controller
             'mensaje'      => "Boleta {$numero_boleta}. Ábrela y fírmala para dejar constancia de que la recibiste.",
             'documento_id' => $documentoId,
         ]);
+
+        // Queda anotado en la boleta a quién y cuándo se le avisó. Es lo que
+        // le permite a RR.HH. contestar con una fecha y un correo cuando
+        // alguien dice "a mí nunca me avisaron".
+        if ($documentoId) {
+            Documento::find($documentoId)?->registrarAviso($user->email);
+        }
 
         if ($user->email) {
             Mail::to($user->email)->queue(new BoletaGenerada(

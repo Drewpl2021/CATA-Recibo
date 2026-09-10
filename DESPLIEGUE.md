@@ -96,6 +96,7 @@ Ya está. Entra en `http://LA-IP-DEL-SERVIDOR`.
 | `APP_KEY` | La llave que genera el comando de arriba. |
 | `DB_PASSWORD` / `DB_ROOT_PASSWORD` | **Cámbialas antes del primer arranque.** MySQL las aplica al crear la base; después ya no se cambian solas. |
 | `MAIL_*` | Con `MAIL_MAILER=log` los correos no salen, se escriben en el log. Para que salgan de verdad, `smtp` y los datos del buzón del colegio. |
+| `RENSUN_*` / `DECOLECTA_TOKEN` | Opcionales. Para que al dar de alta a un trabajador el sistema traiga sus nombres por el DNI. Sin rellenarlas, RR.HH. los escribe a mano y el sistema funciona igual. Ver el propio `.env.example` para el detalle de cada una. |
 
 ---
 
@@ -128,6 +129,9 @@ docker compose up -d --build      # las migraciones se aplican solas al arrancar
 
 # Entrar a la consola de Laravel
 docker compose exec app php artisan tinker
+
+# Revisar la conexión con la base del padrón (RENSUN) y con Decolecta
+docker compose exec app php artisan dni:diagnostico
 
 # Parar todo (los datos se quedan)
 docker compose down

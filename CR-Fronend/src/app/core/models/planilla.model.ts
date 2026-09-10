@@ -93,6 +93,17 @@ export interface AplicacionConceptoGrupo {
   mes: number;
   anio: number;
   resumen: { aplicadas: number; omitidas: number };
+  /**
+   * Solo cuando se aplicó a una planilla con nombre: viene con sus cifras
+   * recalculadas, porque el neto de esa planilla acaba de cambiar y la
+   * pantalla tiene que poder reflejarlo sin volver a pedirlo.
+   */
+  corrida?: {
+    id: string;
+    nombre: string;
+    personas: number;
+    masa_salarial: number;
+  } | null;
   detalle: Array<{
     empleado: string;
     estado: string;

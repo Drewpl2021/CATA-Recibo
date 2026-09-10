@@ -19,6 +19,22 @@ export interface Documento {
   fecha_firma: string | null;
   fecha_visto: string | null;
 
+  /*
+   * El rastro de la boleta, paso a paso. Es lo que le permite a RR.HH.
+   * contestar con una fecha cuando alguien dice "a mí nunca me llegó".
+   *
+   *   fecha_aviso     cuándo se le avisó que ya estaba
+   *   aviso_correo    a qué correo se le avisó (congelado: si después cambia
+   *                   de correo, la boleta de ese mes sigue diciendo a dónde
+   *                   se mandó de verdad)
+   *   fecha_descarga  la PRIMERA vez que se la bajó
+   *   descargas       cuántas veces en total
+   */
+  fecha_aviso?: string | null;
+  aviso_correo?: string | null;
+  fecha_descarga?: string | null;
+  descargas?: number;
+
   // Firma del empleador (RRHH) — ver DocumentoController@firmarComoEmpleador
   empleador_id?: string | null;
   estado_firma_empleador?: 'pendiente' | 'firmado';
@@ -28,7 +44,11 @@ export interface Documento {
 
   created_at?: string;
   planilla?: Pick<Planilla, 'mes' | 'anio'> | null;
-  empleado?: Pick<Empleado, 'id' | 'nombre' | 'apellido' | 'dni'> | null;
+  empleado?: (Pick<Empleado, 'id' | 'nombre' | 'apellido' | 'dni'> & {
+    telefono?: string | null;
+    sede?: { id: string; nombre: string } | null;
+    usuario?: { id: number; email: string } | null;
+  }) | null;
 }
 
 export interface DocumentoPayload {

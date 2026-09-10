@@ -12,6 +12,9 @@ export const END_POINTS = {
     cambiarPassword: 'cambiar-password',
     olvidePassword: 'olvide-password',
     restablecerPassword: 'restablecer-password',
+    /** Los términos de uso: el papel que antes se firmaba a mano. */
+    terminos: 'terminos',
+    aceptarTerminos: 'terminos/aceptar',
   },
 
   /** Configuración base — RRHH y Admin (ver routes/api.php, grupo rol:rrhh,admin). */
@@ -38,6 +41,8 @@ export const END_POINTS = {
 
   planilla: {
     planilla: 'planilla',
+    /** Las planillas con nombre que agrupan a los trabajadores. */
+    corridas: 'planilla-corridas',
     payrollDetalles: 'payroll-detalles',
     documentos: 'documentos',
     vacaciones: 'vacaciones',
@@ -94,4 +99,7 @@ export const END_POINTS_ACCIONES = {
 
   /** POST modulos/{id}/roles */
   asignarRolesModulo: (moduloId: string) => `modulos/${moduloId}/roles`,
+
+  /** GET consulta-dni/{dni} — quién es esa persona, para el alta */
+  consultaDni: (dni: string) => `consulta-dni/${dni}`,
 } as const;

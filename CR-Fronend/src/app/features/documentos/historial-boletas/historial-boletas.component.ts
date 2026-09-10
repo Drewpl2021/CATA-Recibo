@@ -7,9 +7,7 @@ import { mensajeErrorApi } from '../../../core/utils';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
-
-const MESES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+import { nombreMes } from '../../../shared/constants';
 
 /**
  * Historial de Boletas: todo lo que se le ha emitido a un trabajador.
@@ -43,14 +41,29 @@ export class HistorialBoletasComponent implements OnInit {
   busqueda = '';
   total = 0;
 
+  /**
+   * RR.HH. ve exactamente el mismo rastro que el trabajador, en el mismo
+   * orden: avisada, revisada, descargada, firmada. Es la pantalla a la que
+   * se entra cuando alguien dice "a mí nunca me llegó mi boleta", así que
+   * tiene que responder con fechas y no con estados.
+   */
   columnas: ColumnaTabla<Documento>[] = [
-    { campo: 'planilla', header: 'Periodo', ancho: '22%', formatear: (_v, doc) => this.periodo(doc) },
-    { campo: 'tipo', header: 'Tipo', ancho: '22%', formatear: (v) => this.tipoLegible(v) },
-    { campo: 'created_at', header: 'Fecha de emisión', tipo: 'fecha', ancho: '20%' },
+    { campo: 'planilla', header: 'Periodo', ancho: '10%', formatear: (_v, doc) => this.periodo(doc) },
+    { campo: 'empleado.sede.nombre', header: 'Entidad', ancho: '9%', formatear: (v) => v || '—' },
+    { campo: 'tipo', header: 'Tipo', ancho: '10%', formatear: (v) => this.tipoLegible(v) },
     {
-      campo: 'estado_firma', header: 'Estado', tipo: 'badge', ancho: '15%',
-      formatear: (v) => this.estadoLegible(v),
-      badgeSeveridad: (v) => (v === 'firmado' ? 'success' : v === 'visto' ? 'info' : 'warning'),
+      campo: 'fecha_aviso', header: 'Aviso enviado', tipo: 'hito', ancho: '17%',
+      hitoDetalle: (doc) => doc.aviso_correo || doc.empleado?.usuario?.email || null,
+    },
+    { campo: 'fecha_visto', header: 'Revisado', tipo: 'hito', ancho: '13%' },
+    {
+      campo: 'fecha_descarga', header: 'Descargado', tipo: 'hito', ancho: '15%',
+      hitoDetalle: (doc) => ((doc.descargas ?? 0) > 1 ? `${doc.descargas} descargas` : null),
+    },
+    { campo: 'fecha_firma', header: 'Firmado', tipo: 'hito', ancho: '13%' },
+    {
+      campo: 'empleado.telefono', header: 'Celular', ancho: '10%',
+      formatear: (v) => v || '—',
     },
   ];
 
@@ -164,7 +177,7 @@ export class HistorialBoletasComponent implements OnInit {
 
   periodo(doc: Documento): string {
     if (!doc.planilla) return this.tipoLegible(doc.tipo);
-    return `${MESES[doc.planilla.mes] || doc.planilla.mes} ${doc.planilla.anio}`;
+    return `${nombreMes(doc.planilla.mes)} ${doc.planilla.anio}`;
   }
 
   tipoLegible(tipo: string): string {

@@ -1,5 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import {
   NgApexchartsModule,
   ApexChart,
@@ -17,15 +20,19 @@ import {
   ApexGrid,
 } from 'ng-apexcharts';
 
-import { DashboardService, ToastService } from '../../../core/services';
-import { ContratoPorVencer, Dashboard, DatoGrafico } from '../../../core/models';
+import { DashboardService, SedeService, ToastService } from '../../../core/services';
+import { ContratoPorVencer, CumpleanosDelMes, Dashboard, DatoGrafico, PendienteRrhh, Sede } from '../../../core/models';
 import { fechaLegible, mensajeErrorApi } from '../../../core/utils';
 import {
   PALETA_SERIES,
   PALETA_SERIE_UNICA,
   PALETA_DEGRADADO_BARRA,
   PALETA_ESTADO,
+  PALETA_MARCA,
+  PALETA_ACENTO,
+  MESES_OPCIONES,
   nombreMes,
+  fechaEnPalabras,
 } from '../../../shared/constants';
 
 /**
@@ -45,16 +52,50 @@ import {
 @Component({
   selector: 'app-dashboard-view',
   standalone: true,
-  imports: [CommonModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, NgApexchartsModule],
   templateUrl: './dashboard-view.component.html',
   styleUrl: './dashboard-view.component.scss',
 })
 export class DashboardViewComponent implements OnInit {
   private dashboardService = inject(DashboardService);
+  private sedeService = inject(SedeService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   cargando = true;
   etiquetaPeriodo = '';
+
+  /*
+   * Los filtros del panel.
+   *
+   * Antes la pantalla siempre enseñaba el mes en curso y toda la nómina
+   * junta, aunque el backend ya sabía filtrar: para saber cuánto costó
+   * agosto, o cuánto cuesta Jerusalén, había que salir a otra pantalla y
+   * sacar la cuenta.
+   */
+  filtroMes: number = new Date().getMonth() + 1;
+  filtroAnio: number = new Date().getFullYear();
+  filtroSede = '';
+
+  meses = MESES_OPCIONES;
+  sedes: Sede[] = [];
+  anios: number[] = [];
+
+  /** Sin conceptos aplicados no hay nada que graficar: se esconde. */
+  hayTopConceptos = false;
+
+  /** Lo que RR.HH. tiene pendiente de hacer. */
+  pendientes: PendienteRrhh[] = [];
+  cumpleanos: CumpleanosDelMes[] = [];
+
+  /** Solo los que tienen algo pendiente: los que están en cero no son noticia. */
+  get pendientesConTrabajo(): PendienteRrhh[] {
+    return this.pendientes.filter((p) => p.cuantos > 0);
+  }
+
+  get todoAlDia(): boolean {
+    return !this.cargando && this.pendientesConTrabajo.length === 0;
+  }
 
   // ── KPIs ──────────────────────────────────────────────────────────
   kpis: { label: string; value: string; sub: string; icon: string; color: string; bg: string }[] = [];
@@ -112,6 +153,76 @@ export class DashboardViewComponent implements OnInit {
   /** Cuánto subió o bajó respecto al mes anterior, para el chip de la tarjeta. */
   variacionNomina = 0;
 
+  // ── GRÁFICO 6: A dónde se va la plata (barras apiladas) ──────────
+  //
+  // Es LA pregunta de una planilla y el panel no la contestaba: enseñaba el
+  // neto y el reparto por área, pero no cuánto de ese gasto es sueldo,
+  // cuánto se añade, cuánto se retiene y cuánto pone el colegio encima.
+  composicionSeries: ApexAxisChartSeries = [{ name: 'Monto', data: [] }];
+  composicionChart: ApexChart = { type: 'bar', height: 250, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' };
+  composicionXaxis: ApexXAxis = { categories: [], labels: { style: { fontSize: '11px' } } };
+  composicionYaxis: ApexYAxis = { labels: { formatter: (v) => this.enMiles(v), style: { fontSize: '11px' } } };
+  composicionPlot: ApexPlotOptions = {
+    bar: { borderRadius: 6, columnWidth: '52%', distributed: true },
+  };
+  /*
+   * Un color por concepto y no por serie: lo que suma va en el azul de
+   * marca, lo que resta en rojo y ámbar, y lo que pone el colegio en verde.
+   * Así se lee de un vistazo qué entra y qué sale sin leer las etiquetas.
+   */
+  composicionColores = [
+    PALETA_MARCA.b700,      // sueldo básico
+    PALETA_ESTADO.exito,    // bonificaciones
+    PALETA_ESTADO.peligro,  // descuentos
+    PALETA_ESTADO.aviso,    // adelantos
+    PALETA_MARCA.b500,      // aporta el colegio
+  ];
+  composicionDataLabels: ApexDataLabels = { enabled: false };
+  composicionLegend: ApexLegend = { show: false };
+  composicionTooltip: ApexTooltip = { y: { formatter: (v) => this.enSoles(v) } };
+  composicionGrid: ApexGrid = { yaxis: { lines: { show: true } } };
+
+  // ── GRÁFICO 7: Personal por sede (dona) ──────────────────────────
+  sedeSeries: ApexNonAxisChartSeries = [];
+  sedeLabels: string[] = [];
+  sedeChart: ApexChart = { type: 'donut', height: 240, fontFamily: 'Inter, sans-serif' };
+  sedeColores = [PALETA_MARCA.b700, PALETA_ACENTO, PALETA_MARCA.b500, PALETA_ESTADO.exito];
+  sedeLegend: ApexLegend = { position: 'bottom', fontSize: '12px', labels: {} };
+  sedeDataLabels: ApexDataLabels = { enabled: true, formatter: (v: number) => v.toFixed(0) + '%' };
+
+  // ── GRÁFICO 8: Antigüedad del personal (barras) ──────────────────
+  //
+  // Dice dos cosas que RR.HH. mira: quién está por cumplir años de servicio
+  // y si la plantilla es estable o rota mucho.
+  antiguedadSeries: ApexAxisChartSeries = [{ name: 'Trabajadores', data: [] }];
+  antiguedadChart: ApexChart = { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' };
+  antiguedadXaxis: ApexXAxis = { categories: [], labels: { style: { fontSize: '10.5px' } } };
+  antiguedadYaxis: ApexYAxis = { labels: { formatter: (v) => String(Math.round(v)), style: { fontSize: '11px' } } };
+  antiguedadPlot: ApexPlotOptions = { bar: { borderRadius: 6, columnWidth: '50%', distributed: true } };
+  /* Del azul claro al oscuro: cuanto más lleva la persona, más intenso. */
+  antiguedadColores = [
+    PALETA_MARCA.b500, PALETA_MARCA.b600, PALETA_MARCA.b700, PALETA_MARCA.b900, PALETA_ACENTO,
+  ];
+  antiguedadDataLabels: ApexDataLabels = { enabled: true, style: { fontSize: '11px' } };
+  antiguedadLegend: ApexLegend = { show: false };
+
+  // ── GRÁFICO 9: Los conceptos que más pesan (barras horizontales) ──
+  //
+  // Sin los de ley: la pensión y EsSalud siempre estarían arriba porque le
+  // tocan a todo el mundo. Lo que dice algo es qué OTRA cosa está costando.
+  conceptosSeries: ApexAxisChartSeries = [{ name: 'Monto', data: [] }];
+  conceptosChart: ApexChart = { type: 'bar', height: 240, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' };
+  conceptosXaxis: ApexXAxis = { categories: [], labels: { formatter: (v) => this.enMiles(v), style: { fontSize: '11px' } } };
+  conceptosYaxis: ApexYAxis = { labels: { style: { fontSize: '11px' } } };
+  conceptosPlot: ApexPlotOptions = { bar: { horizontal: true, borderRadius: 5, barHeight: '58%', distributed: true } };
+  conceptosColores = [
+    PALETA_ACENTO, PALETA_MARCA.b700, PALETA_ESTADO.exito,
+    PALETA_MARCA.b500, PALETA_ESTADO.aviso, PALETA_MARCA.b600,
+  ];
+  conceptosDataLabels: ApexDataLabels = { enabled: false };
+  conceptosLegend: ApexLegend = { show: false };
+  conceptosTooltip: ApexTooltip = { y: { formatter: (v) => this.enSoles(v) } };
+
   // ── GRÁFICO 5: Firma de boletas del mes (radial) ─────────────────
   nivelSeries: ApexNonAxisChartSeries = [];
   nivelChart: ApexChart = { type: 'radialBar', height: 260, fontFamily: 'Inter, sans-serif' };
@@ -134,18 +245,140 @@ export class DashboardViewComponent implements OnInit {
   // ── TABLA: contratos que se acaban ───────────────────────────────
   vencimientos: ContratoPorVencer[] = [];
 
-  fechaHoy = new Date().toLocaleDateString('es-PE', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-  });
+  fechaHoy = fechaEnPalabras();
 
   ngOnInit(): void {
+    const actual = new Date().getFullYear();
+    for (let a = actual + 1; a >= actual - 4; a--) this.anios.push(a);
+
+    this.sedeService.getAll().subscribe({
+      next: (res) => {
+        if (res.success) this.sedes = res.data;
+      },
+      // Si falla, el filtro de sede se queda vacío y el panel sigue mostrando
+      // todo: no es motivo para dejar la pantalla en blanco.
+      error: () => {},
+    });
+
     this.cargar();
+  }
+
+  /** El usuario movió un filtro. */
+  alFiltrar(): void {
+    this.cargar();
+  }
+
+  // ────────── El periodo que se está mirando ──────────
+
+  /**
+   * Se movía el mes con un desplegable de doce y otro de años. Pero lo que
+   * hace RR.HH. casi siempre es mirar el mes de al lado —"¿y en agosto?"—,
+   * y eso tenía que costar un clic, no tres.
+   */
+  nombreMes = nombreMes;
+
+  calendarioAbierto = false;
+  anioDelCalendario = new Date().getFullYear();
+
+  moverMes(pasos: number): void {
+    const fecha = new Date(this.filtroAnio, this.filtroMes - 1 + pasos, 1);
+    this.filtroMes = fecha.getMonth() + 1;
+    this.filtroAnio = fecha.getFullYear();
+    this.anioDelCalendario = this.filtroAnio;
+    this.cargar();
+  }
+
+  /** Para el título de las flechas: se sabe a dónde llevan antes de pulsar. */
+  etiquetaMesVecino(pasos: number): string {
+    const fecha = new Date(this.filtroAnio, this.filtroMes - 1 + pasos, 1);
+    return `${nombreMes(fecha.getMonth() + 1)} ${fecha.getFullYear()}`;
+  }
+
+  /**
+   * El clic que abre la rejilla se queda aquí: si sube hasta el document, el
+   * cierre de "clic fuera" la cerraría en el mismo golpe y no abriría nunca.
+   */
+  alternarCalendario(evento: MouseEvent): void {
+    evento.stopPropagation();
+    this.calendarioAbierto = !this.calendarioAbierto;
+    if (this.calendarioAbierto) this.anioDelCalendario = this.filtroAnio;
+  }
+
+  moverAnioDelCalendario(pasos: number): void {
+    this.anioDelCalendario += pasos;
+  }
+
+  elegirMes(mes: number): void {
+    this.filtroMes = mes;
+    this.filtroAnio = this.anioDelCalendario;
+    this.calendarioAbierto = false;
+    this.cargar();
+  }
+
+  esMesElegido(mes: number): boolean {
+    return this.filtroMes === mes && this.filtroAnio === this.anioDelCalendario;
+  }
+
+  /** El mes en curso lleva un punto: sirve de brújula al pasear por los años. */
+  esMesDeHoy(mes: number): boolean {
+    const hoy = new Date();
+    return hoy.getMonth() + 1 === mes && hoy.getFullYear() === this.anioDelCalendario;
+  }
+
+  /** Un clic fuera o un Escape cierran la rejilla de meses. */
+  @HostListener('document:click')
+  cerrarCalendario(): void {
+    this.calendarioAbierto = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  alPulsarEscape(): void {
+    this.calendarioAbierto = false;
+  }
+
+  elegirSede(id: string): void {
+    this.filtroSede = id;
+    this.cargar();
+  }
+
+  get sedeElegida(): Sede | undefined {
+    return this.sedes.find((s) => s.id === this.filtroSede);
+  }
+
+  /** Vuelve al mes en curso y a toda la nómina. */
+  limpiarFiltros(): void {
+    const hoy = new Date();
+    this.filtroMes = hoy.getMonth() + 1;
+    this.filtroAnio = hoy.getFullYear();
+    this.anioDelCalendario = this.filtroAnio;
+    this.filtroSede = '';
+    this.cargar();
+  }
+
+  get hayFiltros(): boolean {
+    const hoy = new Date();
+    return (
+      this.filtroMes !== hoy.getMonth() + 1 ||
+      this.filtroAnio !== hoy.getFullYear() ||
+      !!this.filtroSede
+    );
+  }
+
+  /** Lo que se está viendo, en palabras. */
+  get loQueSeVe(): string {
+    const sede = this.sedes.find((s) => s.id === this.filtroSede);
+    return `${nombreMes(this.filtroMes)} ${this.filtroAnio}` + (sede ? ` · ${sede.nombre}` : '');
+  }
+
+  /** Del pendiente a la pantalla donde se resuelve. */
+  irAResolver(pendiente: PendienteRrhh): void {
+    this.router.navigate([pendiente.ruta]);
   }
 
   private cargar(): void {
     this.cargando = true;
 
-    this.dashboardService.obtener().subscribe({
+    this.dashboardService.obtener(this.filtroMes, this.filtroAnio, this.filtroSede || null).subscribe({
       next: (res) => {
         if (res.success) this.pintar(res.data);
         this.cargando = false;
@@ -161,6 +394,25 @@ export class DashboardViewComponent implements OnInit {
   private pintar(d: Dashboard): void {
     const r = d.resumen;
     this.etiquetaPeriodo = `${nombreMes(d.periodo.mes)} ${d.periodo.anio}`;
+    this.pendientes = d.pendientes ?? [];
+    this.cumpleanos = d.cumpleanos ?? [];
+
+    const comp = d.composicionNomina ?? [];
+    this.composicionSeries = [{ name: 'Monto', data: comp.map((c) => c.valor) }];
+    this.composicionXaxis = { ...this.composicionXaxis, categories: comp.map((c) => c.etiqueta) };
+
+    const sedes = d.personalPorSede ?? [];
+    this.sedeSeries = sedes.map((x) => x.valor);
+    this.sedeLabels = sedes.map((x) => x.etiqueta);
+
+    const ant = d.antiguedad ?? [];
+    this.antiguedadSeries = [{ name: 'Trabajadores', data: ant.map((x) => x.valor) }];
+    this.antiguedadXaxis = { ...this.antiguedadXaxis, categories: ant.map((x) => x.etiqueta) };
+
+    const tops = d.topConceptos ?? [];
+    this.conceptosSeries = [{ name: 'Monto', data: tops.map((x) => x.valor) }];
+    this.conceptosXaxis = { ...this.conceptosXaxis, categories: tops.map((x) => x.etiqueta) };
+    this.hayTopConceptos = tops.length > 0;
 
     // Las boletas se cuentan contra las planillas del mes: a quien no se le
     // armó planilla no se le puede emitir boleta, así que ese es el 100%.

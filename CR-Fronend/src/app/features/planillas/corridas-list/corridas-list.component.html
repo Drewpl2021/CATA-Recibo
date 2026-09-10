@@ -1,0 +1,264 @@
+<app-page-header
+  icono="table_chart"
+  titulo="Planillas"
+  subtitulo="Cada planilla agrupa a los trabajadores que se pagan juntos. Entra a una para ver su gente."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <button headerActions class="btn-primary" (click)="nueva()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Nueva planilla
+  </button>
+</app-page-header>
+
+<section class="panel-filtros">
+  <header class="panel-filtros__cabecera">
+    <div>
+      <h2 class="panel-filtros__titulo">Mostrando</h2>
+      <p class="panel-filtros__periodo">{{ etiquetaPeriodo }}</p>
+    </div>
+
+    <div class="panel-filtros__cifras">
+      <div class="cifra">
+        <strong>{{ personas }}</strong>
+        <span>Trabajadores</span>
+      </div>
+      <div class="cifra cifra--destacada">
+        <strong>S/ {{ masaSalarial | number: '1.2-2' }}</strong>
+        <span>Neto a pagar</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="panel-filtros__campos panel-filtros__campos--compacto">
+    <div class="campo-filtro">
+      <label for="filtroMes">Mes</label>
+      <select id="filtroMes" class="form-control" [ngModel]="filtroMes" [ngModelOptions]="{ standalone: true }"
+        (ngModelChange)="filtroMes = $event; alFiltrar()">
+        <option [ngValue]="''">Todos</option>
+        <option *ngFor="let m of meses" [ngValue]="m.value">{{ m.label }}</option>
+      </select>
+    </div>
+
+    <div class="campo-filtro campo-filtro--corto">
+      <label for="filtroAnio">Año</label>
+      <input type="number" id="filtroAnio" class="form-control" [ngModel]="filtroAnio"
+        [ngModelOptions]="{ standalone: true }" (ngModelChange)="filtroAnio = $event; alFiltrar()"
+        min="2000" placeholder="Todos" />
+    </div>
+  </div>
+</section>
+
+<!-- Las que no están en ninguna planilla. Solo sale si hay alguna: si no,
+     sería un cajón vacío ocupando sitio en todas las pantallas. -->
+<div class="form-nota form-nota--accion" *ngIf="!cargando && sinAgrupar > 0">
+  <div>
+    <strong>{{ sinAgrupar }} trabajador(es) sin agrupar.</strong>
+    Tienen su planilla del mes pero no están en ninguna de las de arriba
+    —son las de antes de que existieran—. Suman
+    <strong>S/ {{ sinAgruparMasa | number: '1.2-2' }}</strong>.
+  </div>
+  <button class="btn-secondary" (click)="abrirSinAgrupar()">Verlos y agruparlos</button>
+</div>
+
+<app-data-table
+  entidad="esta planilla"
+  [columnas]="columnas"
+  [datos]="corridas"
+  [cargando]="cargando"
+  [numerarFilas]="true"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  [filasPorPagina]="TAMANO_PAGINA"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['nombre', 'observaciones']"
+  [acciones]="['editar', 'eliminar']"
+  [accionesPersonalizadas]="acciones"
+  (accionPersonalizada)="alAccionar($event)"
+  (editarFila)="editar($event)"
+  (eliminarFila)="eliminar($event)"
+  mensajeVacio="Todavía no hay planillas de este mes. Crea una con el botón de arriba."
+></app-data-table>
+
+<!-- ── Crear / editar una planilla ── -->
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="corridaEditando ? 'Editar planilla' : 'Nueva planilla'"
+  ancho="900px"
+  [guardando]="guardando"
+  [textoGuardar]="corridaEditando ? 'Guardar cambios' : (resultadoMeses ? 'Crear otra' : textoCrear)"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="nombre">Nombre de la planilla *</label>
+        <input type="text" id="nombre" class="form-control" formControlName="nombre"
+          placeholder="Ej. Planilla TIC, Docentes de secundaria"
+          [class.is-invalid]="invalido('nombre')" />
+        <small class="form-error" *ngIf="invalido('nombre')">
+          Ponle un nombre para poder distinguirla (máximo 100 caracteres).
+        </small>
+        <small class="form-ayuda" *ngIf="!invalido('nombre')">
+          Así la vas a reconocer en la lista. No puede repetirse en el mismo mes.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="periodo">Periodo *</label>
+        <select id="periodo" class="form-control" formControlName="periodo_id"
+          (change)="alCambiarPeriodo()" [class.is-invalid]="invalido('periodo_id')">
+          <option value="">— Elige el periodo —</option>
+          <option *ngFor="let p of periodos" [value]="p.id">{{ p.nombre }}</option>
+        </select>
+        <small class="form-ayuda" *ngIf="rangoDelPeriodo">{{ rangoDelPeriodo }}</small>
+        <small class="form-error" *ngIf="!periodos.length">
+          No hay periodos creados. Crea uno primero en Configuración → Periodos.
+        </small>
+      </div>
+    </div>
+
+    <!-- Los meses del periodo. Una planilla es de UN mes, así que del año
+         escolar salen tantas planillas como meses tenga. -->
+    <div class="form-group" *ngIf="!corridaEditando && !resultadoMeses">
+      <label>Meses a pagar *</label>
+      <small class="form-ayuda">
+        Cada mes se paga por separado, así que se crea una planilla por mes:
+        la de Marzo paga marzo. Todas llevan el mismo nombre y la misma gente.
+      </small>
+
+      <div class="meses-pago" *ngIf="mesesDelPeriodo.length">
+        <div class="meses-pago__barra">
+          <span>
+            <strong>{{ mesesElegidos.length }}</strong> de {{ mesesDelPeriodo.length }} marcados
+          </span>
+          <button type="button" class="enlace-sutil" (click)="alternarTodosLosMeses()">
+            {{ todosLosMesesMarcados ? 'Desmarcar todos' : 'Marcar todos' }}
+          </button>
+        </div>
+
+        <div class="meses-pago__lista">
+          <label class="mes-chip" *ngFor="let m of mesesDelPeriodo"
+            [class.mes-chip--marcado]="mesMarcado(m.valor)">
+            <input type="checkbox" [checked]="mesMarcado(m.valor)" (change)="alternarMes(m.valor)" />
+            <span>{{ m.etiqueta }}</span>
+          </label>
+        </div>
+      </div>
+
+      <small class="form-error" *ngIf="!mesesDelPeriodo.length">
+        Elige un periodo para ver sus meses.
+      </small>
+      <small class="form-error" *ngIf="mesesDelPeriodo.length && !mesesElegidos.length">
+        Marca al menos un mes: sin mes no hay nada que pagar.
+      </small>
+      <small class="form-ayuda" *ngIf="resumenDeMeses">{{ resumenDeMeses }}</small>
+    </div>
+
+    <p class="form-ayuda" *ngIf="corridaEditando">
+      Esta planilla paga <strong>{{ etiquetaDeMes(corridaEditando.mes, corridaEditando.anio) }}</strong>.
+      El mes no se cambia: sus cifras ya están calculadas para ese mes.
+    </p>
+
+    <div class="form-group" *ngIf="!resultadoMeses">
+      <label for="observaciones">Observaciones</label>
+      <input type="text" id="observaciones" class="form-control" formControlName="observaciones"
+        placeholder="Opcional: alguna nota sobre esta planilla" />
+    </div>
+
+    <!-- Al crear se puede llenar de una vez; al editar ya tiene su gente. -->
+    <ng-container *ngIf="!corridaEditando && !resultadoMeses">
+      <label class="check-item">
+        <input type="checkbox" formControlName="generar" />
+        <span>Armarle la planilla a un grupo ahora mismo</span>
+      </label>
+
+      <ng-container *ngIf="form.get('generar')?.value">
+        <app-selector-empleados
+          [empleados]="empleadosActivos"
+          [areas]="areas"
+          [cargos]="cargos"
+          [sedes]="sedes"
+          [(alcance)]="alcance"
+          [(seleccion)]="empleadosElegidos"
+        ></app-selector-empleados>
+
+        <p class="form-nota">
+          Se le armará la planilla a <strong>{{ cuantosAlcanzados }} trabajador(es)</strong>
+          en <strong>{{ mesesElegidos.length }} mes(es)</strong>, con sus conceptos de ley ya
+          calculados. A quien ya tenga planilla de un mes se le omite ahí, así que puedes
+          repetirlo sin duplicar nada.
+        </p>
+
+        <p class="form-nota form-nota--aviso" *ngIf="mesesFuturos">
+          Ojo: {{ mesesFuturos }} de los meses marcados todavía no han pasado. Se calcularán
+          con los sueldos de hoy; si alguno sube o entra gente nueva, esa planilla habrá que
+          rehacerla.
+        </p>
+      </ng-container>
+
+      <p class="form-ayuda" *ngIf="!form.get('generar')?.value">
+        Las planillas se crearán vacías y les irás metiendo trabajadores después.
+      </p>
+    </ng-container>
+
+    <!-- Qué pasó: cuántas planillas salieron, y qué se saltó -->
+    <ng-container *ngIf="resultadoMeses as r">
+      <div class="resumen-masivo">
+        <div class="resumen-masivo__dato">
+          <strong>{{ r.resumen.planillas }}</strong>
+          <span>Planillas creadas</span>
+        </div>
+        <div class="resumen-masivo__dato">
+          <strong>{{ r.resumen.generadas }}</strong>
+          <span>Trabajadores dentro</span>
+        </div>
+        <div class="resumen-masivo__dato">
+          <strong>{{ r.resumen.omitidas }}</strong>
+          <span>Trabajadores omitidos</span>
+        </div>
+      </div>
+
+      <p class="form-ayuda" *ngIf="r.resumen.mesesOmitidos">
+        {{ r.resumen.mesesOmitidos }} mes(es) ya tenían una planilla con ese nombre, así que
+        se saltaron y quedaron como estaban.
+      </p>
+
+      <div class="detalle-masivo" *ngIf="r.porMes.length">
+        <div class="detalle-masivo__fila" *ngFor="let m of r.porMes">
+          <span>{{ etiquetaDeMes(m.mes, m.anio) }}</span>
+          <span class="status-badge status-badge-success" *ngIf="m.generadas">
+            {{ m.generadas }} trabajador(es)
+          </span>
+          <!-- Vacía y omitidos no son lo mismo: sin gente porque así se pidió,
+               o sin gente porque ya la tenían en otra planilla del mes. -->
+          <span class="detalle-masivo__motivo" *ngIf="m.omitidas">
+            {{ m.omitidas }} sin agregar: ya tenían planilla de ese mes o les falta el sueldo
+          </span>
+          <span class="detalle-masivo__motivo" *ngIf="!m.generadas && !m.omitidas">
+            Creada vacía
+          </span>
+        </div>
+
+        <div class="detalle-masivo__fila" *ngFor="let o of r.mesesOmitidos">
+          <span>{{ etiquetaDeMes(o.mes, o.anio) }}</span>
+          <span class="detalle-masivo__motivo">{{ o.motivo }}</span>
+        </div>
+      </div>
+
+      <!-- Trabajador por trabajador. Solo llega cuando fue un mes solo. -->
+      <div class="detalle-masivo" *ngIf="r.detalle?.length">
+        <div class="detalle-masivo__fila" *ngFor="let d of r.detalle">
+          <span>{{ d.empleado }}</span>
+          <span *ngIf="d.estado === 'generada'" class="status-badge status-badge-success">Generada</span>
+          <span *ngIf="d.estado !== 'generada'" class="detalle-masivo__motivo">{{ d.motivo }}</span>
+        </div>
+      </div>
+    </ng-container>
+  </form>
+</app-form-modal>

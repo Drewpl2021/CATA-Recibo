@@ -127,6 +127,21 @@ class AuthController extends Controller
 
         $user = $request->user();
 
+        // Primero los términos, después la contraseña. Es el orden que tenía
+        // en papel: se firmaba la hoja al entrar, no después. Y hacerlo aquí
+        // y no solo en la pantalla es lo que lo vuelve una regla: por la API
+        // tampoco se puede saltar.
+        $alDia = $user->terminos_firmados
+            && $user->terminos_version === \App\Support\TerminosDeUso::VERSION;
+
+        if (! $alDia) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Antes de poner tu contraseña tienes que leer y aceptar los términos de uso.',
+                'data'    => ['requiereTerminos' => true],
+            ], 409);
+        }
+
         // Al dar de alta un empleado, su contraseña inicial ES su DNI. Dejar
         // que la "cambie" por el mismo DNI no cambia nada en la práctica.
         if ($user->empleado && $request->password_nuevo === $user->empleado->dni) {

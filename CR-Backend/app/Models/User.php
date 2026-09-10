@@ -17,7 +17,7 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $appends = ['es_institucional'];
+    protected $appends = ['es_institucional', 'terminos_estado'];
 
     protected function casts(): array
     {
@@ -25,6 +25,8 @@ class User extends Authenticatable
             'email_verified_at'     => 'datetime',
             'password'              => 'hashed',
             'debe_cambiar_password' => 'boolean',
+            'terminos_firmados'     => 'boolean',
+            'terminos_firmados_en'  => 'datetime',
         ];
     }
 
@@ -49,6 +51,26 @@ class User extends Authenticatable
         return Attribute::make(
             get: fn () => str_ends_with($this->email ?? '', '@cata.edu.pe'),
         );
+    }
+
+    /**
+     * En qué anda esta persona con los términos de uso.
+     *
+     * Es la columna "FIRMADO SÍ / NO" de la hoja que se repartía impresa,
+     * con un tercer estado que el papel no tenía: quien firmó una versión
+     * anterior no está pendiente, pero tampoco al día.
+     */
+    protected function terminosEstado(): Attribute
+    {
+        return Attribute::make(get: function () {
+            if (! $this->terminos_firmados) {
+                return 'pendiente';
+            }
+
+            return $this->terminos_version === \App\Support\TerminosDeUso::VERSION
+                ? 'firmado'
+                : 'desactualizado';
+        });
     }
 
     /**

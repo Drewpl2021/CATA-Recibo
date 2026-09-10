@@ -22,10 +22,13 @@ trait CalculaConceptosPlanilla
      * (arriba en generarConceptosAutomaticos) — nunca deben procesarse por el motor
      * genérico de "aplica_a_todos", así ese campo quede marcado true por error.
      */
-    private const CONCEPTOS_CON_CALCULO_ESPECIAL = [
-        'ONP', 'SPP Fondo de Pensiones', 'SPP Prima de Seguro', 'SPP Comisión',
-        'ESSALUD', 'I.R. 5ta Categoría',
-    ];
+    /**
+     * Los seis que se calculan por empleado. La lista vive en
+     * App\Support\ConceptosDePago junto a los nombres, para que no puedan
+     * separarse del seeder: el motor los busca por nombre exacto y cuando no
+     * los encuentra NO falla, simplemente no crea la línea.
+     */
+    private const CONCEPTOS_CON_CALCULO_ESPECIAL = \App\Support\ConceptosDePago::CALCULO_ESPECIAL;
 
     protected function calcularDescuentoPension($empleado, $sueldoBase): array
     {
@@ -44,12 +47,25 @@ trait CalculaConceptosPlanilla
 
             return [
                 'tipo'    => 'AFP - ' . $empleado->afp,
+                // Las mismas etiquetas que el catálogo, para que la boleta y la
+                // pantalla de Conceptos de Pago no se llamen distinto.
                 'detalle' => [
-                    ['concepto' => 'SPP Fondo Pensiones', 'monto' => $aporte],
-                    ['concepto' => 'SPP Prima de Seguro', 'monto' => $comision],
-                    ['concepto' => 'SPP Comisión', 'monto' => $prima],
+                    ['concepto' => \App\Support\ConceptosDePago::SPP_FONDO, 'monto' => $aporte],
+                    ['concepto' => \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, 'monto' => $comision],
+                    ['concepto' => \App\Support\ConceptosDePago::SPP_COMISION, 'monto' => $prima],
                 ],
                 'total' => round($aporte + $prima + $comision, 2),
+            ];
+        }
+
+        // Sin sistema de pensiones no se descuenta nada. Antes esto era un
+        // "else" que caía en ONP, así que al jubilado que vuelve a dictar
+        // —que por ley ya no aporta— se le descontaba el 13% igual.
+        if ($empleado->sistema_pensiones !== 'ONP') {
+            return [
+                'tipo'    => 'No aporta',
+                'detalle' => [],
+                'total'   => 0.0,
             ];
         }
 
@@ -57,7 +73,7 @@ trait CalculaConceptosPlanilla
         return [
             'tipo'    => 'ONP',
             'detalle' => [
-                ['concepto' => 'ONP 13%', 'monto' => $monto],
+                ['concepto' => \App\Support\ConceptosDePago::ONP, 'monto' => $monto],
             ],
             'total' => $monto,
         ];
@@ -276,7 +292,7 @@ trait CalculaConceptosPlanilla
         return (float) \App\Models\PayrollDetalle::whereHas('planilla', function ($q) use ($empleadoId, $anio, $mesCorte) {
                 $q->where('empleado_id', $empleadoId)->where('anio', $anio)->where('mes', '<=', $mesCorte);
             })
-            ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', 'I.R. 5ta Categoría'))
+            ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', \App\Support\ConceptosDePago::RENTA_5TA))
             ->sum('monto_calculado');
     }
 
@@ -309,7 +325,7 @@ trait CalculaConceptosPlanilla
             $planilla->anio
         );
 
-        $concepto = \App\Models\PaymentConcept::where('nombre', 'I.R. 5ta Categoría')->first();
+        $concepto = \App\Models\PaymentConcept::where('nombre', \App\Support\ConceptosDePago::RENTA_5TA)->first();
         if ($concepto) {
             if ($renta5ta > 0) {
                 \App\Models\PayrollDetalle::updateOrCreate(
@@ -353,20 +369,23 @@ trait CalculaConceptosPlanilla
         $baseAfecta         = $sueldoBase + $asignacionFamiliar;
 
         if ($empleado->sistema_pensiones === 'AFP' && $empleado->afp) {
-            $this->crearDetalleAutomatico($planilla, 'SPP Fondo de Pensiones', $baseAfecta * ($this->aporteObligatorioAfp / 100));
+            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_FONDO, $baseAfecta * ($this->aporteObligatorioAfp / 100));
             // OJO: "Prima de Seguro" / "Comisión" van intercambiadas a propósito respecto
             // a las variables del trait — así las llama la boleta oficial del colegio.
-            $this->crearDetalleAutomatico($planilla, 'SPP Comisión', $baseAfecta * ($this->primaSeguroAfp / 100));
+            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_COMISION, $baseAfecta * ($this->primaSeguroAfp / 100));
 
             $comisionAfp = $this->comisionesAfp[$empleado->afp] ?? 0;
             if ($comisionAfp > 0) {
-                $this->crearDetalleAutomatico($planilla, 'SPP Prima de Seguro', $baseAfecta * ($comisionAfp / 100), "AFP {$empleado->afp} ({$comisionAfp}%)");
+                $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, $baseAfecta * ($comisionAfp / 100), "AFP {$empleado->afp} ({$comisionAfp}%)");
             }
-        } else {
-            $this->crearDetalleAutomatico($planilla, 'ONP', $baseAfecta * ($this->porcentajeOnp / 100));
+        } elseif ($empleado->sistema_pensiones === 'ONP') {
+            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::ONP, $baseAfecta * ($this->porcentajeOnp / 100));
         }
+        // Sin sistema de pensiones no se crea ninguna línea: es el jubilado
+        // que ya cobra su pensión o el extranjero con convenio. EsSalud sí se
+        // le sigue aportando, que es cosa aparte.
 
-        $this->crearDetalleAutomatico($planilla, 'ESSALUD', $this->calcularEssalud($baseAfecta));
+        $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::ESSALUD, $this->calcularEssalud($baseAfecta));
 
         // Conceptos marcados como "fijo para todos" en el catálogo — EXCLUYENDO siempre
         // los de pensión/EsSalud/Renta 5ta, que arriba ya reciben su cálculo especial
@@ -383,7 +402,7 @@ trait CalculaConceptosPlanilla
                 ? $sueldoBase * ((float) $concepto->valor / 100)
                 : (float) $concepto->valor;
 
-            $this->crearDetalleAutomatico($planilla, $concepto->nombre, $monto, 'Aplicado automáticamente a todos los empleados');
+            $this->crearDetalleAutomatico($planilla, $concepto->nombre, $monto);
         }
 
         // Se recalcula también cada vez que se genera la boleta (por si RRHH agrega
@@ -403,7 +422,16 @@ trait CalculaConceptosPlanilla
             ['planilla_id' => $planilla->id, 'payment_concept_id' => $concepto->id],
             [
                 'monto_calculado' => round($monto, 2),
-                'descripcion'     => $descripcion ?? 'Generado automáticamente al crear la planilla',
+                // Sin descripción cuando no hay nada que decir.
+                //
+                // La descripción se IMPRIME en la boleta pegada al nombre
+                // ("Otros Conceptos: Subsidio de Maternidad"), así que meter
+                // acá una nota del sistema hacía que al trabajador le llegara
+                // impreso "Bono de Aniversario: Aplicado automáticamente a
+                // todos los empleados". Esa nota es de la máquina, no del
+                // concepto: la columna es para el detalle puntual de ESA
+                // aplicación, y si no lo hay va vacía.
+                'descripcion'     => $descripcion,
             ]
         );
     }

@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 use App\Models\PaymentConcept;
 use App\Models\Empleado;
 use App\Models\Planilla;
+use App\Models\PlanillaCorrida;
 use App\Models\PayrollDetalle;
 use App\Traits\CalculaConceptosPlanilla;
 use Illuminate\Http\Request;
@@ -110,31 +111,85 @@ class PaymentConceptController extends Controller
             ], 422);
         }
 
-        if (empty($concepto->calculo) || is_null($concepto->valor)) {
+        /*
+         * La regla con la que se aplica: la que venga en la petición, y si no
+         * la del catálogo.
+         *
+         * Antes solo se podían aplicar a un grupo los conceptos que ya
+         * traían calculo/valor puestos, que en el catálogo real son tres de
+         * veintidós: al resto había que agregárselo de uno en uno a cada
+         * planilla. Ahora se manda el monto en el momento —que además es lo
+         * normal: un préstamo o un adelanto no tienen un valor "de catálogo"—
+         * y el del catálogo queda como propuesta.
+         */
+        $calculo = $request->input('calculo', $concepto->calculo);
+        $valor   = $request->input('valor', $concepto->valor);
+
+        if (empty($calculo) || is_null($valor)) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => "\"{$concepto->nombre}\" no tiene calculo/valor definidos en el catálogo, así que no hay un monto único para aplicar al grupo. Agrégalo manualmente a cada empleado (POST /payroll-detalles), o primero defínele un calculo/valor en este concepto."],
+                'data'    => ['message' => "\"{$concepto->nombre}\" no tiene un monto por defecto en el catálogo. Indica cuánto se le aplica a cada trabajador."],
             ], 422);
         }
 
+        // Se puede decir a quiénes de dos maneras: la lista de siempre, o
+        // "a los de esta planilla". Lo segundo es lo natural cuando ya
+        // agrupaste a la gente: sin esto había que volver a re-seleccionar por
+        // área a las mismas personas que ya estaban juntas —y si entretanto
+        // moviste a alguien a mano, esa selección ya no coincide con lo que
+        // hay dentro.
         $request->validate([
-            'mes'             => 'required|integer|min:1|max:12',
-            'anio'            => 'required|integer|min:2000',
-            'empleado_ids'    => 'required|array|min:1',
+            'corrida_id'      => 'required_without:empleado_ids|uuid|exists:planilla_corridas,id',
+            // La regla con la que se aplica, si no se usa la del catálogo.
+            'calculo'         => 'sometimes|in:fijo,porcentaje',
+            'valor'           => 'sometimes|numeric|min:0',
+            'mes'             => 'required_without:corrida_id|integer|min:1|max:12',
+            'anio'            => 'required_without:corrida_id|integer|min:2000',
+            'empleado_ids'    => 'required_without:corrida_id|array|min:1',
             'empleado_ids.*'  => 'uuid|exists:empleados,id|distinct',
         ]);
+
+        $mes  = (int) $request->mes;
+        $anio = (int) $request->anio;
+        $empleadoIds = $request->input('empleado_ids', []);
+        $corrida = null;
+
+        if ($request->filled('corrida_id')) {
+            $corrida = PlanillaCorrida::findOrFail($request->corrida_id);
+
+            if ($corrida->estaCerrada()) {
+                return response()->json([
+                    'success' => false,
+                    'data'    => ['message' => "La planilla \"{$corrida->nombre}\" está cerrada: ya se pagó y no se le pueden mover las cifras."],
+                ], 409);
+            }
+
+            // El mes sale de la planilla, no se pregunta: sus filas ya están
+            // calculadas para ese mes y pedirlo otra vez solo abre la puerta
+            // a equivocarse.
+            $mes  = (int) $corrida->mes;
+            $anio = (int) $corrida->anio;
+            $empleadoIds = $corrida->planillas()->pluck('empleado_id')->all();
+
+            if (empty($empleadoIds)) {
+                return response()->json([
+                    'success' => false,
+                    'data'    => ['message' => "La planilla \"{$corrida->nombre}\" todavía no tiene trabajadores."],
+                ], 422);
+            }
+        }
 
         $aplicadas = 0;
         $omitidas  = 0;
         $detalle   = [];
 
-        foreach ($request->empleado_ids as $empleadoId) {
+        foreach ($empleadoIds as $empleadoId) {
             $empleado = Empleado::find($empleadoId);
             $nombreCompleto = trim($empleado->nombre . ' ' . $empleado->apellido);
 
             $planilla = Planilla::where('empleado_id', $empleadoId)
-                ->where('mes', $request->mes)
-                ->where('anio', $request->anio)
+                ->where('mes', $mes)
+                ->where('anio', $anio)
                 ->first();
 
             if (!$planilla) {
@@ -143,14 +198,21 @@ class PaymentConceptController extends Controller
                 continue;
             }
 
-            $monto = $concepto->calculo === 'porcentaje'
-                ? (float) $planilla->sueldo_base * ((float) $concepto->valor / 100)
-                : (float) $concepto->valor;
+            $monto = $calculo === 'porcentaje'
+                ? (float) $planilla->sueldo_base * ((float) $valor / 100)
+                : (float) $valor;
             $monto = round($monto, 2);
 
             PayrollDetalle::updateOrCreate(
                 ['planilla_id' => $planilla->id, 'payment_concept_id' => $concepto->id],
-                ['monto_calculado' => $monto, 'descripcion' => 'Aplicado a un grupo de empleados']
+                [
+                    'monto_calculado' => $monto,
+                    // Se guarda la regla, no solo los soles: así el detalle de
+                    // la planilla puede decir "10% del básico" y no un número
+                    // suelto del que nadie se acuerda a los tres meses.
+                    'calculo' => $calculo,
+                    'valor'   => $valor,
+                ]
             );
             $planilla->recalcularTotal();
 
@@ -162,8 +224,19 @@ class PaymentConceptController extends Controller
             'success' => true,
             'data'    => [
                 'concepto' => $concepto->nombre,
-                'mes'      => (int) $request->mes,
-                'anio'     => (int) $request->anio,
+                'calculo'  => $calculo,
+                'valor'    => (float) $valor,
+                'mes'      => $mes,
+                'anio'     => $anio,
+                // Cuando se aplicó a una planilla, se devuelve con sus cifras
+                // ya al día: el neto de la planilla cambió y la pantalla tiene
+                // que poder reflejarlo sin pedirlo otra vez.
+                'corrida'  => $corrida ? [
+                    'id'            => $corrida->id,
+                    'nombre'        => $corrida->nombre,
+                    'personas'      => (int) $corrida->planillas()->count(),
+                    'masa_salarial' => (float) $corrida->planillas()->sum('total'),
+                ] : null,
                 'resumen'  => ['aplicadas' => $aplicadas, 'omitidas' => $omitidas],
                 'detalle'  => $detalle,
             ],

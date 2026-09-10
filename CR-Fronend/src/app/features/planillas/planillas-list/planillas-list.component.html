@@ -1,15 +1,32 @@
 <app-page-header
-  icono="table_chart"
-  titulo="Planillas"
-  subtitulo="Cálculo del sueldo de cada empleado, mes a mes."
+  [icono]="modoSinAgrupar ? 'folder_open' : 'table_chart'"
+  [titulo]="tituloPantalla"
+  [subtitulo]="subtituloPantalla"
 >
-  <div headerActions style="display: flex; gap: 12px;">
-    <button class="btn-primary" (click)="abrirGenerar()">
+  <div headerActions style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <button class="btn-secondary" (click)="volver()">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
       </svg>
-      Generar planillas
+      Volver a Planillas
+    </button>
+
+    <button class="btn-primary" *ngIf="corridaId && !estaCerrada" (click)="abrirGenerar()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Agregar trabajadores
+    </button>
+
+    <button class="btn-secondary" *ngIf="corridaId && !estaCerrada" (click)="abrirConcepto()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      Aplicar concepto
     </button>
 
     <button class="btn-secondary" (click)="abrirBoletas()">
@@ -20,15 +37,15 @@
       </svg>
       Emitir boletas
     </button>
-
-    <button class="btn-secondary" (click)="nueva()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      Una sola
-    </button>
   </div>
 </app-page-header>
+
+<!-- Una planilla cerrada se mira, no se toca. -->
+<div class="form-nota form-nota--alerta" *ngIf="estaCerrada">
+  <strong>Esta planilla está cerrada.</strong>
+  Ya se pagó, así que no se le pueden agregar ni sacar trabajadores. Si necesitas
+  corregir algo, ábrela desde la lista de Planillas.
+</div>
 
 <section class="panel-filtros">
   <header class="panel-filtros__cabecera">
@@ -40,17 +57,20 @@
     <div class="panel-filtros__cifras">
       <div class="cifra">
         <strong>{{ total | number }}</strong>
-        <span>Planillas</span>
+        <!-- Dentro de una planilla, sus filas son trabajadores; en la lista
+             suelta, son planillas. Decir "5 planillas" mirando a cinco
+             personas confunde. -->
+        <span>{{ corridaId || modoSinAgrupar ? 'Trabajadores' : 'Planillas' }}</span>
       </div>
       <div class="cifra cifra--destacada">
         <strong>S/ {{ masaSalarial | number: '1.2-2' }}</strong>
-        <span>Masa salarial (neto)</span>
+        <span>Neto a pagar</span>
       </div>
     </div>
   </header>
 
   <div class="panel-filtros__campos">
-    <div class="campo-filtro">
+    <div class="campo-filtro" *ngIf="!corridaId">
       <label for="filtroMes">Mes</label>
       <select id="filtroMes" class="form-control" [(ngModel)]="filtroMes" (ngModelChange)="alFiltrar()">
         <option [ngValue]="''">Todos</option>
@@ -58,7 +78,7 @@
       </select>
     </div>
 
-    <div class="campo-filtro campo-filtro--corto">
+    <div class="campo-filtro campo-filtro--corto" *ngIf="!corridaId">
       <label for="filtroAnio">Año</label>
       <input type="number" id="filtroAnio" class="form-control" [(ngModel)]="filtroAnio"
         (ngModelChange)="alFiltrar()" min="2000" placeholder="Todos" />
@@ -72,8 +92,8 @@
       </select>
     </div>
 
-    <div class="campo-filtro">
-      <label for="filtroPeriodo">Periodo</label>
+    <div class="campo-filtro" *ngIf="!corridaId">
+      <label for="filtroPeriodo">Año escolar</label>
       <select id="filtroPeriodo" class="form-control" [(ngModel)]="filtroPeriodo" (ngModelChange)="alFiltrar()">
         <option value="">Todos</option>
         <option *ngFor="let p of periodos" [value]="p.id">{{ p.nombre }}</option>
@@ -95,6 +115,7 @@
   [columnas]="columnas"
   [datos]="planillas"
   [cargando]="cargando"
+  [numerarFilas]="true"
   [paginacionServidor]="true"
   [totalElementos]="total"
   [pagina]="pagina"
@@ -104,7 +125,7 @@
   [acciones]="['editar', 'eliminar']"
   [accionesPersonalizadas]="accionesExtra"
   [filasPorPagina]="15"
-  mensajeVacio="No hay planillas para este filtro. Puedes generarlas todas desde Periodos."
+  [mensajeVacio]="mensajeSinFilas"
   (editarFila)="editar($event)"
   (eliminarFila)="eliminar($event)"
   (accionPersonalizada)="alAccionar($event)"
@@ -113,39 +134,19 @@
 <!-- ── Generar las planillas del mes ── -->
 <app-form-modal
   [(visible)]="modalGenerarVisible"
-  titulo="Generar planillas del mes"
+  [titulo]="tituloModalAgregar"
   ancho="640px"
   [guardando]="generando"
-  [textoGuardar]="resultadoGeneracion ? 'Generar otra vez' : 'Generar planillas'"
+  [textoGuardar]="resultadoGeneracion ? 'Agregar más' : 'Agregar trabajadores'"
   (guardar)="generar()"
   (cancelar)="cerrarGenerar()"
 >
   <form [formGroup]="formGenerar" class="form-fields">
-    <div class="form-group">
-      <label for="genPeriodo">Periodo *</label>
-      <select id="genPeriodo" class="form-control" formControlName="periodo_id"
-        (change)="alCambiarPeriodo()">
-        <option value="">— Elige el periodo —</option>
-        <option *ngFor="let p of periodos" [value]="p.id">{{ p.nombre }}</option>
-      </select>
-      <small class="form-ayuda" *ngIf="rangoDelPeriodo">{{ rangoDelPeriodo }}</small>
-      <small class="form-error" *ngIf="!periodos.length">
-        No hay periodos creados. Crea uno primero en Configuración → Periodos.
-      </small>
-    </div>
-
-    <div class="form-group">
-      <label for="genMes">Mes a generar *</label>
-      <select id="genMes" class="form-control" formControlName="mesAnio"
-        [attr.disabled]="mesesDelPeriodo.length ? null : true">
-        <option value="">— Elige primero el periodo —</option>
-        <option *ngFor="let m of mesesDelPeriodo" [value]="m.valor">{{ m.etiqueta }}</option>
-      </select>
-      <small class="form-ayuda" *ngIf="mesesDelPeriodo.length">
-        Solo aparecen los meses que cubre el periodo, así no se puede pedir uno que
-        el sistema vaya a rechazar.
-      </small>
-    </div>
+    <p class="form-nota">
+      Se les armará la planilla de
+      <strong>{{ nombreMes(corrida?.mes ?? 0) }} {{ corrida?.anio }}</strong>,
+      que es el mes de esta planilla.
+    </p>
 
     <app-selector-empleados
       *ngIf="!resultadoGeneracion"
@@ -227,6 +228,140 @@
         Las omitidas son empleados sin planilla de ese mes, o que ya tenían su
         boleta emitida.
       </p>
+    </ng-container>
+  </div>
+</app-form-modal>
+
+<!-- ── Meter a alguien en una planilla ── -->
+<app-form-modal
+  [(visible)]="modalMoverVisible"
+  titulo="Meter en una planilla"
+  [guardando]="moviendo"
+  textoGuardar="Mover"
+  (guardar)="confirmarMover()"
+  (cancelar)="cerrarMover()"
+>
+  <div class="form-fields">
+    <p class="form-nota">
+      <strong>{{ planillaAMover ? nombreEmpleado(planillaAMover) : '' }}</strong>
+      pasará a la planilla que elijas. Su cálculo no cambia: solo se agrupa.
+    </p>
+
+    <div class="form-group">
+      <label for="destino">Planilla de destino</label>
+      <select id="destino" class="form-control" [(ngModel)]="corridaDestino">
+        <option value="">— Elige una planilla —</option>
+        <option *ngFor="let c of corridasDelMes" [value]="c.id">
+          {{ c.nombre }} ({{ c.personas ?? 0 }} trabajador(es))
+        </option>
+      </select>
+      <small class="form-ayuda" *ngIf="corridasDelMes.length">
+        Solo salen las planillas abiertas del mismo mes.
+      </small>
+      <small class="form-error" *ngIf="!corridasDelMes.length">
+        No hay ninguna planilla abierta de ese mes. Crea una primero desde la
+        pantalla de Planillas.
+      </small>
+    </div>
+  </div>
+</app-form-modal>
+
+<!-- ── Aplicar un concepto ── -->
+<app-form-modal
+  [(visible)]="modalConceptoVisible"
+  [titulo]="tituloModalConcepto"
+  ancho="680px"
+  [guardando]="aplicandoConcepto"
+  [textoGuardar]="resultadoConcepto ? 'Aplicar otro' : 'Aplicar'"
+  (guardar)="aplicarConcepto()"
+  (cancelar)="cerrarConcepto()"
+>
+  <div class="form-fields">
+    <ng-container *ngIf="!resultadoConcepto">
+      <div class="form-group">
+        <label for="concepto">Concepto *</label>
+        <select id="concepto" class="form-control" [(ngModel)]="conceptoElegido"
+          (ngModelChange)="alElegirConcepto()">
+          <option value="">— Elige un concepto —</option>
+          <optgroup *ngFor="let g of conceptosPorTipo" [label]="g.etiqueta">
+            <option *ngFor="let c of g.conceptos" [value]="c.id">{{ c.nombre }}</option>
+          </optgroup>
+        </select>
+        <small class="form-ayuda" *ngIf="conceptoSeleccionado?.descripcion">
+          {{ conceptoSeleccionado?.descripcion }}
+        </small>
+        <small class="form-ayuda" *ngIf="!conceptoElegido">
+          Salen todos menos los que el sistema calcula solo por trabajador
+          (pensión, EsSalud y Renta de 5ta): esos dependen de la ficha de cada
+          quien y no se aplican en bloque.
+        </small>
+      </div>
+
+      <div class="form-row" *ngIf="conceptoElegido">
+        <div class="form-group">
+          <label for="conceptoCalculo">¿Cómo se calcula?</label>
+          <select id="conceptoCalculo" class="form-control" [(ngModel)]="conceptoCalculo">
+            <option value="fijo">Monto fijo en soles</option>
+            <option value="porcentaje">Porcentaje del sueldo básico</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="conceptoValor">
+            {{ conceptoCalculo === 'porcentaje' ? 'Porcentaje (%)' : 'Monto (S/)' }} *
+          </label>
+          <input type="number" id="conceptoValor" class="form-control" [(ngModel)]="conceptoValor"
+            min="0" step="0.01" placeholder="0.00" />
+          <small class="form-ayuda" *ngIf="conceptoCalculo === 'porcentaje' && montoPrevisto">
+            Sobre el básico medio de esta planilla serían unos
+            <strong>S/ {{ montoPrevisto | number: '1.2-2' }}</strong>; a cada
+            trabajador se le calcula sobre el suyo.
+          </small>
+          <small class="form-ayuda" *ngIf="conceptoCalculo !== 'porcentaje'">
+            El mismo monto para todos los que alcance.
+          </small>
+        </div>
+      </div>
+
+      <app-selector-empleados
+        *ngIf="conceptoElegido"
+        [empleados]="empleadosDeLaPlanilla"
+        [areas]="areas"
+        [cargos]="cargos"
+        [sedes]="sedes"
+        [(alcance)]="alcanceConcepto"
+        [(seleccion)]="elegidosConcepto"
+      ></app-selector-empleados>
+
+      <p class="form-nota" *ngIf="conceptoElegido">
+        Se le aplicará a <strong>{{ alcanceDelConcepto }} trabajador(es)</strong>
+        de {{ nombreMes(corrida?.mes ?? 0) }} {{ corrida?.anio }}.
+        A quien ya lo tenga se le actualiza el monto, no se le duplica la línea.
+      </p>
+    </ng-container>
+
+    <!-- Qué pasó con cada uno -->
+    <ng-container *ngIf="resultadoConcepto">
+      <div class="resumen-masivo">
+        <div class="resumen-masivo__dato">
+          <strong>{{ resultadoConcepto.resumen.aplicadas }}</strong>
+          <span>Aplicadas</span>
+        </div>
+        <div class="resumen-masivo__dato">
+          <strong>{{ resultadoConcepto.resumen.omitidas }}</strong>
+          <span>Omitidas</span>
+        </div>
+      </div>
+
+      <div class="detalle-masivo">
+        <div class="detalle-masivo__fila" *ngFor="let d of resultadoConcepto.detalle">
+          <span>{{ d.empleado }}</span>
+          <span *ngIf="d.estado === 'aplicada'" class="status-badge status-badge-success">
+            S/ {{ d.monto | number: '1.2-2' }}
+          </span>
+          <span *ngIf="d.estado !== 'aplicada'" class="detalle-masivo__motivo">{{ d.motivo }}</span>
+        </div>
+      </div>
     </ng-container>
   </div>
 </app-form-modal>

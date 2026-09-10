@@ -10,6 +10,31 @@ export interface Usuario {
   estado_registro?: string;
   es_institucional?: boolean;
   rol?: Rol | string;
+  /** La firma de los términos: 'pendiente' | 'firmado' | 'desactualizado'. */
+  terminos_estado?: EstadoTerminos;
+  terminos_firmados_en?: string | null;
+  terminos_version?: string | null;
+}
+
+/**
+ * En qué anda alguien con los términos de uso.
+ *
+ * 'desactualizado' es el caso que el papel no tenía: firmó, pero una versión
+ * anterior a la que rige hoy, así que tiene que volver a firmar.
+ */
+export type EstadoTerminos = 'pendiente' | 'firmado' | 'desactualizado';
+
+/** El documento que se lee antes de entrar por primera vez. */
+export interface TerminosDeUso {
+  version: string;
+  titulo: string;
+  resumen: string;
+  secciones: { titulo: string; texto: string }[];
+  firmados: boolean;
+  firmadosEn: string | null;
+  versionFirmada: string | null;
+  /** Firmó una versión anterior: hay que pedirle la firma otra vez. */
+  esVersionNueva: boolean;
 }
 
 /** Usuario ya normalizado por AuthService (rol siempre string). */

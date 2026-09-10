@@ -5,16 +5,17 @@ use App\Models\Empleado;
 use App\Models\Documento;
 use App\Traits\CalculaConceptosPlanilla;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\ConceptosDePago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Support\Meses;
 
 class MiBoletaController extends Controller
 {
     use CalculaConceptosPlanilla;
 
-    private const CONCEPTOS_MOSTRADOS_APARTE = [
-        'ONP', 'SPP Fondo de Pensiones', 'SPP Prima de Seguro', 'SPP Comisión', 'I.R. 5ta Categoría',
-    ];
+    /** La pensión y la Renta de 5ta ya salen en su propia fila de la boleta. */
+    private const CONCEPTOS_MOSTRADOS_APARTE = ConceptosDePago::MOSTRADOS_APARTE;
 
     public function descargar(Request $request, $mes, $anio)
     {
@@ -39,12 +40,7 @@ class MiBoletaController extends Controller
             ], 404);
         }
 
-        $meses = [
-            1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo',
-            4 => 'Abril', 5 => 'Mayo', 6 => 'Junio',
-            7 => 'Julio', 8 => 'Agosto', 9 => 'Septiembre',
-            10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
-        ];
+        $meses = Meses::NOMBRES;
 
         $archivo = "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf";
 
@@ -71,7 +67,7 @@ class MiBoletaController extends Controller
             ->filter(fn ($d) => $d->paymentConcept?->tipo === 'descuento' && !in_array($d->paymentConcept?->nombre, self::CONCEPTOS_MOSTRADOS_APARTE, true))
             ->values();
         $conceptosAportacion = $conceptosPlanilla
-            ->filter(fn ($d) => $d->paymentConcept?->tipo === 'aportacion' && $d->paymentConcept?->nombre !== 'ESSALUD')
+            ->filter(fn ($d) => $d->paymentConcept?->tipo === 'aportacion' && $d->paymentConcept?->nombre !== ConceptosDePago::ESSALUD)
             ->values();
         $conceptosAdelanto = $conceptosPlanilla->filter(fn ($d) => $d->paymentConcept?->tipo === 'adelanto')->values();
 
@@ -131,6 +127,11 @@ class MiBoletaController extends Controller
             $archivada = Pdf::loadView('boleta', $data + ['copias' => 2])->setPaper('a4', 'landscape');
             Storage::disk('local')->put($rutaArchivo, $archivada->output());
         }
+
+        // El trabajador se la bajó: queda anotado. Solo acá, que es SU
+        // descarga; que RR.HH. abra el PDF para revisarlo no significa que el
+        // trabajador la haya recibido.
+        $documento->registrarDescarga();
 
         return $suya->download($archivo);
     }

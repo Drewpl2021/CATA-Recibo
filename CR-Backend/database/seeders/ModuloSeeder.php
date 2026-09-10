@@ -25,8 +25,12 @@ class ModuloSeeder extends Seeder
         $idEspacio  = Str::uuid()->toString();
 
         DB::table('modulo_padre')->insert([
-            // Va primero: es la pantalla en la que se cae al entrar.
-            ['id' => $idInicio,  'nombre' => 'Dashboard',          'icono' => 'dashboard',    'orden' => 1, 'created_at' => now(), 'updated_at' => now()],
+            // Va primero: es la pantalla en la que se cae al entrar. Se llama
+            // "Inicio" y no "Dashboard" porque el menú lo lee gente del
+            // colegio, no gente de sistemas — y porque el ítem de dentro ya
+            // se llama "Panel de Control": tener los dos en inglés y
+            // repetidos no ayudaba a nadie.
+            ['id' => $idInicio,  'nombre' => 'Inicio',             'icono' => 'dashboard',    'orden' => 1, 'created_at' => now(), 'updated_at' => now()],
             ['id' => $idBoletas, 'nombre' => 'Boletas y Finanzas', 'icono' => 'receipt',      'orden' => 2, 'created_at' => now(), 'updated_at' => now()],
             ['id' => $idConfig,  'nombre' => 'Configuración',      'icono' => 'settings',     'orden' => 3, 'created_at' => now(), 'updated_at' => now()],
             ['id' => $idEspacio, 'nombre' => 'Mi Espacio',         'icono' => 'person',       'orden' => 4, 'created_at' => now(), 'updated_at' => now()],
@@ -34,7 +38,7 @@ class ModuloSeeder extends Seeder
 
         // ── Módulos hijos ─────────────────────────────────
         $modulos = [
-            // Dashboard — el resumen del mes. Solo admin y RRHH: sus cifras son
+            // Panel de Control — el resumen del mes. Solo admin y RRHH: sus cifras son
             // de toda la nómina (masa salarial, contratos por vencer), nada que
             // deba ver un docente. Al empleado se le manda a Mis Boletas.
             ['padre' => $idInicio, 'nombre' => 'Panel de Control', 'ruta' => '/dashboard', 'icono' => 'dashboard', 'orden' => 1, 'roles' => [$admin, $rrhh]],

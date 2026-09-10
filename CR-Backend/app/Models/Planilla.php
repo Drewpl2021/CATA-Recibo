@@ -11,10 +11,21 @@ class Planilla extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
+    /*
+     * Ojo con esta lista: lo que no está aquí, Laravel lo TIRA sin avisar.
+     *
+     * 'periodo_id' faltaba, y como PeriodoController::generarPlanilla lo
+     * pasaba en el create(), se descartaba en silencio: la generación decía
+     * "13 generadas" y las 13 quedaban sin periodo. Se veía en la base
+     * (0 de 13 con periodo_id) y en la pantalla, cuyo filtro por periodo no
+     * devolvía nunca nada. Nadie lo notó porque no falla: solo no guarda.
+     */
     protected $fillable = [
         'empleado_id',
         'mes',
         'anio',
+        'periodo_id',
+        'corrida_id',
         'sueldo_base',
         'bonificaciones',
         'descuentos',
@@ -33,6 +44,18 @@ class Planilla extends Model
     public function empleado()
     {
         return $this->belongsTo(Empleado::class);
+    }
+
+    /** El año escolar del que cuelga, si se le puso. */
+    public function periodo()
+    {
+        return $this->belongsTo(Periodo::class);
+    }
+
+    /** La corrida que la agrupa ("Planilla TIC"). Sin ella queda suelta. */
+    public function corrida()
+    {
+        return $this->belongsTo(PlanillaCorrida::class, 'corrida_id');
     }
 
     public function payrollDetalles()

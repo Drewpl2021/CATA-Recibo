@@ -35,6 +35,10 @@ export class PlanillaService extends EntityDataService<Planilla> {
     mes?: number | string;
     anio?: number | string;
     periodo_id?: string;
+    /** Las filas de UNA planilla con nombre. */
+    corrida_id?: string;
+    /** Las que no están en ninguna: el grupo "Sin agrupar". */
+    sin_corrida?: boolean;
     page?: number;
     size?: number;
     search?: string;

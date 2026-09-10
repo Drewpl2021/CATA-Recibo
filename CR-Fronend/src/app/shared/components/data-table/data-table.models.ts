@@ -6,10 +6,22 @@
 export interface ColumnaTabla<T = any> {
   campo: string;
   header: string;
-  tipo?: 'texto' | 'fecha' | 'fecha-hora' | 'moneda' | 'badge' | 'boolean' | 'icono';
+  /**
+   * 'hito' es para un paso que puede haber ocurrido o no: recibe una fecha o
+   * null y pinta la marca con su fecha, o una raya. Lo usan las columnas de
+   * seguimiento de la boleta (avisada, revisada, descargada, firmada).
+   */
+  tipo?: 'texto' | 'fecha' | 'fecha-hora' | 'moneda' | 'badge' | 'boolean' | 'icono' | 'hito';
   ancho?: string;
   /** Solo para tipo 'badge': decide la severidad (color) según el valor de la celda. */
   badgeSeveridad?: (valor: any, fila: T) => 'success' | 'info' | 'warning' | 'danger' | 'secondary';
+  /**
+   * Solo para tipo 'hito': una línea más pequeña bajo la fecha. La usa
+   * "Aviso enviado" para decir A QUÉ CORREO se avisó, que es el dato que de
+   * verdad zanja la discusión de "a mí nunca me llegó".
+   */
+  hitoDetalle?: (fila: T) => string | null | undefined;
+
   /** Transforma el valor crudo antes de mostrarlo (ej. traducir un enum a texto legible). */
   formatear?: (valor: any, fila: T) => string;
   /**

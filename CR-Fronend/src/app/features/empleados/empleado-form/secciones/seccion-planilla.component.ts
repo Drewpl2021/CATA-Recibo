@@ -30,6 +30,11 @@ export class SeccionPlanillaComponent extends SeccionEmpleadoBase {
     return this.form.get('sistema_pensiones')?.value === 'AFP';
   }
 
+  /** Sin sistema de pensiones: no se le descuenta nada por ese lado. */
+  get sinPension(): boolean {
+    return !this.form.get('sistema_pensiones')?.value;
+  }
+
   get pagaPorBanco(): boolean {
     return this.form.get('forma_pago')?.value === 'banco';
   }

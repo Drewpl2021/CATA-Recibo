@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import {
@@ -14,6 +14,8 @@ import {
   BoletaService,
   ToastService,
   ConfirmService,
+  PlanillaCorridaService,
+  PaymentConceptService,
 } from '../../../core/services';
 import {
   Area,
@@ -23,6 +25,9 @@ import {
   Periodo,
   Planilla,
   Sede,
+  PlanillaCorrida,
+  PaymentConcept,
+  AplicacionConceptoGrupo,
 } from '../../../core/models';
 import { mensajeErrorApi } from '../../../core/utils';
 import { MESES_OPCIONES, nombreMes } from '../../../shared/constants';
@@ -62,6 +67,9 @@ import {
 export class PlanillasListComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private ruta = inject(ActivatedRoute);
+  private corridaService = inject(PlanillaCorridaService);
+  private conceptoService = inject(PaymentConceptService);
   private planillaService = inject(PlanillaService);
   private empleadoService = inject(EmpleadoService);
   private periodoService = inject(PeriodoService);
@@ -89,6 +97,19 @@ export class PlanillasListComponent implements OnInit {
   filtroAnio: number | '' = new Date().getFullYear();
   filtroEmpleado = '';
   filtroPeriodo = '';
+
+  /*
+   * Dentro de qué planilla estamos.
+   *
+   *   corrida        -> las filas de "Planilla TIC"
+   *   modoSinAgrupar -> las que no están en ninguna
+   *
+   * La pantalla es la misma en los dos casos porque la tabla es la misma:
+   * cambia de dónde salen las filas y qué se puede hacer con ellas.
+   */
+  corridaId = '';
+  corrida: PlanillaCorrida | null = null;
+  modoSinAgrupar = false;
 
   // ── Generación masiva de planillas ──
   modalGenerarVisible = false;
@@ -149,11 +170,137 @@ export class PlanillasListComponent implements OnInit {
   /** Los conceptos de la planilla se gestionan en su propia pantalla. */
   accionesExtra: AccionPersonalizada<Planilla>[] = [
     { id: 'detalle', titulo: 'Ver y ajustar sus conceptos', icono: 'receipt_long' },
+    {
+      id: 'sacar', titulo: 'Sacar de esta planilla (no borra su pago)', icono: 'remove_circle',
+      severidad: 'warning',
+      // Solo dentro de una planilla abierta: en "Sin agrupar" ya está fuera,
+      // y de una cerrada no se saca a nadie.
+      visible: () => !!this.corridaId && !this.estaCerrada,
+    },
+    {
+      id: 'mover', titulo: 'Meter en una planilla', icono: 'folder',
+      visible: () => this.modoSinAgrupar,
+    },
   ];
 
+    // ── Aplicar un concepto a TODA la planilla ──
+  //
+  // Es lo que evita tener que irse a Conceptos de Pago y volver a
+  // re-seleccionar por área a la misma gente que ya está junta acá dentro
+  // —y que, si moviste a alguien a mano, ya ni siquiera coincide—.
+  modalConceptoVisible = false;
+  aplicandoConcepto = false;
+  conceptos: PaymentConcept[] = [];
+  conceptoElegido = '';
+  resultadoConcepto: AplicacionConceptoGrupo | null = null;
+
+  /*
+   * Con qué regla se aplica. Se propone la del catálogo al elegir el
+   * concepto y se puede cambiar acá: un préstamo o un adelanto no tienen un
+   * valor "de catálogo", y antes esos no se podían aplicar a un grupo.
+   */
+  conceptoCalculo: 'fijo' | 'porcentaje' = 'fijo';
+  conceptoValor: number | null = null;
+
+  /** A quiénes: toda la planilla, o los que se busquen y marquen. */
+  alcanceConcepto: AlcanceGrupo = 'todos';
+  elegidosConcepto: string[] = [];
+
+
+  // ── Meter una planilla suelta en una corrida ──
+  modalMoverVisible = false;
+  moviendo = false;
+  planillaAMover: Planilla | null = null;
+  corridasDelMes: PlanillaCorrida[] = [];
+  corridaDestino = '';
+
   ngOnInit(): void {
-    this.cargar();
+    this.corridaId = this.ruta.snapshot.paramMap.get('id') ?? '';
+    this.modoSinAgrupar = this.ruta.snapshot.url.some((t) => t.path === 'sin-agrupar');
+
+    if (this.modoSinAgrupar) {
+      // El mes viene de la pantalla anterior para no perder de vista dónde
+      // estabas: si allá mirabas septiembre, acá también.
+      const q = this.ruta.snapshot.queryParamMap;
+      this.filtroMes = q.get('mes') ? Number(q.get('mes')) : '';
+      this.filtroAnio = q.get('anio') ? Number(q.get('anio')) : '';
+      this.cargar();
+    } else if (this.corridaId) {
+      this.cargarCorrida();
+    } else {
+      this.cargar();
+    }
+
     this.cargarCatalogos();
+  }
+
+  /**
+   * Los datos de la planilla en la que estamos: su nombre para la cabecera y
+   * su mes, que es el que fija la lista. Se cargan ANTES que las filas para
+   * que la tabla salga ya acotada al mes correcto.
+   */
+  private cargarCorrida(): void {
+    this.cargando = true;
+    this.corridaService.getById(this.corridaId).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.corrida = res.data;
+          this.filtroMes = res.data.mes;
+          this.filtroAnio = res.data.anio;
+        }
+        this.cargar();
+      },
+      error: (err) => {
+        this.cargando = false;
+        this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo cargar esta planilla.'));
+        this.volver();
+      },
+    });
+  }
+
+  /** De vuelta a la lista de planillas. */
+  volver(): void {
+    this.router.navigate(['/inicio/planillas']);
+  }
+
+  /** El título de la pantalla, según dónde estemos. */
+  get tituloPantalla(): string {
+    if (this.modoSinAgrupar) return 'Sin agrupar';
+    return this.corrida?.nombre ?? 'Planillas';
+  }
+
+  get subtituloPantalla(): string {
+    if (this.modoSinAgrupar) {
+      return 'Trabajadores con planilla del mes que todavía no están en ninguna planilla con nombre.';
+    }
+    if (this.corrida) {
+      return `Los trabajadores de esta planilla, ${nombreMes(this.corrida.mes)} ${this.corrida.anio}.`;
+    }
+    return 'Cálculo del sueldo de cada empleado, mes a mes.';
+  }
+
+  /** Lo que dice la tabla cuando no hay ni una fila. */
+  get mensajeSinFilas(): string {
+    if (this.modoSinAgrupar) {
+      return 'Ninguna planilla quedó suelta: todas están dentro de una planilla con nombre.';
+    }
+    if (this.corridaId) {
+      return 'Esta planilla todavía no tiene trabajadores. Agrégalos con el botón de arriba.';
+    }
+    return 'No hay planillas para este filtro.';
+  }
+
+  get tituloModalConcepto(): string {
+    return `Aplicar un concepto a "${this.tituloPantalla}"`;
+  }
+
+  get tituloModalAgregar(): string {
+    return `Agregar trabajadores a "${this.tituloPantalla}"`;
+  }
+
+  /** Una planilla cerrada se mira, no se toca. */
+  get estaCerrada(): boolean {
+    return this.corrida?.estado === 'cerrada';
   }
 
   /**
@@ -181,6 +328,16 @@ export class PlanillasListComponent implements OnInit {
         this.toastService.error('Aviso', 'No se pudieron cargar los datos de los filtros.');
       },
     });
+  }
+
+  /**
+   * Los trabajadores QUE ESTÁN en esta planilla, para el buscador del
+   * concepto: ofrecer a los 150 del colegio cuando la planilla tiene doce
+   * sería ofrecer gente a la que no se le puede aplicar nada.
+   */
+  get empleadosDeLaPlanilla(): Empleado[] {
+    const dentro = new Set(this.planillas.map((p) => p.empleado_id));
+    return this.empleados.filter((e) => dentro.has(e.id));
   }
 
   /** Solo el personal activo entra en una generación de planillas. */
@@ -258,6 +415,8 @@ export class PlanillasListComponent implements OnInit {
         anio: this.filtroAnio || undefined,
         empleado_id: this.filtroEmpleado || undefined,
         periodo_id: this.filtroPeriodo || undefined,
+        corrida_id: this.corridaId || undefined,
+        sin_corrida: this.modoSinAgrupar || undefined,
       })
       .subscribe({
         next: (res) => {
@@ -304,6 +463,230 @@ export class PlanillasListComponent implements OnInit {
 
   alAccionar(evento: { accion: string; fila: Planilla }): void {
     if (evento.accion === 'detalle') this.verDetalle(evento.fila);
+    if (evento.accion === 'sacar') this.sacarDeLaPlanilla(evento.fila);
+    if (evento.accion === 'mover') this.abrirMover(evento.fila);
+  }
+
+  /**
+   * Saca a alguien de esta planilla. NO borra su pago: la fila sigue ahí con
+   * sus conceptos y sus montos, solo deja de estar agrupada.
+   */
+  sacarDeLaPlanilla(planilla: Planilla): void {
+    this.confirmService
+      .confirmar({
+        titulo: 'Sacar de esta planilla',
+        mensaje: `${this.nombreEmpleado(planilla)} saldrá de "${this.corrida?.nombre}" y pasará a `
+          + '"Sin agrupar". Su planilla y sus conceptos no se tocan: solo deja de estar agrupado.',
+        aceptarTexto: 'Sí, sacar',
+      })
+      .then((aceptado) => {
+        if (!aceptado) return;
+        this.corridaService.sacar([planilla.id!]).subscribe({
+          next: () => {
+            this.toastService.success('Listo', `${this.nombreEmpleado(planilla)} pasó a "Sin agrupar".`);
+            this.cargar();
+          },
+          error: (err) => this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo sacar de la planilla.')),
+        });
+      });
+  }
+
+  /** El catálogo, para el desplegable de "aplicar concepto". */
+  abrirConcepto(): void {
+    this.conceptoElegido = '';
+    this.conceptoValor = null;
+    this.conceptoCalculo = 'fijo';
+    this.alcanceConcepto = 'todos';
+    this.elegidosConcepto = [];
+    this.resultadoConcepto = null;
+    this.modalConceptoVisible = true;
+
+    if (this.conceptos.length) return;
+    this.conceptoService.getAll().subscribe({
+      next: (res) => {
+        if (res.success) this.conceptos = res.data;
+      },
+      error: () => this.toastService.error('Error', 'No se pudo cargar el catálogo de conceptos.'),
+    });
+  }
+
+  cerrarConcepto(): void {
+    this.modalConceptoVisible = false;
+    this.conceptoElegido = '';
+    this.conceptoValor = null;
+    this.alcanceConcepto = 'todos';
+    this.elegidosConcepto = [];
+    this.resultadoConcepto = null;
+  }
+
+  /**
+   * Los que se pueden aplicar a un grupo: TODOS menos los seis de cálculo
+   * especial, que el backend rechaza porque dependen de la ficha de cada
+   * quien.
+   *
+   * Antes se exigía además que trajeran regla en el catálogo, y eso dejaba
+   * fuera a diecinueve de veintidós: los adelantos, los préstamos, la
+   * alimentación... justo los que se aplican a un grupo en la vida real. El
+   * monto se pide en el momento.
+   */
+  get conceptosAplicables(): PaymentConcept[] {
+    return this.conceptos.filter((c) => !c.calculo_especial);
+  }
+
+  /** Agrupados por tipo, que es como los tiene la boleta. */
+  get conceptosPorTipo(): { tipo: string; etiqueta: string; conceptos: PaymentConcept[] }[] {
+    const grupos = [
+      { tipo: 'bonificacion', etiqueta: 'Ingresos' },
+      { tipo: 'descuento', etiqueta: 'Descuentos' },
+      { tipo: 'aportacion', etiqueta: 'Aportaciones del colegio' },
+      { tipo: 'adelanto', etiqueta: 'Adelantos' },
+    ];
+    return grupos
+      .map((g) => ({ ...g, conceptos: this.conceptosAplicables.filter((c) => c.tipo === g.tipo) }))
+      .filter((g) => g.conceptos.length > 0);
+  }
+
+  /** Al elegir concepto se copia su regla del catálogo, si la tiene. */
+  alElegirConcepto(): void {
+    const c = this.conceptoSeleccionado;
+    if (!c) return;
+    this.conceptoCalculo = c.calculo === 'porcentaje' ? 'porcentaje' : 'fijo';
+    this.conceptoValor = c.valor != null ? Number(c.valor) : null;
+  }
+
+  /** Los soles que va a salir, para enseñarlos mientras se escribe. */
+  get montoPrevisto(): number {
+    const valor = Number(this.conceptoValor ?? 0);
+    if (!valor) return 0;
+    if (this.conceptoCalculo !== 'porcentaje') return +valor.toFixed(2);
+    // Sobre el básico medio de la planilla: cada trabajador tendrá el suyo.
+    const base = this.total ? this.masaSalarial / this.total : 0;
+    return +(base * (valor / 100)).toFixed(2);
+  }
+
+  get conceptoSeleccionado(): PaymentConcept | undefined {
+    return this.conceptos.find((c) => c.id === this.conceptoElegido);
+  }
+
+  /** A cuántos les va a caer el concepto tal como está ahora. */
+  get alcanceDelConcepto(): number {
+    return this.aplicaSoloAMarcados ? this.elegidosConcepto.length : this.total;
+  }
+
+  get aplicaSoloAMarcados(): boolean {
+    return this.alcanceConcepto === 'elegidos';
+  }
+
+  aplicarConcepto(): void {
+    if (!this.conceptoElegido) {
+      this.toastService.error('Falta elegir', 'Elige el concepto que vas a aplicar.');
+      return;
+    }
+
+    if (this.aplicaSoloAMarcados && !this.elegidosConcepto.length) {
+      this.toastService.error('Falta elegir', 'Busca y marca al menos un trabajador.');
+      return;
+    }
+
+    if (this.conceptoValor == null || Number(this.conceptoValor) <= 0) {
+      this.toastService.error('Falta el monto', 'Indica cuánto se le aplica a cada trabajador.');
+      return;
+    }
+
+    this.aplicandoConcepto = true;
+    this.resultadoConcepto = null;
+
+    /*
+     * Dos alcances:
+     *
+     *   toda la planilla -> solo el id de la corrida, y el backend resuelve
+     *                       el mes y a quiénes desde ella
+     *   los elegidos     -> sus empleado_id, con el mes de la planilla
+     */
+    const destino = this.aplicaSoloAMarcados
+      ? {
+          mes: Number(this.corrida?.mes ?? this.filtroMes),
+          anio: Number(this.corrida?.anio ?? this.filtroAnio),
+          empleado_ids: this.elegidosConcepto,
+        }
+      : { corrida_id: this.corridaId };
+
+    const regla = { calculo: this.conceptoCalculo, valor: Number(this.conceptoValor) };
+
+    this.conceptoService.aplicarAGrupo(this.conceptoElegido, { ...destino, ...regla }).subscribe({
+      next: (res) => {
+        this.aplicandoConcepto = false;
+        if (!res.success) return;
+
+        this.resultadoConcepto = res.data;
+        const { aplicadas, omitidas } = res.data.resumen;
+
+        this.toastService.resultadoMasivo({
+          hechas: aplicadas,
+          omitidas,
+          exito: `"${res.data.concepto}" aplicado`,
+          nada: 'No se aplicó a nadie',
+          cosas: 'trabajador(es)',
+          motivo: 'no tienen planilla de este mes',
+        });
+
+        if (res.data.corrida && this.corrida) {
+          this.corrida.personas = res.data.corrida.personas;
+          this.corrida.masa_salarial = res.data.corrida.masa_salarial;
+        }
+        this.cargar();
+      },
+      error: (err) => {
+        this.aplicandoConcepto = false;
+        this.toastService.error('No se aplicó', mensajeErrorApi(err, 'No se pudo aplicar el concepto.'));
+      },
+    });
+  }
+
+  /** Abre el cuadro para elegir a qué planilla se mete esta fila. */
+  abrirMover(planilla: Planilla): void {
+    this.planillaAMover = planilla;
+    this.corridaDestino = '';
+    this.corridasDelMes = [];
+    this.modalMoverVisible = true;
+
+    // Solo las del MISMO mes: el backend rechaza el resto, y ofrecerlas sería
+    // enseñar opciones que van a fallar.
+    this.corridaService
+      .getPagina({ mes: planilla.mes, anio: planilla.anio, estado: 'abierta', page: 0, size: 100 })
+      .subscribe({
+        next: (res) => {
+          if (res.success) this.corridasDelMes = res.data.content;
+        },
+        error: () => this.toastService.error('Error', 'No se pudieron cargar las planillas del mes.'),
+      });
+  }
+
+  cerrarMover(): void {
+    this.modalMoverVisible = false;
+    this.planillaAMover = null;
+    this.corridaDestino = '';
+  }
+
+  confirmarMover(): void {
+    if (!this.planillaAMover || !this.corridaDestino) {
+      this.toastService.error('Falta elegir', 'Elige a qué planilla lo vas a meter.');
+      return;
+    }
+
+    this.moviendo = true;
+    this.corridaService.mover(this.corridaDestino, [this.planillaAMover.id!]).subscribe({
+      next: (res) => {
+        this.moviendo = false;
+        this.toastService.success('Movido', `Ahora está en "${res.data.corrida.nombre}".`);
+        this.cerrarMover();
+        this.cargar();
+      },
+      error: (err) => {
+        this.moviendo = false;
+        this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo mover.'));
+      },
+    });
   }
 
   eliminar(planilla: Planilla): void {
@@ -329,16 +712,6 @@ export class PlanillasListComponent implements OnInit {
     this.resultadoGeneracion = null;
     this.alcance = 'todos';
     this.empleadosElegidos = [];
-    // Se propone el periodo que se está viendo en la lista, y de sus meses
-    // el que coincida con el filtro; si no coincide ninguno, el primero.
-    const propuesto = this.filtroPeriodo || this.periodos[0]?.id || '';
-    const mesFiltro = Number(this.filtroMes);
-    const anioFiltro = Number(this.filtroAnio);
-    const deseado =
-      mesFiltro && anioFiltro ? `${anioFiltro}-${String(mesFiltro).padStart(2, '0')}` : '';
-
-    this.formGenerar.reset({ periodo_id: propuesto, mesAnio: deseado });
-    this.alCambiarPeriodo();
     this.modalGenerarVisible = true;
   }
 
@@ -414,52 +787,53 @@ export class PlanillasListComponent implements OnInit {
       : `Este periodo va de ${primero} a ${ultimo}.`;
   }
 
+  /**
+   * Le arma la planilla del mes a más gente DENTRO de esta corrida.
+   *
+   * El mes no se pregunta: es el de la planilla en la que estamos. Al que ya
+   * la tiene se le salta, así que darle dos veces no duplica ni pisa lo que
+   * se haya ajustado a mano.
+   */
   generar(): void {
-    if (this.formGenerar.invalid) {
-      this.formGenerar.markAllAsTouched();
-      this.toastService.error(
-        'Falta un dato',
-        'Elige el periodo y el mes que se va a generar.'
-      );
+    if (!this.corridaId) {
+      this.toastService.error('Sin planilla', 'Entra a una planilla para agregarle trabajadores.');
       return;
     }
 
     if (this.alcance === 'elegidos' && !this.empleadosElegidos.length) {
-      this.toastService.error('Falta elegir', 'Marca al menos un empleado, o cambia a "todo el personal".');
+      this.toastService.error('Falta elegir', 'Marca al menos un trabajador, o cambia a "todo el personal".');
       return;
     }
 
-    const { periodo_id, mesAnio } = this.formGenerar.getRawValue();
-    const [anio, mes] = String(mesAnio).split('-').map(Number);
     this.generando = true;
     this.resultadoGeneracion = null;
 
     // Sin lista, el backend alcanza a todo el personal activo.
-    const soloEstos = this.alcance === 'elegidos' ? this.empleadosElegidos : undefined;
+    const grupo = this.alcance === 'elegidos' ? { empleado_ids: this.empleadosElegidos } : {};
 
-    this.periodoService.generarPlanillaMasiva(periodo_id!, Number(mes), Number(anio), soloEstos).subscribe({
+    this.corridaService.generar(this.corridaId, grupo).subscribe({
       next: (res) => {
         this.generando = false;
         if (!res.success) return;
-        this.resultadoGeneracion = res.data;
+
+        this.resultadoGeneracion = res.data as any;
         const { generadas, omitidas } = res.data.resumen;
+
         this.toastService.resultadoMasivo({
           hechas: generadas,
           omitidas,
-          exito: 'Planillas generadas',
-          nada: 'No se generó ninguna planilla',
+          exito: 'Trabajadores agregados',
+          nada: 'No se agregó a nadie',
           cosas: 'planilla(s)',
-          motivo: 'esos empleados ya tenían planilla de ese mes, o no tienen sueldo básico',
+          motivo: 'ya tenían planilla de ese mes, no tienen sueldo puesto, o todavía no habían ingresado',
         });
-        // La lista se pone al día con lo recién creado.
-        this.filtroMes = Number(mes);
-        this.filtroAnio = Number(anio);
+
+        if (res.data.corrida) this.corrida = res.data.corrida;
         this.cargar();
       },
       error: (err) => {
         this.generando = false;
-        // 422 si el mes cae fuera del rango del periodo.
-        this.toastService.error('No se generó', mensajeErrorApi(err, 'No se pudieron generar las planillas.'));
+        this.toastService.error('No se agregó', mensajeErrorApi(err, 'No se pudieron agregar los trabajadores.'));
       },
     });
   }

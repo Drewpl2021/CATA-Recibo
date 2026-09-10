@@ -7,15 +7,23 @@ import { Area, Cargo, Empleado, Sede } from '../../../core/models';
 export type AlcanceGrupo = 'todos' | 'elegidos';
 
 /**
- * Elegir a qué empleados alcanza una operación masiva.
+ * Buscar y elegir trabajadores.
  *
- * Lo usan la generación de planillas (Periodos) y la aplicación de un
- * concepto a un grupo (Conceptos de Pago), que necesitaban lo mismo.
+ * Lo usan la creación de una planilla, el "agregar trabajadores" y la
+ * aplicación de un concepto a un grupo, que necesitaban lo mismo.
  *
- * Ofrece dos modos: todo el personal activo, o una selección concreta. En
- * el segundo, los filtros por área, cargo y sede no ocultan a nadie: sirven
- * para MARCAR de golpe a los que cumplen, y luego se puede ajustar a mano.
- * Así el usuario siempre ve exactamente a quién le va a caer la operación.
+ * Antes volcaba la plantilla entera como una lista de casillas, y los
+ * filtros de área/cargo/sede no filtraban nada: solo habilitaban un botón
+ * para marcar de golpe a los que coincidían. Con 150 trabajadores esa lista
+ * es imposible de recorrer, y unos filtros que parecen filtros pero no
+ * filtran son peores que no tenerlos.
+ *
+ * Ahora hay un buscador por nombre o DNI y los tres filtros acotan la lista
+ * de verdad: lo que se ve es lo que hay, y se marca de ahí.
+ *
+ * Lo marcado NO se pierde al cambiar el filtro: se puede buscar "Mamani",
+ * marcarlo, buscar "Quispe" y marcarlo también. Por eso el contador dice
+ * cuántos van en total, y se avisa si alguno de ellos quedó fuera de vista.
  */
 @Component({
   selector: 'app-selector-empleados',
@@ -39,6 +47,7 @@ export class SelectorEmpleadosComponent implements OnChanges {
   @Input() seleccion: string[] = [];
   @Output() seleccionChange = new EventEmitter<string[]>();
 
+  busqueda = '';
   filtroArea = '';
   filtroCargo = '';
   filtroSede = '';
@@ -60,6 +69,41 @@ export class SelectorEmpleadosComponent implements OnChanges {
     this.alcanceChange.emit(valor);
   }
 
+  // ────────── La lista que se ve ──────────
+
+  /**
+   * Los que pasan el buscador y los tres filtros.
+   *
+   * El buscador mira nombre, apellido y DNI, y no le importa el orden:
+   * "mamani carlos" encuentra a "Carlos Enrique Mamani Flores".
+   */
+  get visibles(): Empleado[] {
+    const palabras = this.busqueda.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+    return this.empleados.filter((e) => {
+      if (this.filtroArea && e.area_id !== this.filtroArea) return false;
+      if (this.filtroCargo && e.cargo_id !== this.filtroCargo) return false;
+      if (this.filtroSede && e.sede_id !== this.filtroSede) return false;
+      if (!palabras.length) return true;
+
+      const texto = `${e.nombre ?? ''} ${e.apellido ?? ''} ${e.dni ?? ''}`.toLowerCase();
+      return palabras.every((p) => texto.includes(p));
+    });
+  }
+
+  get hayFiltros(): boolean {
+    return !!(this.busqueda.trim() || this.filtroArea || this.filtroCargo || this.filtroSede);
+  }
+
+  limpiarFiltros(): void {
+    this.busqueda = '';
+    this.filtroArea = '';
+    this.filtroCargo = '';
+    this.filtroSede = '';
+  }
+
+  // ────────── Lo marcado ──────────
+
   estaMarcado(id: string): boolean {
     return this.marcados.has(id);
   }
@@ -73,54 +117,49 @@ export class SelectorEmpleadosComponent implements OnChanges {
     this.emitir();
   }
 
-  get todosMarcados(): boolean {
-    return this.empleados.length > 0 && this.marcados.size === this.empleados.length;
+  /** ¿Están marcados TODOS los que se ven ahora? */
+  get todosVisiblesMarcados(): boolean {
+    const lista = this.visibles;
+    return lista.length > 0 && lista.every((e) => this.marcados.has(e.id));
   }
 
-  alternarTodos(): void {
-    if (this.todosMarcados) {
-      this.marcados.clear();
+  /**
+   * Marca o desmarca de golpe a los que se están viendo. Es lo que hace útil
+   * el filtro: "TIC" → marcar los tres → buscar otra cosa → marcar más.
+   */
+  alternarVisibles(): void {
+    const lista = this.visibles;
+    if (this.todosVisiblesMarcados) {
+      lista.forEach((e) => this.marcados.delete(e.id));
     } else {
-      this.empleados.forEach((e) => this.marcados.add(e.id));
+      lista.forEach((e) => this.marcados.add(e.id));
     }
-    this.emitir();
-  }
-
-  /** Los que cumplen los filtros de arriba; sin filtros, nadie. */
-  private coincidenConFiltros(): Empleado[] {
-    if (!this.filtroArea && !this.filtroCargo && !this.filtroSede) return [];
-    return this.empleados.filter(
-      (e) =>
-        (!this.filtroArea || e.area_id === this.filtroArea) &&
-        (!this.filtroCargo || e.cargo_id === this.filtroCargo) &&
-        (!this.filtroSede || e.sede_id === this.filtroSede)
-    );
-  }
-
-  get cuantosCoinciden(): number {
-    return this.coincidenConFiltros().length;
-  }
-
-  get hayFiltros(): boolean {
-    return !!(this.filtroArea || this.filtroCargo || this.filtroSede);
-  }
-
-  /** Marca a los que cumplen los filtros, sin desmarcar lo ya elegido. */
-  marcarLosDelFiltro(): void {
-    this.coincidenConFiltros().forEach((e) => this.marcados.add(e.id));
     this.emitir();
   }
 
   limpiarSeleccion(): void {
     this.marcados.clear();
-    this.filtroArea = '';
-    this.filtroCargo = '';
-    this.filtroSede = '';
     this.emitir();
   }
 
   get cuantosMarcados(): number {
     return this.marcados.size;
+  }
+
+  /**
+   * Los marcados que el filtro de ahora no deja ver.
+   *
+   * Se avisa para que nadie crea que perdió una selección: la operación va a
+   * alcanzarlos igual aunque no estén en pantalla.
+   */
+  get marcadosOcultos(): number {
+    const visibles = new Set(this.visibles.map((e) => e.id));
+    return [...this.marcados].filter((id) => !visibles.has(id)).length;
+  }
+
+  /** Para el trackBy de la lista: sin esto Angular la repinta entera al teclear. */
+  porId(_indice: number, empleado: Empleado): string {
+    return empleado.id;
   }
 
   private emitir(): void {

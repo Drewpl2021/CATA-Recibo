@@ -35,9 +35,18 @@ export class PaymentConceptService extends EntityDataService<PaymentConcept> {
    * para todo el grupo: si hace falta uno distinto por persona, se agrega a
    * mano en el detalle de su planilla.
    */
+  /**
+   * Aplica el concepto a un grupo. Dos formas de decir a quiénes:
+   *
+   *   { mes, anio, empleado_ids }  la lista de siempre
+   *   { corrida_id }               a todos los de esa planilla — el mes sale
+   *                                de ella, no hay que repetirlo
+   */
   aplicarAGrupo(
     conceptoId: string,
-    datos: { mes: number; anio: number; empleado_ids: string[] }
+    datos:
+      | { mes: number; anio: number; empleado_ids: string[] }
+      | { corrida_id: string }
   ): Observable<ApiResponse<AplicacionConceptoGrupo>> {
     return this.http.post<ApiResponse<AplicacionConceptoGrupo>>(
       `${environment.apiUrl}/${END_POINTS_ACCIONES.aplicarConceptoGrupo(conceptoId)}`,

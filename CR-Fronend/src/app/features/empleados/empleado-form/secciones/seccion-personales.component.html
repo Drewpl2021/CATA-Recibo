@@ -4,15 +4,51 @@
   <div class="rejilla-campos">
     <div class="form-group">
       <label for="dni">DNI *</label>
-      <input type="text" id="dni" class="form-control" formControlName="dni"
-        inputmode="numeric" maxlength="8" placeholder="12345678"
-        [class.is-invalid]="invalido('dni')" />
+
+      <!-- El DNI trae los nombres del padrón: menos tecleo y, sobre todo,
+           menos erratas en el nombre que se va a imprimir en las boletas. -->
+      <div class="campo-con-accion">
+        <input type="text" id="dni" class="form-control" formControlName="dni"
+          inputmode="numeric" maxlength="8" placeholder="12345678"
+          (input)="alEscribirDni()"
+          (keydown.enter)="$event.preventDefault(); buscarPorDni()"
+          [class.is-invalid]="invalido('dni')" />
+
+        <button type="button" class="btn-secondary" *ngIf="mostrarBuscador"
+          [disabled]="!puedeBuscar" (click)="buscarPorDni()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          {{ buscando ? 'Buscando…' : 'Buscar' }}
+        </button>
+      </div>
+
       <small class="form-error" *ngIf="invalido('dni')">
         Son 8 dígitos, sin puntos ni espacios.
       </small>
       <small class="form-ayuda" *ngIf="!invalido('dni') && esNuevo">
-        Será la contraseña inicial de su cuenta.
+        Escribe los 8 dígitos y pulsa Buscar: traemos sus nombres del padrón.
+        También será la contraseña inicial de su cuenta.
       </small>
+
+      <!-- Ese DNI ya tiene ficha: mejor saberlo ahora que al guardar -->
+      <div class="form-nota form-nota--aviso form-nota--accion" *ngIf="yaEsEmpleado as ficha">
+        <div>
+          <strong>{{ ficha.nombre }}</strong> ya está registrado con ese DNI
+          ({{ ficha.estado }}). No hace falta darlo de alta otra vez.
+        </div>
+        <button type="button" class="btn-secondary" (click)="verFichaExistente()">Ver su ficha</button>
+      </div>
+
+      <p class="form-ayuda" *ngIf="resultado?.encontrado">
+        Datos traídos de <strong>{{ resultado?.fuente }}</strong>. Revísalos: si algo
+        no cuadra, escríbelo tú.
+      </p>
+
+      <p class="form-ayuda" *ngIf="resultado && !resultado.encontrado && !yaEsEmpleado">
+        {{ resultado.mensaje }}
+      </p>
     </div>
 
     <div class="form-group">

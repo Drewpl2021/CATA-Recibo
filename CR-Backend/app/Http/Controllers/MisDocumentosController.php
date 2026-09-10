@@ -48,8 +48,10 @@ class MisDocumentosController extends Controller
         // dos. Las demás columnas de aquí abajo (tipo, estado_firma) son solo
         // de documentos, y van sin calificar a propósito: el punto en
         // ListadoPaginado significa "relación", no "tabla".
+        // Se trae la sede y la cuenta para poder pintar la "Entidad" y los
+        // datos de contacto de la fila sin una consulta por boleta.
         $query = Documento::where('documentos.empleado_id', $empleado_id)
-            ->with('planilla')
+            ->with(['planilla', 'empleado:id,nombre,apellido,telefono,sede_id', 'empleado.sede:id,nombre', 'empleado.usuario:id,empleado_id,email'])
             ->leftJoin('planilla', 'documentos.planilla_id', '=', 'planilla.id')
             ->select('documentos.*')
             ->orderByDesc('planilla.anio')

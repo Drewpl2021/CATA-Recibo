@@ -19,6 +19,10 @@ export const FORMA_PAGO_OPCIONES: readonly Opcion[] = [
 export const SISTEMA_PENSIONES_OPCIONES: readonly Opcion[] = [
   { label: 'ONP', value: 'ONP' },
   { label: 'AFP', value: 'AFP' },
+  // El jubilado que vuelve a dictar y el extranjero con convenio no aportan
+  // a ninguna pensión. Sin esta opción se les guardaba ONP y se les
+  // descontaba el 13% que por ley no les toca.
+  { label: 'Ninguno — no aporta', value: '' },
 ];
 
 /** Empleado.afp — solo aplica si sistema_pensiones = AFP */

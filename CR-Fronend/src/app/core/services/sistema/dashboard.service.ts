@@ -18,10 +18,12 @@ export class DashboardService {
   private url = `${environment.apiUrl}/dashboard`;
 
   /** Sin mes ni año, el backend usa el mes en curso. */
-  obtener(mes?: number, anio?: number): Observable<ApiResponse<Dashboard>> {
+  obtener(mes?: number, anio?: number, sedeId?: string | null): Observable<ApiResponse<Dashboard>> {
     let params = new HttpParams();
     if (mes) params = params.set('mes', String(mes));
     if (anio) params = params.set('anio', String(anio));
+    // Un colegio con dos locales necesita poder mirar uno solo.
+    if (sedeId) params = params.set('sede_id', sedeId);
     return this.http.get<ApiResponse<Dashboard>>(this.url, { params });
   }
 }

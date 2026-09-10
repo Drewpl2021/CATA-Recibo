@@ -81,6 +81,34 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
    * vienen completas desde otra pantalla.
    */
   @Input() paginacionServidor = false;
+  /**
+   * Numerar las filas: 1, 2, 3...
+   *
+   * En una lista de veinte áreas no hace falta; en una de ciento cincuenta
+   * planillas sí, porque es la única forma de decir "mira la 87" o de saber
+   * por dónde vas sin ir contando con el dedo.
+   *
+   * La cuenta NO se reinicia en cada página: en la página 2 de diez en diez
+   * la primera fila es la 11, no la 1.
+   */
+  @Input() numerarFilas = false;
+
+  /**
+   * Marcar filas con casillas, para actuar sobre unas cuantas.
+   *
+   * Lo pide RR.HH. cuando quiere hacerle algo a un grupo que no es un área
+   * ni un cargo —"las madres", "los que entraron este año"—: eso no se puede
+   * describir con un filtro, hay que señalarlos a mano.
+   *
+   * La selección es de la PÁGINA que se está viendo: marcar "todos" en una
+   * lista paginada por el servidor marcaría gente que no está en pantalla, y
+   * nadie firma un descuento que no vio.
+   */
+  @Input() seleccionable = false;
+
+  /** Se emite cada vez que cambia lo marcado, con las filas enteras. */
+  @Output() cambioSeleccion = new EventEmitter<T[]>();
+
   /** Cuántos registros hay en total, según el backend. */
   @Input() totalElementos = 0;
   /** Página actual en base 0, la misma numeración que usa el backend. */
@@ -168,6 +196,61 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     return anchos[posicion % anchos.length];
   }
 
+  /** Lo marcado ahora mismo, por el id de cada fila. */
+  private marcadas = new Set<unknown>();
+
+  private idDe(fila: T): unknown {
+    return (fila as Record<string, unknown>)['id'];
+  }
+
+  estaMarcada(fila: T): boolean {
+    return this.marcadas.has(this.idDe(fila));
+  }
+
+  alternarFila(fila: T): void {
+    const id = this.idDe(fila);
+    if (this.marcadas.has(id)) {
+      this.marcadas.delete(id);
+    } else {
+      this.marcadas.add(id);
+    }
+    this.avisarSeleccion();
+  }
+
+  /** ¿Están marcadas TODAS las de esta página? */
+  get todasMarcadas(): boolean {
+    const pagina = this.filaPagina;
+    return pagina.length > 0 && pagina.every((f) => this.marcadas.has(this.idDe(f)));
+  }
+
+  alternarTodas(): void {
+    const pagina = this.filaPagina;
+    if (this.todasMarcadas) {
+      pagina.forEach((f) => this.marcadas.delete(this.idDe(f)));
+    } else {
+      pagina.forEach((f) => this.marcadas.add(this.idDe(f)));
+    }
+    this.avisarSeleccion();
+  }
+
+  /** Deja la selección en blanco. La pantalla la llama tras actuar. */
+  limpiarSeleccion(): void {
+    this.marcadas.clear();
+    this.avisarSeleccion();
+  }
+
+  private avisarSeleccion(): void {
+    this.cambioSeleccion.emit(this.filaPagina.filter((f) => this.marcadas.has(this.idDe(f))));
+  }
+
+  /**
+   * El número que le toca a esta fila, contando desde el principio de la
+   * lista y no desde el principio de la página.
+   */
+  numeroDeFila(indice: number): number {
+    return (this.paginaActual - 1) * this.filasPorPagina + indice + 1;
+  }
+
   /** ¿Hay algo que pintar en la columna de acciones de esta fila? */
   hayAcciones(fila: T): boolean {
     return this.acciones.length > 0 || this.accionesVisibles(fila).length > 0;
@@ -181,6 +264,10 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     if (changes['pagina'] && this.paginacionServidor) {
       // La página la manda la pantalla; acá solo se refleja.
       this.establecerPaginaActual(this.pagina + 1);
+      // Lo marcado era de la página anterior: se suelta al cambiar, porque
+      // seguir contando filas que ya no se ven es la forma de aplicarle algo
+      // a alguien sin querer.
+      if (this.marcadas.size) this.limpiarSeleccion();
       return;
     }
     if (changes['datos'] && !this.paginacionServidor) {
@@ -264,7 +351,26 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     if (columna.formatear) return columna.formatear(crudo, fila);
     if (columna.tipo === 'fecha' && crudo) return fechaLegible(crudo);
     if (columna.tipo === 'fecha-hora' && crudo) return new Date(crudo).toLocaleString('es-PE');
-    if (columna.tipo === 'moneda' && crudo != null) return `S/ ${Number(crudo).toFixed(2)}`;
+    // 'hito' devuelve "dd/mm/aaaa hh:mm" y la plantilla lo parte en dos
+    // líneas; sin fecha devuelve cadena vacía, que es lo que hace que se
+    // pinte la raya en vez de la marca.
+    if (columna.tipo === 'hito') {
+      if (!crudo) return '';
+      const f = new Date(crudo);
+      if (isNaN(f.getTime())) return '';
+      const dosCifras = (n: number) => String(n).padStart(2, '0');
+      return `${dosCifras(f.getDate())}/${dosCifras(f.getMonth() + 1)}/${f.getFullYear()} `
+        + `${dosCifras(f.getHours())}:${dosCifras(f.getMinutes())}`;
+    }
+    // Con separador de miles: "S/ 9,114.40". Sin él, un sueldo de cinco
+    // cifras y uno de cuatro se parecen demasiado en una columna, y el panel
+    // de arriba —que sí lo lleva— parecía decir otra cosa que la tabla.
+    if (columna.tipo === 'moneda' && crudo != null) {
+      return `S/ ${Number(crudo).toLocaleString('es-PE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    }
     if (columna.tipo === 'boolean') return crudo ? 'Sí' : 'No';
     return crudo;
   }

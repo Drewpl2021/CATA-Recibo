@@ -89,6 +89,30 @@ services:
 
       SESION_INACTIVIDAD_MINUTOS: ${SESION_INACTIVIDAD_MINUTOS:-120}
 
+      # Búsqueda de personas por DNI al dar de alta a un trabajador. Es
+      # opcional: sin RENSUN_DB_HOST y sin DECOLECTA_TOKEN, RR.HH. sigue
+      # escribiendo los datos a mano y el sistema funciona igual.
+      CONSULTA_DNI_CACHE_DIAS: ${CONSULTA_DNI_CACHE_DIAS:-30}
+      DECOLECTA_BASE_URL: ${DECOLECTA_BASE_URL:-https://api.decolecta.com}
+      DECOLECTA_TOKEN: ${DECOLECTA_TOKEN:-}
+      DECOLECTA_RUTA_DNI: ${DECOLECTA_RUTA_DNI:-/v1/reniec/dni}
+      DECOLECTA_TIMEOUT: ${DECOLECTA_TIMEOUT:-8}
+
+      # La base del padrón del colegio (RENSUN). Vive en otro servidor; si
+      # no se rellena, el sistema va directo a Decolecta.
+      RENSUN_DB_HOST: ${RENSUN_DB_HOST:-}
+      RENSUN_DB_PORT: ${RENSUN_DB_PORT:-3306}
+      RENSUN_DB_DATABASE: ${RENSUN_DB_DATABASE:-}
+      RENSUN_DB_USERNAME: ${RENSUN_DB_USERNAME:-}
+      RENSUN_DB_PASSWORD: ${RENSUN_DB_PASSWORD:-}
+      RENSUN_TABLA: ${RENSUN_TABLA:-padron}
+      RENSUN_COL_DNI: ${RENSUN_COL_DNI:-dni}
+      RENSUN_COL_NOMBRES: ${RENSUN_COL_NOMBRES:-nombres}
+      RENSUN_COL_APE_PATERNO: ${RENSUN_COL_APE_PATERNO:-apellido_paterno}
+      RENSUN_COL_APE_MATERNO: ${RENSUN_COL_APE_MATERNO:-apellido_materno}
+      RENSUN_COL_NACIMIENTO: ${RENSUN_COL_NACIMIENTO:-fecha_nacimiento}
+      RENSUN_COL_DIRECCION: ${RENSUN_COL_DIRECCION:-direccion}
+
       # Este es el que hace las migraciones y cachea la config.
       ROL: api
     volumes:

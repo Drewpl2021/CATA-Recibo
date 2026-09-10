@@ -16,66 +16,84 @@
 </div>
 
 <ng-container *ngIf="!esTodos || !permiteTodos">
-  <!-- Los filtros marcan de golpe; no esconden a nadie -->
-  <div class="form-group">
-    <div class="filtros-linea">
-      <div class="filtros-linea__campo" *ngIf="areas.length">
-        <label for="selArea">Área</label>
-        <select id="selArea" class="form-control" [(ngModel)]="filtroArea">
-          <option value="">Cualquiera</option>
-          <option *ngFor="let a of areas" [value]="a.id">{{ a.nombre }}</option>
-        </select>
-      </div>
-
-      <div class="filtros-linea__campo" *ngIf="cargos.length">
-        <label for="selCargo">Cargo</label>
-        <select id="selCargo" class="form-control" [(ngModel)]="filtroCargo">
-          <option value="">Cualquiera</option>
-          <option *ngFor="let c of cargos" [value]="c.id">{{ c.nombre }}</option>
-        </select>
-      </div>
-
-      <div class="filtros-linea__campo" *ngIf="sedes.length">
-        <label for="selSede">Sede</label>
-        <select id="selSede" class="form-control" [(ngModel)]="filtroSede">
-          <option value="">Cualquiera</option>
-          <option *ngFor="let s of sedes" [value]="s.id">{{ s.nombre }}</option>
-        </select>
-      </div>
-
-      <button type="button" class="btn-secondary" [disabled]="!hayFiltros"
-        (click)="marcarLosDelFiltro()">
-        Marcar los {{ cuantosCoinciden }} que coinciden
-      </button>
+  <!-- Buscador y filtros. Acotan la lista de verdad: lo que se ve es lo que hay. -->
+  <div class="buscador-personas">
+    <div class="buscador-personas__campo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" class="form-control" [(ngModel)]="busqueda"
+        placeholder="Busca por nombre, apellido o DNI..." aria-label="Buscar trabajador" />
     </div>
-    <small class="form-ayuda">
-      Los filtros solo sirven para marcar rápido: no ocultan a nadie de la lista.
-    </small>
-  </div>
 
-  <div class="form-group">
-    <label>
-      Empleados
-      <span class="form-ayuda" style="display: inline; margin-left: 6px;">
-        {{ cuantosMarcados }} de {{ empleados.length }} marcados
-      </span>
-      <button type="button" class="enlace-sutil" *ngIf="cuantosMarcados" (click)="limpiarSeleccion()">
+    <div class="buscador-personas__filtros">
+      <select class="form-control" [(ngModel)]="filtroArea" *ngIf="areas.length" aria-label="Área">
+        <option value="">Todas las áreas</option>
+        <option *ngFor="let a of areas" [value]="a.id">{{ a.nombre }}</option>
+      </select>
+
+      <select class="form-control" [(ngModel)]="filtroCargo" *ngIf="cargos.length" aria-label="Cargo">
+        <option value="">Todos los cargos</option>
+        <option *ngFor="let c of cargos" [value]="c.id">{{ c.nombre }}</option>
+      </select>
+
+      <select class="form-control" [(ngModel)]="filtroSede" *ngIf="sedes.length" aria-label="Sede">
+        <option value="">Todas las sedes</option>
+        <option *ngFor="let s of sedes" [value]="s.id">{{ s.nombre }}</option>
+      </select>
+
+      <button type="button" class="btn-limpiar" [disabled]="!hayFiltros" (click)="limpiarFiltros()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
         Limpiar
       </button>
+    </div>
+  </div>
+
+  <!-- Cuántos se ven, cuántos van marcados, y marcar los de la vista de un golpe -->
+  <div class="buscador-personas__barra">
+    <span class="buscador-personas__cuenta">
+      <strong>{{ visibles.length }}</strong> de {{ empleados.length }} en la lista
+      <ng-container *ngIf="cuantosMarcados">
+        · <strong>{{ cuantosMarcados }}</strong> marcado(s)
+      </ng-container>
+    </span>
+
+    <span class="buscador-personas__acciones">
+      <button type="button" class="enlace-sutil" [disabled]="!visibles.length"
+        (click)="alternarVisibles()">
+        {{ todosVisiblesMarcados ? 'Desmarcar los de la lista' : 'Marcar los ' + visibles.length + ' de la lista' }}
+      </button>
+      <button type="button" class="enlace-sutil" *ngIf="cuantosMarcados" (click)="limpiarSeleccion()">
+        Limpiar selección
+      </button>
+    </span>
+  </div>
+
+  <!-- Los marcados que el filtro dejó fuera de vista: siguen contando -->
+  <p class="form-ayuda" *ngIf="marcadosOcultos">
+    Hay <strong>{{ marcadosOcultos }}</strong> marcado(s) que este filtro no deja ver.
+    Siguen contando: la operación también les va a caer.
+  </p>
+
+  <div class="lista-personas">
+    <label class="persona" *ngFor="let e of visibles; trackBy: porId"
+      [class.persona--marcada]="estaMarcado(e.id)">
+      <input type="checkbox" [checked]="estaMarcado(e.id)" (change)="alternar(e.id)" />
+      <span class="persona__datos">
+        <strong>{{ e.apellido }}, {{ e.nombre }}</strong>
+        <small>DNI {{ e.dni }}</small>
+      </span>
     </label>
 
-    <div class="lista-checks lista-checks--alta">
-      <label class="check-item check-item--bloque" *ngIf="empleados.length">
-        <input type="checkbox" [checked]="todosMarcados" (change)="alternarTodos()" />
-        <span><strong>Marcar a todos</strong></span>
-      </label>
-
-      <label class="check-item" *ngFor="let e of empleados">
-        <input type="checkbox" [checked]="estaMarcado(e.id)" (change)="alternar(e.id)" />
-        <span>{{ e.nombre }} {{ e.apellido }}</span>
-      </label>
-
-      <p class="form-ayuda" *ngIf="!empleados.length">No hay empleados activos.</p>
-    </div>
+    <p class="lista-personas__vacio" *ngIf="!visibles.length && empleados.length">
+      Ningún trabajador coincide con lo que buscaste.
+    </p>
+    <p class="lista-personas__vacio" *ngIf="!empleados.length">
+      No hay trabajadores activos.
+    </p>
   </div>
 </ng-container>

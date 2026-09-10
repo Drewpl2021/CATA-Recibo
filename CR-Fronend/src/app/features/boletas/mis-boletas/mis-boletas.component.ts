@@ -10,16 +10,20 @@ import { VisorPdfComponent } from '../../../shared/components/visor-pdf/visor-pd
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
+import { nombreMes } from '../../../shared/constants';
 
-const MESES: Record<number, string> = {
-  1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
-  5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
-  9: 'Setiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
-};
-
-/** Una fila de la tabla: la boleta ya masticada para pintarla. */
+/**
+ * Una fila de la tabla: la boleta ya masticada para pintarla.
+ *
+ * Los cuatro hitos son el rastro de la boleta —cuándo se avisó, cuándo la
+ * revisó, cuándo se la bajó, cuándo la firmó— y los guarda el backend en
+ * cada paso. Antes esta interfaz ya los declaraba, pero llegaban siempre en
+ * null porque nadie los anotaba: se veía una tabla con cuatro columnas
+ * vacías para siempre.
+ */
 export interface BoletaRow {
   id: string;
+  entidad: string;
   tipoDocumento: string;
   numeroDocumento: string;
   fechaEmision: string;
@@ -27,7 +31,13 @@ export interface BoletaRow {
   mesNum: number;
   montoTotal: number;
   anio: number;
-  firmado: { fecha: string } | null;
+  avisoEnviado: string | null;
+  revisado: string | null;
+  descargado: string | null;
+  descargas: number;
+  firmado: string | null;
+  correo: string;
+  celular: string;
 }
 
 /**
@@ -89,16 +99,28 @@ export class MisBoletasComponent implements OnInit {
     ];
   }
 
+  /**
+   * Las columnas del seguimiento van en el orden en que pasan las cosas
+   * —avisar, revisar, descargar, firmar—, para que la fila se lea de
+   * izquierda a derecha como la historia de esa boleta.
+   */
   columnas: ColumnaTabla<BoletaRow>[] = [
-    { campo: 'numeroDocumento', header: 'N.° de documento', ancho: '18%' },
-    { campo: 'mes', header: 'Mes', ancho: '14%' },
-    { campo: 'fechaEmision', header: 'Emisión', ancho: '14%' },
-    { campo: 'montoTotal', header: 'Neto a pagar', tipo: 'moneda', ancho: '16%' },
+    { campo: 'entidad', header: 'Entidad', ancho: '9%' },
+    { campo: 'mes', header: 'Mes', ancho: '9%' },
+    { campo: 'montoTotal', header: 'Neto a pagar', tipo: 'moneda', ancho: '11%' },
     {
-      campo: 'firmado', header: 'Estado', tipo: 'badge', ancho: '22%',
-      formatear: (_v, fila) => (fila.firmado ? `Firmada el ${fila.firmado.fecha}` : 'Pendiente de firma'),
-      badgeSeveridad: (_v, fila) => (fila.firmado ? 'success' : 'warning'),
+      campo: 'avisoEnviado', header: 'Aviso enviado', tipo: 'hito', ancho: '17%',
+      // El correo va DENTRO del hito: es a dónde se mandó ese aviso, no el
+      // que tenga hoy la cuenta.
+      hitoDetalle: (b) => b.correo,
     },
+    { campo: 'revisado', header: 'Revisado', tipo: 'hito', ancho: '13%' },
+    {
+      campo: 'descargado', header: 'Descargado', tipo: 'hito', ancho: '15%',
+      hitoDetalle: (b) => (b.descargas > 1 ? `${b.descargas} descargas` : null),
+    },
+    { campo: 'firmado', header: 'Firmado', tipo: 'hito', ancho: '13%' },
+    { campo: 'celular', header: 'Celular', ancho: '10%' },
   ];
 
   acciones: AccionPersonalizada<BoletaRow>[] = [
@@ -179,16 +201,27 @@ export class MisBoletasComponent implements OnInit {
     const anio = d.planilla?.anio ?? 0;
     return {
       id: d.id,
+      // La sede a la que pertenece el trabajador. Si su ficha no la tiene,
+      // se deja en blanco antes que inventar un nombre.
+      entidad: d.empleado?.sede?.nombre ?? '—',
       tipoDocumento: 'Boleta de pago',
       numeroDocumento: `BP-${anio}-${String(mes).padStart(2, '0')}`,
       fechaEmision: d.created_at ? this.formatFecha(d.created_at).split(' ')[0] : '',
-      mes: MESES[mes] ?? `Mes ${mes}`,
+      mes: nombreMes(mes),
       mesNum: mes,
       montoTotal: Number((d.planilla as any)?.total ?? 0),
       anio,
-      firmado: d.estado_firma === 'firmado'
-        ? { fecha: this.formatFecha(d.fecha_firma ?? d.created_at ?? '') }
-        : null,
+      avisoEnviado: d.fecha_aviso ?? null,
+      revisado: d.fecha_visto ?? null,
+      descargado: d.fecha_descarga ?? null,
+      descargas: d.descargas ?? 0,
+      // El hito de la firma es la fecha; el estado_firma manda por si acaso
+      // hubiera una firma vieja sin fecha guardada.
+      firmado: d.estado_firma === 'firmado' ? (d.fecha_firma ?? d.created_at ?? null) : null,
+      // El correo del aviso va congelado en el documento; si esa boleta es
+      // de antes de que se anotara, se cae al de la cuenta.
+      correo: d.aviso_correo ?? d.empleado?.usuario?.email ?? '—',
+      celular: d.empleado?.telefono ?? '—',
     };
   }
 
@@ -243,7 +276,7 @@ export class MisBoletasComponent implements OnInit {
 
   firmarBoleta(boleta: BoletaRow): void {
     if (boleta.firmado) {
-      this.toastService.info('Ya firmada', `Firmaste esta boleta el ${boleta.firmado.fecha}.`);
+      this.toastService.info('Ya firmada', `Firmaste esta boleta el ${this.formatFecha(boleta.firmado)}.`);
       return;
     }
     this.boletaAFirmar = boleta;

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { ToastService } from './toast.service';
 import { Observable, tap } from 'rxjs';
-import { AuthUser, CambiarPasswordPayload, RegisterPayload, RestablecerPasswordPayload, SesionData } from '../../models';
+import { AuthUser, CambiarPasswordPayload, RegisterPayload, RestablecerPasswordPayload, SesionData, TerminosDeUso } from '../../models';
 import { ApiResponse, END_POINTS } from '../../utils';
 import { environment } from '../../../../environments/environment';
 
@@ -64,6 +64,23 @@ export class AuthService {
       // Si estaba obligada a cambiarla, ya no lo está: se levanta el bloqueo
       // acá mismo para no tener que volver a preguntarle al backend.
       .pipe(tap((res) => { if (res.success) this.marcarPasswordAlDia(); }));
+  }
+
+  /**
+   * Los términos de uso, y si esta persona ya los firmó.
+   *
+   * Se puede consultar y firmar con la cuenta trabada del primer ingreso:
+   * van antes que la contraseña, así que el backend los deja pasar.
+   */
+  terminos(): Observable<ApiResponse<TerminosDeUso>> {
+    return this.http.get<ApiResponse<TerminosDeUso>>(`${this.apiUrl}/${END_POINTS.auth.terminos}`);
+  }
+
+  aceptarTerminos(): Observable<ApiResponse<{ message: string; firmadosEn: string; version: string }>> {
+    return this.http.post<ApiResponse<{ message: string; firmadosEn: string; version: string }>>(
+      `${this.apiUrl}/${END_POINTS.auth.aceptarTerminos}`,
+      { acepto: true }
+    );
   }
 
   /** Pide al correo el enlace para reponer la contraseña. */

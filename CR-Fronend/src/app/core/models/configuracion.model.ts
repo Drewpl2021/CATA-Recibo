@@ -84,6 +84,12 @@ export interface PaymentConcept {
   valor?: number | null;
   descripcion?: string | null;
   aplica_a_todos?: boolean;
+  /**
+   * Lo marca el backend: los seis que se calculan por empleado (pensión,
+   * EsSalud, Renta de 5ta) y que rechaza si se intentan aplicar a un grupo.
+   * Viene de allá para no repetir la lista acá y que un día no coincidan.
+   */
+  calculo_especial?: boolean;
 }
 
 export interface PaymentConceptPayload {

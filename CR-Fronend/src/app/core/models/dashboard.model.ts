@@ -36,8 +36,33 @@ export interface ContratoPorVencer {
   urgencia: 'urgente' | 'proximo' | 'normal';
 }
 
+/** Una cosa que RR.HH. tiene pendiente de hacer, con dónde se resuelve. */
+export interface PendienteRrhh {
+  clave: string;
+  cuantos: number;
+  texto: string;
+  ruta: string;
+}
+
+/** Quién cumple años este mes. */
+export interface CumpleanosDelMes {
+  nombre: string;
+  cargo: string;
+  dia: number;
+}
+
 export interface Dashboard {
-  periodo: { mes: number; anio: number };
+  periodo: { mes: number; anio: number; sede_id?: string | null };
+  /** Lo que hay que hacer, no lo que hay que mirar. */
+  pendientes: PendienteRrhh[];
+  cumpleanos: CumpleanosDelMes[];
+  /** A dónde se va la plata del mes: básico, bonos, descuentos, aportes. */
+  composicionNomina: DatoGrafico[];
+  personalPorSede: DatoGrafico[];
+  /** Cuánto lleva cada quien en el colegio, por tramos. */
+  antiguedad: DatoGrafico[];
+  /** Los conceptos que más pesan, sin contar los de ley. */
+  topConceptos: DatoGrafico[];
   resumen: ResumenDashboard;
   remuneracionPorArea: DatoGrafico[];
   sistemaPensiones: DatoGrafico[];

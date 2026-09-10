@@ -23,7 +23,12 @@ class DocumentoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Documento::with('empleado', 'contrato');
+        // Igual que en el autoservicio: la sede y la cuenta van eager-loaded
+        // para la columna "Entidad" y los datos de contacto del seguimiento.
+        $query = Documento::with([
+            'empleado', 'contrato', 'planilla',
+            'empleado.sede:id,nombre', 'empleado.usuario:id,empleado_id,email',
+        ]);
 
         if ($request->filled('empleado_id')) {
             $query->where('empleado_id', $request->empleado_id);

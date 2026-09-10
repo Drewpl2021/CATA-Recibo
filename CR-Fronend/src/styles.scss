@@ -239,9 +239,22 @@ body {
   overflow: hidden;
 }
 
+/* En escritorio el menú empuja el contenido y no hay nada que cerrar:
+   el fondo solo existe en móvil. */
+.sidebar-fondo { display: none; }
+
 /* En móvil la barra flota sobre el contenido en vez de empujarlo, y ahí
    sí se desplaza fuera de pantalla: encogerla no serviría porque tapa. */
 @media (max-width: 768px) {
+  .sidebar-fondo {
+    display: block;
+    position: absolute;
+    inset: 0;
+    /* Por debajo del menú (1000) y por encima de todo lo demás. */
+    z-index: 999;
+    background: rgba(15, 23, 42, 0.55);  /* el mismo velo que los modales */
+  }
+
   .sidebar {
     position: absolute;
     height: 100%;
@@ -676,6 +689,11 @@ body {
   overflow: hidden;
 }
 
+/* Panel que contiene un formulario largo (el alta de un trabajador).
+   El respiro estaba escrito en el HTML y en el celular se comía 48px de
+   los 390 que hay: aquí sí se puede ajustar por ancho. */
+.section-panel--formulario { padding: 24px; }
+
 .panel-header {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border);
@@ -735,6 +753,14 @@ body {
 .celda-rompe {
   overflow-wrap: anywhere;
 }
+
+/* Un importe se lee de un tirón o no se lee: "S/ 2,162.40" partido en dos
+   líneas hay que recomponerlo con la vista. */
+.celda-monto {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 
 .data-table th,
 .data-table td {
@@ -800,7 +826,665 @@ body {
 /* La columna de Acciones lleva botones, no texto: con los 24px de aire de
    una celda normal a cada lado se llevaba 48px que hacían falta para que la
    tabla de Empleados entrara entera en un portátil de 1280. */
-.data-table .celda-acciones {
+.data-table /* La columna del número de fila. Angosta, gris y alineada a la derecha: es
+   una referencia para ubicarse, no un dato de la fila, y no debe competir con
+   el nombre que va al lado. */
+/* La columna del número de fila: angosta y alineada a la derecha, porque es
+   una referencia para ubicarse y no debe competir con el nombre de al lado.
+   El color solo se toca en el CUERPO: si se pone en `.celda-numero` a secas
+   también pisa la cabecera, y el "#" salía gris sobre el azul de marca
+   mientras el resto de los títulos salía en blanco. */
+.celda-numero {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+  padding-right: 14px !important;
+  font-variant-numeric: tabular-nums;
+}
+
+td.celda-numero {
+  /* --text-muted y no --text-faint: en oscuro el faint (#6A7590) queda casi
+     del color del fondo y el número no se lee. */
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Un hito del seguimiento: la marca y su fecha ──────────────────
+   Lo usan las boletas para enseñar cuándo se avisó, cuándo la revisó,
+   cuándo la bajó y cuándo la firmó. Sin fecha se pinta una raya, que se
+   lee como "todavía no" sin gritar que falta algo. */
+.hito {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  line-height: 1.25;
+}
+
+.hito__marca {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--success-bg);
+  color: var(--success-text);
+}
+
+.hito__fecha {
+  font-size: 12.5px;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.hito__hora {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* A quién se le avisó, bajo la fecha del aviso. Va en la misma celda y no
+   en una columna aparte porque es un dato DE ese hito: el correo al que se
+   mandó ese aviso, no el correo que tiene hoy la cuenta. */
+.hito__detalle {
+  display: block;
+  font-size: 11px;
+  color: var(--text-faint);
+  max-width: 180px;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+
+.hito--pendiente {
+  color: var(--text-faint);
+  font-size: 13px;
+}
+
+/* ══ PANEL DE CONTROL ══════════════════════════════════════════════
+   Los filtros van DENTRO de la barra del título. Como sección propia
+   ocupaban una franja entera y empujaban todos los gráficos fuera de la
+   pantalla: había que bajar para ver el primero. */
+.dash-header__titulo { min-width: 240px; }
+
+/* ── La barra de filtros ────────────────────────────────────────────
+   Eran tres desplegables sueltos: "Septiembre", "2026" y "Todas las
+   sedes". Tres cajas de texto iguales, sin jerarquía, y el mes —que es
+   lo que más se cambia— costaba dos clics y una lista de doce.
+
+   Ahora son controles con forma propia: el periodo es un paso adelante
+   y atrás con su calendario, y la sede un segmentado donde se ve de un
+   golpe cuál está puesta. Menos texto, menos clics, y se lee sin
+   detenerse a leer. */
+.barra-filtros {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ── Periodo: ‹ Septiembre 2026 › ── */
+.filtro-periodo {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: visible;
+}
+
+.filtro-periodo__paso {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.filtro-periodo__paso:hover {
+  background-color: var(--surface-hover);
+  color: var(--heading);
+}
+
+/* El mes y el año, que es lo que se lee. Abre la rejilla de meses. */
+.filtro-periodo__valor {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 168px;
+  justify-content: center;
+  padding: 8px 12px;
+  border: none;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--heading);
+  cursor: pointer;
+  transition: background-color .15s ease;
+}
+
+.filtro-periodo__valor:hover { background-color: var(--surface-hover); }
+
+.filtro-periodo__valor svg { flex: 0 0 auto; }
+
+.filtro-periodo__flecha {
+  color: var(--text-muted);
+  transition: transform .15s ease;
+}
+
+.filtro-periodo__flecha--abierta { transform: rotate(180deg); }
+
+/* ── La rejilla de meses que se despliega ── */
+.selector-mes {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  width: 268px;
+  padding: 12px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.selector-mes__anio {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.selector-mes__anio button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.selector-mes__anio button:hover {
+  background-color: var(--surface-hover);
+  color: var(--heading);
+}
+
+.selector-mes__meses {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.selector-mes__mes {
+  padding: 8px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color .12s ease, color .12s ease;
+}
+
+.selector-mes__mes:hover { background-color: var(--surface-hover); }
+
+.selector-mes__mes--elegido {
+  background-color: var(--brand-100);
+  border-color: var(--brand-500);
+  color: var(--heading);
+  font-weight: 700;
+}
+
+/* El mes de hoy, para no perderse al pasear por los años. */
+.selector-mes__mes--hoy::after {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 4px;
+  margin: 3px auto 0;
+  border-radius: 50%;
+  background-color: var(--accent);
+}
+
+/* ── Segmentado: la sede ── */
+.segmentado {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.segmentado__opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border: none;
+  border-radius: calc(var(--radius-md) - 4px);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.segmentado__opcion:hover { background-color: var(--surface-hover); }
+
+.segmentado__opcion--activa {
+  background-color: var(--brand-100);
+  color: var(--heading);
+  font-weight: 600;
+}
+
+/* Con muchas sedes el segmentado no cabe: se cae a un desplegable, pero
+   con su icono delante para que no vuelva a ser una caja de texto. */
+.filtro-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-muted);
+}
+
+.filtro-select select {
+  padding: 8px 4px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.filtro-select select:focus { outline: none; }
+
+/* ── Volver a hoy ── */
+.chip-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--brand-500);
+  border-radius: var(--radius-md);
+  background-color: var(--brand-100);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--heading);
+  cursor: pointer;
+  transition: background-color .15s ease;
+}
+
+.chip-filtro:hover { background-color: var(--brand-100-hover); }
+
+@media (max-width: 900px) {
+  .barra-filtros { justify-content: flex-start; }
+  .filtro-periodo__valor { min-width: 140px; }
+  /* En pantalla estrecha las sedes pasan a la línea de abajo en vez de
+     salirse por el borde: con cuatro no caben en una sola fila. */
+  .segmentado { flex-wrap: wrap; }
+  .selector-mes { right: auto; left: 0; }
+}
+
+/* ── Rejillas de tarjetas ──────────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.dash-grid--dos  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* La primera manda: "a dónde se va la nómina" necesita el doble de ancho
+   que la dona de al lado para que quepan las cinco barras con su etiqueta. */
+.dash-grid--tres { grid-template-columns: 2fr 1fr; }
+
+@media (max-width: 1100px) {
+  .dash-grid--dos,
+  .dash-grid--tres { grid-template-columns: 1fr; }
+}
+
+.chart-card .card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.card-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* La nota bajo un gráfico: explica cómo leerlo, no repite el dato. */
+.card-pie {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Las tarjetas de una fila se estiran a la altura de la más alta. Cuando
+   una no tiene nada que enseñar, el mensaje se centra en ese hueco en vez
+   de quedarse pegado arriba dejando un cajón blanco debajo. */
+.chart-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-vacio {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
+/* Lo que RR.HH. tiene pendiente. Cada línea es trabajo que alguien está
+   esperando, y lleva de un clic a donde se resuelve — por eso son botones
+   y no texto. */
+.pendientes {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+
+.pendientes__titulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.pendientes__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* En fila y no apilados: cada pendiente ocupa lo que necesita y caben
+   varios por línea. Apilados, una sola línea empujaba los gráficos casi
+   ochocientos píxeles hacia abajo. */
+.pendientes__lista.pendientes__lista--fila {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.pendientes__lista--fila > .pendiente {
+  flex: 1 1 auto;
+  min-width: 280px;
+  max-width: 460px;
+}
+
+.pendiente {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 9px 13px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--warning-text);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-alt);
+  color: var(--text-soft);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.pendiente:hover {
+  background-color: var(--brand-100);
+  border-color: var(--brand-500);
+  border-left-color: var(--warning-text);
+}
+
+.pendiente__cuantos {
+  flex-shrink: 0;
+  min-width: 34px;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--warning-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.pendiente__texto { flex: 1; }
+
+.pendiente__flecha {
+  flex-shrink: 0;
+  color: var(--text-faint);
+}
+
+.pendiente:hover .pendiente__flecha { color: var(--brand-600); }
+
+/* Cuando no hay nada pendiente se dice, en vez de dejar el hueco vacío. */
+.pendientes__vacio {
+  margin: 0;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background-color: var(--success-bg);
+  color: var(--success-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Cumpleaños del mes ─────────────────────────────────────────── */
+.cumpleanos {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.cumpleanos__lista {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cumpleanos__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-alt);
+  min-width: 220px;
+}
+
+/* El día, en un círculo: es el dato por el que se busca en esta lista. */
+.cumpleanos__dia {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.cumpleanos__quien { display: flex; flex-direction: column; line-height: 1.25; }
+.cumpleanos__quien strong { font-size: 13.5px; color: var(--text); }
+.cumpleanos__quien small { font-size: 11.5px; color: var(--text-muted); }
+
+/* El panel de filtros del Panel de Control va sin la franja azul: acá los
+   números importantes son los de las tarjetas, no los de la cabecera. */
+.panel-filtros--sinborde { box-shadow: none; }
+
+/* ══ BUSCADOR DE PERSONAS ══════════════════════════════════════════
+   Para elegir trabajadores en una operación masiva. Antes era la plantilla
+   entera volcada como casillas y unos filtros que no filtraban; con 150
+   personas eso no se puede recorrer. */
+.buscador-personas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.buscador-personas__campo {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.buscador-personas__campo svg {
+  position: absolute;
+  left: 12px;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.buscador-personas__campo .form-control { padding-left: 36px; }
+
+.buscador-personas__filtros {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.buscador-personas__filtros .form-control {
+  flex: 1 1 150px;
+  min-width: 130px;
+  padding: 7px 10px;
+  font-size: 13px;
+}
+
+/* La barra de "cuántos se ven / cuántos van marcados". */
+.buscador-personas__barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px 2px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.buscador-personas__acciones {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* ── La lista ─────────────────────────────────────────────────── */
+.lista-personas {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface);
+}
+
+.persona {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.persona:last-child { border-bottom: none; }
+.persona:hover { background-color: var(--surface-hover); }
+
+.persona--marcada { background-color: var(--brand-100); }
+.persona--marcada:hover { background-color: var(--brand-100-hover); }
+
+.persona input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--brand-600);
+}
+
+.persona__datos { display: flex; flex-direction: column; line-height: 1.3; }
+.persona__datos strong { font-size: 13.5px; font-weight: 500; color: var(--text); }
+.persona__datos small { font-size: 11.5px; color: var(--text-muted); }
+
+.lista-personas__vacio {
+  margin: 0;
+  padding: 26px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+/* La casilla de marcar. Angosta y centrada: no es un dato de la fila. */
+.celda-marca {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+  padding-right: 4px !important;
+}
+
+.celda-marca input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--brand-600);
+}
+
+/* La fila marcada se nota, pero sin taparle el texto. */
+.fila-marcada > td {
+  background-color: var(--brand-100);
+}
+
+.celda-acciones {
   padding-left: 12px;
   padding-right: 16px;
 }
@@ -2234,6 +2918,94 @@ textarea.form-control {
   color: var(--heading);
 }
 
+/* Un campo con un botón pegado a la derecha (el DNI y su "Buscar").
+   El input se come el espacio que sobra y el botón se queda con el suyo. */
+.campo-con-accion {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.campo-con-accion .form-control {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.campo-con-accion .btn-secondary {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* ============================================
+   MESES A PAGAR
+   ============================================
+   Una planilla es de UN mes, así que del periodo salen tantas como meses
+   cubra. Se muestran como fichas marcables en vez de un desplegable
+   porque hay que ver los diez de un vistazo y saber cuáles van.
+   ============================================ */
+.meses-pago {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-alt);
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.meses-pago__barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.meses-pago__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+}
+
+/* Se cuelgan de la lista porque son <label> dentro de un .form-group, y esa
+   regla (que pinta las etiquetas de los campos) le ganaba en especificidad
+   al color del mes marcado. */
+.meses-pago__lista .mes-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background-color: var(--surface);
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+
+.meses-pago__lista .mes-chip:hover {
+  border-color: var(--brand-500);
+}
+
+/* El mes marcado se lee de un golpe: es lo que se va a crear. */
+.meses-pago__lista .mes-chip--marcado {
+  background-color: var(--brand-100);
+  border-color: var(--brand-500);
+  /* --heading y no --brand-700: en oscuro el fondo del chip es un azul
+     translúcido y el azul de marca queda ilegible encima. */
+  color: var(--heading);
+  font-weight: 600;
+}
+
+.meses-pago__lista .mes-chip input {
+  accent-color: var(--brand-700);
+  cursor: pointer;
+  margin: 0;
+}
+
 /* ============================================
    PANEL DE FILTROS (reciclable)
    ============================================
@@ -2324,6 +3096,15 @@ textarea.form-control {
   gap: 5px;
   flex: 1;
   min-width: 170px;
+}
+
+/* Cuando el panel tiene dos o tres campos, `flex: 1` los reparte todo el
+   ancho y sale un <select> de mes de mil pixeles. Con esto se quedan de su
+   tamaño y se agrupan a la izquierda. */
+.panel-filtros__campos--compacto .campo-filtro {
+  flex: 0 1 auto;
+  min-width: 200px;
+  max-width: 280px;
 }
 
 .campo-filtro--corto {
@@ -2865,4 +3646,193 @@ textarea.form-control {
   flex-direction: row;
   justify-content: flex-start;
   padding: 0 0 16px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   EN EL CELULAR
+   ══════════════════════════════════════════════════════════════════
+   Un solo sitio para lo que cambia en pantalla chica, en vez de un
+   @media suelto por componente.
+
+   El problema de fondo era el respiro: `.content-area` tenía 32px de
+   padding a cada lado sin excepción, así que de los 390px de un celular
+   quedaban 326 para trabajar —y de ahí salían las tarjetas cortadas por
+   el borde derecho—. Se le baja el margen y las rejillas pasan a una
+   columna, que es como se lee un panel con el pulgar.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Tabletas y celulares grandes ── */
+@media (max-width: 900px) {
+  .content-area { padding: 20px 16px; }
+  .top-header { padding: 0 16px; }
+  .header-actions { gap: 12px; }
+}
+
+/* ── Celular ── */
+@media (max-width: 560px) {
+  .content-area { padding: 14px 12px; }
+
+  .section-panel--formulario { padding: 16px 14px; }
+
+  /* El nombre completo y el rol partían la cabecera en dos líneas. El
+     avatar basta: el nombre sigue estando dentro de su menú. */
+  .user-info { display: none; }
+
+  /* Las cabeceras de pantalla: el título arriba, los botones debajo y
+     ocupando el ancho, que es donde llega el pulgar. */
+  .page-header,
+  .panel-filtros__cabecera {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .page-header__actions { width: 100%; }
+  .page-header__actions > * { flex: 1 1 auto; justify-content: center; }
+
+  /* Las cifras de la cabecera, repartidas en vez de apretadas. */
+  .cifras-cabecera { width: 100%; justify-content: space-between; }
+
+  /* Un campo por línea: dos no caben sin quedar ilegibles. */
+  .rejilla-campos { grid-template-columns: 1fr; }
+  .panel-filtros__campos { flex-direction: column; align-items: stretch; }
+  .panel-filtros__campos .campo-filtro { width: 100%; max-width: none; }
+
+  .form-row { flex-direction: column; gap: 16px; }
+
+  /* Los resúmenes de una operación masiva, en columna. */
+  .resumen-masivo { grid-template-columns: 1fr; }
+
+  .detalle-masivo__fila {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  /* Las notas con botón: el botón debajo y a lo ancho. */
+  .form-nota--accion {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* El pie de un formulario largo: los botones no se apelotonan. */
+  .form-pie {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .form-pie__derecha {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .form-pie button { width: 100%; justify-content: center; }
+
+  /* El buscador de personas y sus filtros, uno debajo de otro. */
+  .buscador-personas__filtros .form-control { flex: 1 1 100%; }
+
+  .buscador-personas__barra {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* Los pendientes del panel, en columna y a lo ancho. */
+  .pendientes__lista.pendientes__lista--fila { flex-direction: column; }
+  .pendientes__lista .pendiente { flex: 1 1 auto; width: 100%; }
+}
+
+/* ── La tabla, en el celular ────────────────────────────────────────
+   Una tabla de ocho columnas en 366px solo se puede leer arrastrándola
+   de lado, y a ciegas: al llegar a la cuarta columna ya no se ve de qué
+   fila es. Así que en pantalla chica cada fila se convierte en una
+   ficha, y cada dato lleva delante el nombre de su columna.
+
+   Es CSS puro sobre la misma tabla: sigue siendo una <table> para quien
+   la lee con lector de pantalla, y ninguna de las diez pantallas que
+   usan el componente tuvo que tocarse. */
+@media (max-width: 560px) {
+  .table-responsive { overflow-x: visible; }
+
+  .data-table thead { display: none; }
+
+  .data-table,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table tr {
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background-color: var(--surface);
+  }
+
+  .data-table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 5px 0;
+    border: none;
+    text-align: right;
+  }
+
+  /* El nombre de la columna, que en la tabla estaba arriba del todo. */
+  .data-table td[data-titulo]::before {
+    content: attr(data-titulo);
+    flex: 0 0 auto;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--text-muted);
+    text-align: left;
+  }
+
+  /* El número de fila hace de título de la ficha. */
+  .data-table td.celda-numero {
+    justify-content: flex-start;
+    padding: 0 0 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .data-table td.celda-marca { justify-content: flex-start; padding: 0 0 6px; }
+
+  /* Los botones, abajo y separados del contenido. */
+  .data-table td.celda-acciones {
+    justify-content: flex-end;
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .data-table td.celda-monto { font-size: 15px; }
+
+  .data-table .data-table-empty {
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* La silueta de carga también es una ficha. */
+  .data-table tr.fila-esqueleto td { padding: 4px 0; }
+}
+
+/* ── Celular chico ── */
+@media (max-width: 400px) {
+  /* Con cuatro sedes el segmentado ocupaba dos líneas y media: a esta
+     altura se lee mejor como lista de una columna. */
+  .segmentado { width: 100%; }
+  .segmentado__opcion { flex: 1 1 auto; justify-content: center; }
+
+  .filtro-periodo { width: 100%; }
+  .filtro-periodo__valor { flex: 1 1 auto; min-width: 0; }
+  .selector-mes { width: calc(100vw - 40px); max-width: 300px; }
 }
