@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { VacacionService, Vacacion } from '../../core/services/vacacion.service';
+import { VacacionService, Vacacion, SaldoVacaciones } from '../../core/services/vacacion.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 
@@ -19,6 +19,9 @@ export class VacacionesListComponent implements OnInit {
   userRole = '';
   searchTerm = '';
   filtroEstado = 'todos';
+
+  // Saldo oficial desde el endpoint GET /api/vacaciones/saldo
+  saldoVacaciones: SaldoVacaciones | null = null;
 
   // Balance para docentes
   diasMaximos = 30;
@@ -64,6 +67,26 @@ export class VacacionesListComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarVacaciones();
+    if (!this.isAdmin) {
+      this.cargarSaldo();
+    }
+  }
+
+  cargarSaldo(empleadoId?: string): void {
+    this.vacacionService.getSaldo(empleadoId).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.saldoVacaciones = res.data;
+          this.diasDisponibles = res.data.diasDisponibles;
+          this.diasMaximos = res.data.diasGanados;
+          this.diasAprobados = res.data.diasUsados;
+        }
+      },
+      error: (err) => {
+        console.warn('No se pudo obtener el saldo de vacaciones oficial, usando cálculo local:', err);
+        this.calcularBalance();
+      }
+    });
   }
 
   cargarVacaciones(): void {
@@ -81,6 +104,7 @@ export class VacacionesListComponent implements OnInit {
           this.vacaciones = res.data;
           if (!this.isAdmin) {
             this.calcularBalance();
+            this.cargarSaldo();
           }
         }
         this.cargando = false;
@@ -98,6 +122,7 @@ export class VacacionesListComponent implements OnInit {
     let pendientes = 0;
 
     for (const v of this.vacaciones) {
+      if (v.estado_registro === 'inactivo') continue;
       if (v.estado === 'aprobado') {
         aprobados += Number(v.dias_solicitados || 0);
       } else if (v.estado === 'pendiente') {
@@ -107,14 +132,23 @@ export class VacacionesListComponent implements OnInit {
 
     this.diasAprobados = aprobados;
     this.diasPendientes = pendientes;
-    this.diasDisponibles = Math.max(0, this.diasMaximos - aprobados - pendientes);
+    // Si tenemos saldoVacaciones del servidor, respetamos los días ganados oficiales
+    const topeGanado = this.saldoVacaciones ? this.saldoVacaciones.diasGanados : this.diasMaximos;
+    this.diasDisponibles = Math.max(0, topeGanado - aprobados - pendientes);
   }
 
   get filteredVacaciones(): Vacacion[] {
     let lista = this.vacaciones;
 
-    if (this.filtroEstado !== 'todos') {
-      lista = lista.filter(v => v.estado === this.filtroEstado);
+    // Si el usuario quiere ver las canceladas/anuladas
+    if (this.filtroEstado === 'canceladas') {
+      lista = lista.filter(v => v.estado_registro === 'inactivo');
+    } else {
+      // Por defecto solo mostrar solicitudes activas (ocultar las que fueron canceladas)
+      lista = lista.filter(v => !v.estado_registro || v.estado_registro === 'activo');
+      if (this.filtroEstado !== 'todos') {
+        lista = lista.filter(v => v.estado === this.filtroEstado);
+      }
     }
 
     if (this.searchTerm) {
@@ -130,11 +164,21 @@ export class VacacionesListComponent implements OnInit {
     return lista;
   }
 
+  // Política de anticipación mínima (mínimo 3 días de anticipación para planificar reemplazos)
+  diasAnticipacionMinima = 3;
+  fechaMinimaInicio = '';
+  fechaMinimaFin = '';
+
   abrirModalSolicitud(): void {
-    const hoy = new Date().toISOString().split('T')[0];
+    const fechaMin = new Date();
+    fechaMin.setDate(fechaMin.getDate() + this.diasAnticipacionMinima);
+    const minStr = fechaMin.toISOString().split('T')[0];
+    this.fechaMinimaInicio = minStr;
+    this.fechaMinimaFin = minStr;
+
     this.nuevaSolicitud = {
-      fecha_inicio: hoy,
-      fecha_fin: hoy,
+      fecha_inicio: minStr,
+      fecha_fin: minStr,
       motivo: '',
       dias_solicitados: 1
     };
@@ -146,6 +190,12 @@ export class VacacionesListComponent implements OnInit {
   }
 
   calcularDias(): void {
+    if (this.nuevaSolicitud.fecha_inicio) {
+      this.fechaMinimaFin = this.nuevaSolicitud.fecha_inicio;
+      if (this.nuevaSolicitud.fecha_fin && this.nuevaSolicitud.fecha_fin < this.nuevaSolicitud.fecha_inicio) {
+        this.nuevaSolicitud.fecha_fin = this.nuevaSolicitud.fecha_inicio;
+      }
+    }
     if (this.nuevaSolicitud.fecha_inicio && this.nuevaSolicitud.fecha_fin) {
       const ini = new Date(this.nuevaSolicitud.fecha_inicio);
       const fin = new Date(this.nuevaSolicitud.fecha_fin);
@@ -164,6 +214,14 @@ export class VacacionesListComponent implements OnInit {
 
     if (!this.nuevaSolicitud.fecha_inicio || !this.nuevaSolicitud.fecha_fin) {
       this.toastService.warning('Campos Requeridos', 'Indica fecha de inicio y fecha de fin.');
+      return;
+    }
+
+    if (this.nuevaSolicitud.fecha_inicio < this.fechaMinimaInicio) {
+      this.toastService.warning(
+        'Anticipación Mínima Requerida',
+        `Las vacaciones deben solicitarse con al menos ${this.diasAnticipacionMinima} días de anticipación (a partir del ${this.fechaMinimaInicio}).`
+      );
       return;
     }
 
@@ -275,6 +333,26 @@ export class VacacionesListComponent implements OnInit {
       error: (err) => {
         console.error('Error cancelando vacacion:', err);
         this.toastService.error('Error', 'No se pudo cancelar la solicitud.');
+      }
+    });
+  }
+
+  anularVacacionPorAdmin(v: Vacacion): void {
+    const empNombre = v.empleado ? `${v.empleado.nombre} ${v.empleado.apellido}` : 'este trabajador';
+    const confirmMsg = v.estado === 'aprobado'
+      ? `¿Estás seguro de anular las vacaciones aprobadas de ${empNombre}?\nLos ${v.dias_solicitados} días se reintegrarán a su saldo disponible.`
+      : `¿Deseas cancelar y retirar esta solicitud de ${empNombre}?`;
+
+    if (!confirm(confirmMsg)) return;
+
+    this.vacacionService.eliminarVacacion(v.id).subscribe({
+      next: () => {
+        this.toastService.success('Anulada', 'La solicitud fue cancelada y los días se reintegraron al trabajador.');
+        this.cargarVacaciones();
+      },
+      error: (err) => {
+        console.error('Error anulando vacación:', err);
+        this.toastService.error('Error', err.error?.message || 'No se pudo anular la solicitud.');
       }
     });
   }

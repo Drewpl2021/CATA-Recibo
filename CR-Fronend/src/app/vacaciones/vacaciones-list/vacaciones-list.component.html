@@ -5,8 +5,12 @@
       <h1>Vacaciones y Licencias</h1>
       <p>Gestión y seguimiento de solicitudes de descanso laboral.</p>
     </div>
-    <div class="header-actions" *ngIf="!isAdmin">
-      <button class="btn-primary" (click)="abrirModalSolicitud()">
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="cargarVacaciones()" title="Sincronizar y recargar solicitudes" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; font-weight: 600; font-size: 0.85rem; color: #475569; cursor: pointer;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        Actualizar
+      </button>
+      <button class="btn-primary" *ngIf="!isAdmin" (click)="abrirModalSolicitud()">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
@@ -22,7 +26,12 @@
       <div class="metric-info">
         <h3>Días Disponibles</h3>
         <div class="metric-value">{{ diasDisponibles }} <span class="unit">días</span></div>
-        <div class="metric-trend trend-neutral">De {{ diasMaximos }} días anuales</div>
+        <div class="metric-trend trend-neutral" *ngIf="saldoVacaciones">
+          De {{ saldoVacaciones.diasGanados }} días ganados ({{ saldoVacaciones.mesesTrabajados }} meses de antigüedad)
+        </div>
+        <div class="metric-trend trend-neutral" *ngIf="!saldoVacaciones">
+          De {{ diasMaximos }} días anuales
+        </div>
       </div>
       <div class="metric-icon green">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -69,10 +78,11 @@
         </div>
 
         <select class="status-select" [(ngModel)]="filtroEstado">
-          <option value="todos">Todos los Estados</option>
+          <option value="todos">Todos los Estados (Activas)</option>
           <option value="pendiente">Pendientes</option>
           <option value="aprobado">Aprobadas</option>
           <option value="rechazado">Rechazadas</option>
+          <option value="canceladas" *ngIf="isAdmin">Anuladas / Canceladas</option>
         </select>
       </div>
     </div>
@@ -125,10 +135,10 @@
             <td class="motivo-cell">{{ v.motivo || 'Sin motivo especificado' }}</td>
             <td>
               <span class="status-badge"
-                [class.status-pending]="v.estado === 'pendiente'"
-                [class.status-approved]="v.estado === 'aprobado'"
-                [class.status-rejected]="v.estado === 'rechazado'">
-                {{ v.estado | uppercase }}
+                [class.status-pending]="v.estado === 'pendiente' && v.estado_registro !== 'inactivo'"
+                [class.status-approved]="v.estado === 'aprobado' && v.estado_registro !== 'inactivo'"
+                [class.status-rejected]="v.estado === 'rechazado' || v.estado_registro === 'inactivo'">
+                {{ v.estado_registro === 'inactivo' ? 'ANULADA' : (v.estado | uppercase) }}
               </span>
             </td>
             <td *ngIf="isAdmin">
@@ -137,21 +147,26 @@
             <td style="text-align: right;">
               <!-- Acciones Docente -->
               <div class="action-btns" *ngIf="!isAdmin">
-                <button class="btn-cancel" *ngIf="v.estado === 'pendiente'" (click)="cancelarSolicitudPropia(v)">
+                <button class="btn-cancel" *ngIf="v.estado === 'pendiente' && v.estado_registro !== 'inactivo'" (click)="cancelarSolicitudPropia(v)">
                   Cancelar
                 </button>
-                <span *ngIf="v.estado !== 'pendiente'" class="text-muted">—</span>
+                <span *ngIf="v.estado !== 'pendiente' || v.estado_registro === 'inactivo'" class="text-muted">—</span>
               </div>
 
               <!-- Acciones Admin/RRHH -->
               <div class="action-btns" *ngIf="isAdmin">
-                <button class="btn-approve" *ngIf="v.estado === 'pendiente'" (click)="aprobarVacacion(v)">
+                <button class="btn-approve" *ngIf="v.estado === 'pendiente' && v.estado_registro !== 'inactivo'" (click)="aprobarVacacion(v)">
                   Aprobar
                 </button>
-                <button class="btn-reject" *ngIf="v.estado === 'pendiente'" (click)="abrirModalRechazo(v)">
+                <button class="btn-reject" *ngIf="v.estado === 'pendiente' && v.estado_registro !== 'inactivo'" (click)="abrirModalRechazo(v)">
                   Rechazar
                 </button>
-                <span *ngIf="v.estado !== 'pendiente'" class="text-muted">Completado</span>
+                <button class="btn-cancel" *ngIf="v.estado_registro !== 'inactivo'" (click)="anularVacacionPorAdmin(v)" title="Anular vacaciones y reintegrar días al trabajador">
+                  {{ v.estado === 'aprobado' ? 'Anular' : 'Cancelar' }}
+                </button>
+                <span *ngIf="v.estado_registro === 'inactivo'" class="text-muted" style="font-style: italic; font-size: 0.8rem;">
+                  Anulada
+                </span>
               </div>
             </td>
           </tr>
@@ -177,18 +192,34 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>Fecha de Inicio *</label>
-            <input type="date" [(ngModel)]="nuevaSolicitud.fecha_inicio" (change)="calcularDias()" />
+            <label>Fecha de Inicio * <small class="text-muted">(Mín. {{ diasAnticipacionMinima }} días de anticipación)</small></label>
+            <input 
+              type="date" 
+              [(ngModel)]="nuevaSolicitud.fecha_inicio" 
+              [min]="fechaMinimaInicio" 
+              (change)="calcularDias()" />
           </div>
           <div class="form-group">
             <label>Fecha de Fin *</label>
-            <input type="date" [(ngModel)]="nuevaSolicitud.fecha_fin" (change)="calcularDias()" />
+            <input 
+              type="date" 
+              [(ngModel)]="nuevaSolicitud.fecha_fin" 
+              [min]="fechaMinimaFin" 
+              (change)="calcularDias()" />
           </div>
         </div>
 
         <div class="form-group">
-          <label>Días Calculados</label>
-          <div class="dias-preview">{{ nuevaSolicitud.dias_solicitados }} días solicitados</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="margin: 0;">Días Calculados</label>
+            <span style="font-size: 0.8rem; color: #64748b;">Saldo disponible: <strong>{{ diasDisponibles }} días</strong></span>
+          </div>
+          <div class="dias-preview" [style.color]="nuevaSolicitud.dias_solicitados > diasDisponibles ? '#ef4444' : ''" [style.borderColor]="nuevaSolicitud.dias_solicitados > diasDisponibles ? '#fca5a5' : ''">
+            {{ nuevaSolicitud.dias_solicitados }} días solicitados
+            <span *ngIf="nuevaSolicitud.dias_solicitados > diasDisponibles" style="display: block; font-size: 0.75rem; color: #ef4444; margin-top: 4px;">
+              ⚠️ Excede tu saldo disponible de {{ diasDisponibles }} días
+            </span>
+          </div>
         </div>
 
         <div class="form-group">
