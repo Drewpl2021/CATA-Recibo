@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services';
+import { claveConLetrasYNumeros } from '../../../core/utils';
 
 /**
  * Donde aterriza el enlace del correo: poner la contraseña nueva.
@@ -35,7 +36,7 @@ export class RestablecerPasswordComponent implements OnInit {
 
   form = this.fb.group(
     {
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.required, Validators.minLength(8), claveConLetrasYNumeros]],
       password_confirmation: ['', [Validators.required]],
     },
     { validators: (grupo: AbstractControl) => coincidenLasClaves(grupo) }
@@ -50,6 +51,12 @@ export class RestablecerPasswordComponent implements OnInit {
   get passwordCorta(): boolean {
     const c = this.form.get('password');
     return !!c && c.touched && c.hasError('minlength');
+  }
+
+  /** Le faltan letras o números: la misma regla que el backend. */
+  get claveDebil(): boolean {
+    const c = this.form.get('password');
+    return !!c && c.touched && c.hasError('claveDebil');
   }
 
   get noCoinciden(): boolean {

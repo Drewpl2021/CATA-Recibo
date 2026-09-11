@@ -37,7 +37,7 @@ class Notificacion extends Model
 
         static::creating(function ($model) {
             if (empty($model->id)) {
-                $model->id = (string) Str::uuid();
+                $model->id = (string) Str::uuid7();
             }
         });
     }

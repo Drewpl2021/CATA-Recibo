@@ -19,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'sesion'      => \App\Http\Middleware\RenovarSesionActiva::class,
             // Traba la cuenta que todavía usa la contraseña que le dieron.
             'clave_nueva' => \App\Http\Middleware\ExigirCambioPassword::class,
+            // Traba a quien todavía no firmó los términos de uso.
+            'terminos'    => \App\Http\Middleware\ExigirTerminos::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

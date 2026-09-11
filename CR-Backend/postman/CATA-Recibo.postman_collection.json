@@ -389,6 +389,57 @@
      }
     },
     {
+     "name": "Firma los terminos (Admin)",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 201', function () { pm.response.to.have.status(201); });"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{admin_token}}"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/terminos/aceptar",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "terminos",
+        "aceptar"
+       ]
+      },
+      "description": "Toda cuenta firma los terminos antes de usar el sistema, tambien Admin y RR.HH.: sin esto todo lo demas responde 428.",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n    \"acepto\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
      "name": "Login - RRHH",
      "event": [
       {
@@ -438,6 +489,135 @@
      }
     },
     {
+     "name": "Sin firmar los terminos no entra a nada",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 428', function () { pm.response.to.have.status(428); });",
+         "pm.test('dice que faltan los terminos', function () {",
+         "    pm.expect(pm.response.json().data.requiereTerminos).to.eql(true);",
+         "});"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{rrhh_token}}"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/empleados",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "empleados"
+       ]
+      },
+      "description": "Antes la firma solo se pedia al cambiar la contrasena, asi que quien ya tenia una suya no firmaba nunca. Ahora es un candado para todos, como el de la contrasena."
+     }
+    },
+    {
+     "name": "Pero si puede leerlos sin firmar",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+         "pm.test('todavia sin firmar', function () { pm.expect(pm.response.json().data.firmados).to.eql(false); });"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{rrhh_token}}"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/terminos",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "terminos"
+       ]
+      },
+      "description": "Los terminos tienen que poder leerse con la cuenta trabada, o no habria forma de salir del candado."
+     }
+    },
+    {
+     "name": "Firma los terminos (RRHH)",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 201', function () { pm.response.to.have.status(201); });"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{rrhh_token}}"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/terminos/aceptar",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "terminos",
+        "aceptar"
+       ]
+      },
+      "description": "Toda cuenta firma los terminos antes de usar el sistema, tambien Admin y RR.HH.: sin esto todo lo demas responde 428.",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n    \"acepto\": true\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
      "name": "Me (Admin)",
      "event": [
       {
@@ -476,7 +656,7 @@
      }
     },
     {
-     "name": "Registro Público (auto-registro, requiere correo @cata.edu.pe)",
+     "name": "El autorregistro esta cerrado",
      "event": [
       {
        "listen": "prerequest",
@@ -495,12 +675,10 @@
        "script": {
         "type": "text/javascript",
         "exec": [
-         "(function () {",
-         "pm.test('Status 201', () => pm.response.to.have.status(201));",
-         "const data = pm.response.json().data;",
-         "pm.test('Devuelve token', () => pm.expect(data.token).to.not.be.empty);",
-         "pm.test('Queda con rol empleado', () => pm.expect(data.user.rol.nombre).to.eql('empleado'));",
-         "})();"
+         "pm.test('Status 403', () => pm.response.to.have.status(403));",
+         "pm.test('explica como es el primer ingreso', () => {",
+         "    pm.expect(pm.response.json().message).to.include('Recursos Humanos');",
+         "});"
         ]
        }
       }
@@ -535,93 +713,7 @@
         "register"
        ]
       },
-      "description": "El registro crea la cuenta Y la ficha de empleado, por eso pide el DNI real: antes el backend lo inventaba con substr(time(), -8) y dos registros en el mismo segundo chocaban con un error de clave duplicada."
-     }
-    },
-    {
-     "name": "Registro: DNI inválido (debe fallar)",
-     "event": [
-      {
-       "listen": "test",
-       "script": {
-        "type": "text/javascript",
-        "exec": [
-         "pm.test('422: el DNI debe tener 8 digitos', function () {",
-         "    pm.response.to.have.status(422);",
-         "    pm.expect(pm.response.text()).to.include('8');",
-         "});"
-        ]
-       }
-      }
-     ],
-     "request": {
-      "method": "POST",
-      "header": [
-       {
-        "key": "Content-Type",
-        "value": "application/json"
-       },
-       {
-        "key": "Accept",
-        "value": "application/json"
-       }
-      ],
-      "body": {
-       "mode": "raw",
-       "raw": "{\n    \"nombre\": \"Dni\",\n    \"apellido\": \"Malo\",\n    \"dni\": \"123\",\n    \"email\": \"dnimalo{{$timestamp}}@cata.edu.pe\",\n    \"password\": \"claveSegura123\",\n    \"password_confirmation\": \"claveSegura123\"\n}"
-      },
-      "url": {
-       "raw": "{{base_url}}/register",
-       "host": [
-        "{{base_url}}"
-       ],
-       "path": [
-        "register"
-       ]
-      }
-     }
-    },
-    {
-     "name": "Registro: contraseña corta (debe fallar)",
-     "event": [
-      {
-       "listen": "test",
-       "script": {
-        "type": "text/javascript",
-        "exec": [
-         "pm.test('422: la contrasena necesita 8 caracteres', function () {",
-         "    pm.response.to.have.status(422);",
-         "});"
-        ]
-       }
-      }
-     ],
-     "request": {
-      "method": "POST",
-      "header": [
-       {
-        "key": "Content-Type",
-        "value": "application/json"
-       },
-       {
-        "key": "Accept",
-        "value": "application/json"
-       }
-      ],
-      "body": {
-       "mode": "raw",
-       "raw": "{\n    \"nombre\": \"Clave\",\n    \"apellido\": \"Corta\",\n    \"dni\": \"76543210\",\n    \"email\": \"corta{{$timestamp}}@cata.edu.pe\",\n    \"password\": \"corta\",\n    \"password_confirmation\": \"corta\"\n}"
-      },
-      "url": {
-       "raw": "{{base_url}}/register",
-       "host": [
-        "{{base_url}}"
-       ],
-       "path": [
-        "register"
-       ]
-      },
-      "description": "El minimo subio de 6 a 8 caracteres."
+      "description": "Antes cualquiera con un correo @cata.edu.pe podia crear aqui un empleado nuevo, sin comprobar que el buzon fuera suyo. Cada trabajador que da de alta RR.HH. ya recibe su cuenta, asi que se cierra."
      }
     },
     {
@@ -7618,6 +7710,121 @@
        }
       },
       {
+       "name": "A unos pocos DENTRO de la planilla, no a todos",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+           "var d = pm.response.json().data;",
+           "pm.test('solo le cae a quien se marco', function () {",
+           "    pm.expect(d.resumen.aplicadas).to.eql(1);",
+           "    pm.expect(d.detalle).to.have.lengthOf(1);",
+           "});",
+           "pm.test('el mes sigue saliendo de la planilla', function () {",
+           "    pm.expect(d.mes).to.eql(8);",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n    \"corrida_id\": \"{{corrida_conceptos_id}}\",\n    \"empleado_ids\": [\"{{empleado_id}}\"],\n    \"calculo\": \"fijo\",\n    \"valor\": 150\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": {
+         "raw": "{{base_url}}/payment-concepts/{{payment_concept_aplicable_id}}/aplicar-a-grupo",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "payment-concepts",
+          "{{payment_concept_aplicable_id}}",
+          "aplicar-a-grupo"
+         ]
+        },
+        "description": "El caso de verdad: aplicar un Subsidio de Maternidad a las tres madres de la planilla de docentes, no a los cuarenta. La planilla y la lista de personas se cruzan; antes la lista se pisaba con 'todos los de la planilla' y el concepto se lo llevaba entero."
+       }
+      },
+      {
+       "name": "Marcar a alguien que no esta en esa planilla se rechaza",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 422', function () { pm.response.to.have.status(422); });",
+           "pm.test('dice por que', function () {",
+           "    pm.expect(pm.response.json().data.message).to.include('Ninguno');",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n    \"corrida_id\": \"{{corrida_conceptos_id}}\",\n    \"empleado_ids\": [\"{{empleado_id_deivi}}\"],\n    \"calculo\": \"fijo\",\n    \"valor\": 150\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": {
+         "raw": "{{base_url}}/payment-concepts/{{payment_concept_aplicable_id}}/aplicar-a-grupo",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "payment-concepts",
+          "{{payment_concept_aplicable_id}}",
+          "aplicar-a-grupo"
+         ]
+        },
+        "description": "Aplicarle un concepto de esta planilla a alguien que no esta dentro no es un descuido menor: le mueve el sueldo a quien no tocaba. Se corta y se dice."
+       }
+      },
+      {
        "name": "En una planilla cerrada no se pueden mover cifras",
        "event": [
         {
@@ -7724,6 +7931,69 @@
          ]
         },
         "description": "CONCEPTO-A-PLANILLA — Una planilla ya pagada no se toca ni por esta puerta."
+       }
+      },
+      {
+       "name": "Emitir boletas SOLO de esta planilla, no del mes entero",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+           "var d = pm.response.json();",
+           "pm.test('solo alcanza a la gente de la planilla', function () {",
+           "    // La planilla de prueba tiene UN trabajador. Antes se emitia para",
+           "    // todos los activos del mes: aqui habria salido la plantilla entera.",
+           "    pm.expect(d.generadas + d.yaTenianBoleta).to.eql(1);",
+           "});",
+           "pm.test('dentro de una planilla nadie cuenta como sin planilla', function () {",
+           "    pm.expect(d.sinPlanilla).to.eql(0);",
+           "});",
+           "pm.test('dice de que planilla se emitio', function () {",
+           "    pm.expect(d.planilla).to.be.a('string');",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n    \"corrida_id\": \"{{corrida_conceptos_id}}\"\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": {
+         "raw": "{{base_url}}/boletas/generar-masivo",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "boletas",
+          "generar-masivo"
+         ]
+        },
+        "description": "Desde dentro de una planilla se emiten solo las boletas de su gente, y el mes sale de ella. Antes el boton solo sabia del mes y emitia las de todo el colegio."
        }
       },
       {
@@ -8866,6 +9136,318 @@
          "  pm.test('Y dice por que', () => pm.expect(pm.response.text()).to.include('cambiar tu contrase'));",
          "})();"
         ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "10.2 - Terminos de uso (la firma que antes era en papel)",
+     "description": "El colegio repartia una hoja impresa para que cada trabajador firmara que aceptaba recibir sus boletas por medios digitales. Ahora se firma en la cuenta: se guarda quien, cuando, que version y desde que IP. Sin esa firma no se puede poner la contrasena nueva.",
+     "item": [
+      {
+       "name": "El documento y su estado",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+           "var d = pm.response.json().data;",
+           "pm.test('trae el documento completo', function () {",
+           "    pm.expect(d.version).to.be.a('string');",
+           "    pm.expect(d.secciones).to.be.an('array').that.is.not.empty;",
+           "    pm.expect(d.secciones[0]).to.have.property('titulo');",
+           "});",
+           "pm.test('todavia no los ha firmado', function () {",
+           "    pm.expect(d.firmados).to.eql(false);",
+           "});",
+           "pm.collectionVariables.set('terminos_version', d.version);"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         }
+        ],
+        "url": {
+         "raw": "{{base_url}}/terminos",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "terminos"
+         ]
+        },
+        "description": "El texto vive en el codigo y va versionado: la version que cada uno acepta queda guardada, porque decir 'acepto los terminos' sin decir cuales no prueba nada."
+       }
+      },
+      {
+       "name": "Sin firmar no se puede cambiar la contrasena",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 409', function () { pm.response.to.have.status(409); });",
+           "pm.test('dice que faltan los terminos', function () {",
+           "    var r = pm.response.json();",
+           "    pm.expect(r.data.requiereTerminos).to.eql(true);",
+           "    pm.expect(r.message).to.include('terminos'.replace('e', 'é'));",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "PUT",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         }
+        ],
+        "url": {
+         "raw": "{{base_url}}/cambiar-password",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "cambiar-password"
+         ]
+        },
+        "description": "El candado esta en el backend y no solo en la pantalla: por la API tampoco se puede saltar el orden.",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n    \"password_actual\": \"empleado123\",\n    \"password_nuevo\": \"ClaveDePrueba26\",\n    \"password_nuevo_confirmation\": \"ClaveDePrueba26\"\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       }
+      },
+      {
+       "name": "Aceptar sin decir que si se rechaza",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 422', function () { pm.response.to.have.status(422); });"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         }
+        ],
+        "url": {
+         "raw": "{{base_url}}/terminos/aceptar",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "terminos",
+          "aceptar"
+         ]
+        },
+        "description": "Es una aceptacion: tiene que haber un acto de aceptar, no basta con llamar a la ruta.",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n    \"acepto\": false\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       }
+      },
+      {
+       "name": "Firmar los terminos",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+           "var d = pm.response.json().data;",
+           "pm.test('queda la constancia: cuando y que version', function () {",
+           "    pm.expect(d.firmadosEn).to.be.a('string');",
+           "    pm.expect(d.version).to.eql(pm.collectionVariables.get('terminos_version'));",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         }
+        ],
+        "url": {
+         "raw": "{{base_url}}/terminos/aceptar",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "terminos",
+          "aceptar"
+         ]
+        },
+        "description": "Se guarda quien, cuando, que version y la IP: es lo mismo que probaba la hoja firmada.",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n    \"acepto\": true\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       }
+      },
+      {
+       "name": "Firmarlos otra vez no duplica nada",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+           "pm.test('conserva la firma original', function () {",
+           "    pm.expect(pm.response.json().data.message).to.include('Ya');",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         }
+        ],
+        "url": {
+         "raw": "{{base_url}}/terminos/aceptar",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "terminos",
+          "aceptar"
+         ]
+        },
+        "description": "Volver a entrar a la pantalla no debe pisar la fecha de la primera firma: esa es la que vale.",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n    \"acepto\": true\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       }
+      },
+      {
+       "name": "Y ahora el estado dice que estan firmados",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+           "var d = pm.response.json().data;",
+           "pm.test('firmados y al dia', function () {",
+           "    pm.expect(d.firmados).to.eql(true);",
+           "    pm.expect(d.esVersionNueva).to.eql(false);",
+           "    pm.expect(d.versionFirmada).to.eql(d.version);",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         }
+        ],
+        "url": {
+         "raw": "{{base_url}}/terminos",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "terminos"
+         ]
+        },
+        "description": "Lo que lee la pantalla para saber si tiene que pedir la firma o pasar directo a la contrasena."
        }
       }
      ]
@@ -10521,6 +11103,109 @@
           "exec": [
            "pm.test('423: primero cambia la contrasena', function () {",
            "  pm.response.to.have.status(423);",
+           "});"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Antes de la contrasena, firma los terminos",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+           "pm.test('queda la constancia', function () {",
+           "    pm.expect(pm.response.json().data.firmadosEn).to.be.a('string');",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{descartable_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n    \"acepto\": true\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": {
+         "raw": "{{base_url}}/terminos/aceptar",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "terminos",
+          "aceptar"
+         ]
+        },
+        "description": "A quien RR.HH. le repone la contrasena le pasa lo mismo que al que entra por primera vez: con la cuenta trabada solo puede leer y firmar los terminos, y recien despues poner su contrasena. Se firma aqui para que el siguiente paso sea el que de verdad se quiere probar."
+       }
+      },
+      {
+       "name": "Una contrasena sin numeros no vale",
+       "request": {
+        "method": "PUT",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{descartable_token}}"
+         },
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": {
+         "raw": "{{base_url}}/cambiar-password",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "cambiar-password"
+         ]
+        },
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"password_actual\": \"{{password_temporal}}\",\n  \"password_nuevo\": \"SoloLetrasAqui\",\n  \"password_nuevo_confirmation\": \"SoloLetrasAqui\"\n}"
+        },
+        "description": "Antes bastaba con 8 caracteres: \"aaaaaaaa\" o \"12345678\" pasaban. Ahora tiene que llevar letras y numeros."
+       },
+       "response": [],
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 422', function () { pm.response.to.have.status(422); });",
+           "pm.test('lo dice en el campo de la contrasena nueva', function () {",
+           "    pm.expect(pm.response.json().errors).to.have.property('password_nuevo');",
            "});"
           ]
          }
@@ -12425,6 +13110,276 @@
        ]
       },
       "description": "PANEL-DE-CONTROL - Masa salarial y contratos por vencer no son datos que deba ver un docente."
+     }
+    }
+   ]
+  },
+  {
+   "name": "11.95 - Auditoria (quien cambio que)",
+   "description": "Antes no quedaba rastro de quien cambiaba un sueldo, aplicaba un concepto o reabria una planilla. Ahora queda: quien, cuando, y el valor de antes y de despues.",
+   "item": [
+    {
+     "name": "RRHH cambia un sueldo",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 200', function () { pm.response.to.have.status(200); });"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{rrhh_token}}"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/empleados/{{empleado_id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "empleados",
+        "{{empleado_id}}"
+       ]
+      },
+      "description": "Un cambio de sueldo cualquiera, para ver que queda anotado.",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n    \"sueldo_base\": 3456.78\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
+    },
+    {
+     "name": "Queda anotado: quien, cuando, de cuanto a cuanto",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+         "var fila = pm.response.json().data.content[0];",
+         "pm.test('el ultimo movimiento es el cambio de sueldo', function () {",
+         "    pm.expect(fila.accion).to.eql('cambió');",
+         "    pm.expect(fila.cambios).to.have.property('sueldo_base');",
+         "    pm.expect(Number(fila.cambios.sueldo_base[1])).to.eql(3456.78);",
+         "});",
+         "pm.test('dice quien fue', function () {",
+         "    pm.expect(fila.usuario_nombre).to.be.a('string').and.not.empty;",
+         "});"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{admin_token}}"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/auditoria?entidad=empleado&entidad_id={{empleado_id}}&page=0&size=5",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "auditoria"
+       ],
+       "query": [
+        {
+         "key": "entidad",
+         "value": "empleado"
+        },
+        {
+         "key": "entidad_id",
+         "value": "{{empleado_id}}"
+        },
+        {
+         "key": "page",
+         "value": "0"
+        },
+        {
+         "key": "size",
+         "value": "5"
+        }
+       ]
+      },
+      "description": "La historia de una ficha: todo lo que le paso a este empleado, lo ultimo primero."
+     }
+    },
+    {
+     "name": "La contrasena se anota sin su valor",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+         "var filas = pm.response.json().data.content.filter(function (f) { return f.cambios && f.cambios.password; });",
+         "pm.test('hay cambios de contrasena anotados', function () { pm.expect(filas.length).to.be.above(0); });",
+         "pm.test('y ninguno guarda la contrasena', function () {",
+         "    filas.forEach(function (f) { pm.expect(f.cambios.password).to.eql(['(oculto)', '(oculto)']); });",
+         "});"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{admin_token}}"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/auditoria?entidad=usuario&page=0&size=100",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "auditoria"
+       ],
+       "query": [
+        {
+         "key": "entidad",
+         "value": "usuario"
+        },
+        {
+         "key": "page",
+         "value": "0"
+        },
+        {
+         "key": "size",
+         "value": "100"
+        }
+       ]
+      },
+      "description": "Se sabe QUE cambio y quien la cambio, nunca a que."
+     }
+    },
+    {
+     "name": "Aplicar un concepto a un grupo deja una sola linea",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+         "var d = pm.response.json().data;",
+         "pm.test('esta anotado, en palabras', function () {",
+         "    pm.expect(d.totalElements).to.be.above(0);",
+         "    pm.expect(d.content[0].descripcion).to.include('Aplic');",
+         "});"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{admin_token}}"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/auditoria?accion=aplicó&page=0&size=5",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "auditoria"
+       ],
+       "query": [
+        {
+         "key": "accion",
+         "value": "aplicó"
+        },
+        {
+         "key": "page",
+         "value": "0"
+        },
+        {
+         "key": "size",
+         "value": "5"
+        }
+       ]
+      },
+      "description": "Una fila por operacion, no una por trabajador."
+     }
+    },
+    {
+     "name": "RRHH no puede leer la auditoria",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 403', function () { pm.response.to.have.status(403); });"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Accept",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{rrhh_token}}"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/auditoria",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "auditoria"
+       ]
+      },
+      "description": "Es justamente donde se ve lo que hizo RR.HH.: solo Admin."
      }
     }
    ]

@@ -169,13 +169,39 @@ class PaymentConceptController extends Controller
             // a equivocarse.
             $mes  = (int) $corrida->mes;
             $anio = (int) $corrida->anio;
-            $empleadoIds = $corrida->planillas()->pluck('empleado_id')->all();
 
-            if (empty($empleadoIds)) {
+            $deLaPlanilla = $corrida->planillas()->pluck('empleado_id')->all();
+
+            if (empty($deLaPlanilla)) {
                 return response()->json([
                     'success' => false,
                     'data'    => ['message' => "La planilla \"{$corrida->nombre}\" todavía no tiene trabajadores."],
                 ], 422);
+            }
+
+            /*
+             * Si además se marcaron personas, se aplica SOLO a esas — y solo
+             * a las que estén dentro de la planilla.
+             *
+             * Antes la lista marcada se pisaba con "todos los de la
+             * planilla": marcabas a las tres madres para el Subsidio de
+             * Maternidad y se lo llevaban los cuarenta. Ahora las dos cosas
+             * se cruzan, que es lo que significa "a estos, dentro de esta
+             * planilla".
+             */
+            if (! empty($empleadoIds)) {
+                $elegidos = array_values(array_intersect($empleadoIds, $deLaPlanilla));
+
+                if (empty($elegidos)) {
+                    return response()->json([
+                        'success' => false,
+                        'data'    => ['message' => "Ninguno de los trabajadores que marcaste está dentro de \"{$corrida->nombre}\"."],
+                    ], 422);
+                }
+
+                $empleadoIds = $elegidos;
+            } else {
+                $empleadoIds = $deLaPlanilla;
             }
         }
 
@@ -218,6 +244,24 @@ class PaymentConceptController extends Controller
 
             $aplicadas++;
             $detalle[] = ['empleado' => $nombreCompleto, 'estado' => 'aplicada', 'monto' => $monto];
+        }
+
+        // Una sola línea en la auditoría por toda la operación, no una por
+        // trabajador: lo que se quiere saber es "quién aplicó el Subsidio de
+        // Maternidad a las tres madres", no leer tres filas iguales.
+        if ($aplicadas > 0) {
+            $monto = $calculo === 'porcentaje'
+                ? "{$valor}% del básico"
+                : 'S/ ' . number_format((float) $valor, 2);
+            $donde = $corrida ? "de \"{$corrida->nombre}\"" : "de {$mes}/{$anio}";
+
+            \App\Models\Auditoria::registrar(
+                'aplicó',
+                'concepto',
+                $concepto->id,
+                "Aplicó {$concepto->nombre} ({$monto}) a {$aplicadas} trabajador(es) {$donde}",
+                ['aplicadas' => $aplicadas, 'omitidas' => $omitidas, 'calculo' => $calculo, 'valor' => $valor]
+            );
         }
 
         return response()->json([

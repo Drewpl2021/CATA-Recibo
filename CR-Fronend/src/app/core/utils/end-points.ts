@@ -6,7 +6,6 @@
 export const END_POINTS = {
   auth: {
     login: 'login',
-    register: 'register',
     logout: 'logout',
     me: 'me',
     cambiarPassword: 'cambiar-password',
@@ -31,6 +30,8 @@ export const END_POINTS = {
   admin: {
     modulos: 'modulos',
     modulosPadre: 'modulos-padre',
+    /** Quién cambió qué. Solo lectura. */
+    auditoria: 'auditoria',
   },
 
   personal: {

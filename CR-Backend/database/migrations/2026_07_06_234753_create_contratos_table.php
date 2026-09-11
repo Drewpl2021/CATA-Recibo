@@ -23,6 +23,10 @@ return new class extends Migration
             $table->string('estado_registro')->default('activo');
             $table->timestamps();
 
+            // El listado ordena por fecha de inicio y filtra por estado.
+            $table->index('fecha_inicio', 'contratos_inicio_idx');
+            $table->index('estado', 'contratos_estado_idx');
+
             $table->foreign('empleado_id')->references('id')->on('empleados')->onDelete('cascade');
         });
     }

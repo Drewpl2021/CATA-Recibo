@@ -82,10 +82,9 @@ class TerminosController extends Controller
         ], 201);
     }
 
-    /** Firmados, y además la versión que está vigente hoy. */
+    /** Firmados, y además la versión que está vigente hoy. La regla vive en User. */
     private function estanAlDia($user): bool
     {
-        return (bool) $user->terminos_firmados
-            && $user->terminos_version === TerminosDeUso::VERSION;
+        return $user->terminosAlDia();
     }
 }

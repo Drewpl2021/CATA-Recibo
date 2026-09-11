@@ -12,7 +12,7 @@ import {
   ConfirmService,
 } from '../../../core/services';
 import { Empleado, Rol, Usuario } from '../../../core/models';
-import { mensajeErrorApi } from '../../../core/utils';
+import { fechaLegible, mensajeErrorApi } from '../../../core/utils';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
@@ -100,7 +100,35 @@ export class UsuariosListComponent implements OnInit {
       formatear: (valor) => (valor === 'inactivo' ? 'Inactivo' : 'Activo'),
       badgeSeveridad: (valor) => (valor === 'inactivo' ? 'secondary' : 'success'),
     },
+    {
+      // La columna que antes era una hoja de Excel con las firmas: quién
+      // aceptó los términos y quién no. Ya no hay que perseguir a nadie
+      // con un papel para saberlo.
+      campo: 'terminos_estado',
+      header: 'Términos',
+      ancho: '12%',
+      tipo: 'badge',
+      formatear: (valor, fila) => this.etiquetaTerminos(valor, fila),
+      badgeSeveridad: (valor) => {
+        if (valor === 'firmado') return 'success';
+        return valor === 'desactualizado' ? 'warning' : 'secondary';
+      },
+    },
   ];
+
+  /**
+   * "Firmado" a secas no dice nada: lo que prueba una aceptación es cuándo
+   * fue, así que la fecha va en la misma celda.
+   */
+  private etiquetaTerminos(valor: unknown, fila: Usuario): string {
+    if (valor === 'firmado') {
+      return fila.terminos_firmados_en
+        ? `Firmado ${fechaLegible(fila.terminos_firmados_en)}`
+        : 'Firmado';
+    }
+
+    return valor === 'desactualizado' ? 'Versión anterior' : 'Pendiente';
+  }
 
   accionesExtra: AccionPersonalizada<Usuario>[] = [
     {

@@ -15,7 +15,7 @@ class ModuloPadre extends Model
     protected static function boot()
     {
         parent::boot();
-        static::creating(fn($m) => $m->id = Str::uuid());
+        static::creating(fn($m) => $m->id = Str::uuid7());
     }
 
     public function modulos()

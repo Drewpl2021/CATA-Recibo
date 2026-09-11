@@ -36,21 +36,35 @@ export class PaymentConceptService extends EntityDataService<PaymentConcept> {
    * mano en el detalle de su planilla.
    */
   /**
-   * Aplica el concepto a un grupo. Dos formas de decir a quiénes:
+   * Aplica el concepto a un grupo. Tres formas de decir a quiénes:
    *
-   *   { mes, anio, empleado_ids }  la lista de siempre
-   *   { corrida_id }               a todos los de esa planilla — el mes sale
-   *                                de ella, no hay que repetirlo
+   *   { mes, anio, empleado_ids }   la lista suelta, fuera de una planilla
+   *   { corrida_id }                a todos los de esa planilla — el mes
+   *                                 sale de ella, no hay que repetirlo
+   *   { corrida_id, empleado_ids }  a unos pocos DENTRO de esa planilla; el
+   *                                 backend cruza las dos cosas
    */
   aplicarAGrupo(
     conceptoId: string,
-    datos:
-      | { mes: number; anio: number; empleado_ids: string[] }
-      | { corrida_id: string }
+    datos: AplicarConceptoDestino & { calculo?: string; valor?: number }
   ): Observable<ApiResponse<AplicacionConceptoGrupo>> {
     return this.http.post<ApiResponse<AplicacionConceptoGrupo>>(
       `${environment.apiUrl}/${END_POINTS_ACCIONES.aplicarConceptoGrupo(conceptoId)}`,
       datos
     );
   }
+}
+
+/**
+ * A quiénes alcanza la aplicación de un concepto.
+ *
+ * `corrida_id` y `empleado_ids` no se excluyen: juntos significan "a estas
+ * personas, dentro de esta planilla", que es como se aplica un Subsidio de
+ * Maternidad a las tres madres de la planilla de docentes.
+ */
+export interface AplicarConceptoDestino {
+  corrida_id?: string;
+  mes?: number;
+  anio?: number;
+  empleado_ids?: string[];
 }

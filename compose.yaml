@@ -78,12 +78,19 @@ services:
       LOG_CHANNEL: stderr
       LOG_LEVEL: ${LOG_LEVEL:-warning}
 
-      MAIL_MAILER: ${MAIL_MAILER:-log}
+      # Obligatorio. Con "log" —el valor por defecto de antes— los correos se
+      # escribían en un archivo: nadie recibía el aviso de su boleta y el
+      # enlace de "olvidé mi contraseña" no llegaba nunca. Si falta, el
+      # contenedor no arranca y lo dice. Ver .env.example.
+      MAIL_MAILER: ${MAIL_MAILER:?Falta MAIL_MAILER en el .env - sin correo nadie recibe avisos ni puede recuperar su clave (ver .env.example)}
       MAIL_HOST: ${MAIL_HOST:-}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
-      MAIL_SCHEME: ${MAIL_SCHEME:-tls}
+      # "smtp" para el puerto 587 (cifra con STARTTLS) o "smtps" para el 465.
+      # "tls" NO es un esquema válido para el mailer de Laravel: con él, el
+      # día que se configurara el correo habría fallado igual.
+      MAIL_SCHEME: ${MAIL_SCHEME:-smtp}
       MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-no-reply@cata.edu.pe}
       MAIL_FROM_NAME: ${APP_NAME:-CATA-Recibo}
 
@@ -172,6 +179,36 @@ services:
     # routes/console.php. Reemplaza al cron del servidor.
     command: php artisan schedule:work
 
+  # ── Respaldo diario ──────────────────────────────────────────────
+  # La base y los archivos (PDF de boletas, firmas) cada noche a las
+  # 02:00, guardando los últimos 30 días. Usa la misma imagen que la base
+  # para que mysqldump sea de la misma versión que el servidor.
+  #
+  # Restaurar: ver docker/respaldo/restaurar.sh.
+  respaldo:
+    image: mysql:8.4
+    restart: unless-stopped
+    depends_on:
+      base:
+        condition: service_healthy
+    environment:
+      DB_HOST: base
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      RESPALDO_HORA: ${RESPALDO_HORA:-02:00}
+      RESPALDO_DIAS: ${RESPALDO_DIAS:-30}
+      TZ: America/Lima
+    volumes:
+      - ./docker/respaldo:/respaldo:ro
+      - respaldos:/respaldos
+      # Lectura y escritura: el respaldo solo lee, pero restaurar escribe.
+      - archivos:/archivos
+    # No arranca MySQL: la imagen se usa solo por sus herramientas.
+    entrypoint: ["bash", "/respaldo/cada-noche.sh"]
+
 volumes:
   datos-mysql:
   archivos:
+  # Los respaldos diarios. En el mismo disco: cópialos fuera de vez en cuando.
+  respaldos:

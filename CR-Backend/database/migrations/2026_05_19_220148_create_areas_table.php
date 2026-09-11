@@ -12,6 +12,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('nombre', 100)->unique();
             $table->string('descripcion', 255)->nullable();
+            // Dar de baja no borra: el área sigue nombrada en las fichas viejas.
+            $table->string('estado')->default('activo');
             $table->timestamps();
         });
     }

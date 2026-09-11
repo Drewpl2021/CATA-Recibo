@@ -5,3 +5,5 @@
 *.sh text eol=lf
 docker/** text eol=lf
 compose.yaml text eol=lf
+# Los scripts de Docker corren en Linux: siempre con finales de línea LF.
+docker/**/*.sh text eol=lf

@@ -110,6 +110,7 @@ class PayrollDetalleController extends Controller
         $detalle = PayrollDetalle::create($nuevo);
 
         $planilla->recalcularTotal();
+        $this->anotar('agregó', $detalle, $planilla, null);
 
         return response()->json(['success' => true, 'data' => $detalle->load('paymentConcept')], 201);
     }
@@ -158,8 +159,25 @@ class PayrollDetalleController extends Controller
             }
         }
 
+        $antes = [
+            'monto_calculado' => $detalle->monto_calculado,
+            'calculo'         => $detalle->calculo,
+            'valor'           => $detalle->valor,
+        ];
+
         $detalle->update($cambios);
         $planilla->recalcularTotal();
+
+        $diferencias = [];
+        foreach ($antes as $campo => $valorAntes) {
+            if (array_key_exists($campo, $cambios) && (string) $valorAntes !== (string) $detalle->{$campo}) {
+                $diferencias[$campo] = [$valorAntes, $detalle->{$campo}];
+            }
+        }
+
+        if ($diferencias) {
+            $this->anotar('cambió', $detalle, $planilla, $diferencias);
+        }
 
         return response()->json(['success' => true, 'data' => $detalle->load('paymentConcept')]);
     }
@@ -189,9 +207,37 @@ class PayrollDetalleController extends Controller
         $detalle  = PayrollDetalle::findOrFail($id);
         $planilla = $detalle->planilla;
 
+        $this->anotar('quitó', $detalle, $planilla, null);
         $detalle->delete();
         $planilla->recalcularTotal();
 
         return response()->json(['success' => true, 'data' => ['message' => 'Detalle eliminado.']]);
+    }
+
+    /**
+     * Las líneas de planilla se anotan a mano y no con el trait Auditable:
+     * el motor crea miles al generar las planillas del mes, y eso no responde
+     * a ningún reclamo. Lo que sí interesa es que alguien agregue, cambie o
+     * quite una línea A MANO: "¿quién me puso este descuento?".
+     */
+    private function anotar(string $accion, PayrollDetalle $detalle, Planilla $planilla, ?array $cambios): void
+    {
+        $detalle->loadMissing('paymentConcept');
+        $planilla->loadMissing('empleado');
+
+        $concepto = $detalle->paymentConcept?->nombre ?? 'un concepto';
+        $quien    = $planilla->empleado
+            ? trim($planilla->empleado->nombre . ' ' . $planilla->empleado->apellido)
+            : 'un trabajador';
+        $monto    = 'S/ ' . number_format((float) $detalle->monto_calculado, 2);
+        $verbo    = ['agregó' => 'Agregó', 'cambió' => 'Cambió', 'quitó' => 'Quitó'][$accion] ?? ucfirst($accion);
+
+        \App\Models\Auditoria::registrar(
+            $accion,
+            'linea',
+            (string) $detalle->id,
+            "{$verbo} {$concepto} ({$monto}) en la planilla de {$quien} ({$planilla->mes}/{$planilla->anio})",
+            $cambios
+        );
     }
 }

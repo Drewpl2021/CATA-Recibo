@@ -143,7 +143,7 @@ export class PlanillasListComponent implements OnInit {
   // ── Emisión masiva de boletas ──
   modalBoletasVisible = false;
   emitiendo = false;
-  resultadoBoletas: { generadas: number; omitidas: number } | null = null;
+  resultadoBoletas: { generadas: number; omitidas: number; yaTenianBoleta: number; sinPlanilla: number } | null = null;
 
   meses = MESES_OPCIONES;
   nombreMes = nombreMes;
@@ -597,19 +597,27 @@ export class PlanillasListComponent implements OnInit {
     this.resultadoConcepto = null;
 
     /*
-     * Dos alcances:
+     * A quiénes va.
      *
-     *   toda la planilla -> solo el id de la corrida, y el backend resuelve
-     *                       el mes y a quiénes desde ella
-     *   los elegidos     -> sus empleado_id, con el mes de la planilla
+     * Estando dentro de una planilla SIEMPRE se manda su id, aunque solo se
+     * apliquen unos pocos: de ahí salen el mes y el año, y es lo que hace
+     * que el backend compruebe que la planilla no esté cerrada. Mandando
+     * solo la lista de personas, esa comprobación no llegaba a correr y se
+     * podían mover cifras de una planilla ya pagada.
+     *
+     * Con las dos cosas juntas, el backend las cruza: estas personas, dentro
+     * de esta planilla.
      */
-    const destino = this.aplicaSoloAMarcados
-      ? {
+    const destino: Record<string, unknown> = this.corridaId
+      ? { corrida_id: this.corridaId }
+      : {
           mes: Number(this.corrida?.mes ?? this.filtroMes),
           anio: Number(this.corrida?.anio ?? this.filtroAnio),
-          empleado_ids: this.elegidosConcepto,
-        }
-      : { corrida_id: this.corridaId };
+        };
+
+    if (this.aplicaSoloAMarcados) {
+      destino['empleado_ids'] = this.elegidosConcepto;
+    }
 
     const regla = { calculo: this.conceptoCalculo, valor: Number(this.conceptoValor) };
 
@@ -850,13 +858,25 @@ export class PlanillasListComponent implements OnInit {
     this.resultadoBoletas = null;
   }
 
-  /** El mes que se va a emitir: el del filtro, o el actual si está vacío. */
+  /**
+   * El mes que se va a emitir.
+   *
+   * Dentro de una planilla, el SUYO: antes salía del filtro de la pantalla,
+   * y si el filtro decía otro mes se emitían boletas de un mes que la
+   * planilla ni tiene. Fuera de una planilla, el del filtro o el actual.
+   */
   get mesAEmitir(): number {
-    return Number(this.filtroMes) || new Date().getMonth() + 1;
+    return Number(this.corrida?.mes) || Number(this.filtroMes) || new Date().getMonth() + 1;
   }
 
   get anioAEmitir(): number {
-    return Number(this.filtroAnio) || new Date().getFullYear();
+    return Number(this.corrida?.anio) || Number(this.filtroAnio) || new Date().getFullYear();
+  }
+
+  /** De qué se emite, en palabras: "Planilla TIC — Septiembre 2026" o solo el mes. */
+  get queSeEmite(): string {
+    const mes = `${nombreMes(this.mesAEmitir)} ${this.anioAEmitir}`;
+    return this.corrida ? `${this.corrida.nombre} — ${mes}` : mes;
   }
 
   /**
@@ -868,17 +888,25 @@ export class PlanillasListComponent implements OnInit {
     this.emitiendo = true;
     this.resultadoBoletas = null;
 
-    this.boletaService.generarMasivo(this.mesAEmitir, this.anioAEmitir).subscribe({
+    // Dentro de una planilla va su id: se emiten solo las de su gente.
+    this.boletaService.generarMasivo(this.mesAEmitir, this.anioAEmitir, this.corridaId).subscribe({
       next: (res) => {
         this.emitiendo = false;
-        this.resultadoBoletas = { generadas: res.generadas ?? 0, omitidas: res.omitidas ?? 0 };
+        this.resultadoBoletas = {
+          generadas: res.generadas ?? 0,
+          omitidas: res.omitidas ?? 0,
+          yaTenianBoleta: res.yaTenianBoleta ?? 0,
+          sinPlanilla: res.sinPlanilla ?? 0,
+        };
         this.toastService.resultadoMasivo({
           hechas: this.resultadoBoletas.generadas,
           omitidas: this.resultadoBoletas.omitidas,
           exito: 'Boletas emitidas',
           nada: 'No se emitió ninguna boleta',
           cosas: 'boleta(s)',
-          motivo: 'esos empleados no tienen planilla de ese mes, o ya tenían su boleta',
+          motivo: this.corrida
+            ? 'ya tenían su boleta emitida'
+            : 'esos empleados no tienen planilla de ese mes, o ya tenían su boleta',
         });
       },
       error: (err) => {

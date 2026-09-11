@@ -5,6 +5,26 @@ use Illuminate\Support\Str;
 
 class Empleado extends Model
 {
+    use \App\Traits\Auditable;
+
+    /**
+     * Lo que se anota en la auditoría cuando cambia: lo que mueve el dinero
+     * de la persona (sueldo, pensión, cuenta) o su situación (cargo, sede,
+     * estado). El teléfono o la dirección no responden a ningún reclamo.
+     */
+    protected array $camposAuditables = [
+        'dni', 'nombre', 'apellido', 'sueldo_base', 'sistema_pensiones', 'afp', 'cuspp',
+        'entidad_financiera', 'numero_cuenta', 'forma_pago', 'tiene_hijos',
+        'cargo_id', 'area_id', 'sede_id', 'estado', 'tipo_contrato',
+    ];
+
+    protected string $entidadAuditada = 'empleado';
+
+    public function nombreAuditado(): string
+    {
+        return trim("{$this->nombre} {$this->apellido}") . " (DNI {$this->dni})";
+    }
+
     protected $keyType = 'string';
     public $incrementing = false;
 
@@ -39,7 +59,7 @@ class Empleado extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            $model->id = Str::uuid();
+            $model->id = Str::uuid7();
         });
     }
 

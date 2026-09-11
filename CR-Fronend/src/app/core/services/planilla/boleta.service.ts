@@ -33,10 +33,17 @@ export class BoletaService {
   }
 
   /** POST /boletas/generar-masivo */
-  generarMasivo(mes: number, anio: number): Observable<GeneracionMasivaBoletas> {
+  /**
+   * Emite las boletas que falten.
+   *
+   * Con `corridaId` se emiten solo las de esa planilla (el mes sale de ella);
+   * sin él, las del mes entero. Antes no había forma de decir "de esta
+   * planilla", y desde la Planilla TIC se emitían las de todo el colegio.
+   */
+  generarMasivo(mes: number, anio: number, corridaId?: string | null): Observable<GeneracionMasivaBoletas> {
     return this.http.post<GeneracionMasivaBoletas>(
       `${this.apiUrl}/${END_POINTS_ACCIONES.boletasMasivo}`,
-      { mes, anio }
+      corridaId ? { corrida_id: corridaId } : { mes, anio }
     );
   }
 }

@@ -46,6 +46,8 @@ export interface AuthUser {
   empleado_id: string | null;
   /** Sigue con la contraseña que le dieron y tiene que cambiarla. */
   debe_cambiar_password?: boolean;
+  /** Si firmó los términos de uso: sin 'firmado' el backend responde 428 a todo. */
+  terminos_estado?: EstadoTerminos;
 }
 
 export interface LoginPayload {
@@ -53,18 +55,6 @@ export interface LoginPayload {
   password: string;
 }
 
-/**
- * Cuerpo de POST /register. Crea la cuenta Y la ficha de empleado, por eso
- * pide el DNI: el backend ya no lo inventa.
- */
-export interface RegisterPayload {
-  nombre: string;
-  apellido: string;
-  dni: string;
-  email: string;
-  password: string;
-  password_confirmation: string;
-}
 
 export interface CambiarPasswordPayload {
   password_actual: string;

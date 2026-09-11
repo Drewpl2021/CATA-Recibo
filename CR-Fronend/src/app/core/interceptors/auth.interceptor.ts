@@ -64,6 +64,18 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
 
+      /*
+       * 428: le falta firmar los términos de uso, o cambiaron desde que los
+       * firmó. Como el 423, se le lleva a donde se arregla. Si ya está en el
+       * cambio de contraseña no se le mueve: ahí firma en el primer paso.
+       */
+      if (error.status === 428 && authService.isLoggedIn()) {
+        authService.marcarDebeFirmarTerminos();
+        if (!router.url.startsWith('/terminos') && !router.url.startsWith('/cambiar-clave')) {
+          router.navigate(['/terminos']);
+        }
+      }
+
       return throwError(() => error);
     })
   );

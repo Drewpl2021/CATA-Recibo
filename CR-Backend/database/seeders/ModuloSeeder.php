@@ -64,6 +64,8 @@ class ModuloSeeder extends Seeder
             ['padre' => $idConfig, 'nombre' => 'Roles',          'ruta' => '/roles',          'icono' => 'shield',      'orden' => 7, 'roles' => [$admin]],
             ['padre' => $idConfig, 'nombre' => 'Módulos',        'ruta' => '/modulos',        'icono' => 'view_module', 'orden' => 8, 'roles' => [$admin]],
             ['padre' => $idConfig, 'nombre' => 'Módulos Padre',  'ruta' => '/modulos-padre',  'icono' => 'folder_open', 'orden' => 9, 'roles' => [$admin]],
+            // Quién cambió qué. Solo Admin: es donde se ve lo que hizo RR.HH.
+            ['padre' => $idConfig, 'nombre' => 'Auditoría',      'ruta' => '/auditoria',      'icono' => 'clock',       'orden' => 10, 'roles' => [$admin]],
 
             // Mi Espacio — admin, rrhh y empleado
             ['padre' => $idEspacio, 'nombre' => 'Mis Boletas',    'ruta' => '/mis-boletas',    'icono' => 'receipt_long',  'orden' => 1, 'roles' => [$admin, $rrhh, $empleado]],

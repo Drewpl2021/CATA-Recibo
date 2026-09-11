@@ -17,8 +17,22 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // Entra con el DNI que le dieron: hasta que ponga una suya, el
+            // sistema no le deja hacer nada más.
+            $table->boolean('debe_cambiar_password')->default(false);
+
+            // La firma de los términos de uso, que antes era una hoja que se
+            // repartía impresa. Se guarda cuándo, qué versión y desde dónde:
+            // sin la versión, "aceptó los términos" no prueba nada.
+            $table->boolean('terminos_firmados')->default(false);
+            $table->timestamp('terminos_firmados_en')->nullable();
+            $table->string('terminos_version', 20)->nullable();
+            $table->string('terminos_ip', 45)->nullable();
             $table->rememberToken();
             $table->timestamps();
+
+            // El listado de Usuarios ordena por nombre.
+            $table->index('name', 'users_nombre_idx');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

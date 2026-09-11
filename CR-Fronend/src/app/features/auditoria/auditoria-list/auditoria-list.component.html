@@ -1,0 +1,34 @@
+<app-page-header
+  icono="clock"
+  titulo="Auditoría"
+  subtitulo="Quién cambió qué y cuándo: sueldos, cuentas, conceptos y planillas. Solo se lee: nadie puede editarlo."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+></app-page-header>
+
+<section class="panel-filtros">
+  <div class="panel-filtros__campos panel-filtros__campos--compacto">
+    <div class="campo-filtro">
+      <label for="filtroEntidad">Sobre</label>
+      <select id="filtroEntidad" class="form-control" [ngModel]="filtroEntidad"
+        [ngModelOptions]="{ standalone: true }" (ngModelChange)="filtroEntidad = $event; alFiltrar()">
+        <option *ngFor="let e of entidades" [value]="e.valor">{{ e.etiqueta }}</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<app-data-table
+  entidad="el registro"
+  [columnas]="columnas"
+  [datos]="registros"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  [filasPorPagina]="TAMANO_PAGINA"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['descripcion', 'usuario_nombre']"
+  mensajeVacio="Todavía no hay nada anotado. Aparece aquí en cuanto alguien cambie un sueldo, una cuenta, un concepto o una planilla."
+></app-data-table>

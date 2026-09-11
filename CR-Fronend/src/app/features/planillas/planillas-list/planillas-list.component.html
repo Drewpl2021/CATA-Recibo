@@ -195,23 +195,32 @@
 <!-- ── Emisión masiva de boletas ── -->
 <app-form-modal
   [(visible)]="modalBoletasVisible"
-  titulo="Emitir boletas del mes"
+  [titulo]="corrida ? 'Emitir boletas de esta planilla' : 'Emitir boletas del mes'"
   [guardando]="emitiendo"
   [textoGuardar]="resultadoBoletas ? 'Emitir otra vez' : 'Emitir boletas'"
   (guardar)="emitirBoletas()"
   (cancelar)="cerrarBoletas()"
 >
   <div class="form-fields">
-    <p class="form-nota" *ngIf="!resultadoBoletas">
-      Se generará el PDF de la boleta de
-      <strong>{{ nombreMes(mesAEmitir) }} {{ anioAEmitir }}</strong> para cada
-      empleado que ya tenga planilla de ese mes. A quien no la tenga se le omite,
-      y las boletas ya emitidas no se duplican.
+    <!-- Dentro de una planilla: solo su gente, y su mes -->
+    <p class="form-nota" *ngIf="!resultadoBoletas && corrida">
+      Se generará el PDF de la boleta de cada trabajador de
+      <strong>{{ queSeEmite }}</strong>: solo los de esta planilla, no los del
+      resto del colegio. Las boletas ya emitidas no se duplican.
     </p>
 
-    <p class="form-ayuda" *ngIf="!resultadoBoletas">
-      El mes sale del filtro de la lista: cámbialo ahí si quieres emitir otro.
-    </p>
+    <!-- Fuera de una planilla: el mes entero -->
+    <ng-container *ngIf="!resultadoBoletas && !corrida">
+      <p class="form-nota">
+        Se generará el PDF de la boleta de
+        <strong>{{ queSeEmite }}</strong> para cada
+        empleado que ya tenga planilla de ese mes. A quien no la tenga se le omite,
+        y las boletas ya emitidas no se duplican.
+      </p>
+      <p class="form-ayuda">
+        El mes sale del filtro de la lista: cámbialo ahí si quieres emitir otro.
+      </p>
+    </ng-container>
 
     <ng-container *ngIf="resultadoBoletas">
       <div class="resumen-masivo">
@@ -224,9 +233,15 @@
           <span>Omitidas</span>
         </div>
       </div>
-      <p class="form-ayuda">
-        Las omitidas son empleados sin planilla de ese mes, o que ya tenían su
-        boleta emitida.
+      <!-- Las omitidas, separadas: "sin planilla" es trabajo pendiente -->
+      <p class="form-ayuda" *ngIf="resultadoBoletas.omitidas">
+        <ng-container *ngIf="resultadoBoletas.yaTenianBoleta">
+          {{ resultadoBoletas.yaTenianBoleta }} ya tenían su boleta emitida.
+        </ng-container>
+        <ng-container *ngIf="resultadoBoletas.sinPlanilla">
+          {{ resultadoBoletas.sinPlanilla }} están activos pero no tienen planilla
+          de ese mes: hay que armársela antes de emitirles la boleta.
+        </ng-container>
       </p>
     </ng-container>
   </div>

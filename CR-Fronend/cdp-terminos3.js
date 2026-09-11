@@ -1,0 +1,40 @@
+const WebSocket=require('ws'),fs=require('fs'),http=require('http');
+const get=(p)=>new Promise((r,j)=>{http.get({host:'127.0.0.1',port:9222,path:p},(s)=>{let d='';s.on('data',c=>d+=c);s.on('end',()=>r(JSON.parse(d)))}).on('error',j)});
+(async()=>{
+ const tab=(await get('/json')).find(t=>t.type==='page');
+ const ws=new WebSocket(tab.webSocketDebuggerUrl,{perMessageDeflate:false,maxPayload:256*1024*1024});let id=0;const pend=new Map();
+ const errores=[];
+ const send=(m,q={})=>new Promise(r=>{const i=++id;pend.set(i,r);ws.send(JSON.stringify({id:i,method:m,params:q}))});
+ await new Promise(r=>ws.on('open',r));
+ ws.on('message',m=>{const x=JSON.parse(m);
+   if(x.id&&pend.has(x.id)){pend.get(x.id)(x.result);pend.delete(x.id)}
+   if(x.method==='Runtime.consoleAPICalled'&&x.params.type==='error') errores.push(x.params.args.map(a=>a.value??a.description??'').join(' ').slice(0,160));
+ });
+ await send('Page.enable');await send('Runtime.enable');
+ const ev=async e=>(await send('Runtime.evaluate',{expression:e,awaitPromise:true,returnByValue:true})).result.value;
+ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+ await send('Emulation.setDeviceMetricsOverride',{width:1400,height:950,deviceScaleFactor:1,mobile:false});
+ await ev('localStorage.clear()');
+ await send('Page.reload',{ignoreCache:true});
+ await wait(3000);
+ await send('Page.navigate',{url:'http://localhost:4200/login'});
+ await wait(4000);
+ await ev(`(()=>{
+   const set=(el,v)=>{const s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;s.call(el,v);el.dispatchEvent(new Event('input',{bubbles:true}))};
+   const ins=[...document.querySelectorAll('input')];
+   set(ins.find(i=>i.type==='email'||/correo/i.test(i.placeholder||'')),'admin@colegio.com');
+   set(ins.find(i=>i.type==='password'),'admin123');
+   [...document.querySelectorAll('button')].find(b=>/ingresar/i.test(b.textContent)).click();
+ })()`);
+ await wait(6000);
+ const estado=async()=>ev(`JSON.stringify({ruta:location.pathname, pasos:document.querySelectorAll('.acceso__pasos li').length, kpis:document.querySelectorAll('.kpi-card').length})`);
+ console.log('  1) tras entrar:       ', await estado());
+ await ev(`document.querySelector('.terminos__acepto input').click()`);
+ await wait(500);
+ await ev(`[...document.querySelectorAll('button')].find(b=>/Aceptar y continuar/.test(b.textContent)).click()`);
+ await wait(6000);
+ console.log('  2) tras firmar:       ', await estado());
+ console.log('  3) aviso:             ', await ev(`[...document.querySelectorAll('[class*=toast]')].map(t=>t.innerText.trim().split(String.fromCharCode(10)).join(' / ')).filter(Boolean)[0] || '(ninguno)'`));
+ console.log('  4) errores en consola:', errores.length ? JSON.stringify(errores) : 'ninguno');
+ ws.close();
+})();

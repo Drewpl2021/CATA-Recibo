@@ -5,6 +5,18 @@ use Illuminate\Support\Str;
 
 class PaymentConcept extends Model
 {
+    use \App\Traits\Auditable;
+
+    /** El catálogo: cambiar el valor de un concepto cambia boletas. */
+    protected array $camposAuditables = ['nombre', 'etiqueta_boleta', 'tipo', 'calculo', 'valor', 'aplica_a_todos'];
+
+    protected string $entidadAuditada = 'concepto';
+
+    public function nombreAuditado(): string
+    {
+        return (string) $this->nombre;
+    }
+
     protected $table = 'payment_concepts';
     protected $keyType = 'string';
     public $incrementing = false;
@@ -35,7 +47,7 @@ class PaymentConcept extends Model
     protected static function boot()
     {
         parent::boot();
-        static::creating(fn($m) => $m->id = $m->id ?: Str::uuid());
+        static::creating(fn($m) => $m->id = $m->id ?: Str::uuid7());
     }
 
     public function payrollDetalles()

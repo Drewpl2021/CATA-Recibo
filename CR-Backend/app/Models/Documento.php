@@ -49,7 +49,7 @@ class Documento extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            $model->id = Str::uuid();
+            $model->id = Str::uuid7();
         });
     }
 

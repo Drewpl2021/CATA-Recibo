@@ -6,6 +6,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +23,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // La contraseña: 8 caracteres con al menos una letra y un número. Antes
+        // solo se pedía el largo, y "12345678" o "aaaaaaaa" pasaban. Es la
+        // regla que usan el cambio de contraseña y la recuperación; el
+        // frontend la replica para avisar antes de guardar.
+        Password::defaults(fn () => Password::min(8)->letters()->numbers());
+
         $this->frenosDeLasPuertasAbiertas();
     }
 

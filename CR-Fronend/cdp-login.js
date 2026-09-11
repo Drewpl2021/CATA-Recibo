@@ -1,0 +1,20 @@
+const WebSocket=require('ws'),fs=require('fs'),http=require('http');
+const get=(p)=>new Promise((r,j)=>{http.get({host:'127.0.0.1',port:9222,path:p},(s)=>{let d='';s.on('data',c=>d+=c);s.on('end',()=>r(JSON.parse(d)))}).on('error',j)});
+(async()=>{
+ const tab=(await get('/json')).find(t=>t.type==='page');
+ const ws=new WebSocket(tab.webSocketDebuggerUrl,{perMessageDeflate:false,maxPayload:256*1024*1024});let id=0;const pend=new Map();
+ const send=(m,q={})=>new Promise(r=>{const i=++id;pend.set(i,r);ws.send(JSON.stringify({id:i,method:m,params:q}))});
+ await new Promise(r=>ws.on('open',r));
+ ws.on('message',m=>{const x=JSON.parse(m);if(x.id&&pend.has(x.id)){pend.get(x.id)(x.result);pend.delete(x.id)}});
+ await send('Page.enable');await send('Runtime.enable');
+ const ev=async e=>(await send('Runtime.evaluate',{expression:e,awaitPromise:true,returnByValue:true})).result.value;
+ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+ await send('Emulation.setDeviceMetricsOverride',{width:1400,height:950,deviceScaleFactor:1,mobile:false});
+ await ev('localStorage.clear()');
+ await send('Page.navigate',{url:'http://localhost:4200/registro'});
+ await wait(4500);
+ console.log(' ', await ev(`JSON.stringify({ruta:location.pathname, botonCrearCuenta: [...document.querySelectorAll('button')].some(b=>/Crear cuenta/i.test(b.textContent)), panel:(document.querySelector('.acceso__motivo')||{}).textContent?.trim().replace(/ +/g,' ')})`));
+ fs.writeFileSync('login-nuevo.png',Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64'));
+ console.log('  captura login-nuevo.png');
+ ws.close();
+})();

@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { ToastService } from './toast.service';
 import { Observable, tap } from 'rxjs';
-import { AuthUser, CambiarPasswordPayload, RegisterPayload, RestablecerPasswordPayload, SesionData, TerminosDeUso } from '../../models';
+import { AuthUser, CambiarPasswordPayload, RestablecerPasswordPayload, SesionData, TerminosDeUso } from '../../models';
 import { ApiResponse, END_POINTS } from '../../utils';
 import { environment } from '../../../../environments/environment';
 
@@ -31,12 +31,6 @@ export class AuthService {
       .pipe(tap((res) => { if (res.success) this.guardarSesion(res.data.user, res.data.token, res.data.debe_cambiar_password === true); }));
   }
 
-  /** Autoregistro (docente sin cuenta creada por RRHH). Requiere correo @cata.edu.pe. */
-  register(payload: RegisterPayload): Observable<ApiResponse<SesionData>> {
-    return this.http
-      .post<ApiResponse<SesionData>>(`${this.apiUrl}/${END_POINTS.auth.register}`, payload)
-      .pipe(tap((res) => { if (res.success) this.guardarSesion(res.data.user, res.data.token); }));
-  }
 
   /**
    * Vuelve a leer del backend quién es el usuario y qué rol tiene.
@@ -77,10 +71,13 @@ export class AuthService {
   }
 
   aceptarTerminos(): Observable<ApiResponse<{ message: string; firmadosEn: string; version: string }>> {
-    return this.http.post<ApiResponse<{ message: string; firmadosEn: string; version: string }>>(
-      `${this.apiUrl}/${END_POINTS.auth.aceptarTerminos}`,
-      { acepto: true }
-    );
+    return this.http
+      .post<ApiResponse<{ message: string; firmadosEn: string; version: string }>>(
+        `${this.apiUrl}/${END_POINTS.auth.aceptarTerminos}`,
+        { acepto: true }
+      )
+      // Firmó: se levanta el candado aquí mismo, sin volver a preguntar.
+      .pipe(tap((res) => { if (res.success) this.marcarTerminosAlDia(); }));
   }
 
   /** Pide al correo el enlace para reponer la contraseña. */
@@ -120,9 +117,38 @@ export class AuthService {
     if (user) this.guardarUsuario({ ...user, debe_cambiar_password: false });
   }
 
-  /** A dónde mandar al usuario tras entrar, teniendo en cuenta el bloqueo. */
+  /**
+   * Le falta firmar los términos de uso, o firmó una versión anterior.
+   *
+   * Viene en el usuario desde el login y desde /me, y el backend lo recuerda
+   * con un 428 a cualquier otra petición. Se guarda con el usuario para que
+   * el guard pueda decidir sin esperar a que falle una llamada.
+   */
+  debeFirmarTerminos(): boolean {
+    const estado = this.getUser()?.terminos_estado;
+    return estado === 'pendiente' || estado === 'desactualizado';
+  }
+
+  marcarDebeFirmarTerminos(): void {
+    const user = this.getUser();
+    if (user) this.guardarUsuario({ ...user, terminos_estado: 'pendiente' });
+  }
+
+  private marcarTerminosAlDia(): void {
+    const user = this.getUser();
+    if (user) this.guardarUsuario({ ...user, terminos_estado: 'firmado' });
+  }
+
+  /**
+   * A dónde mandar al usuario tras entrar, teniendo en cuenta los candados.
+   *
+   * Primero la contraseña (esa pantalla ya pide los términos en su primer
+   * paso), después los términos sueltos, y si no falta nada, su inicio.
+   */
   rutaTrasIngresar(): string {
-    return this.debeCambiarPassword() ? '/cambiar-clave' : this.rutaInicioSegunRol();
+    if (this.debeCambiarPassword()) return '/cambiar-clave';
+    if (this.debeFirmarTerminos()) return '/terminos';
+    return this.rutaInicioSegunRol();
   }
 
   /** Cierre de sesión a petición del usuario. */

@@ -10,15 +10,37 @@
       <span class="acceso__filo" aria-hidden="true"></span>
 
       <p class="acceso__invitacion">Hola{{ nombre ? ', ' + nombre : '' }}</p>
-      <p class="acceso__motivo">
+
+      <p class="acceso__motivo" *ngIf="paso === 'terminos'">
+        Antes esto era una hoja que se firmaba a mano y se entregaba a
+        Recursos Humanos. Ahora se acepta aquí y queda guardado en tu cuenta,
+        con la fecha.
+      </p>
+
+      <p class="acceso__motivo" *ngIf="paso === 'clave'">
         Tu DNI lo conoce cualquiera que vea tu ficha o tu boleta, así que no
         sirve como contraseña. Elige una que solo sepas tú.
       </p>
+
+      <!-- Los dos pasos, para saber por dónde va -->
+      <!-- Los dos pasos. Quien vino solo a firmar no tiene segundo paso. -->
+      <ol class="acceso__pasos" aria-label="Pasos" *ngIf="!soloTerminos">
+        <li [class.acceso__pasos--hecho]="paso === 'clave'"
+          [class.acceso__pasos--actual]="paso === 'terminos'">
+          Aceptar los términos
+        </li>
+        <li [class.acceso__pasos--actual]="paso === 'clave'">Poner tu contraseña</li>
+      </ol>
     </aside>
 
     <div class="acceso__hoja">
-      <h1 class="acceso__titulo">Cambia tu contraseña</h1>
-      <p class="acceso__intro">
+      <h1 class="acceso__titulo">
+        {{ paso === 'terminos' ? (terminos?.titulo || 'Términos de uso') : 'Cambia tu contraseña' }}
+      </h1>
+      <p class="acceso__intro" *ngIf="paso === 'terminos'">
+        {{ terminos?.resumen }}
+      </p>
+      <p class="acceso__intro" *ngIf="paso === 'clave'">
         Entraste con la contraseña que te dieron. Pon una tuya para empezar a
         usar el sistema.
       </p>
@@ -30,7 +52,48 @@
         {{ errorMsg }}
       </div>
 
-      <form [formGroup]="form" (ngSubmit)="guardar()">
+      <!-- ══ Paso 1: los términos ══════════════════════════════════ -->
+      <ng-container *ngIf="paso === 'terminos'">
+        <p class="acceso__intro" *ngIf="cargandoTerminos">Cargando el documento…</p>
+
+        <ng-container *ngIf="!cargandoTerminos && terminos as doc">
+          <p class="terminos__aviso" *ngIf="doc.esVersionNueva">
+            Los términos cambiaron desde la última vez que los aceptaste
+            (firmaste la versión {{ doc.versionFirmada }}). Léelos otra vez.
+          </p>
+
+          <!-- Se desplaza dentro de su caja: el documento entero empujaría
+               el botón de aceptar fuera de la pantalla. -->
+          <div class="terminos" tabindex="0" role="region" aria-label="Términos de uso">
+            <section class="terminos__seccion" *ngFor="let s of doc.secciones">
+              <h2 class="terminos__titulo">{{ s.titulo }}</h2>
+              <p class="terminos__texto">{{ s.texto }}</p>
+            </section>
+
+            <p class="terminos__version">
+              Versión {{ doc.version }} — Asociación Educativa Colegio Adventista
+              "Túpac Amaru", Juliaca.
+            </p>
+          </div>
+
+          <label class="terminos__acepto">
+            <input type="checkbox" [(ngModel)]="aceptaTerminos" [ngModelOptions]="{ standalone: true }" />
+            <span>
+              He leído y acepto los términos. Entiendo que esto vale igual que
+              la firma que antes ponía en la hoja impresa.
+            </span>
+          </label>
+
+          <button type="button" class="btn-primary acceso__enviar"
+            [disabled]="firmando || !aceptaTerminos" (click)="firmar()">
+            <span *ngIf="firmando" class="spinner-small"></span>
+            {{ firmando ? 'Registrando…' : 'Aceptar y continuar' }}
+          </button>
+        </ng-container>
+      </ng-container>
+
+      <!-- ══ Paso 2: la contraseña ═════════════════════════════════ -->
+      <form [formGroup]="form" (ngSubmit)="guardar()" *ngIf="paso === 'clave'">
         <div class="campo">
           <label class="solo-lectores" for="password_actual">Contraseña actual</label>
           <div class="campo__control">
@@ -83,8 +146,9 @@
               </svg>
             </button>
           </div>
-          <small class="form-ayuda">Mínimo 8 caracteres. No puede ser tu DNI.</small>
+          <small class="form-ayuda">Mínimo 8 caracteres, con letras y números. No puede ser tu DNI.</small>
           <small class="form-error" *ngIf="nuevaCorta">Necesita al menos 8 caracteres.</small>
+          <small class="form-error" *ngIf="claveDebil">Tiene que llevar letras y números, no solo unos u otros.</small>
         </div>
 
         <div class="campo">
@@ -115,6 +179,9 @@
       </form>
 
       <div class="acceso__pie">
+        <p *ngIf="paso === 'clave' && firmadosAntes">
+          Términos aceptados. <a (click)="verTerminos()">Volver a leerlos</a>.
+        </p>
         <p>¿Prefieres hacerlo después? <a (click)="salir()">Cerrar sesión</a>.</p>
       </div>
     </div>

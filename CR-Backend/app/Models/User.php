@@ -16,6 +16,22 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
+    use \App\Traits\Auditable;
+
+    /**
+     * El rol (quién puede ver qué), si la cuenta está activa, su correo y la
+     * contraseña. De la contraseña se anota QUE cambió, nunca su valor.
+     */
+    protected array $camposAuditables = ['email', 'rol_id', 'estado_registro', 'password'];
+
+    protected array $camposSecretos = ['password'];
+
+    protected string $entidadAuditada = 'usuario';
+
+    public function nombreAuditado(): string
+    {
+        return "{$this->name} ({$this->email})";
+    }
 
     protected $appends = ['es_institucional', 'terminos_estado'];
 
@@ -71,6 +87,18 @@ class User extends Authenticatable
                 ? 'firmado'
                 : 'desactualizado';
         });
+    }
+
+    /**
+     * Firmó los términos, y además la versión que rige hoy.
+     *
+     * Es LA regla: la usan el middleware que traba la cuenta, el cambio de
+     * contraseña y la pantalla de los términos. Antes estaba copiada en los
+     * tres, y bastaba con cambiar una para que dejaran de coincidir.
+     */
+    public function terminosAlDia(): bool
+    {
+        return $this->terminos_estado === 'firmado';
     }
 
     /**

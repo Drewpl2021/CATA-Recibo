@@ -11,7 +11,10 @@ return new class extends Migration
         Schema::create('modulos', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('modulo_padre_id');
-            $table->string('nombre')->unique();
+            // Sin único: el mismo nombre puede repetirse en grupos
+            // distintos, y al dar uno de baja no debe estorbar para
+            // volver a crearlo.
+            $table->string('nombre');
             $table->string('ruta')->nullable();
             $table->string('icono')->nullable();
             $table->integer('orden')->default(0);

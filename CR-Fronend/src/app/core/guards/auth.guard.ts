@@ -25,6 +25,13 @@ export const authGuard: CanActivateFn = () => {
     return false;
   }
 
+  // Sin los términos firmados, lo mismo: el backend responde 428 a todo, así
+  // que se le lleva directo a firmarlos en vez de cargar una pantalla vacía.
+  if (authService.debeFirmarTerminos()) {
+    router.navigate(['/terminos']);
+    return false;
+  }
+
   return true;
 };
 
@@ -42,7 +49,7 @@ export const sesionGuard: CanActivateFn = () => {
   return false;
 };
 
-/** Para /login y /registro: si ya hay sesión iniciada, no tiene sentido volver a mostrarlas. */
+/** Para /login: si ya hay sesión iniciada, no tiene sentido volver a mostrarlo. */
 export const guestGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);

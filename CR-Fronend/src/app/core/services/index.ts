@@ -32,3 +32,4 @@ export * from './sistema/modulo-padre.service';
 export * from './sistema/notificacion.service';
 export * from './sistema/dashboard.service';
 export * from './planilla/planilla-corrida.service';
+export * from './sistema/auditoria.service';

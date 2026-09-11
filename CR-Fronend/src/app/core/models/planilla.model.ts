@@ -85,6 +85,11 @@ export interface GeneracionMasivaBoletas {
   message: string;
   generadas: number;
   omitidas: number;
+  /** Las omitidas, separadas: no es lo mismo "ya la tenía" que "no tiene planilla". */
+  yaTenianBoleta?: number;
+  sinPlanilla?: number;
+  /** Nombre de la planilla, cuando se emitió desde una. */
+  planilla?: string | null;
 }
 
 /** Respuesta de POST /payment-concepts/{id}/aplicar-a-grupo */

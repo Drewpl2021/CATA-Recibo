@@ -15,6 +15,18 @@ use Illuminate\Support\Str;
  */
 class PlanillaCorrida extends Model
 {
+    use \App\Traits\Auditable;
+
+    /** Sobre todo el estado: reabrir una planilla ya pagada es lo que se pregunta. */
+    protected array $camposAuditables = ['nombre', 'estado', 'observaciones'];
+
+    protected string $entidadAuditada = 'planilla';
+
+    public function nombreAuditado(): string
+    {
+        return "{$this->nombre} ({$this->mes}/{$this->anio})";
+    }
+
     protected $table = 'planilla_corridas';
     protected $keyType = 'string';
     public $incrementing = false;
@@ -32,7 +44,7 @@ class PlanillaCorrida extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            $model->id = Str::uuid();
+            $model->id = Str::uuid7();
         });
     }
 

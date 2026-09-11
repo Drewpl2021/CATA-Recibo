@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Planilla;
+use App\Models\PlanillaCorrida;
 use App\Models\Empleado;
 use App\Models\Documento;
 use App\Models\Notificacion;
@@ -202,50 +203,74 @@ class BoletaController extends Controller
     public function generarMasivo(Request $request)
     {
         $request->validate([
-            'mes'  => 'required|integer|min:1|max:12',
-            'anio' => 'required|integer|min:2000',
+            // Desde dentro de una planilla se manda su id y se emite SOLO para
+            // su gente. Antes solo se aceptaba el mes, así que "Emitir boletas"
+            // en la Planilla TIC emitía las de todo el colegio.
+            'corrida_id' => 'nullable|uuid|exists:planilla_corridas,id',
+            'mes'        => 'required_without:corrida_id|integer|min:1|max:12',
+            'anio'       => 'required_without:corrida_id|integer|min:2000',
         ]);
 
-        $mes  = (int) $request->mes;
-        $anio = (int) $request->anio;
+        $corrida = $request->filled('corrida_id') ? PlanillaCorrida::findOrFail($request->corrida_id) : null;
+        $mes     = $corrida ? (int) $corrida->mes : (int) $request->mes;
+        $anio    = $corrida ? (int) $corrida->anio : (int) $request->anio;
 
-        $empleados = Empleado::with('area', 'cargo', 'identidadFirma')->where('estado', 'activo')->get();
+        /*
+         * Se recorren las PLANILLAS, con su empleado ya cargado, y no los
+         * empleados uno por uno.
+         *
+         * Antes eran dos consultas por trabajador —buscar su planilla, buscar
+         * su boleta—: con 2 000 personas, 4 000 consultas antes de generar el
+         * primer PDF. Ahora son dos en total: las planillas con todo lo que
+         * pinta la boleta, y cuáles de ellas ya tienen la suya.
+         */
+        $planillas = ($corrida ? $corrida->planillas() : Planilla::where('mes', $mes)->where('anio', $anio))
+            ->whereHas('empleado', fn ($q) => $q->where('estado', 'activo'))
+            ->with('empleado.area', 'empleado.cargo', 'empleado.identidadFirma')
+            ->get();
+
+        $yaEmitidas = Documento::where('tipo', 'boleta')
+            ->whereIn('planilla_id', $planillas->pluck('id'))
+            ->pluck('planilla_id')
+            ->flip();
+
         $generadas = 0;
-        $omitidas  = 0;
+        $yaTenian  = 0;
 
-        foreach ($empleados as $empleado) {
-            $planilla = Planilla::where('empleado_id', $empleado->id)
-                ->where('mes', $mes)
-                ->where('anio', $anio)
-                ->first();
-
-            if (!$planilla) {
-                $omitidas++;
+        foreach ($planillas as $planilla) {
+            // Idempotente: la boleta que ya existe no se vuelve a generar.
+            if (isset($yaEmitidas[$planilla->id])) {
+                $yaTenian++;
                 continue;
             }
 
-            $existe = Documento::where('empleado_id', $empleado->id)
-                ->where('planilla_id', $planilla->id)
-                ->where('tipo', 'boleta')
-                ->first();
+            $empleado = $planilla->empleado;
 
-            if (!$existe) {
-                // Genera y persiste el PDF real (antes solo se creaba el registro
-                // Documento sin archivo — quedaba metadata sin nada que descargar).
-                ['numero_boleta' => $numero_boleta, 'documento' => $documento]
-                    = $this->construirBoleta($empleado, $planilla, $mes, $anio);
-                $this->avisarBoletaLista($empleado, $mes, $anio, $numero_boleta, $documento?->id);
-                $generadas++;
-            } else {
-                $omitidas++;
-            }
+            // Genera y persiste el PDF real (antes solo se creaba el registro
+            // Documento sin archivo — quedaba metadata sin nada que descargar).
+            ['numero_boleta' => $numero_boleta, 'documento' => $documento]
+                = $this->construirBoleta($empleado, $planilla, $mes, $anio);
+            $this->avisarBoletaLista($empleado, $mes, $anio, $numero_boleta, $documento?->id);
+            $generadas++;
         }
 
+        // Quien está activo pero no tiene planilla ese mes. Solo cuenta al
+        // emitir el mes entero: dentro de una planilla, los de fuera no son
+        // "omitidos", simplemente no son de ella.
+        $sinPlanilla = $corrida
+            ? 0
+            : max(0, Empleado::where('estado', 'activo')->count() - $planillas->count());
+
         return response()->json([
-            'success'   => true,
-            'message'   => "Proceso completado.",
-            'generadas' => $generadas,
-            'omitidas'  => $omitidas,
+            'success'        => true,
+            'message'        => 'Proceso completado.',
+            'generadas'      => $generadas,
+            'omitidas'       => $yaTenian + $sinPlanilla,
+            // El desglose de las omitidas: no es lo mismo "ya la tenía" que
+            // "no tiene planilla", y lo segundo es trabajo pendiente.
+            'yaTenianBoleta' => $yaTenian,
+            'sinPlanilla'    => $sinPlanilla,
+            'planilla'       => $corrida?->nombre,
         ]);
     }
 }

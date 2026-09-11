@@ -17,6 +17,7 @@
     "@angular/platform-browser": "^19.2.25",
     "@angular/platform-browser-dynamic": "^19.2.25",
     "@angular/router": "^19.2.25",
+    "@fontsource/inter": "^5.3.0",
     "apexcharts": "5.15.2",
     "ng-apexcharts": "1.11.0",
     "ng2-pdf-viewer": "^10.4.0",

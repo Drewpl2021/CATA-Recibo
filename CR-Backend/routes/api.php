@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\ConsultaDniController;
 use App\Http\Controllers\TerminosController;
 use App\Http\Controllers\AuthController;
@@ -44,7 +45,16 @@ Route::options('{any}', function () {
 // mismo contador — la clave que arma Laravel para un visitante sin sesión es
 // dominio + IP, sin la URL — y errar la contraseña unas veces te dejaba sin
 // poder pedir el enlace para reponerla.
-Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:registro');
+// El autorregistro está cerrado. Cada trabajador que da de alta RR.HH. ya
+// recibe su cuenta en el mismo paso, así que lo único que hacía esto era
+// dejar crear "empleados" nuevos desde internet con cualquier correo
+// @cata.edu.pe, sin comprobar que el buzón fuera de quien lo escribía. Se
+// deja la ruta respondiendo con la explicación para quien la llame.
+Route::post('/register', fn () => response()->json([
+    'success' => false,
+    'message' => 'Las cuentas las crea Recursos Humanos al registrarte como trabajador. '
+        . 'Entra con tu correo del colegio y tu DNI como contraseña; el sistema te pedirá cambiarla.',
+], 403))->middleware('throttle:registro');
 Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:ingreso');
 
 // "Olvide mi contrasena": pedir el enlace y usarlo. Van con freno aparte
@@ -58,7 +68,9 @@ Route::post('/restablecer-password', [AuthController::class, 'restablecerPasswor
 // esté trabajando la sesión no se cae. Ver RenovarSesionActiva.
 // 'clave_nueva' traba a quien sigue con la contrasena que le dieron: solo le
 // deja /me, /logout y /cambiar-password hasta que ponga una suya.
-Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva'])->group(function () {
+// 'terminos' traba a quien no ha firmado los términos de uso. Va DESPUÉS de
+// 'clave_nueva': quien además debe cambiar la contraseña firma en esa pantalla.
+Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me',      [AuthController::class, 'me']);
@@ -163,6 +175,10 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva'])->group(function () 
 
     // ── Solo Administrador: gestión de roles y del sistema de permisos ──
     Route::middleware('rol:admin')->group(function () {
+        // La auditoría: quién cambió qué. Solo lectura, y solo Admin —es
+        // justamente donde se ve lo que hizo RR.HH.—.
+        Route::get('auditoria', [AuditoriaController::class, 'index']);
+
         Route::apiResource('roles', RolController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('modulos-padre', ModuloPadreController::class);
         Route::apiResource('modulos', ModuloController::class);

@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './features/autenticacion/login/login.component';
-import { RegistroComponent } from './features/autenticacion/registro/registro.component';
 import { LayoutComponent } from './layout/layout.component';
 import { authGuard, guestGuard, roleGuard, sesionGuard } from './core/guards/auth.guard';
 
@@ -10,7 +9,9 @@ const soloAdmin = roleGuard(['admin']);
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
-  { path: 'registro', component: RegistroComponent, canActivate: [guestGuard] },
+  // El autorregistro está cerrado: las cuentas las crea RR.HH. Quien llegue
+  // con un enlace viejo va al login, que explica cómo es el primer ingreso.
+  { path: 'registro', redirectTo: 'login', pathMatch: 'full' },
 
   // ── Recuperar el acceso ──
   // Van sin sesión: quien las necesita es justo quien no puede entrar.
@@ -30,6 +31,15 @@ export const routes: Routes = [
     // que usa sesionGuard y no authGuard (que mandaría acá otra vez).
     path: 'cambiar-clave',
     canActivate: [sesionGuard],
+    loadComponent: () => import('./features/autenticacion/cambiar-clave/cambiar-clave.component').then(m => m.CambiarClaveComponent),
+  },
+  {
+    // Firmar los términos sin tocar la contraseña: para quien ya tiene una
+    // suya (autorregistro, cuentas de antes de que existieran los términos).
+    // Es la misma pantalla que el primer ingreso, pero solo su primer paso.
+    path: 'terminos',
+    canActivate: [sesionGuard],
+    data: { soloTerminos: true },
     loadComponent: () => import('./features/autenticacion/cambiar-clave/cambiar-clave.component').then(m => m.CambiarClaveComponent),
   },
   {
@@ -175,6 +185,12 @@ export const routes: Routes = [
         path: 'modulos',
         canActivate: [soloAdmin],
         loadComponent: () => import('./features/modulos/modulos-list/modulos-list.component').then(m => m.ModulosListComponent),
+      },
+      {
+        // Quién cambió qué. Solo Admin, igual que la ruta del backend.
+        path: 'auditoria',
+        canActivate: [soloAdmin],
+        loadComponent: () => import('./features/auditoria/auditoria-list/auditoria-list.component').then(m => m.AuditoriaListComponent),
       },
       { path: '**', redirectTo: 'dashboard' }
     ]

@@ -19,7 +19,10 @@ return new class extends Migration
             $table->string('direccion', 255)->nullable();
             $table->date('fecha_ingreso');
             $table->string('estado', 20)->default('activo');
-            $table->enum('sistema_pensiones', ['AFP', 'ONP'])->default('ONP');
+            // Nulo = no aporta a ninguna pensión. Es el jubilado que vuelve a
+            // dictar y el extranjero con convenio: por ley no aportan, y sin
+            // esta tercera posibilidad se les descontaba el 13% de la ONP.
+            $table->enum('sistema_pensiones', ['AFP', 'ONP'])->nullable()->default('ONP');
             $table->enum('afp', ['Habitat', 'Integra', 'Prima', 'Profuturo'])->nullable();
             $table->string('cuspp', 20)->nullable();
             $table->string('entidad_financiera', 100)->nullable();
@@ -38,6 +41,9 @@ return new class extends Migration
             $table->string('contacto_emergencia_telefono')->nullable();
             $table->date('fecha_nacimiento')->nullable();
             $table->timestamps();
+
+            // El listado sale ordenado por apellido y filtrado por estado.
+            $table->index(['estado', 'apellido', 'nombre'], 'empleados_estado_nombre_idx');
 
             $table->foreign('area_id')->references('id')->on('areas')->nullOnDelete();
             $table->foreign('cargo_id')->references('id')->on('cargos')->nullOnDelete();

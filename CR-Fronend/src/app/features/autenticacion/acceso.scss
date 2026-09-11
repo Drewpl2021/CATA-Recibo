@@ -447,3 +447,136 @@
     animation: none;
   }
 }
+
+/* ================================================================
+   TÉRMINOS DE USO
+   ================================================================
+   El papel que el colegio repartía impreso para que cada trabajador
+   lo firmara, ahora dentro de su cuenta y antes de la contraseña.
+
+   El documento se desplaza DENTRO de su caja: entero empujaría el
+   botón de aceptar fuera de la pantalla, y en un celular haría falta
+   bajar a ciegas para encontrarlo.
+   ================================================================ */
+.acceso__pasos {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  counter-reset: paso;
+}
+
+.acceso__pasos li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--acceso-panel-apoyo);
+}
+
+.acceso__pasos li::before {
+  counter-increment: paso;
+  content: counter(paso);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border: 1px solid var(--acceso-panel-apoyo);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.acceso__pasos--actual {
+  color: var(--acceso-panel-texto);
+  font-weight: 600;
+}
+
+.acceso__pasos--actual::before {
+  border-color: var(--acceso-panel-texto);
+}
+
+/* El paso ya cumplido lleva un visto en vez de su número. */
+.acceso__pasos--hecho::before {
+  content: '✓';
+  background-color: var(--acceso-panel-texto);
+  color: var(--acceso-panel);
+  border-color: var(--acceso-panel-texto);
+}
+
+.terminos {
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 4px 0 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-alt);
+}
+
+.terminos:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+.terminos__seccion + .terminos__seccion { margin-top: 14px; }
+
+.terminos__titulo {
+  margin: 0 0 4px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.terminos__texto {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.terminos__version {
+  margin: 18px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* Firmó una versión anterior: hay que decírselo, no solo volver a
+   enseñarle el documento. */
+.terminos__aviso {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background-color: var(--warning-bg);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.terminos__acepto {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.terminos__acepto input {
+  margin: 2px 0 0;
+  accent-color: var(--brand-700);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 560px) {
+  .terminos { max-height: 240px; }
+}

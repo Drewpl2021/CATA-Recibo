@@ -69,9 +69,6 @@ export class LoginComponent {
     });
   }
 
-  goToRegister(): void {
-    this.router.navigate(['/registro']);
-  }
 
   irAOlvide(): void {
     this.router.navigate(['/olvide-password']);

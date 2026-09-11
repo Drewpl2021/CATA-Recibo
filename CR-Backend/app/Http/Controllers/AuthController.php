@@ -9,52 +9,12 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+// La REGLA de contraseña, con otro nombre: "Password" a secas ya es la
+// fachada de los enlaces de recuperación que usa este mismo controlador.
+use Illuminate\Validation\Rules\Password as ReglaDeClave;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
-    {
-        $request->validate([
-            'nombre'   => 'required|string|max:100',
-            'apellido' => 'required|string|max:100',
-            // Se pide el DNI de verdad. Antes se inventaba con substr(time(), -8),
-            // lo que daba un documento falso y, peor, hacía chocar dos registros
-            // hechos en el mismo segundo con un error de clave duplicada.
-            'dni'      => 'required|string|regex:/^[0-9]{8}$/|unique:empleados,dni',
-            'email'    => 'required|email|unique:users|ends_with:@cata.edu.pe',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        $rolEmpleado = Rol::where('nombre', 'empleado')->first();
-
-        // Empleado y usuario nacen juntos: si algo falla a mitad, no debe
-        // quedar un empleado suelto sin cuenta con el DNI ya ocupado.
-        $user = DB::transaction(function () use ($request, $rolEmpleado) {
-            $empleado = Empleado::create([
-                'nombre'        => $request->nombre,
-                'apellido'      => $request->apellido,
-                'dni'           => $request->dni,
-                'fecha_ingreso' => now()->toDateString(),
-                'estado'        => 'activo',
-            ]);
-
-            return User::create([
-                'name'        => trim($request->nombre . ' ' . $request->apellido),
-                'email'       => $request->email,
-                'password'    => Hash::make($request->password),
-                'rol_id'      => $rolEmpleado?->id,
-                'empleado_id' => $empleado->id,
-            ]);
-        });
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'data'    => ['user' => $user->load('rol', 'empleado'), 'token' => $token],
-        ], 201);
-    }
-
     public function login(Request $request)
     {
         $request->validate([
@@ -122,7 +82,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'password_actual'      => 'required|string',
-            'password_nuevo'       => 'required|string|min:8|confirmed|different:password_actual',
+            'password_nuevo'       => ['required', 'string', 'confirmed', 'different:password_actual', ReglaDeClave::defaults()],
         ]);
 
         $user = $request->user();
@@ -131,10 +91,7 @@ class AuthController extends Controller
         // en papel: se firmaba la hoja al entrar, no después. Y hacerlo aquí
         // y no solo en la pantalla es lo que lo vuelve una regla: por la API
         // tampoco se puede saltar.
-        $alDia = $user->terminos_firmados
-            && $user->terminos_version === \App\Support\TerminosDeUso::VERSION;
-
-        if (! $alDia) {
+        if (! $user->terminosAlDia()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Antes de poner tu contraseña tienes que leer y aceptar los términos de uso.',
@@ -215,7 +172,7 @@ class AuthController extends Controller
         $request->validate([
             'token'    => 'required|string',
             'email'    => 'required|email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'string', 'confirmed', ReglaDeClave::defaults()],
         ]);
 
         $estado = Password::reset(

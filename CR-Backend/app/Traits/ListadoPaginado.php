@@ -3,8 +3,12 @@
 namespace App\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Listados con paginación y búsqueda resueltas en la base de datos.
@@ -63,7 +67,9 @@ trait ListadoPaginado
         $porPagina = max(1, min($porPagina, self::MAXIMO_POR_PAGINA));
         $pagina    = max((int) $request->input('page', 0), 0);
 
-        $resultado = $query->paginate($porPagina, ['*'], 'page', $pagina + 1);
+        $resultado = $pagina * $porPagina >= self::DESDE_AQUI_PAGINAR_POR_LLAVES
+            ? $this->paginarPorLlaves($query, $porPagina, $pagina)
+            : $query->paginate($porPagina, ['*'], 'page', $pagina + 1);
 
         return response()->json([
             'success' => true,
@@ -89,12 +95,62 @@ trait ListadoPaginado
      *
      * @param  array<string,string>  $valores  etiqueta en la respuesta => valor en la columna
      */
+    /**
+     * A partir de cuántas filas saltadas se pagina por llaves.
+     *
+     * Con un OFFSET grande, MySQL trae enteras TODAS las filas que se salta
+     * para después tirarlas: la página 2 000 de Documentos leía 20 000 filas
+     * completas para enseñar diez (81 ms). Por debajo de esto el OFFSET de
+     * siempre es más barato que la consulta de más.
+     */
+    private const DESDE_AQUI_PAGINAR_POR_LLAVES = 1000;
+
+    /**
+     * La página en dos pasos: primero los ids, después sus filas.
+     *
+     * Los ids de la página salen del índice sin tocar la tabla —el mismo
+     * salto de 20 000, pero sobre entradas de índice y no sobre filas—, y
+     * luego se traen solo esas diez. De 81 ms a 6 en la página 2 000.
+     */
+    private function paginarPorLlaves(Builder $query, int $porPagina, int $pagina): LengthAwarePaginator
+    {
+        $modelo = $query->getModel();
+        $llave  = $modelo->getQualifiedKeyName();
+
+        $total = (clone $query)->toBase()->getCountForPagination();
+
+        $ids = (clone $query)->toBase()
+            ->select($llave)
+            ->forPage($pagina + 1, $porPagina)
+            ->pluck($modelo->getKeyName());
+
+        // Mismo orden que la consulta original: el whereIn no lo cambia y
+        // los orderBy siguen puestos en el builder.
+        $filas = $ids->isEmpty() ? $modelo->newCollection() : (clone $query)->whereIn($llave, $ids)->get();
+
+        return new LengthAwarePaginator($filas, $total, $porPagina, $pagina + 1);
+    }
+
     protected function conteoPorEstado(Builder $query, string $columna, array $valores): array
     {
-        $conteos = ['total' => (clone $query)->reorder()->count()];
+        /*
+         * UNA consulta agrupada, no una por estado.
+         *
+         * Antes era un COUNT del total y otro por cada estado, y cada uno
+         * volvía a recorrer todo lo filtrado: con 46 000 documentos eran
+         * tres recorridos para tres números que salen del mismo. Agrupando
+         * por la columna se hace una vez, y el total es la suma de los
+         * grupos —incluidos los valores que no se piden por separado—.
+         */
+        $grupos = (clone $query)->reorder()->toBase()
+            ->select($columna . ' as valor_del_estado', DB::raw('COUNT(*) as cuantos'))
+            ->groupBy($columna)
+            ->pluck('cuantos', 'valor_del_estado');
+
+        $conteos = ['total' => (int) $grupos->sum()];
 
         foreach ($valores as $etiqueta => $valor) {
-            $conteos[$etiqueta] = (clone $query)->reorder()->where($columna, $valor)->count();
+            $conteos[$etiqueta] = (int) ($grupos[$valor] ?? 0);
         }
 
         return $conteos;
@@ -117,17 +173,78 @@ trait ListadoPaginado
             return;
         }
 
-        $query->where(function (Builder $q) use ($buscarEn, $termino) {
+        $patron = "%{$termino}%";
+
+        $query->where(function (Builder $q) use ($buscarEn, $patron) {
+            // Las columnas de una misma relación se juntan: "empleado.nombre",
+            // "empleado.apellido" y "empleado.dni" son UNA subconsulta sobre
+            // empleados, no tres.
+            $porRelacion = [];
+
             foreach ($buscarEn as $campo) {
+                // "=tipo": la palabra tiene que ser exactamente esa. Sirve para
+                // columnas de pocos valores fijos ("boleta", "contrato"): un
+                // like '%x%' sobre ellas no encuentra nada útil y, metido en
+                // el OR, obliga a MySQL a recorrer la tabla entera. La
+                // igualdad sí va por índice.
+                //
+                // Y solo se añade si el término ES uno de esos valores. Hasta
+                // una igualdad, metida en el OR, le impide a MySQL entrar por
+                // la subconsulta de empleados y lo manda a recorrer todos los
+                // documentos: buscar "mamani" costaba 254 ms por una rama que
+                // nunca iba a encontrar nada. Preguntar si existe va por
+                // índice (0,1 ms) y deja la búsqueda en 16 ms.
+                if (str_starts_with($campo, '=')) {
+                    $columna = substr($campo, 1);
+                    $valor   = trim($patron, '%');
+
+                    if ($q->getModel()->newQuery()->where($columna, $valor)->exists()) {
+                        $q->orWhere($columna, '=', $valor);
+                    }
+                    continue;
+                }
+
                 if (!str_contains($campo, '.')) {
-                    $q->orWhere($campo, 'like', "%{$termino}%");
+                    $q->orWhere($campo, 'like', $patron);
                     continue;
                 }
 
                 [$relacion, $columna] = explode('.', $campo, 2);
-                $q->orWhereHas($relacion, function (Builder $r) use ($columna, $termino) {
-                    $r->where($columna, 'like', "%{$termino}%");
-                });
+                $porRelacion[$relacion][] = $columna;
+            }
+
+            foreach ($porRelacion as $relacion => $columnas) {
+                $coincide = function (Builder $r) use ($columnas, $patron) {
+                    $r->where(function (Builder $w) use ($columnas, $patron) {
+                        foreach ($columnas as $columna) {
+                            $w->orWhere($columna, 'like', $patron);
+                        }
+                    });
+                };
+
+                $rel = $q->getModel()->{$relacion}();
+
+                /*
+                 * "Los documentos cuyo empleado se llame así" se pedía con
+                 * whereHas, que MySQL resuelve con una subconsulta POR FILA:
+                 * con 46 000 boletas eran 46 000 × 3 búsquedas en empleados,
+                 * 840 ms por teclear un apellido. Se da la vuelta: primero se
+                 * buscan los empleados que coinciden (unos pocos, sobre una
+                 * tabla chica) y después se toman sus documentos por la llave,
+                 * que tiene índice.
+                 */
+                if ($rel instanceof BelongsTo) {
+                    $sub = $rel->getRelated()->newQuery()->select($rel->getOwnerKeyName());
+                    $coincide($sub);
+                    $q->orWhereIn($rel->getQualifiedForeignKeyName(), $sub);
+                } elseif ($rel instanceof HasOneOrMany) {
+                    $sub = $rel->getRelated()->newQuery()->select($rel->getForeignKeyName());
+                    $coincide($sub);
+                    $q->orWhereIn($rel->getQualifiedParentKeyName(), $sub);
+                } else {
+                    // Cualquier otra relación, como antes.
+                    $q->orWhereHas($relacion, $coincide);
+                }
             }
         });
     }
