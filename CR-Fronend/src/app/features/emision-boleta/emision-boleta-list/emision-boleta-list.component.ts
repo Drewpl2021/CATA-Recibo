@@ -5,9 +5,10 @@ import { EmpleadoService } from '../../../core/services';
 import { Empleado } from '../../../core/models';
 import { BoletaService } from '../../../core/services';
 import { PlanillaService } from '../../../core/services';
+import { PayrollDetalleService } from '../../../core/services';
 import { Planilla } from '../../../core/models';
 import { ToastService } from '../../../core/services';
-import { Observable } from 'rxjs';
+import { Observable, of, map, switchMap } from 'rxjs';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
@@ -143,6 +144,7 @@ export class EmisionBoletaListComponent implements OnInit {
     private empleadoService: EmpleadoService,
     private boletaService: BoletaService,
     private planillaService: PlanillaService,
+    private detalleService: PayrollDetalleService,
     private toastService: ToastService
   ) {}
 
@@ -264,24 +266,12 @@ export class EmisionBoletaListComponent implements OnInit {
       next: (res) => {
         if (res.success && res.data.length > 0) {
           this.planillaActual = res.data[0];
-          // Rellenar formulario con los montos guardados
+
+          // El básico sale de la planilla; el resto, de sus líneas de concepto.
           // Laravel manda los decimales como string ("2500.00") — se convierten aqui.
           this.formulario.remuneracionBasica = this.planillaActual.sueldo_base != null ? Number(this.planillaActual.sueldo_base) : null;
-          this.formulario.bonificacion = this.planillaActual.bonificaciones != null ? Number(this.planillaActual.bonificaciones) : null;
-          this.formulario.descuentoOtros = this.planillaActual.descuentos != null ? Number(this.planillaActual.descuentos) : null;
 
-          // Limpiar otros campos específicos
-          this.formulario.bonificacionCargo = null;
-          this.formulario.vacacionesTruncas = null;
-          this.formulario.bonifExtraordTemporal = null;
-          this.formulario.otrosConceptosSubsidio = null;
-          this.formulario.compensacionTiempoServicios = null;
-          this.formulario.ir5taCategoria = null;
-          this.formulario.descuentoAlimentacion = null;
-          this.formulario.descuentoBazar = null;
-          this.formulario.descuentoAutorizadoDiezmo = null;
-          this.formulario.descuentoEscolaridad = null;
-          this.formulario.adelanto = null;
+          this.cargarConceptosEnFormulario(this.planillaActual.id!);
         } else {
           this.planillaActual = null;
           // Si no existe, cargar el sueldo_base inicial del empleado
@@ -404,39 +394,125 @@ export class EmisionBoletaListComponent implements OnInit {
     return this.totalIngresos - this.totalDescuentos;
   }
 
+  /** Qué campo de la pantalla corresponde a cada concepto del catálogo. */
+  private readonly CAMPO_POR_CONCEPTO: Record<string, keyof FormularioBoleta> = {
+    'Bonificación por Cargo': 'bonificacionCargo',
+    'Asignación Familiar': 'asignacionFamiliar',
+    'Vacaciones Truncas': 'vacacionesTruncas',
+    'Gratificaciones Fiestas Patrias - Ley 29351 y 30334': 'gratificacionesFiestas',
+    'Bonif. Extraord. Temporal - Ley 29351 y 30334': 'bonifExtraordTemporal',
+    'Otros Conceptos (Ingresos)': 'otrosConceptosSubsidio',
+    'Compensación por Tiempo de Servicios': 'compensacionTiempoServicios',
+    'Bonificaciones': 'bonificacion',
+    'ONP 13%': 'onp13',
+    'SPP. Fondo Pensiones': 'sppFondoPensiones',
+    'SPP. Prima de Seguro': 'sppPrimaSeguro',
+    'SPP. Comisión': 'sppComision',
+    'I.R. 5ta Categoría': 'ir5taCategoria',
+    'Descuento Serv. Alimentación': 'descuentoAlimentacion',
+    'Descuento Serv. Bazar': 'descuentoBazar',
+    'Descuento Autorizado - Diezmo': 'descuentoAutorizadoDiezmo',
+    'Otros Conceptos (Descuentos)': 'descuentoOtros',
+    'Descuento - Pago de Escolaridad Mensual': 'descuentoEscolaridad',
+    'ESSALUD 9%': 'essalud9',
+    'SCTR': 'sctr',
+    'Adelanto de Sueldo': 'adelanto',
+  };
+
+  /**
+   * Rellena el formulario con las LÍNEAS de la planilla, no con las columnas.
+   *
+   * Antes el diezmo, la alimentación y los demás se leían de dos columnas que
+   * los traían sumados —y que desde el cambio a conceptos valen siempre 0—,
+   * así que al reabrir el cuadro los campos salían vacíos y parecía que lo
+   * guardado se había perdido.
+   *
+   * Se piden con un tope alto porque el endpoint viene paginado: con el
+   * tamaño por defecto se quedarían fuera las últimas líneas de una planilla
+   * cargada de conceptos.
+   */
+  private cargarConceptosEnFormulario(planillaId: string): void {
+    this.detalleService.paginaDePlanilla(planillaId, 0, 200).subscribe({
+      next: (res) => {
+        if (!res.success) return;
+
+        for (const linea of res.data.content) {
+          const campo = this.CAMPO_POR_CONCEPTO[linea.payment_concept?.nombre ?? ''];
+          if (campo) {
+            (this.formulario[campo] as number | null) = Number(linea.monto_calculado);
+          }
+        }
+
+        // Lo que no tenga línea se queda en blanco, que es lo que significa.
+        this._formularioOriginal = JSON.stringify(this.formulario);
+      },
+      error: () => {
+        this.toastService.error('Aviso', 'No se pudieron cargar los conceptos ya guardados de esta planilla.');
+      },
+    });
+  }
+
+  /**
+   * Guarda lo escrito COMO CONCEPTOS, cada uno con su nombre.
+   *
+   * Antes sumaba los doce campos en dos números —total de bonificaciones y
+   * total de descuentos— y los guardaba en dos columnas de la planilla. Se
+   * perdía justo lo que importa: cuál era el diezmo, cuál la alimentación,
+   * cuál el adelanto. En la boleta salían dos cifras sin explicación.
+   *
+   * Ahora cada campo viaja con el nombre de su concepto del catálogo y el
+   * backend sincroniza las líneas de una vez. Un campo vacío borra su línea,
+   * que es lo que se espera al dejarlo en blanco.
+   *
+   * Los calculados (pensión, EsSalud, Renta de 5ta, Asignación Familiar) NO
+   * se mandan: los pone el motor según la ficha, y el backend además los
+   * rechaza si alguien lo intenta.
+   */
   guardarPlanillaEnServidor(): Observable<{ success: boolean; data: Planilla }> {
-    const total_bonificaciones = [
-      this.formulario.bonificacionCargo,
-      this.formulario.vacacionesTruncas,
-      this.formulario.bonifExtraordTemporal,
-      this.formulario.otrosConceptosSubsidio,
-      this.formulario.compensacionTiempoServicios,
-      this.formulario.bonificacion
-    ].reduce((sum: number, v) => sum + (v ? Number(v) : 0), 0);
+    const f = this.formulario;
 
-    const total_descuentos = [
-      this.formulario.descuentoAlimentacion,
-      this.formulario.descuentoBazar,
-      this.formulario.descuentoAutorizadoDiezmo,
-      this.formulario.descuentoOtros,
-      this.formulario.descuentoEscolaridad,
-      this.formulario.adelanto
-    ].reduce((sum: number, v) => sum + (v ? Number(v) : 0), 0);
+    const conceptos: { nombre: string; monto: number | null }[] = [
+      { nombre: 'Bonificación por Cargo', monto: f.bonificacionCargo },
+      { nombre: 'Vacaciones Truncas', monto: f.vacacionesTruncas },
+      { nombre: 'Gratificaciones Fiestas Patrias - Ley 29351 y 30334', monto: f.gratificacionesFiestas },
+      { nombre: 'Bonif. Extraord. Temporal - Ley 29351 y 30334', monto: f.bonifExtraordTemporal },
+      { nombre: 'Otros Conceptos (Ingresos)', monto: f.otrosConceptosSubsidio },
+      { nombre: 'Compensación por Tiempo de Servicios', monto: f.compensacionTiempoServicios },
+      { nombre: 'Bonificaciones', monto: f.bonificacion },
+      { nombre: 'Descuento Serv. Alimentación', monto: f.descuentoAlimentacion },
+      { nombre: 'Descuento Serv. Bazar', monto: f.descuentoBazar },
+      { nombre: 'Descuento Autorizado - Diezmo', monto: f.descuentoAutorizadoDiezmo },
+      { nombre: 'Otros Conceptos (Descuentos)', monto: f.descuentoOtros },
+      { nombre: 'Descuento - Pago de Escolaridad Mensual', monto: f.descuentoEscolaridad },
+      { nombre: 'SCTR', monto: f.sctr },
+      { nombre: 'Adelanto de Sueldo', monto: f.adelanto },
+    ];
 
-    const body: Planilla = {
-      empleado_id: this.empleadoSeleccionado!.id,
-      mes: Number(this.formulario.mes),
-      anio: Number(this.formulario.anio),
-      sueldo_base: this.formulario.remuneracionBasica ?? 0,
-      bonificaciones: total_bonificaciones,
-      descuentos: total_descuentos
-    };
+    /*
+     * Primero tiene que existir la planilla; sus conceptos van después.
+     *
+     * Al crearla NO se manda el sueldo base: sale de la ficha del trabajador
+     * y el backend lo prorratea si entró a mitad de mes. Mandarlo desde acá
+     * era escribir un número que el servidor ya ignoraba.
+     */
+    const planilla$ = this.planillaActual?.id
+      ? of({ success: true, data: this.planillaActual } as { success: boolean; data: Planilla })
+      : this.planillaService.crear({
+          empleado_id: this.empleadoSeleccionado!.id,
+          mes: Number(f.mes),
+          anio: Number(f.anio),
+        } as Partial<Planilla>);
 
-    if (this.planillaActual && this.planillaActual.id) {
-      return this.planillaService.update(this.planillaActual.id, body);
-    } else {
-      return this.planillaService.crear(body);
-    }
+    return planilla$.pipe(
+      switchMap((res) => {
+        const id = res.data?.id;
+        if (!id) return of(res);
+
+        return this.planillaService
+          .sincronizarConceptos(id, conceptos)
+          .pipe(map((sync) => ({ success: sync.success, data: sync.data.planilla })));
+      })
+    );
   }
 
   guardarBorrador(): void {

@@ -130,6 +130,55 @@ export class EmpleadosListComponent implements OnInit {
     });
   }
 
+  // ────────── Descargar la lista del personal ──────────
+
+  exportando = false;
+
+  /**
+   * Baja la ficha completa de cada trabajador en CSV: sus datos personales,
+   * los laborales, los de planilla y los bancarios.
+   *
+   * Va el mismo buscador de la tabla, así que si arriba se filtró por un
+   * área o un apellido, el archivo sale con esa misma gente.
+   */
+  exportar(): void {
+    this.exportando = true;
+
+    this.empleadoService.exportar({ search: this.busqueda || undefined }).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.nombreDelArchivo();
+        a.click();
+        window.URL.revokeObjectURL(url);
+
+        this.exportando = false;
+        this.toastService.success('Lista descargada', `${this.total} trabajador(es), con su ficha completa.`);
+      },
+      error: (err) => {
+        this.exportando = false;
+        this.toastService.error('No se descargó', mensajeErrorApi(err, 'No se pudo generar la lista.'));
+      },
+    });
+  }
+
+  /**
+   * "Empleados 2026-09-13.csv".
+   *
+   * La fecha va en el nombre porque esta lista se vuelve a bajar cada poco y
+   * sin ella acaban tres archivos iguales en la carpeta de descargas. Se arma
+   * acá y no se lee de la respuesta porque el backend no expone
+   * Content-Disposition al navegador.
+   */
+  private nombreDelArchivo(): string {
+    const hoy = new Date();
+    const dosDigitos = (n: number) => String(n).padStart(2, '0');
+    const fecha = `${hoy.getFullYear()}-${dosDigitos(hoy.getMonth() + 1)}-${dosDigitos(hoy.getDate())}`;
+
+    return `Empleados ${fecha}.csv`;
+  }
+
   nuevo(): void {
     this.router.navigate(['/inicio/empleados/nuevo']);
   }

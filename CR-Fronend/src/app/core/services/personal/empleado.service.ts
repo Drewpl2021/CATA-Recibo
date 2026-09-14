@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 import { Empleado, EmpleadoPayload } from '../../models';
-import { END_POINTS, EntityDataService } from '../../utils';
+import { END_POINTS, END_POINTS_ACCIONES, EntityDataService } from '../../utils';
 
 @Injectable({ providedIn: 'root' })
 export class EmpleadoService extends EntityDataService<Empleado> {
@@ -35,5 +37,18 @@ export class EmpleadoService extends EntityDataService<Empleado> {
    */
   paraSelector() {
     return this.getAll({ formato: 'selector' });
+  }
+
+  /**
+   * GET /empleados/exportar — la ficha completa de cada trabajador en CSV.
+   *
+   * Lleva el mismo buscador que la tabla: lo que se ve es lo que baja. Vuelve
+   * como blob porque es un archivo, no el { success, data } del resto.
+   */
+  exportar(filtros: { search?: string } = {}): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/${END_POINTS_ACCIONES.exportarEmpleados}`, {
+      params: this.construirParams(filtros),
+      responseType: 'blob',
+    });
   }
 }

@@ -58,9 +58,10 @@ export class LoginComponent {
           return;
         }
 
-        // El backend responde 422 (ValidationException) con
-        // errors.email = ["Credenciales incorrectas."] cuando el correo o
-        // la contraseña no coinciden — o 403 si la cuenta está desactivada.
+        // El backend contesta 422 con UN solo mensaje genérico, valga el
+        // motivo que valga. No lo especialices acá —ni mirando el código de
+        // estado— porque distinguir los casos en el cliente reabre la
+        // enumeración de usuarios que el backend acaba de cerrar.
         this.errorMsg =
           err?.error?.errors?.email?.[0] ||
           err?.error?.message ||

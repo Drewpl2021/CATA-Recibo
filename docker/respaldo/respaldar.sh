@@ -37,7 +37,7 @@ echo "[respaldo] $(date '+%F %T') empieza"
 
 # ── La base ────────────────────────────────────────────────────────
 # --single-transaction: una foto coherente de todas las tablas sin bloquear
-#   a nadie, así se puede respaldar con RR.HH. trabajando.
+#   a nadie, así se puede respaldar con el personal trabajando.
 # --no-tablespaces: el usuario de la aplicación no tiene el permiso PROCESS
 #   que pide MySQL 8 para volcar los tablespaces, y no hacen falta.
 # Se escribe primero como ".parcial" y se renombra al final: si algo falla a

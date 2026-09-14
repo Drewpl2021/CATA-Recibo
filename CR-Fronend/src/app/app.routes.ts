@@ -134,16 +134,16 @@ export const routes: Routes = [
         canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/planillas/planillas-list/planillas-list.component').then(m => m.PlanillasListComponent),
       },
-      {
-        path: 'planillas/nuevo',
-        canActivate: [soloRrhhOAdmin],
-        loadComponent: () => import('./features/planillas/planilla-form/planilla-form.component').then(m => m.PlanillaFormComponent),
-      },
-      {
-        path: 'planillas/editar/:id',
-        canActivate: [soloRrhhOAdmin],
-        loadComponent: () => import('./features/planillas/planilla-form/planilla-form.component').then(m => m.PlanillaFormComponent),
-      },
+      /*
+       * Acá estaban 'planillas/nuevo' y 'planillas/editar/:id', que abrían
+       * PlanillaFormComponent.
+       *
+       * Esa pantalla escribía dos números sueltos en las columnas
+       * bonificaciones/descuentos de la planilla: sin nombre, sin motivo y
+       * sin salir como línea en la boleta. Lo que suma o resta va por el
+       * catálogo de conceptos, que sí deja cada monto con su etiqueta y su
+       * regla. 'planillas/nuevo' además ya no lo abría ningún botón.
+       */
       {
         path: 'planillas/detalle/:id',
         canActivate: [soloRrhhOAdmin],

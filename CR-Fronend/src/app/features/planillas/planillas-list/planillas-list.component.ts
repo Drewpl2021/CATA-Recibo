@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -11,7 +11,6 @@ import {
   AreaService,
   CargoService,
   SedeService,
-  BoletaService,
   ToastService,
   ConfirmService,
   PlanillaCorridaService,
@@ -76,7 +75,6 @@ export class PlanillasListComponent implements OnInit {
   private areaService = inject(AreaService);
   private cargoService = inject(CargoService);
   private sedeService = inject(SedeService);
-  private boletaService = inject(BoletaService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
 
@@ -86,7 +84,15 @@ export class PlanillasListComponent implements OnInit {
   cargando = false;
 
   /** Filas por página; el backend corta y cuenta, acá solo se pinta. */
-  readonly TAMANO_PAGINA = 15;
+  /*
+   * Diez, como el resto del sistema.
+   *
+   * Estaba en 15 —la única pantalla que se salía— y además el número se
+   * repetía a mano en la plantilla. Con una planilla de 13 trabajadores
+   * entraban los 13 de una vez y el paginador no llegaba a aparecer, así que
+   * parecía que la paginación no funcionaba.
+   */
+  readonly TAMANO_PAGINA = 10;
   pagina = 0;
   busqueda = '';
   /** Cuántas hay en total, según el backend — no el largo de la página. */
@@ -140,10 +146,6 @@ export class PlanillasListComponent implements OnInit {
   /** Los meses que cubre el periodo elegido; se recalculan al cambiarlo. */
   mesesDelPeriodo: { valor: string; etiqueta: string }[] = [];
 
-  // ── Emisión masiva de boletas ──
-  modalBoletasVisible = false;
-  emitiendo = false;
-  resultadoBoletas: { generadas: number; omitidas: number; yaTenianBoleta: number; sinPlanilla: number } | null = null;
 
   meses = MESES_OPCIONES;
   nombreMes = nombreMes;
@@ -161,10 +163,17 @@ export class PlanillasListComponent implements OnInit {
       ancho: '14%',
       formatear: (_v, fila) => `${nombreMes(fila.mes)} ${fila.anio}`,
     },
-    { campo: 'sueldo_base', header: 'Sueldo base', ancho: '14%', tipo: 'moneda' },
-    { campo: 'bonificaciones', header: 'Bonificaciones', ancho: '14%', tipo: 'moneda' },
-    { campo: 'descuentos', header: 'Descuentos', ancho: '14%', tipo: 'moneda' },
-    { campo: 'total', header: 'Neto a pagar', ancho: '14%', tipo: 'moneda' },
+    { campo: 'sueldo_base', header: 'Sueldo base', ancho: '20%', tipo: 'moneda' },
+    /*
+     * Sin las columnas "Bonificaciones" y "Descuentos".
+     *
+     * Salían de dos campos de la planilla que ya nadie escribe: desde que lo
+     * que suma o resta va por conceptos, esas dos columnas mostraban S/ 0.00
+     * en todas las filas, siempre. Lo que las reemplaza es el detalle de cada
+     * trabajador ("Ver y ajustar sus conceptos"), donde cada monto sale con su
+     * nombre, y el CSV, que trae una columna por concepto.
+     */
+    { campo: 'total', header: 'Neto a pagar', ancho: '20%', tipo: 'moneda' },
   ];
 
   /** Los conceptos de la planilla se gestionan en su propia pantalla. */
@@ -449,14 +458,18 @@ export class PlanillasListComponent implements OnInit {
     this.cargar();
   }
 
-  nueva(): void {
-    this.router.navigate(['/inicio/planillas/nuevo']);
-  }
-
-  editar(planilla: Planilla): void {
-    this.router.navigate(['/inicio/planillas/editar', planilla.id]);
-  }
-
+  /*
+   * Acá vivían nueva() y editar(), que llevaban a PlanillaFormComponent.
+   *
+   * Esa pantalla solo permitía escribir dos números sueltos —una
+   * "bonificación" y un "descuento" del periodo— directamente en las
+   * columnas de la planilla: sin nombre, sin motivo y sin salir como línea
+   * en la boleta. Era un camino paralelo al catálogo de conceptos, que sí
+   * deja cada monto con su etiqueta, su regla y su rastro.
+   *
+   * Lo que sube o baja un sueldo se ajusta ahora en "Ver y ajustar sus
+   * conceptos" (verDetalle) o con "Aplicar concepto" para todo un grupo.
+   */
   verDetalle(planilla: Planilla): void {
     this.router.navigate(['/inicio/planillas/detalle', planilla.id]);
   }
@@ -492,13 +505,48 @@ export class PlanillasListComponent implements OnInit {
   }
 
   /** El catálogo, para el desplegable de "aplicar concepto". */
+  /** La tabla, para poder desmarcar sus filas tras aplicar el concepto. */
+  @ViewChild('tablaPlanillas') tablaPlanillas?: { limpiarSeleccion: () => void };
+
+  /**
+   * Los trabajadores marcados con la casilla de su fila.
+   *
+   * OJO: la tabla emite solo los marcados de la PÁGINA que se está viendo.
+   * Con quince filas por página alcanza para lo normal —marcar a cuatro o
+   * cinco y aplicarles algo—, pero marcar en una página y pasar a otra no
+   * acumula.
+   */
+  marcados: Planilla[] = [];
+
+  alMarcar(filas: Planilla[]): void {
+    this.marcados = filas;
+  }
+
+  get nombresMarcados(): string {
+    return this.marcados.map((p) => this.nombreEmpleado(p)).join(', ');
+  }
+
   abrirConcepto(): void {
     this.conceptoElegido = '';
     this.conceptoValor = null;
     this.conceptoCalculo = 'fijo';
-    this.alcanceConcepto = 'todos';
-    this.elegidosConcepto = [];
     this.resultadoConcepto = null;
+
+    /*
+     * Si venías con filas marcadas, el concepto arranca apuntando a ESAS.
+     *
+     * Es lo que se espera después de marcar a cinco personas: abrir el
+     * cuadro y que ya estén elegidas, en vez de tener que volver a buscarlas
+     * una por una en el selector.
+     */
+    if (this.marcados.length) {
+      this.alcanceConcepto = 'elegidos';
+      this.elegidosConcepto = this.marcados.map((p) => p.empleado_id);
+    } else {
+      this.alcanceConcepto = 'todos';
+      this.elegidosConcepto = [];
+    }
+
     this.modalConceptoVisible = true;
 
     if (this.conceptos.length) return;
@@ -566,6 +614,30 @@ export class PlanillasListComponent implements OnInit {
 
   get conceptoSeleccionado(): PaymentConcept | undefined {
     return this.conceptos.find((c) => c.id === this.conceptoElegido);
+  }
+
+  /**
+   * A cuántos trabajadores de ESTA planilla ya se les puso ese concepto.
+   *
+   * Lo cuenta el backend al pedir la corrida. Sirve para marcar el
+   * desplegable: sin esto, saber si el diezmo ya se aplicó obligaba a entrar
+   * trabajador por trabajador.
+   */
+  cuantosConEseConcepto(conceptoId: string): number {
+    return this.corrida?.conceptos_aplicados?.[conceptoId] ?? 0;
+  }
+
+  /**
+   * Cómo se lee el concepto en la lista: con un visto y a cuántos alcanza.
+   *
+   * Se muestra el número y no solo el visto porque no es lo mismo "ya lo
+   * tienen los cuarenta" que "lo tienen tres": lo segundo suele significar
+   * que faltan los demás.
+   */
+  etiquetaConcepto(concepto: PaymentConcept): string {
+    const cuantos = this.cuantosConEseConcepto(concepto.id);
+
+    return cuantos ? `✓ ${concepto.nombre} (${cuantos})` : concepto.nombre;
   }
 
   /** A cuántos les va a caer el concepto tal como está ahora. */
@@ -642,6 +714,12 @@ export class PlanillasListComponent implements OnInit {
           this.corrida.personas = res.data.corrida.personas;
           this.corrida.masa_salarial = res.data.corrida.masa_salarial;
         }
+
+        // Ya se les aplicó: las casillas se quedan limpias para que la
+        // próxima vez no se aplique sin querer al grupo anterior.
+        this.tablaPlanillas?.limpiarSeleccion();
+        this.marcados = [];
+
         this.cargar();
       },
       error: (err) => {
@@ -846,73 +924,78 @@ export class PlanillasListComponent implements OnInit {
     });
   }
 
-  // ────────── Emisión masiva de boletas ──────────
-
-  abrirBoletas(): void {
-    this.resultadoBoletas = null;
-    this.modalBoletasVisible = true;
-  }
-
-  cerrarBoletas(): void {
-    this.modalBoletasVisible = false;
-    this.resultadoBoletas = null;
-  }
-
-  /**
-   * El mes que se va a emitir.
+  /*
+   * Acá vivía la emisión masiva de boletas.
    *
-   * Dentro de una planilla, el SUYO: antes salía del filtro de la pantalla,
-   * y si el filtro decía otro mes se emitían boletas de un mes que la
-   * planilla ni tiene. Fuera de una planilla, el del filtro o el actual.
+   * Se fue porque esta pantalla hace una cosa —armar la planilla y ajustar
+   * sus conceptos— y emitir boletas es otra, con su propia pantalla
+   * (Emisión de Boletas). Tener las dos aquí mezclaba dos trabajos.
    */
-  get mesAEmitir(): number {
-    return Number(this.corrida?.mes) || Number(this.filtroMes) || new Date().getMonth() + 1;
-  }
 
-  get anioAEmitir(): number {
-    return Number(this.corrida?.anio) || Number(this.filtroAnio) || new Date().getFullYear();
-  }
 
-  /** De qué se emite, en palabras: "Planilla TIC — Septiembre 2026" o solo el mes. */
-  get queSeEmite(): string {
-    const mes = `${nombreMes(this.mesAEmitir)} ${this.anioAEmitir}`;
-    return this.corrida ? `${this.corrida.nombre} — ${mes}` : mes;
+  // ────────── Reporte completo de la planilla ──────────
+
+  exportando = false;
+
+  /**
+   * Baja la planilla entera en CSV: una fila por trabajador, con su ficha,
+   * una columna por concepto y su neto.
+   *
+   * Van los MISMOS filtros de la pantalla, el buscador incluido, así que lo
+   * que se está viendo es lo que baja: dentro de una planilla con nombre
+   * sale solo la suya, y fuera, la de todos los trabajadores del mes.
+   */
+  exportar(): void {
+    this.exportando = true;
+
+    this.planillaService
+      .exportar({
+        search: this.busqueda || undefined,
+        mes: this.filtroMes || undefined,
+        anio: this.filtroAnio || undefined,
+        empleado_id: this.filtroEmpleado || undefined,
+        periodo_id: this.filtroPeriodo || undefined,
+        corrida_id: this.corridaId || undefined,
+        sin_corrida: this.modoSinAgrupar || undefined,
+      })
+      .subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = this.nombreDelReporte();
+          a.click();
+          window.URL.revokeObjectURL(url);
+
+          this.exportando = false;
+          this.toastService.success(
+            'Reporte descargado',
+            `${this.total} trabajador(es), con todos sus conceptos.`
+          );
+        },
+        error: (err) => {
+          this.exportando = false;
+          this.toastService.error('No se descargó', mensajeErrorApi(err, 'No se pudo generar el reporte.'));
+        },
+      });
   }
 
   /**
-   * Emite el PDF de la boleta de todos los empleados que YA tengan planilla
-   * de ese mes; a quien no la tenga se le omite. Es idempotente: si la
-   * boleta ya existe, no se vuelve a generar.
+   * "Planilla TIC - Septiembre 2026.csv".
+   *
+   * El nombre se arma acá y no se lee de la respuesta porque el backend no
+   * expone Content-Disposition al navegador: sin esa cabecera en
+   * Access-Control-Expose-Headers, el front no puede leerla.
    */
-  emitirBoletas(): void {
-    this.emitiendo = true;
-    this.resultadoBoletas = null;
+  private nombreDelReporte(): string {
+    const ambito = this.modoSinAgrupar
+      ? 'Sin agrupar'
+      : this.corrida?.nombre ?? 'Planilla general';
 
-    // Dentro de una planilla va su id: se emiten solo las de su gente.
-    this.boletaService.generarMasivo(this.mesAEmitir, this.anioAEmitir, this.corridaId).subscribe({
-      next: (res) => {
-        this.emitiendo = false;
-        this.resultadoBoletas = {
-          generadas: res.generadas ?? 0,
-          omitidas: res.omitidas ?? 0,
-          yaTenianBoleta: res.yaTenianBoleta ?? 0,
-          sinPlanilla: res.sinPlanilla ?? 0,
-        };
-        this.toastService.resultadoMasivo({
-          hechas: this.resultadoBoletas.generadas,
-          omitidas: this.resultadoBoletas.omitidas,
-          exito: 'Boletas emitidas',
-          nada: 'No se emitió ninguna boleta',
-          cosas: 'boleta(s)',
-          motivo: this.corrida
-            ? 'ya tenían su boleta emitida'
-            : 'esos empleados no tienen planilla de ese mes, o ya tenían su boleta',
-        });
-      },
-      error: (err) => {
-        this.emitiendo = false;
-        this.toastService.error('No se emitieron', mensajeErrorApi(err, 'No se pudieron generar las boletas.'));
-      },
-    });
+    const mes = this.filtroMes ? nombreMes(Number(this.filtroMes)) : 'Todos los meses';
+    const anio = this.filtroAnio ? ` ${this.filtroAnio}` : '';
+
+    // Windows rechaza estos caracteres en un nombre de archivo.
+    return `${ambito} - ${mes}${anio}.csv`.replace(/[\\/:*?"<>|]/g, '');
   }
 }

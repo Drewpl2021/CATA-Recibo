@@ -58,7 +58,9 @@ export class EmisionDescuentosFormComponent implements OnInit {
       }
     };
     
-    console.log('Guardando datos de emisión:', data);
+    // Sin console.log: volcaba en la consola del navegador los descuentos y
+    // el sueldo de la persona, y ahí se queda a la vista de cualquiera que
+    // abra las herramientas de desarrollo en esa máquina.
     this.toastService.success('Guardado', `Se guardaron los descuentos y bonificaciones para ${this.nombreEmpleado} exitosamente.`);
     this.volver();
   }

@@ -33,6 +33,7 @@
 <app-form-modal
   [(visible)]="modalVisible"
   [titulo]="areaEditando ? 'Editar Área' : 'Nueva Área'"
+  ancho="860px"
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrarModal()"
@@ -52,6 +53,32 @@
       <textarea id="descripcion" class="form-control" formControlName="descripcion" rows="3"
         placeholder="Descripción opcional del área" [class.is-invalid]="invalido('descripcion')"></textarea>
       <small class="form-error" *ngIf="invalido('descripcion')">Máximo 255 caracteres.</small>
+    </div>
+
+    <div class="form-group">
+      <label>¿Qué cargos son propios de esta área?</label>
+
+      <input type="text" class="form-control buscador-opciones" [(ngModel)]="buscadorCargos"
+        [ngModelOptions]="{ standalone: true }" placeholder="Busca un cargo por su nombre…"
+        aria-label="Buscar un cargo" />
+
+      <div class="rejilla-opciones">
+        <label class="check-item" *ngFor="let c of cargosVisibles" [class.is-activo]="estaMarcado(c.id)">
+          <input type="checkbox" [checked]="estaMarcado(c.id)" (change)="alternarCargo(c.id)" />
+          <span>{{ c.nombre }}</span>
+        </label>
+      </div>
+
+      <small class="form-ayuda" *ngIf="marcadosOcultos">
+        Hay <strong>{{ marcadosOcultos }}</strong> cargo(s) marcado(s) que este
+        buscador no deja ver. Siguen marcados.
+      </small>
+
+      <small class="form-ayuda">
+        Al dar de alta a alguien en esta área saldrán estos cargos, más los que
+        no están acotados a ninguna (practicantes, voluntarios). Un cargo puede
+        ser propio de varias áreas: "Docente" lo es de los tres niveles.
+      </small>
     </div>
 
     <div class="form-group">

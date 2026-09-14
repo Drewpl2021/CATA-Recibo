@@ -98,4 +98,15 @@ export interface SaldoVacaciones {
   diasGanados: number;
   diasUsados: number;
   diasDisponibles: number;
+  /** Su contrato de hoy: 'indeterminado', 'plazo_fijo', 'suplencia' o 'practicas'. */
+  tipoContrato: string | null;
+  /**
+   * Si puede pedir descanso. Solo el contrato indeterminado lo permite; a los
+   * otros tres se les paga con el concepto "Vacaciones Truncas". Los días de
+   * arriba se calculan igual para todos —son los que lleva ganados, y de ahí
+   * sale lo que se le pague—, lo que cambia es si puede tomarlos.
+   */
+  puedeSolicitar: boolean;
+  /** Por qué no puede, ya redactado por el backend. Null cuando sí puede. */
+  motivo: string | null;
 }

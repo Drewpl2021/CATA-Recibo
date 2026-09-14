@@ -12,14 +12,13 @@
       <p class="acceso__invitacion">Hola{{ nombre ? ', ' + nombre : '' }}</p>
 
       <p class="acceso__motivo" *ngIf="paso === 'terminos'">
-        Antes esto era una hoja que se firmaba a mano y se entregaba a
-        Recursos Humanos. Ahora se acepta aquí y queda guardado en tu cuenta,
-        con la fecha.
+        Lee y acepta los términos de uso. Tu aceptación queda registrada en
+        tu cuenta, con la fecha.
       </p>
 
       <p class="acceso__motivo" *ngIf="paso === 'clave'">
-        Tu DNI lo conoce cualquiera que vea tu ficha o tu boleta, así que no
-        sirve como contraseña. Elige una que solo sepas tú.
+        Elige una contraseña que solo conozcas tú y que no uses en ningún
+        otro sitio.
       </p>
 
       <!-- Los dos pasos, para saber por dónde va -->
@@ -41,8 +40,7 @@
         {{ terminos?.resumen }}
       </p>
       <p class="acceso__intro" *ngIf="paso === 'clave'">
-        Entraste con la contraseña que te dieron. Pon una tuya para empezar a
-        usar el sistema.
+        Por seguridad, establece una contraseña personal antes de continuar.
       </p>
 
       <div class="auth-alert auth-alert-error" *ngIf="errorMsg">
@@ -112,7 +110,7 @@
               autocomplete="current-password"
             />
           </div>
-          <small class="form-ayuda">Es la que usaste para entrar: tu DNI, o la que te dio Recursos Humanos.</small>
+          <small class="form-ayuda">La contraseña con la que acabas de ingresar.</small>
           <small class="form-error" *ngIf="actualVacia">Escribe la contraseña con la que entraste.</small>
         </div>
 
@@ -146,7 +144,7 @@
               </svg>
             </button>
           </div>
-          <small class="form-ayuda">Mínimo 8 caracteres, con letras y números. No puede ser tu DNI.</small>
+          <small class="form-ayuda">Mínimo 8 caracteres, con letras y números. No uses datos personales.</small>
           <small class="form-error" *ngIf="nuevaCorta">Necesita al menos 8 caracteres.</small>
           <small class="form-error" *ngIf="claveDebil">Tiene que llevar letras y números, no solo unos u otros.</small>
         </div>

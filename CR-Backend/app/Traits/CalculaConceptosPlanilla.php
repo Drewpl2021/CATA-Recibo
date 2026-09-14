@@ -38,10 +38,22 @@ trait CalculaConceptosPlanilla
             $comisionAfp = $this->comisionesAfp[$empleado->afp] ?? 0;
 
             $aporte   = round($sueldoBase * ($this->aporteObligatorioAfp / 100), 2);
-            // $primaSeguroAfp (1.37%, igual para todas las AFP) y $comisionAfp (varía por AFP)
-            // son los montos; los nombres "Prima de Seguro" / "Comisión" abajo van
-            // intercambiados a propósito respecto a esas variables — así es como el
-            // colegio los llama en su boleta oficial (verificado contra el documento físico).
+
+            /*
+             * Cada nombre con SU monto: la prima es la fija, la comisión la
+             * que cambia según la AFP.
+             *
+             * Hasta el 2026-09-13 iban intercambiados a propósito, siguiendo
+             * la boleta física del colegio. Se deshizo porque el PLAME del
+             * propio colegio usa el criterio contrario, que además es el
+             * estándar: en la hoja PLANILLA, columna AC "COMISIÓN % SOBRE
+             * R.A." lleva el 1.69 de Profuturo y la AD "PRIMA DE SEGURO" el
+             * 1.37 fijo (comprobado contra la fila de AGUIRRE VELAZCO).
+             *
+             * NO volver a cruzarlos: el total descontado es el mismo en los
+             * dos casos, así que el error no salta en ninguna suma — solo
+             * queda mal el nombre en la boleta y en la declaración.
+             */
             $prima    = round($sueldoBase * ($this->primaSeguroAfp / 100), 2);
             $comision = round($sueldoBase * ($comisionAfp / 100), 2);
 
@@ -51,8 +63,8 @@ trait CalculaConceptosPlanilla
                 // pantalla de Conceptos de Pago no se llamen distinto.
                 'detalle' => [
                     ['concepto' => \App\Support\ConceptosDePago::SPP_FONDO, 'monto' => $aporte],
-                    ['concepto' => \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, 'monto' => $comision],
-                    ['concepto' => \App\Support\ConceptosDePago::SPP_COMISION, 'monto' => $prima],
+                    ['concepto' => \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, 'monto' => $prima],
+                    ['concepto' => \App\Support\ConceptosDePago::SPP_COMISION, 'monto' => $comision],
                 ],
                 'total' => round($aporte + $prima + $comision, 2),
             ];
@@ -299,13 +311,26 @@ trait CalculaConceptosPlanilla
     /**
      * Suma los ingresos "extraordinarios" (cualquier PayrollDetalle tipo bonificacion:
      * bonos, subsidios puntuales, etc.) ya percibidos este año hasta el mes indicado.
+     *
+     * La Asignación Familiar se EXCLUYE a propósito, y esto no es un detalle:
+     * quien la llama ya la sumó aparte, dentro de la remuneración ordinaria
+     * (`$sueldoBase + $bonificaciones + calcularAsignacionFamiliar()`), porque
+     * se cobra todos los meses y no es un ingreso extraordinario.
+     *
+     * Mientras la asignación no existía como línea las dos vías no se
+     * cruzaban. Desde que se crea como concepto —que es lo correcto, y lo que
+     * hace que llegue al neto— caería en esta suma también, y la proyección
+     * anual contaría esos 113 dos veces: retención de 5ta inflada para quien
+     * tiene hijos.
      */
     private function ingresosExtraordinariosAcumulados($empleadoId, int $anio, int $mesHasta): float
     {
         return (float) \App\Models\PayrollDetalle::whereHas('planilla', function ($q) use ($empleadoId, $anio, $mesHasta) {
                 $q->where('empleado_id', $empleadoId)->where('anio', $anio)->where('mes', '<=', $mesHasta);
             })
-            ->whereHas('paymentConcept', fn ($q) => $q->where('tipo', 'bonificacion'))
+            ->whereHas('paymentConcept', fn ($q) => $q
+                ->where('tipo', 'bonificacion')
+                ->where('nombre', '!=', \App\Support\ConceptosDePago::ASIGNACION_FAMILIAR))
             ->sum('monto_calculado');
     }
 
@@ -317,10 +342,19 @@ trait CalculaConceptosPlanilla
      */
     protected function generarYPersistirRenta5ta($planilla, $empleado): float
     {
+        /*
+         * Cero, y no la columna `bonificaciones` de la planilla.
+         *
+         * No es que se pierdan: las bonificaciones viven ahora como líneas de
+         * concepto, y `ingresosExtraordinariosAcumulados()` —al que llama
+         * calcularRenta5taCategoria— ya las suma todas. Pasar además la
+         * columna las contaría dos veces, que es exactamente el error que
+         * acabamos de corregir con la Asignación Familiar.
+         */
         $renta5ta = $this->calcularRenta5taCategoria(
             $empleado,
             $planilla->sueldo_base,
-            $planilla->bonificaciones,
+            0.0,
             $planilla->mes,
             $planilla->anio
         );
@@ -368,15 +402,43 @@ trait CalculaConceptosPlanilla
         $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
         $baseAfecta         = $sueldoBase + $asignacionFamiliar;
 
+        /*
+         * La Asignación Familiar, como línea de verdad.
+         *
+         * ESTO FALTABA, y era un error que costaba dinero al trabajador: la
+         * asignación se sumaba a $baseAfecta para calcular pensión y EsSalud,
+         * pero nunca se creaba su concepto. Como `recalcularTotal()` suma los
+         * conceptos de tipo bonificación, esos 113 nunca llegaban al neto: se
+         * le descontaba pensión sobre un dinero que no cobraba.
+         *
+         * Sale de `tiene_hijos` en su ficha, no del catálogo: si esa casilla
+         * está en 0 no se crea ninguna línea, igual que no se crea la de ONP
+         * a quien está en AFP.
+         */
+        if ($asignacionFamiliar > 0) {
+            $this->crearDetalleAutomatico(
+                $planilla,
+                \App\Support\ConceptosDePago::ASIGNACION_FAMILIAR,
+                $asignacionFamiliar
+            );
+        }
+
         if ($empleado->sistema_pensiones === 'AFP' && $empleado->afp) {
             $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_FONDO, $baseAfecta * ($this->aporteObligatorioAfp / 100));
-            // OJO: "Prima de Seguro" / "Comisión" van intercambiadas a propósito respecto
-            // a las variables del trait — así las llama la boleta oficial del colegio.
-            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_COMISION, $baseAfecta * ($this->primaSeguroAfp / 100));
 
+            // La prima del seguro: 1.37%, igual para todas las AFP.
+            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, $baseAfecta * ($this->primaSeguroAfp / 100));
+
+            // Y la comisión, que sí depende de cuál sea su AFP. Va con la tasa
+            // escrita al lado porque es el dato que cambia de persona a
+            // persona, y sin él la línea no se puede comprobar.
+            //
+            // Antes estos dos nombres iban cruzados; se enderezaron siguiendo
+            // el PLAME del colegio. Ver el comentario largo en
+            // calcularDescuentoPension() antes de tocarlo.
             $comisionAfp = $this->comisionesAfp[$empleado->afp] ?? 0;
             if ($comisionAfp > 0) {
-                $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, $baseAfecta * ($comisionAfp / 100), "AFP {$empleado->afp} ({$comisionAfp}%)");
+                $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_COMISION, $baseAfecta * ($comisionAfp / 100), "AFP {$empleado->afp} ({$comisionAfp}%)");
             }
         } elseif ($empleado->sistema_pensiones === 'ONP') {
             $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::ONP, $baseAfecta * ($this->porcentajeOnp / 100));

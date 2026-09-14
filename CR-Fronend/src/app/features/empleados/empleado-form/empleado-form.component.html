@@ -27,7 +27,10 @@
         [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"></app-seccion-planilla>
 
       <app-seccion-complementarios *ngIf="pasoActual === 'complementarios'"
-        [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"></app-seccion-complementarios>
+        [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"
+        [hojaDeVida]="hojaDeVida"
+        (cvElegido)="cvArchivo = $event"
+        (descargarCv)="descargarHojaDeVida()"></app-seccion-complementarios>
 
       <app-seccion-acceso *ngIf="pasoActual === 'acceso'"
         [form]="form" [soloLectura]="soloLectura"

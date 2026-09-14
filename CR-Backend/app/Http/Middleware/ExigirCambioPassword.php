@@ -9,10 +9,9 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Mientras la cuenta siga con la contraseña que le dieron, no se entra a nada.
  *
- * La contraseña inicial de un empleado es su DNI, que sabe cualquiera que vea
- * su ficha o su boleta. La pantalla del frontend ya manda a cambiarla, pero
- * una pantalla no es una cerradura: sin esto bastaba con llamar al API por
- * fuera para seguir trabajando con la contraseña pública.
+ * Las cuentas nacen con una contraseña provisional. La pantalla del frontend
+ * ya manda a cambiarla, pero una pantalla no es una cerradura: sin esto
+ * bastaba con llamar al API por fuera para seguir usándola.
  *
  * Lo único que se deja pasar es lo que hace falta para cambiarla: saber quién
  * eres, cambiarla, y salir.

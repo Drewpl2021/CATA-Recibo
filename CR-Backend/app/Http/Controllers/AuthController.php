@@ -15,6 +15,18 @@ use Illuminate\Validation\Rules\Password as ReglaDeClave;
 
 class AuthController extends Controller
 {
+    /**
+     * La ÚNICA respuesta a un intento de acceso fallido, sea cual sea el
+     * motivo: el correo no está registrado, la contraseña no coincide, o la
+     * cuenta ya no está activa.
+     *
+     * No la especialices. Cada variante que se agregue vuelve a abrir la
+     * puerta a enumerar usuarios: comparando respuestas, cualquiera de fuera
+     * puede ir descubriendo qué direcciones existen.
+     */
+    private const CREDENCIALES_INVALIDAS =
+        'Credenciales incorrectas. Verifica tus datos e intenta nuevamente.';
+
     public function login(Request $request)
     {
         $request->validate([
@@ -24,15 +36,28 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Credenciales incorrectas.'],
-            ]);
+        /*
+         * Los tres motivos de rechazo se contestan igual.
+         *
+         * Antes la cuenta desactivada tenía su propio mensaje, y eso era una
+         * fuga: para verlo había que acertar el correo Y la contraseña, así
+         * que el mensaje confirmaba las dos cosas de golpe.
+         *
+         * El Hash::make de abajo no guarda nada; está para gastar el mismo
+         * tiempo que habría costado comprobar una contraseña real. Sin él,
+         * el caso "ese correo no existe" contesta muy por debajo del resto y
+         * el cronómetro delata las direcciones válidas aunque el texto sea
+         * idéntico.
+         */
+        if (! $user) {
+            Hash::make($request->password);
         }
 
-        if ($user->estado_registro !== 'activo') {
+        if (! $user
+            || ! Hash::check($request->password, $user->password)
+            || $user->estado_registro !== 'activo') {
             throw ValidationException::withMessages([
-                'email' => ['Esta cuenta está desactivada.'],
+                'email' => [self::CREDENCIALES_INVALIDAS],
             ]);
         }
 
@@ -99,11 +124,12 @@ class AuthController extends Controller
             ], 409);
         }
 
-        // Al dar de alta un empleado, su contraseña inicial ES su DNI. Dejar
-        // que la "cambie" por el mismo DNI no cambia nada en la práctica.
+        // El documento de identidad no vale como contraseña: figura en varios
+        // documentos del trabajador. El mensaje se queda en el consejo y no
+        // menciona de dónde salía la contraseña provisional.
         if ($user->empleado && $request->password_nuevo === $user->empleado->dni) {
             throw ValidationException::withMessages([
-                'password_nuevo' => ['La contraseña no puede ser tu DNI: es la que te dieron al inicio.'],
+                'password_nuevo' => ['No uses datos personales como contraseña. Elige una distinta.'],
             ]);
         }
 
@@ -133,9 +159,10 @@ class AuthController extends Controller
      *
      * Manda al correo un enlace de un solo uso que vence en una hora.
      *
-     * Responde lo mismo exista o no el correo, a propósito: si dijera "ese
-     * correo no está registrado", cualquiera podría ir probando direcciones
-     * para averiguar quién trabaja en el colegio.
+     * Responde lo mismo exista o no el correo, a propósito (prevención de
+     * enumeración de usuarios): si dijera "ese correo no está registrado",
+     * bastaría con ir probando direcciones para descubrir cuáles están
+     * dadas de alta.
      */
     public function olvidePassword(Request $request)
     {

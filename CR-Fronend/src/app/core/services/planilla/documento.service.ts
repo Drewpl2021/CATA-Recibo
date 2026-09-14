@@ -20,6 +20,30 @@ export class DocumentoService extends EntityDataService<Documento> {
     return this.create<DocumentoPayload>(payload);
   }
 
+  /**
+   * POST /documentos/subir — adjunta un archivo que llega de fuera.
+   *
+   * Es multipart, no JSON: crear() registra un documento que ya está en
+   * disco (la boleta que genera el sistema), esto sube el papel de verdad.
+   */
+  subir(datos: {
+    empleado_id: string;
+    tipo: string;
+    archivo: File;
+    contrato_id?: string | null;
+  }): Observable<ApiResponse<Documento>> {
+    const formData = new FormData();
+    formData.append('empleado_id', datos.empleado_id);
+    formData.append('tipo', datos.tipo);
+    formData.append('archivo', datos.archivo);
+    if (datos.contrato_id) formData.append('contrato_id', datos.contrato_id);
+
+    return this.http.post<ApiResponse<Documento>>(
+      `${environment.apiUrl}/${END_POINTS_ACCIONES.subirDocumento}`,
+      formData
+    );
+  }
+
   /** GET /documentos/{id}/descargar — devuelve el PDF ya guardado en disco. */
   descargar(documentoId: string): Observable<Blob> {
     return this.http.get(`${environment.apiUrl}/${END_POINTS_ACCIONES.descargarDocumento(documentoId)}`, {

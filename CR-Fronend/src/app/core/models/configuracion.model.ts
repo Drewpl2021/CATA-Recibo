@@ -12,12 +12,15 @@ export interface Area {
   nombre: string;
   descripcion?: string | null;
   estado?: EstadoCatalogo;
+  /** Los cargos acotados a esta área. Los comodines no salen aquí. */
+  cargos?: Cargo[];
 }
 
 export interface AreaPayload {
   nombre: string;
   descripcion?: string | null;
   estado?: EstadoCatalogo;
+  cargo_ids?: string[];
 }
 
 export interface Cargo {
@@ -25,12 +28,19 @@ export interface Cargo {
   nombre: string;
   descripcion?: string | null;
   estado?: EstadoCatalogo;
+  /**
+   * Las áreas donde vale este cargo. VACÍO significa "en todas": es el caso
+   * de Practicante o Voluntario Misionero.
+   */
+  areas?: Area[];
 }
 
 export interface CargoPayload {
   nombre: string;
   descripcion?: string | null;
   estado?: EstadoCatalogo;
+  /** Vacío = el cargo vale en todas las áreas. */
+  area_ids?: string[];
 }
 
 export interface Sede {

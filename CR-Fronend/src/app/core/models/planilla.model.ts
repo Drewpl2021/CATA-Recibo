@@ -6,6 +6,13 @@ export interface Planilla {
   id?: string;
   empleado_id: string;
   periodo_id?: string | null;
+  /**
+   * La planilla con nombre que la agrupa, o null si está "Sin agrupar".
+   *
+   * El backend siempre lo ha mandado; acá faltaba declararlo. Es lo que le
+   * permite al detalle de un trabajador saber a qué pantalla volver.
+   */
+  corrida_id?: string | null;
   mes: number;
   anio: number;
   /** Llega como string decimal desde Laravel; se castea al mostrar. */

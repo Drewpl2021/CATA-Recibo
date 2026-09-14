@@ -96,7 +96,7 @@ Ya está. Entra en `http://LA-IP-DEL-SERVIDOR`.
 | `APP_KEY` | La llave que genera el comando de arriba. |
 | `DB_PASSWORD` / `DB_ROOT_PASSWORD` | **Cámbialas antes del primer arranque.** MySQL las aplica al crear la base; después ya no se cambian solas. |
 | `MAIL_*` | Con `MAIL_MAILER=log` los correos no salen, se escriben en el log. Para que salgan de verdad, `smtp` y los datos del buzón del colegio. |
-| `RENSUN_*` / `DECOLECTA_TOKEN` | Opcionales. Para que al dar de alta a un trabajador el sistema traiga sus nombres por el DNI. Sin rellenarlas, RR.HH. los escribe a mano y el sistema funciona igual. Ver el propio `.env.example` para el detalle de cada una. |
+| `RENSUN_*` / `DECOLECTA_TOKEN` | Opcionales. Para que al dar de alta a un trabajador el sistema traiga sus nombres por el DNI. Sin rellenarlas, los datos se escriben a mano y el sistema funciona igual. Ver el propio `.env.example` para el detalle de cada una. |
 
 ---
 
@@ -110,6 +110,42 @@ Sirve para probar en la red del colegio. Antes de abrirlo a internet de verdad,
 hay que ponerle HTTPS. Cuando tengan el dominio apuntando al VPS, el cambio es
 pequeño y lo dejo hecho en un rato: se le pone delante un contenedor que saca y
 renueva el certificado solo.
+
+---
+
+## Antes de exponerlo a internet
+
+Tres cosas que hay que hacer sí o sí, y que no se arreglan solas.
+
+**1. Cambiar las contraseñas de ejemplo.** `db:seed` crea tres cuentas con
+contraseñas conocidas y publicadas (`admin`, `rrhh` y una de empleado). Sirven
+para probar; en un sistema real son tres puertas abiertas. Entra con cada una y
+cámbiala, o borra las que no se usen:
+
+```bash
+docker compose exec app php artisan tinker
+```
+
+**2. Las contraseñas de la base.** `DB_PASSWORD` y `DB_ROOT_PASSWORD` del
+`.env` hay que cambiarlas **antes** del primer arranque: MySQL las graba al
+crear la base y después ya no se aplican solas.
+
+**3. HTTPS.** Sin él, las contraseñas y las boletas viajan en claro. Mientras
+sea la red del colegio se aguanta; abierto a internet, no.
+
+### Qué nunca debe entrar al repositorio
+
+El `.gitignore` ya bloquea lo peligroso, pero conviene saber por qué está:
+
+| Qué | Por qué |
+|---|---|
+| `.env` | Lleva la llave de la aplicación y las contraseñas del servidor. |
+| `*.sql` | Los volcados de la base llevan nombres, DNI, correos y hashes de contraseña. |
+| `*.xls`, `*.xlsx`, `*.csv` | Las planillas reales llevan nombre, DNI y sueldo de todo el personal. |
+
+Si alguna vez se subió uno de estos por error, **borrarlo en un commit nuevo no
+basta**: sigue estando en el historial y se puede recuperar. Hay que reescribir
+el historial (`git filter-repo`) y dar por comprometido lo que contuviera.
 
 ---
 

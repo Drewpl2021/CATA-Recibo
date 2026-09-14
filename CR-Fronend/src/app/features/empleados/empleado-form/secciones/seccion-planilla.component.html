@@ -13,10 +13,14 @@
       <small class="form-ayuda" *ngIf="!sinPension">
         ONP descuenta el 13%; en AFP el porcentaje depende de la entidad.
       </small>
-      <small class="form-ayuda" *ngIf="sinPension">
+      <small class="form-ayuda" *ngIf="sinPension && !esHonorarios">
         No se le descontará pensión en ninguna de sus boletas. Es lo que
         corresponde al jubilado que ya cobra su pensión y al extranjero
         acogido a un convenio. EsSalud sí se le sigue aportando.
+      </small>
+      <small class="form-ayuda" *ngIf="pensionLimpiadaPorHonorarios">
+        Se dejó en <strong>ninguno</strong> porque cobra por recibo de
+        honorarios. Puedes cambiarlo si no es el caso.
       </small>
     </div>
 
@@ -46,23 +50,51 @@
 
     <div class="form-group">
       <label for="forma_pago">Forma de pago</label>
-      <select id="forma_pago" class="form-control" formControlName="forma_pago">
+      <select id="forma_pago" class="form-control" formControlName="forma_pago"
+        (change)="alCambiarFormaPago()">
         <option value="">— Sin definir —</option>
         <option *ngFor="let f of formasPago" [value]="f.value">{{ f.label }}</option>
       </select>
+      <small class="form-ayuda" *ngIf="esHonorarios">
+        Cobra por recibo de honorarios: no está en planilla, así que no se le
+        descuenta pensión.
+      </small>
     </div>
 
-    <ng-container *ngIf="pagaPorBanco">
+    <ng-container *ngIf="pideDatosBancarios">
       <div class="form-group">
         <label for="entidad_financiera">Banco</label>
-        <input type="text" id="entidad_financiera" class="form-control"
-          formControlName="entidad_financiera" placeholder="Ej. BCP" />
+        <input type="text" id="entidad_financiera" class="form-control" list="lista-bancos"
+          formControlName="entidad_financiera" autocomplete="off"
+          placeholder="Elige uno o escríbelo" />
+        <!-- Lista de ayuda, no cerrada: el campo admite cualquier entidad
+             que no esté acá, como una caja municipal o una cooperativa. -->
+        <datalist id="lista-bancos">
+          <option *ngFor="let b of bancos" [value]="b"></option>
+        </datalist>
+        <small class="form-ayuda">
+          Si no aparece en la lista, escríbelo tal cual.
+        </small>
       </div>
 
       <div class="form-group">
         <label for="numero_cuenta">Número de cuenta</label>
         <input type="text" id="numero_cuenta" class="form-control"
           formControlName="numero_cuenta" placeholder="Cuenta de abono del sueldo" />
+      </div>
+
+      <div class="form-group">
+        <label for="cci">CCI</label>
+        <input type="text" id="cci" class="form-control" formControlName="cci"
+          inputmode="numeric" maxlength="20" placeholder="20 dígitos"
+          [class.is-invalid]="invalido('cci')" />
+        <small class="form-error" *ngIf="invalido('cci')">
+          El CCI son 20 dígitos, sin espacios ni guiones.
+        </small>
+        <small class="form-ayuda" *ngIf="!invalido('cci')">
+          Código de Cuenta Interbancario. Puede quedar vacío: solo hace falta
+          para transferirle desde un banco distinto al suyo.
+        </small>
       </div>
     </ng-container>
 

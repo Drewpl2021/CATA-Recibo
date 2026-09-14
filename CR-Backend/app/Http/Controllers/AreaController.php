@@ -22,7 +22,7 @@ class AreaController extends Controller
     {
         return $this->responderListado(
             $request,
-            Area::query()->orderBy('nombre'),
+            Area::query()->with('cargos:id,nombre')->orderBy('nombre'),
             ['nombre', 'descripcion'],
             // Las cifras de la cabecera: se cuentan sobre todo lo que pasa el
             // filtro, no sobre la página que se está viendo.
@@ -36,14 +36,19 @@ class AreaController extends Controller
             'nombre' => 'required|string|max:100|unique:areas,nombre',
             'descripcion' => 'nullable|string|max:255',
             'estado' => 'nullable|string|in:activo,inactivo',
+            // Los cargos propios de esta área. Los comodines —los que no
+            // están acotados a ninguna— valen aquí igual, sin marcarlos.
+            'cargo_ids'   => 'sometimes|array',
+            'cargo_ids.*' => 'uuid|exists:cargos,id',
         ]);
         $area = Area::create($datos);
-        return response()->json(['success' => true, 'data' => $area], 201);
+        $area->cargos()->sync($request->input('cargo_ids', []));
+        return response()->json(['success' => true, 'data' => $area->load('cargos:id,nombre')], 201);
     }
 
     public function show(string $id)
     {
-        return response()->json(['success' => true, 'data' => Area::findOrFail($id)]);
+        return response()->json(['success' => true, 'data' => Area::with('cargos:id,nombre')->findOrFail($id)]);
     }
 
     public function update(Request $request, string $id)
@@ -53,9 +58,14 @@ class AreaController extends Controller
             'nombre' => ['sometimes', 'string', 'max:100', Rule::unique('areas', 'nombre')->ignore($id)],
             'descripcion' => 'nullable|string|max:255',
             'estado' => 'nullable|string|in:activo,inactivo',
+            'cargo_ids'   => 'sometimes|array',
+            'cargo_ids.*' => 'uuid|exists:cargos,id',
         ]);
         $area->update($datos);
-        return response()->json(['success' => true, 'data' => $area]);
+        if ($request->has('cargo_ids')) {
+            $area->cargos()->sync($request->input('cargo_ids', []));
+        }
+        return response()->json(['success' => true, 'data' => $area->load('cargos:id,nombre')]);
     }
 
     public function destroy(string $id)

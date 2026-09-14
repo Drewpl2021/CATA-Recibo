@@ -91,22 +91,26 @@ services:
       # "tls" NO es un esquema válido para el mailer de Laravel: con él, el
       # día que se configurara el correo habría fallado igual.
       MAIL_SCHEME: ${MAIL_SCHEME:-smtp}
-      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-no-reply@cata.edu.pe}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-no-reply@ejemplo.com}
       MAIL_FROM_NAME: ${APP_NAME:-CATA-Recibo}
 
       SESION_INACTIVIDAD_MINUTOS: ${SESION_INACTIVIDAD_MINUTOS:-120}
 
+      # Dominio de correo de la institución. Vacío por defecto a propósito:
+      # el código no lo lleva escrito dentro, lo pone cada despliegue.
+      INSTITUCION_DOMINIO_CORREO: ${INSTITUCION_DOMINIO_CORREO:-}
+
       # Búsqueda de personas por DNI al dar de alta a un trabajador. Es
-      # opcional: sin RENSUN_DB_HOST y sin DECOLECTA_TOKEN, RR.HH. sigue
-      # escribiendo los datos a mano y el sistema funciona igual.
+      # opcional: sin RENSUN_DB_HOST y sin DECOLECTA_TOKEN, los datos se
+      # escriben a mano y el sistema funciona igual.
       CONSULTA_DNI_CACHE_DIAS: ${CONSULTA_DNI_CACHE_DIAS:-30}
       DECOLECTA_BASE_URL: ${DECOLECTA_BASE_URL:-https://api.decolecta.com}
       DECOLECTA_TOKEN: ${DECOLECTA_TOKEN:-}
       DECOLECTA_RUTA_DNI: ${DECOLECTA_RUTA_DNI:-/v1/reniec/dni}
       DECOLECTA_TIMEOUT: ${DECOLECTA_TIMEOUT:-8}
 
-      # La base del padrón del colegio (RENSUN). Vive en otro servidor; si
-      # no se rellena, el sistema va directo a Decolecta.
+      # Base de datos local del padrón. Si no se rellena, el sistema va
+      # directo al proveedor externo.
       RENSUN_DB_HOST: ${RENSUN_DB_HOST:-}
       RENSUN_DB_PORT: ${RENSUN_DB_PORT:-3306}
       RENSUN_DB_DATABASE: ${RENSUN_DB_DATABASE:-}

@@ -10,6 +10,7 @@ use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\VacacionController;
 use App\Http\Controllers\PlanillaController;
 use App\Http\Controllers\PlanillaCorridaController;
+use App\Http\Controllers\FotoPerfilController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\BoletaController;
 use App\Http\Controllers\MiPlanillaController;
@@ -45,15 +46,17 @@ Route::options('{any}', function () {
 // mismo contador — la clave que arma Laravel para un visitante sin sesión es
 // dominio + IP, sin la URL — y errar la contraseña unas veces te dejaba sin
 // poder pedir el enlace para reponerla.
-// El autorregistro está cerrado. Cada trabajador que da de alta RR.HH. ya
-// recibe su cuenta en el mismo paso, así que lo único que hacía esto era
-// dejar crear "empleados" nuevos desde internet con cualquier correo
-// @cata.edu.pe, sin comprobar que el buzón fuera de quien lo escribía. Se
-// deja la ruta respondiendo con la explicación para quien la llame.
+// El autorregistro está cerrado. Las cuentas se crean al dar de alta a la
+// persona, así que lo único que hacía esto era dejar crear "empleados" nuevos
+// desde internet, sin comprobar que el buzón fuera de quien lo escribía.
+//
+// La respuesta es deliberadamente escueta: esta ruta es pública y sin sesión.
+// Antes explicaba quién crea las cuentas y con qué contraseña nacen — dos
+// datos que le ahorran la mitad del trabajo a quien quiera entrar sin permiso.
 Route::post('/register', fn () => response()->json([
     'success' => false,
-    'message' => 'Las cuentas las crea Recursos Humanos al registrarte como trabajador. '
-        . 'Entra con tu correo del colegio y tu DNI como contraseña; el sistema te pedirá cambiarla.',
+    'message' => 'El registro público está deshabilitado. Acceso restringido a personal autorizado. '
+        . 'Si requieres asistencia, contacta al administrador del sistema.',
 ], 403))->middleware('throttle:registro');
 Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:ingreso');
 
@@ -103,6 +106,14 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     // propio endpoint equivalente para hacerlo por cualquier empleado, más abajo).
     Route::post('mi-identidad-firma', [IdentidadFirmaController::class, 'subirMia']);
 
+    // La foto de perfil. Cada quien sube y quita LA SUYA; la imagen se sirve
+    // por su propia ruta porque vive en el disco privado y hay que comprobar
+    // antes quién la pide. "users/{id}/foto" no choca con el apiResource de
+    // users: tiene un segmento más.
+    Route::post('mi-foto',        [FotoPerfilController::class, 'subirMia']);
+    Route::delete('mi-foto',      [FotoPerfilController::class, 'quitarMia']);
+    Route::get('users/{id}/foto', [FotoPerfilController::class, 'ver']);
+
     // Vacaciones — el trabajador ve y pide LAS SUYAS; RR.HH. ve las de todos.
     // El recorte se hace dentro del controlador, con el empleado del token.
     // 'saldo' va antes que '{id}' o la ruta con parametro se lo comeria.
@@ -145,7 +156,15 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
             ->middleware('throttle:consulta_dni');
 
         Route::post('empleados/{id}/identidad-firma', [IdentidadFirmaController::class, 'subir']);
+        // La lista del personal en CSV. Va ANTES del apiResource, igual que
+        // la de planilla: si no, "exportar" entraría por show({id}).
+        Route::get('empleados/exportar',       [EmpleadoController::class, 'exportar']);
         Route::apiResource('empleados',        EmpleadoController::class);
+
+        // La planilla completa en CSV. Va ANTES del apiResource: si no,
+        // "exportar" entraría por show({id}) y devolvería un 404 buscando
+        // una planilla con ese id.
+        Route::get('planilla/exportar',        [PlanillaController::class, 'exportar']);
         Route::apiResource('planilla',         PlanillaController::class);
 
         // Las corridas: la planilla con nombre que agrupa a un grupo de gente
@@ -156,6 +175,10 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('planilla-corridas/{id}/generar',    [PlanillaCorridaController::class, 'generar']);
         Route::post('planilla-corridas/{id}/mover',      [PlanillaCorridaController::class, 'mover']);
         Route::apiResource('planilla-corridas', PlanillaCorridaController::class);
+        // Subir un archivo que llega de fuera (hoja de vida, contrato
+        // escaneado). Va ANTES del apiResource: si no, "subir" entraría por
+        // show({id}) y devolvería un 404 buscando un documento con ese id.
+        Route::post('documentos/subir',        [DocumentoController::class, 'subir']);
         Route::apiResource('documentos',       DocumentoController::class);
         Route::post('documentos/{id}/firmar-empleador', [DocumentoController::class, 'firmarComoEmpleador']);
         Route::apiResource('areas',            AreaController::class);
@@ -164,6 +187,10 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('periodos/{id}/generar-planilla', [PeriodoController::class, 'generarPlanilla']);
         Route::apiResource('payment-concepts', PaymentConceptController::class);
         Route::post('payment-concepts/{id}/aplicar-a-grupo', [PaymentConceptController::class, 'aplicarAGrupo']);
+        // Deja las líneas de UNA planilla como diga la pantalla, de una vez.
+        // Va antes del apiResource de planilla por el mismo motivo de siempre:
+        // con un segmento más, no choca con show({id}).
+        Route::post('planilla/{id}/conceptos', [PlanillaController::class, 'sincronizarConceptos']);
         Route::apiResource('payroll-detalles', PayrollDetalleController::class);
         Route::apiResource('sedes',            SedeController::class);
 

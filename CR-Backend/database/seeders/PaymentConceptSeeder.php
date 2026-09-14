@@ -58,7 +58,7 @@ class PaymentConceptSeeder extends Seeder
             [
                 'nombre' => 'Vacaciones Truncas',
                 'tipo' => 'bonificacion', 'calculo' => null, 'valor' => null,
-                'descripcion' => 'Las vacaciones ganadas y no tomadas que se pagan al cesar: un doceavo del sueldo por cada mes completo trabajado desde su último periodo.',
+                'descripcion' => 'Un doceavo del sueldo por cada mes completo trabajado, de las vacaciones ganadas y no tomadas. Es la vía de plazo fijo, suplencia y prácticas: ellos no piden descanso, se les paga con este concepto.',
             ],
             [
                 'nombre' => 'Gratificaciones Fiestas Patrias - Ley 29351 y 30334',
@@ -81,6 +81,12 @@ class PaymentConceptSeeder extends Seeder
                 'descripcion' => 'La CTS. Normalmente se deposita en su cuenta en mayo y noviembre; acá solo aparece cuando se le paga junto con la boleta.',
             ],
             [
+                // Sale en la hoja PLANILLA del PLAME del colegio, columna U.
+                'nombre' => 'Planilla de Movilidad',
+                'tipo' => 'bonificacion', 'calculo' => null, 'valor' => null,
+                'descripcion' => 'Lo que se le paga por movilizarse por trabajo. Va aparte del sueldo y el monto es de cada quien, así que se agrega caso por caso.',
+            ],
+            [
                 'nombre' => ConceptosDePago::OTROS_INGRESOS,
                 'etiqueta_boleta' => 'Otros Conceptos',
                 'tipo' => 'bonificacion', 'calculo' => null, 'valor' => null,
@@ -99,14 +105,18 @@ class PaymentConceptSeeder extends Seeder
                 'descripcion' => 'El aporte obligatorio a la AFP: el 10% que se va a su fondo de jubilación. Solo para quien está en una AFP.',
             ],
             [
+                // Estos dos estaban intercambiados a propósito, siguiendo la
+                // boleta física. El PLAME del colegio (hoja PLANILLA, columnas
+                // AC y AD) usa el criterio estándar —comisión variable, prima
+                // fija— y es el que manda desde ahora.
                 'nombre' => ConceptosDePago::SPP_PRIMA_SEGURO,
-                'tipo' => 'descuento', 'calculo' => 'porcentaje', 'valor' => null,
-                'descripcion' => 'La tasa que cobra su AFP y que cambia según cuál sea (Habitat, Integra, Prima, Profuturo). No tiene un valor fijo acá: lo pone el sistema según su ficha.',
+                'tipo' => 'descuento', 'calculo' => 'porcentaje', 'valor' => 1.37,
+                'descripcion' => 'La prima del seguro de invalidez y sobrevivencia, igual para todas las AFP. Lo calcula el sistema.',
             ],
             [
                 'nombre' => ConceptosDePago::SPP_COMISION,
-                'tipo' => 'descuento', 'calculo' => 'porcentaje', 'valor' => 1.37,
-                'descripcion' => 'La prima del seguro de invalidez y sobrevivencia, igual para todas las AFP. Lo calcula el sistema.',
+                'tipo' => 'descuento', 'calculo' => 'porcentaje', 'valor' => null,
+                'descripcion' => 'La comisión que cobra su AFP y que cambia según cuál sea (Habitat 1.47, Integra 1.55, Prima 1.60, Profuturo 1.69). No tiene un valor fijo acá: lo pone el sistema según su ficha.',
             ],
             [
                 'nombre' => ConceptosDePago::RENTA_5TA,
@@ -121,12 +131,32 @@ class PaymentConceptSeeder extends Seeder
             [
                 'nombre' => 'Descuento Autorizado - Diezmo',
                 'tipo' => 'descuento', 'calculo' => 'porcentaje', 'valor' => 10.00,
-                'descripcion' => 'El diezmo, que el trabajador autoriza por escrito a que se le descuente y se entregue a la iglesia. Sin esa autorización no se aplica.',
+                'aplica_a_todos' => true,
+                'descripcion' => 'El 10% del sueldo básico que se entrega a la iglesia. Se le pone solo a todo el personal. A quien no lo autorice, quítale la línea desde su detalle.',
             ],
             [
                 'nombre' => 'Descuento - Pago de Escolaridad Mensual',
                 'tipo' => 'descuento', 'calculo' => null, 'valor' => null,
                 'descripcion' => 'La pensión de sus hijos estudiando en el colegio, descontada del sueldo en vez de pagarla en caja.',
+            ],
+            [
+                // Sale en la pantalla de Emisión de Boletas del propio colegio.
+                'nombre' => 'Descuento Serv. Bazar',
+                'tipo' => 'descuento', 'calculo' => null, 'valor' => null,
+                'descripcion' => 'Lo que se llevó del bazar del colegio y se le descuenta del sueldo.',
+            ],
+            [
+                // Columna AJ de la hoja PLANILLA del PLAME del colegio.
+                'nombre' => 'Descuento Serv. Copias',
+                'tipo' => 'descuento', 'calculo' => null, 'valor' => null,
+                'descripcion' => 'Las copias e impresiones que se le hicieron en el colegio y se le descuentan del sueldo.',
+            ],
+            [
+                // Columna AK del PLAME. El monto sale de la hoja DSCT, que lo
+                // calcula por minutos de tardanza sobre el pago por hora.
+                'nombre' => 'Descuento Autorizado - Tardanzas y Faltas',
+                'tipo' => 'descuento', 'calculo' => null, 'valor' => null,
+                'descripcion' => 'Lo que se le descuenta por llegar tarde o faltar. El monto se saca de sus minutos de tardanza y de su pago por hora, así que se agrega caso por caso.',
             ],
             [
                 'nombre' => ConceptosDePago::OTROS_DESCUENTOS,

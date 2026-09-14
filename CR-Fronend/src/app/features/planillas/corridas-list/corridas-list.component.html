@@ -5,12 +5,26 @@
   [cifras]="cifras"
   [cargandoCifras]="cargando"
 >
-  <button headerActions class="btn-primary" (click)="nueva()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
-    Nueva planilla
-  </button>
+  <div headerActions style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <button class="btn-primary" (click)="nueva()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nueva planilla
+    </button>
+
+    <!-- El reporte general: todos los trabajadores del mes con sus
+         conceptos, estén en la planilla que estén. -->
+    <button class="btn-exportar" (click)="exportar()" [disabled]="exportando">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/>
+      </svg>
+      {{ exportando ? 'Generando…' : 'Descargar reporte' }}
+    </button>
+  </div>
 </app-page-header>
 
 <section class="panel-filtros">
@@ -123,41 +137,22 @@
       </div>
     </div>
 
-    <!-- Los meses del periodo. Una planilla es de UN mes, así que del año
-         escolar salen tantas planillas como meses tenga. -->
+    <!-- El mes que se va a generar. Una planilla es de UN mes: la de
+         septiembre paga septiembre. Viene puesto el mes en curso, que es el
+         que se paga casi siempre, y se puede cambiar a cualquier otro del
+         periodo. -->
     <div class="form-group" *ngIf="!corridaEditando && !resultadoMeses">
-      <label>Meses a pagar *</label>
-      <small class="form-ayuda">
-        Cada mes se paga por separado, así que se crea una planilla por mes:
-        la de Marzo paga marzo. Todas llevan el mismo nombre y la misma gente.
-      </small>
-
-      <div class="meses-pago" *ngIf="mesesDelPeriodo.length">
-        <div class="meses-pago__barra">
-          <span>
-            <strong>{{ mesesElegidos.length }}</strong> de {{ mesesDelPeriodo.length }} marcados
-          </span>
-          <button type="button" class="enlace-sutil" (click)="alternarTodosLosMeses()">
-            {{ todosLosMesesMarcados ? 'Desmarcar todos' : 'Marcar todos' }}
-          </button>
-        </div>
-
-        <div class="meses-pago__lista">
-          <label class="mes-chip" *ngFor="let m of mesesDelPeriodo"
-            [class.mes-chip--marcado]="mesMarcado(m.valor)">
-            <input type="checkbox" [checked]="mesMarcado(m.valor)" (change)="alternarMes(m.valor)" />
-            <span>{{ m.etiqueta }}</span>
-          </label>
-        </div>
-      </div>
+      <label for="mesAnio">Mes a generar *</label>
+      <select id="mesAnio" class="form-control" formControlName="mesAnio"
+        [class.is-invalid]="invalido('mesAnio')">
+        <option value="">— Elige el mes —</option>
+        <option *ngFor="let m of mesesDelPeriodo" [value]="m.valor">{{ m.etiqueta }}</option>
+      </select>
 
       <small class="form-error" *ngIf="!mesesDelPeriodo.length">
         Elige un periodo para ver sus meses.
       </small>
-      <small class="form-error" *ngIf="mesesDelPeriodo.length && !mesesElegidos.length">
-        Marca al menos un mes: sin mes no hay nada que pagar.
-      </small>
-      <small class="form-ayuda" *ngIf="resumenDeMeses">{{ resumenDeMeses }}</small>
+      <small class="form-ayuda" *ngIf="mesesDelPeriodo.length && resumenDeMeses">{{ resumenDeMeses }}</small>
     </div>
 
     <p class="form-ayuda" *ngIf="corridaEditando">
@@ -189,15 +184,15 @@
         ></app-selector-empleados>
 
         <p class="form-nota">
-          Se le armará la planilla a <strong>{{ cuantosAlcanzados }} trabajador(es)</strong>
-          en <strong>{{ mesesElegidos.length }} mes(es)</strong>, con sus conceptos de ley ya
-          calculados. A quien ya tenga planilla de un mes se le omite ahí, así que puedes
+          Se le armará la planilla de <strong>{{ mesElegidoEtiqueta }}</strong> a
+          <strong>{{ cuantosAlcanzados }} trabajador(es)</strong>, con sus conceptos de ley ya
+          calculados. A quien ya tenga planilla de ese mes se le omite, así que puedes
           repetirlo sin duplicar nada.
         </p>
 
         <p class="form-nota form-nota--aviso" *ngIf="mesesFuturos">
-          Ojo: {{ mesesFuturos }} de los meses marcados todavía no han pasado. Se calcularán
-          con los sueldos de hoy; si alguno sube o entra gente nueva, esa planilla habrá que
+          Ojo: <strong>{{ mesElegidoEtiqueta }}</strong> todavía no ha pasado. Se calculará con
+          los sueldos de hoy; si alguno sube o entra gente nueva, esa planilla habrá que
           rehacerla.
         </p>
       </ng-container>

@@ -33,6 +33,7 @@
 <app-form-modal
   [(visible)]="modalVisible"
   [titulo]="cargoEditando ? 'Editar Cargo' : 'Nuevo Cargo'"
+  ancho="860px"
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrarModal()"
@@ -52,6 +53,37 @@
       <textarea id="descripcion" class="form-control" formControlName="descripcion" rows="3"
         placeholder="Descripción opcional del cargo" [class.is-invalid]="invalido('descripcion')"></textarea>
       <small class="form-error" *ngIf="invalido('descripcion')">Máximo 255 caracteres.</small>
+    </div>
+
+    <div class="form-group">
+      <label>¿En qué áreas vale este cargo?</label>
+
+      <input type="text" class="form-control buscador-opciones" [(ngModel)]="buscadorAreas"
+        [ngModelOptions]="{ standalone: true }" placeholder="Busca un área por su nombre…"
+        aria-label="Buscar un área" />
+
+      <div class="rejilla-opciones">
+        <label class="check-item" *ngFor="let a of areasVisibles" [class.is-activo]="estaMarcada(a.id)">
+          <input type="checkbox" [checked]="estaMarcada(a.id)" (change)="alternarArea(a.id)" />
+          <span>{{ a.nombre }}</span>
+        </label>
+      </div>
+
+      <small class="form-ayuda" *ngIf="marcadasOcultas">
+        Hay <strong>{{ marcadasOcultas }}</strong> área(s) marcada(s) que este
+        buscador no deja ver. Siguen marcadas.
+      </small>
+
+      <small class="form-ayuda">
+        <ng-container *ngIf="areasElegidas.size === 0">
+          Sin marcar ninguna, el cargo aparece en <strong>todas</strong> las áreas.
+          Así están Practicante o Voluntario Misionero, que van donde haga falta.
+        </ng-container>
+        <ng-container *ngIf="areasElegidas.size > 0">
+          Al dar de alta a alguien, este cargo solo aparecerá en
+          {{ areasElegidas.size === 1 ? 'esa área' : 'esas ' + areasElegidas.size + ' áreas' }}.
+        </ng-container>
+      </small>
     </div>
 
     <div class="form-group">

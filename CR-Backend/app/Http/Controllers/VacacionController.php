@@ -37,6 +37,13 @@ class VacacionController extends Controller
     const DIAS_POR_ANIO = 30;
 
     /**
+     * Lo que se le dice a quien no puede pedirlas. Está una sola vez porque
+     * lo devuelven tres sitios: el saldo, el alta y la aprobación.
+     */
+    const MOTIVO_SIN_DERECHO = 'Con contrato de %s no se piden vacaciones: '
+        . 'al terminar el contrato se le pagan con el concepto "Vacaciones Truncas".';
+
+    /**
      * GET /vacaciones
      *
      * RR.HH. ve las de todos y puede filtrar por empleado; el trabajador ve
@@ -132,6 +139,11 @@ class VacacionController extends Controller
             ? $datos['empleado_id']
             : $this->empleadoDelToken($request);
 
+        // Antes que nada: si su contrato no da derecho a descanso, no hay
+        // fechas que revisar. Vale tanto para quien pide lo suyo como para
+        // RR.HH. registrando la solicitud de otro.
+        $this->rechazarSiNoTieneDerecho($empleadoId);
+
         $inicio = Carbon::parse($datos['fecha_inicio'])->startOfDay();
         $fin    = Carbon::parse($datos['fecha_fin'])->startOfDay();
 
@@ -210,6 +222,11 @@ class VacacionController extends Controller
         $vacacion = Vacacion::findOrFail($id);
 
         if ($datos['estado'] === 'aprobado' && $vacacion->estado !== 'aprobado') {
+            // También el derecho se revisa otra vez. Una solicitud puede haber
+            // quedado pendiente desde antes de que se le cambiara el contrato;
+            // aprobarla entonces sería dar un descanso que ya no le toca.
+            $this->rechazarSiNoTieneDerecho($vacacion->empleado_id, 'estado');
+
             // Se revisa otra vez al aprobar: entre que se pidió y se resuelve
             // pueden haberse aprobado otras solicitudes del mismo trabajador.
             $saldo = $this->calcularSaldo(
@@ -331,13 +348,57 @@ class VacacionController extends Controller
             ->when($exceptoId, fn ($q) => $q->where('id', '!=', $exceptoId))
             ->sum('dias_solicitados');
 
+        $tipoContrato = $empleado?->tipoContratoVigente();
+
         return [
             'anio'            => $anio,
             'mesesTrabajados' => $meses,
             'diasGanados'     => $ganados,
             'diasUsados'      => (int) $usadas,
             'diasDisponibles' => max(0, $ganados - (int) $usadas),
+            // Los días de arriba se calculan igual para todos: son los que
+            // lleva ganados, y de ahí sale también lo que se le pague como
+            // truncas. Lo que cambia con el contrato es si puede PEDIRLOS,
+            // y eso va aparte en vez de falsear la cuenta con ceros.
+            'tipoContrato'    => $tipoContrato,
+            'puedeSolicitar'  => (bool) $empleado?->puedeTomarVacaciones(),
+            'motivo'          => $empleado && ! $empleado->puedeTomarVacaciones()
+                ? $this->motivoSinDerecho($tipoContrato)
+                : null,
         ];
+    }
+
+    /** "plazo fijo", "prácticas"… como se lee, no como se guarda. */
+    private function motivoSinDerecho(?string $tipoContrato): string
+    {
+        $legible = match ($tipoContrato) {
+            'plazo_fijo' => 'plazo fijo',
+            'suplencia'  => 'suplencia',
+            'practicas'  => 'prácticas',
+            default      => 'este tipo',
+        };
+
+        return sprintf(self::MOTIVO_SIN_DERECHO, $legible);
+    }
+
+    /**
+     * Corta el paso a quien no tiene derecho a descanso.
+     *
+     * El campo del error cambia según por dónde entre —al pedir, el problema
+     * está en el empleado elegido; al aprobar, en el estado que se intenta
+     * poner— para que el formulario marque el campo correcto.
+     */
+    private function rechazarSiNoTieneDerecho(string $empleadoId, string $campo = 'empleado_id'): void
+    {
+        $empleado = Empleado::find($empleadoId);
+
+        if (! $empleado || $empleado->puedeTomarVacaciones()) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            $campo => [$this->motivoSinDerecho($empleado->tipoContratoVigente())],
+        ]);
     }
 
     /**

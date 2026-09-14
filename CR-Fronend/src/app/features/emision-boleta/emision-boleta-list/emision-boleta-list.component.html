@@ -175,7 +175,8 @@
           <div class="fin-col fin-col-ingresos">
             <div class="fin-fila"><span class="fin-concepto">Remuneración Básica</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.remuneracionBasica" (ngModelChange)="recalcularMontosDinamicos()" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Bonificación por Cargo</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonificacionCargo" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Asignación Familiar</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.asignacionFamiliar" min="0" step="0.01"></div>
+            <!-- Sale de "tiene hijos" en su ficha: a mano se pisaría el valor bueno. -->
+            <div class="fin-fila"><span class="fin-concepto" title="Sale de la ficha del trabajador: se le pone sola si tiene hijos a cargo">Asignación Familiar</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.asignacionFamiliar" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
             <div class="fin-fila"><span class="fin-concepto">Vacaciones Truncas</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.vacacionesTruncas" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Gratificaciones Fiestas Patrias</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.gratificacionesFiestas" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Bonif. Extraord. Temporal</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonifExtraordTemporal" min="0" step="0.01"></div>
@@ -185,10 +186,12 @@
           </div>
 
           <div class="fin-col fin-col-descuentos">
-            <div class="fin-fila"><span class="fin-concepto">ONP 13%</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.onp13" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">SPP: Fondo Pensiones</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sppFondoPensiones" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">SPP: Prima de Seguro</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sppPrimaSeguro" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">SPP: Comisión</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sppComision" min="0" step="0.01"></div>
+            <!-- Pensión: la calcula el motor según su sistema y su AFP. A mano
+                 se podría escribir un descuento que no le toca. -->
+            <div class="fin-fila"><span class="fin-concepto" title="Se calcula según su sistema de pensión y su AFP">ONP 13%</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.onp13" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+            <div class="fin-fila"><span class="fin-concepto" title="Se calcula según su AFP">SPP: Fondo Pensiones</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.sppFondoPensiones" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+            <div class="fin-fila"><span class="fin-concepto" title="1.37%, igual para todas las AFP">SPP: Prima de Seguro</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.sppPrimaSeguro" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+            <div class="fin-fila"><span class="fin-concepto" title="Cambia según cuál sea su AFP">SPP: Comisión</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.sppComision" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
             <div class="fin-fila"><span class="fin-concepto" title="Se calcula automáticamente en la boleta oficial según las retenciones de Ley">I.R. 5ta Categoría <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color: var(--text-muted); margin-left: 4px;" stroke-width="2" ><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span><input type="text" class="fin-input" placeholder="Automático en PDF" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed; text-align: right;"></div>
             <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Alimentación</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoAlimentacion" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Bazar</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoBazar" min="0" step="0.01"></div>
@@ -204,7 +207,8 @@
           </div>
 
           <div class="fin-col fin-col-aportaciones">
-            <div class="fin-fila"><span class="fin-concepto">ESSALUD 9%</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.essalud9" min="0" step="0.01"></div>
+            <!-- Lo paga el colegio sobre la base afecta: no se escribe a mano. -->
+            <div class="fin-fila"><span class="fin-concepto" title="El 9% que aporta el colegio sobre su remuneración afecta">ESSALUD 9%</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.essalud9" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
             <div class="fin-fila"><span class="fin-concepto">SCTR</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sctr" min="0" step="0.01"></div>
           </div>
 

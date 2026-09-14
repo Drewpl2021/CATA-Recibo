@@ -10,3 +10,15 @@
 !CR-Backend/database/**/*.sql
 respaldo-*.tar.gz
 archivos-*.tar.gz
+
+# Planillas y padrones reales del colegio.
+#
+# Son los Excel y CSV que sirvieron para comprobar el cálculo contra el
+# proceso de verdad: llevan nombre, DNI y sueldo de todo el personal. Se
+# quedan en la máquina de quien trabaja, NUNCA en el repositorio — y menos
+# siendo público. Si hace falta un juego de datos para probar, que sea
+# inventado.
+*.xls
+*.xlsx
+*.csv
+!_test_data/**/*.csv

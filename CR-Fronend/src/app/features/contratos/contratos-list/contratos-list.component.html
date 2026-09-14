@@ -25,9 +25,11 @@
   (cambioBusqueda)="buscar($event)"
   [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'observaciones']"
   [acciones]="['editar', 'eliminar']"
+  [accionesPersonalizadas]="accionesExtra"
   mensajeVacio="No hay contratos que coincidan con el filtro."
   (editarFila)="editar($event)"
   (eliminarFila)="eliminar($event)"
+  (accionPersonalizada)="alAccionar($event)"
 >
   <div tableActions class="filtros-linea">
     <div class="filtros-linea__campo">
@@ -128,4 +130,50 @@
         placeholder="Notas internas sobre este contrato"></textarea>
     </div>
   </form>
+</app-form-modal>
+
+<!-- ── Los documentos de un contrato: verlos, bajarlos y adjuntar otro ── -->
+<app-form-modal
+  [(visible)]="modalDocsVisible"
+  [titulo]="'Documentos de ' + nombreEmpleado(contratoElegido?.empleado)"
+  ancho="720px"
+  [guardando]="subiendo"
+  textoGuardar="Adjuntar documento"
+  (guardar)="subirDocumento()"
+  (cancelar)="cerrarDocumentos()"
+>
+  <div class="form-fields">
+    <p class="data-table-empty" *ngIf="cargandoDocs">Cargando…</p>
+
+    <p class="form-nota" *ngIf="!cargandoDocs && !documentos.length">
+      Este contrato todavía no tiene nada adjunto. Sube acá el contrato
+      firmado y escaneado y queda guardado en el expediente del trabajador,
+      en vez de en una carpeta aparte.
+    </p>
+
+    <div class="detalle-masivo" *ngIf="documentos.length">
+      <div class="detalle-masivo__fila" *ngFor="let d of documentos">
+        <span>{{ etiqueta(tiposDocumento, d.tipo) }}</span>
+        <button type="button" class="btn-exportar" (click)="descargarDocumento(d)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/>
+          </svg>
+          Descargar
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="docContrato">Adjuntar el contrato firmado</label>
+      <input type="file" id="docContrato" class="form-control"
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" (change)="alElegirDocumento($event)" />
+      <small class="form-ayuda">
+        PDF, Word o imagen, hasta 5 MB. Se guarda en el disco privado: solo lo
+        ven RR.HH. y el propio trabajador.
+      </small>
+    </div>
+  </div>
 </app-form-modal>

@@ -20,9 +20,26 @@ class CargoController extends Controller
      */
     public function index(Request $request)
     {
+        $query = Cargo::query()->with('areas:id,nombre')->orderBy('nombre');
+
+        /*
+         * "Los cargos que puedo elegir en esta área": los suyos MÁS los
+         * comodines (los que no están acotados a ninguna). Sin la segunda
+         * mitad, elegir un área dejaría fuera a Practicante o Docente y
+         * habría que acotar los 34 cargos a mano para que la lista sirviera.
+         */
+        if ($request->filled('area_id')) {
+            $area = $request->input('area_id');
+
+            $query->where(function (Builder $q) use ($area) {
+                $q->whereHas('areas', fn (Builder $a) => $a->where('areas.id', $area))
+                    ->orWhereDoesntHave('areas');
+            });
+        }
+
         return $this->responderListado(
             $request,
-            Cargo::query()->orderBy('nombre'),
+            $query,
             ['nombre', 'descripcion'],
             // Las cifras de la cabecera: se cuentan sobre todo lo que pasa el
             // filtro, no sobre la página que se está viendo.
@@ -36,14 +53,18 @@ class CargoController extends Controller
             'nombre' => 'required|string|max:100|unique:cargos,nombre',
             'descripcion' => 'nullable|string|max:255',
             'estado' => 'nullable|string|in:activo,inactivo',
+            // Las áreas donde vale. Vacío o ausente = vale en todas.
+            'area_ids'   => 'sometimes|array',
+            'area_ids.*' => 'uuid|exists:areas,id',
         ]);
         $cargo = Cargo::create($datos);
-        return response()->json(['success' => true, 'data' => $cargo], 201);
+        $cargo->areas()->sync($request->input('area_ids', []));
+        return response()->json(['success' => true, 'data' => $cargo->load('areas:id,nombre')], 201);
     }
 
     public function show(string $id)
     {
-        return response()->json(['success' => true, 'data' => Cargo::findOrFail($id)]);
+        return response()->json(['success' => true, 'data' => Cargo::with('areas:id,nombre')->findOrFail($id)]);
     }
 
     public function update(Request $request, string $id)
@@ -53,9 +74,15 @@ class CargoController extends Controller
             'nombre' => ['sometimes', 'string', 'max:100', Rule::unique('cargos', 'nombre')->ignore($id)],
             'descripcion' => 'nullable|string|max:255',
             'estado' => 'nullable|string|in:activo,inactivo',
+            'area_ids'   => 'sometimes|array',
+            'area_ids.*' => 'uuid|exists:areas,id',
         ]);
         $cargo->update($datos);
-        return response()->json(['success' => true, 'data' => $cargo]);
+        // Solo si vienen: una edición que no las menciona no debe borrarlas.
+        if ($request->has('area_ids')) {
+            $cargo->areas()->sync($request->input('area_ids', []));
+        }
+        return response()->json(['success' => true, 'data' => $cargo->load('areas:id,nombre')]);
     }
 
     public function destroy(string $id)

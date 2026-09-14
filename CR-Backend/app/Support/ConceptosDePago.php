@@ -28,6 +28,12 @@ final class ConceptosDePago
     public const SPP_COMISION        = 'SPP. Comisión';
     public const RENTA_5TA           = 'I.R. 5ta Categoría';
     public const ESSALUD             = 'ESSALUD 9%';
+    /**
+     * Se le crea la línea a quien tiene `tiene_hijos = 1` en su ficha, y a
+     * nadie más. El código necesita nombrarla porque el monto no sale del
+     * catálogo sino de esa casilla, igual que EsSalud sale de su base.
+     */
+    public const ASIGNACION_FAMILIAR = 'Asignación Familiar';
 
     // ── Las dos bolsas genéricas ──────────────────────────────────
     public const OTROS_INGRESOS      = 'Otros Conceptos (Ingresos)';

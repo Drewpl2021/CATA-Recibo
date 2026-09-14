@@ -5,7 +5,7 @@
   [cifras]="cifras"
   [cargandoCifras]="!saldo"
 >
-  <button headerActions class="btn-primary" (click)="pedir()" *ngIf="!sinEmpleado">
+  <button headerActions class="btn-primary" (click)="pedir()" *ngIf="!sinEmpleado && puedeSolicitar">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
       <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
     </svg>
@@ -16,6 +16,17 @@
 <p class="form-nota form-nota--alerta" *ngIf="sinEmpleado">
   Tu cuenta no está vinculada a ninguna ficha de empleado, así que no tiene
   días de vacaciones. Pídele a Recursos Humanos que la vincule.
+</p>
+
+<!--
+  Su contrato no da derecho a pedir descanso. Se le dice por qué y qué recibe
+  en su lugar, en vez de dejarle un botón que el servidor va a rechazar. La
+  tabla de abajo sigue a la vista: puede tener solicitudes de antes.
+-->
+<p class="form-nota form-nota--alerta" *ngIf="!sinEmpleado && motivoSinVacaciones">
+  {{ motivoSinVacaciones }}
+  Esos días se te pagan en dinero, no se toman como descanso. Si tienes dudas,
+  consúltalo con Recursos Humanos.
 </p>
 
 <app-data-table
@@ -33,7 +44,7 @@
   (eliminarFila)="anular($event)"
 ></app-data-table>
 
-<p class="form-nota" style="margin-top: 16px;" *ngIf="!sinEmpleado">
+<p class="form-nota" style="margin-top: 16px;" *ngIf="!sinEmpleado && puedeSolicitar">
   <ng-container *ngIf="esProporcional; else anioCompleto">
     Llevas {{ saldo?.mesesTrabajados }} meses en el colegio, así que por ahora te
     corresponden {{ saldo?.diasGanados }} días. Al cumplir el año pasas a los 30.

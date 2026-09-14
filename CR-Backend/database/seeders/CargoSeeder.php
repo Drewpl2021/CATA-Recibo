@@ -4,6 +4,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use App\Models\Cargo;
+use App\Models\Area;
 
 /**
  * Los cargos del colegio: qué hace cada persona, con su descripción.
@@ -36,6 +37,7 @@ class CargoSeeder extends Seeder
     public function run(): void
     {
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('area_cargo')->truncate();
         Cargo::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
@@ -94,6 +96,69 @@ class CargoSeeder extends Seeder
             ]);
         }
 
+        $this->acotarPorArea();
+
         $this->command?->info('   ' . count($cargos) . ' cargos con su descripción');
+    }
+
+    /**
+     * Qué cargos tienen sentido en cada área.
+     *
+     * LO QUE NO ESTÁ AQUÍ ES A PROPÓSITO: un cargo sin áreas vale en TODAS.
+     * Practicante Pre-Profesional, Practicante Profesional y Voluntario
+     * Misionero se quedan fuera porque el colegio los pone donde haga falta
+     * —en TIC, en Contabilidad, en Psicopedagogía—, y acotarlos sería tener
+     * que acordarse de sumarles cada área nueva.
+     *
+     * Docente, Auxiliar y Coordinador de Nivel sí están, pero en las TRES
+     * planas docentes: es exactamente el caso que hace que esta relación
+     * tenga que ser de varios a varios.
+     */
+    private function acotarPorArea(): void
+    {
+        $mapa = [
+            'Dirección'                  => ['Director', 'Secretaria'],
+            'Subdirección Académica'     => ['Subdirector', 'Coordinador Académico'],
+            'Administración'             => ['Jefe de Personal', 'Administrativo', 'Asistente Administrativo', 'Encargado de Logística'],
+            'Contabilidad y Tesorería'   => ['Contador', 'Asistente Contable', 'Tesorero', 'Cajero'],
+            'Secretaría Académica'       => ['Secretaria', 'Asistente Administrativo'],
+            'TIC'                        => ['Soporte Técnico'],
+            'Admisión y Comunicaciones'  => ['Promotor de Admisión', 'Secretaria', 'Asistente Administrativo'],
+            'Plana Docente — Inicial'    => ['Docente', 'Auxiliar', 'Docente de Taller', 'Coordinador de Nivel'],
+            'Plana Docente — Primaria'   => ['Docente', 'Auxiliar', 'Docente de Taller', 'Coordinador de Nivel', 'Entrenador Deportivo'],
+            'Plana Docente — Secundaria' => ['Docente', 'Auxiliar', 'Docente de Taller', 'Coordinador de Nivel', 'Entrenador Deportivo'],
+            'Tutoría y Psicopedagogía'   => ['Psicólogo', 'Coordinador de Tutoría', 'Enfermero'],
+            'Pastoral y Capellanía'      => ['Capellán', 'Coordinador de Pastoral'],
+            'Biblioteca'                 => ['Bibliotecario'],
+            'Mantenimiento y Limpieza'   => ['Personal de Limpieza', 'Personal de Mantenimiento', 'Personal de Cocina', 'Conductor'],
+            'Vigilancia y Portería'      => ['Portero', 'Vigilante'],
+        ];
+
+        $acotados = [];
+
+        foreach ($mapa as $areaNombre => $nombresDeCargo) {
+            $areaId = Area::where('nombre', $areaNombre)->value('id');
+
+            if (! $areaId) {
+                $this->command?->warn("   no encontré el área \"{$areaNombre}\": sus cargos quedan sin acotar");
+                continue;
+            }
+
+            foreach ($nombresDeCargo as $nombreCargo) {
+                $cargo = Cargo::where('nombre', $nombreCargo)->first();
+
+                if (! $cargo) {
+                    continue;
+                }
+
+                $cargo->areas()->syncWithoutDetaching([$areaId]);
+                $acotados[$cargo->id] = true;
+            }
+        }
+
+        $comodines = Cargo::doesntHave('areas')->count();
+
+        $this->command?->info('   ' . count($acotados) . ' cargos acotados a su área, '
+            . $comodines . ' que valen en cualquiera (practicantes y voluntarios)');
     }
 }

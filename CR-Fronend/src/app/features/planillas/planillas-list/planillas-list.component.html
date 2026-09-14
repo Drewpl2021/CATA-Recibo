@@ -20,7 +20,10 @@
       Agregar trabajadores
     </button>
 
-    <button class="btn-secondary" *ngIf="corridaId && !estaCerrada" (click)="abrirConcepto()">
+    <!-- Dorado, no gris: es una acción que mueve dinero de toda la planilla y
+         en gris se perdía entre los demás botones. Usa el par --accent /
+         --on-accent, que está pensado para leerse en claro y en oscuro. -->
+    <button class="btn-warning" *ngIf="corridaId && !estaCerrada" (click)="abrirConcepto()">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="1" x2="12" y2="23"/>
@@ -29,13 +32,16 @@
       Aplicar concepto
     </button>
 
-    <button class="btn-secondary" (click)="abrirBoletas()">
+    <!-- El reporte completo: lo que se ve en pantalla, con una columna por
+         concepto. Dentro de una planilla baja solo la suya. -->
+    <button class="btn-exportar" (click)="exportar()" [disabled]="exportando">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
         <polyline points="14 2 14 8 20 8"/>
+        <line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/>
       </svg>
-      Emitir boletas
+      {{ exportando ? 'Generando…' : 'Descargar reporte' }}
     </button>
   </div>
 </app-page-header>
@@ -110,9 +116,18 @@
   </div>
 </section>
 
+<!-- Sin la acción "editar": esa pantalla solo dejaba escribir una bonificación
+     y un descuento sueltos, sin nombre ni motivo. Lo que suma o resta va por
+     conceptos, que sí quedan con su etiqueta en la boleta.
+
+     Las casillas de la izquierda solo salen dentro de una planilla abierta:
+     son para marcar a quiénes aplicarles un concepto. -->
 <app-data-table
+  #tablaPlanillas
   entidad="la planilla"
   [columnas]="columnas"
+  [seleccionable]="!!corridaId && !estaCerrada"
+  (cambioSeleccion)="alMarcar($event)"
   [datos]="planillas"
   [cargando]="cargando"
   [numerarFilas]="true"
@@ -122,11 +137,10 @@
   (cambioPagina)="irAPagina($event)"
   (cambioBusqueda)="buscar($event)"
   [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'empleado.dni']"
-  [acciones]="['editar', 'eliminar']"
+  [acciones]="['eliminar']"
   [accionesPersonalizadas]="accionesExtra"
-  [filasPorPagina]="15"
+  [filasPorPagina]="TAMANO_PAGINA"
   [mensajeVacio]="mensajeSinFilas"
-  (editarFila)="editar($event)"
   (eliminarFila)="eliminar($event)"
   (accionPersonalizada)="alAccionar($event)"
 ></app-data-table>
@@ -192,60 +206,8 @@
   </form>
 </app-form-modal>
 
-<!-- ── Emisión masiva de boletas ── -->
-<app-form-modal
-  [(visible)]="modalBoletasVisible"
-  [titulo]="corrida ? 'Emitir boletas de esta planilla' : 'Emitir boletas del mes'"
-  [guardando]="emitiendo"
-  [textoGuardar]="resultadoBoletas ? 'Emitir otra vez' : 'Emitir boletas'"
-  (guardar)="emitirBoletas()"
-  (cancelar)="cerrarBoletas()"
->
-  <div class="form-fields">
-    <!-- Dentro de una planilla: solo su gente, y su mes -->
-    <p class="form-nota" *ngIf="!resultadoBoletas && corrida">
-      Se generará el PDF de la boleta de cada trabajador de
-      <strong>{{ queSeEmite }}</strong>: solo los de esta planilla, no los del
-      resto del colegio. Las boletas ya emitidas no se duplican.
-    </p>
-
-    <!-- Fuera de una planilla: el mes entero -->
-    <ng-container *ngIf="!resultadoBoletas && !corrida">
-      <p class="form-nota">
-        Se generará el PDF de la boleta de
-        <strong>{{ queSeEmite }}</strong> para cada
-        empleado que ya tenga planilla de ese mes. A quien no la tenga se le omite,
-        y las boletas ya emitidas no se duplican.
-      </p>
-      <p class="form-ayuda">
-        El mes sale del filtro de la lista: cámbialo ahí si quieres emitir otro.
-      </p>
-    </ng-container>
-
-    <ng-container *ngIf="resultadoBoletas">
-      <div class="resumen-masivo">
-        <div class="resumen-masivo__dato">
-          <strong>{{ resultadoBoletas.generadas }}</strong>
-          <span>Emitidas</span>
-        </div>
-        <div class="resumen-masivo__dato">
-          <strong>{{ resultadoBoletas.omitidas }}</strong>
-          <span>Omitidas</span>
-        </div>
-      </div>
-      <!-- Las omitidas, separadas: "sin planilla" es trabajo pendiente -->
-      <p class="form-ayuda" *ngIf="resultadoBoletas.omitidas">
-        <ng-container *ngIf="resultadoBoletas.yaTenianBoleta">
-          {{ resultadoBoletas.yaTenianBoleta }} ya tenían su boleta emitida.
-        </ng-container>
-        <ng-container *ngIf="resultadoBoletas.sinPlanilla">
-          {{ resultadoBoletas.sinPlanilla }} están activos pero no tienen planilla
-          de ese mes: hay que armársela antes de emitirles la boleta.
-        </ng-container>
-      </p>
-    </ng-container>
-  </div>
-</app-form-modal>
+<!-- La emisión de boletas se fue de acá: esta pantalla arma la planilla, y
+     emitir es otro trabajo con su propia pantalla (Emisión de Boletas). -->
 
 <!-- ── Meter a alguien en una planilla ── -->
 <app-form-modal
@@ -298,8 +260,10 @@
         <select id="concepto" class="form-control" [(ngModel)]="conceptoElegido"
           (ngModelChange)="alElegirConcepto()">
           <option value="">— Elige un concepto —</option>
+          <!-- El visto y el número dicen qué conceptos ya tiene esta planilla
+               y a cuánta gente le alcanzaron. -->
           <optgroup *ngFor="let g of conceptosPorTipo" [label]="g.etiqueta">
-            <option *ngFor="let c of g.conceptos" [value]="c.id">{{ c.nombre }}</option>
+            <option *ngFor="let c of g.conceptos" [value]="c.id">{{ etiquetaConcepto(c) }}</option>
           </optgroup>
         </select>
         <small class="form-ayuda" *ngIf="conceptoSeleccionado?.descripcion">
