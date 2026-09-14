@@ -9,7 +9,7 @@ use Throwable;
 /**
  * Manda un correo de prueba, AHORA y sin pasar por la cola.
  *
- *   php artisan correo:probar tu-correo@cata.edu.pe
+ *   php artisan correo:probar tu-correo@ejemplo.com
  *
  * Existe porque el correo falla en silencio: los avisos de boleta y el
  * "olvidé mi contraseña" van a la cola, y si el SMTP está mal configurado el

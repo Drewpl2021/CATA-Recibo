@@ -2,24 +2,41 @@
   <h2 class="seccion-form__titulo">Datos laborales</h2>
 
   <div class="rejilla-campos">
-    <div class="form-group">
-      <label for="area_id">Área *</label>
-      <select id="area_id" class="form-control" formControlName="area_id"
-        [class.is-invalid]="invalido('area_id')">
-        <option value="">— Elige un área —</option>
-        <option *ngFor="let a of areas" [value]="a.id">{{ a.nombre }}</option>
-      </select>
-      <small class="form-error" *ngIf="invalido('area_id')">{{ error('area_id') }}</small>
-    </div>
+    <!-- Área y Cargo van juntos y en ese orden: el área manda, y de ella
+         sale la lista de cargos. -->
+    <div class="form-row rejilla-campos--completo">
+      <div class="form-group">
+        <label for="area_id">Área *</label>
+        <select id="area_id" class="form-control" formControlName="area_id"
+          (change)="alCambiarArea()" [class.is-invalid]="invalido('area_id')">
+          <option value="">— Elige un área —</option>
+          <option *ngFor="let a of areas" [value]="a.id">{{ a.nombre }}</option>
+        </select>
+        <small class="form-error" *ngIf="invalido('area_id')">{{ error('area_id') }}</small>
+      </div>
 
-    <div class="form-group">
-      <label for="cargo_id">Cargo *</label>
-      <select id="cargo_id" class="form-control" formControlName="cargo_id"
-        [class.is-invalid]="invalido('cargo_id')">
-        <option value="">— Elige un cargo —</option>
-        <option *ngFor="let c of cargos" [value]="c.id">{{ c.nombre }}</option>
-      </select>
-      <small class="form-error" *ngIf="invalido('cargo_id')">{{ error('cargo_id') }}</small>
+      <div class="form-group">
+        <label for="cargo_id">Cargo *</label>
+        <select id="cargo_id" class="form-control" formControlName="cargo_id"
+          [class.is-invalid]="invalido('cargo_id')">
+          <option value="">— Elige un cargo —</option>
+          <option *ngFor="let c of cargosDelArea" [value]="c.id">{{ c.nombre }}</option>
+        </select>
+
+        <small class="form-error" *ngIf="invalido('cargo_id')">{{ error('cargo_id') }}</small>
+
+        <small class="form-ayuda" *ngIf="cargoLimpiadoPorElArea">
+          El cargo que tenías no existe en esa área: elige uno de los de ahora.
+        </small>
+
+        <small class="form-ayuda" *ngIf="!invalido('cargo_id') && !cargoLimpiadoPorElArea && form.get('area_id')?.value">
+          Solo los cargos de esa área, más los que valen en cualquiera.
+        </small>
+
+        <small class="form-ayuda" *ngIf="!form.get('area_id')?.value">
+          Elige primero el área y la lista se acorta sola.
+        </small>
+      </div>
     </div>
 
     <div class="form-group">

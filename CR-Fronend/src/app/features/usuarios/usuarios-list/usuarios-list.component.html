@@ -50,7 +50,7 @@
     <div class="form-group">
       <label for="email">Correo *</label>
       <input type="email" id="email" class="form-control" formControlName="email"
-        placeholder="docente@cata.edu.pe" [class.is-invalid]="invalido('email')" />
+        placeholder="nombre@dominio.com" [class.is-invalid]="invalido('email')" />
       <small class="form-error" *ngIf="invalido('email')">
         Escribe un correo válido; es con el que entra al sistema.
       </small>

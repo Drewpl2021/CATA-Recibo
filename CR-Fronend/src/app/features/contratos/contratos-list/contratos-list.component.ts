@@ -3,16 +3,19 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 
-import { ContratoService, EmpleadoService, ToastService, ConfirmService } from '../../../core/services';
-import { Contrato, ContratoPayload, Empleado } from '../../../core/models';
+import {
+  ContratoService, EmpleadoService, ToastService, ConfirmService, DocumentoService,
+} from '../../../core/services';
+import { Contrato, ContratoPayload, Documento, Empleado } from '../../../core/models';
 import { mensajeErrorApi } from '../../../core/utils';
 import {
   TIPO_CONTRATO_CONTRATO_OPCIONES,
   ESTADO_CONTRATO_OPCIONES,
   MOTIVO_FIN_CONTRATO_OPCIONES,
+  TIPO_DOCUMENTO_OPCIONES,
 } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
-import { ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
+import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
@@ -129,6 +132,129 @@ export class ContratosListComponent implements OnInit {
     motivo_fin: [''],
     observaciones: [''],
   });
+
+  // ────────── Documentos del contrato ──────────
+  //
+  // El contrato en papel —el que se firma y se escanea— vivía fuera del
+  // sistema, en una carpeta de red. La tabla documentos ya tenía columna
+  // contrato_id desde el principio; lo que faltaba era por dónde subirlo.
+
+  private documentoService = inject(DocumentoService);
+
+  modalDocsVisible = false;
+  cargandoDocs = false;
+  subiendo = false;
+  contratoElegido: Contrato | null = null;
+  documentos: Documento[] = [];
+  archivoDoc: File | null = null;
+
+  tiposDocumento = TIPO_DOCUMENTO_OPCIONES;
+
+  accionesExtra: AccionPersonalizada<Contrato>[] = [
+    { id: 'documentos', titulo: 'Ver y adjuntar sus documentos', icono: 'description' },
+  ];
+
+  alAccionar(evento: { accion: string; fila: Contrato }): void {
+    if (evento.accion === 'documentos') this.verDocumentos(evento.fila);
+  }
+
+  verDocumentos(contrato: Contrato): void {
+    this.contratoElegido = contrato;
+    this.documentos = [];
+    this.archivoDoc = null;
+    this.modalDocsVisible = true;
+    this.cargarDocumentos();
+  }
+
+  private cargarDocumentos(): void {
+    if (!this.contratoElegido) return;
+
+    this.cargandoDocs = true;
+    this.documentoService.listar({ contrato_id: this.contratoElegido.id }).subscribe({
+      next: (res) => {
+        if (res.success) this.documentos = res.data;
+        this.cargandoDocs = false;
+      },
+      error: (err) => {
+        this.cargandoDocs = false;
+        this.toastService.error('Error', mensajeErrorApi(err, 'No se pudieron cargar los documentos.'));
+      },
+    });
+  }
+
+  cerrarDocumentos(): void {
+    this.modalDocsVisible = false;
+    this.contratoElegido = null;
+    this.documentos = [];
+    this.archivoDoc = null;
+  }
+
+  alElegirDocumento(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    this.archivoDoc = input.files?.[0] ?? null;
+  }
+
+  /**
+   * Sube el archivo y lo deja atado a ESTE contrato.
+   *
+   * El empleado sale del contrato, no de un desplegable: un documento de un
+   * contrato es, por definición, de su titular, y preguntarlo otra vez solo
+   * abre la puerta a colgárselo a otra persona.
+   */
+  subirDocumento(): void {
+    if (!this.contratoElegido) return;
+
+    if (!this.archivoDoc) {
+      this.toastService.error('Falta el archivo', 'Elige el documento que vas a adjuntar.');
+      return;
+    }
+
+    this.subiendo = true;
+    this.documentoService
+      .subir({
+        empleado_id: this.contratoElegido.empleado_id,
+        contrato_id: this.contratoElegido.id,
+        tipo: 'contrato',
+        archivo: this.archivoDoc,
+      })
+      .subscribe({
+        next: () => {
+          this.subiendo = false;
+          this.archivoDoc = null;
+          this.toastService.success('Documento adjuntado', 'Quedó guardado en el expediente del trabajador.');
+          this.cargarDocumentos();
+        },
+        error: (err) => {
+          this.subiendo = false;
+          this.toastService.error('No se subió', mensajeErrorApi(err, 'No se pudo adjuntar el documento.'));
+        },
+      });
+  }
+
+  descargarDocumento(documento: Documento): void {
+    this.documentoService.descargar(documento.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.nombreDelArchivo(documento);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.toastService.error('No se descargó', mensajeErrorApi(err, 'No se pudo bajar el documento.'));
+      },
+    });
+  }
+
+  /** "Contrato - Mamani Flores Carlos.pdf", con su extensión original. */
+  private nombreDelArchivo(documento: Documento): string {
+    const extension = documento.archivo?.includes('.') ? documento.archivo.split('.').pop() : 'pdf';
+    const tipo = this.etiqueta(this.tiposDocumento, documento.tipo);
+    const persona = this.nombreEmpleado(this.contratoElegido?.empleado);
+
+    return `${tipo} - ${persona}.${extension}`.replace(/[\\/:*?"<>|]/g, '');
+  }
 
   ngOnInit(): void {
     this.cargar();

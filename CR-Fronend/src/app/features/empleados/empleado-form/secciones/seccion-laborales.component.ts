@@ -31,6 +31,51 @@ export class SeccionLaboralesComponent extends SeccionEmpleadoBase {
   tiposContrato = TIPO_CONTRATO_OPCIONES;
   estados = ESTADO_EMPLEADO_OPCIONES;
 
+  /** Se avisa una vez cuando el cambio de área dejó fuera al cargo elegido. */
+  cargoLimpiadoPorElArea = false;
+
+  /**
+   * Los cargos que se pueden elegir en el área marcada.
+   *
+   * Son los acotados a esa área MÁS los comodines (los que no están acotados
+   * a ninguna: practicantes, voluntarios). Sin área elegida salen todos.
+   *
+   * Se filtra en memoria: el formulario ya trae el catálogo entero al
+   * abrirse, así que cambiar de área no cuesta una llamada más.
+   */
+  get cargosDelArea(): Cargo[] {
+    const areaId = this.form.get('area_id')?.value;
+
+    if (!areaId) {
+      return this.cargos;
+    }
+
+    return this.cargos.filter(
+      (c) => !c.areas?.length || c.areas.some((a) => a.id === areaId)
+    );
+  }
+
+  /**
+   * Al cambiar de área, un cargo que ya no encaja se quita.
+   *
+   * Dejarlo puesto sería peor que molesto: el desplegable mostraría un hueco
+   * y el backend rechazaría el alta al final del formulario, con los cinco
+   * pasos ya llenos.
+   */
+  alCambiarArea(): void {
+    const cargoId = this.form.get('cargo_id')?.value;
+    this.cargoLimpiadoPorElArea = false;
+
+    if (!cargoId) {
+      return;
+    }
+
+    if (!this.cargosDelArea.some((c) => c.id === cargoId)) {
+      this.form.patchValue({ cargo_id: '' });
+      this.cargoLimpiadoPorElArea = true;
+    }
+  }
+
   /**
    * Un contrato indeterminado no acaba, así que pedirle fecha de término no
    * tiene sentido. Los demás (plazo fijo, suplencia, prácticas) sí la llevan

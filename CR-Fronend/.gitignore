@@ -40,3 +40,11 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Scripts de prueba contra el navegador (CDP) y capturas sueltas.
+# Son de usar y tirar: se crean para comprobar una pantalla y se borran.
+# Se colaron en un commit por no estar aquí.
+cdp-*.js
+*.png
+!src/**/*.png
+!public/**/*.png

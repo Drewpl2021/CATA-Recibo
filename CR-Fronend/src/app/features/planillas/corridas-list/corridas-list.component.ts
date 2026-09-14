@@ -6,6 +6,7 @@ import { forkJoin } from 'rxjs';
 
 import {
   PlanillaCorridaService,
+  PlanillaService,
   PeriodoService,
   EmpleadoService,
   AreaService,
@@ -53,6 +54,7 @@ export class CorridasListComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private corridaService = inject(PlanillaCorridaService);
+  private planillaService = inject(PlanillaService);
   private periodoService = inject(PeriodoService);
   private empleadoService = inject(EmpleadoService);
   private areaService = inject(AreaService);
@@ -104,11 +106,11 @@ export class CorridasListComponent implements OnInit {
     // escolar va de marzo a diciembre, los meses que se pueden pagar son
     // esos y no otros. Elegido el periodo, el mes sale de él.
     periodo_id: ['', [Validators.required]],
-    // Los meses que se van a pagar. Van varios porque una planilla es de UN
-    // mes: "Planilla Docentes" de un año escolar son diez planillas, una por
-    // cada mes que el periodo cubre. Elegido el periodo se marcan todos sus
-    // meses, y se desmarca lo que no toque.
-    meses: [[] as string[], [Validators.required]],
+    // El mes que se va a generar, como "2026-09". Una planilla es de UN mes:
+    // la de septiembre paga septiembre. Antes se marcaban varios a la vez con
+    // fichas, y abrir el año entero de golpe dejaba creadas planillas de
+    // meses que todavía no habían pasado.
+    mesAnio: ['', [Validators.required]],
     observaciones: ['', [Validators.maxLength(255)]],
     generar: [true],
   });
@@ -265,13 +267,13 @@ export class CorridasListComponent implements OnInit {
     this.form.reset({
       nombre: '',
       periodo_id: this.periodos[0]?.id ?? '',
-      meses: [],
+      mesAnio: '',
       observaciones: '',
       generar: true,
     });
 
-    // Del periodo salen sus meses, y arrancan todos marcados: lo normal al
-    // abrir un año escolar es querer las planillas de todos sus meses.
+    // Del periodo salen sus meses, y queda propuesto el que corre: abrir
+    // esto en septiembre y encontrar septiembre puesto es lo que se espera.
     this.alCambiarPeriodo();
     this.modalVisible = true;
   }
@@ -282,7 +284,7 @@ export class CorridasListComponent implements OnInit {
     this.form.reset({
       nombre: corrida.nombre,
       periodo_id: corrida.periodo_id ?? '',
-      meses: [`${corrida.anio}-${String(corrida.mes).padStart(2, '0')}`],
+      mesAnio: `${corrida.anio}-${String(corrida.mes).padStart(2, '0')}`,
       observaciones: corrida.observaciones ?? '',
       generar: false,
     });
@@ -340,10 +342,12 @@ export class CorridasListComponent implements OnInit {
   }
 
   /**
-   * Al cambiar de periodo se rehace la lista de meses.
+   * Al cambiar de periodo se rehacen sus meses y se propone uno.
    *
-   * Se quedan marcados los que el periodo nuevo también cubra; si no queda
-   * ninguno, se marcan todos, que es lo que casi siempre se quiere.
+   * Se propone el mes EN CURSO, que es el que se paga casi siempre: llegar a
+   * la pantalla en septiembre y encontrar septiembre ya puesto ahorra el
+   * paso. Si el periodo no lo cubre —un año escolar ya cerrado— se deja su
+   * primer mes. Y si lo que había elegido sigue valiendo, no se toca.
    */
   alCambiarPeriodo(): void {
     const id = this.form.get('periodo_id')!.value;
@@ -351,57 +355,48 @@ export class CorridasListComponent implements OnInit {
 
     this.mesesDelPeriodo = periodo ? this.mesesQueCubre(periodo) : [];
 
-    const validos = new Set(this.mesesDelPeriodo.map((m) => m.valor));
-    const quedan = this.mesesElegidos.filter((m) => validos.has(m));
+    const elegido = this.form.get('mesAnio')!.value as string;
+    if (elegido && this.mesesDelPeriodo.some((m) => m.valor === elegido)) return;
 
-    this.form.patchValue({
-      meses: quedan.length ? quedan : this.mesesDelPeriodo.map((m) => m.valor),
-    });
+    this.form.patchValue({ mesAnio: this.mesPorDefecto() });
   }
 
-  // ────────── Los meses que se van a pagar ──────────
+  /** El mes en curso si el periodo lo cubre; si no, el primero que tenga. */
+  private mesPorDefecto(): string {
+    const hoy = new Date();
+    const enCurso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
 
+    return this.mesesDelPeriodo.some((m) => m.valor === enCurso)
+      ? enCurso
+      : this.mesesDelPeriodo[0]?.valor ?? '';
+  }
+
+  // ────────── El mes que se va a generar ──────────
+
+  /**
+   * El mes elegido, en el formato de lista que espera el backend.
+   *
+   * Se manda como lista de uno y no como `mes`/`anio` sueltos porque el
+   * backend ya atiende varios meses por esa vía y es el camino que ya está
+   * probado: cambiarlo obligaría a tocar el controlador sin necesidad.
+   */
   get mesesElegidos(): string[] {
-    return (this.form.get('meses')!.value as string[]) ?? [];
+    const valor = this.form.get('mesAnio')!.value as string;
+    return valor ? [valor] : [];
   }
 
-  mesMarcado(valor: string): boolean {
-    return this.mesesElegidos.includes(valor);
-  }
-
-  alternarMes(valor: string): void {
-    const elegidos = this.mesesElegidos;
-    this.form.patchValue({
-      meses: elegidos.includes(valor)
-        ? elegidos.filter((m) => m !== valor)
-        : [...elegidos, valor],
-    });
-    this.form.get('meses')!.markAsTouched();
-  }
-
-  get todosLosMesesMarcados(): boolean {
-    return this.mesesDelPeriodo.length > 0
-      && this.mesesElegidos.length === this.mesesDelPeriodo.length;
-  }
-
-  alternarTodosLosMeses(): void {
-    this.form.patchValue({
-      meses: this.todosLosMesesMarcados ? [] : this.mesesDelPeriodo.map((m) => m.valor),
-    });
-    this.form.get('meses')!.markAsTouched();
-  }
-
-  /** Lo que dice el botón de guardar: cuántas planillas van a salir. */
+  /** Lo que dice el botón de guardar. */
   get textoCrear(): string {
-    const cuantos = this.mesesElegidos.length;
-    return cuantos > 1 ? `Crear ${cuantos} planillas` : 'Crear planilla';
+    return 'Crear planilla';
   }
 
   /**
-   * Cuántos de los meses marcados todavía no han pasado.
+   * 1 si el mes elegido todavía no ha pasado; 0 si ya pasó.
    *
-   * Generarlos ahora congela los sueldos de hoy: sirve para dejar el año
-   * armado, pero conviene decirlo antes y no que aparezca en la boleta.
+   * No lo impide: generarlo congela los sueldos de hoy, lo que sirve para
+   * dejar un mes armado por adelantado, pero conviene avisarlo antes y no
+   * que se descubra en la boleta. Devuelve un número y no un booleano
+   * porque sigue contando sobre la lista que se manda al backend.
    */
   get mesesFuturos(): number {
     const hoy = new Date();
@@ -409,15 +404,14 @@ export class CorridasListComponent implements OnInit {
     return this.mesesElegidos.filter((m) => m > actual).length;
   }
 
+  /** El mes elegido en palabras: "Septiembre 2026". */
+  get mesElegidoEtiqueta(): string {
+    return this.mesesDelPeriodo.find((m) => m.valor === this.mesesElegidos[0])?.etiqueta ?? '';
+  }
+
   /** Lo que va a pasar al guardar, en una frase. */
   get resumenDeMeses(): string {
-    const cuantos = this.mesesElegidos.length;
-    if (!cuantos) return '';
-    if (cuantos === 1) {
-      const uno = this.mesesDelPeriodo.find((m) => m.valor === this.mesesElegidos[0]);
-      return `Se creará 1 planilla, la de ${uno?.etiqueta ?? 'ese mes'}.`;
-    }
-    return `Se crearán ${cuantos} planillas con el mismo nombre, una por cada mes marcado.`;
+    return this.mesElegidoEtiqueta ? `Se creará la planilla de ${this.mesElegidoEtiqueta}.` : '';
   }
 
   /** El rango del periodo, en cristiano, para ponerlo bajo el campo. */
@@ -441,7 +435,7 @@ export class CorridasListComponent implements OnInit {
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.toastService.error('Falta un dato', 'Ponle nombre a la planilla y marca al menos un mes.');
+      this.toastService.error('Falta un dato', 'Ponle nombre a la planilla y elige el mes que se va a generar.');
       return;
     }
 
@@ -581,6 +575,67 @@ export class CorridasListComponent implements OnInit {
         error: (err) => this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo eliminar la planilla.')),
       });
     });
+  }
+
+  // ────────── Reporte general de la planilla ──────────
+
+  exportando = false;
+
+  /**
+   * Baja el reporte de TODOS los trabajadores del mes, estén en la planilla
+   * que estén: una fila por trabajador, con su ficha, una columna por cada
+   * concepto y su neto.
+   *
+   * Va el mes y el año del filtro de arriba, pero NO el buscador: el de esta
+   * pantalla busca nombres de planilla ("TIC", "Docentes"), y el del reporte
+   * busca personas. Pasárselo daría un archivo vacío casi siempre.
+   *
+   * Para bajar solo una planilla concreta se entra a ella: ahí está el mismo
+   * botón, ya acotado a su gente.
+   */
+  exportar(): void {
+    this.exportando = true;
+
+    this.planillaService
+      .exportar({
+        mes: this.filtroMes || undefined,
+        anio: this.filtroAnio || undefined,
+      })
+      .subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = this.nombreDelReporte();
+          a.click();
+          window.URL.revokeObjectURL(url);
+
+          this.exportando = false;
+          this.toastService.success(
+            'Reporte descargado',
+            `Todos los trabajadores de ${this.etiquetaPeriodo}, con sus conceptos.`
+          );
+        },
+        error: (err) => {
+          this.exportando = false;
+          this.toastService.error('No se descargó', mensajeErrorApi(err, 'No se pudo generar el reporte.'));
+        },
+      });
+  }
+
+  /**
+   * "Planilla general - Septiembre 2026.csv".
+   *
+   * Se arma acá y no se lee de la respuesta porque el backend no expone
+   * Content-Disposition al navegador: sin esa cabecera en
+   * Access-Control-Expose-Headers, el front no puede leerla.
+   */
+  private nombreDelReporte(): string {
+    const mes = this.filtroMes ? nombreMes(Number(this.filtroMes)) : 'Todos los meses';
+    const anio = this.filtroAnio ? ` ${this.filtroAnio}` : '';
+
+    // Windows rechaza estos caracteres en un nombre de archivo.
+    return `Planilla general - ${mes}${anio}.csv`.replace(/[\\/:*?"<>|]/g, '');
   }
 
   nombreMes = nombreMes;

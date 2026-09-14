@@ -136,7 +136,7 @@
 
         <!-- Modal Mi Perfil (Movido aquí junto al de notificaciones) -->
         <div class="modal-overlay" *ngIf="showProfileModal" (click)="closeProfile()">
-          <div class="modal-container" (click)="$event.stopPropagation()" style="max-width: 450px;">
+          <div class="modal-container" (click)="$event.stopPropagation()" style="max-width: 760px;">
             <div class="modal-header" style="background-color: var(--brand-900); color: white;">
               <h2 style="margin:0; font-size: 1.25rem; font-weight: 600; color: white;">Mi Perfil</h2>
               <button class="btn-close" (click)="closeProfile()" style="background: none; border: none; cursor: pointer; color: white;">
@@ -144,34 +144,83 @@
               </button>
             </div>
             <div class="modal-body" style="padding: 24px;">
-              <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
-                <div class="avatar" style="width: 64px; height: 64px; font-size: 1.5rem; background: var(--brand-900); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">{{ userInitials }}</div>
-                <div>
-                  <h3 style="margin: 0; font-size: 1.2rem; color: var(--text);">{{ userName }}</h3>
-                  <span style="color: var(--text-muted); font-size: 0.9rem;">{{ empleadoData?.cargo?.nombre || userRole }} {{ (empleadoData && empleadoData.area && empleadoData.area.nombre) ? '· ' + empleadoData.area.nombre : '' }}</span>
-                </div>
-              </div>
+              <div class="perfil-rejilla">
 
-              <div style="display: flex; flex-direction: column; gap: 16px;">
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                  <span style="color: var(--text-muted); font-weight: 500;">Sede</span>
-                  <span style="font-weight: 600; color: var(--text-soft);">{{ empleadoData?.sede?.nombre || '-' }}</span>
+                <!-- Columna izquierda: la foto y qué hacer con ella -->
+                <div class="perfil-foto">
+                  <div class="avatar perfil-foto__marco">
+                    <img *ngIf="fotoUrl" class="avatar__foto" [src]="fotoUrl"
+                      [alt]="'Foto de ' + userName" />
+                    <ng-container *ngIf="!fotoUrl">{{ userInitials }}</ng-container>
+                  </div>
+
+                  <div class="perfil-foto__acciones">
+                    <!-- El input real se esconde; el botón es su label. -->
+                    <input type="file" id="fotoPerfil" class="perfil-foto__campo"
+                      accept="image/jpeg,image/png,image/webp"
+                      [disabled]="subiendoFoto" (change)="alElegirFoto($event)" />
+                    <label for="fotoPerfil" class="btn-primary" style="padding: 8px 16px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
+                      {{ subiendoFoto ? 'Subiendo…' : (fotoUrl ? 'Cambiar foto' : 'Subir foto') }}
+                    </label>
+
+                    <button type="button" class="btn-secondary" style="padding: 8px 16px;"
+                      *ngIf="fotoUrl && !subiendoFoto" (click)="quitarFoto()">
+                      Quitar
+                    </button>
+                  </div>
+
+                  <small class="form-ayuda">
+                    JPG, PNG o WEBP, hasta 4 MB.
+                  </small>
                 </div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                  <span style="color: var(--text-muted); font-weight: 500;">Teléfono de contacto</span>
-                  <span style="font-weight: 600; color: var(--text-soft);">{{ empleadoData?.telefono || '-' }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                  <span style="color: var(--text-muted); font-weight: 500;">Correo</span>
-                  <span style="font-weight: 600; color: var(--text-soft);">{{ userEmail }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                  <span style="color: var(--text-muted); font-weight: 500;">Estado</span>
-                  <span class="status-badge" [ngClass]="perfilDadoDeBaja ? 'status-badge-secondary' : 'status-badge-success'">{{ estadoDelPerfil }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="color: var(--text-muted); font-weight: 500;">Fecha de ingreso</span>
-                  <span style="font-weight: 600; color: var(--text-soft);">{{ (empleadoData && empleadoData.fecha_ingreso) ? 'Desde ' + getMesNombre(+empleadoData.fecha_ingreso.split('-')[1]) + ' ' + empleadoData.fecha_ingreso.split('-')[0] : '-' }}</span>
+
+                <!-- Columna derecha: quién es y sus datos -->
+                <div>
+                  <h3 style="margin: 0; font-size: 1.3rem; color: var(--text);">{{ userName }}</h3>
+                  <!-- El cargo va acá arriba y no repetido abajo: es la línea
+                       que dice quién es, no un dato más de la lista. -->
+                  <span style="color: var(--text-muted); font-size: 0.9rem;">{{ empleadoData?.cargo?.nombre || userRole }}</span>
+
+                  <div class="perfil-datos" style="margin-top: 20px;">
+                    <div class="perfil-dato">
+                      <span class="perfil-dato__etiqueta">DNI</span>
+                      <span class="perfil-dato__valor">{{ empleadoData?.dni || '-' }}</span>
+                    </div>
+                    <div class="perfil-dato">
+                      <span class="perfil-dato__etiqueta">Área</span>
+                      <span class="perfil-dato__valor">{{ empleadoData?.area?.nombre || '-' }}</span>
+                    </div>
+                    <div class="perfil-dato">
+                      <span class="perfil-dato__etiqueta">Sede</span>
+                      <span class="perfil-dato__valor">{{ empleadoData?.sede?.nombre || '-' }}</span>
+                    </div>
+                    <div class="perfil-dato">
+                      <span class="perfil-dato__etiqueta">Tipo de contrato</span>
+                      <span class="perfil-dato__valor">{{ tipoDeContrato }}</span>
+                    </div>
+                    <div class="perfil-dato">
+                      <span class="perfil-dato__etiqueta">Fecha de ingreso</span>
+                      <span class="perfil-dato__valor">{{ (empleadoData && empleadoData.fecha_ingreso) ? 'Desde ' + getMesNombre(+empleadoData.fecha_ingreso.split('-')[1]) + ' ' + empleadoData.fecha_ingreso.split('-')[0] : '-' }}</span>
+                    </div>
+                    <div class="perfil-dato">
+                      <span class="perfil-dato__etiqueta">Nivel de estudios</span>
+                      <span class="perfil-dato__valor">{{ nivelDeEstudios }}</span>
+                    </div>
+                    <div class="perfil-dato">
+                      <span class="perfil-dato__etiqueta">Teléfono</span>
+                      <span class="perfil-dato__valor">{{ empleadoData?.telefono || '-' }}</span>
+                    </div>
+                    <div class="perfil-dato">
+                      <span class="perfil-dato__etiqueta">Correo</span>
+                      <span class="perfil-dato__valor">{{ userEmail }}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -215,7 +264,10 @@
 
         <div class="user-profile-container" style="position: relative;">
           <div class="user-profile" (click)="toggleUserMenu()" style="cursor: pointer;">
-            <div class="avatar">{{ userInitials }}</div>
+            <div class="avatar">
+              <img *ngIf="fotoUrl" class="avatar__foto" [src]="fotoUrl" [alt]="'Foto de ' + userName" />
+              <ng-container *ngIf="!fotoUrl">{{ userInitials }}</ng-container>
+            </div>
             <div class="user-info">
               <span class="user-name">{{ userName }}</span>
               <span class="user-role">{{ userRole }}</span>
@@ -227,7 +279,10 @@
             
             <!-- Header Dropdown -->
             <div style="display: flex; align-items: center; padding: 20px; background: var(--surface-alt); border-bottom: 1px solid var(--border); gap: 16px;">
-              <div class="avatar" style="width: 48px; height: 48px; font-size: 1.2rem; background: var(--brand-900); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">{{ userInitials }}</div>
+              <div class="avatar" style="width: 48px; height: 48px; font-size: 1.2rem;">
+                <img *ngIf="fotoUrl" class="avatar__foto" [src]="fotoUrl" [alt]="'Foto de ' + userName" />
+                <ng-container *ngIf="!fotoUrl">{{ userInitials }}</ng-container>
+              </div>
               <div style="display: flex; flex-direction: column;">
                 <span style="font-weight: 600; font-size: 16px; color: var(--text);">{{ userName }}</span>
                 <span style="font-size: 13px; color: var(--text-muted);">{{ userEmail }}</span>

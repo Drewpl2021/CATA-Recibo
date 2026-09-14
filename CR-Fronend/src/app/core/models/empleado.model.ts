@@ -38,6 +38,8 @@ export interface Empleado {
   cuspp?: string | null;
   entidad_financiera?: string | null;
   numero_cuenta?: string | null;
+  /** Código de Cuenta Interbancario, 20 dígitos. Opcional. */
+  cci?: string | null;
   tiene_hijos?: boolean;
 
   /** Relación identidades_firma (backend: identidadFirma()) — disco privado. */
@@ -80,6 +82,7 @@ export interface EmpleadoPayload {
   cuspp?: string | null;
   entidad_financiera?: string | null;
   numero_cuenta?: string | null;
+  cci?: string | null;
   tiene_hijos?: boolean;
   forma_pago?: string | null;
   nivel_estudios?: string | null;

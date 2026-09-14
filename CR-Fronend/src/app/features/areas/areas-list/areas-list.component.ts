@@ -1,9 +1,9 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { AreaService, ToastService, ConfirmService } from '../../../core/services';
-import { Area, AreaPayload } from '../../../core/models';
+import { AreaService, CargoService, ToastService, ConfirmService } from '../../../core/services';
+import { Area, AreaPayload, Cargo } from '../../../core/models';
 import { mensajeErrorApi } from '../../../core/utils';
 import {
   ESTADO_CATALOGO_OPCIONES,
@@ -24,7 +24,7 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
   selector: 'app-areas-list',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
+    CommonModule, ReactiveFormsModule, FormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent,
   ],
   templateUrl: './areas-list.component.html',
@@ -32,6 +32,7 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 export class AreasListComponent implements OnInit {
   private fb = inject(FormBuilder);
   private areaService = inject(AreaService);
+  private cargoService = inject(CargoService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
 
@@ -60,9 +61,37 @@ export class AreasListComponent implements OnInit {
   modalVisible = false;
   areaEditando: Area | null = null;
 
+  /** Todos los cargos del colegio, para marcar los propios de esta área. */
+  cargos: Cargo[] = [];
+
+  /** Lo marcado en el modal: los cargos acotados a esta área. */
+  cargosElegidos = new Set<string>();
+
+  /** Filtra la rejilla del modal: treinta y cuatro cargos no se recorren a ojo. */
+  buscadorCargos = '';
+
+  /** Los cargos que pasan el buscador. Lo marcado NO se pierde al filtrar. */
+  get cargosVisibles(): Cargo[] {
+    const termino = this.buscadorCargos.trim().toLowerCase();
+
+    return termino
+      ? this.cargos.filter((c) => c.nombre.toLowerCase().includes(termino))
+      : this.cargos;
+  }
+
+  /** Marcados que el filtro de ahora no deja ver: siguen contando. */
+  get marcadosOcultos(): number {
+    const visibles = new Set(this.cargosVisibles.map((c) => c.id));
+    return [...this.cargosElegidos].filter((id) => !visibles.has(id)).length;
+  }
+
   columnas: ColumnaTabla<Area>[] = [
-    { campo: 'nombre', header: 'Nombre', ancho: '35%' },
+    { campo: 'nombre', header: 'Nombre', ancho: '24%' },
     { campo: 'descripcion', header: 'Descripción' },
+    {
+      campo: 'cargos', header: 'Cargos propios', ancho: '26%', romperTexto: true,
+      formatear: (_v, fila) => this.cargosDelArea(fila),
+    },
     columnaEstado<Area>(),
   ];
 
@@ -77,6 +106,36 @@ export class AreasListComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+
+    this.cargoService.getAll().subscribe({
+      next: (res) => { if (res.success) this.cargos = res.data; },
+      error: () => this.toastService.error('Aviso', 'No se pudieron cargar los cargos.'),
+    });
+  }
+
+  /**
+   * Los cargos acotados a esta área.
+   *
+   * Ojo: además de estos, en el área también se pueden elegir los cargos
+   * comodín (los que no están acotados a ninguna), y por eso no se dice
+   * "solo estos".
+   */
+  cargosDelArea(area: Area): string {
+    return area.cargos?.length
+      ? area.cargos.map((c) => c.nombre).join(', ')
+      : 'Ninguno propio';
+  }
+
+  estaMarcado(cargoId: string): boolean {
+    return this.cargosElegidos.has(cargoId);
+  }
+
+  alternarCargo(cargoId: string): void {
+    if (this.cargosElegidos.has(cargoId)) {
+      this.cargosElegidos.delete(cargoId);
+    } else {
+      this.cargosElegidos.add(cargoId);
+    }
   }
 
   invalido(campo: string): boolean {
@@ -119,6 +178,8 @@ export class AreasListComponent implements OnInit {
   }
 
   nueva(): void {
+    this.buscadorCargos = '';
+    this.cargosElegidos.clear();
     this.areaEditando = null;
     this.form.reset({ estado: ESTADO_CATALOGO_POR_DEFECTO });
     this.modalVisible = true;
@@ -126,6 +187,8 @@ export class AreasListComponent implements OnInit {
 
   editar(area: Area): void {
     this.areaEditando = area;
+    this.buscadorCargos = '';
+    this.cargosElegidos = new Set((area.cargos ?? []).map((c) => c.id));
     this.form.patchValue({
       nombre: area.nombre,
       descripcion: area.descripcion ?? '',
@@ -146,7 +209,10 @@ export class AreasListComponent implements OnInit {
       return;
     }
 
-    const payload = this.form.getRawValue() as AreaPayload;
+    const payload: AreaPayload = {
+      ...(this.form.getRawValue() as AreaPayload),
+      cargo_ids: [...this.cargosElegidos],
+    };
     this.guardando = true;
 
     const peticion = this.areaEditando

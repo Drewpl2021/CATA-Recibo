@@ -21,7 +21,7 @@
             width: 96%;
             margin: 0 auto;
             padding: 15px;
-            border: 2px solid #1565C0;
+            border: 2px solid #1B4282;
         }
 
         .boleta + .boleta {
@@ -31,7 +31,7 @@
         .encabezado {
             display: table;
             width: 100%;
-            border-bottom: 2px solid #1565C0;
+            border-bottom: 2px solid #1B4282;
             padding-bottom: 8px;
             margin-bottom: 10px;
         }
@@ -55,7 +55,7 @@
 
         .encabezado-texto h1 {
             font-size: 13px;
-            color: #1565C0;
+            color: #0E2650;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
@@ -68,7 +68,7 @@
 
         .encabezado-texto h2 {
             font-size: 11px;
-            color: #B8860B;
+            color: #1B4282;
             margin-top: 4px;
             font-weight: bold;
         }
@@ -83,7 +83,7 @@
             text-align: center;
             font-size: 12px;
             font-weight: bold;
-            color: #1565C0;
+            color: #0E2650;
             margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -91,19 +91,26 @@
 
         .seccion { margin-bottom: 4px; }
 
+        /* ── Las cuatro categorías ───────────────────────────────────────
+           Ingresos, Descuentos, Aportaciones y Adelanto llevaban cada una un
+           color saturado distinto (azul, rojo, verde y dorado), y el
+           documento parecía un semáforo. Ahora comparten el azul
+           institucional y se distinguen por lo que de verdad las separa: su
+           título y el marco que encierra su tabla.
+
+           Los colores van literales y no con variables CSS porque esto lo
+           renderiza dompdf, que no las soporta. Son los mismos de
+           styles.scss: #1B4282 es --brand-700, #0E2650 --brand-900 y
+           #E7EEF9 --brand-100. */
         .seccion-titulo {
-            background: #1565C0;
+            background: #1B4282;
             color: white;
-            padding: 3px 8px;
+            padding: 4px 8px;
             font-size: 10px;
             font-weight: bold;
             text-transform: uppercase;
-            margin-bottom: 6px;
+            letter-spacing: 0.4px;
         }
-
-        .seccion-titulo.descuento { background: #B71C1C; }
-        .seccion-titulo.aporte { background: #2E7D32; }
-        .seccion-titulo.adelanto { background: #B8860B; }
 
         table {
             width: 100%;
@@ -111,9 +118,16 @@
             table-layout: fixed;
         }
 
+        /* El marco que encierra cada categoría: es lo que las separa a la
+           vista ahora que todas comparten color. */
+        .seccion table {
+            border: 1px solid #1B4282;
+            border-top: none;
+        }
+
         table td {
             padding: 3px 6px;
-            border: 1px solid #ddd;
+            border: 1px solid #C9D2E3;
             font-size: 10px;
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -121,16 +135,40 @@
 
         table td.monto { text-align: right; }
 
+        /* La columna de etiquetas, en azul muy claro: en la ficha del
+           trabajador distingue de un vistazo el rótulo del dato. */
+        table td.label {
+            background: #E7EEF9;
+            font-weight: bold;
+            color: #14325F;
+        }
+
         .fila-total td {
-            background: #B8860B;
+            background: #0E2650;
             color: white;
             font-weight: bold;
             font-size: 11px;
         }
 
+        /* El "TOTAL NETO" salía azul oscuro sobre azul oscuro, ilegible, en
+           la fila más importante del documento.
+
+           La culpa es de la especificidad: `table td.label` vale (0,1,2) y
+           `.fila-total td` solo (0,1,1), así que la celda de la izquierda se
+           quedaba con el color de las etiquetas por más que la fila pidiera
+           blanco. Esta regla nombra las dos celdas y gana a ambas. No la
+           colapses con la de arriba: el selector tiene que seguir mencionando
+           `td.label` para poder ganarle. */
+        table tr.fila-total td,
+        table tr.fila-total td.label {
+            background: #0E2650;
+            color: #FFFFFF;
+        }
+
         .fila-subtotal td {
-            background: #e8e8e8;
+            background: #E7EEF9;
             font-weight: bold;
+            color: #14325F;
         }
 
         /* ── Densidad: la boleta se aprieta segun cuantos conceptos lleve ──
@@ -198,7 +236,7 @@
             width: 48%;
             text-align: center;
             padding-top: 10px;
-            border-top: 1px solid #333;
+            border-top: 1px solid #0E2650;
             font-size: 9px;
             color: #555;
         }
@@ -206,7 +244,7 @@
         .copia-label {
             text-align: center;
             font-size: 9px;
-            color: #B8860B;
+            color: #1B4282;
             margin-bottom: 6px;
             font-style: italic;
             font-weight: bold;
@@ -215,10 +253,10 @@
         .firma-digital {
             margin-top: 8px;
             padding: 6px 8px;
-            background: #f0f7ff;
-            border: 1px solid #1565C0;
+            background: #E7EEF9;
+            border: 1px solid #1B4282;
             font-size: 9px;
-            color: #1565C0;
+            color: #14325F;
         }
     </style>
 </head>
@@ -227,15 +265,18 @@
 @php
     $totalConceptosIngreso = $conceptosIngreso->sum('monto_calculado');
 
+    /* Ya no se suman `planilla->bonificaciones` ni `planilla->descuentos`.
+       Eran los dos montos sueltos que se escribían a mano cuando existía la
+       edición directa de la planilla; ahora todo lo que mueve dinero es un
+       concepto de pago con nombre, así que esas dos columnas quedan siempre
+       en cero y sumarlas solo escondía de dónde salía la plata. */
     $totalIngresos = (float)$planilla->sueldo_base
-        + (float)$planilla->bonificaciones
         + $asignacionFamiliar
         + $gratificacion['total']
         + $totalConceptosIngreso;
 
-    $totalDescuentosManual    = (float)$planilla->descuentos;
     $totalConceptosDescuento  = $conceptosDescuento->sum('monto_calculado');
-    $totalDescuentos = $totalDescuentosManual + $pension['total'] + $renta5ta + $totalConceptosDescuento;
+    $totalDescuentos = $pension['total'] + $renta5ta + $totalConceptosDescuento;
 
     $totalConceptosAportacion = $conceptosAportacion->sum('monto_calculado');
     $totalAportes = $essalud + $totalConceptosAportacion;
@@ -356,6 +397,15 @@
                 <td class="label">N° de Cuenta</td>
                 <td>{{ $empleado->numero_cuenta ?? '-' }}</td>
             </tr>
+            {{-- Solo si lo tiene. Es opcional y la mayoría no lo registra:
+                 una fila fija con un guion sería ruido en un documento que
+                 se archiva firmado. --}}
+            @if ($empleado->cci)
+            <tr>
+                <td class="label">CCI</td>
+                <td colspan="5">{{ $empleado->cci }}</td>
+            </tr>
+            @endif
         </table>
     </div>
 
@@ -366,10 +416,6 @@
                 <tr>
                     <td class="label">Remuneración Básica</td>
                     <td class="monto">S/ {{ number_format($planilla->sueldo_base, 2) }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Bonificaciones</td>
-                    <td class="monto">S/ {{ number_format($planilla->bonificaciones, 2) }}</td>
                 </tr>
                 <tr>
                     <td class="label">Asignación Familiar</td>
@@ -399,7 +445,7 @@
         </div>
 
         <div class="columna">
-            <div class="seccion-titulo descuento">Descuentos</div>
+            <div class="seccion-titulo">Descuentos</div>
             <table>
                 @foreach ($pension['detalle'] as $item)
                 <tr>
@@ -413,12 +459,6 @@
                     <td class="monto">S/ {{ number_format($concepto->monto_calculado, 2) }}</td>
                 </tr>
                 @endforeach
-                @if($totalDescuentosManual > 0)
-                <tr>
-                    <td class="label">Otros Descuentos</td>
-                    <td class="monto">S/ {{ number_format($totalDescuentosManual, 2) }}</td>
-                </tr>
-                @endif
                 @if($renta5ta > 0)
                 <tr>
                     <td class="label">I.R. 5ta Categoría</td>
@@ -442,7 +482,7 @@
 
     <div class="fila-columnas">
         <div class="columna">
-            <div class="seccion-titulo aporte">Aportaciones del Empleador (Informativo)</div>
+            <div class="seccion-titulo">Aportaciones del Empleador (Informativo)</div>
             <table>
                 <tr>
                     <td class="label">ESSALUD 9%</td>
@@ -464,7 +504,7 @@
 
         <div class="columna">
             @if ($conceptosAdelanto->count() > 0)
-            <div class="seccion-titulo adelanto">Adelanto</div>
+            <div class="seccion-titulo">Adelanto</div>
             <table>
                 @foreach ($conceptosAdelanto as $concepto)
                 <tr>
@@ -503,7 +543,7 @@
             @if (isset($documento) && $documento->estado_firma_empleador === 'firmado' && $documento->empleador?->identidadFirma?->huella_imagen)
                 <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($documento->empleador->identidadFirma->huella_imagen) }}" style="height:35px; margin-left:10px;">
             @endif
-            <div style="border-top:1px solid #333; padding-top:5px; margin-top:5px;">
+            <div style="border-top:1px solid #0E2650; padding-top:5px; margin-top:5px;">
                 Firma Empleador<br>
                 Colegio Adventista Túpac Amaru
             </div>
@@ -516,7 +556,7 @@
                 {{-- Igual que en un documento físico peruano, la huella va junto a la firma. --}}
                 <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($empleado->identidadFirma->huella_imagen) }}" style="height:35px; margin-left:10px;">
             @endif
-            <div style="border-top:1px solid #333; padding-top:5px; margin-top:5px;">
+            <div style="border-top:1px solid #0E2650; padding-top:5px; margin-top:5px;">
                 Firma del Trabajador<br>
                 {{ $empleado->apellido }}, {{ $empleado->nombre }}
             </div>

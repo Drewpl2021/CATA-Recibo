@@ -664,7 +664,7 @@
         "type": "text/javascript",
         "exec": [
          "(function () {",
-         "pm.collectionVariables.set('registro_publico_email', 'autoregistro.' + Date.now() + '@cata.edu.pe');",
+         "pm.collectionVariables.set('registro_publico_email', 'autoregistro.' + Date.now() + '@ejemplo.edu.pe');",
          "})();",
          "pm.collectionVariables.set('registro_publico_dni', '7' + String(Date.now()).slice(-7));"
         ]
@@ -676,8 +676,8 @@
         "type": "text/javascript",
         "exec": [
          "pm.test('Status 403', () => pm.response.to.have.status(403));",
-         "pm.test('explica como es el primer ingreso', () => {",
-         "    pm.expect(pm.response.json().message).to.include('Recursos Humanos');",
+         "pm.test('no revela quien crea las cuentas ni con que clave nacen', () => {",
+         "    pm.expect(pm.response.json().message).to.include('administrador del sistema');",
          "});"
         ]
        }
@@ -713,7 +713,7 @@
         "register"
        ]
       },
-      "description": "Antes cualquiera con un correo @cata.edu.pe podia crear aqui un empleado nuevo, sin comprobar que el buzon fuera suyo. Cada trabajador que da de alta RR.HH. ya recibe su cuenta, asi que se cierra."
+      "description": "Antes cualquiera con un correo @ejemplo.edu.pe podia crear aqui un empleado nuevo, sin comprobar que el buzon fuera suyo. Cada trabajador que da de alta RR.HH. ya recibe su cuenta, asi que se cierra."
      }
     },
     {
@@ -786,7 +786,7 @@
       },
       "body": {
        "mode": "raw",
-       "raw": "{\n  \"email\": \"nadie{{$timestamp}}@cata.edu.pe\"\n}"
+       "raw": "{\n  \"email\": \"nadie{{$timestamp}}@ejemplo.edu.pe\"\n}"
       },
       "description": "A proposito responde lo mismo: si dijera \"ese correo no esta registrado\", cualquiera podria ir probando direcciones para averiguar quien trabaja en el colegio."
      },
@@ -1758,6 +1758,170 @@
          }
         }
        ]
+      },
+      {
+       "name": "Un cargo acotado a un area",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 201', function () { pm.response.to.have.status(201); });",
+           "var c = pm.response.json().data;",
+           "pm.test('queda acotado a esa area', function () {",
+           "    pm.expect(c.areas).to.be.an('array').with.lengthOf(1);",
+           "    pm.expect(c.areas[0].id).to.eql(pm.collectionVariables.get('area_id'));",
+           "});",
+           "pm.collectionVariables.set('cargo_acotado_id', c.id);"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{admin_token}}"
+         }
+        ],
+        "url": {
+         "raw": "{{base_url}}/cargos",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "cargos"
+         ]
+        },
+        "description": "Un cargo puede acotarse a las areas donde tiene sentido. 'Docente' esta en tres areas a la vez: por eso la relacion es de varios a varios y no una columna.",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n    \"nombre\": \"Cargo Acotado {{$timestamp}}\",\n    \"descripcion\": \"Solo tiene sentido en un area\",\n    \"area_ids\": [\"{{area_id}}\"]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       }
+      },
+      {
+       "name": "Los cargos de un area: los suyos y los comodines",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+           "var lista = pm.response.json().data.content;",
+           "var ids = lista.map(function (c) { return c.id; });",
+           "pm.test('sale el cargo acotado a esta area', function () {",
+           "    pm.expect(ids).to.include(pm.collectionVariables.get('cargo_acotado_id'));",
+           "});",
+           "pm.test('y tambien los comodines, los que no estan acotados a ninguna', function () {",
+           "    var comodines = lista.filter(function (c) { return !c.areas || c.areas.length === 0; });",
+           "    pm.expect(comodines.length, 'sin comodines habria que acotar los 34 cargos a mano').to.be.above(0);",
+           "});",
+           "pm.test('no sale ningun cargo de OTRA area', function () {",
+           "    var intrusos = lista.filter(function (c) {",
+           "        return c.areas && c.areas.length && !c.areas.some(function (a) { return a.id === pm.collectionVariables.get('area_id'); });",
+           "    });",
+           "    pm.expect(intrusos.map(function (c) { return c.nombre; })).to.be.empty;",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{admin_token}}"
+         }
+        ],
+        "url": {
+         "raw": "{{base_url}}/cargos?area_id={{area_id}}&size=200",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "cargos"
+         ],
+         "query": [
+          {
+           "key": "area_id",
+           "value": "{{area_id}}"
+          },
+          {
+           "key": "size",
+           "value": "200"
+          }
+         ]
+        },
+        "description": "El filtro que usa el alta de un empleado: al elegir un area, el desplegable de cargos se queda con los suyos mas los que valen en cualquiera."
+       }
+      },
+      {
+       "name": "Ubico otra area, para probar el candado",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+           "var otras = pm.response.json().data.content.filter(function (a) { return a.id !== pm.collectionVariables.get('area_id'); });",
+           "pm.test('hay mas de un area', function () { pm.expect(otras.length).to.be.above(0); });",
+           "pm.collectionVariables.set('otra_area_id', otras[0].id);"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{admin_token}}"
+         }
+        ],
+        "url": {
+         "raw": "{{base_url}}/areas?size=200",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "areas"
+         ],
+         "query": [
+          {
+           "key": "size",
+           "value": "200"
+          }
+         ]
+        },
+        "description": "Hace falta un area distinta a la del cargo acotado para comprobar que no se pueden mezclar."
+       }
       }
      ]
     },
@@ -3596,7 +3760,7 @@
       },
       "body": {
        "mode": "raw",
-       "raw": "{\n  \"email\": \"empleado.{{empleado_dni}}@cata.edu.pe\"\n}",
+       "raw": "{\n  \"email\": \"empleado.{{empleado_dni}}@ejemplo.edu.pe\"\n}",
        "options": {
         "raw": {
          "language": "json"
@@ -3613,7 +3777,7 @@
          "(function () {",
          "pm.test('Status 200', () => pm.response.to.have.status(200));",
          "const usuario = pm.response.json().data.usuario;",
-         "const esperado = `empleado.${pm.collectionVariables.get('empleado_dni')}@cata.edu.pe`;",
+         "const esperado = `empleado.${pm.collectionVariables.get('empleado_dni')}@ejemplo.edu.pe`;",
          "pm.test('El correo del usuario vinculado se actualizó', () => pm.expect(usuario.email).to.eql(esperado));",
          "pm.test('Ahora sí queda marcado como institucional', () => pm.expect(usuario.es_institucional).to.eql(true));",
          "// A partir de aquí el correo del empleado YA es el institucional: actualizamos",
@@ -3754,7 +3918,7 @@
       ],
       "body": {
        "mode": "raw",
-       "raw": "{\n    \"dni\": \"70999123\",\n    \"nombre\": \"Sin\",\n    \"apellido\": \"FechaFin\",\n    \"area_id\": \"{{area_id}}\",\n    \"cargo_id\": \"{{cargo_id}}\",\n    \"sede_id\": \"{{sede_id}}\",\n    \"telefono\": \"999111222\",\n    \"direccion\": \"Av. Prueba 1\",\n    \"fecha_ingreso\": \"2026-03-01\",\n    \"fecha_nacimiento\": \"1990-01-01\",\n    \"sueldo_base\": 2000,\n    \"tipo_contrato\": \"plazo_fijo\",\n    \"email\": \"sinfechafin@cata.edu.pe\",\n    \"rol_id\": \"{{rol_empleado_id}}\",\n    \"sistema_pensiones\": \"ONP\"\n}"
+       "raw": "{\n    \"dni\": \"70999123\",\n    \"nombre\": \"Sin\",\n    \"apellido\": \"FechaFin\",\n    \"area_id\": \"{{area_id}}\",\n    \"cargo_id\": \"{{cargo_id}}\",\n    \"sede_id\": \"{{sede_id}}\",\n    \"telefono\": \"999111222\",\n    \"direccion\": \"Av. Prueba 1\",\n    \"fecha_ingreso\": \"2026-03-01\",\n    \"fecha_nacimiento\": \"1990-01-01\",\n    \"sueldo_base\": 2000,\n    \"tipo_contrato\": \"plazo_fijo\",\n    \"email\": \"sinfechafin@ejemplo.edu.pe\",\n    \"rol_id\": \"{{rol_empleado_id}}\",\n    \"sistema_pensiones\": \"ONP\"\n}"
       },
       "url": {
        "raw": "{{base_url}}/empleados",
@@ -4072,6 +4236,62 @@
        }
       }
      ]
+    },
+    {
+     "name": "Un cargo de otra area se rechaza",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 422', function () { pm.response.to.have.status(422); });",
+         "pm.test('lo dice en el campo del cargo, y dice de que area es', function () {",
+         "    var e = pm.response.json().errors;",
+         "    pm.expect(e).to.have.property('cargo_id');",
+         "    pm.expect(e.cargo_id[0]).to.include('no pertenece a esa area'.replace('area', 'área'));",
+         "});"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       },
+       {
+        "key": "Authorization",
+        "value": "Bearer {{rrhh_token}}"
+       }
+      ],
+      "url": {
+       "raw": "{{base_url}}/empleados/{{empleado_id}}",
+       "host": [
+        "{{base_url}}"
+       ],
+       "path": [
+        "empleados",
+        "{{empleado_id}}"
+       ]
+      },
+      "description": "El candado esta en el backend y no solo en el desplegable: por la API tampoco se puede mandar una pareja area/cargo que no existe.",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n    \"area_id\": \"{{otra_area_id}}\",\n    \"cargo_id\": \"{{cargo_acotado_id}}\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     }
     }
    ]
   },
@@ -5881,7 +6101,7 @@
            "pm.test('Status 200', () => pm.response.to.have.status(200));",
            "const d = pm.response.json().data;",
            "pm.test('Sueldo base de Deivi es 3000', () => pm.expect(parseFloat(d.sueldo_base)).to.eql(3000));",
-           "pm.test('Total = 3000 + 25 (bono) - 390 (ONP 13%) = 2635.00', () => pm.expect(parseFloat(d.total)).to.be.closeTo(2635.00, 0.01));",
+           "pm.test('Total = 3000 + 25 (bono) - 390 (ONP 13%) - 300 (diezmo 10%) = 2335.00', () => pm.expect(parseFloat(d.total)).to.be.closeTo(2335.00, 0.01));",
            "})();"
           ]
          }
@@ -6458,7 +6678,7 @@
            "(function () {",
            "pm.test('Status 200', () => pm.response.to.have.status(200));",
            "const d = pm.response.json().data;",
-           "pm.test('Total = 2635.00 - 150.00 (aporte solidario) = 2485.00', () => pm.expect(parseFloat(d.total)).to.be.closeTo(2485.00, 0.01));",
+           "pm.test('Total = 2335.00 - 150.00 (aporte solidario) = 2185.00', () => pm.expect(parseFloat(d.total)).to.be.closeTo(2185.00, 0.01));",
            "})();"
           ]
          }
@@ -11633,7 +11853,10 @@
            "(function () {",
            "pm.test('Status 200', () => pm.response.to.have.status(200));",
            "const data = pm.response.json().data;",
-           "pm.test('bonificaciones se actualizo', () => pm.expect(Number(data.bonificaciones)).to.eql(50));",
+           "// La API ya no acepta montos sueltos: lo que suma o resta va por",
+           "// conceptos de pago. Se manda igual para comprobar que se IGNORA.",
+           "pm.test('bonificaciones se ignora: los montos van por conceptos', () => pm.expect(Number(data.bonificaciones)).to.eql(0));",
+           "pm.test('descuentos se ignora: los montos van por conceptos', () => pm.expect(Number(data.descuentos)).to.eql(0));",
            "})();"
           ]
          }
@@ -11876,6 +12099,59 @@
      "name": "11.6 - Vacaciones",
      "item": [
       {
+       "name": "Un practicante no puede pedir vacaciones (debe fallar)",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": {
+         "raw": "{{base_url}}/vacaciones",
+         "host": [
+          "{{base_url}}"
+         ],
+         "path": [
+          "vacaciones"
+         ]
+        },
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"empleado_id\": \"{{empleado_descartable_id}}\",\n  \"fecha_inicio\": \"2026-11-10\",\n  \"fecha_fin\": \"2026-11-12\",\n  \"motivo\": \"Prueba: su contrato no da derecho a descanso\"\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "description": "Solo el contrato indeterminado da derecho a pedir descanso. Al de plazo fijo, suplencia y practicas se le paga con el concepto Vacaciones Truncas, asi que el alta tiene que rechazarse explicandolo."
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "(function () {",
+           "  pm.test('422: con contrato de practicas no se piden vacaciones', () => pm.response.to.have.status(422));",
+           "  pm.test('Le explica que se le pagan como Vacaciones Truncas', () => pm.expect(pm.response.text()).to.include('Truncas'));",
+           "})();"
+          ]
+         }
+        }
+       ]
+      },
+      {
        "name": "Crear Vacacion Descartable",
        "request": {
         "method": "POST",
@@ -11904,13 +12180,14 @@
         },
         "body": {
          "mode": "raw",
-         "raw": "{\n  \"empleado_id\": \"{{empleado_descartable_id}}\",\n  \"fecha_inicio\": \"2026-11-01\",\n  \"fecha_fin\": \"2026-11-03\",\n  \"dias_solicitados\": 3,\n  \"motivo\": \"Vacaciones de prueba Postman\"\n}",
+         "raw": "{\n  \"empleado_id\": \"{{empleado_secundario_id}}\",\n  \"fecha_inicio\": \"2026-11-01\",\n  \"fecha_fin\": \"2026-11-03\",\n  \"dias_solicitados\": 3,\n  \"motivo\": \"Vacaciones de prueba Postman\"\n}",
          "options": {
           "raw": {
            "language": "json"
           }
          }
-        }
+        },
+        "description": "Va a nombre del empleado secundario y no del descartable porque el descartable tiene contrato de practicas, y con ese contrato no se piden vacaciones: se pagan como Vacaciones Truncas. Eso lo prueba el request de arriba."
        },
        "event": [
         {

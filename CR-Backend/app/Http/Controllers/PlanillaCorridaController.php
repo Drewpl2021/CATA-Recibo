@@ -277,7 +277,38 @@ class PlanillaCorridaController extends Controller
     public function show(string $id)
     {
         $corrida = PlanillaCorrida::with('periodo')->findOrFail($id);
-        return response()->json(['success' => true, 'data' => $this->conCifras($corrida)]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $this->conCifras($corrida) + [
+                'conceptos_aplicados' => $this->conceptosAplicados($corrida),
+            ],
+        ]);
+    }
+
+    /**
+     * Qué conceptos ya tiene puestos la gente de esta planilla, y a cuántos.
+     *
+     * Sirve para marcar con un visto los que ya están cuando se va a aplicar
+     * otro: sin eso, la única manera de saber si el diezmo ya se aplicó era
+     * entrar trabajador por trabajador.
+     *
+     * Va solo en show() y no en conCifras(): la lista de planillas pinta
+     * decenas de corridas, y una consulta agregada por cada una sería el
+     * clásico N+1 para un dato que ahí no se usa.
+     *
+     * @return array<string,int>  id del concepto => a cuántos trabajadores
+     */
+    private function conceptosAplicados(PlanillaCorrida $corrida): array
+    {
+        return \Illuminate\Support\Facades\DB::table('payroll_detalles as d')
+            ->join('planilla as p', 'p.id', '=', 'd.planilla_id')
+            ->where('p.corrida_id', $corrida->id)
+            ->groupBy('d.payment_concept_id')
+            ->selectRaw('d.payment_concept_id, COUNT(DISTINCT p.id) as cuantos')
+            ->pluck('cuantos', 'payment_concept_id')
+            ->map(fn ($n) => (int) $n)
+            ->all();
     }
 
     public function update(Request $request, string $id)

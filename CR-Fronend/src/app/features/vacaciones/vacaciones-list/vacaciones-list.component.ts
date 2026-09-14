@@ -195,6 +195,17 @@ export class VacacionesListComponent implements OnInit {
     return !!this.saldoElegido && this.diasDelFormulario > this.saldoElegido.diasDisponibles;
   }
 
+  /**
+   * El trabajador elegido no tiene derecho a descanso.
+   *
+   * Solo el contrato indeterminado lo da; a plazo fijo, suplencia y prácticas
+   * se les paga con el concepto "Vacaciones Truncas". Se avisa apenas se le
+   * elige, para no hacer llenar fechas que no van a ninguna parte.
+   */
+  get elegidoSinDerecho(): boolean {
+    return !!this.saldoElegido && !this.saldoElegido.puedeSolicitar;
+  }
+
   irAPagina(pagina: number): void {
     this.pagina = pagina;
     this.cargar();
@@ -285,6 +296,13 @@ export class VacacionesListComponent implements OnInit {
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      return;
+    }
+
+    // El backend lo rechaza igual; esto es para que el aviso salga acá y no
+    // como un error rojo después de haber llenado todo.
+    if (this.elegidoSinDerecho) {
+      this.toastService.warning('No le corresponde', this.saldoElegido!.motivo!);
       return;
     }
 

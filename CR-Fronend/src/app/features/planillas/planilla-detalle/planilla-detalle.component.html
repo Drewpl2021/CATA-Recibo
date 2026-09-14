@@ -9,7 +9,7 @@
         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
       </svg>
-      Volver
+      {{ textoVolver }}
     </button>
 
     <button class="btn-primary" (click)="nuevo()">
@@ -84,7 +84,13 @@
         (change)="alElegirConcepto()"
         [class.is-invalid]="invalido('payment_concept_id')">
         <option value="">— Elige un concepto —</option>
-        <option *ngFor="let c of conceptos" [value]="c.id">{{ c.nombre }}</option>
+        <!-- El visto marca los que esta planilla ya tiene. Va como texto
+             porque un <option> no admite iconos ni marcado. -->
+        <optgroup *ngFor="let g of conceptosPorTipo" [label]="g.etiqueta">
+          <option *ngFor="let c of g.conceptos" [value]="c.id">
+            {{ yaAplicado(c.id) ? '✓ ' : '' }}{{ c.nombre }}
+          </option>
+        </optgroup>
       </select>
       <small class="form-error" *ngIf="invalido('payment_concept_id')">Elige qué concepto agregar.</small>
       <small class="form-ayuda" *ngIf="detalleEditando">

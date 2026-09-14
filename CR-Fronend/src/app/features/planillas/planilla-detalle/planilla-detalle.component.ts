@@ -65,6 +65,23 @@ export class PlanillaDetalleComponent implements OnInit {
   detalles: PayrollDetalle[] = [];
   conceptos: PaymentConcept[] = [];
 
+  /**
+   * Los conceptos que esta planilla YA tiene puestos.
+   *
+   * Sirve para marcarlos con un visto en el desplegable: sin eso, la única
+   * manera de saber si el diezmo ya estaba era cerrar el cuadro y buscarlo
+   * en la tabla.
+   *
+   * Se pide aparte y con un tope alto a propósito: la tabla va paginada de
+   * diez en diez, así que mirar `detalles` solo diría qué hay en la página
+   * que se está viendo.
+   */
+  conceptosAplicados = new Set<string>();
+
+  yaAplicado(conceptoId: string): boolean {
+    return this.conceptosAplicados.has(conceptoId);
+  }
+
   cargando = false;
   guardando = false;
   modalVisible = false;
@@ -148,12 +165,30 @@ export class PlanillaDetalleComponent implements OnInit {
    * "S/ 150" suelto no dice de dónde salió, y a los tres meses nadie se
    * acuerda.
    */
+  /** ¿Lo paga el colegio encima del sueldo, en vez de moverle el neto? */
+  private esAportacion(detalle: PayrollDetalle): boolean {
+    return detalle.payment_concept?.tipo === 'aportacion';
+  }
+
   montoConSigno(detalle: PayrollDetalle): string {
     const monto = Number(detalle.monto_calculado ?? 0);
-    const signo = this.resta(detalle) ? '−' : '+';
     const regla = detalle.calculo === 'porcentaje' && detalle.como_se_calculo
       ? ` (${detalle.como_se_calculo})`
       : '';
+
+    /*
+     * Una aportación no lleva signo.
+     *
+     * EsSalud y el SCTR los paga el colegio ENCIMA del sueldo: no suman ni
+     * restan al trabajador. Salían con "+" —porque solo descuento y adelanto
+     * contaban como resta—, y un "+ S/ 239.08" al lado de sus ingresos se lee
+     * como si se le abonara. Se marca como lo que es.
+     */
+    if (this.esAportacion(detalle)) {
+      return `S/ ${monto.toFixed(2)}${regla} · lo paga el colegio`;
+    }
+
+    const signo = this.resta(detalle) ? '−' : '+';
 
     return `${signo} S/ ${monto.toFixed(2)}${regla}`;
   }
@@ -236,10 +271,56 @@ export class PlanillaDetalleComponent implements OnInit {
     });
   }
 
+  /**
+   * El catálogo agrupado por sus cuatro categorías, igual que en "Aplicar
+   * concepto" de la planilla.
+   *
+   * Era una lista plana de veinticinco nombres donde había que ir leyendo
+   * uno por uno para saber si lo que se elegía sumaba o restaba.
+   *
+   * Los de cálculo especial (pensión, EsSalud, Renta de 5ta, Asignación
+   * Familiar) se quedan fuera a propósito: el sistema ya se los puso al armar
+   * la planilla, y ofrecerlos otra vez solo sirve para duplicarlos a mano.
+   */
+  get conceptosPorTipo(): { etiqueta: string; conceptos: PaymentConcept[] }[] {
+    const grupos = [
+      { tipo: 'bonificacion', etiqueta: 'Ingresos' },
+      { tipo: 'descuento', etiqueta: 'Descuentos' },
+      { tipo: 'aportacion', etiqueta: 'Aportaciones del colegio' },
+      { tipo: 'adelanto', etiqueta: 'Adelantos' },
+    ];
+
+    return grupos
+      .map((g) => ({
+        etiqueta: g.etiqueta,
+        conceptos: this.conceptos.filter((c) => c.tipo === g.tipo && !c.calculo_especial),
+      }))
+      .filter((g) => g.conceptos.length > 0);
+  }
+
   nuevo(): void {
     this.detalleEditando = null;
     this.form.reset({ payment_concept_id: '', calculo: 'fijo', valor: null, descripcion: '' });
     this.modalVisible = true;
+    this.cargarConceptosAplicados();
+  }
+
+  /**
+   * Qué conceptos tiene ya esta planilla, para el visto del desplegable.
+   *
+   * Se pide al abrir el cuadro y no al cargar la pantalla: es el único sitio
+   * donde se usa, y así refleja lo que hay en ese momento aunque se hayan
+   * agregado líneas sin recargar.
+   */
+  private cargarConceptosAplicados(): void {
+    this.detalleService.paginaDePlanilla(this.planillaId, 0, 200).subscribe({
+      next: (res) => {
+        if (!res.success) return;
+        this.conceptosAplicados = new Set(res.data.content.map((d) => d.payment_concept_id));
+      },
+      // Si falla, el desplegable sale sin vistos: es un aviso, no una regla.
+      error: () => undefined,
+    });
   }
 
   editar(detalle: PayrollDetalle): void {
@@ -324,7 +405,37 @@ export class PlanillaDetalleComponent implements OnInit {
     );
   }
 
+  /**
+   * Vuelve a la planilla de donde se entró, no al listado de arriba.
+   *
+   * Antes mandaba siempre a /inicio/planillas —la lista de planillas con
+   * nombre—, así que ajustarle un concepto a alguien y volver te sacaba de
+   * la planilla en la que estabas, y había que entrar otra vez y buscar a la
+   * persona desde el principio.
+   *
+   * El destino sale del corrida_id de la propia planilla y no del historial
+   * del navegador: así acierta también cuando se entra por un enlace directo
+   * o después de recargar, que es justo cuando no hay "atrás" que valga.
+   */
   volver(): void {
-    this.router.navigate(['/inicio/planillas']);
+    const corridaId = this.planilla?.corrida_id;
+
+    if (corridaId) {
+      this.router.navigate(['/inicio/planillas/corrida', corridaId]);
+      return;
+    }
+
+    // Sin corrida, venía de "Sin agrupar", que se filtra por mes: se le
+    // devuelve el suyo para que no le aparezca el año entero.
+    this.router.navigate(['/inicio/planillas/sin-agrupar'], {
+      queryParams: { mes: this.planilla?.mes ?? null, anio: this.planilla?.anio ?? null },
+    });
+  }
+
+  /** Lo que dice el botón, según a dónde lleva de vuelta. */
+  get textoVolver(): string {
+    if (!this.planilla) return 'Volver';
+
+    return this.planilla.corrida_id ? 'Volver a la planilla' : 'Volver a Sin agrupar';
   }
 }

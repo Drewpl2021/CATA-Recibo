@@ -27,8 +27,10 @@ class Planilla extends Model
         'periodo_id',
         'corrida_id',
         'sueldo_base',
-        'bonificaciones',
-        'descuentos',
+        // 'bonificaciones' y 'descuentos' salieron de acá el 2026-09-13: lo
+        // que suma o resta a un sueldo va por conceptos. Las columnas siguen
+        // en la base con lo que tuvieran —ninguna planilla ya pagada cambia
+        // de cifra—, pero ya nada las escribe ni las cuenta en el neto.
         'total',
         'estado_registro',
     ];
@@ -84,9 +86,19 @@ class Planilla extends Model
             ->whereHas('paymentConcept', fn ($q) => $q->where('tipo', 'adelanto'))
             ->sum('monto_calculado');
 
+        /*
+         * El neto sale SOLO de los conceptos.
+         *
+         * Antes sumaba además las columnas `bonificaciones` y `descuentos` de
+         * la propia planilla, que llenaba la pantalla de editar. Esa pantalla
+         * ya no existe: lo que sube o baja un sueldo va por el catálogo, con
+         * su etiqueta y su rastro. Las columnas siguen en la base con lo que
+         * tuvieran —no se toca ninguna planilla ya pagada—, pero dejan de
+         * entrar en la cuenta.
+         */
         $total = (float) $this->sueldo_base
-            + (float) $this->bonificaciones + $bonificacionesConcepto
-            - (float) $this->descuentos - $descuentosConcepto
+            + $bonificacionesConcepto
+            - $descuentosConcepto
             - $adelantosConcepto;
 
         $this->update(['total' => $total]);

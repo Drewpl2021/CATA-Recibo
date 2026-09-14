@@ -195,7 +195,7 @@ class UsuarioDemoSeeder extends Seeder
                 'contacto_emergencia_nombre' => 'Rosa Lucana Quispe',
                 'contacto_emergencia_telefono' => '954567891',
                 'contrato' => ['observaciones' => 'Capellanía escolar y acompañamiento espiritual.'],
-                'cuenta' => ['email' => 'deivi.apaza@cata.edu.pe', 'rol' => 'empleado'],
+                'cuenta' => ['email' => 'deivi.apaza@ejemplo.edu.pe', 'rol' => 'empleado'],
             ],
 
             // ── Plana docente ──────────────────────────────────────
@@ -213,7 +213,7 @@ class UsuarioDemoSeeder extends Seeder
                 'contacto_emergencia_nombre' => 'Yeny Flores Apaza',
                 'contacto_emergencia_telefono' => '955678902',
                 'contrato' => ['observaciones' => 'Docente de Matemáticas de secundaria.'],
-                'cuenta' => ['email' => 'carlos.mamani@cata.edu.pe', 'rol' => 'empleado'],
+                'cuenta' => ['email' => 'carlos.mamani@ejemplo.edu.pe', 'rol' => 'empleado'],
             ],
             [
                 'dni' => '46712083', 'nombre' => 'Ana Lucía', 'apellido' => 'Condori Yupanqui',
@@ -232,7 +232,7 @@ class UsuarioDemoSeeder extends Seeder
                     'fecha_fin' => '2026-12-31',
                     'observaciones' => 'Contrato a plazo fijo por el año escolar 2026.',
                 ],
-                'cuenta' => ['email' => 'ana.condori@cata.edu.pe', 'rol' => 'empleado'],
+                'cuenta' => ['email' => 'ana.condori@ejemplo.edu.pe', 'rol' => 'empleado'],
             ],
             [
                 'dni' => '43980215', 'nombre' => 'Jhon Michael', 'apellido' => 'Ramos Cahuana',
@@ -248,7 +248,7 @@ class UsuarioDemoSeeder extends Seeder
                 'contacto_emergencia_nombre' => 'Karina Cahuana Ticona',
                 'contacto_emergencia_telefono' => '957890124',
                 'contrato' => ['observaciones' => 'Docente de Inglés, sede Jerusalén.'],
-                'cuenta' => ['email' => 'jhon.ramos@cata.edu.pe', 'rol' => 'empleado'],
+                'cuenta' => ['email' => 'jhon.ramos@ejemplo.edu.pe', 'rol' => 'empleado'],
             ],
             [
                 'dni' => '47215639', 'nombre' => 'Rosa María', 'apellido' => 'Huanca Pari',
@@ -267,7 +267,7 @@ class UsuarioDemoSeeder extends Seeder
                     'fecha_fin' => '2026-12-31',
                     'observaciones' => 'Contrato a plazo fijo por el año escolar 2026.',
                 ],
-                'cuenta' => ['email' => 'rosa.huanca@cata.edu.pe', 'rol' => 'empleado'],
+                'cuenta' => ['email' => 'rosa.huanca@ejemplo.edu.pe', 'rol' => 'empleado'],
             ],
             [
                 'dni' => '42558107', 'nombre' => 'Wilber', 'apellido' => 'Apaza Ccopa',
@@ -283,7 +283,7 @@ class UsuarioDemoSeeder extends Seeder
                 'contacto_emergencia_nombre' => 'Nancy Ccopa Vilca',
                 'contacto_emergencia_telefono' => '959012346',
                 'contrato' => ['observaciones' => 'Docente de Educación Física y deportes.'],
-                'cuenta' => ['email' => 'wilber.apaza@cata.edu.pe', 'rol' => 'empleado'],
+                'cuenta' => ['email' => 'wilber.apaza@ejemplo.edu.pe', 'rol' => 'empleado'],
             ],
             [
                 'dni' => '48963201', 'nombre' => 'Katherine Judith', 'apellido' => 'Vilca Sucari',
@@ -302,7 +302,7 @@ class UsuarioDemoSeeder extends Seeder
                     'fecha_fin' => '2026-12-31',
                     'observaciones' => 'Contrato a plazo fijo por el año escolar 2026.',
                 ],
-                'cuenta' => ['email' => 'katherine.vilca@cata.edu.pe', 'rol' => 'empleado'],
+                'cuenta' => ['email' => 'katherine.vilca@ejemplo.edu.pe', 'rol' => 'empleado'],
             ],
 
             // ── Apoyo y administración ─────────────────────────────
@@ -320,7 +320,7 @@ class UsuarioDemoSeeder extends Seeder
                 'contacto_emergencia_nombre' => 'Máximo Turpo Larico',
                 'contacto_emergencia_telefono' => '961234568',
                 'contrato' => ['observaciones' => 'Departamento psicopedagógico.'],
-                'cuenta' => ['email' => 'sandra.turpo@cata.edu.pe', 'rol' => 'empleado'],
+                'cuenta' => ['email' => 'sandra.turpo@ejemplo.edu.pe', 'rol' => 'empleado'],
             ],
             [
                 'dni' => '70458812', 'nombre' => 'Yesenia', 'apellido' => 'Coaquira Choque',
@@ -336,7 +336,7 @@ class UsuarioDemoSeeder extends Seeder
                 'contacto_emergencia_nombre' => 'Delia Choque Mamani',
                 'contacto_emergencia_telefono' => '962345679',
                 'contrato' => ['observaciones' => 'Secretaría de dirección.'],
-                'cuenta' => ['email' => 'yesenia.coaquira@cata.edu.pe', 'rol' => 'empleado'],
+                'cuenta' => ['email' => 'yesenia.coaquira@ejemplo.edu.pe', 'rol' => 'empleado'],
             ],
 
             // ── Practicante: media jornada y pago en efectivo ──────
@@ -357,7 +357,7 @@ class UsuarioDemoSeeder extends Seeder
                     'fecha_fin' => '2026-12-31',
                     'observaciones' => 'Prácticas preprofesionales, media jornada.',
                 ],
-                'cuenta' => ['email' => 'brayan.quenta@cata.edu.pe', 'rol' => 'empleado'],
+                'cuenta' => ['email' => 'brayan.quenta@ejemplo.edu.pe', 'rol' => 'empleado'],
             ],
         ];
     }

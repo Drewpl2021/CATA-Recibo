@@ -1,9 +1,9 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { CargoService, ToastService, ConfirmService } from '../../../core/services';
-import { Cargo, CargoPayload } from '../../../core/models';
+import { AreaService, CargoService, ToastService, ConfirmService } from '../../../core/services';
+import { Area, Cargo, CargoPayload } from '../../../core/models';
 import { mensajeErrorApi } from '../../../core/utils';
 import {
   ESTADO_CATALOGO_OPCIONES,
@@ -19,7 +19,7 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
   selector: 'app-cargos-list',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
+    CommonModule, ReactiveFormsModule, FormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent,
   ],
   templateUrl: './cargos-list.component.html',
@@ -27,6 +27,7 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 export class CargosListComponent implements OnInit {
   private fb = inject(FormBuilder);
   private cargoService = inject(CargoService);
+  private areaService = inject(AreaService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
 
@@ -55,9 +56,43 @@ export class CargosListComponent implements OnInit {
   modalVisible = false;
   cargoEditando: Cargo | null = null;
 
+  /** Las áreas del colegio, para marcar dónde vale cada cargo. */
+  areas: Area[] = [];
+
+  /** Lo marcado en el modal. Vacío = el cargo vale en todas las áreas. */
+  areasElegidas = new Set<string>();
+
+  /** Filtra la rejilla del modal. Con quince áreas ya cuesta encontrar una. */
+  buscadorAreas = '';
+
+  /** Las áreas que pasan el buscador. Lo marcado NO se pierde al filtrar. */
+  get areasVisibles(): Area[] {
+    const termino = this.buscadorAreas.trim().toLowerCase();
+
+    return termino
+      ? this.areas.filter((a) => a.nombre.toLowerCase().includes(termino))
+      : this.areas;
+  }
+
+  /**
+   * Marcadas que el filtro de ahora no deja ver.
+   *
+   * Se avisa para que nadie crea que al buscar perdió lo que ya había
+   * marcado: sigue contando y se guardará igual.
+   */
+  get marcadasOcultas(): number {
+    const visibles = new Set(this.areasVisibles.map((a) => a.id));
+    return [...this.areasElegidas].filter((id) => !visibles.has(id)).length;
+  }
+
   columnas: ColumnaTabla<Cargo>[] = [
-    { campo: 'nombre', header: 'Nombre', ancho: '35%' },
+    { campo: 'nombre', header: 'Nombre', ancho: '24%' },
     { campo: 'descripcion', header: 'Descripción' },
+    {
+      // Sin áreas no es un vacío: significa que vale en todas.
+      campo: 'areas', header: 'Áreas donde vale', ancho: '26%', romperTexto: true,
+      formatear: (_v, fila) => this.areasDelCargo(fila),
+    },
     columnaEstado<Cargo>(),
   ];
 
@@ -72,6 +107,31 @@ export class CargosListComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+
+    // A un desplegable de quince no se le pagina.
+    this.areaService.getAll().subscribe({
+      next: (res) => { if (res.success) this.areas = res.data; },
+      error: () => this.toastService.error('Aviso', 'No se pudieron cargar las áreas.'),
+    });
+  }
+
+  /** "Biblioteca, TIC" o, si no está acotado, "Todas las áreas". */
+  areasDelCargo(cargo: Cargo): string {
+    return cargo.areas?.length
+      ? cargo.areas.map((a) => a.nombre).join(', ')
+      : 'Todas las áreas';
+  }
+
+  estaMarcada(areaId: string): boolean {
+    return this.areasElegidas.has(areaId);
+  }
+
+  alternarArea(areaId: string): void {
+    if (this.areasElegidas.has(areaId)) {
+      this.areasElegidas.delete(areaId);
+    } else {
+      this.areasElegidas.add(areaId);
+    }
   }
 
   invalido(campo: string): boolean {
@@ -114,6 +174,8 @@ export class CargosListComponent implements OnInit {
   }
 
   nuevo(): void {
+    this.buscadorAreas = '';
+    this.areasElegidas.clear();
     this.cargoEditando = null;
     this.form.reset({ estado: ESTADO_CATALOGO_POR_DEFECTO });
     this.modalVisible = true;
@@ -121,6 +183,8 @@ export class CargosListComponent implements OnInit {
 
   editar(cargo: Cargo): void {
     this.cargoEditando = cargo;
+    this.buscadorAreas = '';
+    this.areasElegidas = new Set((cargo.areas ?? []).map((a) => a.id));
     this.form.patchValue({
       nombre: cargo.nombre,
       descripcion: cargo.descripcion ?? '',
@@ -141,7 +205,12 @@ export class CargosListComponent implements OnInit {
       return;
     }
 
-    const payload = this.form.getRawValue() as CargoPayload;
+    const payload: CargoPayload = {
+      ...(this.form.getRawValue() as CargoPayload),
+      // Siempre va, aunque esté vacío: así se puede quitar la última área y
+      // devolver el cargo a "vale en todas".
+      area_ids: [...this.areasElegidas],
+    };
     this.guardando = true;
 
     const peticion = this.cargoEditando

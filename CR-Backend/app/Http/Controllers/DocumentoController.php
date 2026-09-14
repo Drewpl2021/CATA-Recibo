@@ -105,6 +105,89 @@ class DocumentoController extends Controller
         return response()->json(['success' => true, 'data' => $documento], 201);
     }
 
+    /**
+     * POST /documentos/subir — adjunta un archivo de verdad.
+     *
+     * store() registra un documento que YA está en disco: es para la boleta
+     * que genera el propio sistema, y por eso recibe una ruta y no un
+     * archivo. Esto es lo contrario, y hasta ahora no existía: el papel que
+     * llega de fuera —la hoja de vida del postulante, el contrato escaneado
+     * y firmado— que hay que subir y guardar.
+     *
+     * Va al disco privado "local" (storage/app/private), igual que las
+     * boletas y la huella: una hoja de vida trae DNI, domicilio y teléfono,
+     * y no puede quedar colgando de una URL pública.
+     */
+    public function subir(Request $request)
+    {
+        $datos = $request->validate([
+            'empleado_id' => 'required|uuid|exists:empleados,id',
+            'contrato_id' => 'nullable|uuid|exists:contratos,id',
+            'tipo'        => 'required|in:boleta,contrato,cts,vacaciones_truncas,comprobante_transferencia,hoja_de_vida,otro',
+            // Word entra a propósito: la mitad de las hojas de vida llegan
+            // en .docx y obligar a convertirlas a PDF es trabajo que RR.HH.
+            // acabaría haciendo a mano.
+            'archivo'     => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120',
+            'firmado_por' => 'nullable|string|max:120',
+        ]);
+
+        if ($request->filled('contrato_id')) {
+            $contrato = Contrato::findOrFail($request->contrato_id);
+            if ($contrato->empleado_id !== $request->empleado_id) {
+                throw ValidationException::withMessages([
+                    'contrato_id' => ['El contrato indicado no pertenece a este empleado.'],
+                ]);
+            }
+        }
+
+        $archivo   = $request->file('archivo');
+        $extension = strtolower($archivo->getClientOriginalExtension());
+
+        // El nombre lo pone el servidor. El que trae el archivo del usuario
+        // puede venir con barras, con tildes o repetido, y acabaría pisando
+        // el documento de otro o saliéndose de su carpeta.
+        $ruta = sprintf(
+            'documentos/%s/%s-%s-%s.%s',
+            $datos['empleado_id'],
+            $datos['tipo'],
+            now()->format('Ymd-His'),
+            bin2hex(random_bytes(3)),
+            $extension
+        );
+
+        Storage::disk('local')->put($ruta, file_get_contents($archivo->getRealPath()));
+
+        /*
+         * La hoja de vida es una sola: la vigente.
+         *
+         * Al subir otra, la anterior se da de baja en vez de borrarse —su
+         * archivo sigue en disco— para que la ficha enseñe un solo CV y aun
+         * así quede rastro de cuál había antes. Es la misma baja lógica que
+         * usa el resto del sistema.
+         */
+        if ($datos['tipo'] === 'hoja_de_vida') {
+            Documento::where('empleado_id', $datos['empleado_id'])
+                ->where('tipo', 'hoja_de_vida')
+                ->where('estado_registro', 'activo')
+                ->update(['estado_registro' => 'inactivo']);
+        }
+
+        // El estado de firma lo pone el sistema, nunca el cuerpo de la
+        // petición: es el mismo agujero que ya se cerró en store().
+        $documento = Documento::create(array_merge($datos, [
+            'archivo'      => $ruta,
+            'estado_firma' => 'pendiente',
+            // Explícito aunque la columna ya tenga ese valor por defecto: el
+            // defecto lo aplica MySQL, no Eloquent, así que el documento que
+            // se devuelve acá salía con estado_registro en null mientras la
+            // fila de la base decía "activo". La respuesta contaba otra cosa
+            // que la base.
+            'estado_registro' => 'activo',
+        ]));
+
+        return response()->json(['success' => true, 'data' => $documento], 201);
+    }
+
     public function show(string $id)
     {
         $documento = Documento::with('empleado')->findOrFail($id);

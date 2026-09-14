@@ -137,8 +137,9 @@ trait GeneraPlanillasEnLote
                 'periodo_id'     => $periodoId,
                 'corrida_id'     => $corrida?->id,
                 'sueldo_base'    => $sueldoDelMes,
-                'bonificaciones' => 0,
-                'descuentos'     => 0,
+                // Sin 'bonificaciones' ni 'descuentos': salieron del fillable
+                // el 2026-09-13. El neto se arma solo con los conceptos que
+                // se crean justo debajo.
                 'total'          => 0,
             ]);
 

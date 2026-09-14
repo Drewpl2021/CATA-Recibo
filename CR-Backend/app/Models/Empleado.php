@@ -14,7 +14,7 @@ class Empleado extends Model
      */
     protected array $camposAuditables = [
         'dni', 'nombre', 'apellido', 'sueldo_base', 'sistema_pensiones', 'afp', 'cuspp',
-        'entidad_financiera', 'numero_cuenta', 'forma_pago', 'tiene_hijos',
+        'entidad_financiera', 'numero_cuenta', 'cci', 'forma_pago', 'tiene_hijos',
         'cargo_id', 'area_id', 'sede_id', 'estado', 'tipo_contrato',
     ];
 
@@ -43,6 +43,7 @@ class Empleado extends Model
     'cuspp',
     'entidad_financiera',
     'numero_cuenta',
+    'cci',
     'tiene_hijos',
     'sueldo_base',
     'tipo_contrato',
@@ -85,6 +86,44 @@ class Empleado extends Model
     public function contratos()
     {
         return $this->hasMany(Contrato::class);
+    }
+
+    /**
+     * El contrato que manda hoy.
+     *
+     * `empleados.tipo_contrato` es una copia suelta que quedó del alta y
+     * envejece: quien entró por suplencia y ya pasó a planilla fija sigue
+     * teniéndola ahí. La verdad está en su contrato vigente, y solo se cae a
+     * la copia cuando no hay ninguno (fichas viejas, antes del módulo de
+     * Contratos).
+     */
+    public function contratoVigente()
+    {
+        return $this->hasOne(Contrato::class)
+            ->where('estado', 'vigente')
+            ->latest('fecha_inicio');
+    }
+
+    public function tipoContratoVigente(): ?string
+    {
+        return $this->contratoVigente()->first()?->tipo_contrato ?? $this->tipo_contrato;
+    }
+
+    /**
+     * Quién puede PEDIR vacaciones.
+     *
+     * Solo el contrato indeterminado. A los otros tres —plazo fijo,
+     * suplencia y prácticas— el colegio no les da descanso a cuenta: se les
+     * paga con el concepto "Vacaciones Truncas" al terminar el contrato.
+     *
+     * Está acá y no en el controlador a propósito: la regla la consultan el
+     * alta de la solicitud, la aprobación y la pantalla de saldo, y con tres
+     * copias basta con que alguien cambie una para que el sistema deje pasar
+     * por un lado lo que niega por el otro.
+     */
+    public function puedeTomarVacaciones(): bool
+    {
+        return $this->tipoContratoVigente() === 'indeterminado';
     }
 
     public function identidadFirma()

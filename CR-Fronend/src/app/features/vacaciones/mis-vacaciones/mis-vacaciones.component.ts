@@ -66,6 +66,26 @@ export class MisVacacionesComponent implements OnInit {
     return !!this.saldo && this.saldo.mesesTrabajados < 12;
   }
 
+  /**
+   * Si su contrato le da derecho a pedir descanso.
+   *
+   * Solo el indeterminado. Con plazo fijo, suplencia o prácticas no se piden
+   * vacaciones: se cobran como Vacaciones Truncas al terminar el contrato.
+   *
+   * Mientras el saldo no haya llegado devuelve `false` a propósito: es
+   * preferible que el botón aparezca un instante después a que aparezca y
+   * luego desaparezca, o peor, que alguien alcance a llenar un formulario
+   * que el backend va a rechazar igual.
+   */
+  get puedeSolicitar(): boolean {
+    return this.saldo?.puedeSolicitar ?? false;
+  }
+
+  /** Por qué no le corresponde. Lo redacta el backend, acá solo se muestra. */
+  get motivoSinVacaciones(): string | null {
+    return this.saldo?.motivo ?? null;
+  }
+
   columnas: ColumnaTabla<Vacacion>[] = [
     { campo: 'fecha_inicio', header: 'Desde', tipo: 'fecha', ancho: '15%' },
     { campo: 'fecha_fin', header: 'Hasta', tipo: 'fecha', ancho: '15%' },

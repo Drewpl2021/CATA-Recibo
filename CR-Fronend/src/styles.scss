@@ -87,6 +87,21 @@
   --success: #10B981;
   --success-bg: #DCFCE7;
   --success-text: #047857;
+  /* Verde macizo para un botón con texto blanco encima. --success es un verde
+     medio: con blanco da 1,9:1 e ilegible, y --success-bg es tan pálido que
+     sobre el lienzo claro el botón desaparece. Este da 5,5:1, y como el
+     contraste es del texto contra el propio botón, vale igual en los dos
+     temas y no hace falta redefinirlo en oscuro. */
+  --success-solid: #047857;
+  --success-solid-hover: #036249;
+  /* Los tonos macizos de los badges de estado. Van FIJOS en los dos temas,
+     igual que el verde de arriba: lo que tiene que contrastar es el texto
+     blanco contra la propia píldora, no contra el lienzo, así que un token
+     que se aclara en oscuro no sirve acá. Medidos contra blanco: 5,4:1 el
+     ámbar, 6,5:1 el rojo y 6,3:1 el gris. */
+  --warning-solid: #92600A;
+  --danger-solid: #B3271C;
+  --muted-solid: #55607A;
   --warning: #F59E0B;
   --warning-bg: #FEF3C7;
   --warning-text: #92600A;
@@ -498,6 +513,131 @@ body {
   justify-content: center;
   font-weight: 600;
   font-size: 14px;
+  /* Para que la foto respete el círculo, y para que el avatar no se aplaste
+     cuando el nombre de al lado es largo. */
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/*
+ * La foto, dentro del mismo círculo del avatar.
+ *
+ * Va encima de las iniciales en vez de sustituir el componente: quien no
+ * tiene foto sigue viendo su degradado con las iniciales, y no hay dos
+ * maneras distintas de pintar a una persona.
+ */
+.avatar__foto {
+  width: 100%;
+  height: 100%;
+  /* "cover" y no "contain": una foto de carnet es vertical y un retrato de
+     teléfono es cuadrado; recortando se llena el círculo sin deformar la
+     cara, que es lo que pasaría estirándola. */
+  object-fit: cover;
+  display: block;
+}
+
+/*
+ * Mi Perfil: la foto a un lado, los datos al otro.
+ *
+ * Era una sola columna de 450 px con el avatar arriba. Metiéndole la foto y
+ * sus botones habría quedado un embudo cada vez más largo; en dos columnas
+ * la foto manda a la izquierda y los datos se leen de corrido a la derecha.
+ */
+.perfil-rejilla {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.perfil-foto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+/* El círculo grande. Hereda de .avatar, así que sin foto enseña las mismas
+   iniciales que la cabecera. */
+.perfil-foto__marco {
+  width: 132px;
+  height: 132px;
+  font-size: 2.4rem;
+  box-shadow: var(--shadow-md);
+}
+
+.perfil-foto__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+/*
+ * El <input type="file"> de verdad se esconde y el botón visible es su
+ * <label>: es lo único que se puede dar estilo de forma fiable en todos los
+ * navegadores. No se usa display:none porque eso lo saca del recorrido del
+ * teclado y dejaría la subida fuera del alcance de quien no usa ratón.
+ */
+.perfil-foto__campo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+/*
+ * Los datos, en dos columnas.
+ *
+ * En una sola, los ocho campos convertían la ficha en un chorizo más alto
+ * que la propia foto. Repartidos en dos, ocupan el mismo alto que tenían
+ * cinco y la columna de la izquierda deja de quedar coja. Cuando no caben
+ * 230 px por columna se apilan solos, sin más reglas.
+ */
+.perfil-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px 24px;
+  align-content: start;
+}
+
+.perfil-dato {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.perfil-dato:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.perfil-dato__etiqueta {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.perfil-dato__valor {
+  font-weight: 600;
+  color: var(--text-soft);
+  text-align: right;
+  /* En una celda de 230 px un correo institucional no cabe de una pieza:
+     sin esto empujaría la rejilla y descuadraría las dos columnas. El
+     min-width en 0 es lo que le permite encogerse dentro del flex. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* En teléfono no caben dos columnas: la foto arriba y los datos debajo. */
+@media (max-width: 640px) {
+  .perfil-rejilla {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 }
 
 .user-info {
@@ -580,6 +720,39 @@ body {
   background-color: var(--accent-dark);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
+}
+
+/*
+ * Descargar: la planilla, la lista del personal.
+ *
+ * Verde macizo, que es lo que la gente asocia con "esto se abre en Excel".
+ * La primera versión usaba --success-bg, un verde pastel, y sobre el lienzo
+ * claro el botón se perdía: parecía que no estaba.
+ */
+.btn-exportar {
+  background-color: var(--success-solid);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.btn-exportar:hover:not(:disabled) {
+  background-color: var(--success-solid-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-exportar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btn-icon-blue {
@@ -899,6 +1072,32 @@ td.celda-numero {
 .hito--pendiente {
   color: var(--text-faint);
   font-size: 13px;
+}
+
+/* Rejilla de casillas para marcar varios de una lista corta: las áreas de
+   un cargo, los cargos de un área. En columna, quince opciones obligan a
+   desplazar el modal entero para llegar al botón de guardar. */
+/* El buscador de la rejilla, pegado encima de ella. */
+.buscador-opciones {
+  margin-bottom: 8px;
+}
+
+.rejilla-opciones {
+  display: grid;
+  /* Columnas algo más estrechas que antes: en un modal ancho entran cuatro
+     de un vistazo en vez de dos, que era lo que obligaba a desplazar. */
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-alt);
+}
+
+.rejilla-opciones .check-item {
+  margin: 0;
 }
 
 /* ══ PANEL DE CONTROL ══════════════════════════════════════════════
@@ -2257,11 +2456,25 @@ textarea.form-control {
   transform: translateY(-1px);
 }
 
-.status-badge-success { background-color: var(--success-bg); color: var(--success); }
-.status-badge-warning { background-color: var(--warning-bg); color: var(--warning); }
-.status-badge-danger { background-color: var(--danger-bg); color: var(--danger-text); }
-.status-badge-info { background-color: var(--brand-100); color: var(--brand-500); }
-.status-badge-secondary { background-color: var(--bg); color: var(--text-muted); }
+/*
+ * Los badges de estado, en color macizo.
+ *
+ * Antes eran fondo pastel con el color medio encima, y no era solo que se
+ * perdieran sobre el blanco: "Activo" daba 2:1 de contraste y "Pendiente"
+ * 1,9:1, por debajo de cualquier mínimo legible. Ahora van en el tono oscuro
+ * de cada estado con texto blanco — el verde es exactamente el del botón de
+ * descargar, para que el mismo significado tenga el mismo color en toda la
+ * aplicación.
+ *
+ * El gris de "secundario" es el único que no sube de tono a propósito: marca
+ * lo que está de baja o cerrado, y debe leerse sin gritar tanto como lo que
+ * sigue vigente.
+ */
+.status-badge-success { background-color: var(--success-solid); color: white; }
+.status-badge-warning { background-color: var(--warning-solid); color: white; }
+.status-badge-danger { background-color: var(--danger-solid); color: white; }
+.status-badge-info { background-color: var(--brand-700); color: white; }
+.status-badge-secondary { background-color: var(--muted-solid); color: white; }
 
 .data-table-pagination {
   display: flex;
@@ -2936,75 +3149,10 @@ textarea.form-control {
   white-space: nowrap;
 }
 
-/* ============================================
-   MESES A PAGAR
-   ============================================
-   Una planilla es de UN mes, así que del periodo salen tantas como meses
-   cubra. Se muestran como fichas marcables en vez de un desplegable
-   porque hay que ver los diez de un vistazo y saber cuáles van.
-   ============================================ */
-.meses-pago {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background-color: var(--surface-alt);
-  margin-top: 8px;
-  overflow: hidden;
-}
-
-.meses-pago__barra {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.meses-pago__lista {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px;
-}
-
-/* Se cuelgan de la lista porque son <label> dentro de un .form-group, y esa
-   regla (que pinta las etiquetas de los campos) le ganaba en especificidad
-   al color del mes marcado. */
-.meses-pago__lista .mes-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background-color: var(--surface);
-  font-size: 13px;
-  color: var(--text);
-  cursor: pointer;
-  transition: border-color .15s ease, background-color .15s ease;
-}
-
-.meses-pago__lista .mes-chip:hover {
-  border-color: var(--brand-500);
-}
-
-/* El mes marcado se lee de un golpe: es lo que se va a crear. */
-.meses-pago__lista .mes-chip--marcado {
-  background-color: var(--brand-100);
-  border-color: var(--brand-500);
-  /* --heading y no --brand-700: en oscuro el fondo del chip es un azul
-     translúcido y el azul de marca queda ilegible encima. */
-  color: var(--heading);
-  font-weight: 600;
-}
-
-.meses-pago__lista .mes-chip input {
-  accent-color: var(--brand-700);
-  cursor: pointer;
-  margin: 0;
-}
+/* Las fichas marcables de "meses a pagar" vivían acá. Se fueron con ellas:
+   el mes ahora se elige en un desplegable, que viene puesto en el mes en
+   curso. (.enlace-sutil, que usaba su barra, sigue viva más arriba porque
+   también la usa el selector de empleados.) */
 
 /* ============================================
    PANEL DE FILTROS (reciclable)

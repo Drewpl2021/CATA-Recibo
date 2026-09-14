@@ -11,7 +11,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'rol_id', 'empleado_id', 'estado_registro', 'debe_cambiar_password'])]
+#[Fillable(['name', 'email', 'foto', 'password', 'rol_id', 'empleado_id', 'estado_registro', 'debe_cambiar_password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -57,15 +57,27 @@ class User extends Authenticatable
     }
 
     /**
-     * true si el correo ya es el institucional del colegio.
-     * Sirve para que RRHH identifique de un vistazo qué usuarios
-     * siguen con un correo temporal (mientras no tienen su @cata.edu.pe)
-     * y todavía necesitan que se les actualice.
+     * true si el correo ya es el institucional.
+     *
+     * Sirve para distinguir de un vistazo qué cuentas siguen con un correo
+     * provisional y todavía necesitan que se les actualice.
+     *
+     * El dominio sale de la configuración y no del código: iba escrito aquí
+     * dentro, y en un repositorio público eso enseña a qué organización
+     * pertenece el sistema y cómo son sus direcciones. Sin
+     * INSTITUCION_DOMINIO_CORREO en el .env devuelve false para todos, que es
+     * lo correcto cuando no hay dominio con el que comparar.
      */
     protected function esInstitucional(): Attribute
     {
         return Attribute::make(
-            get: fn () => str_ends_with($this->email ?? '', '@cata.edu.pe'),
+            get: function () {
+                $dominio = config('institucion.dominio_correo');
+
+                return $dominio
+                    ? str_ends_with(strtolower($this->email ?? ''), '@' . strtolower($dominio))
+                    : false;
+            },
         );
     }
 

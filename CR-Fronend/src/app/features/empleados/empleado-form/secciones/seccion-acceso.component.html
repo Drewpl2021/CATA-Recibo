@@ -12,7 +12,7 @@
     <div class="form-group">
       <label for="email">Correo institucional {{ esNuevo ? '*' : '' }}</label>
       <input type="email" id="email" class="form-control" formControlName="email"
-        placeholder="nombre.apellido@cata.edu.pe"
+        placeholder="nombre@dominio.com"
         [class.is-invalid]="invalido('email')" />
       <small class="form-error" *ngIf="invalido('email')">{{ error('email') }}</small>
       <small class="form-ayuda" *ngIf="!invalido('email')">

@@ -20,6 +20,14 @@ export interface PlanillaCorrida {
   personas?: number;
   /** Lo que suma pagar a esa gente. Llega como número o string decimal. */
   masa_salarial?: number | string;
+  /**
+   * Qué conceptos ya tiene puestos la gente de esta planilla: el id del
+   * concepto y a cuántos trabajadores se le aplicó.
+   *
+   * Solo viene en el detalle de UNA corrida (GET /planilla-corridas/{id}),
+   * no en el listado: ahí sería una consulta agregada por fila.
+   */
+  conceptos_aplicados?: Record<string, number>;
   created_at?: string;
 }
 

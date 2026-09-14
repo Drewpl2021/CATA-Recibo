@@ -9,9 +9,10 @@ import { AuthService } from '../../../core/services';
  *
  * Pide el correo y manda un enlace de un solo uso que vence en una hora.
  *
- * El mensaje de éxito es el mismo exista o no ese correo, y es a propósito:
- * el backend responde igual en los dos casos para que nadie pueda ir probando
- * direcciones hasta averiguar quién trabaja en el colegio.
+ * El mensaje de éxito es el mismo exista o no ese correo, y es a propósito
+ * (prevención de enumeración de usuarios): el backend responde igual en los
+ * dos casos, así que no hay forma de averiguar qué direcciones existen
+ * probándolas una por una. No lo cambies por un "correo no registrado".
  */
 @Component({
   selector: 'app-olvide-password',

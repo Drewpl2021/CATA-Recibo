@@ -8,6 +8,8 @@ export interface Usuario {
   rol_id?: string;
   empleado_id?: string | null;
   estado_registro?: string;
+  /** Ruta de su foto en el disco privado. La imagen se pide aparte. */
+  foto?: string | null;
   es_institucional?: boolean;
   rol?: Rol | string;
   /** La firma de los términos: 'pendiente' | 'firmado' | 'desactualizado'. */
@@ -44,6 +46,14 @@ export interface AuthUser {
   email: string;
   rol: string;
   empleado_id: string | null;
+  /**
+   * Ruta de su foto en el disco privado, o null si no tiene.
+   *
+   * Es solo la señal de que existe: la imagen no se puede pedir con un
+   * `<img src>` porque esa petición no lleva el token, así que la cabecera la
+   * trae por HTTP y la pinta desde memoria.
+   */
+  foto?: string | null;
   /** Sigue con la contraseña que le dieron y tiene que cambiarla. */
   debe_cambiar_password?: boolean;
   /** Si firmó los términos de uso: sin 'firmado' el backend responde 428 a todo. */

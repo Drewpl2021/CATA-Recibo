@@ -12,8 +12,9 @@ import {
   RolService,
   ToastService,
   ContratoService,
+  DocumentoService,
 } from '../../../core/services';
-import { Area, Cargo, Empleado, EmpleadoPayload, Rol, Sede,
+import { Area, Cargo, Documento, Empleado, EmpleadoPayload, Rol, Sede,
   Contrato,
 } from '../../../core/models';
 import { mensajeErrorApi } from '../../../core/utils';
@@ -66,6 +67,7 @@ export class EmpleadoFormComponent implements OnInit {
   private sedeService = inject(SedeService);
   private rolService = inject(RolService);
   private contratoService = inject(ContratoService);
+  private documentoService = inject(DocumentoService);
   private toastService = inject(ToastService);
 
   modo: 'nuevo' | 'editar' | 'ver' = 'nuevo';
@@ -77,6 +79,17 @@ export class EmpleadoFormComponent implements OnInit {
   cargos: Cargo[] = [];
   sedes: Sede[] = [];
   roles: Rol[] = [];
+
+  /** La hoja de vida que ya tiene en su expediente, si la tiene. */
+  hojaDeVida: Documento | null = null;
+
+  /**
+   * El CV elegido en el paso 4, pendiente de subir.
+   *
+   * No se sube al elegirlo: en un alta todavía no existe el empleado al que
+   * colgárselo, así que espera a que el guardado devuelva su id.
+   */
+  cvArchivo: File | null = null;
 
   paso = 0;
   pasos: PasoWizard[] = [];
@@ -109,6 +122,9 @@ export class EmpleadoFormComponent implements OnInit {
     forma_pago: [''],
     entidad_financiera: [''],
     numero_cuenta: [''],
+    // Opcional, pero si lo escriben tiene que ser un CCI completo: 20
+    // dígitos. Es la misma regla que aplica el backend.
+    cci: ['', [Validators.pattern(/^[0-9]{20}$/)]],
     tiene_hijos: [false],
 
     // ── Complementarios ──
@@ -323,6 +339,7 @@ export class EmpleadoFormComponent implements OnInit {
       forma_pago: e.forma_pago ?? '',
       entidad_financiera: e.entidad_financiera ?? '',
       numero_cuenta: e.numero_cuenta ?? '',
+      cci: e.cci ?? '',
       tiene_hijos: !!e.tiene_hijos,
       nivel_estudios: e.nivel_estudios ?? '',
       especialidad: e.especialidad ?? '',
@@ -333,6 +350,24 @@ export class EmpleadoFormComponent implements OnInit {
     });
     this.ajustarValidacionAfp();
     this.ajustarFechaFinContrato();
+    this.cargarHojaDeVida(e.id);
+  }
+
+  /**
+   * Su hoja de vida, para poder enseñarla y bajarla desde la ficha.
+   *
+   * Se pide aparte y no viene con el empleado porque es un documento de su
+   * expediente, no un campo suyo. Si falla no se avisa: es un añadido de la
+   * ficha, y un error acá no debería ensuciar la pantalla de edición.
+   */
+  private cargarHojaDeVida(empleadoId: string): void {
+    this.documentoService.listar({ empleado_id: empleadoId, tipo: 'hoja_de_vida' }).subscribe({
+      next: (res) => {
+        // Vienen de la más nueva a la más vieja: la primera es la vigente.
+        if (res.success) this.hojaDeVida = res.data[0] ?? null;
+      },
+      error: () => undefined,
+    });
   }
 
   /** El paso que se está viendo ahora mismo. */
@@ -374,6 +409,7 @@ export class EmpleadoFormComponent implements OnInit {
       forma_pago: oNull(v.forma_pago),
       entidad_financiera: oNull(v.entidad_financiera),
       numero_cuenta: oNull(v.numero_cuenta),
+      cci: oNull(v.cci),
       tiene_hijos: !!v.tiene_hijos,
       nivel_estudios: oNull(v.nivel_estudios),
       especialidad: oNull(v.especialidad),
@@ -407,13 +443,23 @@ export class EmpleadoFormComponent implements OnInit {
     if (this.esNuevo) {
       this.empleadoService.create(payload).subscribe({
         next: (res) => {
-          this.guardando = false;
-          if (!res.success) return;
-          this.toastService.success(
-            'Empleado registrado',
-            `Se creó la cuenta ${payload.email}. Su contraseña inicial es su DNI: ${payload.dni}.`
-          );
-          this.router.navigate(['/inicio/empleados']);
+          if (!res.success) {
+            this.guardando = false;
+            return;
+          }
+
+          // El id recién creado es lo que faltaba para poder subirle el CV.
+          const creado = (res.data as { empleado?: Empleado } & Empleado);
+          const nuevoId = creado?.empleado?.id ?? creado?.id ?? null;
+
+          this.subirCvSiHay(nuevoId, () => {
+            this.guardando = false;
+            this.toastService.success(
+              'Empleado registrado',
+              `Se creó la cuenta ${payload.email}. Su contraseña inicial es su DNI: ${payload.dni}.`
+            );
+            this.router.navigate(['/inicio/empleados']);
+          });
         },
         error: (err) => {
           this.guardando = false;
@@ -427,16 +473,83 @@ export class EmpleadoFormComponent implements OnInit {
     const { rol_id, ...cambios } = payload;
     this.empleadoService.update(this.empleadoId!, cambios).subscribe({
       next: (res) => {
-        this.guardando = false;
-        if (!res.success) return;
-        this.toastService.success('Empleado actualizado', 'Los cambios se guardaron correctamente.');
-        this.router.navigate(['/inicio/empleados']);
+        if (!res.success) {
+          this.guardando = false;
+          return;
+        }
+
+        this.subirCvSiHay(this.empleadoId, () => {
+          this.guardando = false;
+          this.toastService.success('Empleado actualizado', 'Los cambios se guardaron correctamente.');
+          this.router.navigate(['/inicio/empleados']);
+        });
       },
       error: (err) => {
         this.guardando = false;
         this.toastService.error('No se pudo guardar', mensajeErrorApi(err, 'Revisa los datos e inténtalo de nuevo.'));
       },
     });
+  }
+
+  /**
+   * Sube la hoja de vida, si se eligió una, y sigue.
+   *
+   * Va en una llamada aparte porque el alta del empleado es JSON y esto es
+   * multipart. Y si la subida falla, el empleado YA quedó creado: se avisa
+   * de eso en lugar de dar el alta por fallida, porque dar por fallido algo
+   * que sí se guardó lleva a repetirlo y a chocar con el DNI repetido.
+   */
+  private subirCvSiHay(empleadoId: string | null, alTerminar: () => void): void {
+    if (!this.cvArchivo || !empleadoId) {
+      alTerminar();
+      return;
+    }
+
+    this.documentoService
+      .subir({ empleado_id: empleadoId, tipo: 'hoja_de_vida', archivo: this.cvArchivo })
+      .subscribe({
+        next: () => {
+          this.cvArchivo = null;
+          alTerminar();
+        },
+        error: (err) => {
+          alTerminar();
+          this.toastService.error(
+            'La hoja de vida no se subió',
+            mensajeErrorApi(err, 'El trabajador sí quedó guardado. Vuelve a subir su CV desde su ficha.')
+          );
+        },
+      });
+  }
+
+  /** Baja la hoja de vida que ya está en su expediente. */
+  descargarHojaDeVida(): void {
+    if (!this.hojaDeVida) return;
+
+    this.documentoService.descargar(this.hojaDeVida.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.nombreDelCv();
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.toastService.error('No se descargó', mensajeErrorApi(err, 'No se pudo bajar la hoja de vida.'));
+      },
+    });
+  }
+
+  /** "CV - Mamani Flores Carlos.pdf", conservando su extensión original. */
+  private nombreDelCv(): string {
+    const guardado = this.hojaDeVida?.archivo ?? '';
+    const extension = guardado.includes('.') ? guardado.split('.').pop() : 'pdf';
+
+    const v = this.form.getRawValue();
+    const persona = `${v.apellido ?? ''} ${v.nombre ?? ''}`.trim() || 'trabajador';
+
+    return `CV - ${persona}.${extension}`.replace(/[\\/:*?"<>|]/g, '');
   }
 
   volver(): void {

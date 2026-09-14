@@ -46,6 +46,14 @@
   pedirla con las correctas.
 </p>
 
+<p class="form-nota form-nota--aviso" style="margin-top: 12px;">
+  Solo pide vacaciones quien tiene <strong>contrato indeterminado</strong>. Con
+  plazo fijo, suplencia o prácticas no se toma descanso: al terminar el contrato
+  se le paga con el concepto <strong>Vacaciones Truncas</strong> desde la
+  planilla. Si eliges a uno de ellos al registrar una solicitud, la pantalla te
+  lo avisa.
+</p>
+
 <p class="form-nota" style="margin-top: 12px;">
   Aprobar unas vacaciones <strong>no cambia lo que se le paga</strong>: son
   remuneradas, el trabajador cobra su sueldo completo ese mes. Lo único que
@@ -75,7 +83,12 @@
       <small class="form-error" *ngIf="invalido('empleado_id')">Elige de quién es la solicitud.</small>
     </div>
 
-    <div class="form-nota" *ngIf="saldoElegido">
+    <!-- Su contrato no da derecho a descanso: se avisa al elegirlo. -->
+    <div class="form-nota form-nota--alerta" *ngIf="elegidoSinDerecho">
+      {{ saldoElegido?.motivo }}
+    </div>
+
+    <div class="form-nota" *ngIf="saldoElegido && !elegidoSinDerecho">
       Le quedan <strong>{{ saldoElegido.diasDisponibles }}</strong> de
       {{ saldoElegido.diasGanados }} días este año
       <span *ngIf="saldoElegido.mesesTrabajados < 12">

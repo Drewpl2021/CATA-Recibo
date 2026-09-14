@@ -80,6 +80,15 @@ export const END_POINTS_ACCIONES = {
   /** GET documentos/{id}/descargar */
   descargarDocumento: (documentoId: string) => `documentos/${documentoId}/descargar`,
 
+  /** POST documentos/subir — adjuntar un archivo (hoja de vida, contrato firmado) */
+  subirDocumento: 'documentos/subir',
+
+  /** POST y DELETE mi-foto — la foto de perfil del usuario autenticado */
+  miFoto: 'mi-foto',
+
+  /** GET users/{id}/foto — los bytes de la imagen, desde el disco privado */
+  fotoDeUsuario: (userId: number | string) => `users/${userId}/foto`,
+
   /** POST documentos/{id}/firmar-empleador */
   firmarComoEmpleador: (documentoId: string) => `documentos/${documentoId}/firmar-empleador`,
 
@@ -103,4 +112,13 @@ export const END_POINTS_ACCIONES = {
 
   /** GET consulta-dni/{dni} — quién es esa persona, para el alta */
   consultaDni: (dni: string) => `consulta-dni/${dni}`,
+
+  /** GET planilla/exportar?... — el reporte completo de la planilla en CSV */
+  exportarPlanilla: 'planilla/exportar',
+
+  /** POST planilla/{id}/conceptos — deja sus líneas como diga la pantalla */
+  sincronizarConceptosPlanilla: (planillaId: string) => `planilla/${planillaId}/conceptos`,
+
+  /** GET empleados/exportar?search= — la lista del personal en CSV */
+  exportarEmpleados: 'empleados/exportar',
 } as const;

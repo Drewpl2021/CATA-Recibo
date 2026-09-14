@@ -10,10 +10,9 @@ import { claveConLetrasYNumeros } from '../../../core/utils';
 /**
  * El cambio obligatorio del primer ingreso.
  *
- * Cuando RR.HH. da de alta a un empleado, su contraseña es su DNI — que está
- * en su ficha, en el listado y en su boleta, o sea que lo sabe medio colegio.
- * Hasta que ponga una suya, el backend responde 423 a todo lo demás, así que
- * esta pantalla no tiene salida más que cambiarla o cerrar sesión.
+ * Las cuentas nacen con una contraseña provisional. Hasta que la persona
+ * ponga una suya, el backend responde 423 a todo lo demás, así que esta
+ * pantalla no tiene salida más que cambiarla o cerrar sesión.
  *
  * Va sin el menú lateral a propósito: con la cuenta trabada no hay ninguna
  * otra pantalla a la que ir.
@@ -82,7 +81,7 @@ export class CambiarClaveComponent implements OnInit {
         // cambio de contraseña igual. Se dice por qué en vez de dejar una
         // pantalla en blanco.
         this.cargandoTerminos = false;
-        this.errorMsg = 'No pudimos cargar los términos de uso. Recarga la página o avisa a Recursos Humanos.';
+        this.errorMsg = 'No pudimos cargar los términos de uso. Recarga la página o contacta al administrador del sistema.';
       },
     });
   }

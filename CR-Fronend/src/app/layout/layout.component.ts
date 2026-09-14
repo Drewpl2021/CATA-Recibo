@@ -13,8 +13,11 @@ import { ToastService } from '../core/services';
 import { ThemeService } from '../core/services';
 import { FormsModule } from '@angular/forms';
 import { EmpleadoService } from '../core/services';
+import { FotoPerfilService } from '../core/services';
 import { Empleado } from '../core/models';
-import { etiquetaEstado, NOMBRE_ROL_LEGIBLE } from '../shared/constants';
+import {
+  etiquetaEstado, NOMBRE_ROL_LEGIBLE, TIPO_CONTRATO_OPCIONES, NIVEL_ESTUDIOS_OPCIONES,
+} from '../shared/constants';
 import { IconComponent } from '../shared/components/icon/icon.component';
 import { PistaDirective } from '../shared/directives/pista.directive';
 import { fechaLegible } from '../core/utils';
@@ -76,6 +79,17 @@ export class LayoutComponent implements OnInit {
   empleadoData: Empleado | null = null;
 
   /**
+   * La foto de perfil, ya en memoria.
+   *
+   * Es una URL de objeto (blob:), no la ruta del servidor: la imagen vive en
+   * el disco privado y su petición necesita el token, así que no se puede
+   * poner en un `<img src>` apuntando al backend. Se trae una vez y se pinta
+   * desde acá, en la cabecera y en el modal.
+   */
+  fotoUrl: string | null = null;
+  subiendoFoto = false;
+
+  /**
    * "Activo" / "Inactivo" para el panel del perfil.
    *
    * Antes se pintaba el valor crudo del backend, que viene en minúscula, y
@@ -90,6 +104,28 @@ export class LayoutComponent implements OnInit {
   /** Un trabajador dado de baja no se pinta en verde. */
   get perfilDadoDeBaja(): boolean {
     return this.empleadoData?.estado === 'inactivo';
+  }
+
+  /**
+   * "Plazo fijo", no "plazo_fijo".
+   *
+   * La base guarda la clave con guion bajo, y sacarla cruda a una ficha que
+   * lee el propio trabajador se ve a medio hacer. La etiqueta sale del mismo
+   * catálogo que usa el formulario de alta, así que no hay dos maneras de
+   * llamar a lo mismo.
+   */
+  get tipoDeContrato(): string {
+    const valor = this.empleadoData?.tipo_contrato;
+    if (!valor) return '-';
+
+    return TIPO_CONTRATO_OPCIONES.find((t) => t.value === valor)?.label ?? valor;
+  }
+
+  get nivelDeEstudios(): string {
+    const valor = this.empleadoData?.nivel_estudios;
+    if (!valor) return '-';
+
+    return NIVEL_ESTUDIOS_OPCIONES.find((n) => n.value === valor)?.label ?? valor;
   }
   
   // Cambiar password form
@@ -106,6 +142,7 @@ export class LayoutComponent implements OnInit {
     private notificacionService: NotificacionService,
     private toastService: ToastService,
     private empleadoService: EmpleadoService,
+    private fotoPerfilService: FotoPerfilService,
     public themeService: ThemeService,
     private cdr: ChangeDetectorRef
   ) {
@@ -157,6 +194,93 @@ export class LayoutComponent implements OnInit {
     this.userEmail = user.email || '';
     this.userInitials = this.userName.substring(0, 2).toUpperCase();
     this.userRole = NOMBRE_ROL_LEGIBLE[this.authService.getRolNombre()] ?? 'Empleado';
+    this.cargarFoto();
+  }
+
+  // ── Foto de perfil ──
+
+  /**
+   * Trae la imagen si la cuenta tiene una.
+   *
+   * Si falla no se avisa: sin foto se ven las iniciales, que es exactamente
+   * lo que había antes. Un error acá no debería sacar un aviso rojo en la
+   * cabecera cada vez que se entra.
+   */
+  private cargarFoto(): void {
+    const user = this.authService.getUser();
+
+    if (!user?.foto) {
+      this.liberarFoto();
+      return;
+    }
+
+    this.fotoPerfilService.ver(user.id).subscribe({
+      next: (blob) => {
+        this.liberarFoto();
+        this.fotoUrl = URL.createObjectURL(blob);
+        this.cdr.detectChanges();
+      },
+      error: () => this.liberarFoto(),
+    });
+  }
+
+  /** Suelta la URL de memoria anterior: si no, cada cambio deja una colgada. */
+  private liberarFoto(): void {
+    if (this.fotoUrl) {
+      URL.revokeObjectURL(this.fotoUrl);
+      this.fotoUrl = null;
+    }
+  }
+
+  /**
+   * Se sube en cuanto se elige, sin un botón de "guardar" aparte: es una sola
+   * cosa y esperar a confirmar solo agrega un paso.
+   */
+  alElegirFoto(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    if (!archivo) return;
+
+    // Se limpia el input para que volver a elegir la MISMA foto dispare el
+    // evento otra vez (si no, el navegador lo considera "sin cambios").
+    input.value = '';
+
+    // El backend lo valida igual; acá se avisa antes de gastar la subida.
+    if (archivo.size > 4 * 1024 * 1024) {
+      this.toastService.error('La foto pesa demasiado', 'El máximo son 4 MB. Prueba con una más pequeña.');
+      return;
+    }
+
+    this.subiendoFoto = true;
+    this.fotoPerfilService.subirMia(archivo).subscribe({
+      next: () => {
+        this.subiendoFoto = false;
+        // Se releen el usuario (para que la ruta quede guardada) y la imagen.
+        this.authService.refrescarUsuario().subscribe({
+          next: () => this.cargarFoto(),
+          error: () => this.cargarFoto(),
+        });
+        this.toastService.success('Foto actualizada', 'Así te verán en el sistema.');
+      },
+      error: (err) => {
+        this.subiendoFoto = false;
+        const msg = err?.error?.errors?.foto?.[0] ?? 'No se pudo subir la foto.';
+        this.toastService.error('No se subió', msg);
+      },
+    });
+  }
+
+  /** Quita la foto y vuelve a las iniciales. */
+  quitarFoto(): void {
+    this.fotoPerfilService.quitarMia().subscribe({
+      next: () => {
+        this.liberarFoto();
+        this.authService.refrescarUsuario().subscribe({ next: () => {}, error: () => {} });
+        this.toastService.success('Foto quitada', 'Vuelves a aparecer con tus iniciales.');
+        this.cdr.detectChanges();
+      },
+      error: () => this.toastService.error('Error', 'No se pudo quitar la foto.'),
+    });
   }
 
   toggleNotifications(): void {
