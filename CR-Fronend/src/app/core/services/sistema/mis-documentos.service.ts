@@ -78,4 +78,19 @@ export class MisDocumentosService {
       )
       .pipe(tap((res) => { if (res.success) this.refrescarPendientes().subscribe(); }));
   }
+
+  /**
+   * POST /mis-documentos/hoja-de-vida — el trabajador sube su propio CV.
+   *
+   * Reemplaza al que tuviera; el anterior queda en el historial. El
+   * empleado lo pone el backend a partir de la sesión.
+   */
+  subirHojaDeVida(archivo: File): Observable<ApiResponse<Documento>> {
+    const datos = new FormData();
+    datos.append('archivo', archivo);
+    return this.http.post<ApiResponse<Documento>>(
+      `${this.apiUrl}/${END_POINTS_ACCIONES.subirMiHojaDeVida}`,
+      datos
+    );
+  }
 }

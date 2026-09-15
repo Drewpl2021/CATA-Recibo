@@ -36,12 +36,15 @@ class PaymentConceptSeeder extends Seeder
     {
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         PaymentConcept::truncate();
+        // Los alias apuntan a ids de conceptos que se acaban de borrar: sin
+        // esto quedarían nombres "recordados" que llevan a ninguna parte.
+        \App\Models\ConceptoAlias::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $conceptos = [
             // ══ INGRESOS ═══════════════════════════════════════════
             [
-                'nombre' => 'Remuneración Básica',
+                'nombre' => ConceptosDePago::REMUNERACION_BASICA,
                 'tipo' => 'bonificacion', 'calculo' => null, 'valor' => null,
                 'descripcion' => 'El sueldo del mes. NO se agrega como línea: sale de la ficha del trabajador y la boleta lo imprime en su propia fila. Está en el catálogo para que se vea completo.',
             ],

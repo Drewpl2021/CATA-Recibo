@@ -1,10 +1,19 @@
 <app-page-header
   icono="folder_shared"
   titulo="Mis Documentos"
-  subtitulo="Tus boletas y documentos laborales. Acá los revisas y los firmas."
+  subtitulo="Tus boletas y documentos laborales. Acá los revisas, los firmas y subes tu hoja de vida."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
-></app-page-header>
+>
+  <button headerActions type="button" class="btn-primary" (click)="abrirSubirCv()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    Subir mi hoja de vida
+  </button>
+</app-page-header>
 
 <app-data-table
   entidad="este documento"
@@ -22,29 +31,74 @@
   [acciones]="[]"
   [accionesPersonalizadas]="acciones"
   (accionPersonalizada)="alAccionar($event)"
-  mensajeVacio="Todavía no tienes documentos emitidos."
+  mensajeVacio="Todavía no tienes documentos."
 ></app-data-table>
 
-<!-- Modal: firmar el documento con la contraseña de la cuenta -->
-<div class="modal-overlay" *ngIf="mostrarModalFirmar" (click)="cerrarModalFirmar()">
-  <div class="modal-card" style="text-align:left;" (click)="$event.stopPropagation()">
-    <h3 style="margin-bottom:8px; color:var(--heading);">Firmar documento</h3>
-    <p style="margin-bottom:20px; color:var(--text-muted); font-size:0.9em;">
-      Ingresa tu contraseña para confirmar la firma del documento de
-      <strong>{{ periodo(docAFirmar) }}</strong>.
+<!-- Firmar con la contraseña de la cuenta -->
+<app-form-modal
+  [(visible)]="modalFirmar"
+  titulo="Firmar documento"
+  textoGuardar="Firmar"
+  [guardando]="firmando"
+  (guardar)="confirmarFirma()"
+  (cancelar)="cerrarFirmar()"
+>
+  <div class="form-fields">
+    <p class="form-nota">
+      Vas a firmar <strong>{{ nombreDe(docAFirmar) }}</strong>. Escribe la contraseña con la que
+      entras al sistema: vale igual que tu firma en papel.
     </p>
-    <div class="form-group" style="margin-bottom:24px;">
-      <label style="font-weight:500; display:block; margin-bottom:6px;">
-        Contraseña <span style="color:var(--danger-text)">*</span>
-      </label>
-      <input type="password" class="form-control" placeholder="Tu contraseña..."
-        [(ngModel)]="passwordFirma" (keyup.enter)="confirmarFirma()">
-    </div>
-    <div class="modal-actions">
-      <button class="btn-secondary-modal" (click)="cerrarModalFirmar()" [disabled]="firmando">Cancelar</button>
-      <button class="btn-warning" (click)="confirmarFirma()" [disabled]="firmando">
-        {{ firmando ? 'Firmando...' : 'Confirmar firma' }}
-      </button>
+    <div class="form-group">
+      <label for="password_firma">Contraseña</label>
+      <input id="password_firma" type="password" class="form-control" [(ngModel)]="passwordFirma"
+        (keyup.enter)="confirmarFirma()" autocomplete="current-password" placeholder="Tu contraseña" />
     </div>
   </div>
-</div>
+</app-form-modal>
+
+<!-- Subir la hoja de vida -->
+<app-form-modal
+  [(visible)]="modalCv"
+  titulo="Subir mi hoja de vida"
+  textoGuardar="Guardar hoja de vida"
+  ancho="560px"
+  [guardando]="subiendoCv"
+  (guardar)="subirCv()"
+  (cancelar)="cerrarSubirCv()"
+>
+  <div class="form-fields">
+    <app-selector-archivo
+      [extensiones]="['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']"
+      [pesoMaximoMb]="5"
+      [(archivos)]="cv"
+      [ocupado]="subiendoCv"
+      textoOcupado="Subiendo…"
+      texto="Arrastra aquí tu hoja de vida o haz clic para elegirla"
+      ayuda="PDF, Word o imagen, hasta 5 MB."
+    ></app-selector-archivo>
+    <p class="form-nota">
+      Se guarda en tu expediente. Si ya tenías una, esta la reemplaza y la anterior queda en el historial.
+    </p>
+  </div>
+</app-form-modal>
+
+<!-- Ver un PDF -->
+<app-form-modal
+  [(visible)]="modalVisor"
+  [titulo]="nombreDe(docEnVisor)"
+  ancho="960px"
+  [ocultarBotonesPorDefecto]="true"
+  (cancelar)="cerrarVisor()"
+>
+  <div class="visor-documento">
+    @defer (when modalVisor) {
+      <app-visor-pdf [src]="urlVisor"></app-visor-pdf>
+    } @placeholder {
+      <p class="form-nota">Abriendo el documento…</p>
+    }
+  </div>
+  <div modalFooter class="acciones-modal">
+    <button type="button" class="btn-secondary" (click)="cerrarVisor()">Cerrar</button>
+    <button type="button" class="btn-primary" (click)="descargarDelVisor()">Descargar</button>
+  </div>
+</app-form-modal>

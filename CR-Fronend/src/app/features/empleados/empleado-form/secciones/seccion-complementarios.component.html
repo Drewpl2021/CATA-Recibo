@@ -26,7 +26,7 @@
     </div>
 
     <div class="form-group rejilla-campos--completo">
-      <label for="hoja_vida">Hoja de vida (CV)</label>
+      <label>Hoja de vida (CV)</label>
 
       <!-- La que ya está en su expediente -->
       <div class="form-nota form-nota--accion" *ngIf="hojaDeVida && !archivo">
@@ -42,22 +42,21 @@
         </button>
       </div>
 
-      <input type="file" id="hoja_vida" class="form-control" #campoCv
-        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-        (change)="alElegirArchivo($event)" [disabled]="soloLectura" />
+      <app-selector-archivo
+        *ngIf="!soloLectura"
+        [extensiones]="['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']"
+        [pesoMaximoMb]="5"
+        [archivos]="cv"
+        (archivosChange)="alCambiarCv($event)"
+        [texto]="hojaDeVida ? 'Arrastra aquí la nueva hoja de vida o haz clic para elegirla' : 'Arrastra aquí la hoja de vida o haz clic para elegirla'"
+        ayuda="PDF, Word o imagen, hasta 5 MB."
+      ></app-selector-archivo>
 
-      <div class="form-nota form-nota--accion" *ngIf="archivo">
-        <div>
-          Se subirá <strong>{{ archivo.name }}</strong> ({{ pesoLegible }}) al guardar.
-          <ng-container *ngIf="hojaDeVida"> Reemplazará a la que ya tiene.</ng-container>
-        </div>
-        <button type="button" class="btn-secondary" (click)="quitarArchivo(campoCv)">Quitar</button>
-      </div>
-
-      <small class="form-ayuda" *ngIf="!archivo">
-        PDF, Word o imagen, hasta 5 MB. Se guarda en su expediente, donde solo
-        la ve RR.HH.<ng-container *ngIf="esNuevo"> Se sube al terminar el registro.</ng-container>
+      <small class="form-ayuda" *ngIf="!soloLectura">
+        Se guarda en el expediente del trabajador<ng-container *ngIf="archivo"> al guardar<ng-container *ngIf="hojaDeVida"> y reemplaza a la que ya tiene</ng-container></ng-container><ng-container *ngIf="esNuevo && !archivo">, al terminar el registro</ng-container>.
+        El trabajador también puede subirla desde Mis Documentos.
       </small>
+      <small class="form-ayuda" *ngIf="soloLectura && !hojaDeVida">Todavía no tiene hoja de vida.</small>
     </div>
 
     <div class="form-group">

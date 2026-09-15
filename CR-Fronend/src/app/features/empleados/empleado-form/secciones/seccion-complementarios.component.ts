@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { NIVEL_ESTUDIOS_OPCIONES } from '../../../../shared/constants';
 import { Documento } from '../../../../core/models';
+import { SelectorArchivoComponent } from '../../../../shared/components/selector-archivo/selector-archivo.component';
 import { SeccionEmpleadoBase } from './seccion-base';
 
 /** Paso 4: estudios, hoja de vida y a quién avisar. Todo opcional. */
 @Component({
   selector: 'app-seccion-complementarios',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, SelectorArchivoComponent],
   templateUrl: './seccion-complementarios.component.html',
 })
 export class SeccionComplementariosComponent extends SeccionEmpleadoBase {
@@ -28,26 +29,15 @@ export class SeccionComplementariosComponent extends SeccionEmpleadoBase {
   /** Bajarse la que ya está guardada. */
   @Output() descargarCv = new EventEmitter<void>();
 
-  /** Lo elegido, para poder enseñar su nombre antes de guardar. */
-  archivo: File | null = null;
+  /** Lo elegido en el selector compartido (uno solo). */
+  cv: File[] = [];
 
-  alElegirArchivo(evento: Event): void {
-    const input = evento.target as HTMLInputElement;
-    this.archivo = input.files?.[0] ?? null;
+  get archivo(): File | null {
+    return this.cv[0] ?? null;
+  }
+
+  alCambiarCv(archivos: File[]): void {
+    this.cv = archivos;
     this.cvElegido.emit(this.archivo);
-  }
-
-  /** Se limpia también el <input file>: si no, vuelve a ofrecer el mismo. */
-  quitarArchivo(campo: HTMLInputElement): void {
-    this.archivo = null;
-    campo.value = '';
-    this.cvElegido.emit(null);
-  }
-
-  get pesoLegible(): string {
-    if (!this.archivo) return '';
-
-    const kb = this.archivo.size / 1024;
-    return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
   }
 }

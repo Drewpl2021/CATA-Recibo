@@ -7,6 +7,7 @@ import { AuthService, BoletaService, MisDocumentosService, ToastService } from '
 import { Documento } from '../../../core/models';
 import { mensajeErrorApi } from '../../../core/utils';
 import { VisorPdfComponent } from '../../../shared/components/visor-pdf/visor-pdf.component';
+import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
@@ -51,7 +52,7 @@ export interface BoletaRow {
 @Component({
   selector: 'app-mis-boletas',
   standalone: true,
-  imports: [CommonModule, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent],
+  imports: [CommonModule, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent, FormModalComponent],
   templateUrl: './mis-boletas.component.html',
   styleUrl: './mis-boletas.component.scss'
 })

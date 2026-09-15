@@ -279,28 +279,3 @@
 
   </div><!-- fin boleta-modal -->
 </div><!-- fin overlay -->
-
-<!-- ============================================================ -->
-<!--  MODAL DE CONFIRMACIÓN: EMISIÓN MASIVA                       -->
-<!-- ============================================================ -->
-<div class="boleta-modal-overlay" *ngIf="showConfirmMasivo" style="z-index: 9999;" (click)="cancelarEmisionMasiva()">
-  <div class="boleta-modal" style="max-width: 400px; padding: 24px; text-align: center;" (click)="$event.stopPropagation()">
-    <div style="color: var(--warning-text); margin-bottom: 16px;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-      </svg>
-    </div>
-    <h3 style="margin-top: 0; color: var(--text); font-size: 1.25rem;">¿Generar Planillas Masivamente?</h3>
-    <p style="color: var(--text-soft); margin-bottom: 24px; line-height: 1.5;">
-      ¿Estás seguro que deseas calcular y generar las planillas del mes <strong>{{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</strong> para todos los empleados activos?
-    </p>
-    <div style="display: flex; gap: 12px; justify-content: center;">
-      <button class="btn-cancelar" (click)="cancelarEmisionMasiva()" style="flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; cursor: pointer; font-weight: 500;">
-        Cancelar
-      </button>
-      <button class="btn-primary" (click)="confirmarEmisionMasiva()" style="flex: 1; padding: 10px; background: var(--brand-700); color: var(--text-on-brand); border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
-        Sí, generar todas
-      </button>
-    </div>
-  </div>
-</div>

@@ -21,6 +21,7 @@
     "apexcharts": "5.15.2",
     "ng-apexcharts": "1.11.0",
     "ng2-pdf-viewer": "^10.4.0",
+    "read-excel-file": "9.3.10",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

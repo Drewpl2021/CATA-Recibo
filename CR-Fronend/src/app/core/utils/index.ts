@@ -4,3 +4,4 @@ export * from './entity-data.service';
 export * from './error-api';
 export * from './fecha';
 export * from './clave-segura';
+export * from './guardar-archivo';

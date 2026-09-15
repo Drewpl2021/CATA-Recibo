@@ -94,6 +94,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     Route::post('mis-notificaciones/marcar-todas',      [MisNotificacionesController::class, 'marcarTodas']);
     Route::patch('mis-documentos/{id}/visto',  [MisDocumentosController::class, 'visto']);
     Route::post('mis-documentos/{id}/firmar',  [MisDocumentosController::class, 'firmar']);
+    // El trabajador sube su propio CV; el empleado sale del token.
+    Route::post('mis-documentos/hoja-de-vida', [MisDocumentosController::class, 'subirHojaDeVida']);
     Route::get('mis-modulos', [MisModulosController::class, 'index']);
     Route::put('cambiar-password', [AuthController::class, 'cambiarPassword']);
 
@@ -191,6 +193,21 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // Va antes del apiResource de planilla por el mismo motivo de siempre:
         // con un segmento más, no choca con show({id}).
         Route::post('planilla/{id}/conceptos', [PlanillaController::class, 'sincronizarConceptos']);
+        // Importar conceptos desde el Excel de RR.HH.: todas las planillas del
+        // mes de una vez. Tres pasos; el Excel se lee en el navegador y solo
+        // llegan sus celdas. Ver ImportacionConceptosController. "modelo" es
+        // el Excel para llenar, con la gente del mes y una columna por concepto.
+        Route::get('importacion-conceptos/modelo',         [\App\Http\Controllers\ImportacionConceptosController::class, 'modelo']);
+        Route::post('importacion-conceptos/reconocer',    [\App\Http\Controllers\ImportacionConceptosController::class, 'reconocer']);
+        Route::post('importacion-conceptos/previsualizar', [\App\Http\Controllers\ImportacionConceptosController::class, 'previsualizar']);
+        Route::post('importacion-conceptos/aplicar',       [\App\Http\Controllers\ImportacionConceptosController::class, 'aplicar']);
+        // Importar empleados desde Excel (altas y actualizaciones por DNI) y sus
+        // hojas de vida en lote, con el DNI en el nombre de cada archivo.
+        Route::get('importacion-empleados/modelo',         [\App\Http\Controllers\ImportacionEmpleadosController::class, 'modelo']);
+        Route::post('importacion-empleados/reconocer',    [\App\Http\Controllers\ImportacionEmpleadosController::class, 'reconocer']);
+        Route::post('importacion-empleados/previsualizar', [\App\Http\Controllers\ImportacionEmpleadosController::class, 'previsualizar']);
+        Route::post('importacion-empleados/aplicar',       [\App\Http\Controllers\ImportacionEmpleadosController::class, 'aplicar']);
+        Route::post('importacion-empleados/hoja-de-vida',  [\App\Http\Controllers\ImportacionEmpleadosController::class, 'hojaDeVida']);
         Route::apiResource('payroll-detalles', PayrollDetalleController::class);
         Route::apiResource('sedes',            SedeController::class);
 

@@ -257,6 +257,16 @@ export class CorridasListComponent implements OnInit {
 
   // ────────── Crear y editar ──────────
 
+  /**
+   * El asistente para cargar conceptos desde el Excel de RR.HH., abierto en
+   * el mes que se está mirando: casi siempre es ese el que se quiere cargar.
+   */
+  importar(): void {
+    this.router.navigate(['/inicio/planillas/importar'], {
+      queryParams: { mes: this.filtroMes || null, anio: this.filtroAnio || null },
+    });
+  }
+
   nueva(): void {
     this.corridaEditando = null;
     this.alcance = 'todos';

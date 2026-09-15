@@ -333,6 +333,54 @@
   {
    "key": "documento_intento_id",
    "value": ""
+  },
+  {
+   "key": "import_ts",
+   "value": ""
+  },
+  {
+   "key": "import_corrida_id",
+   "value": ""
+  },
+  {
+   "key": "import_dni",
+   "value": ""
+  },
+  {
+   "key": "import_onp_id",
+   "value": ""
+  },
+  {
+   "key": "import_movilidad_id",
+   "value": ""
+  },
+  {
+   "key": "import_bonificaciones_id",
+   "value": ""
+  },
+  {
+   "key": "import_neto_previsto",
+   "value": ""
+  },
+  {
+   "key": "import_bono_id",
+   "value": ""
+  },
+  {
+   "key": "import_emp_dni",
+   "value": ""
+  },
+  {
+   "key": "import_emp_correo",
+   "value": ""
+  },
+  {
+   "key": "import_emp_columnas",
+   "value": ""
+  },
+  {
+   "key": "cv_propio_id",
+   "value": ""
   }
  ],
  "item": [
@@ -4292,6 +4340,368 @@
        }
       }
      }
+    },
+    {
+     "name": "03.3 - Importar empleados desde Excel",
+     "item": [
+      {
+       "name": "Descargar el modelo de empleados",
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": "{{base_url}}/importacion-empleados/modelo",
+        "description": "El Excel vacío para llenar: los títulos que se reconocen, listas desplegables de área, cargo, sede y demás, y una hoja de instrucciones."
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "pm.test('Es un Excel (.xlsx)', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('spreadsheetml.sheet'));",
+           "pm.test('Se descarga como «Modelo de empleados»', () => pm.expect(pm.response.headers.get('Content-Disposition')).to.include('Modelo de empleados'));",
+           "pm.test('Es un zip de verdad (empieza con PK)', () => pm.expect(pm.response.stream.slice(0, 2).toString()).to.eql('PK'));"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Reconocer: los títulos de «Descargar empleados»",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Content-Type",
+          "value": "application/json",
+          "type": "text"
+         }
+        ],
+        "url": "{{base_url}}/importacion-empleados/reconocer",
+        "description": "Los mismos títulos que salen al descargar la lista: RR.HH. descarga, corrige y vuelve a subir.",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"columnas\": [\"N°\", \"DNI\", \"Apellidos\", \"Nombres\", \"Fecha de nacimiento\", \"Teléfono\", \"Dirección\", \"Correo\", \"Rol\", \"Área\", \"Cargo\", \"Sede\", \"Fecha de ingreso\", \"Estado\", \"Tipo de contrato\", \"Fin de contrato\", \"Sueldo base\", \"Sistema de pensión\", \"AFP\", \"CUSPP\", \"Forma de pago\", \"Banco\", \"N° de cuenta\", \"CCI\", \"Tiene hijos\", \"Nivel de estudios\", \"Especialidad\", \"Institución donde estudió\", \"Contacto de emergencia\", \"Teléfono del contacto\"]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       },
+       "event": [
+        {
+         "listen": "prerequest",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "const dni = '7' + String(Date.now()).slice(-7);",
+           "pm.collectionVariables.set('import_emp_dni', dni);",
+           "pm.collectionVariables.set('import_emp_correo', 'importado.' + dni + '@ejemplo.edu.pe');"
+          ]
+         }
+        },
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const d = pm.response.json().data;",
+           "pm.test('Reconoce los 28 datos de la ficha', () => pm.expect(d.columnas.filter(c => c.estado === 'reconocida')).to.have.length(28));",
+           "pm.test('«N°» y «Estado» no se importan', () => {",
+           "  pm.expect(d.columnas.find(c => c.titulo === 'N°').campo).to.be.null;",
+           "  pm.expect(d.columnas.find(c => c.titulo === 'Estado').campo).to.be.null;",
+           "});",
+           "pm.collectionVariables.set('import_emp_columnas', JSON.stringify(d.columnas.map(c => ({ indice: c.indice, titulo: c.titulo, campo: c.campo }))));"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Revisar: una alta nueva, sin guardar nada",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Content-Type",
+          "value": "application/json",
+          "type": "text"
+         }
+        ],
+        "url": "{{base_url}}/importacion-empleados/previsualizar",
+        "description": "",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const d = pm.response.json().data;",
+           "pm.test('Sin errores y una alta', () => {",
+           "  pm.expect(d.resumen.errores).to.eql(0);",
+           "  pm.expect(d.resumen.altas).to.eql(1);",
+           "});",
+           "pm.test('La hoja de vida calza con el DNI de la fila', () => pm.expect(d.filas[0].cv).to.be.true);",
+           "pm.test('Avisa de la contraseña provisional', () => pm.expect(d.advertencias.map(a => a.mensaje).join(' ')).to.include('contraseña provisional'));"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Revisar con errores: DNI corto y área mal escrita",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Content-Type",
+          "value": "application/json",
+          "type": "text"
+         }
+        ],
+        "url": "{{base_url}}/importacion-empleados/previsualizar",
+        "description": "",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"123\", null, null, null, null, null, null, null, null, null, null, null, null, null, null, 10, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {\"numero\": 3, \"celdas\": [null, \"{{import_emp_dni}}\", \"Sin\", \"Correo\", null, null, null, null, null, \"Contabilidad\", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "const d = pm.response.json().data;",
+           "const mensajes = d.errores.map(e => e.mensaje).join(' | ');",
+           "pm.test('Dice que el DNI no tiene 8 cifras', () => pm.expect(mensajes).to.include('«123» no es un DNI'));",
+           "pm.test('Sugiere el área parecida', () => pm.expect(mensajes).to.include('¿Quisiste decir «Contabilidad y Tesorería»?'));"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Aplicar: da de alta con cuenta y contrato",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Content-Type",
+          "value": "application/json",
+          "type": "text"
+         }
+        ],
+        "url": "{{base_url}}/importacion-empleados/aplicar",
+        "description": "",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "pm.test('Resume lo que hizo', () => pm.expect(pm.response.json().data.mensaje).to.include('1 alta(s)'));"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "El importado ya está en la lista",
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": "{{base_url}}/empleados?search={{import_emp_dni}}&page=0&size=5",
+        "description": ""
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const e = pm.response.json().data.content.find(x => x.dni === pm.collectionVariables.get('import_emp_dni'));",
+           "pm.test('Con su sueldo leído de «S/ 2,500.00»', () => pm.expect(Number(e.sueldo_base)).to.eql(2500));",
+           "pm.test('Con su cuenta', () => pm.expect(e.usuario.email).to.eql(pm.collectionVariables.get('import_emp_correo')));"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Su hoja de vida, del lote",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": "{{base_url}}/importacion-empleados/hoja-de-vida",
+        "description": "",
+        "body": {
+         "mode": "formdata",
+         "formdata": [
+          {
+           "key": "dni",
+           "value": "{{import_emp_dni}}",
+           "type": "text"
+          },
+          {
+           "key": "archivo",
+           "type": "file",
+           "src": "postman/fixtures/cv-prueba.pdf"
+          }
+         ]
+        }
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 201', () => pm.response.to.have.status(201));",
+           "pm.test('Queda a su nombre', () => pm.expect(pm.response.json().data.dni).to.eql(pm.collectionVariables.get('import_emp_dni')));"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Aplicar otra vez el mismo archivo no cambia nada",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Content-Type",
+          "value": "application/json",
+          "type": "text"
+         }
+        ],
+        "url": "{{base_url}}/importacion-empleados/aplicar",
+        "description": "",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('422: ya está así', () => {",
+           "  pm.response.to.have.status(422);",
+           "  pm.expect(pm.response.json().message).to.include('nada que cambiar');",
+           "});"
+          ]
+         }
+        }
+       ]
+      }
+     ],
+     "description": "Altas y cambios desde el Excel de RR.HH., y las hojas de vida en lote por DNI."
     }
    ]
   },
@@ -8259,6 +8669,725 @@
      ]
     },
     {
+     "name": "07.3 - Importar conceptos desde Excel",
+     "description": "RR.HH. sube su propio Excel (sus títulos, sin plantilla) y carga los conceptos de todas las planillas del mes de una vez. Tres pasos: reconocer propone qué es cada columna, previsualizar muestra lo que cambiaría sin guardar, y aplicar vuelve a revisarlo todo y guarda todo o nada.",
+     "item": [
+      {
+       "name": "Descargar el modelo de conceptos del mes",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "pm.test('Es un Excel (.xlsx)', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('spreadsheetml.sheet'));",
+           "pm.test('Se descarga como «Modelo de conceptos Septiembre 2026»', () => pm.expect(pm.response.headers.get('Content-Disposition')).to.include('Modelo de conceptos Septiembre 2026'));",
+           "pm.test('Es un zip de verdad (empieza con PK)', () => pm.expect(pm.response.stream.slice(0, 2).toString()).to.eql('PK'));"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "url": "{{base_url}}/importacion-conceptos/modelo?mes=9&anio=2026",
+        "description": "La gente con planilla en ese mes ya puesta, y una columna por cada concepto que se puede importar."
+       }
+      },
+      {
+       "name": "Sin mes no hay modelo",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('422 que pide el mes', () => {",
+           "  pm.response.to.have.status(422);",
+           "  pm.expect(pm.response.json().errors).to.have.property('mes');",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "url": "{{base_url}}/importacion-conceptos/modelo?anio=2026",
+        "description": ""
+       }
+      },
+      {
+       "name": "Preparar: una planilla del mes para importar",
+       "event": [
+        {
+         "listen": "prerequest",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.collectionVariables.set('import_ts', String(Date.now()));"
+          ]
+         }
+        },
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('La planilla del mes se crea con su gente', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+           "const d = pm.response.json().data || {};",
+           "pm.collectionVariables.set('import_corrida_id', d.id || (d.corrida && d.corrida.id) || '');"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"nombre\": \"Importación Excel Postman {{anio}}\",\n  \"mes\": 7,\n  \"anio\": {{anio}},\n  \"generar\": true\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": "{{base_url}}/planilla-corridas",
+        "description": "Un mes que no usa ninguna otra carpeta, para que la importación trabaje sobre planillas recién generadas y abiertas."
+       }
+      },
+      {
+       "name": "Buscar a alguien con planilla ese mes",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const filas = pm.response.json().data.content;",
+           "pm.test('Hay planillas en el mes', () => pm.expect(filas.length).to.be.above(0));",
+           "pm.collectionVariables.set('import_dni', filas[0].empleado.dni);"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "url": "{{base_url}}/planilla?mes=7&anio={{anio}}&page=0&size=5",
+        "description": ""
+       }
+      },
+      {
+       "name": "Buscar la ONP en el catálogo",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const d = pm.response.json().data;",
+           "const lista = Array.isArray(d) ? d : (d.content || []);",
+           "const onp = lista.find(c => c.nombre === 'ONP 13%');",
+           "pm.test('La ONP está en el catálogo', () => pm.expect(onp).to.not.be.undefined);",
+           "pm.collectionVariables.set('import_onp_id', onp ? onp.id : '');"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "url": "{{base_url}}/payment-concepts?page=0&size=100",
+        "description": ""
+       }
+      },
+      {
+       "name": "Reconocer: el sistema propone qué es cada columna",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const d = pm.response.json().data;",
+           "const col = t => d.columnas.find(c => c.titulo === t);",
+           "pm.test('DNI identifica al trabajador', () => pm.expect(col('DNI').accion).to.eql('dni'));",
+           "pm.test('«Movilidad» se reconoce aunque en el catálogo se llame distinto', () => {",
+           "  pm.expect(col('Movilidad').estado).to.eql('reconocida');",
+           "  const m = d.catalogo.find(c => c.id === col('Movilidad').payment_concept_id);",
+           "  pm.expect(m.nombre).to.eql('Planilla de Movilidad');",
+           "});",
+           "pm.test('El detalle queda asociado a la columna de su izquierda', () => pm.expect(col('Detalle movilidad').de_columna).to.eql(3));",
+           "pm.test('«Bonificación» se parece a varios: pregunta en vez de adivinar', () => {",
+           "  pm.expect(col('Bonificación').estado).to.eql('dudosa');",
+           "  pm.expect(col('Bonificación').payment_concept_id).to.be.null;",
+           "  pm.expect(col('Bonificación').candidatos.length).to.be.above(1);",
+           "});",
+           "pm.test('Un título sin parecido se propone como concepto nuevo, sin crearlo', () => {",
+           "  const bono = d.columnas[6];",
+           "  pm.expect(bono.estado).to.eql('nueva');",
+           "  pm.expect(bono.nuevo.nombre).to.eql(bono.titulo);",
+           "});",
+           "pm.test('La ONP la calcula el sistema: no se importa', () => pm.expect(col('ONP').estado).to.eql('protegida'));",
+           "pm.test('«Total» es de referencia', () => pm.expect(col('Total').estado).to.eql('informativa'));",
+           "pm.test('El catálogo para elegir no ofrece los que calcula el sistema', () => {",
+           "  pm.expect(d.catalogo.map(c => c.nombre)).to.not.include('ONP 13%');",
+           "  pm.expect(d.catalogo.map(c => c.nombre)).to.not.include('Asignación Familiar');",
+           "});",
+           "pm.collectionVariables.set('import_movilidad_id', col('Movilidad').payment_concept_id);",
+           "pm.collectionVariables.set('import_bonificaciones_id', d.catalogo.find(c => c.nombre === 'Bonificaciones').id);"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"columnas\": [\"N°\", \"DNI\", \"Apellidos y Nombres\", \"Movilidad\", \"Detalle movilidad\", \"Bonificación\", \"Canasta Navideña\", \"ONP\", \"Total\"]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": "{{base_url}}/importacion-conceptos/reconocer",
+        "description": ""
+       }
+      },
+      {
+       "name": "Revisar: muestra lo que cambiaría y no guarda nada",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const d = pm.response.json().data;",
+           "pm.test('Sin errores y una planilla que cambia', () => {",
+           "  pm.expect(d.resumen.errores).to.eql(0);",
+           "  pm.expect(d.resumen.trabajadores).to.eql(1);",
+           "});",
+           "pm.test('Anuncia el concepto que se va a crear, con su tipo', () => {",
+           "  pm.expect(d.resumen.conceptos_nuevos).to.have.length(1);",
+           "  pm.expect(d.resumen.conceptos_nuevos[0].tipo).to.eql('bonificacion');",
+           "});",
+           "const t = d.trabajadores[0];",
+           "pm.test('Tres conceptos nuevos: movilidad, bonificación y la canasta; la ONP y el total no cuentan', () => pm.expect(t.cambios).to.have.length(3));",
+           "pm.test('El neto previsto suma 120 + 200 + 150', () => pm.expect(t.neto_despues - t.neto_antes).to.be.closeTo(470, 0.01));",
+           "pm.test('La movilidad lleva su detalle para la boleta', () => {",
+           "  pm.expect(t.cambios.find(c => c.concepto === 'Planilla de Movilidad').descripcion).to.eql('Viaje de prueba');",
+           "});",
+           "pm.test('Avisa que los ingresos no recalculan pensión ni 5ta', () => {",
+           "  pm.expect(d.advertencias.map(a => a.mensaje).join(' ')).to.include('pensión');",
+           "});",
+           "pm.collectionVariables.set('import_neto_previsto', t.neto_despues);"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"mes\": 7,\n  \"anio\": {{anio}},\n  \"archivo\": \"Conceptos Postman.xlsx\",\n  \"columnas\": [\n    {\"indice\": 0, \"titulo\": \"N°\", \"accion\": \"ignorar\"},\n    {\"indice\": 1, \"titulo\": \"DNI\", \"accion\": \"dni\"},\n    {\"indice\": 2, \"titulo\": \"Apellidos y Nombres\", \"accion\": \"ignorar\"},\n    {\"indice\": 3, \"titulo\": \"Movilidad\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_movilidad_id}}\"},\n    {\"indice\": 4, \"titulo\": \"Detalle movilidad\", \"accion\": \"detalle\", \"de_columna\": 3},\n    {\"indice\": 5, \"titulo\": \"Bonificación\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_bonificaciones_id}}\"},\n    {\"indice\": 6, \"titulo\": \"Canasta Navideña\", \"accion\": \"crear\", \"nuevo\": {\"nombre\": \"Canasta Navideña\", \"tipo\": \"bonificacion\"}},\n    {\"indice\": 7, \"titulo\": \"ONP\", \"accion\": \"ignorar\"},\n    {\"indice\": 8, \"titulo\": \"Total\", \"accion\": \"ignorar\"}\n  ],\n  \"filas\": [{\"numero\": 4, \"celdas\": [1, \"{{import_dni}}\", \"Postman\", 120, \"Viaje de prueba\", 200, 150, 999, 9999]}]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": "{{base_url}}/importacion-conceptos/previsualizar",
+        "description": ""
+       }
+      },
+      {
+       "name": "Revisar con errores: DNI que no existe y texto donde va un monto",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200: la revisión devuelve los errores, no los tira', () => pm.response.to.have.status(200));",
+           "const d = pm.response.json().data;",
+           "const mensajes = d.errores.map(e => e.mensaje).join(' | ');",
+           "pm.test('Dice qué DNI no existe', () => pm.expect(mensajes).to.include('No hay ningún trabajador con el DNI 99999999'));",
+           "pm.test('Dice qué celda no es un monto', () => pm.expect(mensajes).to.include('«abc» no es un monto'));",
+           "pm.test('Cada error dice en qué fila está', () => pm.expect(d.errores.map(e => e.fila)).to.include.members([5, 6]));"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"mes\": 7,\n  \"anio\": {{anio}},\n  \"archivo\": \"Conceptos Postman.xlsx\",\n  \"columnas\": [\n    {\"indice\": 0, \"titulo\": \"N°\", \"accion\": \"ignorar\"},\n    {\"indice\": 1, \"titulo\": \"DNI\", \"accion\": \"dni\"},\n    {\"indice\": 2, \"titulo\": \"Apellidos y Nombres\", \"accion\": \"ignorar\"},\n    {\"indice\": 3, \"titulo\": \"Movilidad\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_movilidad_id}}\"},\n    {\"indice\": 4, \"titulo\": \"Detalle movilidad\", \"accion\": \"detalle\", \"de_columna\": 3},\n    {\"indice\": 5, \"titulo\": \"Bonificación\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_bonificaciones_id}}\"},\n    {\"indice\": 6, \"titulo\": \"Canasta Navideña\", \"accion\": \"crear\", \"nuevo\": {\"nombre\": \"Canasta Navideña\", \"tipo\": \"bonificacion\"}},\n    {\"indice\": 7, \"titulo\": \"ONP\", \"accion\": \"ignorar\"},\n    {\"indice\": 8, \"titulo\": \"Total\", \"accion\": \"ignorar\"}\n  ],\n  \"filas\": [\n    {\"numero\": 5, \"celdas\": [2, \"99999999\", \"Nadie\", 10, null, null, null, null, null]},\n    {\"numero\": 6, \"celdas\": [3, \"{{import_dni}}\", \"Postman\", \"abc\", null, null, null, null, null]}\n  ]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": "{{base_url}}/importacion-conceptos/previsualizar",
+        "description": ""
+       }
+      },
+      {
+       "name": "Aplicar con errores no guarda nada",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('422: con un solo error no se aplica nada', () => {",
+           "  pm.response.to.have.status(422);",
+           "  pm.expect(pm.response.json().message).to.include('no se guardó nada');",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"mes\": 7,\n  \"anio\": {{anio}},\n  \"archivo\": \"Conceptos Postman.xlsx\",\n  \"columnas\": [\n    {\"indice\": 0, \"titulo\": \"N°\", \"accion\": \"ignorar\"},\n    {\"indice\": 1, \"titulo\": \"DNI\", \"accion\": \"dni\"},\n    {\"indice\": 2, \"titulo\": \"Apellidos y Nombres\", \"accion\": \"ignorar\"},\n    {\"indice\": 3, \"titulo\": \"Movilidad\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_movilidad_id}}\"},\n    {\"indice\": 4, \"titulo\": \"Detalle movilidad\", \"accion\": \"detalle\", \"de_columna\": 3},\n    {\"indice\": 5, \"titulo\": \"Bonificación\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_bonificaciones_id}}\"},\n    {\"indice\": 6, \"titulo\": \"Canasta Navideña\", \"accion\": \"crear\", \"nuevo\": {\"nombre\": \"Canasta Navideña\", \"tipo\": \"bonificacion\"}},\n    {\"indice\": 7, \"titulo\": \"ONP\", \"accion\": \"ignorar\"},\n    {\"indice\": 8, \"titulo\": \"Total\", \"accion\": \"ignorar\"}\n  ],\n  \"filas\": [\n    {\"numero\": 5, \"celdas\": [2, \"99999999\", \"Nadie\", 10, null, null, null, null, null]},\n    {\"numero\": 6, \"celdas\": [3, \"{{import_dni}}\", \"Postman\", \"abc\", null, null, null, null, null]}\n  ]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": "{{base_url}}/importacion-conceptos/aplicar",
+        "description": ""
+       }
+      },
+      {
+       "name": "Una columna no puede apuntar a la ONP (una pantalla no es una cerradura)",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "const d = pm.response.json().data;",
+           "pm.test('La rechaza aunque venga armada a mano por la API', () => {",
+           "  pm.expect(d.errores.map(e => e.mensaje).join(' ')).to.include('lo calcula el sistema');",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"mes\": 7,\n  \"anio\": {{anio}},\n  \"archivo\": \"Conceptos Postman.xlsx\",\n  \"columnas\": [\n    {\"indice\": 0, \"titulo\": \"N°\", \"accion\": \"ignorar\"},\n    {\"indice\": 1, \"titulo\": \"DNI\", \"accion\": \"dni\"},\n    {\"indice\": 2, \"titulo\": \"Apellidos y Nombres\", \"accion\": \"ignorar\"},\n    {\"indice\": 3, \"titulo\": \"Movilidad\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_onp_id}}\"},\n    {\"indice\": 4, \"titulo\": \"Detalle movilidad\", \"accion\": \"detalle\", \"de_columna\": 3},\n    {\"indice\": 5, \"titulo\": \"Bonificación\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_bonificaciones_id}}\"},\n    {\"indice\": 6, \"titulo\": \"Canasta Navideña\", \"accion\": \"crear\", \"nuevo\": {\"nombre\": \"Canasta Navideña\", \"tipo\": \"bonificacion\"}},\n    {\"indice\": 7, \"titulo\": \"ONP\", \"accion\": \"ignorar\"},\n    {\"indice\": 8, \"titulo\": \"Total\", \"accion\": \"ignorar\"}\n  ],\n  \"filas\": [{\"numero\": 4, \"celdas\": [1, \"{{import_dni}}\", \"Postman\", 120, \"Viaje de prueba\", 200, 150, 999, 9999]}]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": "{{base_url}}/importacion-conceptos/previsualizar",
+        "description": ""
+       }
+      },
+      {
+       "name": "Aplicar: guarda todo de una vez",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const d = pm.response.json().data;",
+           "pm.test('Resume lo que hizo', () => pm.expect(d.mensaje).to.include('3 cambios en 1 planillas'));",
+           "pm.test('Creó el concepto nuevo', () => {",
+           "  pm.expect(d.resumen.conceptos_creados).to.eql(['Canasta Navideña']);",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"mes\": 7,\n  \"anio\": {{anio}},\n  \"archivo\": \"Conceptos Postman.xlsx\",\n  \"columnas\": [\n    {\"indice\": 0, \"titulo\": \"N°\", \"accion\": \"ignorar\"},\n    {\"indice\": 1, \"titulo\": \"DNI\", \"accion\": \"dni\"},\n    {\"indice\": 2, \"titulo\": \"Apellidos y Nombres\", \"accion\": \"ignorar\"},\n    {\"indice\": 3, \"titulo\": \"Movilidad\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_movilidad_id}}\"},\n    {\"indice\": 4, \"titulo\": \"Detalle movilidad\", \"accion\": \"detalle\", \"de_columna\": 3},\n    {\"indice\": 5, \"titulo\": \"Bonificación\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_bonificaciones_id}}\"},\n    {\"indice\": 6, \"titulo\": \"Canasta Navideña\", \"accion\": \"crear\", \"nuevo\": {\"nombre\": \"Canasta Navideña\", \"tipo\": \"bonificacion\"}},\n    {\"indice\": 7, \"titulo\": \"ONP\", \"accion\": \"ignorar\"},\n    {\"indice\": 8, \"titulo\": \"Total\", \"accion\": \"ignorar\"}\n  ],\n  \"filas\": [{\"numero\": 4, \"celdas\": [1, \"{{import_dni}}\", \"Postman\", 120, \"Viaje de prueba\", 200, 150, 999, 9999]}]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": "{{base_url}}/importacion-conceptos/aplicar",
+        "description": ""
+       }
+      },
+      {
+       "name": "El neto guardado es el que prometió la revisión",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const fila = pm.response.json().data.content.find(p => p.empleado.dni === pm.collectionVariables.get('import_dni'));",
+           "pm.test('Mismo neto que en la revisión', () => {",
+           "  pm.expect(Number(fila.total)).to.be.closeTo(Number(pm.collectionVariables.get('import_neto_previsto')), 0.01);",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "url": "{{base_url}}/planilla?mes=7&anio={{anio}}&search={{import_dni}}&page=0&size=5",
+        "description": ""
+       }
+      },
+      {
+       "name": "La segunda vez recuerda los títulos que se confirmaron",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const d = pm.response.json().data;",
+           "const col = t => d.columnas.find(c => c.titulo === t);",
+           "pm.test('«Bonificación» ya no pregunta: la recuerda', () => {",
+           "  pm.expect(col('Bonificación').estado).to.eql('reconocida');",
+           "  pm.expect(col('Bonificación').origen).to.eql('recordado');",
+           "});",
+           "pm.test('La canasta ya existe en el catálogo', () => pm.expect(d.columnas[6].estado).to.eql('reconocida'));",
+           "pm.collectionVariables.set('import_bono_id', d.columnas[6].payment_concept_id);"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"columnas\": [\"N°\", \"DNI\", \"Apellidos y Nombres\", \"Movilidad\", \"Detalle movilidad\", \"Bonificación\", \"Canasta Navideña\", \"ONP\", \"Total\"]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": "{{base_url}}/importacion-conceptos/reconocer",
+        "description": ""
+       }
+      },
+      {
+       "name": "Aplicar otra vez el mismo archivo no cambia nada",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('422: los montos ya están así', () => {",
+           "  pm.response.to.have.status(422);",
+           "  pm.expect(pm.response.json().message).to.include('nada que cambiar');",
+           "});"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"mes\": 7,\n  \"anio\": {{anio}},\n  \"archivo\": \"Conceptos Postman.xlsx\",\n  \"columnas\": [\n    {\"indice\": 0, \"titulo\": \"N°\", \"accion\": \"ignorar\"},\n    {\"indice\": 1, \"titulo\": \"DNI\", \"accion\": \"dni\"},\n    {\"indice\": 2, \"titulo\": \"Apellidos y Nombres\", \"accion\": \"ignorar\"},\n    {\"indice\": 3, \"titulo\": \"Movilidad\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_movilidad_id}}\"},\n    {\"indice\": 4, \"titulo\": \"Detalle movilidad\", \"accion\": \"detalle\", \"de_columna\": 3},\n    {\"indice\": 5, \"titulo\": \"Bonificación\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_bonificaciones_id}}\"},\n    {\"indice\": 6, \"titulo\": \"Canasta Navideña\", \"accion\": \"usar\", \"payment_concept_id\": \"{{import_bono_id}}\"},\n    {\"indice\": 7, \"titulo\": \"ONP\", \"accion\": \"ignorar\"},\n    {\"indice\": 8, \"titulo\": \"Total\", \"accion\": \"ignorar\"}\n  ],\n  \"filas\": [{\"numero\": 4, \"celdas\": [1, \"{{import_dni}}\", \"Postman\", 120, \"Viaje de prueba\", 200, 150, 999, 9999]}]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": "{{base_url}}/importacion-conceptos/aplicar",
+        "description": ""
+       }
+      },
+      {
+       "name": "Sin sesión no se importa nada",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('401', () => pm.response.to.have.status(401));"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer token-que-no-existe",
+          "type": "text"
+         }
+        ],
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"columnas\": [\"N°\", \"DNI\", \"Apellidos y Nombres\", \"Movilidad\", \"Detalle movilidad\", \"Bonificación\", \"Canasta Navideña\", \"ONP\", \"Total\"]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        },
+        "url": "{{base_url}}/importacion-conceptos/reconocer",
+        "description": ""
+       }
+      },
+      {
+       "name": "Limpio la planilla de la importación",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "DELETE",
+        "header": [
+         {
+          "key": "Content-Type",
+          "value": "application/json"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "url": "{{base_url}}/planilla-corridas/{{import_corrida_id}}",
+        "description": ""
+       }
+      }
+     ]
+    },
+    {
      "name": "Un concepto sin valor de catalogo se rechaza si no se manda monto",
      "event": [
       {
@@ -10704,6 +11833,206 @@
       },
       "description": "La consulta cuesta dinero y devuelve datos de personas: queda dentro del grupo de RR.HH. y Admin."
      }
+    },
+    {
+     "name": "10.3 - Mi hoja de vida",
+     "item": [
+      {
+       "name": "Subir mi hoja de vida",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": "{{base_url}}/mis-documentos/hoja-de-vida",
+        "description": "El empleado sale del token: no hay forma de colgarle un archivo al expediente de otro.",
+        "body": {
+         "mode": "formdata",
+         "formdata": [
+          {
+           "key": "archivo",
+           "type": "file",
+           "src": "postman/fixtures/cv-prueba.pdf"
+          }
+         ]
+        }
+       },
+       "response": [],
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 201', () => pm.response.to.have.status(201));",
+           "const d = pm.response.json().data;",
+           "pm.test('Queda como hoja de vida, a su nombre', () => {",
+           "  pm.expect(d.tipo).to.eql('hoja_de_vida');",
+           "  pm.expect(d.empleado_id).to.eql(pm.collectionVariables.get('empleado_autoservicio_id'));",
+           "});",
+           "pm.collectionVariables.set('cv_propio_id', d.id);"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Un .txt no es una hoja de vida",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": "{{base_url}}/mis-documentos/hoja-de-vida",
+        "description": "",
+        "body": {
+         "mode": "formdata",
+         "formdata": [
+          {
+           "key": "archivo",
+           "type": "file",
+           "src": "postman/fixtures/no-es-cv.txt"
+          }
+         ]
+        }
+       },
+       "response": [],
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('422 que dice qué formatos valen', () => {",
+           "  pm.response.to.have.status(422);",
+           "  pm.expect(pm.response.text()).to.include('PDF, Word');",
+           "});"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "La hoja de vida no se marca como vista ni se firma",
+       "request": {
+        "method": "PATCH",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Content-Type",
+          "value": "application/json",
+          "type": "text"
+         }
+        ],
+        "url": "{{base_url}}/mis-documentos/{{cv_propio_id}}/visto",
+        "description": "",
+        "body": {
+         "mode": "raw",
+         "raw": "{}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       },
+       "response": [],
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('422', () => pm.response.to.have.status(422));"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Y no sale entre lo que falta firmar",
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": "{{base_url}}/mis-documentos?sin_firmar=1&page=0&size=50",
+        "description": ""
+       },
+       "response": [],
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "pm.test('Ningún pendiente es una hoja de vida', () => pm.expect(pm.response.json().data.content.every(d => d.tipo !== 'hoja_de_vida')).to.be.true);"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Un empleado no descarga los modelos de RR.HH.",
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": "{{base_url}}/importacion-empleados/modelo",
+        "description": ""
+       },
+       "response": [],
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('403', () => pm.response.to.have.status(403));"
+          ]
+         }
+        }
+       ]
+      }
+     ],
+     "description": "El trabajador sube su propio CV. No se firma ni cuenta como pendiente."
     }
    ]
   },

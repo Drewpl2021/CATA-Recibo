@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { inject, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EmpleadoService } from '../../../core/services';
@@ -8,6 +8,7 @@ import { PlanillaService } from '../../../core/services';
 import { PayrollDetalleService } from '../../../core/services';
 import { Planilla } from '../../../core/models';
 import { ToastService } from '../../../core/services';
+import { ConfirmService } from '../../../core/services';
 import { Observable, of, map, switchMap } from 'rxjs';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -136,7 +137,7 @@ export class EmisionBoletaListComponent implements OnInit {
   aniosDisponibles: number[] = [];
 
   // Mass emission modal
-  showConfirmMasivo = false;
+  private confirmService = inject(ConfirmService);
 
   mesesDisponibles = MESES_OPCIONES.map((m) => ({ num: m.value, nombre: m.label }));
 
@@ -591,15 +592,19 @@ export class EmisionBoletaListComponent implements OnInit {
       this.toastService.warning('Aviso', 'No hay trabajadores en la lista para emitir boletas.');
       return;
     }
-    this.showConfirmMasivo = true;
-  }
-
-  cancelarEmisionMasiva(): void {
-    this.showConfirmMasivo = false;
+    // El diálogo de confirmación compartido, como en el resto del sistema:
+    // este tenía uno propio hecho a mano, con estilos sueltos.
+    this.confirmService
+      .confirmar({
+        titulo: 'Emitir todas las boletas',
+        mensaje: `Se emitirán las boletas de ${this.nombreMes(Number(this.mesGlobal))} ${this.anioGlobal} para todo el personal que tenga planilla ese mes.`,
+        aceptarTexto: 'Sí, emitir todas',
+        variante: 'default',
+      })
+      .then((aceptado) => { if (aceptado) this.confirmarEmisionMasiva(); });
   }
 
   confirmarEmisionMasiva(): void {
-    this.showConfirmMasivo = false;
     this.generandoMasivo = true;
     this.boletaService.generarMasivo(this.mesGlobal, this.anioGlobal).subscribe({
       next: (res) => {

@@ -97,6 +97,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/empleados/empleado-form/empleado-form.component').then(m => m.EmpleadoFormComponent),
       },
       {
+        // Altas y cambios de varios trabajadores desde el Excel de RR.HH.
+        path: 'empleados/importar',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/empleados/importar-empleados/importar-empleados.component').then(m => m.ImportarEmpleadosComponent),
+      },
+      {
         path: 'empleados/editar/:id',
         canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/empleados/empleado-form/empleado-form.component').then(m => m.EmpleadoFormComponent),
@@ -121,6 +127,12 @@ export const routes: Routes = [
         path: 'planillas',
         canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/planillas/corridas-list/corridas-list.component').then(m => m.CorridasListComponent),
+      },
+      {
+        // Cargar conceptos de pago de todo el mes desde el Excel de RR.HH.
+        path: 'planillas/importar',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/planillas/importar-conceptos/importar-conceptos.component').then(m => m.ImportarConceptosComponent),
       },
       {
         // Segundo nivel: los trabajadores DENTRO de una planilla.

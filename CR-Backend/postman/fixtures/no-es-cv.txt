@@ -1,0 +1,1 @@
+Esto no es una hoja de vida: lo usa la prueba que comprueba que se rechazan los formatos que no son PDF, Word ni imagen.

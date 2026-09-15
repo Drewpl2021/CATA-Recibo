@@ -1,0 +1,250 @@
+<app-page-header
+  icono="people"
+  titulo="Importar empleados desde Excel"
+  subtitulo="Da de alta o actualiza a varios trabajadores con un solo archivo, y sube sus hojas de vida."
+>
+  <button headerActions type="button" class="btn-secondary" (click)="verEmpleados()">
+    Volver a Empleados
+  </button>
+</app-page-header>
+
+<section class="section-panel section-panel--formulario">
+  <app-wizard [pasos]="pasos" [(actual)]="paso" [form]="avance"></app-wizard>
+
+  <!-- ══ Paso 1: los archivos ════════════════════════════════════ -->
+  <div *ngIf="pasos[paso].id === 'archivos'" class="form-fields">
+    <h2 class="seccion-form__titulo">El Excel con los datos</h2>
+
+    <div class="form-nota form-nota--accion">
+      <div>
+        <strong>¿No tienes el archivo?</strong> Descarga el modelo: trae los títulos que el sistema
+        reconoce, listas para elegir el área, el cargo o la sede, y una hoja con instrucciones. Con un
+        <strong>DNI nuevo</strong> se da de alta al trabajador; con uno que <strong>ya existe</strong> se
+        cambian solo las celdas que tengan algo escrito. Una celda vacía no borra nada.
+      </div>
+      <button type="button" class="btn-exportar" (click)="descargarModelo()" [disabled]="descargandoModelo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/>
+        </svg>
+        {{ descargandoModelo ? 'Preparando…' : 'Descargar modelo' }}
+      </button>
+    </div>
+
+    <app-selector-archivo
+      [extensiones]="['xlsx']"
+      [pesoMaximoMb]="10"
+      [archivos]="archivosExcel"
+      (archivosChange)="alElegirExcel($event)"
+      [ocupado]="leyendo"
+      [mostrarLista]="false"
+      textoOcupado="Leyendo el archivo…"
+      [texto]="nombreArchivo ? nombreArchivo : 'Arrastra aquí tu Excel o haz clic para elegirlo'"
+      ayuda="Solo .xlsx, hasta 10 MB. El archivo no se sube al servidor: se lee en tu computadora."
+    ></app-selector-archivo>
+
+    <p class="form-nota" *ngIf="avance.value.leido">
+      Leímos <strong>{{ filas.length }}</strong> fila(s) de «{{ nombreArchivo }}».
+    </p>
+
+    <p class="form-nota">
+      Para corregir a quienes ya están, también sirve <strong>Descargar empleados</strong> de la lista:
+      ábrelo en Excel y guárdalo como «Libro de Excel (.xlsx)» antes de subirlo.
+    </p>
+
+    <h2 class="seccion-form__titulo">Las hojas de vida (opcional)</h2>
+
+    <app-selector-archivo
+      [extensiones]="extensionesCv"
+      [pesoMaximoMb]="5"
+      [multiple]="true"
+      [archivos]="cvs"
+      (archivosChange)="alCambiarCvs($event)"
+      texto="Arrastra aquí las hojas de vida o haz clic para elegirlas"
+      ayuda="Nombra cada archivo con el DNI del trabajador, por ejemplo 42558107.pdf. PDF, Word o imagen, hasta 5 MB cada una."
+    ></app-selector-archivo>
+
+    <div class="form-nota form-nota--aviso" *ngIf="cvsSinDni.length">
+      Estos archivos no tienen un DNI de 8 cifras en el nombre y no se subirán:
+      {{ cvsSinDni.join(', ') }}. Cámbiales el nombre y vuelve a elegirlos.
+    </div>
+
+    <div class="importacion-pie">
+      <span></span>
+      <button type="button" class="btn-primary" [disabled]="!avance.value.leido || leyendo" (click)="continuar()">
+        Reconocer columnas
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ Paso 2: reconocer las columnas ══════════════════════════ -->
+  <div *ngIf="pasos[paso].id === 'columnas'">
+    <p class="form-nota">
+      El sistema reconoció <strong>{{ cuantasReconocidas }}</strong> columna(s) de «{{ nombreArchivo }}».
+      Revisa las que se ignoran por si alguna sí es un dato de la ficha.
+    </p>
+
+    <app-data-table
+      [columnas]="columnasDeColumnas"
+      [datos]="columnas"
+      [acciones]="[]"
+      [filasPorPagina]="60"
+      [mostrarBuscador]="false"
+      mensajeVacio="El Excel no tiene columnas."
+    >
+      <ng-template appCelda="estado" let-c>
+        <span class="status-badge" [ngClass]="'status-badge-' + severidad(c)">{{ etiqueta(c) }}</span>
+        <div class="form-ayuda">{{ c.motivo }}</div>
+      </ng-template>
+
+      <ng-template appCelda="campo" let-c>
+        <div class="controles-celda">
+          <select class="form-control" [(ngModel)]="c.campo" (ngModelChange)="alCambiarColumna()"
+            [attr.aria-label]="'Dato de la ficha de la columna ' + c.titulo">
+            <option [ngValue]="null">No importar esta columna</option>
+            <option *ngFor="let f of campos" [ngValue]="f.campo">{{ f.titulo }}{{ f.obligatorio ? ' *' : '' }}</option>
+          </select>
+        </div>
+      </ng-template>
+    </app-data-table>
+
+    <div class="form-nota form-nota--aviso" *ngIf="pendientes.length">
+      <strong>Antes de revisar los cambios:</strong>
+      <ul class="importacion-pendientes">
+        <li *ngFor="let p of pendientes">{{ p }}</li>
+      </ul>
+    </div>
+
+    <p class="form-nota" *ngIf="!pendientes.length && obligatoriosSinColumna.length">
+      No hay columna de: <strong>{{ obligatoriosSinColumna.join(', ') }}</strong>. Con este archivo solo se puede
+      actualizar a quienes ya existen; para dar de alta a alguien nuevo hacen falta los datos marcados con *.
+    </p>
+
+    <div class="importacion-pie">
+      <button type="button" class="btn-secondary" (click)="paso = 0">Volver a los archivos</button>
+      <button type="button" class="btn-primary" [disabled]="pendientes.length > 0 || revisando" (click)="previsualizar()">
+        <span *ngIf="revisando" class="spinner-small"></span>
+        {{ revisando ? 'Revisando…' : 'Revisar cambios' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ Paso 3: revisar antes de guardar ════════════════════════ -->
+  <div *ngIf="pasos[paso].id === 'revision' && vista">
+    <div class="resumen-masivo">
+      <div class="resumen-masivo__dato">
+        <strong>{{ vista.resumen.altas }}</strong>
+        <span>Altas nuevas</span>
+      </div>
+      <div class="resumen-masivo__dato">
+        <strong>{{ vista.resumen.actualizaciones }}</strong>
+        <span>Actualizaciones</span>
+      </div>
+      <div class="resumen-masivo__dato">
+        <strong>{{ vista.resumen.sin_cambios }}</strong>
+        <span>Ya estaban al día</span>
+      </div>
+      <div class="resumen-masivo__dato">
+        <strong>{{ cvsParaSubir.length }}</strong>
+        <span>Hojas de vida</span>
+      </div>
+      <div class="resumen-masivo__dato">
+        <strong>{{ vista.resumen.errores }}</strong>
+        <span>Errores</span>
+      </div>
+    </div>
+
+    <div class="form-nota form-nota--alerta" *ngIf="vista.errores.length">
+      <strong>No se puede aplicar todavía.</strong> Corrige estos errores en tu Excel, vuelve a subirlo y revisa
+      otra vez. Mientras haya un solo error no se guarda nada.
+      <ul class="importacion-avisos">
+        <li *ngFor="let e of vista.errores"><strong>{{ ubicacion(e) }}:</strong> {{ e.mensaje }}</li>
+      </ul>
+    </div>
+
+    <div class="form-nota form-nota--aviso" *ngIf="vista.advertencias.length">
+      <strong>Conviene saber:</strong>
+      <ul class="importacion-avisos">
+        <li *ngFor="let a of vista.advertencias"><strong *ngIf="a.fila">{{ ubicacion(a) }}:</strong> {{ a.mensaje }}</li>
+      </ul>
+    </div>
+
+    <p class="form-nota" *ngIf="!vista.errores.length && !vista.filas.length && !cvsParaSubir.length">
+      No hay nada que cambiar: los trabajadores del archivo ya están así en el sistema.
+    </p>
+
+    <app-data-table
+      *ngIf="vista.filas.length"
+      entidad="este trabajador"
+      [columnas]="columnasDeRevision"
+      [datos]="vista.filas"
+      [acciones]="[]"
+      [filasPorPagina]="25"
+      [camposBusqueda]="['nombre', 'dni']"
+    >
+      <ng-template appCelda="nombre" let-f>
+        <strong>{{ f.nombre }}</strong>
+        <div class="form-ayuda">DNI {{ f.dni }}, fila {{ f.fila }} del Excel</div>
+      </ng-template>
+
+      <ng-template appCelda="modo" let-f>
+        <span class="status-badge" [ngClass]="f.modo === 'alta' ? 'status-badge-success' : 'status-badge-info'">
+          {{ f.modo === 'alta' ? 'Alta nueva' : 'Actualización' }}
+        </span>
+      </ng-template>
+
+      <ng-template appCelda="cambios" let-f>
+        <ul class="importacion-cambios">
+          <li *ngFor="let c of f.cambios">
+            <span class="importacion-cambios__concepto">{{ c.titulo }}</span>
+            <span>{{ textoCambio(c) }}</span>
+          </li>
+        </ul>
+      </ng-template>
+
+      <ng-template appCelda="cv" let-f>
+        <span class="status-badge status-badge-success" *ngIf="f.cv">Se sube</span>
+        <span *ngIf="!f.cv">—</span>
+      </ng-template>
+    </app-data-table>
+
+    <div class="importacion-pie">
+      <button type="button" class="btn-secondary" (click)="paso = 1">Volver a las columnas</button>
+      <button type="button" class="btn-primary" [disabled]="!sePuedeAplicar" (click)="aplicar()">
+        <span *ngIf="aplicando" class="spinner-small"></span>
+        {{ textoAplicar }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ Paso 4: listo ═══════════════════════════════════════════ -->
+  <div *ngIf="pasos[paso].id === 'listo' && resultado" class="importacion-listo">
+    <app-icon icono="check_circle" [tamano]="52"></app-icon>
+    <h2>{{ resultado.mensaje }}</h2>
+
+    <p *ngIf="subiendoCvs">
+      <span class="spinner-small"></span>
+      Subiendo hojas de vida: {{ resultadosCv.length }} de {{ cvsParaSubir.length }}…
+    </p>
+    <p *ngIf="!subiendoCvs && resultadosCv.length">
+      Hojas de vida subidas: <strong>{{ cvsSubidos }}</strong><ng-container *ngIf="cvsConProblema.length">, con problema: <strong>{{ cvsConProblema.length }}</strong></ng-container>.
+    </p>
+
+    <div class="form-nota form-nota--alerta" *ngIf="!subiendoCvs && cvsConProblema.length">
+      <ul class="importacion-avisos">
+        <li *ngFor="let c of cvsConProblema"><strong>{{ c.archivo }}:</strong> {{ c.mensaje }}</li>
+      </ul>
+    </div>
+
+    <p *ngIf="resultado.resumen.altas">
+      Cada trabajador nuevo entra con su DNI como contraseña provisional y el sistema le pide cambiarla.
+    </p>
+
+    <div class="importacion-pie importacion-pie--centrado">
+      <button type="button" class="btn-secondary" (click)="otroArchivo()" [disabled]="subiendoCvs">Importar otro archivo</button>
+      <button type="button" class="btn-primary" (click)="verEmpleados()" [disabled]="subiendoCvs">Ver empleados</button>
+    </div>
+  </div>
+</section>

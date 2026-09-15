@@ -35,6 +35,9 @@ final class ConceptosDePago
      */
     public const ASIGNACION_FAMILIAR = 'Asignación Familiar';
 
+    /** El sueldo del mes: sale de la ficha del trabajador, nunca es una línea. */
+    public const REMUNERACION_BASICA = 'Remuneración Básica';
+
     // ── Las dos bolsas genéricas ──────────────────────────────────
     public const OTROS_INGRESOS      = 'Otros Conceptos (Ingresos)';
     public const OTROS_DESCUENTOS    = 'Otros Conceptos (Descuentos)';
@@ -66,5 +69,18 @@ final class ConceptosDePago
         self::SPP_PRIMA_SEGURO,
         self::SPP_COMISION,
         self::RENTA_5TA,
+    ];
+
+    /**
+     * Los que nadie escribe a mano: ni desde una pantalla ni desde un Excel.
+     *
+     * Los seis de cálculo especial, más la Asignación Familiar (sale de
+     * "tiene hijos") y la Remuneración Básica (sale de la ficha). La
+     * importación masiva los rechaza aunque una columna se llame igual.
+     */
+    public const NO_EDITABLES = [
+        ...self::CALCULO_ESPECIAL,
+        self::ASIGNACION_FAMILIAR,
+        self::REMUNERACION_BASICA,
     ];
 }

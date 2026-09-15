@@ -401,39 +401,26 @@
     </div>
   </div>
 
-  <!-- Modal para Firmar Boleta (Flotante) -->
-  <div class="pdf-modal-overlay" *ngIf="showSignModal" (click)="closeSignModal()">
-    <div class="sign-modal-container" (click)="$event.stopPropagation()">
-      <div class="pdf-modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background-color: var(--surface); border-bottom: 1px solid var(--border); color: var(--heading);">
-        <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: var(--heading);">Firmar Boleta</h3>
-        <button class="btn-close" (click)="closeSignModal()" appPista="Cerrar" aria-label="Cerrar" style="background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 50%;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-      <div class="pdf-modal-body" style="padding: 24px; background-color: var(--surface);">
-        <p style="margin-bottom: 20px; color: var(--text-soft); font-size: 14px; line-height: 1.5;">
-          Para firmar la boleta de <strong>{{ getMesNombre(boletaAFirmar?.planilla?.mes) }} {{ boletaAFirmar?.planilla?.anio }}</strong>, por favor ingresa tu contraseña de acceso:
-        </p>
-
-        <div class="form-group" style="margin-bottom: 16px;">
-          <label style="display: block; font-weight: 500; margin-bottom: 8px; color: var(--text);">Contraseña:</label>
-          <input type="password" [(ngModel)]="passwordFirma" class="form-control" style="width: 100%; padding: 10px; border: 1px solid var(--border-strong); border-radius: 4px; box-sizing: border-box;" placeholder="Ingresa tu contraseña" (keyup.enter)="confirmarFirmaRapidaModal()">
-        </div>
-
-        <div *ngIf="signErrorMsg" style="color: var(--danger-text); font-size: 13px; margin-top: 8px; margin-bottom: 8px;">
-          {{ signErrorMsg }}
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
-          <button class="btn-secondary" (click)="closeSignModal()" style="padding: 8px 16px; border: 1px solid var(--border-strong); background: var(--surface); border-radius: 4px; cursor: pointer; color: var(--text); font-weight: 500;">Cancelar</button>
-          <button class="btn-primary" (click)="confirmarFirmaRapidaModal()" [disabled]="firmandoDoc" style="padding: 8px 16px; background: var(--brand-900); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
-            <span *ngIf="firmandoDoc">Procesando...</span>
-            <span *ngIf="!firmandoDoc">Firmar Boleta</span>
-          </button>
-        </div>
+  <!-- Firmar una boleta desde la campana -->
+  <app-form-modal
+    [visible]="showSignModal"
+    titulo="Firmar boleta"
+    textoGuardar="Firmar boleta"
+    [guardando]="firmandoDoc"
+    (guardar)="confirmarFirmaRapidaModal()"
+    (cancelar)="closeSignModal()"
+  >
+    <div class="form-fields">
+      <p class="form-nota">
+        Para firmar la boleta de <strong>{{ getMesNombre(boletaAFirmar?.planilla?.mes) }} {{ boletaAFirmar?.planilla?.anio }}</strong>,
+        escribe la contraseña con la que entras al sistema.
+      </p>
+      <div class="form-group">
+        <label for="password_firma_rapida">Contraseña</label>
+        <input id="password_firma_rapida" type="password" class="form-control" [(ngModel)]="passwordFirma"
+          placeholder="Tu contraseña" autocomplete="current-password" (keyup.enter)="confirmarFirmaRapidaModal()" />
+        <small class="form-error" *ngIf="signErrorMsg">{{ signErrorMsg }}</small>
       </div>
     </div>
-  </div>
+  </app-form-modal>
 </div>
