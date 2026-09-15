@@ -111,7 +111,7 @@ final class ModelosDeImportacion
             ],
             'Cómo escribir cada dato' => [
                 'Fechas: día/mes/año, por ejemplo 15/03/1990.',
-                'DNI: 8 cifras. CUSPP: 11 cifras, obligatorio si aporta a una AFP. Teléfono y CCI: solo números.',
+                'DNI: 8 cifras. CUSPP: 12 caracteres (letras y números), obligatorio si aporta a una AFP. Teléfono y CCI: solo números.',
                 'Sueldo base: el monto, por ejemplo 2500 o 2500.50.',
                 implode(', ', $conLista) . ': elígelos de la lista que aparece en la celda.',
             ],

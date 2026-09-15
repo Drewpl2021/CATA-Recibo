@@ -135,8 +135,9 @@ export class EmpleadosListComponent implements OnInit {
   exportando = false;
 
   /**
-   * Baja la ficha completa de cada trabajador en CSV: sus datos personales,
-   * los laborales, los de planilla y los bancarios.
+   * Baja la ficha completa de cada trabajador en Excel: sus datos personales,
+   * los laborales, los de planilla y los bancarios. El mismo archivo se puede
+   * corregir y volver a subir por Importar empleados, sin convertir nada.
    *
    * Va el mismo buscador de la tabla, así que si arriba se filtró por un
    * área o un apellido, el archivo sale con esa misma gente.
@@ -158,7 +159,7 @@ export class EmpleadosListComponent implements OnInit {
   }
 
   /**
-   * "Empleados 2026-09-13.csv".
+   * "Empleados 2026-09-13.xlsx".
    *
    * La fecha va en el nombre porque esta lista se vuelve a bajar cada poco y
    * sin ella acaban tres archivos iguales en la carpeta de descargas. Se arma
@@ -170,7 +171,7 @@ export class EmpleadosListComponent implements OnInit {
     const dosDigitos = (n: number) => String(n).padStart(2, '0');
     const fecha = `${hoy.getFullYear()}-${dosDigitos(hoy.getMonth() + 1)}-${dosDigitos(hoy.getDate())}`;
 
-    return `Empleados ${fecha}.csv`;
+    return `Empleados ${fecha}.xlsx`;
   }
 
   /** Altas y cambios de varios trabajadores desde el Excel de RR.HH. */

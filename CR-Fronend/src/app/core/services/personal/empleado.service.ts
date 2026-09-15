@@ -40,7 +40,7 @@ export class EmpleadoService extends EntityDataService<Empleado> {
   }
 
   /**
-   * GET /empleados/exportar — la ficha completa de cada trabajador en CSV.
+   * GET /empleados/exportar — la ficha completa de cada trabajador en Excel.
    *
    * Lleva el mismo buscador que la tabla: lo que se ve es lo que baja. Vuelve
    * como blob porque es un archivo, no el { success, data } del resto.

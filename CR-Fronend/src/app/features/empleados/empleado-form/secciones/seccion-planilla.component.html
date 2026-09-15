@@ -39,9 +39,9 @@
       <div class="form-group">
         <label for="cuspp">CUSPP *</label>
         <input type="text" id="cuspp" class="form-control" formControlName="cuspp"
-          inputmode="numeric" maxlength="11" placeholder="11 dígitos"
+          maxlength="12" placeholder="12 caracteres, por ejemplo 052281JHPMM4"
           [class.is-invalid]="invalido('cuspp')" />
-        <small class="form-error" *ngIf="invalido('cuspp')">Son 11 dígitos.</small>
+        <small class="form-error" *ngIf="invalido('cuspp')">Son 12 caracteres, entre letras y números.</small>
         <small class="form-ayuda" *ngIf="!invalido('cuspp')">
           Código único del afiliado al sistema privado.
         </small>

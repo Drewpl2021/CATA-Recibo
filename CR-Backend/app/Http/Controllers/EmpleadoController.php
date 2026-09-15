@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use App\Traits\ListadoPaginado;
-use App\Traits\ExportaCsv;
+use App\Support\LibroExcel;
+use App\Traits\ExportaExcel;
 use App\Models\Cargo;
 use App\Services\AltaDeEmpleado;
 use Illuminate\Validation\ValidationException;
@@ -18,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 class EmpleadoController extends Controller
 {
     use ListadoPaginado;
-    use ExportaCsv;
+    use ExportaExcel;
 
     /**
      * GET /empleados?page=&size=&search=&formato=selector
@@ -113,60 +114,70 @@ class EmpleadoController extends Controller
             'Contacto de emergencia', 'Teléfono del contacto',
         ];
 
-        $archivo = $this->nombreCsvSeguro('Empleados ' . now()->format('Y-m-d'));
+        $fecha = fn ($valor) => $valor ? \Carbon\Carbon::parse($valor)->format('d/m/Y') : '';
 
-        return response()->streamDownload(function () use ($empleados, $cabecera) {
-            $salida = fopen('php://output', 'w');
+        $filas = [];
+        foreach ($empleados as $i => $e) {
+            $filas[] = [
+                $i + 1,
+                (string) $e->dni,
+                $e->apellido,
+                $e->nombre,
+                $fecha($e->fecha_nacimiento),
+                (string) ($e->telefono ?? ''),
+                $e->direccion ?? '',
+                $e->usuario->email ?? 'Sin cuenta',
+                $e->usuario->rol->nombre ?? '',
+                $e->area->nombre ?? '',
+                $e->cargo->nombre ?? '',
+                $e->sede->nombre ?? '',
+                $fecha($e->fecha_ingreso),
+                $e->estado ?? '',
+                // Del contrato vigente, no de la copia suelta de la ficha, que
+                // envejece. Y con su fin: sin él, un plazo fijo descargado no se
+                // podía volver a importar.
+                $e->contratoVigente->tipo_contrato ?? $e->tipo_contrato ?? '',
+                $fecha($e->contratoVigente?->fecha_fin),
+                // Número de verdad, no texto: así se puede sumar y filtrar sin
+                // convertir nada, y la importación lo vuelve a leer igual.
+                $e->sueldo_base !== null ? round((float) $e->sueldo_base, 2) : null,
+                // Vacío no es un olvido: es "no aporta a ninguna pensión".
+                $e->sistema_pensiones ?: 'No aporta',
+                $e->afp ?? '',
+                (string) ($e->cuspp ?? ''),
+                $e->forma_pago ?? '',
+                $e->entidad_financiera ?? '',
+                (string) ($e->numero_cuenta ?? ''),
+                (string) ($e->cci ?? ''),
+                $e->tiene_hijos ? 'Sí' : 'No',
+                $e->nivel_estudios ?? '',
+                $e->especialidad ?? '',
+                $e->institucion_estudios ?? '',
+                $e->contacto_emergencia_nombre ?? '',
+                (string) ($e->contacto_emergencia_telefono ?? ''),
+            ];
+        }
 
-            fwrite($salida, $this->bomUtf8());
-            fwrite($salida, $this->filaCsv($cabecera));
+        // Texto donde el formato importa —un DNI que empieza por cero, una
+        // fecha que Excel no debe reinterpretar según el idioma— y número
+        // donde se suma.
+        $comoTexto = [
+            'DNI', 'Fecha de nacimiento', 'Teléfono', 'Fecha de ingreso', 'Fin de contrato',
+            'CUSPP', 'N° de cuenta', 'CCI', 'Teléfono del contacto',
+        ];
+        $estiloColumnas = [];
+        foreach ($cabecera as $i => $titulo) {
+            $estiloColumnas[$i] = match (true) {
+                in_array($titulo, $comoTexto, true) => LibroExcel::TEXTO,
+                $titulo === 'Sueldo base'           => LibroExcel::MONTO,
+                default                             => LibroExcel::NORMAL,
+            };
+        }
 
-            $fecha = fn ($valor) => $valor ? \Carbon\Carbon::parse($valor)->format('d/m/Y') : '';
+        $libro = new LibroExcel();
+        $this->hojaDeReporte($libro, 'Empleados', $cabecera, $filas, $estiloColumnas);
 
-            foreach ($empleados as $i => $e) {
-                fwrite($salida, $this->filaCsv([
-                    $i + 1,
-                    $e->dni,
-                    $e->apellido,
-                    $e->nombre,
-                    $fecha($e->fecha_nacimiento),
-                    $e->telefono ?? '',
-                    $e->direccion ?? '',
-                    $e->usuario->email ?? 'Sin cuenta',
-                    $e->usuario->rol->nombre ?? '',
-                    $e->area->nombre ?? '',
-                    $e->cargo->nombre ?? '',
-                    $e->sede->nombre ?? '',
-                    $fecha($e->fecha_ingreso),
-                    $e->estado ?? '',
-                    // Del contrato vigente, no de la copia suelta de la ficha, que
-                    // envejece. Y con su fin: sin él, un plazo fijo descargado no se
-                    // podía volver a importar.
-                    $e->contratoVigente->tipo_contrato ?? $e->tipo_contrato ?? '',
-                    $fecha($e->contratoVigente?->fecha_fin),
-                    $e->sueldo_base !== null ? number_format((float) $e->sueldo_base, 2, '.', '') : '',
-                    // Vacío no es un olvido: es "no aporta a ninguna pensión".
-                    $e->sistema_pensiones ?: 'No aporta',
-                    $e->afp ?? '',
-                    $e->cuspp ?? '',
-                    $e->forma_pago ?? '',
-                    $e->entidad_financiera ?? '',
-                    $e->numero_cuenta ?? '',
-                    $e->cci ?? '',
-                    $e->tiene_hijos ? 'Sí' : 'No',
-                    $e->nivel_estudios ?? '',
-                    $e->especialidad ?? '',
-                    $e->institucion_estudios ?? '',
-                    $e->contacto_emergencia_nombre ?? '',
-                    $e->contacto_emergencia_telefono ?? '',
-                ]));
-            }
-
-            fclose($salida);
-        }, $archivo, [
-            'Content-Type'  => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store',
-        ]);
+        return $libro->descargar($this->nombreExcelSeguro('Empleados ' . now()->format('Y-m-d')));
     }
 
     public function store(Request $request)
@@ -223,7 +234,8 @@ class EmpleadoController extends Controller
             'estado'             => 'nullable|string|max:20',
             'sistema_pensiones'  => 'sometimes|nullable|in:AFP,ONP',
             'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo',
-            'cuspp'              => 'nullable|regex:/^[0-9]{11}$/|required_if:sistema_pensiones,AFP',
+            // Mismo formato que el alta: 12 caracteres, con letras y números.
+            'cuspp'              => 'nullable|regex:/^[A-Za-z0-9]{12}$/|required_if:sistema_pensiones,AFP',
             'entidad_financiera' => 'nullable|string|max:100',
             'numero_cuenta'      => 'nullable|string|max:50',
             'cci'                => 'nullable|regex:/^[0-9]{20}$/',

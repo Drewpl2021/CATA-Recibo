@@ -4174,7 +4174,7 @@
         "description": "Se manda sistema_pensiones en null y, a proposito, una AFP y un CUSPP: el backend tiene que quedarse con el nulo y descartar los otros dos.",
         "body": {
          "mode": "raw",
-         "raw": "{\n    \"dni\": \"45009911\",\n    \"nombre\": \"Nicolas\",\n    \"apellido\": \"Sin Pension\",\n    \"area_id\": \"{{area_id}}\",\n    \"cargo_id\": \"{{cargo_id}}\",\n    \"sede_id\": \"{{sede_id}}\",\n    \"telefono\": \"951000111\",\n    \"direccion\": \"Jr. Los Jubilados 100 - Juliaca\",\n    \"fecha_ingreso\": \"2020-03-01\",\n    \"fecha_nacimiento\": \"1955-04-10\",\n    \"sistema_pensiones\": null,\n    \"afp\": \"Integra\",\n    \"cuspp\": \"12345678901\",\n    \"sueldo_base\": 3000,\n    \"tipo_contrato\": \"indeterminado\",\n    \"email\": \"sin.pension@colegio.com\",\n    \"rol_id\": \"{{rol_empleado_id}}\"\n}",
+         "raw": "{\n    \"dni\": \"45009911\",\n    \"nombre\": \"Nicolas\",\n    \"apellido\": \"Sin Pension\",\n    \"area_id\": \"{{area_id}}\",\n    \"cargo_id\": \"{{cargo_id}}\",\n    \"sede_id\": \"{{sede_id}}\",\n    \"telefono\": \"951000111\",\n    \"direccion\": \"Jr. Los Jubilados 100 - Juliaca\",\n    \"fecha_ingreso\": \"2020-03-01\",\n    \"fecha_nacimiento\": \"1955-04-10\",\n    \"sistema_pensiones\": null,\n    \"afp\": \"Integra\",\n    \"cuspp\": \"450099NSPEN1\",\n    \"sueldo_base\": 3000,\n    \"tipo_contrato\": \"indeterminado\",\n    \"email\": \"sin.pension@colegio.com\",\n    \"rol_id\": \"{{rol_empleado_id}}\"\n}",
          "options": {
           "raw": {
            "language": "json"
