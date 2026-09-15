@@ -3,7 +3,8 @@ namespace App\Http\Controllers;
 use App\Models\Planilla;
 use App\Models\Empleado;
 use App\Traits\CalculaConceptosPlanilla;
-use App\Traits\ExportaCsv;
+use App\Support\LibroExcel;
+use App\Traits\ExportaExcel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use App\Traits\ListadoPaginado;
@@ -12,7 +13,7 @@ class PlanillaController extends Controller
 {
     use ListadoPaginado;
     use CalculaConceptosPlanilla;
-    use ExportaCsv;
+    use ExportaExcel;
     /**
      * GET /planilla?empleado_id=&empleado_ids=&mes=&anio=&periodo_id=&corrida_id=&sin_corrida=&page=&size=&search=
      *
@@ -149,107 +150,110 @@ class PlanillaController extends Controller
         // sale ya en la columna de SU concepto, que es lo que se declara.
         ], $conceptos, ['Neto a pagar']);
 
-        $nombreArchivo = $this->nombreDelArchivo($request, $planillas->first());
+        $sumas = array_fill_keys(['base', 'neto'], 0.0);
 
-        return response()->streamDownload(function () use ($planillas, $conceptos, $cabecera) {
-            $salida = fopen('php://output', 'w');
+        // Y el total de CADA concepto, que es lo que se declara al PLAME:
+        // cuánto se retuvo de ONP, cuánto de AFP, cuánto de EsSalud. Con esas
+        // columnas en blanco había que sumarlas a mano en Excel, que es justo
+        // el trabajo que este reporte viene a quitar.
+        $sumasConcepto = [];
+        $filas = [];
 
-            // BOM: sin él, Excel abre el archivo como Latin-1 y los nombres
-            // con tilde salen rotos ("Mu-oz"). Es el reporte del colegio, va
-            // lleno de apellidos con tilde y con ñ.
-            fwrite($salida, "\xEF\xBB\xBF");
+        foreach ($planillas as $i => $planilla) {
+            $e = $planilla->empleado;
 
-            fwrite($salida, $this->filaCsv($cabecera));
-
-            $sumas = array_fill_keys(['base', 'neto'], 0.0);
-
-            // Y el total de CADA concepto, que es lo que se declara al PLAME:
-            // cuánto se retuvo de ONP, cuánto de AFP, cuánto de EsSalud. Con
-            // esas columnas en blanco había que sumarlas a mano en Excel, que
-            // es justo el trabajo que este reporte viene a quitar.
-            $sumasConcepto = [];
-
-            foreach ($planillas as $i => $planilla) {
-                $e = $planilla->empleado;
-
-                // Los montos de ESTA planilla, por nombre de concepto.
-                $montos = [];
-                foreach ($planilla->payrollDetalles as $linea) {
-                    $nombre = $linea->paymentConcept->nombre ?? null;
-                    if ($nombre !== null) {
-                        $montos[$nombre] = round((float) ($montos[$nombre] ?? 0) + (float) $linea->monto_calculado, 2);
-                    }
+            // Los montos de ESTA planilla, por nombre de concepto.
+            $montos = [];
+            foreach ($planilla->payrollDetalles as $linea) {
+                $nombre = $linea->paymentConcept->nombre ?? null;
+                if ($nombre !== null) {
+                    $montos[$nombre] = round((float) ($montos[$nombre] ?? 0) + (float) $linea->monto_calculado, 2);
                 }
-
-                $fila = [
-                    $i + 1,
-                    $e->dni ?? '',
-                    $e->apellido ?? '',
-                    $e->nombre ?? '',
-                    $e->area->nombre ?? '',
-                    $e->cargo->nombre ?? '',
-                    $e->sede->nombre ?? '',
-                    $e && $e->fecha_ingreso ? \Carbon\Carbon::parse($e->fecha_ingreso)->format('d/m/Y') : '',
-                    $e->estado ?? '',
-                    $e->tipo_contrato ?? '',
-                    // Vacío no es un olvido: es "no aporta a ninguna pensión".
-                    $e && $e->sistema_pensiones ? $e->sistema_pensiones : 'No aporta',
-                    $e->afp ?? '',
-                    $e->cuspp ?? '',
-                    $e->forma_pago ?? '',
-                    $e->entidad_financiera ?? '',
-                    $e->numero_cuenta ?? '',
-                    $e->cci ?? '',
-                    $planilla->corrida->nombre ?? 'Sin agrupar',
-                    \App\Support\Meses::nombre((int) $planilla->mes),
-                    $planilla->anio,
-                    number_format((float) $planilla->sueldo_base, 2, '.', ''),
-                ];
-
-                foreach ($conceptos as $nombre) {
-                    // Vacío, no cero: "no se le aplicó" y "se le aplicó S/ 0"
-                    // no son lo mismo cuando alguien revisa por qué cobró de menos.
-                    if (! isset($montos[$nombre])) {
-                        $fila[] = '';
-                        continue;
-                    }
-
-                    $fila[] = number_format($montos[$nombre], 2, '.', '');
-                    $sumasConcepto[$nombre] = round(($sumasConcepto[$nombre] ?? 0) + $montos[$nombre], 2);
-                }
-
-                $fila[] = number_format((float) $planilla->total, 2, '.', '');
-
-                $sumas['base'] += (float) $planilla->sueldo_base;
-                $sumas['neto'] += (float) $planilla->total;
-
-                fwrite($salida, $this->filaCsv($fila));
             }
 
-            // La fila de totales, que es lo que se firma al final del reporte.
-            if ($planillas->isNotEmpty()) {
-                $totales = array_merge(
-                    ['', '', 'TOTALES', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-                     number_format($sumas['base'], 2, '.', '')],
-                    array_map(
-                        fn ($nombre) => number_format($sumasConcepto[$nombre] ?? 0, 2, '.', ''),
-                        $conceptos
-                    ),
-                    [
-                        number_format($sumas['neto'], 2, '.', ''),
-                    ]
-                );
-                fwrite($salida, $this->filaCsv($totales));
+            $fila = [
+                $i + 1,
+                (string) ($e->dni ?? ''),
+                $e->apellido ?? '',
+                $e->nombre ?? '',
+                $e->area->nombre ?? '',
+                $e->cargo->nombre ?? '',
+                $e->sede->nombre ?? '',
+                $e && $e->fecha_ingreso ? \Carbon\Carbon::parse($e->fecha_ingreso)->format('d/m/Y') : '',
+                $e->estado ?? '',
+                $e->tipo_contrato ?? '',
+                // Vacío no es un olvido: es "no aporta a ninguna pensión".
+                $e && $e->sistema_pensiones ? $e->sistema_pensiones : 'No aporta',
+                $e->afp ?? '',
+                (string) ($e->cuspp ?? ''),
+                $e->forma_pago ?? '',
+                $e->entidad_financiera ?? '',
+                (string) ($e->numero_cuenta ?? ''),
+                (string) ($e->cci ?? ''),
+                $planilla->corrida->nombre ?? 'Sin agrupar',
+                \App\Support\Meses::nombre((int) $planilla->mes),
+                (int) $planilla->anio,
+                round((float) $planilla->sueldo_base, 2),
+            ];
+
+            foreach ($conceptos as $nombre) {
+                // Vacío, no cero: "no se le aplicó" y "se le aplicó S/ 0"
+                // no son lo mismo cuando alguien revisa por qué cobró de menos.
+                if (! isset($montos[$nombre])) {
+                    $fila[] = null;
+                    continue;
+                }
+
+                $fila[] = $montos[$nombre];
+                $sumasConcepto[$nombre] = round(($sumasConcepto[$nombre] ?? 0) + $montos[$nombre], 2);
             }
 
-            fclose($salida);
-        }, $nombreArchivo, [
-            'Content-Type'  => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store',
-        ]);
+            $fila[] = round((float) $planilla->total, 2);
+
+            $sumas['base'] += (float) $planilla->sueldo_base;
+            $sumas['neto'] += (float) $planilla->total;
+
+            $filas[] = $fila;
+        }
+
+        // La fila de totales, que es lo que se firma al final del reporte.
+        $estiloFilas = [];
+        if ($planillas->isNotEmpty()) {
+            $totales = array_merge(
+                ['', '', 'TOTALES', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+                 round($sumas['base'], 2)],
+                array_map(fn ($nombre) => round($sumasConcepto[$nombre] ?? 0, 2), $conceptos),
+                [round($sumas['neto'], 2)]
+            );
+
+            $filas[] = $totales;
+            $estiloFilas[count($filas)] = array_map(
+                fn ($valor) => is_string($valor) ? LibroExcel::TOTAL_TEXTO : LibroExcel::TOTAL_MONTO,
+                $totales
+            );
+        }
+
+        // Los montos van como números: el reporte se abre y ya se puede
+        // filtrar y sumar. Lo que es dato de identidad (DNI, cuenta, CCI) va
+        // como texto, para que no pierda ceros ni se convierta en notación
+        // científica.
+        $primerConcepto = 21;
+        $estiloColumnas = [];
+        foreach ($cabecera as $i => $titulo) {
+            $estiloColumnas[$i] = match (true) {
+                in_array($titulo, ['DNI', 'Fecha de ingreso', 'CUSPP', 'N° de cuenta', 'CCI'], true) => LibroExcel::TEXTO,
+                $titulo === 'Sueldo base' || $i >= $primerConcepto => LibroExcel::MONTO,
+                default => LibroExcel::NORMAL,
+            };
+        }
+
+        $libro = new LibroExcel();
+        $this->hojaDeReporte($libro, 'Planilla', $cabecera, $filas, $estiloColumnas, $estiloFilas);
+
+        return $libro->descargar($this->nombreDelArchivo($request, $planillas->first()));
     }
 
-    /** "Planilla TIC - Septiembre 2026.csv", o el mes suelto. */
+    /** "Planilla TIC - Septiembre 2026.xlsx", o el mes suelto. */
     private function nombreDelArchivo(Request $request, ?Planilla $primera): string
     {
         $mes  = (int) ($request->input('mes') ?: $primera->mes ?? 0);
@@ -262,7 +266,7 @@ class PlanillaController extends Controller
             ? 'Sin agrupar'
             : ($primera?->corrida->nombre ?? 'Planilla general');
 
-        return $this->nombreCsvSeguro($ambito . ' - ' . $periodo);
+        return $this->nombreExcelSeguro($ambito . ' - ' . $periodo);
     }
 
     public function store(Request $request)

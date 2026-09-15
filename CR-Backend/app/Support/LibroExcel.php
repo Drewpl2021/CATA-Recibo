@@ -34,6 +34,8 @@ final class LibroExcel
     public const TITULO_DESCUENTO  = 8;
     public const TITULO_ADELANTO   = 9;
     public const TITULO_APORTACION = 10;
+    public const TOTAL_TEXTO       = 11; // la fila de totales de un reporte
+    public const TOTAL_MONTO       = 12;
 
     private const TIPO_XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -324,7 +326,7 @@ final class LibroExcel
         .   '<font><b/><sz val="15"/><color rgb="FF1B4282"/><name val="Calibri"/><family val="2"/></font>'
         .   '<font><b/><sz val="11"/><color rgb="FF1B4282"/><name val="Calibri"/><family val="2"/></font>'
         . '</fonts>'
-        . '<fills count="7">'
+        . '<fills count="8">'
         .   '<fill><patternFill patternType="none"/></fill>'
         .   '<fill><patternFill patternType="gray125"/></fill>'
         .   '<fill><patternFill patternType="solid"><fgColor rgb="FF1B4282"/><bgColor indexed="64"/></patternFill></fill>'
@@ -332,6 +334,7 @@ final class LibroExcel
         .   '<fill><patternFill patternType="solid"><fgColor rgb="FF9B2C2C"/><bgColor indexed="64"/></patternFill></fill>'
         .   '<fill><patternFill patternType="solid"><fgColor rgb="FF8A5A12"/><bgColor indexed="64"/></patternFill></fill>'
         .   '<fill><patternFill patternType="solid"><fgColor rgb="FF4A5568"/><bgColor indexed="64"/></patternFill></fill>'
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FFE7EEF9"/><bgColor indexed="64"/></patternFill></fill>'
         . '</fills>'
         . '<borders count="2">'
         .   '<border><left/><right/><top/><bottom/><diagonal/></border>'
@@ -339,7 +342,7 @@ final class LibroExcel
         .     '<top style="thin"><color rgb="FFD0D7E2"/></top><bottom style="thin"><color rgb="FFD0D7E2"/></bottom><diagonal/></border>'
         . '</borders>'
         . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-        . '<cellXfs count="11">'
+        . '<cellXfs count="13">'
         .   '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
         .   '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
         .   '<xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
@@ -351,6 +354,8 @@ final class LibroExcel
         .   '<xf numFmtId="0" fontId="1" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
         .   '<xf numFmtId="0" fontId="1" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
         .   '<xf numFmtId="0" fontId="1" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+        .   '<xf numFmtId="0" fontId="3" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>'
+        .   '<xf numFmtId="164" fontId="3" fillId="7" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"/>'
         . '</cellXfs>'
         . '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
         . '</styleSheet>';

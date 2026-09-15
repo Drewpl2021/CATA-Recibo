@@ -45,7 +45,8 @@ final class ColumnasDeEmpleado
         'sueldo_base'                  => ['titulo' => 'Sueldo base', 'tipo' => 'monto', 'alias' => ['sueldo base', 'sueldo', 'remuneracion basica', 'haber basico', 'basico']],
         'sistema_pensiones'            => ['titulo' => 'Sistema de pensión', 'tipo' => 'opcion', 'alias' => ['sistema de pension', 'sistema pensionario', 'pension', 'regimen pensionario']],
         'afp'                          => ['titulo' => 'AFP', 'tipo' => 'opcion', 'alias' => ['afp']],
-        'cuspp'                        => ['titulo' => 'CUSPP', 'tipo' => 'digitos', 'alias' => ['cuspp']],
+        // Texto y no dígitos: el CUSPP lleva letras (052281JHPMM4).
+        'cuspp'                        => ['titulo' => 'CUSPP', 'tipo' => 'texto', 'alias' => ['cuspp']],
         'forma_pago'                   => ['titulo' => 'Forma de pago', 'tipo' => 'opcion', 'alias' => ['forma de pago', 'pago']],
         'entidad_financiera'           => ['titulo' => 'Banco', 'tipo' => 'texto', 'alias' => ['banco', 'entidad financiera']],
         'numero_cuenta'                => ['titulo' => 'N° de cuenta', 'tipo' => 'texto', 'alias' => ['n de cuenta', 'no de cuenta', 'nro de cuenta', 'numero de cuenta', 'cuenta', 'n cuenta']],

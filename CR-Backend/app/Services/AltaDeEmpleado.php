@@ -36,7 +36,10 @@ final class AltaDeEmpleado
             'estado'             => 'nullable|string|max:20',
             'sistema_pensiones'  => 'nullable|in:AFP,ONP',
             'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo|required_if:sistema_pensiones,AFP',
-            'cuspp'              => 'nullable|regex:/^[0-9]{11}$/|required_if:sistema_pensiones,AFP',
+            // 12 caracteres entre letras y números: es como lo entrega la AFP
+            // (052281JHPMM4). Antes se exigían 11 cifras, y con eso el sistema
+            // rechazaba los CUSPP de su propio personal.
+            'cuspp'              => 'nullable|regex:/^[A-Za-z0-9]{12}$/|required_if:sistema_pensiones,AFP',
             'entidad_financiera' => 'nullable|string|max:100',
             'numero_cuenta'      => 'nullable|string|max:50',
             // Opcional, pero si viene tiene que ser un CCI de verdad: son 20
@@ -67,7 +70,8 @@ final class AltaDeEmpleado
     {
         return [
             // El genérico ("el formato no es válido") no dice qué arreglar.
-            'cci.regex' => 'El CCI son 20 dígitos, sin espacios ni guiones.',
+            'cci.regex'   => 'El CCI son 20 dígitos, sin espacios ni guiones.',
+            'cuspp.regex' => 'El CUSPP son 12 caracteres, entre letras y números.',
         ];
     }
 

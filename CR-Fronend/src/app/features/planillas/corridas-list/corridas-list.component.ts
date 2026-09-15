@@ -18,7 +18,7 @@ import {
 import {
   Area, Cargo, Empleado, Periodo, PlanillaCorrida, PlanillaCorridaPayload, ResultadoVariosMeses, Sede,
 } from '../../../core/models';
-import { mensajeErrorApi } from '../../../core/utils';
+import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
@@ -613,13 +613,7 @@ export class CorridasListComponent implements OnInit {
       })
       .subscribe({
         next: (blob) => {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = this.nombreDelReporte();
-          a.click();
-          window.URL.revokeObjectURL(url);
-
+          guardarArchivo(blob, this.nombreDelReporte());
           this.exportando = false;
           this.toastService.success(
             'Reporte descargado',
@@ -634,7 +628,7 @@ export class CorridasListComponent implements OnInit {
   }
 
   /**
-   * "Planilla general - Septiembre 2026.csv".
+   * "Planilla general - Septiembre 2026.xlsx".
    *
    * Se arma acá y no se lee de la respuesta porque el backend no expone
    * Content-Disposition al navegador: sin esa cabecera en
@@ -645,7 +639,7 @@ export class CorridasListComponent implements OnInit {
     const anio = this.filtroAnio ? ` ${this.filtroAnio}` : '';
 
     // Windows rechaza estos caracteres en un nombre de archivo.
-    return `Planilla general - ${mes}${anio}.csv`.replace(/[\\/:*?"<>|]/g, '');
+    return `Planilla general - ${mes}${anio}.xlsx`.replace(/[\\/:*?"<>|]/g, '');
   }
 
   nombreMes = nombreMes;

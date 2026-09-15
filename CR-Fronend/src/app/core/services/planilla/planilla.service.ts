@@ -72,7 +72,7 @@ export class PlanillaService extends EntityDataService<Planilla> {
   }
 
   /**
-   * GET /planilla/exportar — el reporte completo en CSV.
+   * GET /planilla/exportar — el reporte completo en Excel.
    *
    * Toma los mismos filtros que el listado a propósito: lo que se ve en
    * pantalla es lo que baja. Vuelve como blob porque es un archivo, no el

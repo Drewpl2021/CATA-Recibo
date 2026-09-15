@@ -168,7 +168,7 @@ class UsuarioDemoSeeder extends Seeder
                 'fecha_nacimiento' => '1990-05-15', 'fecha_ingreso' => '2024-01-01',
                 'area' => 'Plana Docente — Secundaria', 'cargo' => 'Docente', 'sede' => 'CATA',
                 'telefono' => '953456789', 'direccion' => 'Jr. San Martín 480, Juliaca',
-                'sistema_pensiones' => 'AFP', 'afp' => 'Integra', 'cuspp' => '12345678901',
+                'sistema_pensiones' => 'AFP', 'afp' => 'Integra', 'cuspp' => '123456ECTRI7',
                 'entidad_financiera' => 'BCP', 'numero_cuenta' => '19412345678012',
                 'tiene_hijos' => true, 'sueldo_base' => 2500.00,
                 'tipo_contrato' => 'indeterminado', 'forma_pago' => 'banco',

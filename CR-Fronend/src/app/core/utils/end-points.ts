@@ -116,13 +116,13 @@ export const END_POINTS_ACCIONES = {
   /** GET consulta-dni/{dni} — quién es esa persona, para el alta */
   consultaDni: (dni: string) => `consulta-dni/${dni}`,
 
-  /** GET planilla/exportar?... — el reporte completo de la planilla en CSV */
+  /** GET planilla/exportar?... — el reporte completo de la planilla en Excel */
   exportarPlanilla: 'planilla/exportar',
 
   /** POST planilla/{id}/conceptos — deja sus líneas como diga la pantalla */
   sincronizarConceptosPlanilla: (planillaId: string) => `planilla/${planillaId}/conceptos`,
 
-  /** GET empleados/exportar?search= — la lista del personal en CSV */
+  /** GET empleados/exportar?search= — la lista del personal en Excel */
   exportarEmpleados: 'empleados/exportar',
 
   /** GET expedientes?page&size&search&filtro — Documentos del personal, por trabajador */
