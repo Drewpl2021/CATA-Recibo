@@ -98,6 +98,9 @@ export const END_POINTS_ACCIONES = {
   /** POST mis-documentos/{id}/firmar */
   firmarMiDocumento: (documentoId: string) => `mis-documentos/${documentoId}/firmar`,
 
+  /** POST mis-documentos/hoja-de-vida — el trabajador sube su propio CV */
+  subirMiHojaDeVida: 'mis-documentos/hoja-de-vida',
+
   /** POST empleados/{id}/identidad-firma */
   identidadFirmaEmpleado: (empleadoId: string) => `empleados/${empleadoId}/identidad-firma`,
 
@@ -121,4 +124,23 @@ export const END_POINTS_ACCIONES = {
 
   /** GET empleados/exportar?search= — la lista del personal en CSV */
   exportarEmpleados: 'empleados/exportar',
+
+  /** POST importacion-conceptos/{paso} — cargar conceptos desde el Excel de RR.HH. */
+  importacionConceptos: {
+    /** GET ?mes=&anio= — el Excel modelo del mes, para llenar */
+    modelo: 'importacion-conceptos/modelo',
+    reconocer: 'importacion-conceptos/reconocer',
+    previsualizar: 'importacion-conceptos/previsualizar',
+    aplicar: 'importacion-conceptos/aplicar',
+  },
+
+  /** POST importacion-empleados/{paso} — altas y cambios desde Excel, y los CVs en lote */
+  importacionEmpleados: {
+    /** GET — el Excel modelo vacío, con listas desplegables e instrucciones */
+    modelo: 'importacion-empleados/modelo',
+    reconocer: 'importacion-empleados/reconocer',
+    previsualizar: 'importacion-empleados/previsualizar',
+    aplicar: 'importacion-empleados/aplicar',
+    hojaDeVida: 'importacion-empleados/hoja-de-vida',
+  },
 } as const;

@@ -1,4 +1,5 @@
-import { AfterContentInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
+import { AfterContentInit, ChangeDetectorRef, Component, ContentChildren, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, QueryList, SimpleChanges, TemplateRef, inject } from '@angular/core';
+import { CeldaTablaDirective } from './celda-tabla.directive';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -126,6 +127,25 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
   @Output() accionPersonalizada = new EventEmitter<{ accion: string; fila: T }>();
 
   /**
+   * Las celdas a medida que trae la pantalla (ver CeldaTablaDirective).
+   *
+   * Existen para que ninguna pantalla vuelva a construirse su propia tabla
+   * HTML solo porque una columna necesitaba un desplegable: la importación
+   * desde Excel lo hizo, y quedó con otro aspecto y otro código que mantener.
+   */
+  @ContentChildren(CeldaTablaDirective) private celdasAMedida?: QueryList<CeldaTablaDirective>;
+  private plantillas = new Map<string, TemplateRef<unknown>>();
+
+  /** La plantilla a medida de esta columna, si la pantalla puso una. */
+  plantillaDe(columna: ColumnaTabla<T>): TemplateRef<unknown> | null {
+    return this.plantillas.get(columna.campo) ?? null;
+  }
+
+  private registrarCeldas(): void {
+    this.plantillas = new Map((this.celdasAMedida?.toArray() ?? []).map((c) => [c.campo, c.plantilla]));
+  }
+
+  /**
    * Si la barra de arriba tiene algo que enseñar: el buscador, o los botones
    * que mete la pantalla ("+ Nueva Área", los chips de filtro...).
    *
@@ -160,6 +180,9 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
    * `tableActions`, así que solo se sabe si los hay cuando ya están puestos.
    */
   ngAfterContentInit(): void {
+    this.registrarCeldas();
+    this.celdasAMedida?.changes.subscribe(() => this.registrarCeldas());
+
     const hayBotones = !!(this.host.nativeElement as HTMLElement).querySelector('[tableActions]');
     this.hayBarraSuperior = (this.mostrarBuscador && this.camposBusqueda.length > 0) || hayBotones;
     this.cdr.detectChanges();

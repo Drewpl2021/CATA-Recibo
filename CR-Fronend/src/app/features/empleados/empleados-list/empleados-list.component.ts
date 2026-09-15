@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 
 import { EmpleadoService, ToastService, ConfirmService } from '../../../core/services';
 import { Empleado } from '../../../core/models';
-import { mensajeErrorApi } from '../../../core/utils';
+import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -146,13 +146,7 @@ export class EmpleadosListComponent implements OnInit {
 
     this.empleadoService.exportar({ search: this.busqueda || undefined }).subscribe({
       next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = this.nombreDelArchivo();
-        a.click();
-        window.URL.revokeObjectURL(url);
-
+        guardarArchivo(blob, this.nombreDelArchivo());
         this.exportando = false;
         this.toastService.success('Lista descargada', `${this.total} trabajador(es), con su ficha completa.`);
       },
@@ -177,6 +171,11 @@ export class EmpleadosListComponent implements OnInit {
     const fecha = `${hoy.getFullYear()}-${dosDigitos(hoy.getMonth() + 1)}-${dosDigitos(hoy.getDate())}`;
 
     return `Empleados ${fecha}.csv`;
+  }
+
+  /** Altas y cambios de varios trabajadores desde el Excel de RR.HH. */
+  importar(): void {
+    this.router.navigate(['/inicio/empleados/importar']);
   }
 
   nuevo(): void {

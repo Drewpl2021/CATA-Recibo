@@ -12,6 +12,7 @@ use Illuminate\Validation\Rule;
 use App\Traits\ListadoPaginado;
 use App\Traits\ExportaCsv;
 use App\Models\Cargo;
+use App\Services\AltaDeEmpleado;
 use Illuminate\Validation\ValidationException;
 
 class EmpleadoController extends Controller
@@ -90,7 +91,7 @@ class EmpleadoController extends Controller
      */
     public function exportar(Request $request)
     {
-        $query = Empleado::with('area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'usuario.rol')
+        $query = Empleado::with('area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'usuario.rol', 'contratoVigente')
             ->orderBy('apellido')
             ->orderBy('nombre');
 
@@ -105,7 +106,7 @@ class EmpleadoController extends Controller
         $cabecera = [
             'N°', 'DNI', 'Apellidos', 'Nombres', 'Fecha de nacimiento',
             'Teléfono', 'Dirección', 'Correo', 'Rol',
-            'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Tipo de contrato',
+            'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Tipo de contrato', 'Fin de contrato',
             'Sueldo base', 'Sistema de pensión', 'AFP', 'CUSPP',
             'Forma de pago', 'Banco', 'N° de cuenta', 'CCI',
             'Tiene hijos', 'Nivel de estudios', 'Especialidad', 'Institución donde estudió',
@@ -138,7 +139,11 @@ class EmpleadoController extends Controller
                     $e->sede->nombre ?? '',
                     $fecha($e->fecha_ingreso),
                     $e->estado ?? '',
-                    $e->tipo_contrato ?? '',
+                    // Del contrato vigente, no de la copia suelta de la ficha, que
+                    // envejece. Y con su fin: sin él, un plazo fijo descargado no se
+                    // podía volver a importar.
+                    $e->contratoVigente->tipo_contrato ?? $e->tipo_contrato ?? '',
+                    $fecha($e->contratoVigente?->fecha_fin),
                     $e->sueldo_base !== null ? number_format((float) $e->sueldo_base, 2, '.', '') : '',
                     // Vacío no es un olvido: es "no aporta a ninguna pensión".
                     $e->sistema_pensiones ?: 'No aporta',
@@ -166,46 +171,9 @@ class EmpleadoController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'dni'                => 'required|string|regex:/^[0-9]{8}$/|unique:empleados',
-            'nombre'             => 'required|string|max:100',
-            'apellido'           => 'required|string|max:100',
-            'cargo_id'           => 'required|uuid|exists:cargos,id',
-            'area_id'            => 'required|uuid|exists:areas,id',
-            'telefono'           => 'required|regex:/^[0-9]+$/|max:15',
-            'direccion'          => 'required|string|max:255',
-            'fecha_ingreso'      => 'required|date|before_or_equal:today',
-            'estado'             => 'nullable|string|max:20',
-            'sistema_pensiones'  => 'nullable|in:AFP,ONP',
-            'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo|required_if:sistema_pensiones,AFP',
-            'cuspp'              => 'nullable|regex:/^[0-9]{11}$/|required_if:sistema_pensiones,AFP',
-            'entidad_financiera' => 'nullable|string|max:100',
-            'numero_cuenta'      => 'nullable|string|max:50',
-            // Opcional, pero si viene tiene que ser un CCI de verdad: son 20
-            // dígitos exactos. Uno mal copiado no rebota, se abona a otra
-            // persona, y eso no hay forma de verlo hasta el reclamo.
-            'cci'                => 'nullable|regex:/^[0-9]{20}$/',
-            'tiene_hijos'        => 'nullable|boolean',
-            'sueldo_base'        => 'required|numeric|min:0',
-            'tipo_contrato'      => 'required|in:indeterminado,plazo_fijo,suplencia,practicas',
-            // Un plazo fijo, una suplencia o unas prácticas SIN fecha de término no
-            // son un contrato: hay que saber cuándo acaba. El indeterminado es el
-            // único que no lleva fin, y ahí el campo sobra.
-            'fecha_fin_contrato' => 'required_unless:tipo_contrato,indeterminado|nullable|date|after:fecha_ingreso',
-            'forma_pago'         => 'nullable|in:banco,efectivo,otro,honorarios',
-            'sede_id'            => 'required|uuid|exists:sedes,id',
-            'email'              => 'required|email|unique:users,email',
-            'rol_id'             => 'required|uuid|exists:roles,id',
-            'nivel_estudios'       => 'nullable|in:primaria,secundaria,tecnico,universitario,maestria,doctorado',
-            'especialidad'         => 'nullable|string|max:150',
-            'institucion_estudios' => 'nullable|string|max:150',
-            'contacto_emergencia_nombre'    => 'nullable|string|max:150',
-            'contacto_emergencia_telefono'  => 'nullable|regex:/^[0-9]+$/|max:15',
-            'fecha_nacimiento'              => 'required|date|before:today',
-        ], [
-            // El genérico ("el formato no es válido") no dice qué arreglar.
-            'cci.regex' => 'El CCI son 20 dígitos, sin espacios ni guiones.',
-        ]);
+        // Las reglas viven en AltaDeEmpleado: las usa también la importación
+        // desde Excel, y así las dos altas piden exactamente lo mismo.
+        $request->validate(AltaDeEmpleado::reglas(), AltaDeEmpleado::mensajes());
 
         $this->limpiarDatosDeAfp($request);
 
@@ -222,37 +190,7 @@ class EmpleadoController extends Controller
         // Las tres cosas nacen juntas o no nace ninguna: un empleado sin usuario
         // no puede entrar, y uno sin contrato queda con el historial en blanco
         // aunque su ficha diga "plazo fijo".
-        $empleado = DB::transaction(function () use ($request) {
-            $empleado = Empleado::create($request->except(['email', 'rol_id', 'fecha_fin_contrato']));
-
-            User::create([
-                'name'        => $empleado->nombre . ' ' . $empleado->apellido,
-                'email'       => $request->email,
-                'password'    => Hash::make($request->dni),
-                'rol_id'      => $request->rol_id,
-                'empleado_id' => $empleado->id,
-                // Entra con su DNI, y el sistema no le deja hacer nada más
-                // hasta que ponga una contraseña suya: el DNI está a la vista
-                // de todos en la ficha y en la boleta.
-                'debe_cambiar_password' => true,
-            ]);
-
-            // El primer contrato sale de lo que ya se pide en el alta: el tipo y la
-            // fecha de ingreso. Las renovaciones se hacen luego desde Contratos, que
-            // al crear una nueva cierra la anterior.
-            Contrato::create([
-                'empleado_id'   => $empleado->id,
-                'tipo_contrato' => $request->tipo_contrato,
-                'fecha_inicio'  => $request->fecha_ingreso,
-                'fecha_fin'     => $request->tipo_contrato === 'indeterminado'
-                    ? null
-                    : $request->fecha_fin_contrato,
-                'estado'        => 'vigente',
-                'observaciones' => 'Contrato inicial, creado al dar de alta al trabajador.',
-            ]);
-
-            return $empleado;
-        });
+        $empleado = AltaDeEmpleado::crear($request->all());
 
         $empleado->load('area', 'cargo', 'sede', 'contratos');
         return response()->json([

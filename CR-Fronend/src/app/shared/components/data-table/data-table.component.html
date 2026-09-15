@@ -58,6 +58,10 @@
             [attr.data-titulo]="col.header"
             [class.celda-rompe]="col.romperTexto"
             [class.celda-monto]="col.tipo === 'moneda'">
+            <ng-container *ngIf="plantillaDe(col) as plantilla; else celdaNormal">
+              <ng-container *ngTemplateOutlet="plantilla; context: { $implicit: fila, indice: i }"></ng-container>
+            </ng-container>
+            <ng-template #celdaNormal>
             <ng-container [ngSwitch]="col.tipo">
               <span *ngSwitchCase="'badge'" [ngClass]="claseBadge(fila, col)">
                 {{ valorCelda(fila, col) }}
@@ -86,6 +90,7 @@
               </span>
               <ng-container *ngSwitchDefault>{{ valorCelda(fila, col) ?? '—' }}</ng-container>
             </ng-container>
+            </ng-template>
           </td>
           <td *ngIf="acciones.length || accionesPersonalizadas.length" class="celda-acciones">
             <div class="action-btns">

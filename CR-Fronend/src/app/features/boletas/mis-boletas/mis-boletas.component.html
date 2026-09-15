@@ -83,37 +83,24 @@
 </div>
 
 <!-- Firmar la boleta con la contraseña de la cuenta -->
-<div class="pdf-modal-overlay" *ngIf="showSignModal" (click)="closeSignModal()">
-  <div class="sign-modal-container" (click)="$event.stopPropagation()">
-    <div class="pdf-modal-header">
-      <h3>Firmar boleta</h3>
-      <button class="btn-close" (click)="closeSignModal()" aria-label="Cerrar">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </div>
-    <div class="pdf-modal-body" style="padding: 24px;">
-      <p style="margin-bottom: 20px; color: var(--text-muted); font-size: 14px;">
-        Para firmar tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong>,
-        ingresa la contraseña con la que entras al sistema.
-      </p>
-
-      <div class="form-group">
-        <label for="passwordFirma">Contraseña</label>
-        <input id="passwordFirma" type="password" class="form-control" [(ngModel)]="signPassword"
-          placeholder="Tu contraseña" (keyup.enter)="confirmarFirma()">
-      </div>
-
+<app-form-modal
+  [visible]="showSignModal"
+  titulo="Firmar boleta"
+  textoGuardar="Firmar boleta"
+  [guardando]="isSigning"
+  (guardar)="confirmarFirma()"
+  (cancelar)="closeSignModal()"
+>
+  <div class="form-fields">
+    <p class="form-nota">
+      Para firmar tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong>,
+      escribe la contraseña con la que entras al sistema.
+    </p>
+    <div class="form-group">
+      <label for="passwordFirma">Contraseña</label>
+      <input id="passwordFirma" type="password" class="form-control" [(ngModel)]="signPassword"
+        placeholder="Tu contraseña" autocomplete="current-password" (keyup.enter)="confirmarFirma()" />
       <small class="form-error" *ngIf="signErrorMsg">{{ signErrorMsg }}</small>
-
-      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
-        <button class="btn-secondary" (click)="closeSignModal()" [disabled]="isSigning">Cancelar</button>
-        <button class="btn-primary" (click)="confirmarFirma()" [disabled]="isSigning">
-          {{ isSigning ? 'Firmando...' : 'Firmar boleta' }}
-        </button>
-      </div>
     </div>
   </div>
-</div>
+</app-form-modal>

@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use App\Models\Documento;
 use App\Models\Planilla;
+use App\Support\ExpedienteDigital;
 use App\Traits\ListadoPaginado;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -68,8 +69,11 @@ class MisDocumentosController extends Controller
             $query->where('planilla.anio', (int) $request->input('anio'));
         }
 
+        // "Sin firmar" es lo que le falta firmar: la hoja de vida no se firma,
+        // así que no tiene nada que hacer en la campana.
         if ($request->boolean('sin_firmar')) {
-            $query->where('estado_firma', '!=', 'firmado');
+            $query->where('estado_firma', '!=', 'firmado')
+                ->whereNotIn('tipo', ExpedienteDigital::SIN_FIRMA);
         }
 
         return $this->responderListado(
@@ -78,7 +82,8 @@ class MisDocumentosController extends Controller
             ['tipo'],
             // Cuántos le faltan por firmar: es el número del recuadro de
             // arriba, y tiene que contarse sobre TODOS, no sobre la página.
-            fn (Builder $suyos) => $this->conteoPorEstado($suyos, 'estado_firma', [
+            // Solo sobre lo que se firma: su CV no es un pendiente.
+            fn (Builder $suyos) => $this->conteoPorEstado((clone $suyos)->whereNotIn('tipo', ExpedienteDigital::SIN_FIRMA), 'estado_firma', [
                 'pendientes' => 'pendiente',
                 'firmados'   => 'firmado',
             ])
@@ -91,6 +96,13 @@ class MisDocumentosController extends Controller
         $documento = Documento::where('id', $id)
             ->where('empleado_id', $empleado_id)
             ->firstOrFail();
+
+        if (! ExpedienteDigital::seFirma($documento->tipo)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La hoja de vida es un documento tuyo: no se marca como vista ni se firma.',
+            ], 422);
+        }
 
         if ($documento->estado_firma !== 'pendiente') {
             return response()->json([
@@ -147,6 +159,15 @@ class MisDocumentosController extends Controller
             ->where('empleado_id', $empleado_id)
             ->firstOrFail();
 
+        // Se revisa aquí y no solo escondiendo el botón: una pantalla no es
+        // una cerradura.
+        if (! ExpedienteDigital::seFirma($documento->tipo)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La hoja de vida es un documento tuyo: no se firma.',
+            ], 422);
+        }
+
         if ($documento->estado_firma === 'firmado') {
             return response()->json([
                 'success' => false,
@@ -186,6 +207,34 @@ class MisDocumentosController extends Controller
             'message' => 'Documento firmado correctamente.',
             'data'    => $documento
         ]);
+    }
+
+    /**
+     * POST /mis-documentos/hoja-de-vida — el trabajador sube su propio CV.
+     *
+     * El empleado sale del token, nunca del cuerpo: sin eso cualquiera podía
+     * colgarle un archivo al expediente de otro. Reemplaza al CV que tuviera
+     * (el anterior queda dado de baja, como cuando lo sube RR.HH.).
+     */
+    public function subirHojaDeVida(Request $request)
+    {
+        $request->validate(['archivo' => ExpedienteDigital::REGLA_ARCHIVO], [
+            'archivo.required' => 'Elige el archivo de tu hoja de vida.',
+            'archivo.mimes'    => 'La hoja de vida tiene que ser PDF, Word o una imagen (JPG o PNG).',
+            'archivo.max'      => 'El archivo pasa de 5 MB.',
+        ]);
+
+        $empleadoId = $request->user()->empleado_id;
+        if (! $empleadoId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tu cuenta no está vinculada a una ficha de trabajador.',
+            ], 403);
+        }
+
+        $documento = ExpedienteDigital::guardar($empleadoId, ExpedienteDigital::HOJA_DE_VIDA, $request->file('archivo'));
+
+        return response()->json(['success' => true, 'data' => $documento], 201);
     }
     
 }

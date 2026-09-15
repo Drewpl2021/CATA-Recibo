@@ -1,0 +1,261 @@
+<app-page-header
+  icono="table_chart"
+  titulo="Importar conceptos desde Excel"
+  subtitulo="Carga los conceptos de pago de todas las planillas del mes con un solo archivo."
+>
+  <button headerActions type="button" class="btn-secondary" (click)="verPlanillas()">
+    Volver a Planillas
+  </button>
+</app-page-header>
+
+<section class="section-panel section-panel--formulario">
+  <app-wizard [pasos]="pasos" [(actual)]="paso" [form]="avance"></app-wizard>
+
+  <!-- ══ Paso 1: el archivo ══════════════════════════════════════ -->
+  <div *ngIf="pasos[paso].id === 'archivo'" class="form-fields">
+    <div class="rejilla-campos">
+      <div class="form-group">
+        <label for="mes">Mes de las planillas</label>
+        <select id="mes" class="form-control" [(ngModel)]="mes" (ngModelChange)="alCambiarPeriodo()">
+          <option *ngFor="let m of meses" [ngValue]="m.value">{{ m.label }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="anio">Año</label>
+        <input id="anio" type="number" class="form-control" [(ngModel)]="anio" (ngModelChange)="alCambiarPeriodo()" min="2000" max="2100" />
+      </div>
+    </div>
+
+    <div class="form-nota form-nota--accion">
+      <div>
+        <strong>¿No tienes el archivo?</strong> Descarga el modelo de {{ periodo }}: trae a los
+        trabajadores con planilla en ese mes y una columna por cada concepto. Solo escribe los montos.
+      </div>
+      <button type="button" class="btn-exportar" (click)="descargarModelo()" [disabled]="descargandoModelo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/>
+        </svg>
+        {{ descargandoModelo ? 'Preparando…' : 'Descargar modelo' }}
+      </button>
+    </div>
+
+    <app-selector-archivo
+      [extensiones]="['xlsx']"
+      [pesoMaximoMb]="10"
+      [archivos]="archivosExcel"
+      (archivosChange)="alElegirExcel($event)"
+      [ocupado]="leyendo"
+      [mostrarLista]="false"
+      textoOcupado="Leyendo el archivo…"
+      [texto]="nombreArchivo ? nombreArchivo : 'Arrastra aquí tu Excel o haz clic para elegirlo'"
+      ayuda="Solo .xlsx, hasta 10 MB. El archivo no se sube al servidor: se lee en tu computadora."
+    ></app-selector-archivo>
+
+    <div class="form-nota">
+      <strong>Cómo tiene que venir tu Excel.</strong> Una fila por trabajador, con una columna de
+      <strong>DNI</strong> y una columna por cada concepto, con los títulos que ustedes usan
+      («Movilidad», «Tardanza», «Bazar»…). En cada celda:
+      <strong>vacía</strong> no cambia nada, <strong>0</strong> le quita el concepto y
+      <strong>un monto</strong> se lo pone. Las columnas de nombre, cargo o totales se ignoran solas.
+      Si es un .xls antiguo, ábrelo en Excel y guárdalo como «Libro de Excel (.xlsx)».
+    </div>
+  </div>
+
+  <!-- ══ Paso 2: reconocer las columnas ══════════════════════════ -->
+  <div *ngIf="pasos[paso].id === 'columnas'">
+    <p class="form-nota">
+      Leímos <strong>{{ filas.length }}</strong> fila(s) de «{{ nombreArchivo }}» para
+      <strong>{{ periodo }}</strong>. El sistema reconoció {{ cuantasReconocidas }} columna(s)
+      de conceptos; revisa las demás y decide qué hacer con cada una.
+    </p>
+
+    <app-data-table
+      [columnas]="columnasDeColumnas"
+      [datos]="columnas"
+      [acciones]="[]"
+      [filasPorPagina]="80"
+      [mostrarBuscador]="false"
+      mensajeVacio="El Excel no tiene columnas."
+    >
+      <ng-template appCelda="estado" let-c>
+        <span class="status-badge" [ngClass]="'status-badge-' + severidadEstado(c.estado)">
+          {{ etiquetaEstado(c.estado) }}
+        </span>
+        <div class="form-ayuda">{{ c.motivo }}</div>
+      </ng-template>
+
+      <ng-template appCelda="accion" let-c>
+        <div class="controles-celda">
+          <select class="form-control" [(ngModel)]="c.accion" (ngModelChange)="alCambiarColumna()" [disabled]="c.bloqueada"
+            [attr.aria-label]="'Qué hacer con la columna ' + c.titulo">
+            <option value="" disabled>Elige qué es…</option>
+            <option value="usar">Un concepto del catálogo</option>
+            <option value="crear">Un concepto nuevo</option>
+            <option value="detalle">El detalle de otra columna</option>
+            <option value="dni">El DNI del trabajador</option>
+            <option value="ignorar">No importar esta columna</option>
+          </select>
+
+          <select *ngIf="c.accion === 'usar'" class="form-control" [(ngModel)]="c.conceptoId" (ngModelChange)="alCambiarColumna()"
+            [attr.aria-label]="'Concepto de la columna ' + c.titulo">
+            <option value="">Elige el concepto…</option>
+            <optgroup *ngIf="c.candidatos.length" label="Los más parecidos">
+              <option *ngFor="let k of c.candidatos" [value]="k.id">{{ k.nombre }}</option>
+            </optgroup>
+            <optgroup *ngFor="let g of grupos" [label]="g.etiqueta">
+              <option *ngFor="let k of g.conceptos" [value]="k.id">{{ k.nombre }}</option>
+            </optgroup>
+          </select>
+
+          <ng-container *ngIf="c.accion === 'crear'">
+            <input class="form-control" [(ngModel)]="c.nuevoNombre" (ngModelChange)="alCambiarColumna()" maxlength="150"
+              placeholder="Nombre del concepto nuevo" [attr.aria-label]="'Nombre del concepto nuevo de ' + c.titulo" />
+            <select class="form-control" [(ngModel)]="c.nuevoTipo" (ngModelChange)="alCambiarColumna()"
+              [attr.aria-label]="'Tipo del concepto nuevo de ' + c.titulo">
+              <option value="">¿Suma o resta del neto?</option>
+              <option value="bonificacion">Ingreso: suma al neto</option>
+              <option value="descuento">Descuento: resta del neto</option>
+              <option value="adelanto">Adelanto: resta del neto</option>
+              <option value="aportacion">Aportación del empleador: no cambia el neto</option>
+            </select>
+          </ng-container>
+
+          <select *ngIf="c.accion === 'detalle'" class="form-control" [(ngModel)]="c.deColumna" (ngModelChange)="alCambiarColumna()"
+            [attr.aria-label]="'De qué columna es el detalle ' + c.titulo">
+            <option [ngValue]="null">¿De qué columna es el detalle?</option>
+            <option *ngFor="let d of columnasDeDinero" [ngValue]="d.indice">{{ d.titulo }}</option>
+          </select>
+        </div>
+      </ng-template>
+    </app-data-table>
+
+    <div class="form-nota form-nota--aviso" *ngIf="pendientes.length">
+      <strong>Antes de revisar los cambios:</strong>
+      <ul class="importacion-pendientes">
+        <li *ngFor="let p of pendientes">{{ p }}</li>
+      </ul>
+    </div>
+
+    <div class="importacion-pie">
+      <button type="button" class="btn-secondary" (click)="otroArchivo()">Cambiar de archivo</button>
+      <button type="button" class="btn-primary" [disabled]="pendientes.length > 0 || revisando" (click)="previsualizar()">
+        <span *ngIf="revisando" class="spinner-small"></span>
+        {{ revisando ? 'Revisando…' : 'Revisar cambios' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ Paso 3: revisar antes de guardar ════════════════════════ -->
+  <div *ngIf="pasos[paso].id === 'revision' && vista">
+    <div class="resumen-masivo">
+      <div class="resumen-masivo__dato">
+        <strong>{{ vista.resumen.trabajadores }}</strong>
+        <span>Planillas que cambian</span>
+      </div>
+      <div class="resumen-masivo__dato">
+        <strong>{{ vista.resumen.lineas_nuevas }}</strong>
+        <span>Conceptos que se agregan</span>
+      </div>
+      <div class="resumen-masivo__dato">
+        <strong>{{ vista.resumen.lineas_cambiadas }}</strong>
+        <span>Montos que cambian</span>
+      </div>
+      <div class="resumen-masivo__dato">
+        <strong>{{ vista.resumen.lineas_quitadas }}</strong>
+        <span>Conceptos que se quitan</span>
+      </div>
+      <div class="resumen-masivo__dato">
+        <strong>{{ vista.resumen.errores }}</strong>
+        <span>Errores</span>
+      </div>
+    </div>
+
+    <div class="form-nota form-nota--alerta" *ngIf="vista.errores.length">
+      <strong>No se puede aplicar todavía.</strong> Corrige estos errores en tu Excel, vuelve a subirlo y revisa
+      otra vez. Mientras haya un solo error no se guarda nada.
+      <ul class="importacion-avisos">
+        <li *ngFor="let e of vista.errores">
+          <strong>{{ ubicacion(e) }}:</strong> {{ e.mensaje }}
+        </li>
+      </ul>
+    </div>
+
+    <div class="form-nota form-nota--aviso" *ngIf="vista.advertencias.length">
+      <strong>Conviene saber:</strong>
+      <ul class="importacion-avisos">
+        <li *ngFor="let a of vista.advertencias">
+          <strong *ngIf="a.fila">{{ ubicacion(a) }}:</strong> {{ a.mensaje }}
+        </li>
+      </ul>
+    </div>
+
+    <div class="form-nota" *ngIf="vista.resumen.conceptos_nuevos.length">
+      <strong>Se crearán en el catálogo:</strong>
+      <span *ngFor="let n of vista.resumen.conceptos_nuevos; let ultimo = last">
+        «{{ n.nombre }}» ({{ etiquetaTipo(n.tipo) }}){{ ultimo ? '.' : ', ' }}
+      </span>
+    </div>
+
+    <p class="form-nota" *ngIf="!vista.errores.length && !vista.trabajadores.length">
+      No hay nada que cambiar: los montos del archivo ya están así en las planillas de {{ vista.resumen.periodo }}.
+    </p>
+
+    <app-data-table
+      *ngIf="vista.trabajadores.length"
+      entidad="este trabajador"
+      [columnas]="columnasDeRevision"
+      [datos]="vista.trabajadores"
+      [acciones]="[]"
+      [filasPorPagina]="25"
+      [camposBusqueda]="['nombre', 'dni']"
+    >
+      <ng-template appCelda="nombre" let-t>
+        <strong>{{ t.nombre }}</strong>
+        <div class="form-ayuda">DNI {{ t.dni }}, fila {{ t.fila }} del Excel</div>
+      </ng-template>
+
+      <ng-template appCelda="cambios" let-t>
+        <ul class="importacion-cambios">
+          <li *ngFor="let c of t.cambios" [ngClass]="'importacion-cambios__' + c.accion">
+            <span class="importacion-cambios__concepto">{{ c.concepto }}</span>
+            <span>{{ textoCambio(c) }}</span>
+            <small *ngIf="c.descripcion">{{ c.descripcion }}</small>
+          </li>
+        </ul>
+      </ng-template>
+
+      <ng-template appCelda="neto_despues" let-t>
+        <span class="monto-anterior" *ngIf="t.neto_antes !== t.neto_despues">S/ {{ t.neto_antes | number: '1.2-2' }}</span>
+        <strong>S/ {{ t.neto_despues | number: '1.2-2' }}</strong>
+      </ng-template>
+    </app-data-table>
+
+    <div class="importacion-pie">
+      <button type="button" class="btn-secondary" (click)="paso = 1">Volver a las columnas</button>
+      <button type="button" class="btn-primary" [disabled]="!sePuedeAplicar" (click)="aplicar()">
+        <span *ngIf="aplicando" class="spinner-small"></span>
+        {{ aplicando ? 'Aplicando…' : 'Aplicar ' + totalCambios + ' cambio(s)' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ Paso 4: listo ═══════════════════════════════════════════ -->
+  <div *ngIf="pasos[paso].id === 'listo' && resultado" class="importacion-listo">
+    <app-icon icono="check_circle" [tamano]="52"></app-icon>
+    <h2>{{ resultado.mensaje }}</h2>
+    <p *ngIf="resultado.resumen.conceptos_creados?.length">
+      Se agregaron al catálogo: {{ resultado.resumen.conceptos_creados?.join(', ') }}.
+    </p>
+    <p>
+      El sistema recuerda los títulos que confirmaste: la próxima vez que subas un Excel con esas mismas
+      columnas, se reconocerán solas.
+    </p>
+    <div class="importacion-pie importacion-pie--centrado">
+      <button type="button" class="btn-secondary" (click)="otroArchivo()">Importar otro archivo</button>
+      <button type="button" class="btn-primary" (click)="verPlanillas()">Ver las planillas de {{ periodo }}</button>
+    </div>
+  </div>
+</section>

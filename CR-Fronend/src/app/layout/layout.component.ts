@@ -19,13 +19,14 @@ import {
   etiquetaEstado, NOMBRE_ROL_LEGIBLE, TIPO_CONTRATO_OPCIONES, NIVEL_ESTUDIOS_OPCIONES,
 } from '../shared/constants';
 import { IconComponent } from '../shared/components/icon/icon.component';
+import { FormModalComponent } from '../shared/components/form-modal/form-modal.component';
 import { PistaDirective } from '../shared/directives/pista.directive';
 import { fechaLegible } from '../core/utils';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, IconComponent, PistaDirective],
+  imports: [CommonModule, RouterModule, FormsModule, IconComponent, PistaDirective, FormModalComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss'
 })
@@ -615,7 +616,6 @@ export class LayoutComponent implements OnInit {
       },
       error: (err) => {
         this.firmandoDoc = false;
-        console.error('Error firmando boleta', err);
         this.signErrorMsg = err?.error?.message || 'Contraseña incorrecta o error del servidor.';
       }
     });
