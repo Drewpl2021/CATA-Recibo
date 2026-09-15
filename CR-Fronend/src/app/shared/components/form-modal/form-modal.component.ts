@@ -29,6 +29,8 @@ export class FormModalComponent {
   @Input() guardando = false;
   @Input() textoGuardar = 'Guardar';
   @Input() ocultarBotonesPorDefecto = false;
+  /** Cabecera azul con letra blanca, como Mi perfil y Avisos. */
+  @Input() cabeceraMarca = false;
 
   @Output() guardar = new EventEmitter<void>();
   @Output() cancelar = new EventEmitter<void>();

@@ -71,11 +71,12 @@ class BoletaController extends Controller
         // Base afecta a AFP/ONP/ESSALUD = sueldo_base + asignación familiar
         // (confirmado contra boleta física — la gratificación NO entra aquí,
         // está exonerada por Ley 29351/30334)
-        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
+        $asignacionFamiliar = $this->asignacionFamiliarDeLaPlanilla($planilla);
         $baseAfecta         = (float) $planilla->sueldo_base + $asignacionFamiliar;
 
         $pension       = $this->calcularDescuentoPension($empleado, $baseAfecta);
-        $gratificacion = $this->calcularGratificacion($empleado, $planilla->sueldo_base, $mes, $anio);
+        // La gratificación no se calcula acá: en julio y diciembre es una línea
+        // de la planilla y sale sola entre los conceptos de ingreso.
         $essalud       = $this->calcularEssalud($baseAfecta);
         // Recalcula y deja registrada la retención del mes (Art. 40 Reglamento LIR),
         // por si se agregaron bonos u otros ingresos después de crear la planilla.
@@ -84,7 +85,12 @@ class BoletaController extends Controller
         // Conceptos de esta planilla (PaymentConcept vía PayrollDetalle), separados por tipo.
         // Se leen DESPUÉS de generarYPersistirRenta5ta() para incluir su resultado más reciente.
         $conceptosPlanilla  = $planilla->payrollDetalles()->with('paymentConcept')->get();
-        $conceptosIngreso   = $conceptosPlanilla->filter(fn ($d) => $d->paymentConcept?->tipo === 'bonificacion')->values();
+        // La Asignación Familiar va fuera: la boleta ya la imprime en su
+        // propia fila, y dejarla también aquí la sumaba dos veces.
+        $conceptosIngreso   = $conceptosPlanilla
+            ->filter(fn ($d) => $d->paymentConcept?->tipo === 'bonificacion'
+                && $d->paymentConcept?->nombre !== ConceptosDePago::ASIGNACION_FAMILIAR)
+            ->values();
         // Excluye los conceptos que ya se muestran aparte (pensión, I.R. 5ta) — aquí solo
         // van los demás descuentos (diezmo, escolaridad, etc.).
         $conceptosDescuento = $conceptosPlanilla
@@ -131,7 +137,6 @@ class BoletaController extends Controller
             'numero_boleta'      => $numero_boleta,
             'pension'            => $pension,
             'asignacionFamiliar' => $asignacionFamiliar,
-            'gratificacion'      => $gratificacion,
             'essalud'            => $essalud,
             'renta5ta'           => $renta5ta,
             'documento'          => $documento,

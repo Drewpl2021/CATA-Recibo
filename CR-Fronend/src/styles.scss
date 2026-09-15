@@ -984,6 +984,9 @@ body {
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;
+  /* Una etiqueta corta ("1 por firmar") no se parte: en una columna
+     estrecha quedaba como una píldora de dos pisos. */
+  white-space: nowrap;
 }
 
 .status-pending {
@@ -2035,6 +2038,29 @@ td.celda-numero {
   color: var(--text);
 }
 
+/* Cabecera azul con letra blanca: la de los modales que salen del menú del
+   usuario (Mi perfil, Cambiar contraseña, Avisos). Usa los tokens de marca,
+   así el título y la X se leen igual en claro y en oscuro. */
+.modal-header--marca {
+  background-color: var(--brand-900);
+  border-bottom-color: transparent;
+  color: var(--marca-text);
+}
+
+.modal-header--marca h2,
+.modal-header--marca h3 {
+  color: var(--marca-text);
+}
+
+.modal-header--marca .btn-close {
+  color: var(--marca-text-soft);
+}
+
+.modal-header--marca .btn-close:hover {
+  background: var(--marca-hover-bg);
+  color: var(--marca-text);
+}
+
 /* Modal de confirmación (icono + texto centrado, sin header separado —
    así lo escribía ya empleado-form.component.html) */
 .modal-icon-danger {
@@ -2406,10 +2432,13 @@ textarea.form-control {
   flex-wrap: wrap;
 }
 
+/* Crece con lo que dice: en 280px fijos, "Buscar por DNI, nombre, cargo,
+   área o correo…" se cortaba a la mitad. */
 .data-table-search {
   position: relative;
-  width: 280px;
-  max-width: 100%;
+  flex: 1 1 320px;
+  min-width: 240px;
+  max-width: 440px;
 }
 
 .data-table-search input {
@@ -3310,6 +3339,8 @@ textarea.form-control {
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
+  /* "Ver expediente" partido en dos líneas descuadraba la columna. */
+  white-space: nowrap;
 }
 
 
@@ -3554,6 +3585,197 @@ textarea.form-control {
   margin-left: auto;
   font-size: 13px;
   color: var(--text-muted);
+}
+
+/* ============================================
+   EXPEDIENTE DEL TRABAJADOR (Documentos del personal)
+   ============================================
+   Los papeles de una persona ordenados como RR.HH. los tiene en su
+   archivador: la hoja de vida, cada contrato con lo que se firmó en él, las
+   boletas y lo demás. El título de cada bloque va fuera del panel, así las
+   tablas —que ya son un panel— no quedan con doble borde.
+   ============================================ */
+.expediente {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.expediente__resumen {
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.expediente-bloque__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.expediente-bloque__icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background-color: var(--brand-100);
+  color: var(--brand-700);
+}
+
+.expediente-bloque__titulos {
+  flex: 1;
+  min-width: 220px;
+}
+
+.expediente-bloque__titulos .form-ayuda {
+  display: block;
+  margin-top: 2px;
+}
+
+.expediente-bloque__panel {
+  padding: 6px 20px;
+}
+
+.expediente-vacio {
+  margin: 0;
+  padding: 14px 0;
+  color: var(--text-muted);
+}
+
+/* Un documento suelto: qué es, cuándo se subió y qué se puede hacer. */
+.documento-fila {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.documento-fila:last-child {
+  border-bottom: none;
+}
+
+.documento-fila__icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--brand-600);
+}
+
+.documento-fila__texto {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.documento-fila__texto strong {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.documento-fila__texto span {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.documento-fila__acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.documento-fila__acciones .btn-secondary {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.documento-fila__acciones .documento-fila__quitar {
+  color: var(--danger-text);
+}
+
+.expediente-historial {
+  border-top: 1px solid var(--border);
+}
+
+.expediente-historial summary {
+  padding: 10px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-600);
+  cursor: pointer;
+}
+
+/* Un contrato del expediente, con lo que se le adjuntó. El vigente lleva
+   una franja verde: es el que manda hoy y el primero que se busca. */
+.contrato-tarjeta {
+  margin: 12px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface);
+}
+
+.contrato-tarjeta--vigente {
+  box-shadow: inset 3px 0 0 var(--success-solid);
+}
+
+.contrato-tarjeta__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.contrato-tarjeta__cabecera strong {
+  display: block;
+  font-size: 15px;
+  color: var(--heading);
+}
+
+.contrato-tarjeta__estado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contrato-tarjeta__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.contrato-tarjeta__pie .btn-secondary {
+  margin-left: auto;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* Algo que pide atención sin ser un error: un contrato por vencer, una hoja
+   de vida que falta. */
+.texto-aviso {
+  color: var(--warning-text);
+  font-weight: 600;
 }
 
 /* ============================================

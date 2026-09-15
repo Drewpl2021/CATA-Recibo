@@ -36,3 +36,4 @@ export * from './planilla/planilla-corrida.service';
 export * from './sistema/auditoria.service';
 export * from './planilla/importacion-conceptos.service';
 export * from './personal/importacion-empleados.service';
+export * from './personal/expediente.service';

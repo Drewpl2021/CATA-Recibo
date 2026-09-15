@@ -137,9 +137,9 @@
         <!-- Modal Mi Perfil (Movido aquí junto al de notificaciones) -->
         <div class="modal-overlay" *ngIf="showProfileModal" (click)="closeProfile()">
           <div class="modal-container" (click)="$event.stopPropagation()" style="max-width: 760px;">
-            <div class="modal-header" style="background-color: var(--brand-900); color: white;">
-              <h2 style="margin:0; font-size: 1.25rem; font-weight: 600; color: white;">Mi Perfil</h2>
-              <button class="btn-close" (click)="closeProfile()" style="background: none; border: none; cursor: pointer; color: white;">
+            <div class="modal-header modal-header--marca">
+              <h2>Mi perfil</h2>
+              <button class="btn-close" (click)="closeProfile()" aria-label="Cerrar">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -222,41 +222,6 @@
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal Cambiar Contraseña (Movido aquí) -->
-        <div class="modal-overlay" *ngIf="showPasswordModal">
-          <div class="modal-container" (click)="$event.stopPropagation()" style="max-width: 400px;">
-            <div class="modal-header" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px;">
-              <h2 style="margin:0; font-size: 1.25rem; font-weight: 600; color: var(--text);">Cambiar Contraseña</h2>
-              <button class="btn-close" (click)="closePassword()" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-            <div class="modal-body" style="padding: 0 24px 24px;">
-              <div style="display: flex; flex-direction: column; gap: 16px;">
-                <div>
-                  <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-soft); margin-bottom: 6px;">Contraseña Actual</label>
-                  <input type="password" class="form-control" [(ngModel)]="currentPassword" placeholder="Ingresa tu contraseña actual" style="width: 100%; padding: 10px; border: 1px solid var(--border-strong); border-radius: 6px; box-sizing: border-box;">
-                </div>
-                <div>
-                  <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-soft); margin-bottom: 6px;">Nueva Contraseña</label>
-                  <input type="password" class="form-control" [(ngModel)]="newPassword" placeholder="Nueva contraseña" style="width: 100%; padding: 10px; border: 1px solid var(--border-strong); border-radius: 6px; box-sizing: border-box;">
-                </div>
-                <div>
-                  <label style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-soft); margin-bottom: 6px;">Confirmar Nueva Contraseña</label>
-                  <input type="password" class="form-control" [(ngModel)]="newPasswordConfirm" placeholder="Repite la nueva contraseña" style="width: 100%; padding: 10px; border: 1px solid var(--border-strong); border-radius: 6px; box-sizing: border-box;">
-                </div>
-              </div>
-              <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
-                <button class="btn-secondary" (click)="closePassword()" style="padding: 8px 16px; border: 1px solid var(--border-strong); background: var(--surface); border-radius: 6px; cursor: pointer; color: var(--text); font-weight: 500;">Cancelar</button>
-                <button class="btn-primary" (click)="submitPasswordChange()" [disabled]="changingPassword" style="padding: 8px 16px; background: var(--brand-900); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                  <span *ngIf="changingPassword">Guardando...</span>
-                  <span *ngIf="!changingPassword">Guardar</span>
-                </button>
               </div>
             </div>
           </div>
@@ -350,7 +315,7 @@
        ya esté firmada, y se puede paginar. -->
   <div class="modal-overlay" *ngIf="showNotifications" (click)="cerrarNotificaciones()">
     <div class="modal-container avisos" (click)="$event.stopPropagation()">
-      <div class="modal-header">
+      <div class="modal-header modal-header--marca">
         <div class="avisos__titulo">
           <app-icon icono="bell" [tamano]="22"></app-icon>
           <h2>Avisos</h2>
@@ -400,6 +365,50 @@
       </div>
     </div>
   </div>
+
+  <!-- Cambiar la contraseña desde el menú del usuario. Mismas reglas que la
+       pantalla de primer ingreso, y los errores debajo de cada campo. -->
+  <app-form-modal
+    [visible]="showPasswordModal"
+    titulo="Cambiar contraseña"
+    textoGuardar="Cambiar contraseña"
+    ancho="460px"
+    [cabeceraMarca]="true"
+    [guardando]="changingPassword"
+    (guardar)="submitPasswordChange()"
+    (cancelar)="closePassword()"
+  >
+    <div class="form-fields">
+      <div class="form-group">
+        <label for="password_actual_menu">Contraseña actual</label>
+        <input id="password_actual_menu" type="password" class="form-control" [(ngModel)]="currentPassword"
+          placeholder="La que usas para entrar" autocomplete="current-password" />
+        <small class="form-error" *ngIf="faltaPasswordActual">Escribe la contraseña con la que entras.</small>
+        <small class="form-error" *ngIf="errorPasswordActual">{{ errorPasswordActual }}</small>
+      </div>
+
+      <div class="form-group">
+        <label for="password_nuevo_menu">Contraseña nueva</label>
+        <input id="password_nuevo_menu" type="password" class="form-control" [(ngModel)]="newPassword"
+          placeholder="Contraseña nueva" autocomplete="new-password" />
+        <small class="form-ayuda">Mínimo 8 caracteres, con letras y números. No uses datos personales.</small>
+        <small class="form-error" *ngIf="passwordNuevaCorta">Necesita al menos 8 caracteres.</small>
+        <small class="form-error" *ngIf="passwordDebil">Tiene que llevar letras y números, no solo unos u otros.</small>
+        <small class="form-error" *ngIf="errorPasswordNuevo">{{ errorPasswordNuevo }}</small>
+      </div>
+
+      <div class="form-group">
+        <label for="password_confirmacion_menu">Repite la contraseña nueva</label>
+        <input id="password_confirmacion_menu" type="password" class="form-control" [(ngModel)]="newPasswordConfirm"
+          placeholder="Repite la contraseña nueva" autocomplete="new-password" (keyup.enter)="submitPasswordChange()" />
+        <small class="form-error" *ngIf="passwordsNoCoinciden">Las dos contraseñas no son iguales.</small>
+      </div>
+
+      <p class="form-nota">
+        Al cambiarla se cierran tus sesiones abiertas en otros equipos. En este sigues dentro.
+      </p>
+    </div>
+  </app-form-modal>
 
   <!-- Firmar una boleta desde la campana -->
   <app-form-modal

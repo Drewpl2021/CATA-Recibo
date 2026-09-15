@@ -125,6 +125,11 @@ export const END_POINTS_ACCIONES = {
   /** GET empleados/exportar?search= — la lista del personal en CSV */
   exportarEmpleados: 'empleados/exportar',
 
+  /** GET expedientes?page&size&search&filtro — Documentos del personal, por trabajador */
+  expedientes: 'expedientes',
+  /** GET expedientes/{empleadoId} — el expediente de un trabajador */
+  expediente: (empleadoId: string) => `expedientes/${empleadoId}`,
+
   /** POST importacion-conceptos/{paso} — cargar conceptos desde el Excel de RR.HH. */
   importacionConceptos: {
     /** GET ?mes=&anio= — el Excel modelo del mes, para llenar */

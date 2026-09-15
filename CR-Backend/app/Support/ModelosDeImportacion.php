@@ -25,10 +25,10 @@ final class ModelosDeImportacion
      * Empleados: los mismos títulos que "Descargar empleados", vacío, con
      * listas para todo lo que tiene que existir o tiene valores fijos.
      */
-    public static function empleados(bool $esAdmin): LibroExcel
+    public static function empleados(): LibroExcel
     {
         $campos = ColumnasDeEmpleado::CAMPOS;
-        $listas = ColumnasDeEmpleado::valoresDeLista($esAdmin);
+        $listas = ColumnasDeEmpleado::valoresDeLista();
 
         $titulos = [];
         $estiloTitulos = [];
@@ -102,6 +102,7 @@ final class ModelosDeImportacion
             'Cada fila es un trabajador' => [
                 'Con un DNI que el sistema todavía no tiene, se da de alta al trabajador: su ficha, su cuenta y su contrato. Entra con su DNI como contraseña provisional y el sistema le pide cambiarla.',
                 'Con un DNI que ya existe, solo se cambian las celdas que tengan algo escrito. Una celda vacía no borra nada.',
+                'Todos entran como trabajadores. Si a alguien le toca entrar a RR.HH. o a Administración, eso se le cambia después desde Usuarios.',
             ],
             'Obligatorio para un trabajador nuevo (títulos en azul oscuro)' => [
                 'DNI, ' . implode(', ', $requeridos) . '.',
@@ -113,10 +114,9 @@ final class ModelosDeImportacion
                 'DNI: 8 cifras. CUSPP: 11 cifras, obligatorio si aporta a una AFP. Teléfono y CCI: solo números.',
                 'Sueldo base: el monto, por ejemplo 2500 o 2500.50.',
                 implode(', ', $conLista) . ': elígelos de la lista que aparece en la celda.',
-                'Rol: si lo dejas vacío, entra como empleado.',
             ],
             'Lo que el Excel no le cambia a quien ya existe' => [
-                'Tipo de contrato, fin de contrato, fecha de ingreso y rol. Eso se cambia desde Contratos y Usuarios, para que quede el historial.',
+                'Tipo de contrato, fin de contrato y fecha de ingreso. Eso se cambia desde Contratos, para que quede el historial.',
             ],
             'Las hojas de vida' => [
                 'No van dentro del Excel. Guarda cada una con el DNI del trabajador en el nombre (por ejemplo 42558107.pdf) y súbelas junto con el Excel, en la misma pantalla.',

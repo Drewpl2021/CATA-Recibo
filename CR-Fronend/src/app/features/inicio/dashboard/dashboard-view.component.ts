@@ -370,9 +370,13 @@ export class DashboardViewComponent implements OnInit {
     return `${nombreMes(this.filtroMes)} ${this.filtroAnio}` + (sede ? ` · ${sede.nombre}` : '');
   }
 
-  /** Del pendiente a la pantalla donde se resuelve. */
+  /**
+   * Del pendiente a la pantalla donde se resuelve. Por URL y no por
+   * navigate(): la ruta puede traer un filtro ("?filtro=boletas_por_firmar")
+   * y navigate() lo codificaría como parte del camino.
+   */
   irAResolver(pendiente: PendienteRrhh): void {
-    this.router.navigate([pendiente.ruta]);
+    this.router.navigateByUrl(pendiente.ruta);
   }
 
   private cargar(): void {

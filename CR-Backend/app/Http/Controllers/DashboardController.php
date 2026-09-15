@@ -341,7 +341,7 @@ class DashboardController extends Controller
             ['clave' => 'sin_boleta', 'cuantos' => $sinBoleta,
              'texto' => 'trabajadores con planilla pero sin boleta emitida', 'ruta' => '/inicio/planillas'],
             ['clave' => 'sin_firmar', 'cuantos' => $sinFirmar,
-             'texto' => 'boletas del mes que el trabajador aún no firma', 'ruta' => '/inicio/documentos'],
+             'texto' => 'boletas del mes que el trabajador aún no firma', 'ruta' => '/inicio/documentos?filtro=boletas_por_firmar'],
             ['clave' => 'sin_sueldo', 'cuantos' => $sinSueldo,
              'texto' => 'trabajadores activos sin sueldo configurado', 'ruta' => '/inicio/empleados'],
             ['clave' => 'contratos', 'cuantos' => $contratosPorVencer,

@@ -23,7 +23,7 @@
   [pagina]="pagina"
   (cambioPagina)="irAPagina($event)"
   (cambioBusqueda)="buscar($event)"
-  [camposBusqueda]="['motivo']"
+  [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'empleado.dni', 'motivo']"
   [acciones]="['eliminar']"
   [accionesPersonalizadas]="accionesExtra"
   [mensajeVacio]="mensajeVacio"

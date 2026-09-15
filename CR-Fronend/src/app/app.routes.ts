@@ -50,11 +50,20 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', loadComponent: () => import('./features/inicio/dashboard/dashboard-view.component').then(m => m.DashboardViewComponent) },
       { path: 'mis-boletas', loadComponent: () => import('./features/boletas/mis-boletas/mis-boletas.component').then(m => m.MisBoletasComponent) },
-      // "documentos" es en realidad el autoservicio de cada quien (mis-documentos por dentro) — accesible a todos.
-      { path: 'documentos', loadComponent: () => import('./features/documentos/documentos-list/documentos-list.component').then(m => m.DocumentosListComponent) },
-      // El seeder crea dos ítems de menú que llevan a la misma pantalla:
-      // "Documentos" (/documentos) y "Mis Documentos" (/mis-documentos).
+      // Mis Documentos: lo que cada quien tiene a su nombre. Para todos.
       { path: 'mis-documentos', loadComponent: () => import('./features/documentos/documentos-list/documentos-list.component').then(m => m.DocumentosListComponent) },
+      // Documentos del personal: el expediente de cada trabajador. Antes
+      // "documentos" abría Mis Documentos, y RR.HH. veía archivos sin dueño.
+      {
+        path: 'documentos',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/documentos/expedientes-list/expedientes-list.component').then(m => m.ExpedientesListComponent),
+      },
+      {
+        path: 'documentos/:empleadoId',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/documentos/expediente/expediente.component').then(m => m.ExpedienteComponent),
+      },
       {
         path: 'historial-boletas',
         canActivate: [soloRrhhOAdmin],

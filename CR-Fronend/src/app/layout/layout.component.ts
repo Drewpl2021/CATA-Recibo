@@ -21,7 +21,7 @@ import {
 import { IconComponent } from '../shared/components/icon/icon.component';
 import { FormModalComponent } from '../shared/components/form-modal/form-modal.component';
 import { PistaDirective } from '../shared/directives/pista.directive';
-import { fechaLegible } from '../core/utils';
+import { fechaLegible, mensajeErrorApi, tieneLetrasYNumeros } from '../core/utils';
 
 @Component({
   selector: 'app-layout',
@@ -129,11 +129,32 @@ export class LayoutComponent implements OnInit {
     return NIVEL_ESTUDIOS_OPCIONES.find((n) => n.value === valor)?.label ?? valor;
   }
   
-  // Cambiar password form
+  // ── Cambiar contraseña ──
   currentPassword = '';
   newPassword = '';
   newPasswordConfirm = '';
   changingPassword = false;
+  /** Los errores se muestran al intentar guardar, no mientras se escribe. */
+  intentoPassword = false;
+  /** Lo que respondió el backend para cada campo. */
+  errorPasswordActual = '';
+  errorPasswordNuevo = '';
+
+  get faltaPasswordActual(): boolean {
+    return this.intentoPassword && !this.currentPassword;
+  }
+
+  get passwordNuevaCorta(): boolean {
+    return this.intentoPassword && this.newPassword.length < 8;
+  }
+
+  get passwordDebil(): boolean {
+    return this.intentoPassword && this.newPassword.length >= 8 && !tieneLetrasYNumeros(this.newPassword);
+  }
+
+  get passwordsNoCoinciden(): boolean {
+    return this.intentoPassword && this.newPassword.length >= 8 && this.newPassword !== this.newPasswordConfirm;
+  }
 
   constructor(
     private router: Router,
@@ -677,48 +698,64 @@ export class LayoutComponent implements OnInit {
         this.showNotifications = false;
       }
     }, 0);
-    
-    this.currentPassword = '';
-    this.newPassword = '';
-    this.newPasswordConfirm = '';
+
+    this.limpiarFormularioPassword();
   }
 
   closePassword(): void {
     this.showPasswordModal = false;
+    this.limpiarFormularioPassword();
     this.cdr.detectChanges();
+  }
+
+  private limpiarFormularioPassword(): void {
+    this.currentPassword = '';
+    this.newPassword = '';
+    this.newPasswordConfirm = '';
+    this.intentoPassword = false;
+    this.errorPasswordActual = '';
+    this.errorPasswordNuevo = '';
   }
 
   toggleTheme(): void {
     this.themeService.toggleTheme();
   }
 
+  /**
+   * Las mismas reglas que la pantalla de primer ingreso (8 caracteres, letras
+   * y números), revisadas aquí para no esperar al rechazo del backend. Lo que
+   * solo sabe el backend (la clave actual, los datos personales) vuelve y se
+   * muestra debajo de su campo.
+   */
   submitPasswordChange(): void {
-    if (!this.currentPassword || !this.newPassword || !this.newPasswordConfirm) {
-      this.toastService.warning('Aviso', 'Completa todos los campos.');
+    if (this.changingPassword) return;
+
+    this.intentoPassword = true;
+    this.errorPasswordActual = '';
+    this.errorPasswordNuevo = '';
+    if (this.faltaPasswordActual || this.passwordNuevaCorta || this.passwordDebil || this.passwordsNoCoinciden) {
       return;
     }
-    if (this.newPassword !== this.newPasswordConfirm) {
-      this.toastService.error('Error', 'Las nuevas contraseñas no coinciden.');
-      return;
-    }
+
     this.changingPassword = true;
     this.authService.cambiarPassword({
       password_actual: this.currentPassword,
       password_nuevo: this.newPassword,
-      password_nuevo_confirmation: this.newPasswordConfirm
+      password_nuevo_confirmation: this.newPasswordConfirm,
     }).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.toastService.success('Éxito', 'Contraseña actualizada correctamente.');
-          this.closePassword();
-        }
+      next: () => {
         this.changingPassword = false;
+        this.toastService.success('Contraseña cambiada', 'La próxima vez entras con la nueva.');
+        this.closePassword();
       },
       error: (err) => {
-        const msg = err.error?.errors?.password_actual?.[0] || err.error?.message || 'Error al cambiar contraseña.';
-        this.toastService.error('Error', msg);
         this.changingPassword = false;
-      }
+        this.errorPasswordActual = err?.error?.errors?.password_actual?.[0] ?? '';
+        this.errorPasswordNuevo = err?.error?.errors?.password_nuevo?.[0] ?? '';
+        if (!this.errorPasswordActual && !this.errorPasswordNuevo) {
+          this.toastService.error('No se cambió la contraseña', mensajeErrorApi(err, 'Intenta de nuevo en un momento.'));
+        }
+      },
     });
   }
 }
