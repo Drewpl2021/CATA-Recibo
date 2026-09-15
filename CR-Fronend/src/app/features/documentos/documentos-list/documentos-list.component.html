@@ -28,6 +28,7 @@
   (cambioPagina)="irAPagina($event)"
   (cambioBusqueda)="buscar($event)"
   [camposBusqueda]="['tipo']"
+  placeholderBusqueda="Buscar por tipo: boleta, contrato, hoja…"
   [acciones]="[]"
   [accionesPersonalizadas]="acciones"
   (accionPersonalizada)="alAccionar($event)"
@@ -82,23 +83,5 @@
   </div>
 </app-form-modal>
 
-<!-- Ver un PDF -->
-<app-form-modal
-  [(visible)]="modalVisor"
-  [titulo]="nombreDe(docEnVisor)"
-  ancho="960px"
-  [ocultarBotonesPorDefecto]="true"
-  (cancelar)="cerrarVisor()"
->
-  <div class="visor-documento">
-    @defer (when modalVisor) {
-      <app-visor-pdf [src]="urlVisor"></app-visor-pdf>
-    } @placeholder {
-      <p class="form-nota">Abriendo el documento…</p>
-    }
-  </div>
-  <div modalFooter class="acciones-modal">
-    <button type="button" class="btn-secondary" (click)="cerrarVisor()">Cerrar</button>
-    <button type="button" class="btn-primary" (click)="descargarDelVisor()">Descargar</button>
-  </div>
-</app-form-modal>
+<!-- Ver un PDF (el visor compartido con el expediente de RR.HH.) -->
+<app-visor-documento [(documento)]="docAbierto"></app-visor-documento>

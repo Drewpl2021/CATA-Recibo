@@ -381,6 +381,10 @@
   {
    "key": "cv_propio_id",
    "value": ""
+  },
+  {
+   "key": "expediente_empleado_id",
+   "value": ""
   }
  ],
  "item": [
@@ -4426,7 +4430,8 @@
           "exec": [
            "pm.test('Status 200', () => pm.response.to.have.status(200));",
            "const d = pm.response.json().data;",
-           "pm.test('Reconoce los 28 datos de la ficha', () => pm.expect(d.columnas.filter(c => c.estado === 'reconocida')).to.have.length(28));",
+           "pm.test('Reconoce los 27 datos de la ficha', () => pm.expect(d.columnas.filter(c => c.estado === 'reconocida')).to.have.length(27));",
+           "pm.test('«Rol» no se importa: todos entran como trabajadores', () => pm.expect(d.columnas.find(c => c.titulo === 'Rol').campo).to.be.null);",
            "pm.test('«N°» y «Estado» no se importan', () => {",
            "  pm.expect(d.columnas.find(c => c.titulo === 'N°').campo).to.be.null;",
            "  pm.expect(d.columnas.find(c => c.titulo === 'Estado').campo).to.be.null;",
@@ -10128,6 +10133,177 @@
        }
       }
      ]
+    },
+    {
+     "name": "08.1 - Documentos del personal (expedientes)",
+     "item": [
+      {
+       "name": "La lista del personal, con lo que le falta a cada uno",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const d = pm.response.json().data;",
+           "pm.test('Paginada', () => pm.expect(d.content.length).to.be.at.most(5));",
+           "pm.test('Trae los conteos de los chips', () => {",
+           "  ['trabajadores', 'sin_hoja_de_vida', 'boletas_por_firmar', 'contrato_por_vencer', 'de_baja'].forEach(k => pm.expect(d.resumen).to.have.property(k));",
+           "});",
+           "const f = d.content[0];",
+           "pm.test('Cada fila dice su contrato, sus documentos y su hoja de vida', () => {",
+           "  pm.expect(f).to.have.property('contrato_vigente');",
+           "  pm.expect(f).to.have.property('documentos_count');",
+           "  pm.expect(f).to.have.property('boletas_por_firmar');",
+           "  pm.expect(f).to.have.property('hoja_de_vida_fecha');",
+           "});",
+           "pm.collectionVariables.set('expediente_empleado_id', f.id);"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "url": "{{base_url}}/expedientes?page=0&size=5",
+        "description": "Antes «Documentos» abría Mis Documentos y RR.HH. veía archivos sin saber de quién eran."
+       }
+      },
+      {
+       "name": "Filtrar a quienes no tienen hoja de vida",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "pm.test('Ninguno tiene hoja de vida', () => pm.expect(pm.response.json().data.content.every(f => !f.hoja_de_vida_fecha)).to.be.true);"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "url": "{{base_url}}/expedientes?page=0&size=50&filtro=sin_hoja_de_vida",
+        "description": ""
+       }
+      },
+      {
+       "name": "Un filtro que no existe",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('422', () => pm.response.to.have.status(422));"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "url": "{{base_url}}/expedientes?page=0&size=5&filtro=cualquiera",
+        "description": ""
+       }
+      },
+      {
+       "name": "El expediente de un trabajador",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const d = pm.response.json().data;",
+           "pm.test('Dice de quién es', () => pm.expect(d.empleado.id).to.eql(pm.collectionVariables.get('expediente_empleado_id')));",
+           "pm.test('Ordenado en hoja de vida, contratos, boletas y otros', () => {",
+           "  ['hoja_de_vida', 'hojas_anteriores', 'contratos', 'boletas', 'otros'].forEach(k => pm.expect(d).to.have.property(k));",
+           "});",
+           "pm.test('Cada contrato trae sus documentos', () => d.contratos.forEach(c => pm.expect(c.documentos).to.be.an('array')));"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "url": "{{base_url}}/expedientes/{{expediente_empleado_id}}",
+        "description": ""
+       }
+      },
+      {
+       "name": "Un trabajador que no existe",
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('404', () => pm.response.to.have.status(404));"
+          ]
+         }
+        }
+       ],
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         }
+        ],
+        "url": "{{base_url}}/expedientes/00000000-0000-0000-0000-000000000000",
+        "description": ""
+       }
+      }
+     ],
+     "description": "El expediente de cada trabajador: hoja de vida, contratos con sus documentos, boletas y lo demás."
     }
    ]
   },
@@ -12016,6 +12192,36 @@
          }
         ],
         "url": "{{base_url}}/importacion-empleados/modelo",
+        "description": ""
+       },
+       "response": [],
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('403', () => pm.response.to.have.status(403));"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Un empleado no ve los expedientes de los demás",
+       "request": {
+        "method": "GET",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{empleado_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": "{{base_url}}/expedientes?page=0&size=5",
         "description": ""
        },
        "response": [],

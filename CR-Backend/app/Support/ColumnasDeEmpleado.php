@@ -36,7 +36,6 @@ final class ColumnasDeEmpleado
         'telefono'                     => ['titulo' => 'Teléfono', 'tipo' => 'digitos', 'alias' => ['telefono', 'celular', 'movil', 'telefono celular']],
         'direccion'                    => ['titulo' => 'Dirección', 'tipo' => 'texto', 'alias' => ['direccion', 'domicilio']],
         'email'                        => ['titulo' => 'Correo', 'tipo' => 'correo', 'alias' => ['correo', 'email', 'correo electronico', 'e mail']],
-        'rol'                          => ['titulo' => 'Rol', 'tipo' => 'catalogo', 'alias' => ['rol', 'perfil']],
         'area'                         => ['titulo' => 'Área', 'tipo' => 'catalogo', 'alias' => ['area']],
         'cargo'                        => ['titulo' => 'Cargo', 'tipo' => 'catalogo', 'alias' => ['cargo', 'puesto']],
         'sede'                         => ['titulo' => 'Sede', 'tipo' => 'catalogo', 'alias' => ['sede', 'local']],
@@ -67,10 +66,9 @@ final class ColumnasDeEmpleado
 
     /**
      * Lo que NO se cambia desde el Excel a quien ya existe: el contrato se
-     * renueva desde Contratos (que cierra el anterior y deja historial) y el
-     * rol desde Usuarios (dar permisos no es un dato más de la ficha).
+     * renueva desde Contratos, que cierra el anterior y deja historial.
      */
-    public const NO_SE_ACTUALIZAN = ['tipo_contrato', 'fecha_fin_contrato', 'fecha_ingreso', 'rol'];
+    public const NO_SE_ACTUALIZAN = ['tipo_contrato', 'fecha_fin_contrato', 'fecha_ingreso'];
 
     /** Títulos que acompañan a la ficha pero no se importan. */
     private const INFORMATIVAS = ['n', 'no', 'nro', 'numero', 'item', 'estado', 'edad'];
@@ -160,6 +158,9 @@ final class ColumnasDeEmpleado
                 $columna['motivo'] = 'La columna no tiene título: se ignora.';
             } elseif (str_contains($normal, 'apellido') && str_contains($normal, 'nombre')) {
                 $columna['motivo'] = 'Los apellidos y los nombres tienen que venir en dos columnas separadas.';
+            } elseif (in_array($normal, ['rol', 'perfil'], true)) {
+                // La descarga de empleados trae esta columna; se ignora sin ruido.
+                $columna['motivo'] = 'El rol no se importa: todos entran como «empleado». Se cambia desde Usuarios.';
             } else {
                 [$campo, $origen] = self::campoDe($normal, (string) $titulo);
 
@@ -213,18 +214,16 @@ final class ColumnasDeEmpleado
 
     /**
      * Los valores de las listas desplegables del Excel modelo: lo que tiene
-     * que existir (área, cargo, sede, rol) y lo que tiene valores fijos,
-     * escrito tal como lo acepta leer(). RR.HH. no ve el rol admin, porque
-     * no lo puede dar.
+     * que existir (área, cargo, sede) y lo que tiene valores fijos, escrito
+     * tal como lo acepta leer().
      *
      * @return array<string, string[]> campo => valores, en el orden de CAMPOS
      */
-    public static function valoresDeLista(bool $esAdmin): array
+    public static function valoresDeLista(): array
     {
         $nombres = fn (string $modelo) => $modelo::query()->orderBy('nombre')->pluck('nombre')->all();
 
         return [
-            'rol'               => array_values(array_filter($nombres(Rol::class), fn ($rol) => $esAdmin || $rol !== 'admin')),
             'area'              => $nombres(Area::class),
             'cargo'             => $nombres(Cargo::class),
             'sede'              => $nombres(Sede::class),

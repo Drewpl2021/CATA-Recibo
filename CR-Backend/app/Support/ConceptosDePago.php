@@ -35,6 +35,14 @@ final class ConceptosDePago
      */
     public const ASIGNACION_FAMILIAR = 'Asignación Familiar';
 
+    /**
+     * Las dos líneas de julio y diciembre. El código las nombra porque su
+     * monto no sale del catálogo: depende de los meses del semestre que la
+     * persona trabajó, igual que la asignación familiar depende de su ficha.
+     */
+    public const GRATIFICACION        = 'Gratificaciones Fiestas Patrias - Ley 29351 y 30334';
+    public const BONIF_EXTRAORDINARIA = 'Bonif. Extraord. Temporal - Ley 29351 y 30334';
+
     /** El sueldo del mes: sale de la ficha del trabajador, nunca es una línea. */
     public const REMUNERACION_BASICA = 'Remuneración Básica';
 

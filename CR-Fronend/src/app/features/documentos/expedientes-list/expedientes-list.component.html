@@ -1,0 +1,69 @@
+<app-page-header
+  icono="folder"
+  titulo="Documentos del personal"
+  subtitulo="El expediente de cada trabajador: su hoja de vida, sus contratos y sus boletas."
+></app-page-header>
+
+<app-data-table
+  entidad="este trabajador"
+  [columnas]="columnas"
+  [datos]="filas"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  [filasPorPagina]="TAMANO_PAGINA"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['nombre', 'apellido', 'dni', 'cargo.nombre', 'area.nombre']"
+  [acciones]="[]"
+  [accionesPersonalizadas]="acciones"
+  (accionPersonalizada)="abrir($event.fila)"
+  [mensajeVacio]="mensajeVacio"
+>
+  <div tableActions class="chips-filtro">
+    <button type="button" *ngFor="let c of chips" class="chip-filtro"
+      [class.chip-filtro--activo]="filtro === c.valor" (click)="filtrar(c.valor)">
+      <app-icon [icono]="c.icono" [tamano]="15"></app-icon>
+      {{ c.etiqueta }}
+      <span class="chip-filtro__cuenta">{{ c.cuenta(resumen) }}</span>
+    </button>
+  </div>
+
+  <ng-template appCelda="apellido" let-f>
+    <strong>{{ f.apellido }}, {{ f.nombre }}</strong>
+    <div class="form-ayuda">
+      DNI {{ f.dni }}<ng-container *ngIf="f.cargo">, {{ f.cargo.nombre }}</ng-container>
+    </div>
+  </ng-template>
+
+  <ng-template appCelda="hoja_de_vida_fecha" let-f>
+    <ng-container *ngIf="f.hoja_de_vida_fecha; else faltaHoja">
+      <span class="status-badge status-badge-success">La tiene</span>
+      <div class="form-ayuda">Subida el {{ fecha(f.hoja_de_vida_fecha) }}</div>
+    </ng-container>
+    <ng-template #faltaHoja>
+      <span class="status-badge status-badge-warning">Falta</span>
+    </ng-template>
+  </ng-template>
+
+  <ng-template appCelda="contrato_vigente" let-f>
+    <ng-container *ngIf="f.contrato_vigente as contrato; else sinContrato">
+      <strong>{{ tipoContrato(contrato.tipo_contrato) }}</strong>
+      <div class="form-ayuda" [class.texto-aviso]="porVencer(contrato)">{{ vigencia(contrato) }}</div>
+    </ng-container>
+    <ng-template #sinContrato>
+      <span class="form-ayuda">Sin contrato vigente</span>
+    </ng-template>
+  </ng-template>
+
+  <ng-template appCelda="documentos_count" let-f>
+    {{ f.documentos_count }}
+  </ng-template>
+
+  <ng-template appCelda="boletas_por_firmar" let-f>
+    <span class="status-badge" [ngClass]="f.boletas_por_firmar ? 'status-badge-warning' : 'status-badge-success'">
+      {{ f.boletas_por_firmar ? f.boletas_por_firmar + ' por firmar' : 'Al día' }}
+    </span>
+  </ng-template>
+</app-data-table>

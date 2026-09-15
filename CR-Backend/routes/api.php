@@ -177,6 +177,10 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('planilla-corridas/{id}/generar',    [PlanillaCorridaController::class, 'generar']);
         Route::post('planilla-corridas/{id}/mover',      [PlanillaCorridaController::class, 'mover']);
         Route::apiResource('planilla-corridas', PlanillaCorridaController::class);
+        // Documentos del personal: el expediente de cada trabajador, ordenado
+        // por persona (hoja de vida, contratos, boletas). Ver ExpedienteController.
+        Route::get('expedientes',              [\App\Http\Controllers\ExpedienteController::class, 'index']);
+        Route::get('expedientes/{empleadoId}', [\App\Http\Controllers\ExpedienteController::class, 'show']);
         // Subir un archivo que llega de fuera (hoja de vida, contrato
         // escaneado). Va ANTES del apiResource: si no, "subir" entraría por
         // show({id}) y devolvería un 404 buscando un documento con ese id.

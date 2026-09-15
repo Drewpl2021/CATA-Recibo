@@ -96,6 +96,26 @@ trait CalculaConceptosPlanilla
         return $empleado->tiene_hijos ? $this->asignacionFamiliarMonto : 0.00;
     }
 
+    /**
+     * La Asignación Familiar que se imprime en la boleta: la de la planilla.
+     *
+     * La boleta la muestra en su propia fila, y al mismo tiempo recorría los
+     * conceptos de ingreso —donde esa misma línea ya estaba—, así que la
+     * sumaba DOS VECES: el PDF decía S/ 2,290.31 donde la planilla tenía
+     * S/ 2,177.31. Un documento de pago no puede decir una cifra distinta de
+     * la que se paga.
+     *
+     * Se lee de la línea de la planilla y no de `tiene_hijos` para que, si
+     * RR.HH. la corrige a mano, la boleta enseñe lo corregido. Sin línea son
+     * 0: la boleta dice lo que hay en la planilla, ni más ni menos.
+     */
+    protected function asignacionFamiliarDeLaPlanilla($planilla): float
+    {
+        return (float) $planilla->payrollDetalles()
+            ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', \App\Support\ConceptosDePago::ASIGNACION_FAMILIAR))
+            ->sum('monto_calculado');
+    }
+
     private float $bonificacionExtraordinariaEssalud = 9.00;
 
     protected function calcularGratificacion($empleado, $sueldoBase, $mes, $anio): array
@@ -330,7 +350,16 @@ trait CalculaConceptosPlanilla
             })
             ->whereHas('paymentConcept', fn ($q) => $q
                 ->where('tipo', 'bonificacion')
-                ->where('nombre', '!=', \App\Support\ConceptosDePago::ASIGNACION_FAMILIAR))
+                // Fuera la asignación familiar (es remuneración ordinaria y
+                // quien llama ya la suma) y fuera las dos líneas de
+                // gratificación: la proyección de arriba calcula las de julio
+                // Y diciembre del año entero por fórmula, así que contar
+                // además su línea inflaría la retención.
+                ->whereNotIn('nombre', [
+                    \App\Support\ConceptosDePago::ASIGNACION_FAMILIAR,
+                    \App\Support\ConceptosDePago::GRATIFICACION,
+                    \App\Support\ConceptosDePago::BONIF_EXTRAORDINARIA,
+                ]))
             ->sum('monto_calculado');
     }
 
@@ -420,6 +449,35 @@ trait CalculaConceptosPlanilla
                 $planilla,
                 \App\Support\ConceptosDePago::ASIGNACION_FAMILIAR,
                 $asignacionFamiliar
+            );
+        }
+
+        /*
+         * Julio y diciembre: la gratificación y su bonificación extraordinaria,
+         * también como líneas de la planilla.
+         *
+         * Antes solo existían dentro del PDF: la boleta las calculaba y las
+         * sumaba, pero la planilla no las tenía. El documento de pago decía
+         * S/ 5,243.48 donde el sistema guardaba S/ 2,177.31, y ni el panel, ni
+         * las corridas, ni el PLAME veían ese dinero. Ahora se crean acá, igual
+         * que la asignación familiar, y la boleta solo imprime lo que hay.
+         *
+         * No entran en $baseAfecta: están exoneradas de pensión y EsSalud
+         * (Ley 29351/30334), y por eso mismo existe la bonificación del 9%.
+         */
+        $gratificacion = $this->calcularGratificacion($empleado, $sueldoBase, $planilla->mes, $planilla->anio);
+        if ($gratificacion['aplica']) {
+            $this->crearDetalleAutomatico(
+                $planilla,
+                \App\Support\ConceptosDePago::GRATIFICACION,
+                $gratificacion['monto_base'] + $gratificacion['asignacion_familiar'],
+                \App\Support\Meses::nombre((int) $planilla->mes) . ", {$gratificacion['meses_trabajados']}/6 meses"
+            );
+
+            $this->crearDetalleAutomatico(
+                $planilla,
+                \App\Support\ConceptosDePago::BONIF_EXTRAORDINARIA,
+                $gratificacion['bonificacion_extraordinaria']
             );
         }
 

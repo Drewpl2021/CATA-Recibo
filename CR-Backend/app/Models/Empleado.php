@@ -88,6 +88,12 @@ class Empleado extends Model
         return $this->hasMany(Contrato::class);
     }
 
+    /** Todo lo que hay en su expediente: boletas, hoja de vida, contratos firmados… */
+    public function documentos()
+    {
+        return $this->hasMany(Documento::class);
+    }
+
     /**
      * El contrato que manda hoy.
      *

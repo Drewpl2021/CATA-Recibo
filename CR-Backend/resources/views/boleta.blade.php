@@ -165,6 +165,14 @@
             color: #FFFFFF;
         }
 
+        /* El total va sin título encima —lo decía dos veces: "Total Neto a
+           Pagar" y, debajo, "TOTAL NETO"—, así que la franja necesita su
+           propio borde superior: `.seccion table` lo quita porque en las
+           demás secciones hace de tapa el título. */
+        .seccion--total table {
+            border-top: 1px solid #1B4282;
+        }
+
         .fila-subtotal td {
             background: #E7EEF9;
             font-weight: bold;
@@ -270,9 +278,12 @@
        edición directa de la planilla; ahora todo lo que mueve dinero es un
        concepto de pago con nombre, así que esas dos columnas quedan siempre
        en cero y sumarlas solo escondía de dónde salía la plata. */
+    /* La gratificación ya no se suma aparte: en julio y diciembre es una línea
+       de la planilla (la crea CalculaConceptosPlanilla), así que entra por
+       $totalConceptosIngreso. Sumarla además dejaba la boleta diciendo más
+       de lo que la planilla paga. */
     $totalIngresos = (float)$planilla->sueldo_base
         + $asignacionFamiliar
-        + $gratificacion['total']
         + $totalConceptosIngreso;
 
     $totalConceptosDescuento  = $conceptosDescuento->sum('monto_calculado');
@@ -427,16 +438,6 @@
                     <td class="monto">S/ {{ number_format($concepto->monto_calculado, 2) }}</td>
                 </tr>
                 @endforeach
-                @if ($gratificacion['aplica'])
-                <tr>
-                    <td class="label">Gratificación ({{ $mes_nombre }}) — {{ $gratificacion['meses_trabajados'] }}/6 meses</td>
-                    <td class="monto">S/ {{ number_format($gratificacion['monto_base'] + $gratificacion['asignacion_familiar'], 2) }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Bonificación Extraordinaria (Ley 30334, 9%)</td>
-                    <td class="monto">S/ {{ number_format($gratificacion['bonificacion_extraordinaria'], 2) }}</td>
-                </tr>
-                @endif
                 <tr class="fila-subtotal">
                     <td class="label">Total Ingresos</td>
                     <td class="monto">S/ {{ number_format($totalIngresos, 2) }}</td>
@@ -521,11 +522,10 @@
         </div>
     </div>
 
-    <div class="seccion">
-        <div class="seccion-titulo">Total Neto a Pagar</div>
+    <div class="seccion seccion--total">
         <table>
             <tr class="fila-total">
-                <td class="label" style="color:white;">TOTAL NETO</td>
+                <td class="label">TOTAL NETO A PAGAR</td>
                 <td class="monto">S/ {{ number_format($totalNeto, 2) }}</td>
             </tr>
         </table>

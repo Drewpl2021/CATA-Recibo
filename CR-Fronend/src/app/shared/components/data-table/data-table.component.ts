@@ -11,6 +11,47 @@ import { PistaDirective } from '../../directives/pista.directive';
 export type AccionFila = 'ver' | 'editar' | 'eliminar';
 
 /**
+ * Cómo se llama, para quien busca, cada campo por el que se puede buscar.
+ *
+ * Con esto el buscador dice "Buscar por nombre, DNI o cargo…" en vez de un
+ * "Buscar..." suelto que obliga a probar a ver qué encuentra. Nombre y
+ * apellido caen en la misma palabra a propósito: quien busca escribe el
+ * nombre de la persona, no distingue entre las dos columnas.
+ */
+const NOMBRE_DEL_CAMPO: Record<string, string> = {
+  nombre: 'nombre',
+  apellido: 'nombre',
+  name: 'nombre',
+  dni: 'DNI',
+  'empleado.nombre': 'trabajador',
+  'empleado.apellido': 'trabajador',
+  'empleado.dni': 'DNI',
+  'cargo.nombre': 'cargo',
+  'area.nombre': 'área',
+  'usuario.email': 'correo',
+  'paymentConcept.nombre': 'concepto',
+  usuario_nombre: 'usuario',
+  email: 'correo',
+  descripcion: 'descripción',
+  direccion: 'dirección',
+  telefono: 'teléfono',
+  observaciones: 'observaciones',
+  motivo: 'motivo',
+  ruta: 'ruta',
+  titulo: 'título',
+  mensaje: 'mensaje',
+  tipo: 'tipo',
+  tipo_contrato: 'tipo de contrato',
+};
+
+/** "cargo.nombre" → "cargo"; "fecha_ingreso" → "fecha ingreso". */
+function nombreDelCampo(campo: string): string {
+  if (NOMBRE_DEL_CAMPO[campo]) return NOMBRE_DEL_CAMPO[campo];
+  const ultimo = campo.split('.').pop() ?? campo;
+  return NOMBRE_DEL_CAMPO[ultimo] ?? ultimo.replace(/_/g, ' ');
+}
+
+/**
  * Tabla reciclable: cualquier pantalla de lista (Áreas, Cargos, Sedes,
  * Roles, Empleados, Periodos, ...) le pasa sus columnas + datos y listo —
  * trae buscador, paginado y columna de acciones ya resueltos, en vez de
@@ -41,6 +82,11 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
   @Input() mensajeVacio = 'No hay registros para mostrar.';
   @Input() filasPorPagina = 10;
   @Input() mostrarBuscador = true;
+  /**
+   * Qué dice el buscador. Vacío lo arma solo con `camposBusqueda`; se pone a
+   * mano cuando el nombre del campo no basta ("tipo" en Mis Documentos).
+   */
+  @Input() placeholderBusqueda = '';
   /** Botones extra de la pantalla, además de ver/editar/eliminar. */
   @Input() accionesPersonalizadas: AccionPersonalizada<T>[] = [];
 
@@ -56,6 +102,21 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
 
   get pistaVer(): string {
     return this.entidad ? `Ver ${this.entidad}` : 'Ver el detalle';
+  }
+
+  /** "Buscar por nombre, DNI o cargo…": por dónde busca, con sus palabras. */
+  get textoBuscador(): string {
+    if (this.placeholderBusqueda) return this.placeholderBusqueda;
+
+    const nombres = [...new Set(this.camposBusqueda.map(nombreDelCampo))];
+    if (!nombres.length) return 'Buscar…';
+
+    const ultimo = nombres.pop()!;
+    if (!nombres.length) return `Buscar por ${ultimo}…`;
+
+    // "nombre u observaciones", no "nombre o observaciones".
+    const o = /^h?o/i.test(ultimo) ? 'u' : 'o';
+    return `Buscar por ${nombres.join(', ')} ${o} ${ultimo}…`;
   }
 
   get pistaEditar(): string {

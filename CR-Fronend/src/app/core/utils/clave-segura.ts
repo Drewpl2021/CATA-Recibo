@@ -12,8 +12,10 @@ export function claveConLetrasYNumeros(control: AbstractControl): ValidationErro
   const valor = String(control.value ?? '');
   if (!valor) return null;
 
-  const tieneLetra = /\p{L}/u.test(valor);
-  const tieneNumero = /\d/.test(valor);
+  return tieneLetrasYNumeros(valor) ? null : { claveDebil: true };
+}
 
-  return tieneLetra && tieneNumero ? null : { claveDebil: true };
+/** La misma regla, para formularios sin FormGroup (el modal del menú del usuario). */
+export function tieneLetrasYNumeros(valor: string): boolean {
+  return /\p{L}/u.test(valor) && /\d/.test(valor);
 }

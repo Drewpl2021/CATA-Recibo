@@ -23,7 +23,7 @@
   [pagina]="pagina"
   (cambioPagina)="irAPagina($event)"
   (cambioBusqueda)="buscar($event)"
-  [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'observaciones']"
+  [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'empleado.dni', 'tipo_contrato']"
   [acciones]="['editar', 'eliminar']"
   [accionesPersonalizadas]="accionesExtra"
   mensajeVacio="No hay contratos que coincidan con el filtro."

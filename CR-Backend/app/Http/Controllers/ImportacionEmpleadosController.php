@@ -40,11 +40,11 @@ class ImportacionEmpleadosController extends Controller
 
     /**
      * GET /importacion-empleados/modelo — el Excel vacío para llenar, con
-     * listas desplegables e instrucciones. A RR.HH. no le ofrece el rol admin.
+     * listas desplegables e instrucciones.
      */
-    public function modelo(Request $request)
+    public function modelo()
     {
-        return ModelosDeImportacion::empleados($request->user()->rol?->nombre === 'admin')
+        return ModelosDeImportacion::empleados()
             ->descargar('Modelo de empleados.xlsx');
     }
 
@@ -235,8 +235,9 @@ class ImportacionEmpleadosController extends Controller
 
         // ── Lo que ya hay en el sistema ──────────────────────────
         $catalogos   = ColumnasDeEmpleado::catalogos();
+        // Por acá siempre entra un trabajador: lo que lo define es su área, su
+        // cargo y su sede. El rol (RR.HH., administración) se da desde Usuarios.
         $rolEmpleado = $catalogos['rol']['empleado']['id'] ?? null;
-        $esAdmin     = $request->user()->rol?->nombre === 'admin';
 
         $existentes = Empleado::with('usuario:id,empleado_id,email')->get()
             ->keyBy(fn (Empleado $e) => LectorDeCeldas::claveDni($e->dni));
@@ -309,7 +310,7 @@ class ImportacionEmpleadosController extends Controller
             $tieneCv   = $cvs->contains($clave);
 
             if (! $existente) {
-                $this->filaDeAlta($r, $numero, $clave, $valores, $catalogos, $rolEmpleado, $esAdmin, $reglasAlta, $atributos, $correos, $vistosCorreo, $tieneCv);
+                $this->filaDeAlta($r, $numero, $clave, $valores, $catalogos, $rolEmpleado, $reglasAlta, $atributos, $correos, $vistosCorreo, $tieneCv);
             } else {
                 $this->filaDeCambio($r, $numero, $clave, $valores, $existente, $catalogos, $reglasCambio, $atributos, $correos, $vistosCorreo, $bloqueadas, $tieneCv);
             }
@@ -319,7 +320,7 @@ class ImportacionEmpleadosController extends Controller
         if ($bloqueadas) {
             $nombres = implode(', ', array_map(fn ($c) => '«' . ColumnasDeEmpleado::CAMPOS[$c]['titulo'] . '»', array_keys($bloqueadas)));
             $r['advertencias'][] = $this->aviso(null, null, null,
-                "{$nombres} no se cambian a quien ya existe: el contrato se renueva desde Contratos y el rol se cambia desde Usuarios. Esas celdas se ignoran.");
+                "{$nombres} no se cambian a quien ya existe: el contrato se renueva desde Contratos. Esas celdas se ignoran.");
         }
         if (collect($r['filas'])->contains('modo', 'alta')) {
             $r['advertencias'][] = $this->aviso(null, null, null,
@@ -343,7 +344,7 @@ class ImportacionEmpleadosController extends Controller
 
     /** Un trabajador nuevo: tiene que traer todo lo que pide el alta. */
     private function filaDeAlta(array &$r, int $numero, string $dni, array $valores, array $catalogos, ?string $rolEmpleado,
-        bool $esAdmin, array $reglas, array $atributos, array $correos, array &$vistosCorreo, bool $tieneCv): void
+        array $reglas, array $atributos, array $correos, array &$vistosCorreo, bool $tieneCv): void
     {
         $faltan = array_values(array_filter(ColumnasDeEmpleado::REQUERIDOS_ALTA, fn ($c) => ! array_key_exists($c, $valores)));
         if ($faltan) {
@@ -356,18 +357,14 @@ class ImportacionEmpleadosController extends Controller
         foreach ($valores as $campo => $valor) {
             $datos[ColumnasDeEmpleado::atributoDe($campo)] = $valor;
         }
-        // Sin columna de Rol, entra como lo que es casi todo el personal.
-        $datos['rol_id'] = $datos['rol_id'] ?? $rolEmpleado;
+        // El Excel no trae rol: por esta puerta todos entran como trabajadores.
+        $datos['rol_id'] = $rolEmpleado;
         $datos = AltaDeEmpleado::limpiarAfp($datos);
 
         $problemas = [];
-        if (($catalogos['porId'][$datos['rol_id']] ?? '') === 'admin' && ! $esAdmin) {
-            $problemas[] = 'Solo un Administrador puede dar el rol de Administrador.';
-        }
-
         $validador = Validator::make($datos, $reglas, AltaDeEmpleado::mensajes(), $atributos);
         if ($validador->fails()) {
-            $problemas = array_merge($problemas, $validador->errors()->all());
+            $problemas = $validador->errors()->all();
         }
 
         $correo = mb_strtolower((string) $datos['email']);

@@ -1,0 +1,19 @@
+<app-form-modal
+  [visible]="visible"
+  [titulo]="nombreDocumento(documento)"
+  ancho="960px"
+  [ocultarBotonesPorDefecto]="true"
+  (cancelar)="cerrar()"
+>
+  <div class="visor-documento">
+    @defer (when visible) {
+      <app-visor-pdf [src]="url"></app-visor-pdf>
+    } @placeholder {
+      <p class="form-nota">Abriendo el documento…</p>
+    }
+  </div>
+  <div modalFooter class="acciones-modal">
+    <button type="button" class="btn-secondary" (click)="cerrar()">Cerrar</button>
+    <button type="button" class="btn-primary" (click)="descargar()">Descargar</button>
+  </div>
+</app-form-modal>

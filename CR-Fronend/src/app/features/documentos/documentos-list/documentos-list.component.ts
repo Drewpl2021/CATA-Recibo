@@ -3,46 +3,40 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DocumentoService, MisDocumentosService, ToastService } from '../../../core/services';
 import { Documento } from '../../../core/models';
-import { mensajeErrorApi } from '../../../core/utils';
+import {
+  documentoSeFirma,
+  esPdf,
+  estadoFirmaLegible,
+  guardarArchivo,
+  mensajeErrorApi,
+  nombreArchivoDocumento,
+  nombreDocumento,
+  severidadFirma,
+} from '../../../core/utils';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { SelectorArchivoComponent } from '../../../shared/components/selector-archivo/selector-archivo.component';
-import { VisorPdfComponent } from '../../../shared/components/visor-pdf/visor-pdf.component';
-import { nombreMes } from '../../../shared/constants';
-
-/** Los que no se firman, igual que ExpedienteDigital::SIN_FIRMA en el backend. */
-const SIN_FIRMA = ['hoja_de_vida'];
-
-const NOMBRE_TIPO: Record<string, string> = {
-  boleta: 'Boleta',
-  contrato: 'Contrato',
-  cts: 'CTS',
-  vacaciones_truncas: 'Vacaciones truncas',
-  comprobante_transferencia: 'Comprobante de transferencia',
-  hoja_de_vida: 'Hoja de vida',
-  otro: 'Documento',
-};
+import { VisorDocumentoComponent } from '../../../shared/components/visor-documento/visor-documento.component';
 
 /**
  * Mis Documentos: lo que el trabajador tiene a su nombre.
  *
  * La lista la corta y la cuenta el backend (MisDocumentosController). Acá
  * además el trabajador sube su propia hoja de vida, que antes solo podía
- * cargar RR.HH.
+ * cargar RR.HH. Lo que ve RR.HH. de todo el personal es otra pantalla:
+ * Documentos del personal (expedientes-list).
  *
- * Todo con los componentes compartidos: la tabla, el modal de formulario, el
- * selector de archivos y el visor de PDF. El modal de firmar estaba hecho a
- * mano con estilos sueltos y se veía distinto al resto —el título pegado al
- * borde, el campo sin márgenes—.
+ * Los nombres de los documentos y el visor son los mismos que usa el
+ * expediente de RR.HH. (core/utils/documentos y app-visor-documento).
  */
 @Component({
   selector: 'app-documentos-list',
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorArchivoComponent, VisorPdfComponent,
+    PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorArchivoComponent, VisorDocumentoComponent,
   ],
   templateUrl: './documentos-list.component.html',
 })
@@ -73,11 +67,10 @@ export class DocumentosListComponent implements OnInit {
   cv: File[] = [];
   subiendoCv = false;
 
-  // ── Ver un PDF ──
-  modalVisor = false;
-  docEnVisor: Documento | null = null;
-  urlVisor: string | null = null;
-  private blobVisor: Blob | null = null;
+  /** El documento abierto en el visor. */
+  docAbierto: Documento | null = null;
+
+  readonly nombreDe = nombreDocumento;
 
   /** Los números de la cabecera van sobre TODOS sus documentos, no la página. */
   get cifras(): CifraCabecera[] {
@@ -89,12 +82,12 @@ export class DocumentosListComponent implements OnInit {
   }
 
   columnas: ColumnaTabla<Documento>[] = [
-    { campo: 'tipo', header: 'Documento', ancho: '38%', formatear: (_v, doc) => this.nombreDe(doc) },
+    { campo: 'tipo', header: 'Documento', ancho: '38%', formatear: (_v, doc) => nombreDocumento(doc) },
     { campo: 'created_at', header: 'Fecha', tipo: 'fecha', ancho: '18%' },
     {
       campo: 'estado_firma', header: 'Estado', tipo: 'badge', ancho: '18%',
-      formatear: (v, doc) => this.estadoLegible(v, doc),
-      badgeSeveridad: (v, doc) => (!this.seFirma(doc) ? 'info' : v === 'firmado' ? 'success' : v === 'visto' ? 'info' : 'warning'),
+      formatear: (_v, doc) => estadoFirmaLegible(doc),
+      badgeSeveridad: (_v, doc) => severidadFirma(doc),
     },
   ];
 
@@ -104,15 +97,15 @@ export class DocumentosListComponent implements OnInit {
    * ve y se descarga, pero no se firma.
    */
   acciones: AccionPersonalizada<Documento>[] = [
-    { id: 'ver', titulo: 'Ver este documento', icono: 'description', visible: (doc) => this.esPdf(doc) },
+    { id: 'ver', titulo: 'Ver este documento', icono: 'description', visible: (doc) => esPdf(doc) },
     { id: 'descargar', titulo: 'Descargar este documento', icono: 'folder_open' },
     {
       id: 'visto', titulo: 'Marcar que ya lo viste', icono: 'check_circle',
-      visible: (doc) => this.seFirma(doc) && doc.estado_firma === 'pendiente',
+      visible: (doc) => documentoSeFirma(doc) && doc.estado_firma === 'pendiente',
     },
     {
       id: 'firmar', titulo: 'Firmar este documento', icono: 'signature', severidad: 'success',
-      visible: (doc) => this.seFirma(doc) && doc.estado_firma !== 'firmado',
+      visible: (doc) => documentoSeFirma(doc) && doc.estado_firma !== 'firmado',
     },
   ];
 
@@ -153,86 +146,17 @@ export class DocumentosListComponent implements OnInit {
   }
 
   alAccionar(evento: { accion: string; fila: Documento }): void {
-    if (evento.accion === 'ver') this.ver(evento.fila);
+    if (evento.accion === 'ver') this.docAbierto = evento.fila;
     if (evento.accion === 'descargar') this.descargar(evento.fila);
     if (evento.accion === 'visto') this.marcarVisto(evento.fila);
     if (evento.accion === 'firmar') this.abrirFirmar(evento.fila);
   }
 
-  // ── Cómo se nombra cada documento ──
-
-  /** "Boleta de Agosto 2026", "Hoja de vida", "Contrato". */
-  nombreDe(doc: Documento | null): string {
-    if (!doc) return '';
-    const tipo = NOMBRE_TIPO[doc.tipo] ?? 'Documento';
-    return doc.planilla ? `${tipo} de ${nombreMes(doc.planilla.mes)} ${doc.planilla.anio}` : tipo;
-  }
-
-  seFirma(doc: Documento): boolean {
-    return !SIN_FIRMA.includes(doc.tipo);
-  }
-
-  estadoLegible(estado: string, doc: Documento): string {
-    if (!this.seFirma(doc)) return 'Guardada';
-    if (estado === 'firmado') return 'Firmado';
-    if (estado === 'visto') return 'Visto';
-    return 'Pendiente';
-  }
-
-  private esPdf(doc: Documento): boolean {
-    return (doc.archivo ?? '').toLowerCase().endsWith('.pdf');
-  }
-
-  private extension(doc: Documento): string {
-    const nombre = doc.archivo ?? '';
-    return nombre.includes('.') ? nombre.slice(nombre.lastIndexOf('.') + 1).toLowerCase() : 'pdf';
-  }
-
-  // ── Ver y descargar ──
-
-  ver(doc: Documento): void {
-    this.documentoService.descargar(doc.id).subscribe({
-      next: (blob) => {
-        this.cerrarVisor();
-        this.blobVisor = blob;
-        this.urlVisor = URL.createObjectURL(blob);
-        this.docEnVisor = doc;
-        this.modalVisor = true;
-      },
-      error: (err) => this.toastService.error('No se pudo abrir', mensajeErrorApi(err, 'Intenta descargarlo.')),
-    });
-  }
-
-  cerrarVisor(): void {
-    this.modalVisor = false;
-    if (this.urlVisor) URL.revokeObjectURL(this.urlVisor);
-    this.urlVisor = null;
-    this.blobVisor = null;
-    this.docEnVisor = null;
-  }
-
-  descargarDelVisor(): void {
-    if (this.blobVisor && this.docEnVisor) this.guardarComo(this.blobVisor, this.docEnVisor);
-  }
-
   descargar(doc: Documento): void {
     this.documentoService.descargar(doc.id).subscribe({
-      next: (blob) => this.guardarComo(blob, doc),
+      next: (blob) => guardarArchivo(blob, nombreArchivoDocumento(doc)),
       error: (err) => this.toastService.error('No se pudo descargar', mensajeErrorApi(err, 'Intenta de nuevo.')),
     });
-  }
-
-  /**
-   * El nombre del archivo se arma acá: el backend no expone la cabecera
-   * Content-Disposition, así que el navegador no la puede leer.
-   */
-  private guardarComo(blob: Blob, doc: Documento): void {
-    const url = URL.createObjectURL(blob);
-    const enlace = document.createElement('a');
-    enlace.href = url;
-    enlace.download = `${this.nombreDe(doc)}.${this.extension(doc)}`;
-    enlace.click();
-    URL.revokeObjectURL(url);
   }
 
   // ── Visto y firma ──
@@ -269,7 +193,7 @@ export class DocumentosListComponent implements OnInit {
       next: (res) => {
         this.firmando = false;
         if (res.success) {
-          this.toastService.success('Firma registrada', `${this.nombreDe(this.docAFirmar)} quedó firmado.`);
+          this.toastService.success('Firma registrada', `${nombreDocumento(this.docAFirmar)} quedó firmado.`);
           this.cerrarFirmar();
           this.cargar();
         }

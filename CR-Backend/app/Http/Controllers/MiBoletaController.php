@@ -51,18 +51,24 @@ class MiBoletaController extends Controller
 
         // Base afecta a AFP/ONP/ESSALUD = sueldo_base + asignación familiar
         // (misma regla que BoletaController — confirmado contra boleta física)
-        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
+        $asignacionFamiliar = $this->asignacionFamiliarDeLaPlanilla($planilla);
         $baseAfecta         = (float) $planilla->sueldo_base + $asignacionFamiliar;
 
         $pension            = $this->calcularDescuentoPension($empleado, $baseAfecta);
-        $gratificacion      = $this->calcularGratificacion($empleado, $planilla->sueldo_base, $mes, $anio);
+        // La gratificación es una línea de la planilla (misma regla que
+        // BoletaController): sale sola entre los conceptos de ingreso.
         $essalud            = $this->calcularEssalud($baseAfecta);
         $renta5ta           = $this->generarYPersistirRenta5ta($planilla, $empleado);
 
         // Conceptos de esta planilla (PaymentConcept vía PayrollDetalle), separados por tipo.
         // Se leen DESPUÉS de generarYPersistirRenta5ta() para incluir su resultado más reciente.
         $conceptosPlanilla  = $planilla->payrollDetalles()->with('paymentConcept')->get();
-        $conceptosIngreso   = $conceptosPlanilla->filter(fn ($d) => $d->paymentConcept?->tipo === 'bonificacion')->values();
+        // Sin la Asignación Familiar: la boleta la imprime en su propia fila
+        // (misma regla que BoletaController, o se sumaría dos veces).
+        $conceptosIngreso   = $conceptosPlanilla
+            ->filter(fn ($d) => $d->paymentConcept?->tipo === 'bonificacion'
+                && $d->paymentConcept?->nombre !== ConceptosDePago::ASIGNACION_FAMILIAR)
+            ->values();
         $conceptosDescuento = $conceptosPlanilla
             ->filter(fn ($d) => $d->paymentConcept?->tipo === 'descuento' && !in_array($d->paymentConcept?->nombre, self::CONCEPTOS_MOSTRADOS_APARTE, true))
             ->values();
@@ -106,7 +112,6 @@ class MiBoletaController extends Controller
             'numero_boleta'      => $numero_boleta,
             'pension'            => $pension,
             'asignacionFamiliar' => $asignacionFamiliar,
-            'gratificacion'      => $gratificacion,
             'essalud'            => $essalud,
             'renta5ta'           => $renta5ta,
             'documento'          => $documento,

@@ -1,0 +1,236 @@
+<app-page-header
+  icono="folder_shared"
+  [titulo]="expediente ? 'Expediente de ' + nombreCompleto : 'Expediente'"
+  [subtitulo]="subtitulo"
+>
+  <button headerActions type="button" class="btn-secondary" (click)="volver()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+    </svg>
+    Volver a Documentos
+  </button>
+  <button headerActions type="button" class="btn-secondary" *ngIf="expediente" (click)="verFicha()">
+    Ver su ficha
+  </button>
+  <button headerActions type="button" class="btn-primary" *ngIf="expediente" (click)="abrirSubir()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    Subir documento
+  </button>
+</app-page-header>
+
+<section class="section-panel section-panel--formulario" *ngIf="!expediente">
+  <p class="expediente-vacio">{{ cargando ? 'Abriendo el expediente…' : 'No se pudo abrir este expediente.' }}</p>
+</section>
+
+<div class="expediente" *ngIf="expediente as e">
+
+  <!-- De un vistazo -->
+  <div class="resumen-masivo expediente__resumen">
+    <div class="resumen-masivo__dato">
+      <strong [class.texto-aviso]="!e.hoja_de_vida">{{ e.hoja_de_vida ? 'La tiene' : 'Falta' }}</strong>
+      <span>Hoja de vida</span>
+    </div>
+    <div class="resumen-masivo__dato">
+      <strong>{{ contratoVigente ? tipoContrato(contratoVigente.tipo_contrato) : 'Ninguno' }}</strong>
+      <span>Contrato vigente</span>
+    </div>
+    <div class="resumen-masivo__dato">
+      <strong>{{ boletasFirmadas }} de {{ e.boletas.length }}</strong>
+      <span>Boletas firmadas</span>
+    </div>
+    <div class="resumen-masivo__dato">
+      <strong>{{ documentosSubidos }}</strong>
+      <span>Documentos subidos</span>
+    </div>
+  </div>
+
+  <!-- ══ Hoja de vida ══════════════════════════════════════════ -->
+  <section class="expediente-bloque">
+    <header class="expediente-bloque__cabecera">
+      <span class="expediente-bloque__icono"><app-icon icono="person" [tamano]="19"></app-icon></span>
+      <div class="expediente-bloque__titulos">
+        <h2 class="seccion-form__titulo">Hoja de vida</h2>
+        <span class="form-ayuda">La sube el trabajador desde Mis Documentos, o tú desde aquí. No se firma.</span>
+      </div>
+      <button type="button" class="btn-secondary" (click)="abrirSubir('hoja_de_vida')">
+        {{ e.hoja_de_vida ? 'Reemplazar' : 'Subir hoja de vida' }}
+      </button>
+    </header>
+
+    <div class="section-panel expediente-bloque__panel">
+      <ng-container *ngIf="e.hoja_de_vida as hoja; else sinHoja">
+        <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: hoja, titulo: 'Hoja de vida vigente', puedeQuitar: false }"></ng-container>
+      </ng-container>
+      <ng-template #sinHoja>
+        <p class="expediente-vacio">
+          Todavía no tiene hoja de vida en el sistema. Puede subirla él mismo desde Mis Documentos.
+        </p>
+      </ng-template>
+
+      <details class="expediente-historial" *ngIf="e.hojas_anteriores.length">
+        <summary>
+          {{ e.hojas_anteriores.length === 1 ? 'Ver la hoja de vida que reemplazó' : 'Ver las ' + e.hojas_anteriores.length + ' hojas de vida que reemplazó' }}
+        </summary>
+        <ng-container *ngFor="let anterior of e.hojas_anteriores">
+          <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: anterior, titulo: 'Hoja de vida reemplazada', puedeQuitar: false }"></ng-container>
+        </ng-container>
+      </details>
+    </div>
+  </section>
+
+  <!-- ══ Contratos ═════════════════════════════════════════════ -->
+  <section class="expediente-bloque">
+    <header class="expediente-bloque__cabecera">
+      <span class="expediente-bloque__icono"><app-icon icono="badge" [tamano]="19"></app-icon></span>
+      <div class="expediente-bloque__titulos">
+        <h2 class="seccion-form__titulo">Contratos</h2>
+        <span class="form-ayuda">Del más reciente al más antiguo, cada uno con el contrato firmado que se le adjuntó.</span>
+      </div>
+      <button type="button" class="btn-secondary" (click)="irAContratos()">Ir a Contratos</button>
+    </header>
+
+    <div class="section-panel expediente-bloque__panel">
+      <p class="expediente-vacio" *ngIf="!e.contratos.length">
+        No tiene contratos registrados. Se crean desde la pantalla de Contratos.
+      </p>
+
+      <article class="contrato-tarjeta" *ngFor="let c of e.contratos" [class.contrato-tarjeta--vigente]="c.estado === 'vigente'">
+        <header class="contrato-tarjeta__cabecera">
+          <div>
+            <strong>{{ tipoContrato(c.tipo_contrato) }}</strong>
+            <span class="form-ayuda">{{ vigencia(c) }}</span>
+          </div>
+          <div class="contrato-tarjeta__estado">
+            <span class="texto-aviso" *ngIf="avisoVencimiento(c) as aviso">{{ aviso }}</span>
+            <span class="status-badge" [ngClass]="'status-badge-' + severidadContrato(c.estado)">{{ estadoContrato(c.estado) }}</span>
+          </div>
+        </header>
+
+        <ng-container *ngFor="let d of c.documentos">
+          <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: d, titulo: '', puedeQuitar: true }"></ng-container>
+        </ng-container>
+
+        <div class="contrato-tarjeta__pie">
+          <span *ngIf="!c.documentos.length">Todavía no tiene el contrato firmado adjunto.</span>
+          <button type="button" class="btn-secondary" (click)="abrirSubir('contrato', c.id)">
+            {{ c.documentos.length ? 'Adjuntar otro documento' : 'Adjuntar contrato firmado' }}
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ══ Boletas ═══════════════════════════════════════════════ -->
+  <section class="expediente-bloque">
+    <header class="expediente-bloque__cabecera">
+      <span class="expediente-bloque__icono"><app-icon icono="receipt" [tamano]="19"></app-icon></span>
+      <div class="expediente-bloque__titulos">
+        <h2 class="seccion-form__titulo">Boletas</h2>
+        <span class="form-ayuda">Mes a mes: cuándo la revisó, la descargó y la firmó.</span>
+      </div>
+    </header>
+
+    <app-data-table
+      entidad="esta boleta"
+      [columnas]="columnasBoletas"
+      [datos]="e.boletas"
+      [filasPorPagina]="12"
+      [mostrarBuscador]="false"
+      [acciones]="[]"
+      [accionesPersonalizadas]="accionesBoletas"
+      (accionPersonalizada)="alAccionar($event)"
+      mensajeVacio="Todavía no tiene boletas emitidas."
+    ></app-data-table>
+  </section>
+
+  <!-- ══ Otros documentos ══════════════════════════════════════ -->
+  <section class="expediente-bloque">
+    <header class="expediente-bloque__cabecera">
+      <span class="expediente-bloque__icono"><app-icon icono="folder" [tamano]="19"></app-icon></span>
+      <div class="expediente-bloque__titulos">
+        <h2 class="seccion-form__titulo">Otros documentos</h2>
+        <span class="form-ayuda">CTS, vacaciones truncas, comprobantes y lo que se subió sin un contrato.</span>
+      </div>
+      <button type="button" class="btn-secondary" (click)="abrirSubir('otro')">Subir otro documento</button>
+    </header>
+
+    <app-data-table
+      entidad="este documento"
+      [columnas]="columnasOtros"
+      [datos]="e.otros"
+      [filasPorPagina]="10"
+      [mostrarBuscador]="false"
+      [acciones]="[]"
+      [accionesPersonalizadas]="accionesOtros"
+      (accionPersonalizada)="alAccionar($event)"
+      mensajeVacio="No tiene otros documentos."
+    ></app-data-table>
+  </section>
+</div>
+
+<!-- Una fila de documento: la hoja de vida y lo adjuntado a un contrato. -->
+<ng-template #filaDocumento let-doc let-titulo="titulo" let-puedeQuitar="puedeQuitar">
+  <div class="documento-fila">
+    <span class="documento-fila__icono"><app-icon icono="description" [tamano]="18"></app-icon></span>
+    <div class="documento-fila__texto">
+      <strong>{{ titulo || nombreDocumento(doc) }}</strong>
+      <span>Subido el {{ fecha(doc.created_at) }}, en {{ formato(doc) }}</span>
+    </div>
+    <div class="documento-fila__acciones">
+      <button type="button" class="btn-secondary" *ngIf="esPdf(doc)" (click)="ver(doc)">Ver</button>
+      <button type="button" class="btn-secondary" (click)="descargar(doc)">Descargar</button>
+      <button type="button" class="btn-secondary documento-fila__quitar" *ngIf="puedeQuitar" (click)="quitar(doc)">Quitar</button>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Subir un documento al expediente -->
+<app-form-modal
+  [(visible)]="modalSubir"
+  titulo="Subir documento"
+  textoGuardar="Subir documento"
+  ancho="560px"
+  [guardando]="subiendo"
+  (guardar)="subir()"
+  (cancelar)="cerrarSubir()"
+>
+  <div class="form-fields" *ngIf="expediente as e">
+    <p class="form-nota">Se guarda en el expediente de <strong>{{ nombreCompleto }}</strong>.</p>
+
+    <div class="form-group">
+      <label for="tipo_documento">Qué documento es</label>
+      <select id="tipo_documento" class="form-control" [(ngModel)]="tipoASubir">
+        <option *ngFor="let t of tiposSubibles" [value]="t.value">{{ t.label }}</option>
+      </select>
+    </div>
+
+    <div class="form-group" *ngIf="tipoASubir === 'contrato' && e.contratos.length">
+      <label for="contrato_documento">De qué contrato</label>
+      <select id="contrato_documento" class="form-control" [(ngModel)]="contratoASubir">
+        <option value="">De ninguno en particular</option>
+        <option *ngFor="let c of e.contratos" [value]="c.id">{{ etiquetaContrato(c) }}</option>
+      </select>
+    </div>
+
+    <app-selector-archivo
+      [extensiones]="['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']"
+      [pesoMaximoMb]="5"
+      [(archivos)]="archivos"
+      [ocupado]="subiendo"
+      textoOcupado="Subiendo…"
+      texto="Arrastra aquí el archivo o haz clic para elegirlo"
+      ayuda="PDF, Word o imagen, hasta 5 MB."
+    ></app-selector-archivo>
+
+    <p class="form-nota form-nota--aviso" *ngIf="tipoASubir === 'hoja_de_vida' && e.hoja_de_vida">
+      Reemplaza la hoja de vida que tiene ahora. La anterior queda guardada en su historial.
+    </p>
+  </div>
+</app-form-modal>
+
+<app-visor-documento [(documento)]="docAbierto" [persona]="nombreCompleto"></app-visor-documento>

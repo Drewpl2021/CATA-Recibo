@@ -64,13 +64,15 @@ class PaymentConceptSeeder extends Seeder
                 'descripcion' => 'Un doceavo del sueldo por cada mes completo trabajado, de las vacaciones ganadas y no tomadas. Es la vía de plazo fijo, suplencia y prácticas: ellos no piden descanso, se les paga con este concepto.',
             ],
             [
-                'nombre' => 'Gratificaciones Fiestas Patrias - Ley 29351 y 30334',
+                'nombre' => \App\Support\ConceptosDePago::GRATIFICACION,
                 'tipo' => 'bonificacion', 'calculo' => null, 'valor' => null,
-                'descripcion' => 'La gratificación de julio y la de diciembre. Es un sueldo completo si trabajó el semestre entero, o la parte proporcional a los meses que sí trabajó.',
+                'etiqueta_boleta' => 'Gratificación',
+                'descripcion' => 'La gratificación de julio y la de diciembre. Es un sueldo completo si trabajó el semestre entero, o la parte proporcional a los meses que sí trabajó. La planilla la crea sola en esos dos meses.',
             ],
             [
-                'nombre' => 'Bonif. Extraord. Temporal - Ley 29351 y 30334',
+                'nombre' => \App\Support\ConceptosDePago::BONIF_EXTRAORDINARIA,
                 'tipo' => 'bonificacion', 'calculo' => 'porcentaje', 'valor' => 9.00,
+                'etiqueta_boleta' => 'Bonificación Extraordinaria (Ley 30334, 9%)',
                 'descripcion' => 'El 9% de la gratificación: es el aporte a EsSalud que la ley ordena entregarle al trabajador en vez de retenerlo. Solo sale en los meses con gratificación.',
             ],
             [

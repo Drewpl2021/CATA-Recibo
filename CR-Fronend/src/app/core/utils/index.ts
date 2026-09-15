@@ -5,3 +5,4 @@ export * from './error-api';
 export * from './fecha';
 export * from './clave-segura';
 export * from './guardar-archivo';
+export * from './documentos';
