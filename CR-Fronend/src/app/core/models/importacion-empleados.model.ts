@@ -52,6 +52,8 @@ export interface FilaEmpleadoImportada {
   dni: string;
   nombre: string;
   modo: 'alta' | 'actualizar';
+  /** Entra como cesado, o pasa a cesado: sin acceso y con el contrato cerrado. */
+  cesado: boolean;
   cv: boolean;
   cambios: CambioFicha[];
 }

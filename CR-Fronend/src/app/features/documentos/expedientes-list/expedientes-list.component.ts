@@ -93,6 +93,11 @@ export class ExpedientesListComponent implements OnInit {
     }
   }
 
+  /** Los PDFs de antes del sistema, en lote: cada uno a su expediente. */
+  subirAnteriores(): void {
+    this.router.navigate(['/inicio/documentos/subir-anteriores']);
+  }
+
   ngOnInit(): void {
     // Llega ya filtrada desde el panel de control ("boletas sin firmar").
     const filtro = this.route.snapshot.queryParamMap.get('filtro') as FiltroExpedientes | null;

@@ -8,6 +8,7 @@ import { Contrato, ContratoDelExpediente, Documento, Expediente } from '../../..
 import {
   TIPOS_DOCUMENTO_SUBIBLES,
   diasHasta,
+  esDocumentoAnterior,
   esPdf,
   estadoFirmaLegible,
   fechaDeDia,
@@ -81,7 +82,10 @@ export class ExpedienteComponent implements OnInit {
   readonly columnasBoletas: ColumnaTabla<Documento>[] = [
     {
       campo: 'planilla', header: 'Mes', ancho: '20%',
-      formatear: (_v, d) => (d.planilla ? `${nombreMes(d.planilla.mes)} ${d.planilla.anio}` : fechaLegible(d.created_at)),
+      formatear: (_v, d) => {
+        if (d.planilla) return `${nombreMes(d.planilla.mes)} ${d.planilla.anio}`;
+        return d.periodo_anio ? `${nombreMes(d.periodo_mes)} ${d.periodo_anio}` : fechaLegible(d.created_at);
+      },
     },
     {
       campo: 'estado_firma', header: 'Estado', tipo: 'badge', ancho: '14%',
@@ -96,6 +100,8 @@ export class ExpedienteComponent implements OnInit {
   readonly accionesBoletas: AccionPersonalizada<Documento>[] = [
     { id: 'ver', titulo: 'Ver la boleta', icono: 'description', visible: (d) => esPdf(d) },
     { id: 'descargar', titulo: 'Descargar la boleta', icono: 'folder_open' },
+    // Solo la subida a mano se quita: la que generó el sistema es la constancia del pago.
+    { id: 'quitar', titulo: 'Quitar del expediente', icono: 'remove_circle', severidad: 'danger', visible: (d) => esDocumentoAnterior(d) },
   ];
 
   readonly columnasOtros: ColumnaTabla<Documento>[] = [
@@ -145,7 +151,7 @@ export class ExpedienteComponent implements OnInit {
       `DNI ${e.dni}`,
       puesto,
       e.sede?.nombre ? `sede ${e.sede.nombre}` : '',
-      e.estado === 'inactivo' ? 'dado de baja' : '',
+      e.estado === 'inactivo' ? (e.fecha_cese ? `cesó el ${fechaDeDia(e.fecha_cese)}` : 'dado de baja') : '',
     ];
     return partes.filter(Boolean).join(', ') + '.';
   }
@@ -159,15 +165,21 @@ export class ExpedienteComponent implements OnInit {
     return this.expediente?.contratos.find((c) => c.estado === 'vigente') ?? null;
   }
 
+  /** Solo las que generó el sistema: una boleta anterior no se firma aquí. */
   get boletasFirmadas(): number {
-    return this.expediente?.boletas.filter((b) => b.estado_firma === 'firmado').length ?? 0;
+    return this.expediente?.boletas.filter((b) => b.tipo === 'boleta' && b.estado_firma === 'firmado').length ?? 0;
+  }
+
+  get boletasDelSistema(): number {
+    return this.expediente?.boletas.filter((b) => b.tipo === 'boleta').length ?? 0;
   }
 
   /** Lo que se subió a mano: hoja de vida, contratos firmados y otros. */
   get documentosSubidos(): number {
     const e = this.expediente;
     if (!e) return 0;
-    return (e.hoja_de_vida ? 1 : 0) + e.otros.length + e.contratos.reduce((n, c) => n + c.documentos.length, 0);
+    return (e.hoja_de_vida ? 1 : 0) + e.otros.length + e.contratos.reduce((n, c) => n + c.documentos.length, 0)
+      + e.contratos_anteriores.length + e.boletas.filter((b) => esDocumentoAnterior(b)).length;
   }
 
   // ── Contratos ──
@@ -303,5 +315,9 @@ export class ExpedienteComponent implements OnInit {
 
   irAContratos(): void {
     this.router.navigate(['/inicio/contratos']);
+  }
+
+  subirAnteriores(): void {
+    this.router.navigate(['/inicio/documentos/subir-anteriores']);
   }
 }

@@ -7,6 +7,9 @@ export interface Documento {
   id: string;
   empleado_id: string;
   planilla_id?: string | null;
+  /** De qué mes es un archivo anterior al sistema, que no tiene planilla. */
+  periodo_mes?: number | null;
+  periodo_anio?: number | null;
   contrato_id?: string | null;
   tipo: string;
   archivo: string;

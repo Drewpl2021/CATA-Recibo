@@ -55,8 +55,9 @@ class MisDocumentosController extends Controller
             ->with(['planilla', 'empleado:id,nombre,apellido,telefono,sede_id', 'empleado.sede:id,nombre', 'empleado.usuario:id,empleado_id,email'])
             ->leftJoin('planilla', 'documentos.planilla_id', '=', 'planilla.id')
             ->select('documentos.*')
-            ->orderByDesc('planilla.anio')
-            ->orderByDesc('planilla.mes')
+            // Un archivo anterior no tiene planilla: su periodo es el suyo.
+            ->orderByRaw('COALESCE(planilla.anio, documentos.periodo_anio) DESC')
+            ->orderByRaw('COALESCE(planilla.mes, documentos.periodo_mes) DESC')
             ->orderByDesc('documentos.created_at');
 
         if ($request->filled('tipo')) {
@@ -66,7 +67,7 @@ class MisDocumentosController extends Controller
         // El año es el de la planilla, no el de created_at: una boleta de
         // diciembre emitida en enero pertenece al año que se trabajó.
         if ($request->filled('anio')) {
-            $query->where('planilla.anio', (int) $request->input('anio'));
+            $query->whereRaw('COALESCE(planilla.anio, documentos.periodo_anio) = ?', [(int) $request->input('anio')]);
         }
 
         // "Sin firmar" es lo que le falta firmar: la hoja de vida no se firma,
@@ -100,7 +101,7 @@ class MisDocumentosController extends Controller
         if (! ExpedienteDigital::seFirma($documento->tipo)) {
             return response()->json([
                 'success' => false,
-                'message' => 'La hoja de vida es un documento tuyo: no se marca como vista ni se firma.',
+                'message' => ExpedienteDigital::porQueNoSeFirma($documento->tipo),
             ], 422);
         }
 
@@ -164,7 +165,7 @@ class MisDocumentosController extends Controller
         if (! ExpedienteDigital::seFirma($documento->tipo)) {
             return response()->json([
                 'success' => false,
-                'message' => 'La hoja de vida es un documento tuyo: no se firma.',
+                'message' => ExpedienteDigital::porQueNoSeFirma($documento->tipo),
             ], 422);
         }
 

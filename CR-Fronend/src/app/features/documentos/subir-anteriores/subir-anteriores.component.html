@@ -1,0 +1,208 @@
+<app-page-header
+  icono="folder"
+  titulo="Subir boletas y contratos anteriores"
+  subtitulo="Los PDFs de antes del sistema, cada uno al expediente de su trabajador."
+>
+  <button headerActions type="button" class="btn-secondary" (click)="verDocumentos()">
+    Volver a Documentos
+  </button>
+</app-page-header>
+
+<section class="section-panel section-panel--formulario">
+  <app-wizard [pasos]="pasos" [(actual)]="paso" [form]="avance"></app-wizard>
+
+  <!-- ══ Paso 1: elegir los archivos ═════════════════════════════ -->
+  <div *ngIf="pasos[paso].id === 'archivos'" class="form-fields">
+    <div class="form-nota form-nota--accion">
+      <div>
+        <strong>Elige todos los archivos de una vez.</strong> El sistema lee cada PDF por dentro para saber
+        de quién es (su DNI) y de qué mes. Si no lo encuentra, mira el nombre del archivo, por ejemplo
+        <strong>42558107 2024-03.pdf</strong>. Antes de guardar nada te muestra qué entendió de cada uno.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="tipo_por_defecto">Qué son</label>
+      <select id="tipo_por_defecto" class="form-control" [(ngModel)]="tipoPorDefecto" (ngModelChange)="alCambiarTipoPorDefecto()">
+        <option value="">Que el sistema lo reconozca en cada archivo</option>
+        <option value="boleta_anterior">Si no lo reconoce, son boletas</option>
+        <option value="contrato_anterior">Si no lo reconoce, son contratos</option>
+      </select>
+    </div>
+
+    <app-selector-archivo
+      [extensiones]="extensiones"
+      [pesoMaximoMb]="5"
+      [multiple]="true"
+      [archivos]="archivos"
+      (archivosChange)="alElegir($event)"
+      [ocupado]="leyendo || revisando"
+      [textoOcupado]="leyendo ? textoLeyendo : 'Revisando de quién es cada archivo…'"
+      [mostrarLista]="false"
+      [texto]="archivos.length ? archivos.length + ' archivo(s) elegido(s)' : 'Arrastra aquí los archivos o haz clic para elegirlos'"
+      ayuda="PDF, Word o imagen, hasta 5 MB cada uno y hasta 1000 por tanda. Se leen en tu computadora: no se suben hasta el final."
+    ></app-selector-archivo>
+
+    <div class="form-nota form-nota--aviso">
+      <div>
+        <strong>¿Boletas de alguien que ya no trabaja aquí?</strong> Primero tiene que estar en el sistema:
+        regístralo desde Importar empleados con «Cesado» en Estado y su fecha de cese. Queda sin acceso,
+        pero con su expediente.
+      </div>
+      <button type="button" class="btn-secondary" (click)="importarEmpleados()">Importar empleados</button>
+    </div>
+
+    <div class="importacion-pie" *ngIf="vista && !leyendo">
+      <span></span>
+      <button type="button" class="btn-primary" (click)="paso = 1">Ver la revisión</button>
+    </div>
+  </div>
+
+  <!-- ══ Paso 2: revisar ═════════════════════════════════════════ -->
+  <div *ngIf="pasos[paso].id === 'revision' && vista">
+    <div class="resumen-masivo">
+      <div class="resumen-masivo__dato">
+        <strong>{{ vista.resumen.listas }}</strong>
+        <span>Se suben</span>
+      </div>
+      <div class="resumen-masivo__dato">
+        <strong>{{ trabajadoresConArchivos }}</strong>
+        <span>Trabajadores</span>
+      </div>
+      <div class="resumen-masivo__dato">
+        <strong [class.texto-aviso]="vista.resumen.por_revisar > 0">{{ vista.resumen.por_revisar }}</strong>
+        <span>Por revisar</span>
+      </div>
+      <div class="resumen-masivo__dato">
+        <strong>{{ vista.resumen.omitidas }}</strong>
+        <span>Ya estaban</span>
+      </div>
+    </div>
+
+    <p class="form-nota" *ngIf="vista.resumen.por_revisar > 0">
+      En los que están <strong>por revisar</strong> elige de quién son, qué son o de qué mes, y pulsa
+      <strong>Volver a revisar</strong>. Si prefieres, sube primero los que están bien: los otros se quedan
+      fuera y puedes volver a elegirlos después, sin que se dupliquen.
+    </p>
+
+    <app-data-table
+      entidad="este archivo"
+      [columnas]="columnas"
+      [datos]="filas"
+      [acciones]="[]"
+      [filasPorPagina]="25"
+      [camposBusqueda]="['nombre', 'empleado.nombre', 'empleado.dni']"
+      placeholderBusqueda="Buscar por archivo, trabajador o DNI…"
+      mensajeVacio="No hay archivos en este grupo."
+    >
+      <div tableActions class="chips-filtro">
+        <button type="button" *ngFor="let c of chips" class="chip-filtro"
+          [class.chip-filtro--activo]="filtro === c.valor" (click)="filtrar(c.valor)">
+          {{ c.etiqueta }}
+          <span class="chip-filtro__cuenta">{{ c.cuenta(vista) }}</span>
+        </button>
+      </div>
+
+      <ng-template appCelda="nombre" let-f>
+        <span class="celda-archivo">{{ f.nombre }}</span>
+      </ng-template>
+
+      <ng-template appCelda="empleado" let-f>
+        <select *ngIf="f.estado === 'elegir'; else conDuenio" class="form-control"
+          [(ngModel)]="datos(f).dni_elegido" (ngModelChange)="marcarCambio()"
+          [attr.aria-label]="'De quién es ' + f.nombre">
+          <option [ngValue]="null">Elige de quién es…</option>
+          <option *ngFor="let c of f.candidatos" [ngValue]="c.dni">{{ c.nombre }} (DNI {{ c.dni }})</option>
+        </select>
+        <ng-template #conDuenio>
+          <ng-container *ngIf="f.empleado as e; else sinDuenio">
+            <strong>{{ e.nombre }}</strong>
+            <div class="form-ayuda">
+              DNI {{ e.dni }}<ng-container *ngIf="e.estado === 'inactivo'">, cesado</ng-container>, {{ origen(f) }}
+            </div>
+          </ng-container>
+        </ng-template>
+        <ng-template #sinDuenio>
+          <input class="form-control" type="text" inputmode="numeric" maxlength="8" placeholder="DNI de 8 cifras"
+            [(ngModel)]="datos(f).dni_elegido" (ngModelChange)="marcarCambio()"
+            [attr.aria-label]="'DNI del trabajador de ' + f.nombre">
+        </ng-template>
+      </ng-template>
+
+      <ng-template appCelda="tipo" let-f>
+        <select *ngIf="f.estado !== 'omitida'; else tipoFijo" class="form-control celda-tipo-documento"
+          [(ngModel)]="datos(f).tipo" (ngModelChange)="marcarCambio()"
+          [attr.aria-label]="'Qué es ' + f.nombre">
+          <option [ngValue]="null" disabled>Elige…</option>
+          <option *ngFor="let t of tipos" [ngValue]="t.value">{{ t.label }}</option>
+        </select>
+        <ng-template #tipoFijo>{{ nombreTipo(f.tipo) }}</ng-template>
+      </ng-template>
+
+      <ng-template appCelda="mes" let-f>
+        <div class="controles-periodo" *ngIf="f.estado !== 'omitida'; else periodoFijo">
+          <select *ngIf="datos(f).tipo !== 'contrato_anterior'" class="form-control"
+            [(ngModel)]="datos(f).mes" (ngModelChange)="marcarCambio()"
+            [attr.aria-label]="'Mes de ' + f.nombre">
+            <option [ngValue]="null">Mes…</option>
+            <option *ngFor="let m of meses" [ngValue]="m.value">{{ m.label }}</option>
+          </select>
+          <input class="form-control" type="number" min="1990" max="2100" placeholder="Año"
+            [(ngModel)]="datos(f).anio" (ngModelChange)="marcarCambio()"
+            [attr.aria-label]="'Año de ' + f.nombre">
+        </div>
+        <ng-template #periodoFijo>{{ periodo(f) }}</ng-template>
+      </ng-template>
+
+      <ng-template appCelda="estado" let-f>
+        <span class="status-badge" [ngClass]="'status-badge-' + severidad(f.estado)">{{ etiqueta(f.estado) }}</span>
+        <div class="form-ayuda">{{ f.mensaje }}</div>
+      </ng-template>
+    </app-data-table>
+
+    <div class="importacion-pie">
+      <button type="button" class="btn-secondary" (click)="otraTanda()">Elegir otros archivos</button>
+      <div class="importacion-pie__acciones">
+        <button type="button" [class]="hayCambios ? 'btn-primary' : 'btn-secondary'" [disabled]="revisando" (click)="revisar()">
+          <span *ngIf="revisando" class="spinner-small"></span>
+          {{ revisando ? 'Revisando…' : 'Volver a revisar' }}
+        </button>
+        <button type="button" class="btn-primary" [disabled]="!sePuedeSubir" (click)="subir()"
+          [title]="hayCambios ? 'Primero vuelve a revisar lo que corregiste' : ''">
+          Subir {{ vista.resumen.listas }} archivo(s)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Paso 3: listo ═══════════════════════════════════════════ -->
+  <div *ngIf="pasos[paso].id === 'listo'" class="importacion-listo">
+    <app-icon icono="check_circle" [tamano]="52"></app-icon>
+    <h2>{{ subiendo ? 'Subiendo archivos…' : 'Archivos subidos: ' + subidos }}</h2>
+
+    <p *ngIf="subiendo">
+      <span class="spinner-small"></span>
+      {{ resultados.length }} de {{ porSubir }}…
+    </p>
+    <p *ngIf="!subiendo && conProblema.length">
+      Con problema: <strong>{{ conProblema.length }}</strong>.
+    </p>
+
+    <div class="form-nota form-nota--alerta" *ngIf="!subiendo && conProblema.length">
+      <ul class="importacion-avisos">
+        <li *ngFor="let r of conProblema"><strong>{{ r.nombre }}:</strong> {{ r.mensaje }}</li>
+      </ul>
+    </div>
+
+    <p *ngIf="!subiendo && vista && vista.resumen.por_revisar">
+      Quedaron {{ vista.resumen.por_revisar }} archivo(s) por revisar. Vuelve a la revisión para decidirlos:
+      lo que ya subiste aparecerá como «Ya estaba».
+    </p>
+
+    <div class="importacion-pie importacion-pie--centrado">
+      <button type="button" class="btn-secondary" (click)="revisar()" [disabled]="subiendo || revisando">Volver a la revisión</button>
+      <button type="button" class="btn-secondary" (click)="otraTanda()" [disabled]="subiendo">Subir otra tanda</button>
+      <button type="button" class="btn-primary" (click)="verDocumentos()" [disabled]="subiendo">Ver Documentos</button>
+    </div>
+  </div>
+</section>

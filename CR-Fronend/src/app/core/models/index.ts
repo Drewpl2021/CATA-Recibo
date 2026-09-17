@@ -11,3 +11,4 @@ export * from './auditoria.model';
 export * from './importacion-conceptos.model';
 export * from './importacion-empleados.model';
 export * from './expediente.model';
+export * from './documentos-anteriores.model';

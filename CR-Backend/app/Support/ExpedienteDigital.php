@@ -22,13 +22,29 @@ final class ExpedienteDigital
     public const HOJA_DE_VIDA = 'hoja_de_vida';
 
     /**
+     * Los archivos de antes del sistema: boletas y contratos que RR.HH. sacó
+     * del Excel de la planilla y sube en lote (DocumentosAnterioresController).
+     *
+     * Van con tipo propio y no como "boleta" a propósito. Todo lo que cuenta
+     * boletas —las pendientes de firma, la campana, Mis Boletas, el tablero—
+     * pregunta por tipo = 'boleta', y ninguna de esas preguntas tiene sentido
+     * para una boleta de 2023: ya se pagó, ya se firmó en papel, y no tiene
+     * planilla ni detalle en el sistema.
+     */
+    public const BOLETA_ANTERIOR   = 'boleta_anterior';
+    public const CONTRATO_ANTERIOR = 'contrato_anterior';
+    public const ANTERIORES        = [self::BOLETA_ANTERIOR, self::CONTRATO_ANTERIOR];
+
+    /**
      * Los documentos que NO se firman.
      *
      * La hoja de vida es del trabajador, no algo que el colegio le entrega:
      * pedirle que "firme" su propio CV no significa nada, y además le
      * aparecía como pendiente en la campana y en el recuadro de "Por firmar".
+     *
+     * Los archivos anteriores tampoco: son copias de algo que ya pasó.
      */
-    public const SIN_FIRMA = [self::HOJA_DE_VIDA];
+    public const SIN_FIRMA = [self::HOJA_DE_VIDA, self::BOLETA_ANTERIOR, self::CONTRATO_ANTERIOR];
 
     /**
      * Qué se acepta, igual en todos los caminos. Word entra a propósito: la
@@ -42,10 +58,25 @@ final class ExpedienteDigital
         return ! in_array($tipo, self::SIN_FIRMA, true);
     }
 
+    /** Lo que se le contesta a quien intenta firmar algo que no se firma. */
+    public static function porQueNoSeFirma(?string $tipo): string
+    {
+        return $tipo === self::HOJA_DE_VIDA
+            ? 'La hoja de vida es un documento tuyo: no se firma.'
+            : 'Es un archivo anterior al sistema, guardado como copia: no se firma.';
+    }
+
+    /** El SHA-256 del archivo: dos archivos iguales tienen la misma huella. */
+    public static function huella(UploadedFile $archivo): string
+    {
+        return hash_file('sha256', $archivo->getRealPath());
+    }
+
     /**
      * Guarda el archivo y registra el documento.
      *
-     * @param  array  $extra  columnas adicionales del documento (contrato_id, firmado_por).
+     * @param  array  $extra  columnas adicionales del documento (contrato_id, firmado_por,
+     *                        periodo_mes, periodo_anio).
      */
     public static function guardar(string $empleadoId, string $tipo, UploadedFile $archivo, array $extra = []): Documento
     {
@@ -84,6 +115,7 @@ final class ExpedienteDigital
             'empleado_id'     => $empleadoId,
             'tipo'            => $tipo,
             'archivo'         => $ruta,
+            'huella'          => self::huella($archivo),
             'estado_firma'    => 'pendiente',
             'estado_registro' => 'activo',
         ]));

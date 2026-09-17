@@ -98,6 +98,23 @@
             <line x1="3" y1="18" x2="21" y2="18"></line>
           </svg>
         </button>
+
+        <!-- Dónde estás. Los nombres son los mismos del menú lateral. -->
+        <nav class="migas" aria-label="Dónde estás">
+          <ng-container *ngFor="let miga of migas; let primero = first; let ultimo = last">
+            <svg *ngIf="!primero" class="migas__flecha" xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true" [class.migas__flecha--grupo]="miga.grupo">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+            <a *ngIf="miga.enlace && !ultimo; else soloTexto" class="migas__paso"
+              [class.migas__paso--grupo]="miga.grupo" [routerLink]="miga.enlace">{{ miga.etiqueta }}</a>
+            <ng-template #soloTexto>
+              <span class="migas__paso" [class.migas__paso--grupo]="miga.grupo"
+                [class.migas__paso--actual]="ultimo" [attr.aria-current]="ultimo ? 'page' : null">{{ miga.etiqueta }}</span>
+            </ng-template>
+          </ng-container>
+        </nav>
       </div>
 
       <div class="header-actions">

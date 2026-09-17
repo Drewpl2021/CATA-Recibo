@@ -85,17 +85,22 @@ class ExpedienteController extends Controller
         $contratos = $empleado->contratos()->orderByDesc('fecha_inicio')->get();
         $idsContratos = $contratos->pluck('id')->all();
 
-        // Del mes más reciente al más antiguo, por el periodo de la planilla y
-        // no por cuándo se generó el PDF: una boleta regenerada no salta arriba.
-        $boletas = $activos->where('tipo', 'boleta')
-            ->sortByDesc(fn (Documento $d) => $d->planilla
-                ? sprintf('%04d-%02d', $d->planilla->anio, $d->planilla->mes)
-                : (string) $d->created_at)
+        // Del mes más reciente al más antiguo, por el periodo que representa y
+        // no por cuándo se subió: una boleta regenerada no salta arriba, y la
+        // de marzo de 2023 subida hoy no se pone delante de la de este mes.
+        $boletas = $activos->whereIn('tipo', ['boleta', ExpedienteDigital::BOLETA_ANTERIOR])
+            ->sortByDesc(fn (Documento $d) => $this->periodoParaOrdenar($d))
+            ->values();
+
+        // Los contratos de antes del sistema son archivos sueltos: no tienen
+        // un contrato registrado del que colgar.
+        $contratosAnteriores = $activos->where('tipo', ExpedienteDigital::CONTRATO_ANTERIOR)
+            ->sortByDesc(fn (Documento $d) => $this->periodoParaOrdenar($d))
             ->values();
 
         // Lo que no es boleta, ni hoja de vida, ni cuelga de un contrato suyo.
         $otros = $activos
-            ->reject(fn (Documento $d) => in_array($d->tipo, ['boleta', ExpedienteDigital::HOJA_DE_VIDA], true)
+            ->reject(fn (Documento $d) => in_array($d->tipo, ['boleta', ExpedienteDigital::HOJA_DE_VIDA, ...ExpedienteDigital::ANTERIORES], true)
                 || in_array($d->contrato_id, $idsContratos, true))
             ->values();
 
@@ -108,11 +113,24 @@ class ExpedienteController extends Controller
                 'contratos'        => $contratos->map(fn ($contrato) => array_merge($contrato->toArray(), [
                     'documentos' => $activos->where('contrato_id', $contrato->id)->values(),
                 ]))->values(),
+                'contratos_anteriores' => $contratosAnteriores,
                 'boletas'          => $boletas,
                 'otros'            => $otros,
                 'dias_por_vencer'  => self::DIAS_POR_VENCER,
             ],
         ]);
+    }
+
+    /** "2024-03" por su planilla o por su periodo; si no tiene, cuándo se subió. */
+    private function periodoParaOrdenar(Documento $d): string
+    {
+        if ($d->planilla) {
+            return sprintf('%04d-%02d', $d->planilla->anio, $d->planilla->mes);
+        }
+
+        return $d->periodo_anio
+            ? sprintf('%04d-%02d', $d->periodo_anio, $d->periodo_mes ?? 0)
+            : (string) $d->created_at;
     }
 
     private function resumen(): array

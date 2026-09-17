@@ -35,6 +35,8 @@ export interface Expediente {
   /** Las que se reemplazaron: siguen guardadas, pero ya no son la vigente. */
   hojas_anteriores: Documento[];
   contratos: ContratoDelExpediente[];
+  /** Contratos de antes del sistema: archivos sueltos, sin contrato registrado. */
+  contratos_anteriores: Documento[];
   boletas: Documento[];
   /** CTS, comprobantes y lo que se subió sin contrato. */
   otros: Documento[];

@@ -148,4 +148,9 @@ export const END_POINTS_ACCIONES = {
     aplicar: 'importacion-empleados/aplicar',
     hojaDeVida: 'importacion-empleados/hoja-de-vida',
   },
+  /** Boletas y contratos de antes del sistema, en lote: se revisa y se sube de a uno */
+  documentosAnteriores: {
+    previsualizar: 'documentos-anteriores/previsualizar',
+    subir: 'documentos-anteriores',
+  },
 } as const;

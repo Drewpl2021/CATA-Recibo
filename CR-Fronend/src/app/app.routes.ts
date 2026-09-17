@@ -59,6 +59,12 @@ export const routes: Routes = [
         canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/documentos/expedientes-list/expedientes-list.component').then(m => m.ExpedientesListComponent),
       },
+      // Va ANTES de documentos/:empleadoId: si no, "subir-anteriores" se leería como un id.
+      {
+        path: 'documentos/subir-anteriores',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/documentos/subir-anteriores/subir-anteriores.component').then(m => m.SubirAnterioresComponent),
+      },
       {
         path: 'documentos/:empleadoId',
         canActivate: [soloRrhhOAdmin],

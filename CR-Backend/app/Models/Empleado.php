@@ -37,6 +37,7 @@ class Empleado extends Model
     'telefono',
     'direccion',
     'fecha_ingreso',
+    'fecha_cese',
     'estado',
     'sistema_pensiones',
     'afp',
@@ -61,6 +62,19 @@ class Empleado extends Model
         parent::boot();
         static::creating(function ($model) {
             $model->id = Str::uuid7();
+        });
+    }
+
+    /**
+     * Le cierra la puerta: sus cuentas quedan inactivas y las sesiones que
+     * tenga abiertas se cortan. Lo usan la baja desde Empleados y la
+     * importación, cuando alguien pasa a cesado.
+     */
+    public function quitarAcceso(): void
+    {
+        User::where('empleado_id', $this->id)->each(function (User $user) {
+            $user->update(['estado_registro' => 'inactivo']);
+            $user->tokens()->delete();
         });
     }
 

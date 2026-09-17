@@ -66,6 +66,24 @@ final class AltaDeEmpleado
         ];
     }
 
+    /**
+     * Las reglas para registrar a alguien que YA SE FUE, solo para guardar sus
+     * boletas y contratos de antes. Basta con saber quién es y cuándo entró y
+     * salió: lo demás, si viene, se valida igual.
+     */
+    public static function reglasDeCesado(): array
+    {
+        $reglas = self::reglas();
+
+        foreach (['cargo_id', 'area_id', 'sede_id', 'telefono', 'direccion', 'sueldo_base', 'tipo_contrato', 'email', 'fecha_nacimiento'] as $campo) {
+            $reglas[$campo] = preg_replace('/^required\|/', 'nullable|', $reglas[$campo]);
+        }
+        $reglas['fecha_fin_contrato'] = 'nullable|date';
+        $reglas['fecha_cese']         = 'required|date|after_or_equal:fecha_ingreso|before_or_equal:today';
+
+        return $reglas;
+    }
+
     public static function mensajes(): array
     {
         return [
@@ -123,34 +141,53 @@ final class AltaDeEmpleado
      */
     public static function crear(array $datos): Empleado
     {
-        return DB::transaction(function () use ($datos) {
-            $empleado = Empleado::create(Arr::except($datos, ['email', 'rol_id', 'fecha_fin_contrato']));
+        // Con fecha de cese es alguien que ya se fue: se registra para guardar
+        // sus documentos, pero sin acceso y con el contrato ya cerrado.
+        $cesado = ! empty($datos['fecha_cese']);
 
-            User::create([
-                'name'        => $empleado->nombre . ' ' . $empleado->apellido,
-                'email'       => $datos['email'],
-                'password'    => Hash::make($datos['dni']),
-                'rol_id'      => $datos['rol_id'],
-                'empleado_id' => $empleado->id,
-                // Entra con su DNI, y el sistema no le deja hacer nada más
-                // hasta que ponga una contraseña suya: el DNI está a la vista
-                // de todos en la ficha y en la boleta.
-                'debe_cambiar_password' => true,
-            ]);
+        return DB::transaction(function () use ($datos, $cesado) {
+            $empleado = Empleado::create(array_merge(
+                Arr::except($datos, ['email', 'rol_id', 'fecha_fin_contrato']),
+                $cesado ? ['estado' => 'inactivo'] : []
+            ));
+
+            // De un cesado de hace años no suele haber correo: sin él no hay
+            // cuenta, y no hace falta, porque no va a entrar.
+            if (! empty($datos['email'])) {
+                User::create([
+                    'name'        => $empleado->nombre . ' ' . $empleado->apellido,
+                    'email'       => $datos['email'],
+                    'password'    => Hash::make($datos['dni']),
+                    'rol_id'      => $datos['rol_id'],
+                    'empleado_id' => $empleado->id,
+                    // Entra con su DNI, y el sistema no le deja hacer nada más
+                    // hasta que ponga una contraseña suya: el DNI está a la vista
+                    // de todos en la ficha y en la boleta.
+                    'debe_cambiar_password' => true,
+                    'estado_registro'       => $cesado ? 'inactivo' : 'activo',
+                ]);
+            }
 
             // El primer contrato sale de lo que ya se pide en el alta: el tipo y la
             // fecha de ingreso. Las renovaciones se hacen luego desde Contratos, que
-            // al crear una nueva cierra la anterior.
-            Contrato::create([
-                'empleado_id'   => $empleado->id,
-                'tipo_contrato' => $datos['tipo_contrato'],
-                'fecha_inicio'  => $datos['fecha_ingreso'],
-                'fecha_fin'     => $datos['tipo_contrato'] === 'indeterminado'
-                    ? null
-                    : ($datos['fecha_fin_contrato'] ?? null),
-                'estado'        => 'vigente',
-                'observaciones' => 'Contrato inicial, creado al dar de alta al trabajador.',
-            ]);
+            // al crear una nueva cierra la anterior. Un cesado sin tipo de contrato
+            // se queda sin él: inventarle uno sería peor que no tenerlo.
+            if (! empty($datos['tipo_contrato'])) {
+                Contrato::create([
+                    'empleado_id'   => $empleado->id,
+                    'tipo_contrato' => $datos['tipo_contrato'],
+                    'fecha_inicio'  => $datos['fecha_ingreso'],
+                    'fecha_fin'     => match (true) {
+                        $cesado                                     => $datos['fecha_cese'],
+                        $datos['tipo_contrato'] === 'indeterminado' => null,
+                        default                                     => $datos['fecha_fin_contrato'] ?? null,
+                    },
+                    'estado'        => $cesado ? 'finalizado' : 'vigente',
+                    'observaciones' => $cesado
+                        ? 'Contrato registrado al importar a un trabajador que ya cesó.'
+                        : 'Contrato inicial, creado al dar de alta al trabajador.',
+                ]);
+            }
 
             return $empleado;
         });
