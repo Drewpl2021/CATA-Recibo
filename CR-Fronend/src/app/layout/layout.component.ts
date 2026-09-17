@@ -23,6 +23,15 @@ import { FormModalComponent } from '../shared/components/form-modal/form-modal.c
 import { PistaDirective } from '../shared/directives/pista.directive';
 import { fechaLegible, mensajeErrorApi, tieneLetrasYNumeros } from '../core/utils';
 
+/** Un paso de las migas de pan de la barra de arriba. */
+interface Miga {
+  etiqueta: string;
+  /** Sin enlace, es solo texto: el grupo del menú y la pantalla actual. */
+  enlace?: string;
+  /** El grupo del menú ("Boletas y Finanzas"): se esconde en pantallas chicas. */
+  grupo?: boolean;
+}
+
 @Component({
   selector: 'app-layout',
   standalone: true,
@@ -42,6 +51,18 @@ export class LayoutComponent implements OnInit {
    * en escritorio la colapsa, en móvil la despliega encima del contenido.
    */
   sidebarVisible = window.innerWidth > 768;
+
+  /**
+   * Dónde estás, para la barra de arriba: "Inicio › Boletas y Finanzas ›
+   * Documentos › Expediente".
+   *
+   * El nombre del módulo y de su grupo salen del menú que manda el backend,
+   * no de una lista escrita acá: así las migas dicen exactamente lo mismo que
+   * la barra lateral, y si mañana le cambian el nombre a un módulo, cambia en
+   * los dos sitios. Lo que cuelga más abajo ("nuevo", "importar") sí lleva
+   * nombre propio, porque no es un módulo del menú.
+   */
+  migas: Miga[] = [];
 
   // Módulos dinámicos del backend
   modulosPadre: ModuloPadre[] = [];
@@ -188,6 +209,9 @@ export class LayoutComponent implements OnInit {
             }).filter(padre => padre.modulos.length > 0); // Si el padre se quedó sin hijos, lo ocultamos
 
             this.modulosPadre = modulosFiltrados;
+            // Ya se sabe cómo se llaman los módulos: las migas se rehacen
+            // para que la primera pantalla también salga con su grupo.
+            this.armarMigas(this.router.url);
           
             const grupoActivo = this.modulosPadre.find((padre) =>
               padre.modulos.some((hijo) => this.getRouterLink(hijo.ruta) === this.activeMenu)
@@ -404,6 +428,37 @@ export class LayoutComponent implements OnInit {
    */
   private rutasProgramadas = new Set<string>();
 
+  /**
+   * Cómo se llama cada trozo de URL que no es un módulo del menú.
+   *
+   * Los nombres de módulo salen del backend, pero el menú llega un instante
+   * después que la URL: mientras tanto, el nombre se saca de la propia ruta.
+   * Los que quedarían mal escritos así ("Mis boletas", "Auditoria") llevan
+   * su nombre aquí, para que no haya un parpadeo con la palabra chueca.
+   */
+  private static readonly NOMBRE_DE_SEGMENTO: Record<string, string> = {
+    dashboard: 'Panel de Control',
+    areas: 'Áreas',
+    auditoria: 'Auditoría',
+    'conceptos-pago': 'Conceptos de Pago',
+    'emision-boleta': 'Emisión de Boletas',
+    'historial-boletas': 'Historial de boletas',
+    'mis-boletas': 'Mis Boletas',
+    'mis-documentos': 'Mis Documentos',
+    'mis-vacaciones': 'Mis Vacaciones',
+    modulos: 'Módulos',
+    'modulos-padre': 'Módulos Padre',
+    nuevo: 'Nuevo trabajador',
+    importar: 'Importar desde Excel',
+    editar: 'Editar',
+    ver: 'Su ficha',
+    'subir-anteriores': 'Subir anteriores',
+    descuentos: 'Descuentos',
+    corrida: 'Planilla agrupada',
+    'sin-agrupar': 'Sin agrupar',
+    detalle: 'Detalle',
+  };
+
   ngOnInit(): void {
     // 0. El ítem activo sale de la URL, no del clic: si no, al entrar por
     //    enlace directo o al recargar, la barra no marcaba nada.
@@ -553,6 +608,8 @@ export class LayoutComponent implements OnInit {
     const limpia = url.split('?')[0].split('#')[0];
     this.activeMenu = limpia;
 
+    this.armarMigas(limpia);
+
     const grupoActivo = this.modulosPadre.find((padre) =>
       padre.modulos.some((hijo) => this.esRutaActiva(hijo.ruta))
     );
@@ -561,6 +618,63 @@ export class LayoutComponent implements OnInit {
       // unas pantallas el menú entero quedaría desplegado.
       this.abrirSoloGrupo(grupoActivo.id);
     }
+  }
+
+  /**
+   * Arma las migas de la URL actual.
+   *
+   * Se rehace en cada navegación y también cuando llega el menú del backend:
+   * al entrar por un enlace directo, la URL se conoce antes que los nombres
+   * de los módulos, y sin esto la primera pantalla salía sin su grupo.
+   */
+  private armarMigas(url: string): void {
+    const partes = url.split('?')[0].split('#')[0].split('/').filter((p) => p && p !== 'inicio');
+
+    // El tablero es la casa: no se pone "Inicio › Inicio".
+    if (!partes.length || partes[0] === 'dashboard') {
+      this.migas = [{ etiqueta: 'Panel de Control' }];
+      return;
+    }
+
+    const migas: Miga[] = [{ etiqueta: 'Inicio', enlace: '/inicio/dashboard' }];
+    const delMenu = this.modulosPadre
+      .flatMap((padre) => padre.modulos.map((modulo) => ({ padre, modulo })))
+      .find((x) => this.getRouterLink(x.modulo.ruta) === `/inicio/${partes[0]}`);
+
+    if (delMenu) {
+      migas.push({ etiqueta: delMenu.padre.nombre, grupo: true });
+    }
+    migas.push({
+      etiqueta: delMenu?.modulo.nombre ?? this.nombreDeSegmento(partes[0]) ?? partes[0],
+      enlace: `/inicio/${partes[0]}`,
+    });
+
+    for (let i = 1; i < partes.length; i++) {
+      const etiqueta = this.nombreDeSegmento(partes[i], partes[i - 1]);
+      if (etiqueta) {
+        migas.push({ etiqueta });
+      }
+    }
+
+    this.migas = migas;
+  }
+
+  /**
+   * El nombre de un trozo de URL; null cuando no hay que enseñarlo.
+   *
+   * Los identificadores no se pintan: "Documentos › 01a0a6bc-2c11-…" no le
+   * dice nada a nadie. El de un expediente se cambia por la palabra, que sí.
+   */
+  private nombreDeSegmento(parte: string, anterior?: string): string | null {
+    const conocido = LayoutComponent.NOMBRE_DE_SEGMENTO[parte];
+    if (conocido) {
+      return conocido;
+    }
+    if (/^[0-9a-f-]{16,}$/i.test(parte) || /^\d+$/.test(parte)) {
+      return anterior === 'documentos' ? 'Expediente' : null;
+    }
+
+    return parte.charAt(0).toUpperCase() + parte.slice(1).replace(/-/g, ' ');
   }
 
   /** Los paths hijos de /inicio declarados en app.routes.ts, como "/areas". */

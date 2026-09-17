@@ -40,6 +40,9 @@ final class ColumnasDeEmpleado
         'cargo'                        => ['titulo' => 'Cargo', 'tipo' => 'catalogo', 'alias' => ['cargo', 'puesto']],
         'sede'                         => ['titulo' => 'Sede', 'tipo' => 'catalogo', 'alias' => ['sede', 'local']],
         'fecha_ingreso'                => ['titulo' => 'Fecha de ingreso', 'tipo' => 'fecha', 'alias' => ['fecha de ingreso', 'fecha ingreso', 'ingreso', 'f ingreso']],
+        // Para registrar a quien ya se fue y guardar sus boletas de antes.
+        'estado'                       => ['titulo' => 'Estado', 'tipo' => 'opcion', 'alias' => ['estado', 'situacion', 'condicion', 'estado laboral']],
+        'fecha_cese'                   => ['titulo' => 'Fecha de cese', 'tipo' => 'fecha', 'alias' => ['fecha de cese', 'fecha cese', 'cese', 'fecha de baja', 'fecha de salida', 'fecha de retiro']],
         'tipo_contrato'                => ['titulo' => 'Tipo de contrato', 'tipo' => 'opcion', 'alias' => ['tipo de contrato', 'tipo contrato', 'contrato', 'modalidad']],
         'fecha_fin_contrato'           => ['titulo' => 'Fin de contrato', 'tipo' => 'fecha', 'alias' => ['fin de contrato', 'fecha fin de contrato', 'fecha de fin de contrato', 'fin del contrato', 'vencimiento']],
         'sueldo_base'                  => ['titulo' => 'Sueldo base', 'tipo' => 'monto', 'alias' => ['sueldo base', 'sueldo', 'remuneracion basica', 'haber basico', 'basico']],
@@ -66,15 +69,28 @@ final class ColumnasDeEmpleado
     ];
 
     /**
+     * Lo que hace falta para registrar a alguien que YA SE FUE. De un
+     * trabajador de hace años RR.HH. no suele tener ni el teléfono ni el
+     * correo, y exigirlos era dejar sus boletas sin dónde guardarse.
+     */
+    public const REQUERIDOS_ALTA_CESADO = ['apellido', 'nombre', 'fecha_ingreso', 'fecha_cese'];
+
+    /**
      * Lo que NO se cambia desde el Excel a quien ya existe: el contrato se
      * renueva desde Contratos, que cierra el anterior y deja historial.
      */
     public const NO_SE_ACTUALIZAN = ['tipo_contrato', 'fecha_fin_contrato', 'fecha_ingreso'];
 
     /** Títulos que acompañan a la ficha pero no se importan. */
-    private const INFORMATIVAS = ['n', 'no', 'nro', 'numero', 'item', 'estado', 'edad'];
+    private const INFORMATIVAS = ['n', 'no', 'nro', 'numero', 'item', 'edad'];
 
     private const OPCIONES = [
+        // "Cesado" es como lo dice la planilla; "inactivo" es como lo guarda el sistema.
+        'estado' => [
+            'activo' => 'activo', 'activa' => 'activo', 'vigente' => 'activo',
+            'cesado' => 'inactivo', 'cesada' => 'inactivo', 'cese' => 'inactivo', 'inactivo' => 'inactivo', 'inactiva' => 'inactivo',
+            'de baja' => 'inactivo', 'baja' => 'inactivo', 'dado de baja' => 'inactivo', 'retirado' => 'inactivo', 'retirada' => 'inactivo',
+        ],
         'tipo_contrato' => [
             'indeterminado' => 'indeterminado', 'plazo fijo' => 'plazo_fijo', 'plazo_fijo' => 'plazo_fijo',
             'suplencia' => 'suplencia', 'practicas' => 'practicas', 'practica' => 'practicas',
@@ -97,6 +113,7 @@ final class ColumnasDeEmpleado
 
     /** Cómo se lee cada valor guardado, y qué se acepta al escribirlo. */
     private const LEGIBLE = [
+        'estado'            => ['activo' => 'Activo', 'inactivo' => 'Cesado'],
         'tipo_contrato'     => ['indeterminado' => 'Indeterminado', 'plazo_fijo' => 'Plazo fijo', 'suplencia' => 'Suplencia', 'practicas' => 'Prácticas'],
         'sistema_pensiones' => ['AFP' => 'AFP', 'ONP' => 'ONP'],
         'afp'               => ['Habitat' => 'Habitat', 'Integra' => 'Integra', 'Prima' => 'Prima', 'Profuturo' => 'Profuturo'],
@@ -105,6 +122,7 @@ final class ColumnasDeEmpleado
     ];
 
     private const ACEPTA = [
+        'estado'            => 'Activo o Cesado',
         'tipo_contrato'     => 'Indeterminado, Plazo fijo, Suplencia o Prácticas',
         'sistema_pensiones' => 'AFP, ONP o No aporta',
         'afp'               => 'Habitat, Integra, Prima o Profuturo',
@@ -228,6 +246,7 @@ final class ColumnasDeEmpleado
             'area'              => $nombres(Area::class),
             'cargo'             => $nombres(Cargo::class),
             'sede'              => $nombres(Sede::class),
+            'estado'            => array_values(self::LEGIBLE['estado']),
             'tipo_contrato'     => array_values(self::LEGIBLE['tipo_contrato']),
             'sistema_pensiones' => [...array_values(self::LEGIBLE['sistema_pensiones']), 'No aporta'],
             'afp'               => array_values(self::LEGIBLE['afp']),

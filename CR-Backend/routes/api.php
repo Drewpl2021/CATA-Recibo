@@ -212,6 +212,10 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('importacion-empleados/previsualizar', [\App\Http\Controllers\ImportacionEmpleadosController::class, 'previsualizar']);
         Route::post('importacion-empleados/aplicar',       [\App\Http\Controllers\ImportacionEmpleadosController::class, 'aplicar']);
         Route::post('importacion-empleados/hoja-de-vida',  [\App\Http\Controllers\ImportacionEmpleadosController::class, 'hojaDeVida']);
+        // Boletas y contratos de antes del sistema, en lote: el navegador lee
+        // cada PDF y aquí se decide de quién es. Ver DocumentosAnterioresController.
+        Route::post('documentos-anteriores/previsualizar', [\App\Http\Controllers\DocumentosAnterioresController::class, 'previsualizar']);
+        Route::post('documentos-anteriores',               [\App\Http\Controllers\DocumentosAnterioresController::class, 'subir']);
         Route::apiResource('payroll-detalles', PayrollDetalleController::class);
         Route::apiResource('sedes',            SedeController::class);
 

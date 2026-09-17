@@ -19,6 +19,9 @@ class Documento extends Model
         'fecha_firma',
         'estado_firma',
         'planilla_id',
+        'periodo_mes',
+        'periodo_anio',
+        'huella',
         'fecha_visto',
         'fecha_aviso',
         'aviso_correo',
@@ -43,6 +46,8 @@ class Documento extends Model
         'fecha_visto'           => 'datetime',
         'fecha_aviso'           => 'datetime',
         'fecha_descarga'        => 'datetime',
+        'periodo_mes'           => 'integer',
+        'periodo_anio'          => 'integer',
     ];
 
     protected static function boot()

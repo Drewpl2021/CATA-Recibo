@@ -107,7 +107,7 @@ class EmpleadoController extends Controller
         $cabecera = [
             'N°', 'DNI', 'Apellidos', 'Nombres', 'Fecha de nacimiento',
             'Teléfono', 'Dirección', 'Correo', 'Rol',
-            'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Tipo de contrato', 'Fin de contrato',
+            'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Fecha de cese', 'Tipo de contrato', 'Fin de contrato',
             'Sueldo base', 'Sistema de pensión', 'AFP', 'CUSPP',
             'Forma de pago', 'Banco', 'N° de cuenta', 'CCI',
             'Tiene hijos', 'Nivel de estudios', 'Especialidad', 'Institución donde estudió',
@@ -132,7 +132,9 @@ class EmpleadoController extends Controller
                 $e->cargo->nombre ?? '',
                 $e->sede->nombre ?? '',
                 $fecha($e->fecha_ingreso),
-                $e->estado ?? '',
+                // Como lo lee la planilla, y como lo acepta la importación.
+                $e->estado === 'inactivo' ? 'Cesado' : 'Activo',
+                $fecha($e->fecha_cese),
                 // Del contrato vigente, no de la copia suelta de la ficha, que
                 // envejece. Y con su fin: sin él, un plazo fijo descargado no se
                 // podía volver a importar.
@@ -162,7 +164,7 @@ class EmpleadoController extends Controller
         // fecha que Excel no debe reinterpretar según el idioma— y número
         // donde se suma.
         $comoTexto = [
-            'DNI', 'Fecha de nacimiento', 'Teléfono', 'Fecha de ingreso', 'Fin de contrato',
+            'DNI', 'Fecha de nacimiento', 'Teléfono', 'Fecha de ingreso', 'Fecha de cese', 'Fin de contrato',
             'CUSPP', 'N° de cuenta', 'CCI', 'Teléfono del contacto',
         ];
         $estiloColumnas = [];
@@ -232,6 +234,7 @@ class EmpleadoController extends Controller
             'direccion'          => 'nullable|string|max:255',
             'fecha_ingreso'      => 'sometimes|date|before_or_equal:today',
             'estado'             => 'nullable|string|max:20',
+            'fecha_cese'         => 'nullable|date',
             'sistema_pensiones'  => 'sometimes|nullable|in:AFP,ONP',
             'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo',
             // Mismo formato que el alta: 12 caracteres, con letras y números.
@@ -264,6 +267,11 @@ class EmpleadoController extends Controller
         );
 
         $this->limpiarDatosDeAfp($request);
+
+        // Quien vuelve a estar activo ya no tiene fecha de cese.
+        if ($request->input('estado') === 'activo') {
+            $request->merge(['fecha_cese' => null]);
+        }
 
         $empleado->update($request->except(['email', 'rol_id']));
 
@@ -330,12 +338,8 @@ class EmpleadoController extends Controller
     public function destroy(string $id)
     {
         $empleado = Empleado::findOrFail($id);
-        $empleado->update(['estado' => 'inactivo']);
-
-        User::where('empleado_id', $empleado->id)->each(function (User $user) {
-            $user->update(['estado_registro' => 'inactivo']);
-            $user->tokens()->delete();
-        });
+        $empleado->update(['estado' => 'inactivo', 'fecha_cese' => $empleado->fecha_cese ?? now()->toDateString()]);
+        $empleado->quitarAcceso();
 
         return response()->json(['success' => true, 'data' => ['message' => 'Empleado desactivado correctamente.']]);
     }

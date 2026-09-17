@@ -40,7 +40,7 @@
       <span>Contrato vigente</span>
     </div>
     <div class="resumen-masivo__dato">
-      <strong>{{ boletasFirmadas }} de {{ e.boletas.length }}</strong>
+      <strong>{{ boletasFirmadas }} de {{ boletasDelSistema }}</strong>
       <span>Boletas firmadas</span>
     </div>
     <div class="resumen-masivo__dato">
@@ -95,7 +95,7 @@
     </header>
 
     <div class="section-panel expediente-bloque__panel">
-      <p class="expediente-vacio" *ngIf="!e.contratos.length">
+      <p class="expediente-vacio" *ngIf="!e.contratos.length && !e.contratos_anteriores.length">
         No tiene contratos registrados. Se crean desde la pantalla de Contratos.
       </p>
 
@@ -122,6 +122,13 @@
           </button>
         </div>
       </article>
+
+      <div class="expediente-anteriores" *ngIf="e.contratos_anteriores.length">
+        <h3 class="expediente-anteriores__titulo">Contratos de antes del sistema</h3>
+        <ng-container *ngFor="let d of e.contratos_anteriores">
+          <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: d, titulo: '', puedeQuitar: true }"></ng-container>
+        </ng-container>
+      </div>
     </div>
   </section>
 
@@ -131,8 +138,9 @@
       <span class="expediente-bloque__icono"><app-icon icono="receipt" [tamano]="19"></app-icon></span>
       <div class="expediente-bloque__titulos">
         <h2 class="seccion-form__titulo">Boletas</h2>
-        <span class="form-ayuda">Mes a mes: cuándo la revisó, la descargó y la firmó.</span>
+        <span class="form-ayuda">Mes a mes: cuándo la revisó, la descargó y la firmó. Las de antes del sistema salen como «Archivo anterior».</span>
       </div>
+      <button type="button" class="btn-secondary" (click)="subirAnteriores()">Subir boletas anteriores</button>
     </header>
 
     <app-data-table

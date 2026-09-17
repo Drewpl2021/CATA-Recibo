@@ -385,6 +385,10 @@
   {
    "key": "expediente_empleado_id",
    "value": ""
+  },
+  {
+   "key": "documento_anterior_id",
+   "value": ""
   }
  ],
  "item": [
@@ -4403,7 +4407,7 @@
         "description": "Los mismos títulos que salen al descargar la lista: RR.HH. descarga, corrige y vuelve a subir.",
         "body": {
          "mode": "raw",
-         "raw": "{\n  \"columnas\": [\"N°\", \"DNI\", \"Apellidos\", \"Nombres\", \"Fecha de nacimiento\", \"Teléfono\", \"Dirección\", \"Correo\", \"Rol\", \"Área\", \"Cargo\", \"Sede\", \"Fecha de ingreso\", \"Estado\", \"Tipo de contrato\", \"Fin de contrato\", \"Sueldo base\", \"Sistema de pensión\", \"AFP\", \"CUSPP\", \"Forma de pago\", \"Banco\", \"N° de cuenta\", \"CCI\", \"Tiene hijos\", \"Nivel de estudios\", \"Especialidad\", \"Institución donde estudió\", \"Contacto de emergencia\", \"Teléfono del contacto\"]\n}",
+         "raw": "{\n  \"columnas\": [\"N°\", \"DNI\", \"Apellidos\", \"Nombres\", \"Fecha de nacimiento\", \"Teléfono\", \"Dirección\", \"Correo\", \"Rol\", \"Área\", \"Cargo\", \"Sede\", \"Fecha de ingreso\", \"Estado\", \"Fecha de cese\", \"Tipo de contrato\", \"Fin de contrato\", \"Sueldo base\", \"Sistema de pensión\", \"AFP\", \"CUSPP\", \"Forma de pago\", \"Banco\", \"N° de cuenta\", \"CCI\", \"Tiene hijos\", \"Nivel de estudios\", \"Especialidad\", \"Institución donde estudió\", \"Contacto de emergencia\", \"Teléfono del contacto\"]\n}",
          "options": {
           "raw": {
            "language": "json"
@@ -4430,11 +4434,12 @@
           "exec": [
            "pm.test('Status 200', () => pm.response.to.have.status(200));",
            "const d = pm.response.json().data;",
-           "pm.test('Reconoce los 27 datos de la ficha', () => pm.expect(d.columnas.filter(c => c.estado === 'reconocida')).to.have.length(27));",
+           "pm.test('Reconoce los 29 datos de la ficha', () => pm.expect(d.columnas.filter(c => c.estado === 'reconocida')).to.have.length(29));",
            "pm.test('«Rol» no se importa: todos entran como trabajadores', () => pm.expect(d.columnas.find(c => c.titulo === 'Rol').campo).to.be.null);",
-           "pm.test('«N°» y «Estado» no se importan', () => {",
-           "  pm.expect(d.columnas.find(c => c.titulo === 'N°').campo).to.be.null;",
-           "  pm.expect(d.columnas.find(c => c.titulo === 'Estado').campo).to.be.null;",
+           "pm.test('«N°» no se importa', () => pm.expect(d.columnas.find(c => c.titulo === 'N°').campo).to.be.null);",
+           "pm.test('«Estado» y «Fecha de cese» sí: así se registra a quien ya se fue', () => {",
+           "  pm.expect(d.columnas.find(c => c.titulo === 'Estado').campo).to.eql('estado');",
+           "  pm.expect(d.columnas.find(c => c.titulo === 'Fecha de cese').campo).to.eql('fecha_cese');",
            "});",
            "pm.collectionVariables.set('import_emp_columnas', JSON.stringify(d.columnas.map(c => ({ indice: c.indice, titulo: c.titulo, campo: c.campo }))));"
           ]
@@ -4465,7 +4470,7 @@
         "description": "",
         "body": {
          "mode": "raw",
-         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
+         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
          "options": {
           "raw": {
            "language": "json"
@@ -4515,7 +4520,7 @@
         "description": "",
         "body": {
          "mode": "raw",
-         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"123\", null, null, null, null, null, null, null, null, null, null, null, null, null, null, 10, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {\"numero\": 3, \"celdas\": [null, \"{{import_emp_dni}}\", \"Sin\", \"Correo\", null, null, null, null, null, \"Contabilidad\", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
+         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"123\", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 10, null, null, null, null, null, null, null, null, null, null, null, null, null]}, {\"numero\": 3, \"celdas\": [null, \"{{import_emp_dni}}\", \"Sin\", \"Correo\", null, null, null, null, null, \"Contabilidad\", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
          "options": {
           "raw": {
            "language": "json"
@@ -4561,7 +4566,7 @@
         "description": "",
         "body": {
          "mode": "raw",
-         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
+         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
          "options": {
           "raw": {
            "language": "json"
@@ -4682,7 +4687,7 @@
         "description": "",
         "body": {
          "mode": "raw",
-         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
+         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
          "options": {
           "raw": {
            "language": "json"
@@ -10304,6 +10309,258 @@
       }
      ],
      "description": "El expediente de cada trabajador: hoja de vida, contratos con sus documentos, boletas y lo demás."
+    },
+    {
+     "name": "08.2 - Boletas y contratos anteriores (en lote)",
+     "description": "Los PDFs de antes del sistema. El navegador lee cada PDF (DNI, tipo, mes) y aquí se decide de quién es; después se suben de a uno.",
+     "item": [
+      {
+       "name": "Revisar: de quién es cada archivo",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Content-Type",
+          "value": "application/json",
+          "type": "text"
+         }
+        ],
+        "url": "{{base_url}}/documentos-anteriores/previsualizar",
+        "description": "No guarda nada. Solo llega lo que el navegador leyó de cada archivo.",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"archivos\": [\n    {\n      \"indice\": 0,\n      \"nombre\": \"BOLETA 000.pdf\",\n      \"huella\": null,\n      \"tipo\": \"boleta_anterior\",\n      \"dnis\": [\n        \"12345678\"\n      ],\n      \"dni_nombre\": null,\n      \"dni_elegido\": null,\n      \"mes\": 3,\n      \"anio\": 2019\n    },\n    {\n      \"indice\": 1,\n      \"nombre\": \"BOLETA 001.pdf\",\n      \"huella\": null,\n      \"tipo\": \"contrato_anterior\",\n      \"dnis\": [],\n      \"dni_nombre\": \"12345678\",\n      \"dni_elegido\": null,\n      \"mes\": null,\n      \"anio\": 2018\n    },\n    {\n      \"indice\": 2,\n      \"nombre\": \"BOLETA 002.pdf\",\n      \"huella\": null,\n      \"tipo\": \"boleta_anterior\",\n      \"dnis\": [\n        \"99999991\"\n      ],\n      \"dni_nombre\": null,\n      \"dni_elegido\": null,\n      \"mes\": 5,\n      \"anio\": 2019\n    },\n    {\n      \"indice\": 3,\n      \"nombre\": \"BOLETA 003.pdf\",\n      \"huella\": null,\n      \"tipo\": \"boleta_anterior\",\n      \"dnis\": [\n        \"12345678\"\n      ],\n      \"dni_nombre\": null,\n      \"dni_elegido\": null,\n      \"mes\": null,\n      \"anio\": 2019\n    }\n  ]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const f = pm.response.json().data.filas;",
+           "pm.test('El DNI leído en el PDF encuentra al trabajador', () => { pm.expect(f[0].estado).to.eql('lista'); pm.expect(f[0].origen).to.eql('pdf'); pm.expect(f[0].empleado.dni).to.eql('12345678'); });",
+           "pm.test('Sin el DNI en el PDF, vale el del nombre del archivo', () => { pm.expect(f[1].estado).to.eql('lista'); pm.expect(f[1].origen).to.eql('nombre'); });",
+           "pm.test('Un DNI que no es de nadie sugiere registrarlo como cesado', () => { pm.expect(f[2].estado).to.eql('error'); pm.expect(f[2].mensaje).to.include('Cesado'); });",
+           "pm.test('Una boleta sin mes queda por revisar', () => { pm.expect(f[3].estado).to.eql('error'); pm.expect(f[3].mensaje).to.include('mes'); });",
+           "pm.test('El resumen cuadra', () => pm.expect(pm.response.json().data.resumen).to.eql({ archivos: 4, listas: 2, omitidas: 0, por_revisar: 2 }));"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Subir una boleta anterior",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": "{{base_url}}/documentos-anteriores",
+        "description": "",
+        "body": {
+         "mode": "formdata",
+         "formdata": [
+          {
+           "key": "archivo",
+           "type": "file",
+           "src": "postman/fixtures/cv-prueba.pdf"
+          },
+          {
+           "key": "dni",
+           "value": "12345678",
+           "type": "text"
+          },
+          {
+           "key": "tipo",
+           "value": "boleta_anterior",
+           "type": "text"
+          },
+          {
+           "key": "mes",
+           "value": "3",
+           "type": "text"
+          },
+          {
+           "key": "anio",
+           "value": "2019",
+           "type": "text"
+          }
+         ]
+        }
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 201', () => pm.response.to.have.status(201));",
+           "const d = pm.response.json().data.documento;",
+           "pm.test('Con su propio tipo: no queda por firmar', () => pm.expect(d.tipo).to.eql('boleta_anterior'));",
+           "pm.test('Guarda el mes y la huella', () => { pm.expect(d.periodo_mes).to.eql(3); pm.expect(d.periodo_anio).to.eql(2019); pm.expect(d.huella).to.have.length(64); });",
+           "pm.collectionVariables.set('documento_anterior_id', d.id);"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "El mismo archivo otra vez no se duplica",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": "{{base_url}}/documentos-anteriores",
+        "description": "",
+        "body": {
+         "mode": "formdata",
+         "formdata": [
+          {
+           "key": "archivo",
+           "type": "file",
+           "src": "postman/fixtures/cv-prueba.pdf"
+          },
+          {
+           "key": "dni",
+           "value": "12345678",
+           "type": "text"
+          },
+          {
+           "key": "tipo",
+           "value": "boleta_anterior",
+           "type": "text"
+          },
+          {
+           "key": "mes",
+           "value": "3",
+           "type": "text"
+          },
+          {
+           "key": "anio",
+           "value": "2019",
+           "type": "text"
+          }
+         ]
+        }
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 422', () => pm.response.to.have.status(422));",
+           "pm.test('Dice que ya estaba', () => pm.expect(pm.response.json().message).to.include('ya está en su expediente'));"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Revisar lo ya subido: sale como «Ya estaba»",
+       "request": {
+        "method": "POST",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         },
+         {
+          "key": "Content-Type",
+          "value": "application/json",
+          "type": "text"
+         }
+        ],
+        "url": "{{base_url}}/documentos-anteriores/previsualizar",
+        "description": "",
+        "body": {
+         "mode": "raw",
+         "raw": "{\n  \"archivos\": [\n    {\n      \"indice\": 0,\n      \"nombre\": \"BOLETA 000.pdf\",\n      \"huella\": null,\n      \"tipo\": \"boleta_anterior\",\n      \"dnis\": [\n        \"12345678\"\n      ],\n      \"dni_nombre\": null,\n      \"dni_elegido\": null,\n      \"mes\": 3,\n      \"anio\": 2019\n    }\n  ]\n}",
+         "options": {
+          "raw": {
+           "language": "json"
+          }
+         }
+        }
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));",
+           "const f = pm.response.json().data.filas[0];",
+           "pm.test('Omitida: ya tiene su boleta de ese mes', () => { pm.expect(f.estado).to.eql('omitida'); pm.expect(f.mensaje).to.include('Marzo 2019'); });"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "name": "Quitar la boleta anterior de prueba",
+       "request": {
+        "method": "DELETE",
+        "header": [
+         {
+          "key": "Authorization",
+          "value": "Bearer {{rrhh_token}}"
+         },
+         {
+          "key": "Accept",
+          "value": "application/json"
+         }
+        ],
+        "url": "{{base_url}}/documentos/{{documento_anterior_id}}",
+        "description": ""
+       },
+       "event": [
+        {
+         "listen": "test",
+         "script": {
+          "type": "text/javascript",
+          "exec": [
+           "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]
+         }
+        }
+       ]
+      }
+     ]
     }
    ]
   },
@@ -12239,6 +12496,49 @@
       }
      ],
      "description": "El trabajador sube su propio CV. No se firma ni cuenta como pendiente."
+    },
+    {
+     "name": "Un empleado no sube documentos anteriores",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{empleado_token}}"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       },
+       {
+        "key": "Content-Type",
+        "value": "application/json",
+        "type": "text"
+       }
+      ],
+      "url": "{{base_url}}/documentos-anteriores/previsualizar",
+      "description": "",
+      "body": {
+       "mode": "raw",
+       "raw": "{\n  \"archivos\": [\n    {\n      \"indice\": 0,\n      \"nombre\": \"BOLETA 000.pdf\",\n      \"huella\": null,\n      \"tipo\": \"boleta_anterior\",\n      \"dnis\": [\n        \"12345678\"\n      ],\n      \"dni_nombre\": null,\n      \"dni_elegido\": null,\n      \"mes\": 3,\n      \"anio\": 2019\n    }\n  ]\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 403', () => pm.response.to.have.status(403));"
+        ]
+       }
+      }
+     ]
     }
    ]
   },

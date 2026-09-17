@@ -109,6 +109,11 @@ final class ModelosDeImportacion
                 'Si el contrato es Plazo fijo, Suplencia o Prácticas, pon también el Fin de contrato.',
                 'Los títulos en azul claro son opcionales.',
             ],
+            'Trabajadores que ya se fueron' => [
+                'En «Estado» elige Cesado y pon la «Fecha de cese». Su ficha queda para guardar sus boletas y contratos anteriores, pero no entra al sistema.',
+                'Para registrarlos solo hacen falta DNI, Apellidos, Nombres, Fecha de ingreso y Fecha de cese. Si pones el Tipo de contrato, se guarda como contrato ya terminado.',
+                'Si ya está en el sistema y dejó de trabajar, escribe Cesado y su Fecha de cese: pierde el acceso y su contrato vigente se cierra en esa fecha.',
+            ],
             'Cómo escribir cada dato' => [
                 'Fechas: día/mes/año, por ejemplo 15/03/1990.',
                 'DNI: 8 cifras. CUSPP: 12 caracteres (letras y números), obligatorio si aporta a una AFP. Teléfono y CCI: solo números.',

@@ -10,8 +10,11 @@ import { fechaLegible } from './fecha';
  * siguiera diciendo otra cosa.
  */
 
+/** Los de antes del sistema, subidos en lote: copias de algo que ya pasó. */
+export const DOCUMENTOS_ANTERIORES: readonly string[] = ['boleta_anterior', 'contrato_anterior'];
+
 /** Los que no se firman, igual que ExpedienteDigital::SIN_FIRMA en el backend. */
-export const DOCUMENTOS_SIN_FIRMA: readonly string[] = ['hoja_de_vida'];
+export const DOCUMENTOS_SIN_FIRMA: readonly string[] = ['hoja_de_vida', ...DOCUMENTOS_ANTERIORES];
 
 export const NOMBRE_TIPO_DOCUMENTO: Record<string, string> = {
   boleta: 'Boleta',
@@ -20,6 +23,8 @@ export const NOMBRE_TIPO_DOCUMENTO: Record<string, string> = {
   vacaciones_truncas: 'Vacaciones truncas',
   comprobante_transferencia: 'Comprobante de transferencia',
   hoja_de_vida: 'Hoja de vida',
+  boleta_anterior: 'Boleta',
+  contrato_anterior: 'Contrato',
   otro: 'Documento',
 };
 
@@ -33,11 +38,19 @@ export const TIPOS_DOCUMENTO_SUBIBLES: readonly { value: string; label: string }
   { value: 'otro', label: 'Otro documento' },
 ];
 
-/** "Boleta de Agosto 2026", "Hoja de vida", "Contrato firmado". */
+/** "Boleta de Agosto 2026", "Contrato de 2023", "Hoja de vida", "Contrato firmado". */
 export function nombreDocumento(doc: Documento | null | undefined): string {
   if (!doc) return '';
   const tipo = NOMBRE_TIPO_DOCUMENTO[doc.tipo] ?? 'Documento';
-  return doc.planilla ? `${tipo} de ${nombreMes(doc.planilla.mes)} ${doc.planilla.anio}` : tipo;
+  if (doc.planilla) return `${tipo} de ${nombreMes(doc.planilla.mes)} ${doc.planilla.anio}`;
+  if (doc.periodo_anio) {
+    return doc.periodo_mes ? `${tipo} de ${nombreMes(doc.periodo_mes)} ${doc.periodo_anio}` : `${tipo} de ${doc.periodo_anio}`;
+  }
+  return tipo;
+}
+
+export function esDocumentoAnterior(doc: Documento): boolean {
+  return DOCUMENTOS_ANTERIORES.includes(doc.tipo);
 }
 
 export function documentoSeFirma(doc: Documento): boolean {
@@ -45,7 +58,7 @@ export function documentoSeFirma(doc: Documento): boolean {
 }
 
 export function estadoFirmaLegible(doc: Documento): string {
-  if (!documentoSeFirma(doc)) return 'Guardada';
+  if (!documentoSeFirma(doc)) return esDocumentoAnterior(doc) ? 'Archivo anterior' : 'Guardada';
   if (doc.estado_firma === 'firmado') return 'Firmado';
   if (doc.estado_firma === 'visto') return 'Visto';
   return 'Pendiente';

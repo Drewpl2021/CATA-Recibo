@@ -17,6 +17,8 @@ export interface Empleado {
   telefono?: string | null;
   direccion?: string | null;
   fecha_ingreso: string;
+  /** Cuándo dejó de trabajar; solo si está dado de baja. */
+  fecha_cese?: string | null;
   fecha_nacimiento?: string | null;
   estado: string;
 

@@ -10,6 +10,7 @@ use App\Support\ColumnasDeEmpleado;
 use App\Support\ExpedienteDigital;
 use App\Support\LectorDeCeldas;
 use App\Support\ModelosDeImportacion;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -112,6 +113,14 @@ class ImportacionEmpleadosController extends Controller
 
                 if ($campos) {
                     $empleado->update($campos);
+                }
+
+                // Pasa a cesado: pierde el acceso, y el contrato que tenía
+                // vigente se cierra en su fecha de cese.
+                if (($campos['estado'] ?? null) === 'inactivo') {
+                    $empleado->quitarAcceso();
+                    $empleado->contratos()->where('estado', 'vigente')
+                        ->update(['estado' => 'finalizado', 'fecha_fin' => $empleado->fecha_cese]);
                 }
                 if ($correo !== null && $empleado->usuario) {
                     $empleado->usuario->update(['email' => $correo]);
@@ -247,6 +256,7 @@ class ImportacionEmpleadosController extends Controller
 
         $reglasAlta   = $this->sinConsultas(AltaDeEmpleado::reglas());
         $reglasCambio = $this->comoOpcionales($reglasAlta);
+        $reglasCesado = $this->sinConsultas(AltaDeEmpleado::reglasDeCesado());
         $atributos    = ColumnasDeEmpleado::atributos();
 
         $vistosDni    = [];
@@ -310,7 +320,7 @@ class ImportacionEmpleadosController extends Controller
             $tieneCv   = $cvs->contains($clave);
 
             if (! $existente) {
-                $this->filaDeAlta($r, $numero, $clave, $valores, $catalogos, $rolEmpleado, $reglasAlta, $atributos, $correos, $vistosCorreo, $tieneCv);
+                $this->filaDeAlta($r, $numero, $clave, $valores, $catalogos, $rolEmpleado, $reglasAlta, $reglasCesado, $atributos, $correos, $vistosCorreo, $tieneCv);
             } else {
                 $this->filaDeCambio($r, $numero, $clave, $valores, $existente, $catalogos, $reglasCambio, $atributos, $correos, $vistosCorreo, $bloqueadas, $tieneCv);
             }
@@ -322,9 +332,18 @@ class ImportacionEmpleadosController extends Controller
             $r['advertencias'][] = $this->aviso(null, null, null,
                 "{$nombres} no se cambian a quien ya existe: el contrato se renueva desde Contratos. Esas celdas se ignoran.");
         }
-        if (collect($r['filas'])->contains('modo', 'alta')) {
+        $resultado = collect($r['filas']);
+        if ($resultado->contains(fn ($f) => $f['modo'] === 'alta' && ! $f['cesado'])) {
             $r['advertencias'][] = $this->aviso(null, null, null,
                 'Cada trabajador nuevo entra con su DNI como contraseña provisional, y el sistema le pide cambiarla la primera vez.');
+        }
+        if ($cesados = $resultado->where('modo', 'alta')->where('cesado', true)->count()) {
+            $r['advertencias'][] = $this->aviso(null, null, null,
+                "{$cesados} trabajador(es) se registran como cesados: su ficha queda para guardar sus boletas y contratos anteriores, pero no entran al sistema.");
+        }
+        if ($bajas = $resultado->where('modo', 'actualizar')->where('cesado', true)->count()) {
+            $r['advertencias'][] = $this->aviso(null, null, null,
+                "{$bajas} trabajador(es) pasan a cesados: pierden el acceso al sistema y su contrato vigente se cierra en la fecha de cese.");
         }
 
         foreach ($cvs as $dniCv) {
@@ -344,12 +363,23 @@ class ImportacionEmpleadosController extends Controller
 
     /** Un trabajador nuevo: tiene que traer todo lo que pide el alta. */
     private function filaDeAlta(array &$r, int $numero, string $dni, array $valores, array $catalogos, ?string $rolEmpleado,
-        array $reglas, array $atributos, array $correos, array &$vistosCorreo, bool $tieneCv): void
+        array $reglas, array $reglasCesado, array $atributos, array $correos, array &$vistosCorreo, bool $tieneCv): void
     {
-        $faltan = array_values(array_filter(ColumnasDeEmpleado::REQUERIDOS_ALTA, fn ($c) => ! array_key_exists($c, $valores)));
+        // Quien ya se fue se registra solo para guardar sus documentos: pide
+        // mucho menos, y entra sin acceso y con el contrato ya cerrado.
+        $cesado = ($valores['estado'] ?? 'activo') === 'inactivo';
+        if (! $cesado && array_key_exists('fecha_cese', $valores)) {
+            $r['errores'][] = $this->aviso($numero, $dni, null, 'Tiene fecha de cese, pero su estado no es «Cesado». Escribe Cesado en «Estado», o borra la fecha.');
+            return;
+        }
+
+        $requeridos = $cesado ? ColumnasDeEmpleado::REQUERIDOS_ALTA_CESADO : ColumnasDeEmpleado::REQUERIDOS_ALTA;
+        $faltan = array_values(array_filter($requeridos, fn ($c) => ! array_key_exists($c, $valores)));
         if ($faltan) {
             $nombres = implode(', ', array_map(fn ($c) => ColumnasDeEmpleado::CAMPOS[$c]['titulo'], $faltan));
-            $r['errores'][] = $this->aviso($numero, $dni, null, "Es un trabajador nuevo, y para darlo de alta falta: {$nombres}.");
+            $r['errores'][] = $this->aviso($numero, $dni, null, $cesado
+                ? "Es un trabajador cesado que el sistema no tiene, y para registrarlo falta: {$nombres}."
+                : "Es un trabajador nuevo, y para darlo de alta falta: {$nombres}.");
             return;
         }
 
@@ -362,15 +392,16 @@ class ImportacionEmpleadosController extends Controller
         $datos = AltaDeEmpleado::limpiarAfp($datos);
 
         $problemas = [];
-        $validador = Validator::make($datos, $reglas, AltaDeEmpleado::mensajes(), $atributos);
+        $validador = Validator::make($datos, $cesado ? $reglasCesado : $reglas, AltaDeEmpleado::mensajes(), $atributos);
         if ($validador->fails()) {
             $problemas = $validador->errors()->all();
         }
 
-        $correo = mb_strtolower((string) $datos['email']);
-        if (array_key_exists($correo, $correos)) {
+        // Un cesado puede venir sin correo: entonces no se le crea cuenta.
+        $correo = mb_strtolower((string) ($datos['email'] ?? ''));
+        if ($correo !== '' && array_key_exists($correo, $correos)) {
             $problemas[] = "El correo {$datos['email']} ya lo usa otra cuenta.";
-        } elseif (isset($vistosCorreo[$correo])) {
+        } elseif ($correo !== '' && isset($vistosCorreo[$correo])) {
             $problemas[] = "El correo {$datos['email']} ya está en la fila {$vistosCorreo[$correo]}.";
         }
 
@@ -385,15 +416,18 @@ class ImportacionEmpleadosController extends Controller
             return;
         }
 
-        $vistosCorreo[$correo] = $numero;
+        if ($correo !== '') {
+            $vistosCorreo[$correo] = $numero;
+        }
 
-        $resumen = array_values(array_filter(['area', 'cargo', 'sede', 'tipo_contrato', 'sueldo_base', 'email'], fn ($c) => array_key_exists($c, $valores)));
+        $resumen = array_values(array_filter(['estado', 'fecha_cese', 'area', 'cargo', 'sede', 'tipo_contrato', 'sueldo_base', 'email'], fn ($c) => array_key_exists($c, $valores)));
 
         $r['filas'][] = [
             'fila'    => $numero,
             'dni'     => $dni,
             'nombre'  => trim($valores['apellido'] . ', ' . $valores['nombre']),
             'modo'    => 'alta',
+            'cesado'  => $cesado,
             'cv'      => $tieneCv,
             'cambios' => array_map(fn ($c) => [
                 'campo'   => $c,
@@ -414,6 +448,28 @@ class ImportacionEmpleadosController extends Controller
                 unset($valores[$campo]);
                 $bloqueadas[$campo] = true;
             }
+        }
+
+        // Dar de baja por el Excel, sí; volver a activar, no: eso le devuelve
+        // la cuenta a alguien, y se decide mirando su ficha.
+        $estadoFinal = $valores['estado'] ?? $existente->estado;
+        $cese        = $valores['fecha_cese'] ?? null;
+        $problema    = match (true) {
+            $existente->estado === 'inactivo' && $estadoFinal === 'activo'
+                => 'Está dado de baja. Para volver a activarlo, hazlo desde su ficha en Empleados.',
+            $estadoFinal === 'activo' && $cese !== null
+                => 'Tiene fecha de cese, pero su estado es «Activo». Escribe Cesado en «Estado», o borra la fecha.',
+            $existente->estado === 'activo' && $estadoFinal === 'inactivo' && $cese === null
+                => 'Para darlo de baja falta la «Fecha de cese».',
+            $cese !== null && $cese > now()->toDateString()
+                => 'La fecha de cese no puede ser una fecha que todavía no llega.',
+            $cese !== null && $cese < Carbon::parse($existente->fecha_ingreso)->toDateString()
+                => 'La fecha de cese es anterior a su fecha de ingreso.',
+            default => null,
+        };
+        if ($problema) {
+            $r['errores'][] = $this->aviso($numero, $dni, null, $problema);
+            return;
         }
 
         $campos = [];
@@ -494,6 +550,7 @@ class ImportacionEmpleadosController extends Controller
             'dni'       => $dni,
             'nombre'    => trim($existente->apellido . ', ' . $existente->nombre),
             'modo'      => 'actualizar',
+            'cesado'    => ($queCambia['estado'] ?? null) === 'inactivo',
             'cv'        => $tieneCv,
             'cambios'   => $cambios,
             '_empleado' => $existente,
@@ -511,6 +568,7 @@ class ImportacionEmpleadosController extends Controller
                 'filas_leidas'       => $r['filas_leidas'],
                 'altas'              => $filas->where('modo', 'alta')->count(),
                 'actualizaciones'    => $filas->where('modo', 'actualizar')->count(),
+                'cesados'            => $filas->where('cesado', true)->count(),
                 'sin_cambios'        => $r['sin_cambios'],
                 'errores'            => count($r['errores']),
                 'advertencias'       => count($r['advertencias']),

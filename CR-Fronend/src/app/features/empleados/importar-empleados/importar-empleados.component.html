@@ -21,7 +21,9 @@
         reconoce, listas para elegir el área, el cargo o la sede, y una hoja con instrucciones. Con un
         <strong>DNI nuevo</strong> se da de alta al trabajador; con uno que <strong>ya existe</strong> se
         cambian solo las celdas que tengan algo escrito. Una celda vacía no borra nada. Todos entran
-        como trabajadores: el rol se cambia después desde Usuarios.
+        como trabajadores: el rol se cambia después desde Usuarios. Para registrar a quien ya se fue, pon
+        <strong>Cesado</strong> en Estado y su fecha de cese: sus boletas y contratos de antes se suben luego
+        desde Documentos.
       </div>
       <button type="button" class="btn-exportar" (click)="descargarModelo()" [disabled]="descargandoModelo">
         <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none"
@@ -193,6 +195,9 @@
       <ng-template appCelda="modo" let-f>
         <span class="status-badge" [ngClass]="f.modo === 'alta' ? 'status-badge-success' : 'status-badge-info'">
           {{ f.modo === 'alta' ? 'Alta nueva' : 'Actualización' }}
+        </span>
+        <span class="status-badge status-badge-secondary" *ngIf="f.cesado">
+          {{ f.modo === 'alta' ? 'Cesado' : 'Pasa a cesado' }}
         </span>
       </ng-template>
 
