@@ -47,12 +47,14 @@
   --on-accent: #4A3400;            /* texto sobre dorado: fijo en ambos temas */
 
   /* ── Papel de firma ──
-     La firma se enseña siempre sobre papel blanco, igual en claro y en
-     oscuro: es la misma caja que sale impresa en la boleta, y la tinta
-     sobre un fondo oscuro no se vería. Fijos a propósito, como --on-accent. */
+     El recuadro donde se firma. Sigue al tema como todo lo demás: en oscuro
+     un cuadro blanco en medio de la pantalla se veía como un parche.
+     --tinta-archivo es la única fija: es el color con el que se GUARDA la
+     firma, y esa imagen se imprime sobre el papel blanco de la boleta. */
   --papel: #FFFFFF;
   --papel-borde: #D9E0EC;
   --tinta: #16213F;
+  --tinta-archivo: #16213F;
   --heading: var(--brand-700);     /* títulos: azul en claro, claro en oscuro */
 
   /* ── Bordes ── */
@@ -180,6 +182,12 @@
 
   --border: #26324A;
   --border-strong: #3A4864;
+
+  /* El recuadro de la firma, en oscuro. --tinta-archivo NO se toca: lo que
+     se guarda tiene que seguir siendo tinta oscura para la boleta impresa. */
+  --papel: var(--surface-alt);
+  --papel-borde: var(--border-strong);
+  --tinta: var(--text);
 
   /* En oscuro el azul de marca se apaga: sobre un lienzo ya oscuro, un
      #1B4282 saturado vuelve a leerse como "otro azul". Los tres bloques
@@ -4506,6 +4514,12 @@ textarea.form-control {
   height: 64px;
   max-width: 100%;
   object-fit: contain;
+}
+
+/* La imagen guardada es tinta oscura sobre transparente: sobre el recuadro
+   oscuro no se vería, así que se aclara al pintarla. El archivo no cambia. */
+.dark-mode .firma-caja__trazo {
+  filter: invert(1) hue-rotate(180deg);
 }
 
 /* El hueco de la firma cuando todavía no hay ninguna, y la invitación

@@ -115,7 +115,9 @@ export class LienzoFirmaComponent implements AfterViewInit {
 
     pincel.scale(escala, escala);
     pincel.translate(MARGEN - limites.izquierda, MARGEN - limites.arriba);
-    this.dibujarTrazos(pincel);
+    // Siempre en tinta oscura, sea cual sea el tema: esta imagen se imprime
+    // sobre el papel blanco de la boleta.
+    this.dibujarTrazos(pincel, this.color('--tinta-archivo'));
 
     return new Promise((resolver) => recorte.toBlob((blob) => resolver(blob), 'image/png'));
   }
@@ -135,15 +137,15 @@ export class LienzoFirmaComponent implements AfterViewInit {
     const escala = window.devicePixelRatio || 1;
     pincel.setTransform(escala, 0, 0, escala, 0, 0);
     pincel.clearRect(0, 0, lienzo.width, lienzo.height);
-    this.dibujarTrazos(pincel);
+    this.dibujarTrazos(pincel, this.color('--tinta'));
   }
 
   /** Curvas entre punto y punto: a rectas, la firma sale temblorosa. */
-  private dibujarTrazos(pincel: CanvasRenderingContext2D): void {
+  private dibujarTrazos(pincel: CanvasRenderingContext2D, tinta: string): void {
     pincel.lineWidth = 2.4;
     pincel.lineCap = 'round';
     pincel.lineJoin = 'round';
-    pincel.strokeStyle = this.tinta();
+    pincel.strokeStyle = tinta;
 
     for (const trazo of this.trazos) {
       if (trazo.length === 1) {
@@ -167,9 +169,9 @@ export class LienzoFirmaComponent implements AfterViewInit {
     }
   }
 
-  /** El color de la tinta sale del token --tinta, como todo color del sistema. */
-  private tinta(): string {
-    return getComputedStyle(document.documentElement).getPropertyValue('--tinta').trim() || '#16213F';
+  /** Los colores salen de los tokens, como todo color del sistema. */
+  private color(token: string): string {
+    return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || '#16213F';
   }
 
   /** Hasta dónde llega la tinta; null si no hay casi nada dibujado. */

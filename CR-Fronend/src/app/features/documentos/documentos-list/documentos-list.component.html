@@ -17,7 +17,7 @@
 
 <!-- Tu firma: el mismo recuadro que sale impreso en la boleta -->
 <section class="section-panel firma-panel">
-  <span class="firma-panel__icono"><app-icon icono="signature" [tamano]="21"></app-icon></span>
+  <span class="firma-panel__icono"><app-icon icono="shield" [tamano]="21"></app-icon></span>
 
   <div class="firma-panel__texto">
     <h2 class="seccion-form__titulo">Tu firma</h2>
@@ -36,7 +36,6 @@
     </div>
 
     <button type="button" class="btn-primary" (click)="abrirFirma()" [disabled]="cargandoFirma">
-      <app-icon icono="signature" [tamano]="17"></app-icon>
       {{ firmaUrl ? 'Cambiar mi firma' : 'Dibujar mi firma' }}
     </button>
   </div>
