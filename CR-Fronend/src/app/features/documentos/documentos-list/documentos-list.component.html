@@ -5,6 +5,15 @@
   [cifras]="cifras"
   [cargandoCifras]="cargando"
 >
+  <button headerActions type="button" class="firma-chip" [class.firma-chip--vacia]="!firmaUrl"
+    (click)="abrirFirma()" [disabled]="cargandoFirma"
+    [appPista]="firmaUrl ? 'Se estampa en cada boleta que firmes' : 'Hazla una vez y queda guardada'"
+    pistaLado="abajo">
+    <img *ngIf="firmaUrl" class="firma-chip__trazo" [src]="firmaUrl" alt="" />
+    <app-icon *ngIf="!firmaUrl" icono="shield" [tamano]="17"></app-icon>
+    <span>{{ firmaUrl ? 'Cambiar' : 'Registrar mi firma' }}</span>
+  </button>
+
   <button headerActions type="button" class="btn-primary" (click)="abrirSubirCv()">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -14,32 +23,6 @@
     Subir mi hoja de vida
   </button>
 </app-page-header>
-
-<!-- Tu firma: el mismo recuadro que sale impreso en la boleta -->
-<section class="section-panel firma-panel">
-  <span class="firma-panel__icono"><app-icon icono="shield" [tamano]="21"></app-icon></span>
-
-  <div class="firma-panel__texto">
-    <h2 class="seccion-form__titulo">Tu firma</h2>
-    <span class="form-ayuda">
-      Se estampa en cada boleta que firmes, tal como la dibujes. La haces una sola vez —con el dedo o
-      con el mouse— y queda guardada; puedes cambiarla cuando quieras.
-    </span>
-  </div>
-
-  <div class="firma-panel__firma">
-    <div class="firma-caja">
-      <img *ngIf="firmaUrl" class="firma-caja__trazo" [src]="firmaUrl" alt="Tu firma registrada" />
-      <span class="firma-caja__vacio" *ngIf="!firmaUrl">{{ cargandoFirma ? '' : 'Sin firma todavía' }}</span>
-      <span class="firma-caja__linea" aria-hidden="true"></span>
-      <span class="firma-caja__pie">{{ miNombre }}</span>
-    </div>
-
-    <button type="button" class="btn-primary" (click)="abrirFirma()" [disabled]="cargandoFirma">
-      {{ firmaUrl ? 'Cambiar mi firma' : 'Dibujar mi firma' }}
-    </button>
-  </div>
-</section>
 
 <app-data-table
   entidad="este documento"

@@ -4578,75 +4578,57 @@ textarea.form-control {
   margin-top: 12px;
 }
 
-/* ── "Tu firma", en Mis Documentos ──
-   Tres columnas: el ícono que ancla el bloque, la explicación, y a la
-   derecha la firma con su botón justo debajo. El botón vivía abajo a la
-   izquierda, lejos del recuadro, y se perdía. */
-.firma-panel {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: "icono texto firma";
-  gap: 20px 24px;
-  /* Arriba: el ícono al lado del título, no a media explicación. */
-  align-items: start;
-  /* .section-panel no trae relleno (lo pone --formulario): sin esto el
-     contenido quedaba pegado a los bordes de la tarjeta. */
-  padding: 22px 24px;
-  margin-bottom: 16px;
-}
-
-.firma-panel__icono {
-  grid-area: icono;
+/* ── El control de la firma, en la cabecera de Mis Documentos ──
+   Enseña la propia firma en chico: es la prueba de que está registrada, y
+   ocupa lo que un botón. Antes era un bloque entero que empujaba la tabla
+   fuera de la pantalla. */
+.firma-chip {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 40px;
-  height: 40px;
+  gap: 10px;
+  padding: 6px 14px;
+  min-height: 42px;
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
-  background-color: var(--brand-100);
+  background-color: var(--surface);
+  color: var(--text-soft);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.firma-chip:hover:not(:disabled) {
+  border-color: var(--brand-500);
   color: var(--brand-700);
 }
 
-.firma-panel__texto {
-  grid-area: texto;
-  min-width: 0;
+.firma-chip:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
-/* Título y explicación pegados uno al otro: hacía falta aire. */
-.firma-panel__texto .seccion-form__titulo {
-  margin-bottom: 8px;
+/* Sin firma todavía: el borde punteado invita a hacerla, como un renglón
+   en blanco esperando la rúbrica. */
+.firma-chip--vacia {
+  border-style: dashed;
+  color: var(--text-muted);
 }
 
-.firma-panel__texto .form-ayuda {
-  display: block;
-  max-width: 52ch;
-  line-height: 1.55;
+.firma-chip__trazo {
+  height: 26px;
+  max-width: 96px;
+  object-fit: contain;
 }
 
-/* La firma y la acción que la cambia, juntas. */
-.firma-panel__firma {
-  grid-area: firma;
-  align-self: center;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.dark-mode .firma-chip__trazo {
+  filter: invert(1) hue-rotate(180deg);
 }
 
-.firma-panel__firma .btn-primary {
-  justify-content: center;
-}
-
-@media (max-width: 760px) {
-  .firma-panel {
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas:
-      "icono texto"
-      "firma firma";
-    gap: 16px;
-  }
-
-  .firma-panel .firma-caja {
-    min-width: 0;
+@media (max-width: 560px) {
+  /* En el celular, la firma sola: el texto del botón se sobreentiende. */
+  .firma-chip span {
+    display: none;
   }
 }

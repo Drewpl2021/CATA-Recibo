@@ -18,6 +18,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { LienzoFirmaComponent } from '../../../shared/components/lienzo-firma/lienzo-firma.component';
 import { SelectorArchivoComponent } from '../../../shared/components/selector-archivo/selector-archivo.component';
 import { VisorDocumentoComponent } from '../../../shared/components/visor-documento/visor-documento.component';
@@ -39,7 +40,7 @@ import { VisorDocumentoComponent } from '../../../shared/components/visor-docume
   imports: [
     CommonModule, FormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorArchivoComponent, VisorDocumentoComponent,
-    LienzoFirmaComponent, IconComponent,
+    LienzoFirmaComponent, IconComponent, PistaDirective,
   ],
   templateUrl: './documentos-list.component.html',
 })
