@@ -10561,6 +10561,35 @@
        ]
       }
      ]
+    },
+    {
+     "name": "RRHH puede pedir la firma de un trabajador",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{rrhh_token}}"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "url": "{{base_url}}/empleados/{{empleado_id}}/firma-imagen",
+      "description": "RR.HH. y Administracion pueden ver la firma de cualquiera; un trabajador, solo la suya (403 en otro caso)."
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Contesta 404 (aun no dibujo la suya), no 403', () => pm.response.to.have.status(404));"
+        ]
+       }
+      }
+     ]
     }
    ]
   },
@@ -12535,6 +12564,36 @@
         "type": "text/javascript",
         "exec": [
          "pm.test('Status 403', () => pm.response.to.have.status(403));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Su firma dibujada: todavia no hay (404)",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{empleado_token}}"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "url": "{{base_url}}/mi-firma-imagen",
+      "description": "La firma que el trabajador dibuja en Mis Documentos. Vive en el disco privado, asi que va por su propia ruta."
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 404', () => pm.response.to.have.status(404));",
+         "pm.test('Lo dice en palabras', () => pm.expect(pm.response.json().message).to.include('registrada'));"
         ]
        }
       }

@@ -132,6 +132,35 @@
     </div>
   </section>
 
+  <!-- ══ Su firma ══════════════════════════════════════════════ -->
+  <section class="expediente-bloque">
+    <header class="expediente-bloque__cabecera">
+      <span class="expediente-bloque__icono"><app-icon icono="signature" [tamano]="19"></app-icon></span>
+      <div class="expediente-bloque__titulos">
+        <h2 class="seccion-form__titulo">Su firma</h2>
+        <span class="form-ayuda">
+          La que se estampa en sus boletas cuando las firma. Puede dibujarla él desde Mis Documentos, o tú desde aquí.
+        </span>
+      </div>
+      <button type="button" class="btn-secondary" (click)="abrirFirma()" [disabled]="cargandoFirma">
+        {{ firmaUrl ? 'Cambiar la firma' : 'Dibujar su firma' }}
+      </button>
+    </header>
+
+    <div class="section-panel expediente-bloque__panel">
+      <div class="firma-caja">
+        <img *ngIf="firmaUrl" class="firma-caja__trazo" [src]="firmaUrl" [alt]="'Firma de ' + nombreCompleto" />
+        <span class="firma-caja__vacio" *ngIf="!firmaUrl">{{ cargandoFirma ? '' : 'Sin firma todavía' }}</span>
+        <span class="firma-caja__linea" aria-hidden="true"></span>
+        <span class="firma-caja__pie">{{ nombreCompleto }}<ng-container *ngIf="e.empleado.dni">, DNI {{ e.empleado.dni }}</ng-container></span>
+      </div>
+
+      <p class="expediente-vacio" *ngIf="!firmaUrl && !cargandoFirma">
+        Sin firma registrada, sus boletas firmadas salen sin el trazo.
+      </p>
+    </div>
+  </section>
+
   <!-- ══ Boletas ═══════════════════════════════════════════════ -->
   <section class="expediente-bloque">
     <header class="expediente-bloque__cabecera">
@@ -242,3 +271,22 @@
 </app-form-modal>
 
 <app-visor-documento [(documento)]="docAbierto" [persona]="nombreCompleto"></app-visor-documento>
+
+<!-- Dibujar la firma del trabajador -->
+<app-form-modal
+  [(visible)]="modalFirma"
+  titulo="Dibujar su firma"
+  textoGuardar="Guardar la firma"
+  ancho="620px"
+  [guardando]="guardandoFirma"
+  (guardar)="guardarFirma()"
+  (cancelar)="cerrarFirma()"
+>
+  <div class="form-fields">
+    <p class="form-nota">
+      Que firme el propio trabajador, en tu pantalla o en su celular. Queda guardada a su nombre y se
+      estampa en cada boleta que él firme.
+    </p>
+    <app-lienzo-firma [pie]="nombreCompleto" (hayTrazoChange)="hayTrazo = $event"></app-lienzo-firma>
+  </div>
+</app-form-modal>

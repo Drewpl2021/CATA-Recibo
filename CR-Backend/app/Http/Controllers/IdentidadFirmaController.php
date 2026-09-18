@@ -1,5 +1,6 @@
 <?php
 namespace App\Http\Controllers;
+use App\Models\Auditoria;
 use App\Models\Empleado;
 use App\Models\IdentidadFirma;
 use Illuminate\Http\Request;
@@ -31,6 +32,47 @@ class IdentidadFirmaController extends Controller
 
         $empleado = Empleado::findOrFail($empleado_id);
         return $this->guardar($request, $empleado);
+    }
+
+    /**
+     * GET mi-firma-imagen  ·  GET empleados/{id}/firma-imagen
+     *
+     * Los bytes de la firma (o de la huella con ?tipo=huella). Van por su
+     * propia ruta, y no como una URL dentro de la ficha, porque viven en el
+     * disco privado: hay que comprobar antes quién las pide. Cada quien ve
+     * las suyas; RR.HH. y Administración, las de cualquiera.
+     */
+    public function ver(Request $request, ?string $empleado_id = null)
+    {
+        $usuario     = $request->user();
+        $empleado_id = $empleado_id ?: $usuario->empleado_id;
+
+        if (! $empleado_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tu usuario no tiene empleado vinculado.',
+            ], 403);
+        }
+
+        $esSuya = $usuario->empleado_id === $empleado_id;
+        if (! $esSuya && ! in_array($usuario->rol?->nombre, ['rrhh', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para ver esta firma.',
+            ], 403);
+        }
+
+        $columna   = $request->input('tipo') === 'huella' ? 'huella_imagen' : 'firma_imagen';
+        $identidad = IdentidadFirma::where('empleado_id', $empleado_id)->first();
+
+        if (! $identidad || ! $identidad->$columna || ! Storage::disk('local')->exists($identidad->$columna)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Todavía no hay una imagen registrada.',
+            ], 404);
+        }
+
+        return Storage::disk('local')->response($identidad->$columna);
     }
 
     /**
@@ -69,6 +111,19 @@ class IdentidadFirmaController extends Controller
         }
 
         $identidad = IdentidadFirma::updateOrCreate(['empleado_id' => $empleado->id], $datos);
+
+        // Queda anotado quién registró la firma de quién: es la imagen que
+        // después sale estampada en sus boletas.
+        $partes = array_filter([
+            $request->hasFile('firma') ? 'la firma' : null,
+            $request->hasFile('huella') ? 'la huella' : null,
+        ]);
+        Auditoria::registrar(
+            'cambió',
+            'firma',
+            $empleado->id,
+            'Registró ' . implode(' y ', $partes) . ' de ' . trim($empleado->nombre . ' ' . $empleado->apellido)
+        );
 
         return response()->json(['success' => true, 'data' => $identidad]);
     }

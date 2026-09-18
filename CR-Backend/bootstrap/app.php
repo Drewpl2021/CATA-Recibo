@@ -28,6 +28,18 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(CorsMiddleware::class);
         // Le pone un código a cada petición para poder seguirla en el registro.
         $middleware->append(RastroDePeticion::class);
+        /*
+         * Sin sesión, la API contesta 401 en JSON.
+         *
+         * Por defecto Laravel manda al invitado a la pantalla de login, y
+         * aquí no hay ninguna: es una API. Al intentar armar esa dirección
+         * reventaba con "Route [login] not defined" y el 401 se convertía en
+         * un 500 —probado con GET /api/mi-firma-imagen sin token—. Devolver
+         * null quita el redirigir y deja pasar la excepción de siempre, que
+         * el manejador de abajo ya convierte en 401.
+         */
+        $middleware->redirectGuestsTo(fn () => null);
+
         $middleware->alias([
             'rol'         => \App\Http\Middleware\CheckRol::class,
             'sesion'      => \App\Http\Middleware\RenovarSesionActiva::class,
