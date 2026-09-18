@@ -286,7 +286,13 @@
     <p class="form-nota">
       Que firme el propio trabajador, en tu pantalla o en su celular. Queda guardada a su nombre y se
       estampa en cada boleta que él firme.
+      {{ firmaUrl ? 'La que dibuje ahora reemplaza a la de arriba.' : '' }}
     </p>
+    <div class="firma-actual" *ngIf="firmaUrl">
+      <span class="form-ayuda">Su firma actual</span>
+      <img class="firma-actual__trazo" [src]="firmaUrl" alt="Su firma actual" />
+    </div>
+
     <app-lienzo-firma [pie]="nombreCompleto" (hayTrazoChange)="hayTrazo = $event"></app-lienzo-firma>
   </div>
 </app-form-modal>

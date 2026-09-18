@@ -4578,6 +4578,30 @@ textarea.form-control {
   margin-top: 12px;
 }
 
+/* ── La firma que ya está registrada, dentro del modal ──
+   Al abrir el recuadro en blanco parecía que la firma guardada se había
+   perdido. Se enseña arriba para que quede claro que sigue ahí hasta que se
+   guarde la nueva. */
+.firma-actual {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-alt);
+}
+
+.firma-actual__trazo {
+  height: 34px;
+  max-width: 180px;
+  object-fit: contain;
+}
+
+.dark-mode .firma-actual__trazo {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 /* ── El control de la firma, en la cabecera de Mis Documentos ──
    Enseña la propia firma en chico: es la prueba de que está registrada, y
    ocupa lo que un botón. Antes era un bloque entero que empujaba la tabla
