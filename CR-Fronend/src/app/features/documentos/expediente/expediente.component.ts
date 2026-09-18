@@ -333,6 +333,9 @@ export class ExpedienteComponent implements OnInit, OnDestroy {
   }
 
   abrirFirma(): void {
+    // El lienzo no se destruye al cerrar el modal: se limpia a mano para no
+    // reabrirlo con el dibujo anterior.
+    this.lienzo?.borrar();
     this.hayTrazo = false;
     this.modalFirma = true;
   }

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /** Un trazo: los puntos que se dibujaron sin levantar el dedo. */
@@ -33,7 +33,7 @@ const TRAZO_MINIMO = 40;
   imports: [CommonModule],
   templateUrl: './lienzo-firma.component.html',
 })
-export class LienzoFirmaComponent implements AfterViewInit {
+export class LienzoFirmaComponent implements AfterViewInit, OnDestroy {
   @ViewChild('lienzo') private lienzoRef!: ElementRef<HTMLCanvasElement>;
 
   /** Lo que va debajo de la línea, como en la boleta: el nombre de quien firma. */
@@ -46,15 +46,34 @@ export class LienzoFirmaComponent implements AfterViewInit {
 
   private trazos: Trazo[] = [];
   private trazoActual: Trazo | null = null;
+  private observador?: ResizeObserver;
 
+  /**
+   * El lienzo nace con la PANTALLA, no con el modal: el modal lo recibe como
+   * contenido proyectado, así que al medirlo aquí puede estar todavía oculto
+   * y medir 0. Un canvas de 0x0 se deja dibujar encima sin pintar nada: se
+   * veía el recuadro, se arrastraba el dedo y no pasaba nada.
+   *
+   * Por eso se mide cada vez que cambia de tamaño —incluido el instante en
+   * que el modal lo enseña— y no una sola vez al arrancar.
+   */
   ngAfterViewInit(): void {
+    this.observador = new ResizeObserver(() => this.ajustarTamano());
+    this.observador.observe(this.lienzoRef.nativeElement);
     this.ajustarTamano();
+  }
+
+  ngOnDestroy(): void {
+    this.observador?.disconnect();
   }
 
   // ── Dibujar ────────────────────────────────────────────────────
 
   empezar(evento: PointerEvent): void {
     evento.preventDefault();
+    // Red de seguridad: si por lo que sea el lienzo quedó sin medir, se mide
+    // antes del primer trazo en vez de tragarse el dibujo.
+    this.ajustarTamano();
     this.lienzoRef.nativeElement.setPointerCapture(evento.pointerId);
     this.trazoActual = [this.punto(evento)];
     this.trazos.push(this.trazoActual);
@@ -80,15 +99,18 @@ export class LienzoFirmaComponent implements AfterViewInit {
     this.avisarSiHayTrazo();
   }
 
-  /** Al girar el celular el lienzo cambia de ancho: se vuelve a dibujar. */
-  @HostListener('window:resize')
+  /** Mide el lienzo y vuelve a pintar lo dibujado. Oculto, no se toca. */
   ajustarTamano(): void {
     const lienzo = this.lienzoRef?.nativeElement;
-    if (!lienzo) return;
+    if (!lienzo || !lienzo.clientWidth) return;
 
     const escala = window.devicePixelRatio || 1;
-    lienzo.width = lienzo.clientWidth * escala;
-    lienzo.height = lienzo.clientHeight * escala;
+    const ancho = Math.round(lienzo.clientWidth * escala);
+    const alto = Math.round(lienzo.clientHeight * escala);
+    if (lienzo.width === ancho && lienzo.height === alto) return;
+
+    lienzo.width = ancho;
+    lienzo.height = alto;
     this.pintar();
   }
 
