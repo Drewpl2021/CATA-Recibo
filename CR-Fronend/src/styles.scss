@@ -45,6 +45,14 @@
   --text-faint: #98A2B8;
   --text-on-brand: #FFFFFF;
   --on-accent: #4A3400;            /* texto sobre dorado: fijo en ambos temas */
+
+  /* ── Papel de firma ──
+     La firma se enseña siempre sobre papel blanco, igual en claro y en
+     oscuro: es la misma caja que sale impresa en la boleta, y la tinta
+     sobre un fondo oscuro no se vería. Fijos a propósito, como --on-accent. */
+  --papel: #FFFFFF;
+  --papel-borde: #D9E0EC;
+  --tinta: #16213F;
   --heading: var(--brand-700);     /* títulos: azul en claro, claro en oscuro */
 
   /* ── Bordes ── */
@@ -4460,4 +4468,140 @@ textarea.form-control {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* ── La caja de firma ────────────────────────────────────────
+   Es el recuadro de la boleta de papel: el trazo, la línea y el nombre
+   debajo. El mismo objeto sirve para dibujar, para enseñar la firma
+   guardada y para el expediente, así al firmar se ve tal cual saldrá
+   impreso. */
+.firma-caja {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 260px;
+  padding: 14px 20px 12px;
+  border: 1px solid var(--papel-borde);
+  border-radius: 10px;
+  background-color: var(--papel);
+}
+
+/* Al dibujar, el trazo llega hasta los bordes. */
+.firma-caja--dibujable {
+  position: relative;
+  padding: 0 20px 12px;
+}
+
+.firma-caja__lienzo {
+  display: block;
+  width: 100%;
+  height: 200px;
+  /* Sin esto, arrastrar el dedo mueve la página en vez de dibujar. */
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.firma-caja__trazo {
+  align-self: center;
+  height: 64px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* El hueco de la firma cuando todavía no hay ninguna, y la invitación
+   a firmar mientras el lienzo está en blanco. */
+.firma-caja__vacio {
+  display: grid;
+  place-items: center;
+  height: 64px;
+  color: var(--tinta);
+  opacity: 0.45;
+  font-size: 0.85rem;
+}
+
+.firma-caja__guia {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Centrado en el lienzo. Abajo caía justo encima de la línea de la firma. */
+  top: 88px;
+  text-align: center;
+  color: var(--tinta);
+  opacity: 0.4;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.firma-caja__linea {
+  margin-top: 10px;
+  border-top: 1px solid var(--papel-borde);
+}
+
+.firma-caja__pie {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--tinta);
+  opacity: 0.6;
+}
+
+.lienzo-firma {
+  position: relative;
+}
+
+/* En el expediente, la caja guarda la proporción del recuadro impreso en vez
+   de estirarse a todo el ancho del panel. */
+.expediente-bloque__panel .firma-caja {
+  max-width: 420px;
+}
+
+.lienzo-firma__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+/* ── "Tu firma", en Mis Documentos ──
+   El texto y el botón a la izquierda; la caja, a la derecha, ocupando las
+   dos filas: es lo que la persona mira. */
+.firma-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "texto caja"
+    "accion caja";
+  gap: 14px 28px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.firma-panel__texto {
+  grid-area: texto;
+  min-width: 0;
+}
+
+.firma-panel__accion {
+  grid-area: accion;
+  justify-self: start;
+}
+
+.firma-panel .firma-caja {
+  grid-area: caja;
+}
+
+@media (max-width: 760px) {
+  .firma-panel {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "texto"
+      "caja"
+      "accion";
+  }
+
+  .firma-panel .firma-caja {
+    min-width: 0;
+  }
 }

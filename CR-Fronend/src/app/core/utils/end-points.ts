@@ -56,6 +56,8 @@ export const END_POINTS = {
     misDocumentos: 'mis-documentos',
     misModulos: 'mis-modulos',
     miIdentidadFirma: 'mi-identidad-firma',
+    /** GET — los bytes de la firma que uno mismo registró */
+    miFirmaImagen: 'mi-firma-imagen',
   },
 } as const;
 
@@ -103,6 +105,8 @@ export const END_POINTS_ACCIONES = {
 
   /** POST empleados/{id}/identidad-firma */
   identidadFirmaEmpleado: (empleadoId: string) => `empleados/${empleadoId}/identidad-firma`,
+  /** GET empleados/{id}/firma-imagen — los bytes de su firma (RR.HH. y Administración) */
+  firmaImagenDeEmpleado: (empleadoId: string) => `empleados/${empleadoId}/firma-imagen`,
 
   /** GET vacaciones/saldo?empleado_id=&anio= */
   saldoVacaciones: 'vacaciones/saldo',

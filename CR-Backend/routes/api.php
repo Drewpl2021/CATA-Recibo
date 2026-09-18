@@ -107,6 +107,10 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     // El propio empleado registra/actualiza su firma y/o huella (RRHH tiene su
     // propio endpoint equivalente para hacerlo por cualquier empleado, más abajo).
     Route::post('mi-identidad-firma', [IdentidadFirmaController::class, 'subirMia']);
+    // La imagen guardada, para poder enseñársela a quien la dibujó. Va por su
+    // propia ruta porque está en el disco privado; el permiso se revisa dentro.
+    Route::get('mi-firma-imagen',             [IdentidadFirmaController::class, 'ver']);
+    Route::get('empleados/{id}/firma-imagen', [IdentidadFirmaController::class, 'ver']);
 
     // La foto de perfil. Cada quien sube y quita LA SUYA; la imagen se sirve
     // por su propia ruta porque vive en el disco privado y hay que comprobar

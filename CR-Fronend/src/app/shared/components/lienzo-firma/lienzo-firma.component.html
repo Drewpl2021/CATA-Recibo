@@ -1,0 +1,23 @@
+<div class="lienzo-firma">
+  <div class="firma-caja firma-caja--dibujable">
+    <canvas
+      #lienzo
+      class="firma-caja__lienzo"
+      aria-label="Recuadro para firmar"
+      (pointerdown)="empezar($event)"
+      (pointermove)="mover($event)"
+      (pointerup)="terminar()"
+      (pointerleave)="terminar()"
+      (pointercancel)="terminar()"
+    ></canvas>
+    <span class="firma-caja__linea" aria-hidden="true"></span>
+    <span class="firma-caja__pie">{{ pie }}</span>
+  </div>
+
+  <span class="firma-caja__guia" *ngIf="!hayTrazo">Firma aquí con el dedo o con el mouse</span>
+
+  <div class="lienzo-firma__pie">
+    <span class="form-ayuda">Así saldrá en tu boleta. Puedes borrarla y repetirla las veces que quieras.</span>
+    <button type="button" class="btn-secondary" (click)="borrar()" [disabled]="!hayTrazo">Borrar y repetir</button>
+  </div>
+</div>
