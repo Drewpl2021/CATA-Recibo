@@ -108,7 +108,13 @@
   <div class="form-fields">
     <p class="form-nota">
       Firma como lo haces en papel: el recuadro es el mismo que sale impreso en tu boleta.
+      {{ firmaUrl ? 'La que dibujes ahora reemplaza a la de arriba.' : '' }}
     </p>
+    <div class="firma-actual" *ngIf="firmaUrl">
+      <span class="form-ayuda">Tu firma actual</span>
+      <img class="firma-actual__trazo" [src]="firmaUrl" alt="Tu firma actual" />
+    </div>
+
     <app-lienzo-firma [pie]="miNombre" (hayTrazoChange)="hayTrazo = $event"></app-lienzo-firma>
   </div>
 </app-form-modal>
