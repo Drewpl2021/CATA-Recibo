@@ -8,6 +8,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Support\ConceptosDePago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Support\AccesoADocumento;
 use App\Support\Meses;
 
 class MiBoletaController extends Controller
@@ -131,6 +132,18 @@ class MiBoletaController extends Controller
         if ($documento->estado_firma !== 'firmado') {
             $archivada = Pdf::loadView('boleta', $data + ['copias' => 2])->setPaper('a4', 'landscape');
             Storage::disk('local')->put($rutaArchivo, $archivada->output());
+        }
+
+        // Abrirla para leerla se permite siempre, y deja anotado que la
+        // revisó. Bajársela, después de firmarla: ese es el final del camino.
+        if ($request->boolean('ver')) {
+            AccesoADocumento::marcarVisto($documento, $request->user());
+
+            return $suya->stream($archivo);
+        }
+
+        if ($motivo = AccesoADocumento::porQueNoPuedeDescargar($documento, $request->user())) {
+            return response()->json(['success' => false, 'message' => $motivo], 403);
         }
 
         // El trabajador se la bajó: queda anotado. Solo acá, que es SU

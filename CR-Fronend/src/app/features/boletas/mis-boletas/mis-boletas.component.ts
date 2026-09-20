@@ -126,9 +126,10 @@ export class MisBoletasComponent implements OnInit {
 
   acciones: AccionPersonalizada<BoletaRow>[] = [
     {
-      id: 'ver', titulo: 'Abrir y descargar tu boleta en PDF', icono: 'receipt_long',
-      // El PDF definitivo es el de la boleta ya firmada.
-      visible: (b) => !!b.firmado,
+      // Abrirla se puede siempre: firmar algo que no se ha podido leer no
+      // prueba nada. Bajársela, ya firmada. Al abrirla queda anotado que la
+      // revisó, que antes había que marcarlo a mano y nadie lo hacía.
+      id: 'ver', titulo: 'Abrir tu boleta en PDF', icono: 'receipt_long',
     },
     {
       id: 'firmar', titulo: 'Firmar esta boleta', icono: 'signature', severidad: 'success',
@@ -243,12 +244,13 @@ export class MisBoletasComponent implements OnInit {
     this.cargando = true;
     this.errorMsg = '';
 
-    this.boletaService.descargarMiBoleta(boleta.mesNum, String(boleta.anio)).subscribe({
+    this.boletaService.descargarMiBoleta(boleta.mesNum, String(boleta.anio), true).subscribe({
       next: (blob) => {
         this.cargando = false;
         this.currentPdfBlob = blob;
         this.pdfUrl = URL.createObjectURL(blob);
         this.pdfBoletaName = `Boleta de ${boleta.mes} ${boleta.anio}`;
+        this.boletaAbierta = boleta;
         this.showPdfModal = true;
       },
       error: () => {
@@ -258,8 +260,14 @@ export class MisBoletasComponent implements OnInit {
     });
   }
 
+  /** La boleta que está abierta en el visor: de ella depende si se baja o no. */
+  boletaAbierta: BoletaRow | null = null;
+
   closePdfModal(): void {
     this.showPdfModal = false;
+    this.boletaAbierta = null;
+    // Abrirla dejó anotado que la revisó: la tabla tiene que enterarse.
+    this.cargar();
     if (this.pdfUrl) URL.revokeObjectURL(this.pdfUrl);
     this.pdfUrl = null;
     this.currentPdfBlob = null;

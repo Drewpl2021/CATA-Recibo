@@ -79,8 +79,10 @@ export const END_POINTS_ACCIONES = {
   /** POST payment-concepts/{id}/aplicar-a-grupo */
   aplicarConceptoGrupo: (conceptoId: string) => `payment-concepts/${conceptoId}/aplicar-a-grupo`,
 
-  /** GET documentos/{id}/descargar */
+  /** GET documentos/{id}/descargar — bajárselo; el suyo, solo firmado */
   descargarDocumento: (documentoId: string) => `documentos/${documentoId}/descargar`,
+  /** GET documentos/{id}/ver — abrirlo en pantalla; deja anotado que lo revisó */
+  verDocumento: (documentoId: string) => `documentos/${documentoId}/ver`,
 
   /** POST documentos/subir — adjuntar un archivo (hoja de vida, contrato firmado) */
   subirDocumento: 'documentos/subir',

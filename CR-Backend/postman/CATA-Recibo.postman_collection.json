@@ -11523,6 +11523,66 @@
      }
     },
     {
+     "name": "Abrirla se puede siempre, sin firmarla",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{empleado_token}}"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "url": "{{base_url}}/documentos/{{documento_id}}/ver",
+      "description": "Leer antes de firmar: una firma sobre algo que no se pudo leer no prueba nada. Abrirla deja anotado que la reviso."
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 200', () => pm.response.to.have.status(200));",
+         "pm.test('Es el PDF', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('pdf'));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Sin firmar todavia no se la puede bajar",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Authorization",
+        "value": "Bearer {{empleado_token}}"
+       },
+       {
+        "key": "Accept",
+        "value": "application/json"
+       }
+      ],
+      "url": "{{base_url}}/documentos/{{documento_id}}/descargar",
+      "description": "Llevarse el PDF es el final del camino: revisar, firmar, descargar. RR.HH. si puede bajarla siempre."
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('Status 403', () => pm.response.to.have.status(403));",
+         "pm.test('Dice que primero hay que firmarla', () => pm.expect(pm.response.json().message.toLowerCase()).to.include('firma'));"
+        ]
+       }
+      }
+     ]
+    },
+    {
      "name": "Firmar Documento",
      "event": [
       {

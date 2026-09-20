@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Documento;
+use App\Support\AccesoADocumento;
 use App\Support\ExpedienteDigital;
 use App\Models\Contrato;
 use App\Models\Empleado;
@@ -211,27 +212,69 @@ class DocumentoController extends Controller
      * el disco "public", porque una boleta trae sueldo, DNI y cuenta bancaria.
      * Acceso: RRHH/admin sobre cualquier documento, o el empleado dueño sobre el suyo.
      */
-    public function descargar(Request $request, string $id)
+    /**
+     * GET documentos/{id}/ver — abrirlo en pantalla, sin bajarlo.
+     *
+     * Va por su propia ruta y no con un parámetro en la descarga porque son
+     * dos cosas distintas: esta se permite siempre (para poder leer antes de
+     * firmar) y deja anotado que lo revisó; la otra pide la firma primero.
+     */
+    public function ver(Request $request, string $id)
     {
         $documento = Documento::findOrFail($id);
-        $user = $request->user();
-        $esRrhhOAdmin = in_array($user->rol?->nombre, ['rrhh', 'admin'], true);
+        $usuario   = $request->user();
 
-        if (!$esRrhhOAdmin && $documento->empleado_id !== $user->empleado_id) {
+        if (! AccesoADocumento::puedeVer($documento, $usuario)) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'No tienes permiso para descargar este documento.'],
+                'message' => 'No tienes permiso para ver este documento.',
             ], 403);
         }
 
-        if (!$documento->archivo || !Storage::disk('local')->exists($documento->archivo)) {
-            return response()->json([
-                'success' => false,
-                'data'    => ['message' => 'El archivo de este documento aún no está disponible. Vuelve a generarlo.'],
-            ], 404);
+        if ($problema = $this->archivoQueFalta($documento)) {
+            return $problema;
+        }
+
+        AccesoADocumento::marcarVisto($documento, $usuario);
+
+        return Storage::disk('local')->response($documento->archivo);
+    }
+
+    public function descargar(Request $request, string $id)
+    {
+        $documento = Documento::findOrFail($id);
+        $usuario   = $request->user();
+
+        // Su dueño se lleva el PDF después de firmarlo; RR.HH. y
+        // Administración, siempre. Ver AccesoADocumento.
+        if ($motivo = AccesoADocumento::porQueNoPuedeDescargar($documento, $usuario)) {
+            return response()->json(['success' => false, 'message' => $motivo], 403);
+        }
+
+        if ($problema = $this->archivoQueFalta($documento)) {
+            return $problema;
+        }
+
+        if (AccesoADocumento::esSuyo($documento, $usuario)) {
+            // Es SU descarga: que RR.HH. abra el PDF no significa que el
+            // trabajador lo haya recibido.
+            $documento->registrarDescarga();
         }
 
         return Storage::disk('local')->download($documento->archivo, basename($documento->archivo));
+    }
+
+    /** La respuesta de "todavía no hay archivo"; null si sí está. */
+    private function archivoQueFalta(Documento $documento)
+    {
+        if ($documento->archivo && Storage::disk('local')->exists($documento->archivo)) {
+            return null;
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'El archivo de este documento aún no está disponible. Vuelve a generarlo.',
+        ], 404);
     }
 
     /**

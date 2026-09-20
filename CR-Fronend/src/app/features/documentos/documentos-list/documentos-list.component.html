@@ -93,7 +93,11 @@
 </app-form-modal>
 
 <!-- Ver un PDF (el visor compartido con el expediente de RR.HH.) -->
-<app-visor-documento [(documento)]="docAbierto"></app-visor-documento>
+<app-visor-documento
+  [documento]="docAbierto"
+  (documentoChange)="alCerrarVisor($event)"
+  [puedeDescargar]="docAbierto ? puedeDescargar(docAbierto) : true"
+></app-visor-documento>
 
 <!-- Dibujar la firma -->
 <app-form-modal
