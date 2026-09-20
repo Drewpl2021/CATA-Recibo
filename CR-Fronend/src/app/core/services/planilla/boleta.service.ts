@@ -21,8 +21,12 @@ export class BoletaService {
   }
 
   /** GET /mis-boletas/{mes}/{anio} — PDF propio del empleado. */
-  descargarMiBoleta(mes: number, anio: number | string): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/${END_POINTS_ACCIONES.miBoleta(mes, anio)}`, { responseType: 'blob' });
+  /** Con `soloVer`, la abre para leerla: no hace falta haberla firmado. */
+  descargarMiBoleta(mes: number, anio: number | string, soloVer = false): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${END_POINTS_ACCIONES.miBoleta(mes, anio)}`, {
+      responseType: 'blob',
+      params: soloVer ? { ver: '1' } : {},
+    });
   }
 
   /** GET /boleta/{empleado_id}/{mes}/{anio} — PDF de cualquier empleado (RRHH/Admin). */

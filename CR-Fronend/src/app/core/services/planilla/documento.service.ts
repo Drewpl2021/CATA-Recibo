@@ -44,6 +44,19 @@ export class DocumentoService extends EntityDataService<Documento> {
     );
   }
 
+  /**
+   * GET /documentos/{id}/ver — el PDF para leerlo en pantalla.
+   *
+   * Va aparte de la descarga a propósito: abrirlo se permite siempre —hay
+   * que poder leer antes de firmar— y deja anotado que lo revisó, mientras
+   * que bajárselo pide la firma primero.
+   */
+  ver(documentoId: string): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/${END_POINTS_ACCIONES.verDocumento(documentoId)}`, {
+      responseType: 'blob',
+    });
+  }
+
   /** GET /documentos/{id}/descargar — devuelve el PDF ya guardado en disco. */
   descargar(documentoId: string): Observable<Blob> {
     return this.http.get(`${environment.apiUrl}/${END_POINTS_ACCIONES.descargarDocumento(documentoId)}`, {

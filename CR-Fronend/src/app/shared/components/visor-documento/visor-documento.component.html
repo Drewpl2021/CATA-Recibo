@@ -13,7 +13,8 @@
     }
   </div>
   <div modalFooter class="acciones-modal">
+    <span class="form-ayuda" *ngIf="!puedeDescargar">Fírmalo y podrás descargarlo.</span>
     <button type="button" class="btn-secondary" (click)="cerrar()">Cerrar</button>
-    <button type="button" class="btn-primary" (click)="descargar()">Descargar</button>
+    <button type="button" class="btn-primary" *ngIf="puedeDescargar" (click)="descargar()">Descargar</button>
   </div>
 </app-form-modal>

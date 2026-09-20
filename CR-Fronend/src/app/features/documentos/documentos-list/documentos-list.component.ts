@@ -116,10 +116,11 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
    */
   acciones: AccionPersonalizada<Documento>[] = [
     { id: 'ver', titulo: 'Ver este documento', icono: 'description', visible: (doc) => esPdf(doc) },
-    { id: 'descargar', titulo: 'Descargar este documento', icono: 'folder_open' },
     {
-      id: 'visto', titulo: 'Marcar que ya lo viste', icono: 'check_circle',
-      visible: (doc) => documentoSeFirma(doc) && doc.estado_firma === 'pendiente',
+      id: 'descargar', titulo: 'Descargar este documento', icono: 'folder_open',
+      // Lo que se firma se descarga después de firmarlo: leerlo, sí; llevárselo,
+      // cuando ya lo aceptaste. Ver AccesoADocumento en el backend.
+      visible: (doc) => this.puedeDescargar(doc),
     },
     {
       id: 'firmar', titulo: 'Firmar este documento', icono: 'signature', severidad: 'success',
@@ -227,10 +228,23 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
       });
   }
 
+  /** Lo que no se firma (hoja de vida, archivos anteriores) se baja siempre. */
+  puedeDescargar(doc: Documento): boolean {
+    return !documentoSeFirma(doc) || doc.estado_firma === 'firmado';
+  }
+
+  /**
+   * Al cerrar el visor se recarga: abrirlo dejó anotado que lo revisó, y la
+   * columna "Estado" y los números de arriba tienen que enterarse.
+   */
+  alCerrarVisor(doc: Documento | null): void {
+    this.docAbierto = doc;
+    if (!doc) this.cargar();
+  }
+
   alAccionar(evento: { accion: string; fila: Documento }): void {
     if (evento.accion === 'ver') this.docAbierto = evento.fila;
     if (evento.accion === 'descargar') this.descargar(evento.fila);
-    if (evento.accion === 'visto') this.marcarVisto(evento.fila);
     if (evento.accion === 'firmar') this.abrirFirmar(evento.fila);
   }
 
@@ -242,15 +256,6 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
   }
 
   // ── Visto y firma ──
-
-  marcarVisto(doc: Documento): void {
-    if (doc.estado_firma !== 'pendiente') return;
-    this.misDocumentosService.marcarVisto(doc.id).subscribe({
-      next: (res) => { if (res.success) this.cargar(); },
-      error: (err) => this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo marcar como visto.')),
-    });
-  }
-
   abrirFirmar(doc: Documento): void {
     this.docAFirmar = doc;
     this.passwordFirma = '';

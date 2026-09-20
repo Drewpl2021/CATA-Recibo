@@ -134,6 +134,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     // Descarga de un Documento ya generado (boleta, contrato, etc.) — el propio
     // empleado dueño del documento, o RRHH/admin sobre cualquiera. La verificación
     // de propiedad se hace dentro del controller, por eso vive fuera del grupo rol:.
+    // Abrirlo en pantalla (siempre) y bajárselo (el suyo, ya firmado).
+    Route::get('documentos/{id}/ver',       [DocumentoController::class, 'ver']);
     Route::get('documentos/{id}/descargar', [DocumentoController::class, 'descargar']);
 
     // ── Solo RRHH y Administrador ───────────────────────────────

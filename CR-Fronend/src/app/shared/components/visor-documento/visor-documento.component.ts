@@ -27,6 +27,9 @@ export class VisorDocumentoComponent implements OnChanges, OnDestroy {
   private toast = inject(ToastService);
 
   @Input() documento: Documento | null = null;
+
+  /** Con false, se puede leer pero no bajar: falta firmarlo. */
+  @Input() puedeDescargar = true;
   @Output() documentoChange = new EventEmitter<Documento | null>();
   /** De quién es, para el nombre del archivo descargado. */
   @Input() persona = '';
@@ -46,7 +49,7 @@ export class VisorDocumentoComponent implements OnChanges, OnDestroy {
       return;
     }
 
-    this.documentoService.descargar(doc.id).subscribe({
+    this.documentoService.ver(doc.id).subscribe({
       next: (blob) => {
         // Se cerró o se abrió otro mientras bajaba.
         if (this.documento !== doc) return;
