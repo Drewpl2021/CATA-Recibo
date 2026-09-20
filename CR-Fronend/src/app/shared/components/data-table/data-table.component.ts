@@ -266,7 +266,11 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
    */
   get filasEsqueleto(): number[] {
     if (!this.cargando) return [];
-    const cuantas = Math.min(this.filasPorPagina, 8);
+
+    // Tantas como va a traer la página, no menos: con ocho fijas la tabla
+    // crecía dos filas al llegar los datos y la pantalla daba un salto.
+    // Medido: el salto de maquetación pasaba de 0 a 0,02 en Empleados.
+    const cuantas = Math.min(this.filasPorPagina, 12);
     return Array.from({ length: cuantas }, (_, i) => i);
   }
 

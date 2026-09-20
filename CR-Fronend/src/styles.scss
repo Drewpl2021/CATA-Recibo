@@ -442,6 +442,8 @@ body {
 
 /* Main Content Area */
 .main-wrapper {
+  /* Para que la barra de "abriendo la pantalla" se cuelgue de aquí. */
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -3462,6 +3464,10 @@ textarea.form-control {
 
 /* El número de registros que caen en ese chip, cuando se conoce. */
 .chip-filtro__cuenta {
+  /* Sitio para dos cifras desde el principio: al pasar de 0 al número de
+     verdad, la fila de chips se recolocaba y arrastraba la tabla. */
+  min-width: 22px;
+  text-align: center;
   padding: 1px 7px;
   border-radius: var(--radius-full);
   background-color: var(--surface-hover);
@@ -4476,6 +4482,66 @@ textarea.form-control {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* Las filas entran con un fundido corto: el cambio de silueta a datos se
+   veía como un parpadeo seco. No es adorno: es el relevo de una cosa por otra. */
+.data-table tbody tr:not(.fila-esqueleto) {
+  animation: filas-entran 0.16s ease-out;
+}
+
+@keyframes filas-entran {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-table tbody tr:not(.fila-esqueleto) {
+    animation: none;
+  }
+}
+
+/* ── La barra de "estoy abriendo la pantalla" ────────────────
+   Va pegada bajo la cabecera, del ancho del contenido. Dos segundos de
+   recorrido: lo justo para que se note que algo pasa sin llamar la
+   atención. */
+.barra-navegacion {
+  /* Flota sobre el contenido: si ocupara sitio, aparecer y desaparecer
+     movería la pantalla 3 px en cada viaje, que es justo lo que se quería
+     evitar. */
+  position: absolute;
+  /* Justo debajo de la cabecera: con top: 0 quedaba detrás de ella y no se
+     veía nunca. */
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  z-index: 4;
+  height: 3px;
+  overflow: hidden;
+  background-color: var(--brand-100);
+}
+
+.barra-navegacion::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 35%;
+  background-color: var(--brand-500);
+  animation: barra-navegacion 1.1s ease-in-out infinite;
+}
+
+@keyframes barra-navegacion {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(340%); }
+}
+
+/* Quien pidió menos movimiento ve la barra quieta, no saltando. */
+@media (prefers-reduced-motion: reduce) {
+  .barra-navegacion::after {
+    width: 100%;
+    animation: none;
+    opacity: 0.45;
+  }
 }
 
 /* ── La caja de firma ────────────────────────────────────────
