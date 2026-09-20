@@ -1,5 +1,5 @@
 import { Component, HostListener, OnInit, ChangeDetectorRef } from '@angular/core';
-import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterModule } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { AuthService,
@@ -51,6 +51,16 @@ export class LayoutComponent implements OnInit {
    * en escritorio la colapsa, en móvil la despliega encima del contenido.
    */
   sidebarVisible = window.innerWidth > 768;
+
+  /**
+   * Se está yendo a otra pantalla: se pinta una barra fina bajo la cabecera.
+   *
+   * La pantalla nueva tarda en llegar (su código se baja aparte), y mientras
+   * tanto no pasaba nada: parecía que el clic no había funcionado.
+   */
+  navegando = false;
+
+  private temporizadorNavegacion?: ReturnType<typeof setTimeout>;
 
   /**
    * Dónde estás, para la barra de arriba: "Inicio › Boletas y Finanzas ›
@@ -482,6 +492,18 @@ export class LayoutComponent implements OnInit {
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => this.sincronizarMenuActivo(e.urlAfterRedirects));
+
+    this.router.events.subscribe((e) => {
+      if (e instanceof NavigationStart) {
+        // Solo si la espera se nota: en un viaje de 50 ms, una barra que
+        // aparece y desaparece es otro parpadeo.
+        clearTimeout(this.temporizadorNavegacion);
+        this.temporizadorNavegacion = setTimeout(() => (this.navegando = true), 150);
+      } else if (e instanceof NavigationEnd || e instanceof NavigationCancel || e instanceof NavigationError) {
+        clearTimeout(this.temporizadorNavegacion);
+        this.navegando = false;
+      }
+    });
 
     // 1. Cargar menú dinámico
     this.cargarModulos();

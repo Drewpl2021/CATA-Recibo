@@ -313,6 +313,10 @@
       </div>
     </header>
 
+    <!-- Se está cambiando de pantalla. Una barra fina, no un cartel: la
+         espera es corta y tapar el contenido sería peor. -->
+    <div class="barra-navegacion" *ngIf="navegando" role="status" aria-label="Abriendo la pantalla"></div>
+
     <main class="content-area">
       <router-outlet />
     </main>
