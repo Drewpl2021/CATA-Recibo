@@ -106,22 +106,20 @@ export class MisBoletasComponent implements OnInit {
    * izquierda a derecha como la historia de esa boleta.
    */
   columnas: ColumnaTabla<BoletaRow>[] = [
-    { campo: 'entidad', header: 'Entidad', ancho: '9%' },
-    { campo: 'mes', header: 'Mes', ancho: '9%' },
-    { campo: 'montoTotal', header: 'Neto a pagar', tipo: 'moneda', ancho: '11%' },
+    { campo: 'mes', header: 'Mes', ancho: '12%' },
+    { campo: 'montoTotal', header: 'Neto a pagar', tipo: 'moneda', ancho: '14%' },
     {
-      campo: 'avisoEnviado', header: 'Aviso enviado', tipo: 'hito', ancho: '17%',
+      campo: 'avisoEnviado', header: 'Aviso enviado', tipo: 'hito', ancho: '20%',
       // El correo va DENTRO del hito: es a dónde se mandó ese aviso, no el
       // que tenga hoy la cuenta.
       hitoDetalle: (b) => b.correo,
     },
-    { campo: 'revisado', header: 'Revisado', tipo: 'hito', ancho: '13%' },
+    { campo: 'revisado', header: 'Revisado', tipo: 'hito', ancho: '17%' },
     {
-      campo: 'descargado', header: 'Descargado', tipo: 'hito', ancho: '15%',
+      campo: 'descargado', header: 'Descargado', tipo: 'hito', ancho: '18%',
       hitoDetalle: (b) => (b.descargas > 1 ? `${b.descargas} descargas` : null),
     },
-    { campo: 'firmado', header: 'Firmado', tipo: 'hito', ancho: '13%' },
-    { campo: 'celular', header: 'Celular', ancho: '10%' },
+    { campo: 'firmado', header: 'Firmado', tipo: 'hito', ancho: '17%' },
   ];
 
   acciones: AccionPersonalizada<BoletaRow>[] = [

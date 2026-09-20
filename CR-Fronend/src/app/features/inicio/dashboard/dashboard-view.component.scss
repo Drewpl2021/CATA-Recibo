@@ -117,7 +117,10 @@
 }
 
 .kpi-value {
-  font-size: 1.55rem;
+  /* Un monto no se parte: "S/" y la cifra van juntos. En una tarjeta
+     angosta encoge la letra antes que romper el número en dos líneas. */
+  white-space: nowrap;
+  font-size: clamp(1.15rem, 1.6vw, 1.55rem);
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.5px;
