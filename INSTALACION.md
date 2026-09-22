@@ -154,6 +154,38 @@ Si dejaste las contraseñas vacías, este comando imprime las que inventó. Cóp
 > volver a sembrar borraría los catálogos y dejaría al personal sin área, sin
 > cargo y sin permisos.
 
+### La otra forma: cargar la semilla
+
+En el repositorio va un `.sql` con los mismos catálogos ya listos
+(`CR-Backend/database/semilla/instalacion-basica.sql`). Da igual cuál uses en
+una instalación nueva:
+
+```bash
+docker compose exec app php artisan semilla:importar
+docker compose exec app php artisan db:seed --class=CuentasInicialesSeeder --force
+```
+
+El primero carga roles, menú, áreas, cargos, sedes y conceptos de pago; el
+segundo crea las dos cuentas a partir del `.env`.
+
+Ese archivo **no lleva personas**: ni usuarios, ni trabajadores, ni planillas,
+ni boletas. Solo catálogos. Y solo los datos: las tablas las crea `migrate`.
+
+Si cambias los catálogos desde las pantallas (agregas un cargo, una sede) y
+quieres que la próxima instalación nazca con ellos, vuelve a generarlo:
+
+```bash
+docker compose exec app php artisan semilla:exportar
+```
+
+Escribe el archivo, dice cuántas filas salió cada tabla, y ahí sí se sube al
+repositorio como un cambio más. **Antes de subirlo, míralo**: si algún día
+aparece un nombre o un DNI ahí dentro, ese archivo no se sube.
+
+> `db:seed` y la semilla hacen lo mismo hoy. La diferencia: `db:seed` se
+> mantiene al día solo con el código, y la semilla es una foto que hay que
+> volver a tomar cuando los catálogos cambien.
+
 ---
 
 ## 7. Entrar
