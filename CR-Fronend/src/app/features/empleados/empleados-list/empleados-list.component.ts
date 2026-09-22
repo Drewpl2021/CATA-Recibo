@@ -2,11 +2,15 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
-import { EmpleadoService, ToastService, ConfirmService } from '../../../core/services';
+import { forkJoin } from 'rxjs';
+
+import { AreaService, CargoService, EmpleadoService, SedeService, ToastService, ConfirmService } from '../../../core/services';
 import { Empleado } from '../../../core/models';
 import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 /**
@@ -21,12 +25,15 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 @Component({
   selector: 'app-empleados-list',
   standalone: true,
-  imports: [CommonModule, PageHeaderComponent, DataTableComponent],
+  imports: [CommonModule, PageHeaderComponent, DataTableComponent, FiltrosComponent],
   templateUrl: './empleados-list.component.html',
 })
 export class EmpleadosListComponent implements OnInit {
   private router = inject(Router);
   private empleadoService = inject(EmpleadoService);
+  private areaService = inject(AreaService);
+  private cargoService = inject(CargoService);
+  private sedeService = inject(SedeService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
 
@@ -42,6 +49,110 @@ export class EmpleadosListComponent implements OnInit {
   /** Los conteos que manda el backend junto a la página. */
   activos = 0;
   inactivos = 0;
+
+  /*
+   * Los filtros de la tabla.
+   *
+   * Antes solo había buscador por texto, y las preguntas de RR.HH. no son de
+   * texto: "los de Jerusalén con plazo fijo", "quién no tiene sueldo puesto",
+   * "los que entraron este año". Eso se contestaba bajando la lista a Excel.
+   *
+   * Filtra el servidor, no el navegador: las cifras de la cabecera y el
+   * Excel salen del mismo conjunto, y con 150 trabajadores no se baja la
+   * plantilla entera para descartar en pantalla.
+   */
+  filtros: ValoresFiltro = {};
+
+  camposFiltro: CampoFiltro[] = [
+    {
+      clave: 'estado', etiqueta: 'Estado', tipo: 'opciones', vacio: 'Todos',
+      opciones: [
+        { valor: 'activo', etiqueta: 'Activos' },
+        { valor: 'inactivo', etiqueta: 'De baja' },
+      ],
+    },
+    { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
+    { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
+    { clave: 'cargo_id', etiqueta: 'Cargo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+    {
+      clave: 'tipo_contrato', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos',
+      opciones: [
+        { valor: 'indeterminado', etiqueta: 'Indeterminado' },
+        { valor: 'plazo_fijo', etiqueta: 'Plazo fijo' },
+        { valor: 'suplencia', etiqueta: 'Suplencia' },
+        { valor: 'practicas', etiqueta: 'Prácticas' },
+      ],
+    },
+    {
+      clave: 'sistema_pensiones', etiqueta: 'Pensión', tipo: 'opciones', vacio: 'Todas',
+      opciones: [
+        { valor: 'ONP', etiqueta: 'ONP' },
+        { valor: 'AFP', etiqueta: 'AFP' },
+        { valor: 'ninguno', etiqueta: 'No aporta' },
+      ],
+    },
+    {
+      clave: 'forma_pago', etiqueta: 'Cómo cobra', tipo: 'opciones', vacio: 'Todas',
+      opciones: [
+        { valor: 'banco', etiqueta: 'Por banco' },
+        { valor: 'efectivo', etiqueta: 'En efectivo' },
+      ],
+    },
+    {
+      clave: 'sin_sueldo', etiqueta: 'Sin sueldo puesto', tipo: 'si-no',
+      ayuda: 'Sin sueldo no se le puede armar planilla: la generación lo salta.',
+    },
+    {
+      clave: 'ingreso_desde', claveHasta: 'ingreso_hasta',
+      etiqueta: 'Fecha de ingreso', tipo: 'fecha', ancho: 'doble',
+    },
+  ];
+
+  /** Cambió un filtro: se vuelve a la primera página. */
+  alFiltrar(): void {
+    this.pagina = 0;
+    this.cargar();
+  }
+
+  /**
+   * Los catálogos de los desplegables, la primera vez que se abre el panel.
+   *
+   * Pedirlos al entrar a la pantalla serían tres listas más en cada visita,
+   * y la mayoría de las veces nadie abre los filtros.
+   */
+  private catalogosListos = false;
+
+  cargarCatalogos(): void {
+    if (this.catalogosListos) return;
+    this.catalogosListos = true;
+
+    forkJoin({
+      sedes: this.sedeService.getAll(),
+      areas: this.areaService.getAll(),
+      cargos: this.cargoService.getAll(),
+    }).subscribe({
+      next: ({ sedes, areas, cargos }) => {
+        this.ponerOpciones('sede_id', sedes.data);
+        this.ponerOpciones('area_id', areas.data);
+        this.ponerOpciones('cargo_id', cargos.data);
+      },
+      // Si falla, los otros filtros siguen sirviendo: no es motivo para
+      // dejar el panel inservible.
+      error: () => {
+        this.catalogosListos = false;
+        this.toastService.error('Filtros', 'No se pudieron cargar las sedes, áreas y cargos.');
+      },
+    });
+  }
+
+  private ponerOpciones(clave: string, lista: { id: string; nombre: string }[]): void {
+    const campo = this.camposFiltro.find((c) => c.clave === clave);
+    if (!campo) return;
+
+    campo.opciones = (lista ?? [])
+      .map((x) => ({ valor: x.id, etiqueta: x.nombre }))
+      .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es'));
+  }
 
   /** Lo que pinta la cabecera: total, en uso y dados de baja. */
   get cifras(): CifraCabecera[] {
@@ -112,7 +223,12 @@ export class EmpleadosListComponent implements OnInit {
   cargar(): void {
     this.cargando = true;
     this.empleadoService
-      .getPagina({ page: this.pagina, size: this.TAMANO_PAGINA, search: this.busqueda || undefined })
+      .getPagina({
+        page: this.pagina,
+        size: this.TAMANO_PAGINA,
+        search: this.busqueda || undefined,
+        ...this.filtros,
+      })
       .subscribe({
       next: (res) => {
         if (res.success) {
@@ -145,7 +261,7 @@ export class EmpleadosListComponent implements OnInit {
   exportar(): void {
     this.exportando = true;
 
-    this.empleadoService.exportar({ search: this.busqueda || undefined }).subscribe({
+    this.empleadoService.exportar({ search: this.busqueda || undefined, ...this.filtros }).subscribe({
       next: (blob) => {
         guardarArchivo(blob, this.nombreDelArchivo());
         this.exportando = false;

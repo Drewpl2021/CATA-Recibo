@@ -1258,6 +1258,19 @@ td.celda-numero {
 
 .filtro-periodo__flecha--abierta { transform: rotate(180deg); }
 
+/*
+ * Se está mirando un mes que no es el de hoy: el control se marca.
+ *
+ * Sin esto se podía estar en agosto y la barra se veía igual que en el mes
+ * en curso: el único aviso era leer el nombre del mes.
+ */
+.filtro-periodo--elegido {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-100);
+}
+
+.filtro-periodo--elegido .filtro-periodo__paso { color: var(--brand-500); }
+
 /* ── La rejilla de meses que se despliega ── */
 .selector-mes {
   position: absolute;
@@ -1321,9 +1334,9 @@ td.celda-numero {
 .selector-mes__mes:hover { background-color: var(--surface-hover); }
 
 .selector-mes__mes--elegido {
-  background-color: var(--brand-100);
-  border-color: var(--brand-500);
-  color: var(--heading);
+  background-color: var(--brand-600);
+  border-color: var(--brand-700);
+  color: var(--text-on-brand);
   font-weight: 700;
 }
 
@@ -1368,10 +1381,23 @@ td.celda-numero {
 
 .segmentado__opcion:hover { background-color: var(--surface-hover); }
 
+/*
+ * La opción puesta va en azul macizo con letra blanca.
+ *
+ * Estaba en --brand-100, un celeste muy suave: entre "Todas" y "CATA" casi
+ * no se distinguía cuál estaba puesta, y el filtro no se sentía aplicado.
+ */
 .segmentado__opcion--activa {
-  background-color: var(--brand-100);
-  color: var(--heading);
+  background-color: var(--brand-600);
+  color: var(--text-on-brand);
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+/* El hover general aclara el fondo; sobre la puesta tiene que oscurecer. */
+.segmentado__opcion--activa:hover {
+  background-color: var(--brand-700);
+  color: var(--text-on-brand);
 }
 
 /* Con muchas sedes el segmentado no cabe: se cae a un desplegable, pero
@@ -1399,6 +1425,70 @@ td.celda-numero {
 }
 
 .filtro-select select:focus { outline: none; }
+
+/* Los cumpleaños y el Excel van del brazo: si no cabe la fila, bajan los
+   dos juntos en vez de dejar uno arriba y otro solo abajo. */
+.barra-filtros__acciones {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Los cumpleaños del mes, en la cabecera ──────────────────────
+   Un icono con la cuenta; los nombres salen en un modal. Estaban al final
+   de la pantalla, detrás de todos los gráficos: para ver un nombre había
+   que bajar hasta abajo, y de paso solo se leía "Cumpleaños de septiembre". */
+.boton-cumpleanos {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.boton-cumpleanos:hover {
+  background-color: var(--surface-hover);
+  color: var(--heading);
+}
+
+.boton-cumpleanos__cuenta {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background-color: var(--brand-100);
+  color: var(--heading);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Hoy cumple alguien: eso no se puede ver igual que el resto del mes. */
+.boton-cumpleanos--hoy {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.boton-cumpleanos--hoy .boton-cumpleanos__cuenta {
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+/* La versión de barra del botón verde de descargar: en la cabecera del panel
+   va al lado de controles de 36 px, y con el tamaño de tabla se salía. */
+.btn-exportar--compacto {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+  border-radius: var(--radius-md);
+}
 
 /* ── Volver a hoy ── */
 .chip-filtro {
@@ -1582,41 +1672,45 @@ td.celda-numero {
   line-height: 1.5;
 }
 
-/* ── Cumpleaños del mes ─────────────────────────────────────────── */
-.cumpleanos {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 18px 20px;
-  margin-bottom: 20px;
+/* ── Los cumpleaños del mes, dentro de su modal ──────────────────
+   Una persona por línea y no tarjetas en rejilla: aquí se lee de arriba
+   abajo buscando un nombre, y en dos columnas la vista se perdía. */
+.cumpleanos__intro {
+  margin: 0 0 14px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
 }
+
+.cumpleanos__intro strong { color: var(--heading); }
 
 .cumpleanos__lista {
   list-style: none;
-  margin: 12px 0 0;
+  margin: 0;
   padding: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
+  /* Con quince cumpleaños la lista crecía más que la pantalla. */
+  max-height: 55vh;
+  overflow-y: auto;
 }
 
 .cumpleanos__item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 8px 14px 8px 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background-color: var(--surface-alt);
-  min-width: 220px;
 }
 
 /* El día, en un círculo: es el dato por el que se busca en esta lista. */
 .cumpleanos__dia {
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -1627,9 +1721,36 @@ td.celda-numero {
   font-size: 13px;
 }
 
-.cumpleanos__quien { display: flex; flex-direction: column; line-height: 1.25; }
+.cumpleanos__quien { display: flex; flex-direction: column; line-height: 1.25; flex: 1; min-width: 0; }
 .cumpleanos__quien strong { font-size: 13.5px; color: var(--text); }
 .cumpleanos__quien small { font-size: 11.5px; color: var(--text-muted); }
+
+/* Los años que cumple, a la derecha y sin gritar. */
+.cumpleanos__edad {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Es hoy: la única línea de la lista que hay que atender ahora mismo. */
+.cumpleanos__item--hoy {
+  border-color: var(--accent);
+  background-color: var(--brand-100);
+}
+
+.cumpleanos__hoy {
+  flex-shrink: 0;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background-color: var(--accent);
+  color: var(--on-accent);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* Ya pasó: se queda, pero apagado. */
+.cumpleanos__item--paso { opacity: 0.62; }
+.cumpleanos__item--paso .cumpleanos__dia { background-color: var(--border); color: var(--text-muted); }
 
 /* El panel de filtros del Panel de Control va sin la franja azul: acá los
    números importantes son los de las tarjetas, no los de la cabecera. */
@@ -2529,6 +2650,235 @@ textarea.form-control {
   gap: 8px;
   margin-left: auto;
 }
+
+/* ══ FILTROS DE UNA TABLA ══════════════════════════════════════════
+   El embudo de la barra de la tabla, sus chips y el panel que abre.
+   Las tablas solo tenían buscador por texto: para "los de Jerusalén con
+   plazo fijo" había que bajar la lista a Excel y filtrar allá. */
+.filtros {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Lo que está puesto, a la vista: se lee y se quita de un clic. */
+.filtros__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  padding: 5px 10px;
+  border: 1px solid var(--brand-500);
+  border-radius: 999px;
+  background-color: var(--brand-100);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--heading);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color .15s ease;
+}
+
+.filtros__chip:hover { background-color: var(--brand-100-hover); }
+.filtros__chip svg { flex: 0 0 auto; opacity: .7; }
+
+.filtros__mas {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--brand-600);
+}
+
+.filtros__caja { position: relative; }
+
+/* El botón. Con filtros puestos va en azul macizo: si se ve igual que sin
+   ellos, no se entiende por qué la tabla trae ocho filas. */
+.boton-filtros {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.boton-filtros:hover {
+  background-color: var(--surface-hover);
+  color: var(--heading);
+}
+
+.boton-filtros--activo,
+.boton-filtros--activo:hover {
+  background-color: var(--brand-600);
+  border-color: var(--brand-600);
+  color: var(--text-on-brand);
+}
+
+.boton-filtros__cuenta {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background-color: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ── El panel ──
+   Va en coordenadas de pantalla (position: fixed) porque el contenedor de
+   la tabla recorta lo que se sale, y con la tabla filtrada a tres filas el
+   panel salía cortado justo cuando más se usa. */
+.panel-flotante {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  width: min(420px, calc(100vw - 32px));
+  /* La cabecera y el pie quedan fijos y los campos son los que se
+     desplazan: con nueve filtros el panel pasaba de la pantalla. */
+  display: flex;
+  flex-direction: column;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+/* Si debajo del botón no queda pantalla, el panel abre hacia arriba. */
+.panel-flotante--arriba {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
+.panel-flotante__cabecera {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--heading);
+}
+
+.panel-flotante__limpiar {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brand-600);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.panel-flotante__campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+  padding: 16px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.campo-flotante {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.campo-flotante--doble { grid-column: 1 / -1; }
+
+.campo-flotante__etiqueta {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+.campo-flotante select,
+.campo-flotante input[type="date"] {
+  height: 36px;
+  padding: 0 8px;
+  font-size: 13.5px;
+}
+
+.campo-flotante__tramo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.campo-flotante__tramo input { flex: 1 1 0; min-width: 0; }
+
+.campo-flotante__hasta {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.campo-flotante__casilla {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-alt);
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.campo-flotante__ayuda {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.panel-flotante__pie {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background-color: var(--surface-alt);
+}
+
+.panel-flotante__nota {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* En el celular el panel ocupa el ancho y los campos van en una columna. */
+@media (max-width: 640px) {
+  .panel-flotante__campos { grid-template-columns: 1fr; }
+  .filtros__chip { max-width: 180px; }
+}
+
+/* El contenedor de la tabla recorta lo que se sale —es lo que le redondea
+   las esquinas—, y el panel de filtros quedaba cortado justo cuando la tabla
+   trae pocas filas. Mientras está abierto, se destapa. */
+.section-panel:has(.panel-flotante) { overflow: visible; }
 
 .data-table-empty {
   text-align: center;

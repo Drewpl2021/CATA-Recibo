@@ -20,9 +20,10 @@ import {
   ApexGrid,
 } from 'ng-apexcharts';
 
+import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { DashboardService, SedeService, ToastService } from '../../../core/services';
 import { ContratoPorVencer, CumpleanosDelMes, Dashboard, DatoGrafico, PendienteRrhh, Sede } from '../../../core/models';
-import { fechaLegible, mensajeErrorApi } from '../../../core/utils';
+import { fechaLegible, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import {
   PALETA_SERIES,
   PALETA_SERIE_UNICA,
@@ -52,7 +53,7 @@ import {
 @Component({
   selector: 'app-dashboard-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgApexchartsModule],
+  imports: [CommonModule, FormsModule, NgApexchartsModule, FormModalComponent],
   templateUrl: './dashboard-view.component.html',
   styleUrl: './dashboard-view.component.scss',
 })
@@ -86,7 +87,58 @@ export class DashboardViewComponent implements OnInit {
 
   /** Lo que RR.HH. tiene pendiente de hacer. */
   pendientes: PendienteRrhh[] = [];
+
+  /*
+   * Los cumpleaños del mes.
+   *
+   * Estaban al final de la pantalla, debajo de todos los gráficos: había que
+   * bajar hasta abajo para ver los nombres, y lo único que se leía de paso
+   * era el título "Cumpleaños de septiembre". Ahora suben a la cabecera como
+   * un icono con la cuenta, y los nombres salen en un modal.
+   */
   cumpleanos: CumpleanosDelMes[] = [];
+  cumpleanosAbierto = false;
+
+  /** Hoy cumple alguien: el icono se pinta de fiesta. */
+  get hayCumpleanosHoy(): boolean {
+    return this.cumpleanos.some((c) => c.es_hoy);
+  }
+
+  /** Los que todavía están por llegar, contando el de hoy. */
+  get cumpleanosPorVenir(): number {
+    return this.cumpleanos.filter((c) => !c.ya_paso).length;
+  }
+
+  abrirCumpleanos(evento: MouseEvent): void {
+    // El clic no sube: arriba está el cierre de "clic fuera" del calendario.
+    evento.stopPropagation();
+    this.cumpleanosAbierto = true;
+  }
+
+  /** Se está descargando el Excel del panel. */
+  exportando = false;
+
+  /**
+   * El panel entero en un Excel, con el filtro que está puesto.
+   *
+   * El nombre lo arma la pantalla y no se lee de la respuesta porque el
+   * backend no expone Content-Disposition al navegador.
+   */
+  exportar(): void {
+    this.exportando = true;
+
+    this.dashboardService.exportar(this.filtroMes, this.filtroAnio, this.filtroSede || null).subscribe({
+      next: (blob) => {
+        guardarArchivo(blob, `Panel de control ${this.loQueSeVe.replace(' · ', ' - ')}.xlsx`);
+        this.exportando = false;
+        this.toastService.success('Reporte descargado', `El panel de ${this.loQueSeVe}, en cinco hojas.`);
+      },
+      error: (err) => {
+        this.exportando = false;
+        this.toastService.error('No se descargó', mensajeErrorApi(err, 'No se pudo generar el reporte.'));
+      },
+    });
+  }
 
   /** Solo los que tienen algo pendiente: los que están en cero no son noticia. */
   get pendientesConTrabajo(): PendienteRrhh[] {
@@ -334,6 +386,7 @@ export class DashboardViewComponent implements OnInit {
   @HostListener('document:keydown.escape')
   alPulsarEscape(): void {
     this.calendarioAbierto = false;
+    this.cumpleanosAbierto = false;
   }
 
   elegirSede(id: string): void {
@@ -353,6 +406,12 @@ export class DashboardViewComponent implements OnInit {
     this.anioDelCalendario = this.filtroAnio;
     this.filtroSede = '';
     this.cargar();
+  }
+
+  /** No se está mirando el mes en curso: el control del periodo se marca. */
+  get mesMovido(): boolean {
+    const hoy = new Date();
+    return this.filtroMes !== hoy.getMonth() + 1 || this.filtroAnio !== hoy.getFullYear();
   }
 
   get hayFiltros(): boolean {

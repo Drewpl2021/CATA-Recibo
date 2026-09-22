@@ -34,7 +34,9 @@
     <div class="panel-filtros__cifras">
       <div class="cifra">
         <strong>{{ totalEmpleados }}</strong>
-        <span>Trabajadores</span>
+        <!-- Con un filtro puesto ya no son "los trabajadores" sino los que
+             quedaron en la lista, y la cifra lo dice. -->
+        <span>{{ hayFiltros ? 'En la lista' : 'Trabajadores' }}</span>
       </div>
       <div class="cifra cifra--destacada">
         <strong>{{ planillasDelMes }}</strong>
@@ -61,7 +63,7 @@
 </section>
 
 <!-- El mes está sin empezar: nadie tiene planilla todavía. -->
-<div class="form-nota form-nota--accion" *ngIf="conteoListo && !cargandoEmpleados && totalEmpleados > 0 && planillasDelMes === 0">
+<div class="form-nota form-nota--accion" *ngIf="conteoListo && !cargandoEmpleados && totalDelColegio > 0 && planillasDelMes === 0">
   <div>
     <strong>Este mes está sin empezar.</strong>
     No hay ninguna boleta armada para {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}.
@@ -88,7 +90,12 @@
   [accionesPersonalizadas]="accionesFila"
   (accionPersonalizada)="abrirModal($event.fila)"
   mensajeVacio="No se encontraron trabajadores."
-></app-data-table>
+>
+  <!-- Mientras se emite, la pregunta es "¿a quién le falta?": eso ahora se
+       filtra en vez de buscarse fila por fila. -->
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
+    (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogos()"></app-filtros>
+</app-data-table>
 
 <!-- ============================================================ -->
 <!--  MODAL: FORMULARIO DE EMISIÓN DE BOLETA                      -->

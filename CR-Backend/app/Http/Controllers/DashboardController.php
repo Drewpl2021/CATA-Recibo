@@ -6,10 +6,15 @@ use App\Models\Contrato;
 use App\Models\Documento;
 use App\Models\Empleado;
 use App\Models\Planilla;
+use App\Models\Sede;
+use App\Support\LibroExcel;
+use App\Support\Meses;
+use App\Traits\ExportaExcel;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Las cifras del Panel de Control.
@@ -32,7 +37,26 @@ use Illuminate\Support\Facades\DB;
  */
 class DashboardController extends Controller
 {
+    use ExportaExcel;
+
     public function index(Request $request)
+    {
+        ['mes' => $mes, 'anio' => $anio, 'sede' => $sede] = $this->filtroPedido($request);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $this->datos($mes, $anio, $sede),
+        ]);
+    }
+
+    /**
+     * El mes, el año y la sede que se están mirando.
+     *
+     * Lo piden los dos —la pantalla y el Excel— y tiene que salir del mismo
+     * sitio: si el archivo leyera los filtros por su cuenta acabaría bajando
+     * un mes distinto del que se ve en pantalla.
+     */
+    private function filtroPedido(Request $request): array
     {
         $request->validate([
             'mes'     => 'nullable|integer|min:1|max:12',
@@ -40,12 +64,21 @@ class DashboardController extends Controller
             'sede_id' => 'nullable|uuid|exists:sedes,id',
         ]);
 
-        $hoy   = Carbon::now();
-        $mes   = (int) ($request->input('mes')  ?: $hoy->month);
-        $anio  = (int) ($request->input('anio') ?: $hoy->year);
-        // Un colegio con dos locales necesita poder mirar uno solo: la
-        // pregunta de RR.HH. es "cuánto cuesta Jerusalén", no siempre el total.
-        $sede  = $request->input('sede_id');
+        $hoy = Carbon::now();
+
+        return [
+            'mes'  => (int) ($request->input('mes')  ?: $hoy->month),
+            'anio' => (int) ($request->input('anio') ?: $hoy->year),
+            // Un colegio con dos locales necesita poder mirar uno solo: la
+            // pregunta de RR.HH. es "cuánto cuesta Jerusalén", no el total.
+            'sede' => $request->input('sede_id'),
+        ];
+    }
+
+    /** Todas las cifras del panel para ese mes y esa sede. */
+    private function datos(int $mes, int $anio, ?string $sede): array
+    {
+        $hoy = Carbon::now();
 
         // Las líneas de las planillas del mes, sumadas por concepto. Las
         // usan dos gráficos y se leen UNA vez.
@@ -56,30 +89,171 @@ class DashboardController extends Controller
         // por su lado: tres recorridos de lo mismo.
         $boletasDelMes = $this->boletasDelMes($mes, $anio, $sede);
 
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'periodo'            => ['mes' => $mes, 'anio' => $anio, 'sede_id' => $sede],
-                'resumen'            => $this->resumen($mes, $anio, $hoy, $sede, $boletasDelMes),
-                // Lo que RR.HH. tiene pendiente de hacer, no de mirar.
-                'pendientes'         => $this->pendientes($mes, $anio, $hoy, $sede, $boletasDelMes),
-                'cumpleanos'         => $this->cumpleanosDelMes($mes, $sede),
-                'remuneracionPorArea'=> $this->remuneracionPorArea($mes, $anio),
-                'sistemaPensiones'   => $this->sistemaPensiones(),
-                'tipoContrato'       => $this->tipoContrato(),
-                'tendenciaNomina'    => $this->tendenciaNomina($anio),
-                'firmaBoletas'       => $this->firmaBoletas($boletasDelMes),
-                'contratosPorVencer' => $this->contratosPorVencer($hoy),
-                // ── Los cuatro que faltaban ──
-                // La composición y el top salen de la MISMA lectura: los dos
-                // suman las líneas de las planillas del mes, y recorrerlas
-                // dos veces costaba el doble para nada.
-                'composicionNomina'  => $this->composicionNomina($mes, $anio, $sede, $conceptosDelMes),
-                'personalPorSede'    => $this->personalPorSede($sede),
-                'antiguedad'         => $this->antiguedad($sede, $hoy),
-                'topConceptos'       => $this->topConceptos($conceptosDelMes),
+        return [
+            'periodo'            => ['mes' => $mes, 'anio' => $anio, 'sede_id' => $sede],
+            'resumen'            => $this->resumen($mes, $anio, $hoy, $sede, $boletasDelMes),
+            // Lo que RR.HH. tiene pendiente de hacer, no de mirar.
+            'pendientes'         => $this->pendientes($mes, $anio, $hoy, $sede, $boletasDelMes),
+            'cumpleanos'         => $this->cumpleanosDelMes($mes, $anio, $sede, $hoy),
+            'remuneracionPorArea'=> $this->remuneracionPorArea($mes, $anio),
+            'sistemaPensiones'   => $this->sistemaPensiones(),
+            'tipoContrato'       => $this->tipoContrato(),
+            'tendenciaNomina'    => $this->tendenciaNomina($anio),
+            'firmaBoletas'       => $this->firmaBoletas($boletasDelMes),
+            'contratosPorVencer' => $this->contratosPorVencer($hoy),
+            // ── Los cuatro que faltaban ──
+            // La composición y el top salen de la MISMA lectura: los dos
+            // suman las líneas de las planillas del mes, y recorrerlas
+            // dos veces costaba el doble para nada.
+            'composicionNomina'  => $this->composicionNomina($mes, $anio, $sede, $conceptosDelMes),
+            'personalPorSede'    => $this->personalPorSede($sede),
+            'antiguedad'         => $this->antiguedad($sede, $hoy),
+            'topConceptos'       => $this->topConceptos($conceptosDelMes),
+        ];
+    }
+
+    /**
+     * El panel entero en un Excel, con el filtro que se está mirando.
+     *
+     * Lo que se ve es lo que baja: el mismo mes y la misma sede. Sale en
+     * cinco hojas porque el panel no es una tabla —son cifras agrupadas por
+     * tema—, y de este modo cada bloque de la pantalla tiene su sitio: el
+     * resumen con los pendientes, la plata, la plantilla, los contratos que
+     * se acaban y los cumpleaños. Los montos van como número, así que en
+     * Excel se pueden sumar sin tocarlos.
+     */
+    public function exportar(Request $request)
+    {
+        ['mes' => $mes, 'anio' => $anio, 'sede' => $sede] = $this->filtroPedido($request);
+
+        $datos   = $this->datos($mes, $anio, $sede);
+        $resumen = $datos['resumen'];
+        $firma   = $datos['firmaBoletas'];
+
+        $periodo     = Meses::nombre($mes) . ' ' . $anio;
+        $nombreSede  = $sede ? (Sede::find($sede)->nombre ?? 'Sede') : 'Todas las sedes';
+
+        // Etiqueta y monto / etiqueta y cuenta, tal como los manda el panel.
+        $conMonto = fn (array $lista) => array_map(fn ($x) => [$x['etiqueta'], $x['valor'], true], $lista);
+        $conCuenta = fn (array $lista) => array_map(fn ($x) => [$x['etiqueta'], $x['valor']], $lista);
+
+        $libro = new LibroExcel();
+
+        $this->hojaDeCifras($libro, 'Resumen', [
+            'Lo que se está mirando' => [
+                ['Periodo', $periodo],
+                ['Sede', $nombreSede],
+                ['Descargado el', $this->cuando()],
             ],
+            'Las cifras del mes' => [
+                ['Personal activo', $resumen['empleadosActivos']],
+                ['Altas de este mes', $resumen['altasDelMes']],
+                ['Nómina del mes (S/)', $resumen['nominaDelMes'], true],
+                ['Planillas armadas', $resumen['planillasDelMes']],
+                ['Boletas emitidas', $resumen['boletasEmitidas']],
+                ['Contratos que vencen en 30 días', $resumen['contratosPorVencer']],
+            ],
+            'Firma de las boletas del mes' => [
+                ['Firmadas', $firma['firmadas']],
+                ['Vistas, pero sin firmar', $firma['vistas']],
+                ['Sin abrir', $firma['pendientes']],
+            ],
+            'Pendientes' => array_map(
+                fn (array $p) => [Str::ucfirst($p['texto']), $p['cuantos']],
+                $datos['pendientes']
+            ),
         ]);
+
+        $this->hojaDeCifras($libro, 'Nómina', [
+            'A dónde se va la nómina (S/)'      => $conMonto($datos['composicionNomina']),
+            'Remuneración por área (S/)'        => $conMonto($datos['remuneracionPorArea']),
+            'Los conceptos que más pesan (S/)'  => $conMonto($datos['topConceptos']),
+            "Nómina mes a mes de {$anio} (S/)"  => $conMonto($datos['tendenciaNomina']),
+        ]);
+
+        $this->hojaDeCifras($libro, 'Plantilla', [
+            'Personal por sede'          => $conCuenta($datos['personalPorSede']),
+            'Sistema de pensiones'       => $conCuenta($datos['sistemaPensiones']),
+            'Tipo de contrato'           => $conCuenta($datos['tipoContrato']),
+            'Antigüedad en el colegio'   => $conCuenta($datos['antiguedad']),
+        ]);
+
+        $this->hojaDeReporte(
+            $libro,
+            'Contratos por vencer',
+            ['Trabajador', 'Cargo', 'Vence el', 'Días que faltan'],
+            array_map(fn (array $c) => [
+                $c['nombre'],
+                $c['cargo'],
+                Carbon::parse($c['fecha'])->format('d/m/Y'),
+                $c['dias'],
+            ], $datos['contratosPorVencer']),
+            // La fecha como texto: escrita así, Excel no la reinterpreta.
+            [2 => LibroExcel::TEXTO]
+        );
+
+        $this->hojaDeReporte(
+            $libro,
+            'Cumpleaños',
+            ['Día', 'Trabajador', 'Cargo', 'Área', 'Sede', 'Cumple'],
+            array_map(fn (array $c) => [
+                $c['fecha'],
+                $c['nombre'],
+                $c['cargo'],
+                $c['area'],
+                $c['sede'],
+                $c['edad'] > 0 ? $c['edad'] . ' años' : '',
+            ], $datos['cumpleanos']),
+            [0 => LibroExcel::TEXTO]
+        );
+
+        return $libro->descargar($this->nombreExcelSeguro(
+            'Panel de control ' . $periodo . ($sede ? ' - ' . $nombreSede : '')
+        ));
+    }
+
+    /** Cuándo se bajó el archivo, para saber de qué día son las cifras. */
+    private function cuando(): string
+    {
+        return Carbon::now()->format('d/m/Y H:i');
+    }
+
+    /**
+     * Una hoja de "concepto y valor", con sus secciones.
+     *
+     * El panel no es una tabla: son cifras sueltas agrupadas por tema. Una
+     * hoja por gráfico serían diez pestañas; así cada hoja lleva sus bloques
+     * separados por un título, que es como se leen en pantalla.
+     *
+     * @param  array<string, array<int, array{0: string, 1: mixed, 2?: bool}>>  $bloques
+     *         título de la sección => filas [concepto, valor, es monto]
+     */
+    private function hojaDeCifras(LibroExcel $libro, string $nombre, array $bloques): void
+    {
+        $filas = [];
+        $estiloFilas = [];
+
+        foreach ($bloques as $titulo => $lineas) {
+            // Una línea en blanco entre secciones: se distinguen de un vistazo.
+            if ($filas) {
+                $filas[] = ['', ''];
+            }
+
+            $filas[] = [$titulo, ''];
+            // Las claves van corridas una fila porque hojaDeReporte pone los
+            // títulos de columna delante.
+            $estiloFilas[count($filas)] = LibroExcel::TITULO_OPCIONAL;
+
+            foreach ($lineas as $linea) {
+                $filas[] = [$linea[0], $linea[1]];
+                $estiloFilas[count($filas)] = [
+                    LibroExcel::NORMAL,
+                    ($linea[2] ?? false) ? LibroExcel::MONTO : LibroExcel::NORMAL,
+                ];
+            }
+        }
+
+        $this->hojaDeReporte($libro, $nombre, ['Concepto', 'Valor'], $filas, [], $estiloFilas);
     }
 
     /** Las cuatro cifras de arriba. */
@@ -356,20 +530,38 @@ class DashboardController extends Controller
      * colegio mira todos los meses y hoy tenía que ir a buscar a mano en las
      * fichas una por una.
      */
-    private function cumpleanosDelMes(int $mes, ?string $sede): array
+    private function cumpleanosDelMes(int $mes, int $anio, ?string $sede, Carbon $hoy): array
     {
+        // Sin tope: en un mes cumplen doce o quince personas y cortar la
+        // lista en veinte solo dejaría a alguien fuera sin avisar.
         return $this->empleadosActivos($sede)
             ->whereNotNull('fecha_nacimiento')
             ->whereMonth('fecha_nacimiento', $mes)
-            ->with('cargo:id,nombre')
+            ->with(['cargo:id,nombre', 'area:id,nombre', 'sede:id,nombre'])
             ->orderByRaw('DAY(fecha_nacimiento)')
-            ->limit(20)
             ->get()
-            ->map(fn (Empleado $e) => [
-                'nombre' => trim($e->nombre . ' ' . $e->apellido),
-                'cargo'  => $e->cargo->nombre ?? '—',
-                'dia'    => (int) Carbon::parse($e->fecha_nacimiento)->day,
-            ])
+            ->map(function (Empleado $e) use ($mes, $anio, $hoy) {
+                $nacimiento = Carbon::parse($e->fecha_nacimiento);
+                $dia = (int) $nacimiento->day;
+
+                return [
+                    'nombre' => trim($e->nombre . ' ' . $e->apellido),
+                    'cargo'  => $e->cargo->nombre ?? '—',
+                    'area'   => $e->area->nombre ?? '—',
+                    'sede'   => $e->sede->nombre ?? '—',
+                    'dia'    => $dia,
+                    'fecha'  => $nacimiento->format('d/m'),
+                    // Los años que cumple en el periodo que se está mirando,
+                    // no la edad de hoy: si se mira un mes que ya pasó, lo
+                    // que interesa es lo que cumplió entonces.
+                    'edad'   => $anio - (int) $nacimiento->year,
+                    'es_hoy' => $hoy->year === $anio && $hoy->month === $mes && $hoy->day === $dia,
+                    // Ya fue, es hoy, o está por venir: sirve para saber a
+                    // quién todavía se le puede saludar.
+                    'ya_paso' => $hoy->year > $anio
+                        || ($hoy->year === $anio && ($hoy->month > $mes || ($hoy->month === $mes && $hoy->day > $dia))),
+                ];
+            })
             ->all();
     }
 

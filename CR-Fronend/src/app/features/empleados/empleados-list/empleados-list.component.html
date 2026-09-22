@@ -57,4 +57,9 @@
   (editarFila)="editar($event)"
   (eliminarFila)="darDeBaja($event)"
   (accionPersonalizada)="alAccionar($event)"
-></app-data-table>
+>
+  <!-- El embudo va junto al buscador: el texto encuentra a una persona, los
+       filtros contestan "quiénes de Jerusalén con plazo fijo". -->
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
+    (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogos()"></app-filtros>
+</app-data-table>

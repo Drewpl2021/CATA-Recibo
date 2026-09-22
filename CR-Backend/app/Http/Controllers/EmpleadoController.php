@@ -64,6 +64,10 @@ class EmpleadoController extends Controller
             ? $query->orderBy('apellido')->orderBy('nombre')
             : $query->orderByDesc('created_at')->orderByDesc('id');
 
+        // Los filtros de la tabla: área, sede, cargo, contrato, pensión y,
+        // para la pantalla de boletas, cómo va la del mes.
+        $this->aplicarFiltrosDePersonal($request, $ordenado);
+
         return $this->responderListado(
             $request,
             $ordenado,
@@ -75,6 +79,116 @@ class EmpleadoController extends Controller
             // filtro, no sobre la página que se está viendo.
             fn (Builder $filtrada) => $this->conteoPorEstado($filtrada, 'estado', ['activos' => 'activo', 'inactivos' => 'inactivo'])
         );
+    }
+
+    /**
+     * Los filtros de la tabla del personal.
+     *
+     * Hasta ahora solo había un buscador por texto: para "los de Jerusalén
+     * con plazo fijo" o "a quién le falta la boleta de este mes" había que
+     * bajar la lista a Excel y filtrar ahí. Son las preguntas que RR.HH. se
+     * hace todos los meses, así que las contesta el servidor: filtra sobre
+     * TODO el personal y no sobre la página que se está viendo, y las cifras
+     * de la cabecera se recalculan con el mismo filtro.
+     *
+     * Los tres últimos (planilla, boleta) necesitan mes y año: son el estado
+     * de ESE mes, no del trabajador.
+     */
+    private function aplicarFiltrosDePersonal(Request $request, Builder $query): void
+    {
+        $request->validate([
+            'estado'            => 'nullable|in:activo,inactivo',
+            'area_id'           => 'nullable|uuid|exists:areas,id',
+            'cargo_id'          => 'nullable|uuid|exists:cargos,id',
+            'sede_id'           => 'nullable|uuid|exists:sedes,id',
+            'tipo_contrato'     => 'nullable|in:indeterminado,plazo_fijo,suplencia,practicas',
+            // "ninguno" no es un valor de la columna: es no aportar a ninguna
+            // pensión, que en la base es NULL.
+            'sistema_pensiones' => 'nullable|in:AFP,ONP,ninguno',
+            'forma_pago'        => 'nullable|in:banco,efectivo',
+            'sin_sueldo'        => 'nullable|boolean',
+            'ingreso_desde'     => 'nullable|date',
+            'ingreso_hasta'     => 'nullable|date',
+            'planilla'          => 'nullable|in:con,sin',
+            'boleta'            => 'nullable|in:con,sin,sin_firmar',
+            'mes'               => 'nullable|integer|min:1|max:12',
+            'anio'              => 'nullable|integer|min:2000',
+        ]);
+
+        // Con el prefijo de la tabla a propósito: areas, cargos y sedes
+        // también tienen `estado`, y en cuanto una consulta las junta MySQL
+        // no sabe de cuál se le habla.
+        foreach (['estado', 'area_id', 'cargo_id', 'sede_id', 'tipo_contrato', 'forma_pago'] as $campo) {
+            if ($request->filled($campo)) {
+                $query->where('empleados.' . $campo, $request->input($campo));
+            }
+        }
+
+        $pension = $request->input('sistema_pensiones');
+        if ($pension === 'ninguno') {
+            $query->whereNull('empleados.sistema_pensiones');
+        } elseif ($pension) {
+            $query->where('empleados.sistema_pensiones', $pension);
+        }
+
+        // Sin sueldo no se le puede armar planilla: la generación lo salta y
+        // la persona se queda sin cobrar sin que nadie se dé cuenta.
+        if ($request->boolean('sin_sueldo')) {
+            $query->where(fn (Builder $q) => $q->whereNull('sueldo_base')->orWhere('sueldo_base', '<=', 0));
+        }
+
+        if ($request->filled('ingreso_desde')) {
+            $query->whereDate('fecha_ingreso', '>=', $request->input('ingreso_desde'));
+        }
+
+        if ($request->filled('ingreso_hasta')) {
+            $query->whereDate('fecha_ingreso', '<=', $request->input('ingreso_hasta'));
+        }
+
+        $this->filtrarPorElMes($request, $query);
+    }
+
+    /**
+     * Cómo va el mes de cada quien: si tiene planilla armada y si ya se le
+     * emitió (y firmó) su boleta.
+     *
+     * Es lo que se pregunta en la pantalla de boletas mientras se emite:
+     * "¿a quién le falta?". Sin mes y año no se aplica, porque la respuesta
+     * depende del periodo que se esté armando.
+     */
+    private function filtrarPorElMes(Request $request, Builder $query): void
+    {
+        $mes  = (int) $request->input('mes');
+        $anio = (int) $request->input('anio');
+
+        if (! $mes || ! $anio) {
+            return;
+        }
+
+        $planillasDelMes = \App\Models\Planilla::where('mes', $mes)->where('anio', $anio);
+
+        if ($request->filled('planilla')) {
+            $ids = (clone $planillasDelMes)->select('empleado_id');
+            $request->input('planilla') === 'con'
+                ? $query->whereIn('empleados.id', $ids)
+                : $query->whereNotIn('empleados.id', $ids);
+        }
+
+        if ($request->filled('boleta')) {
+            $boletas = \App\Models\Documento::where('tipo', 'boleta')
+                ->whereIn('planilla_id', (clone $planillasDelMes)->select('id'));
+
+            match ($request->input('boleta')) {
+                'con' => $query->whereIn('empleados.id', (clone $boletas)->select('empleado_id')),
+                'sin' => $query->whereNotIn('empleados.id', (clone $boletas)->select('empleado_id')),
+                // Emitida pero sin firmar: es la lista a la que hay que ir a
+                // recordarle, distinta de "no se le emitió".
+                'sin_firmar' => $query->whereIn(
+                    'empleados.id',
+                    (clone $boletas)->where('estado_firma', '!=', 'firmado')->select('empleado_id')
+                ),
+            };
+        }
     }
 
     /**
@@ -101,6 +215,10 @@ class EmpleadoController extends Controller
             $query,
             ['nombre', 'apellido', 'dni', 'cargo.nombre', 'area.nombre', 'usuario.email']
         );
+
+        // Los mismos filtros de la pantalla: si arriba se filtró por sede o
+        // por tipo de contrato, el archivo sale con esa misma gente.
+        $this->aplicarFiltrosDePersonal($request, $query);
 
         $empleados = $query->get();
 

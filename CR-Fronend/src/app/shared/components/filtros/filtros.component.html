@@ -1,0 +1,88 @@
+<div class="filtros">
+
+  <!-- Lo que está puesto, a la vista y quitable de un clic. Un embudo con un
+       puntito no explica por qué la tabla tiene ocho filas. -->
+  <button type="button" class="filtros__chip" *ngFor="let c of chipsVisibles"
+    (click)="quitar(c.clave)" [title]="'Quitar «' + c.texto + '»'">
+    {{ c.texto }}
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+
+  <span class="filtros__mas" *ngIf="chipsDeMas" [title]="'Hay ' + chipsDeMas + ' filtro(s) más puestos'">
+    +{{ chipsDeMas }}
+  </span>
+
+  <div class="filtros__caja">
+    <button type="button" class="boton-filtros" [class.boton-filtros--activo]="cuantosActivos"
+      (click)="alternar($event)" [attr.aria-expanded]="abierto"
+      [attr.aria-label]="cuantosActivos ? cuantosActivos + ' filtros puestos' : 'Filtrar la tabla'">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+      </svg>
+      Filtros
+      <span class="boton-filtros__cuenta" *ngIf="cuantosActivos">{{ cuantosActivos }}</span>
+    </button>
+
+    <div class="panel-flotante" *ngIf="abierto" (click)="$event.stopPropagation()" role="dialog"
+      aria-label="Filtros de la tabla"
+      [class.panel-flotante--arriba]="haciaArriba" [style.maxHeight.px]="altoMaximo">
+      <header class="panel-flotante__cabecera">
+        <strong>Filtrar</strong>
+        <button type="button" class="panel-flotante__limpiar" *ngIf="cuantosActivos" (click)="limpiar()">
+          Limpiar todo
+        </button>
+      </header>
+
+      <div class="panel-flotante__campos">
+        <div class="campo-flotante" *ngFor="let campo of campos"
+          [class.campo-flotante--doble]="campo.ancho === 'doble' || campo.tipo === 'fecha'">
+
+          <!-- Una lista: sede, área, cargo, tipo de contrato… -->
+          <ng-container *ngIf="campo.tipo === 'opciones'">
+            <label class="campo-flotante__etiqueta" [attr.for]="'filtro-' + campo.clave">
+              {{ campo.etiqueta }}
+            </label>
+            <select class="form-control" [id]="'filtro-' + campo.clave"
+              [ngModel]="valorDe(campo.clave)" [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="poner(campo.clave, $event)">
+              <option value="">{{ campo.vacio || 'Todos' }}</option>
+              <option *ngFor="let o of campo.opciones" [value]="o.valor">{{ o.etiqueta }}</option>
+            </select>
+          </ng-container>
+
+          <!-- Un tramo de fechas: desde y hasta -->
+          <ng-container *ngIf="campo.tipo === 'fecha'">
+            <span class="campo-flotante__etiqueta">{{ campo.etiqueta }}</span>
+            <div class="campo-flotante__tramo">
+              <input type="date" class="form-control" [attr.aria-label]="campo.etiqueta + ' desde'"
+                [ngModel]="valorDe(campo.clave)" [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="poner(campo.clave, $event)" />
+              <span class="campo-flotante__hasta">hasta</span>
+              <input type="date" class="form-control" [attr.aria-label]="campo.etiqueta + ' hasta'"
+                [ngModel]="valorDe(campo.claveHasta)" [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="poner(campo.claveHasta!, $event)" />
+            </div>
+          </ng-container>
+
+          <!-- Una casilla: "solo los que…" -->
+          <label class="campo-flotante__casilla" *ngIf="campo.tipo === 'si-no'">
+            <input type="checkbox" [checked]="estaMarcado(campo.clave)"
+              (change)="alternarMarca(campo.clave, $any($event.target).checked)" />
+            <span>{{ campo.etiqueta }}</span>
+          </label>
+
+          <small class="campo-flotante__ayuda" *ngIf="campo.ayuda">{{ campo.ayuda }}</small>
+        </div>
+      </div>
+
+      <footer class="panel-flotante__pie">
+        <span class="panel-flotante__nota">Se aplica al momento.</span>
+        <button type="button" class="btn-secondary" (click)="abierto = false">Listo</button>
+      </footer>
+    </div>
+  </div>
+</div>
