@@ -1,3 +1,7 @@
+# Donde cada despliegue anota sus contraseñas (las dos cuentas, la base).
+# Se queda en la computadora: el repositorio es publico.
+ACCESOS.md
+
 # El .env del despliegue lleva las contraseñas del servidor y la
 # llave de la aplicación: nunca va a git. El que sí se versiona es
 # .env.example, que no tiene ningún secreto dentro.

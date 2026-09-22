@@ -96,6 +96,16 @@ services:
 
       SESION_INACTIVIDAD_MINUTOS: ${SESION_INACTIVIDAD_MINUTOS:-120}
 
+      # Las dos cuentas con las que se entra a un sistema recién sembrado.
+      # Si las contraseñas van vacías, `db:seed` inventa una larga, la enseña
+      # una vez y obliga a cambiarla al entrar.
+      ADMIN_NOMBRE: ${ADMIN_NOMBRE:-Administrador del sistema}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@colegio.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      RRHH_NOMBRE: ${RRHH_NOMBRE:-Recursos Humanos}
+      RRHH_EMAIL: ${RRHH_EMAIL:-rrhh@colegio.com}
+      RRHH_PASSWORD: ${RRHH_PASSWORD:-}
+
       # Dominio de correo de la institución. Vacío por defecto a propósito:
       # el código no lo lleva escrito dentro, lo pone cada despliegue.
       INSTITUCION_DOMINIO_CORREO: ${INSTITUCION_DOMINIO_CORREO:-}

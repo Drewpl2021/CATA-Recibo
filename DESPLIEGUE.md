@@ -71,8 +71,10 @@ docker compose up -d --build
 La primera vez tarda unos minutos: compila Angular e instala las dependencias
 de PHP. Las siguientes van mucho más rápido.
 
-**Siembra los datos iniciales** (roles, áreas, cargos, sedes, conceptos de pago
-y el menú). Esto se hace **una sola vez**, en un sistema recién instalado:
+**Siembra los datos iniciales**: los roles, el menú, las áreas, los cargos, los
+conceptos de pago, las cuatro sedes y las dos cuentas con las que se entra
+(administrador y RR.HH.). Esto se hace **una sola vez**, en un sistema recién
+instalado:
 
 ```bash
 docker compose exec app php artisan db:seed --force
@@ -83,8 +85,20 @@ Ya está. Entra en `http://LA-IP-DEL-SERVIDOR`.
 > El `--force` hace falta porque en producción Laravel pregunta antes de
 > tocar la base, y aquí no hay nadie para contestarle.
 >
-> ⚠️ **`db:seed` borra los empleados y usuarios existentes** para dejar los de
-> ejemplo. No lo corras nunca en un sistema que ya esté en uso.
+> **No siembra ningún trabajador**: la plantilla nace vacía y se llena desde la
+> pantalla de Empleados o con Importar empleados.
+>
+> Las contraseñas de las dos cuentas salen de `ADMIN_PASSWORD` y
+> `RRHH_PASSWORD` del `.env`. Si van vacías, la siembra inventa una larga, la
+> enseña **una sola vez** por pantalla y obliga a cambiarla al entrar.
+>
+> Si la base ya tiene gente dentro, el comando se frena solo: volver a sembrar
+> borraría los catálogos y dejaría al personal sin área, sin cargo y sin
+> permisos. Para datos de ejemplo en una máquina de pruebas está
+> `php artisan db:seed --class=UsuarioDemoSeeder`.
+
+La guía paso a paso, con la base de datos y cómo mudar el sistema de una
+computadora a otra, está en [INSTALACION.md](INSTALACION.md).
 
 ---
 
