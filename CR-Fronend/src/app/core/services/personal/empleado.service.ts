@@ -45,7 +45,7 @@ export class EmpleadoService extends EntityDataService<Empleado> {
    * Lleva el mismo buscador que la tabla: lo que se ve es lo que baja. Vuelve
    * como blob porque es un archivo, no el { success, data } del resto.
    */
-  exportar(filtros: { search?: string } = {}): Observable<Blob> {
+  exportar(filtros: Record<string, string | number | undefined> = {}): Observable<Blob> {
     return this.http.get(`${environment.apiUrl}/${END_POINTS_ACCIONES.exportarEmpleados}`, {
       params: this.construirParams(filtros),
       responseType: 'blob',

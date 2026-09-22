@@ -26,4 +26,17 @@ export class DashboardService {
     if (sedeId) params = params.set('sede_id', sedeId);
     return this.http.get<ApiResponse<Dashboard>>(this.url, { params });
   }
+
+  /**
+   * GET /dashboard/exportar — el panel en Excel, con el filtro puesto.
+   *
+   * Lo que se ve es lo que baja: el mes y la sede van en la petición, así
+   * que el archivo no puede salir de un periodo distinto del de la pantalla.
+   * Vuelve como blob porque es un archivo, no el { success, data } del resto.
+   */
+  exportar(mes: number, anio: number, sedeId?: string | null): Observable<Blob> {
+    let params = new HttpParams().set('mes', String(mes)).set('anio', String(anio));
+    if (sedeId) params = params.set('sede_id', sedeId);
+    return this.http.get(`${this.url}/exportar`, { params, responseType: 'blob' });
+  }
 }

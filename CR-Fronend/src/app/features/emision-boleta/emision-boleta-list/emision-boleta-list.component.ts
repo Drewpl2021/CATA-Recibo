@@ -1,6 +1,7 @@
 import { inject, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AreaService, CargoService, SedeService } from '../../../core/services';
 import { EmpleadoService } from '../../../core/services';
 import { Empleado } from '../../../core/models';
 import { BoletaService } from '../../../core/services';
@@ -9,11 +10,13 @@ import { PayrollDetalleService } from '../../../core/services';
 import { Planilla } from '../../../core/models';
 import { ToastService } from '../../../core/services';
 import { ConfirmService } from '../../../core/services';
-import { Observable, of, map, switchMap } from 'rxjs';
+import { Observable, of, map, switchMap, forkJoin } from 'rxjs';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { MESES_OPCIONES } from '../../../shared/constants';
 
 export interface FormularioBoleta {
@@ -48,7 +51,7 @@ export interface FormularioBoleta {
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, PistaDirective, PageHeaderComponent, DataTableComponent],
+  imports: [CommonModule, FormsModule, PistaDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })
@@ -74,6 +77,16 @@ export class EmisionBoletaListComponent implements OnInit {
    * empezar (y toca enseñar el aviso de "generar la planilla del mes").
    */
   planillasDelMes = 0;
+
+  /**
+   * Cuántos trabajadores hay en total, sin contar lo que filtre la tabla.
+   *
+   * Hace falta aparte porque las cifras de arriba miden el AVANCE del mes
+   * ("18 armadas, 4 sin armar") y eso no puede depender del filtro: al
+   * pedir "a quién le falta" la lista queda en 4 y "sin armar" habría
+   * salido 0, que es justo lo contrario de lo que pasa.
+   */
+  totalDelColegio = 0;
 
   /**
    * Si ya llegó la cuenta de las planillas del mes.
@@ -106,15 +119,26 @@ export class EmisionBoletaListComponent implements OnInit {
    */
   get cifras(): CifraCabecera[] {
     return [
-      { icono: 'people', valor: this.totalEmpleados, etiqueta: 'Trabajadores', tono: 'brand' },
+      {
+        icono: 'people',
+        valor: this.totalEmpleados,
+        // Con un filtro puesto ya no son "los trabajadores" sino los que
+        // quedaron en la lista, y conviene que la cifra lo diga.
+        etiqueta: this.hayFiltros ? 'En la lista' : 'Trabajadores',
+        tono: 'brand',
+      },
       { icono: 'receipt', valor: this.planillasDelMes, etiqueta: 'Boletas armadas', tono: 'success' },
       {
         icono: 'clock',
-        valor: Math.max(this.totalEmpleados - this.planillasDelMes, 0),
+        valor: Math.max(this.totalDelColegio - this.planillasDelMes, 0),
         etiqueta: 'Sin armar',
         tono: 'warning',
       },
     ];
+  }
+
+  get hayFiltros(): boolean {
+    return Object.keys(this.filtros).length > 0;
   }
 
   accionesFila: AccionPersonalizada<Empleado>[] = [
@@ -138,8 +162,103 @@ export class EmisionBoletaListComponent implements OnInit {
 
   // Mass emission modal
   private confirmService = inject(ConfirmService);
+  private areaService = inject(AreaService);
+  private cargoService = inject(CargoService);
+  private sedeService = inject(SedeService);
 
   mesesDisponibles = MESES_OPCIONES.map((m) => ({ num: m.value, nombre: m.label }));
+
+  /*
+   * Los filtros de la tabla.
+   *
+   * Acá la pregunta mientras se emite es siempre la misma: "¿a quién le
+   * falta?". Con 150 trabajadores y la mitad ya emitida, eso se buscaba
+   * fila por fila mirando la columna de estado.
+   *
+   * Los de boleta y planilla son del MES que se está armando, así que
+   * viajan con el mes y el año de arriba.
+   */
+  filtros: ValoresFiltro = {};
+
+  camposFiltro: CampoFiltro[] = [
+    {
+      clave: 'boleta', etiqueta: 'Boleta del mes', tipo: 'opciones', vacio: 'No importa',
+      opciones: [
+        { valor: 'sin', etiqueta: 'Le falta' },
+        { valor: 'sin_firmar', etiqueta: 'Emitida, sin firmar' },
+        { valor: 'con', etiqueta: 'Ya emitida' },
+      ],
+    },
+    {
+      clave: 'planilla', etiqueta: 'Planilla del mes', tipo: 'opciones', vacio: 'No importa',
+      opciones: [
+        { valor: 'sin', etiqueta: 'Sin armar' },
+        { valor: 'con', etiqueta: 'Ya armada' },
+      ],
+    },
+    { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
+    { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
+    { clave: 'cargo_id', etiqueta: 'Cargo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+    {
+      clave: 'tipo_contrato', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos',
+      opciones: [
+        { valor: 'indeterminado', etiqueta: 'Indeterminado' },
+        { valor: 'plazo_fijo', etiqueta: 'Plazo fijo' },
+        { valor: 'suplencia', etiqueta: 'Suplencia' },
+        { valor: 'practicas', etiqueta: 'Prácticas' },
+      ],
+    },
+    {
+      clave: 'sistema_pensiones', etiqueta: 'Pensión', tipo: 'opciones', vacio: 'Todas',
+      opciones: [
+        { valor: 'ONP', etiqueta: 'ONP' },
+        { valor: 'AFP', etiqueta: 'AFP' },
+        { valor: 'ninguno', etiqueta: 'No aporta' },
+      ],
+    },
+    {
+      clave: 'sin_sueldo', etiqueta: 'Sin sueldo puesto', tipo: 'si-no',
+      ayuda: 'A quien no tiene sueldo no se le puede armar la boleta.',
+    },
+  ];
+
+  alFiltrar(): void {
+    this.pagina = 0;
+    this.cargarEmpleados();
+  }
+
+  private catalogosListos = false;
+
+  /** Sedes, áreas y cargos: solo si se abre el panel. */
+  cargarCatalogos(): void {
+    if (this.catalogosListos) return;
+    this.catalogosListos = true;
+
+    forkJoin({
+      sedes: this.sedeService.getAll(),
+      areas: this.areaService.getAll(),
+      cargos: this.cargoService.getAll(),
+    }).subscribe({
+      next: ({ sedes, areas, cargos }) => {
+        this.ponerOpciones('sede_id', sedes.data);
+        this.ponerOpciones('area_id', areas.data);
+        this.ponerOpciones('cargo_id', cargos.data);
+      },
+      error: () => {
+        this.catalogosListos = false;
+        this.toastService.error('Filtros', 'No se pudieron cargar las sedes, áreas y cargos.');
+      },
+    });
+  }
+
+  private ponerOpciones(clave: string, lista: { id: string; nombre: string }[]): void {
+    const campo = this.camposFiltro.find((c) => c.clave === clave);
+    if (!campo) return;
+
+    campo.opciones = (lista ?? [])
+      .map((x) => ({ valor: x.id, etiqueta: x.nombre }))
+      .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es'));
+  }
 
   constructor(
     private empleadoService: EmpleadoService,
@@ -156,12 +275,27 @@ export class EmisionBoletaListComponent implements OnInit {
     }
     this.formulario = this.getFormularioVacio();
     this.cargarEmpleados();
+
+    // Una fila basta: lo que interesa es el total que manda el backend.
+    this.empleadoService.getPagina({ page: 0, size: 1 }).subscribe({
+      next: (res) => { if (res.success) this.totalDelColegio = res.data.totalElements; },
+      error: () => {},
+    });
   }
 
   cargarEmpleados(): void {
     this.cargandoEmpleados = true;
     this.empleadoService
-      .getPagina({ page: this.pagina, size: this.TAMANO_PAGINA, search: this.busqueda || undefined })
+      .getPagina({
+        page: this.pagina,
+        size: this.TAMANO_PAGINA,
+        search: this.busqueda || undefined,
+        // El mes que se está armando: los filtros de boleta y planilla son
+        // de ESE periodo, no del trabajador.
+        mes: this.mesGlobal,
+        anio: this.anioGlobal,
+        ...this.filtros,
+      })
       .subscribe({
         next: (res) => {
           if (res.success) {
@@ -588,7 +722,9 @@ export class EmisionBoletaListComponent implements OnInit {
   }
 
   emitirTodasLasBoletas(): void {
-    if (this.totalEmpleados === 0) {
+    // Contra el total del colegio y no contra la lista: emitir masivamente
+    // va por todo el mes, así que un filtro puesto no puede bloquearlo.
+    if (this.totalDelColegio === 0) {
       this.toastService.warning('Aviso', 'No hay trabajadores en la lista para emitir boletas.');
       return;
     }

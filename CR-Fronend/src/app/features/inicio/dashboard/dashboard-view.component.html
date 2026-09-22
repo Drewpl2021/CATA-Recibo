@@ -14,7 +14,7 @@
     <div class="barra-filtros">
 
       <!-- Periodo: un paso atrás, un paso adelante, y el calendario -->
-      <div class="filtro-periodo">
+      <div class="filtro-periodo" [class.filtro-periodo--elegido]="mesMovido">
         <button type="button" class="filtro-periodo__paso" (click)="moverMes(-1)"
           [attr.aria-label]="'Ver ' + etiquetaMesVecino(-1)" [title]="etiquetaMesVecino(-1)">
           <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
@@ -108,6 +108,36 @@
         </select>
       </div>
 
+      <div class="barra-filtros__acciones">
+      <!-- Los cumpleaños del mes: el icono dice cuántos son y el modal, quiénes.
+           Antes esto vivía al final de la pantalla y había que bajar hasta
+           abajo para ver un solo nombre. -->
+      <button type="button" class="boton-cumpleanos" *ngIf="!cargando && cumpleanos.length"
+        [class.boton-cumpleanos--hoy]="hayCumpleanosHoy" (click)="abrirCumpleanos($event)"
+        [title]="'Ver los cumpleaños de ' + nombreMes(filtroMes)"
+        [attr.aria-label]="cumpleanos.length + ' cumpleaños en ' + nombreMes(filtroMes)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 1 4 1 2.5-1 4-1 2.5 1 4 1 2-1 2-1"/>
+          <line x1="12" y1="4" x2="12" y2="7"/><line x1="8" y1="4" x2="8" y2="7"/><line x1="16" y1="4" x2="16" y2="7"/>
+          <line x1="2" y1="21" x2="22" y2="21"/>
+        </svg>
+        <span class="boton-cumpleanos__cuenta">{{ cumpleanos.length }}</span>
+      </button>
+
+      <!-- El panel, tal como se está viendo, en un Excel -->
+      <button type="button" class="btn-exportar btn-exportar--compacto" (click)="exportar()"
+        [disabled]="exportando || cargando" [title]="'Exportar el panel de ' + loQueSeVe + ' a Excel'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 18 15 15"/>
+        </svg>
+        {{ exportando ? 'Generando…' : 'Exportar' }}
+      </button>
+      </div>
+
       <!-- Solo aparece cuando hay a dónde volver -->
       <button type="button" class="chip-filtro" *ngIf="hayFiltros" (click)="limpiarFiltros()">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
@@ -123,7 +153,7 @@
        Va antes que los gráficos a propósito: el resto del panel cuenta
        cosas, y esto señala trabajo que alguien está esperando. -->
   <section class="pendientes" *ngIf="!cargando">
-    <h2 class="pendientes__titulo">Pendientes de Recursos Humanos</h2>
+    <h2 class="pendientes__titulo">Pendientes</h2>
 
     <div class="pendientes__lista pendientes__lista--fila" *ngIf="pendientesConTrabajo.length">
       <button type="button" class="pendiente" *ngFor="let p of pendientesConTrabajo"
@@ -351,9 +381,6 @@
   </div>
 
 
-  <!-- ══ CUMPLEAÑOS DEL MES ════════════════════════════════════════
-       No es una cifra de planilla, pero es de lo que RR.HH. de un colegio
-       mira cada mes y hoy tenía que buscar ficha por ficha. -->
   <!-- ══ A DÓNDE SE VA LA PLATA Y CÓMO ES LA PLANTILLA ═════════════ -->
   <div class="dash-grid dash-grid--tres" *ngIf="!cargando">
     <div class="chart-card chart-card--ancha">
@@ -422,16 +449,36 @@
     </div>
   </div>
 
-  <section class="cumpleanos" *ngIf="!cargando && cumpleanos.length">
-    <h3 class="card-title">Cumpleaños de {{ loQueSeVe.split(' ·')[0] }}</h3>
+  <!-- ══ LOS CUMPLEAÑOS, CON NOMBRE Y APELLIDO ═════════════════════
+       No es una cifra de planilla, pero es de lo que RR.HH. de un colegio
+       mira cada mes y antes tenía que buscar ficha por ficha. -->
+  <app-form-modal [(visible)]="cumpleanosAbierto" [ancho]="'560px'"
+    [titulo]="'Cumpleaños de ' + nombreMes(filtroMes)"
+    [ocultarBotonesPorDefecto]="true" [cabeceraMarca]="true">
+
+    <p class="cumpleanos__intro">
+      <strong>{{ cumpleanos.length }}</strong>
+      {{ cumpleanos.length === 1 ? 'persona cumple' : 'personas cumplen' }} años en
+      {{ nombreMes(filtroMes) }} {{ filtroAnio }}{{ sedeElegida ? ' · ' + sedeElegida.nombre : '' }}.
+      <span *ngIf="cumpleanosPorVenir">Faltan {{ cumpleanosPorVenir }} por llegar.</span>
+    </p>
+
     <ul class="cumpleanos__lista">
-      <li class="cumpleanos__item" *ngFor="let c of cumpleanos">
+      <li class="cumpleanos__item" *ngFor="let c of cumpleanos"
+        [class.cumpleanos__item--hoy]="c.es_hoy"
+        [class.cumpleanos__item--paso]="c.ya_paso && !c.es_hoy">
         <span class="cumpleanos__dia">{{ c.dia }}</span>
         <span class="cumpleanos__quien">
           <strong>{{ c.nombre }}</strong>
-          <small>{{ c.cargo }}</small>
+          <small>{{ c.cargo }}{{ c.area && c.area !== '—' ? ' · ' + c.area : '' }}</small>
         </span>
+        <span class="cumpleanos__edad" *ngIf="c.edad > 0">{{ c.edad }} años</span>
+        <span class="cumpleanos__hoy" *ngIf="c.es_hoy">¡Hoy!</span>
       </li>
     </ul>
-  </section>
+
+    <button modalFooter type="button" class="btn-secondary" (click)="cumpleanosAbierto = false">
+      Cerrar
+    </button>
+  </app-form-modal>
 </div>

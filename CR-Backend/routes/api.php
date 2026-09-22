@@ -81,6 +81,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     // Las cifras del Panel de Control. Solo admin y RRHH: son datos de toda
     // la nomina, igual que el modulo que lo muestra en el menu.
     Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('rol:admin,rrhh');
+    // El mismo panel en Excel, con el filtro puesto.
+    Route::get('/dashboard/exportar', [DashboardController::class, 'exportar'])->middleware('rol:admin,rrhh');
 
     // Empleado autenticado — sus propios datos
     Route::get('mi-planilla',              [MiPlanillaController::class, 'index']);

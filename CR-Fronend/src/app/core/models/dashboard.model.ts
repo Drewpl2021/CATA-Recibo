@@ -48,7 +48,16 @@ export interface PendienteRrhh {
 export interface CumpleanosDelMes {
   nombre: string;
   cargo: string;
+  area: string;
+  sede: string;
   dia: number;
+  /** "15/09", para el Excel y para leerlo de corrido. */
+  fecha: string;
+  /** Los años que cumple en el periodo que se está mirando. */
+  edad: number;
+  es_hoy: boolean;
+  /** Ya fue: sirve para saber a quién todavía se le puede saludar. */
+  ya_paso: boolean;
 }
 
 export interface Dashboard {
