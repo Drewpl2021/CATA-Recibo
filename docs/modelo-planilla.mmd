@@ -1,0 +1,68 @@
+erDiagram
+    planilla {
+        uuid id PK
+        uuid periodo_id FK
+        uuid corrida_id FK
+        uuid empleado_id
+        integer mes
+        integer anio
+        decimal sueldo_base
+        decimal bonificaciones
+    }
+    payroll_detalles {
+        uuid id PK
+        uuid planilla_id FK
+        uuid payment_concept_id FK
+        decimal monto_calculado
+        enum calculo
+        decimal valor
+        string descripcion
+        string estado
+    }
+    payment_concepts {
+        uuid id PK
+        string nombre
+        string etiqueta_boleta
+        string tipo
+        string calculo
+        decimal valor
+        string descripcion
+        boolean aplica_a_todos
+    }
+    concepto_alias {
+        uuid id PK
+        uuid payment_concept_id FK
+        string alias
+        string confirmado_por
+    }
+    planilla_corridas {
+        uuid id PK
+        uuid periodo_id FK
+        string nombre
+        integer mes
+        integer anio
+        enum estado
+        string observaciones
+    }
+    periodos {
+        uuid id PK
+        string nombre
+        date fecha_inicio
+        date fecha_fin
+    }
+    empleados {
+        uuid id PK
+        uuid area_id FK
+        uuid cargo_id FK
+        uuid sede_id FK
+        string dni
+        string nombre
+        string apellido
+        string telefono
+    }
+    periodos ||--o{ planilla_corridas : "periodo_id"
+    periodos ||--o{ planilla : "periodo_id"
+    planilla_corridas ||--o{ planilla : "corrida_id"
+    planilla ||--o{ payroll_detalles : "planilla_id"
+    payment_concepts ||--o{ payroll_detalles : "payment_concept_id"
+    payment_concepts ||--o{ concepto_alias : "payment_concept_id"
