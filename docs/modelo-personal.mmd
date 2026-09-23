@@ -1,0 +1,88 @@
+erDiagram
+    empleados {
+        uuid id PK
+        uuid area_id FK
+        uuid cargo_id FK
+        uuid sede_id FK
+        string dni
+        string nombre
+        string apellido
+        string telefono
+    }
+    contratos {
+        uuid id PK
+        uuid empleado_id FK
+        enum tipo_contrato
+        date fecha_inicio
+        date fecha_fin
+        enum estado
+        enum motivo_fin
+        text observaciones
+    }
+    identidades_firma {
+        uuid id PK
+        uuid empleado_id FK
+        bigint registrado_por FK
+        string firma_imagen
+        string huella_imagen
+    }
+    areas {
+        uuid id PK
+        string nombre
+        string descripcion
+        string estado
+    }
+    cargos {
+        uuid id PK
+        string nombre
+        string descripcion
+        string estado
+    }
+    sedes {
+        uuid id PK
+        string nombre
+        string direccion
+        string telefono
+        string estado
+    }
+    area_cargo {
+        uuid area_id FK
+        uuid cargo_id FK
+    }
+    vacaciones {
+        uuid id PK
+        uuid empleado_id FK
+        uuid periodo_id FK
+        date fecha_inicio
+        date fecha_fin
+        integer dias_solicitados
+        text motivo
+        text observacion
+    }
+    periodos {
+        uuid id PK
+        string nombre
+        date fecha_inicio
+        date fecha_fin
+    }
+    users {
+        uuid rol_id FK
+        uuid empleado_id FK
+        string name
+        string email
+        timestamp email_verified_at
+        string password
+        boolean debe_cambiar_password
+        boolean terminos_firmados
+    }
+    areas ||--o{ empleados : "area_id"
+    cargos ||--o{ empleados : "cargo_id"
+    sedes ||--o{ empleados : "sede_id"
+    empleados ||--o{ users : "empleado_id"
+    empleados ||--o{ vacaciones : "empleado_id"
+    periodos ||--o{ vacaciones : "periodo_id"
+    empleados ||--o{ contratos : "empleado_id"
+    empleados ||--o{ identidades_firma : "empleado_id"
+    users ||--o{ identidades_firma : "registrado_por"
+    areas ||--o{ area_cargo : "area_id"
+    cargos ||--o{ area_cargo : "cargo_id"

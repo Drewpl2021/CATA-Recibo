@@ -505,7 +505,7 @@ institución.
 | Documento | Contenido |
 |---|---|
 | Documento de requerimientos | Historias de usuario con criterios de aceptación |
-| Modelo de datos | Diagrama entidad-relación del sistema |
+| Modelo de datos | Diagrama entidad-relación y diccionario de datos ([MODELO-DE-DATOS.md](MODELO-DE-DATOS.md)) |
 | Manual de instalación y despliegue | Procedimiento completo, del clonado a la puesta en marcha |
 | Manual de usuario por rol | RR.HH., Dirección y trabajador |
 | Plan de firma digital con DNIe | Análisis técnico, normativo y económico |

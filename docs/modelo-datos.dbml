@@ -1,0 +1,319 @@
+// CATA-Recibo - modelo de datos
+// Pegalo en https://dbdiagram.io para ver y exportar el grafico.
+// Generado desde las migraciones: python docs/herramientas/modelo-de-datos.py
+
+// -- Personal --
+Table empleados {
+  id uuid [pk]
+  dni string [unique, not null]
+  nombre string [not null]
+  apellido string [not null]
+  area_id uuid [ref: > areas.id]
+  cargo_id uuid [ref: > cargos.id]
+  telefono string
+  direccion string
+  fecha_ingreso date [not null]
+  estado string [not null]
+  sistema_pensiones enum
+  afp enum
+  cuspp string
+  entidad_financiera string
+  numero_cuenta string
+  tiene_hijos boolean [not null]
+  sueldo_base decimal
+  tipo_contrato enum
+  forma_pago enum
+  sede_id uuid [ref: > sedes.id]
+  nivel_estudios enum
+  especialidad string
+  institucion_estudios string
+  contacto_emergencia_nombre string
+  contacto_emergencia_telefono string
+  fecha_nacimiento date
+  created_at timestamp
+  updated_at timestamp
+  cci string
+  fecha_cese date
+  Note: 'La ficha del trabajador: datos personales, laborales, de planilla y bancarios.'
+}
+
+Table contratos {
+  id uuid [pk]
+  empleado_id uuid [ref: > empleados.id, not null]
+  tipo_contrato enum [not null]
+  fecha_inicio date [not null]
+  fecha_fin date
+  estado enum [not null]
+  motivo_fin enum
+  observaciones text
+  estado_registro string [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'El vinculo laboral. Un trabajador tiene un solo contrato vigente a la vez.'
+}
+
+Table identidades_firma {
+  id uuid [pk]
+  empleado_id uuid [ref: > empleados.id, unique, not null]
+  firma_imagen string
+  huella_imagen string
+  registrado_por bigint [ref: > users.id]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'La firma y la huella del trabajador, para estampar en su boleta.'
+}
+
+Table areas {
+  id uuid [pk]
+  nombre string [unique, not null]
+  descripcion string
+  estado string [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'Areas academicas y administrativas del colegio.'
+}
+
+Table cargos {
+  id uuid [pk]
+  nombre string [unique, not null]
+  descripcion string
+  estado string [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'Puestos que puede ocupar un trabajador.'
+}
+
+Table sedes {
+  id uuid [pk]
+  nombre string [unique, not null]
+  direccion string
+  telefono string
+  estado string [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'Los locales del colegio.'
+}
+
+Table area_cargo {
+  id uuid [pk]
+  area_id uuid [ref: > areas.id, not null]
+  cargo_id uuid [ref: > cargos.id, not null]
+  Note: 'Que cargos son propios de cada area. Un cargo puede valer en varias.'
+}
+
+// -- Planilla --
+Table periodos {
+  id uuid [pk]
+  nombre string [not null]
+  fecha_inicio date [not null]
+  fecha_fin date [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'El tramo de la campana de planillas sobre el que se genera.'
+}
+
+Table planilla_corridas {
+  id uuid [pk]
+  nombre string [not null]
+  mes integer [not null]
+  anio integer [not null]
+  periodo_id uuid [ref: > periodos.id]
+  estado enum [not null]
+  observaciones string
+  created_at timestamp
+  updated_at timestamp
+  Note: 'Una corrida agrupa las planillas que se pagan juntas.'
+}
+
+Table planilla {
+  id uuid [pk]
+  empleado_id uuid [not null]
+  mes integer [not null]
+  anio integer [not null]
+  periodo_id uuid [ref: > periodos.id]
+  corrida_id uuid [ref: > planilla_corridas.id]
+  sueldo_base decimal [not null]
+  bonificaciones decimal [not null]
+  descuentos decimal [not null]
+  total decimal [not null]
+  estado_registro string [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'La planilla de UN trabajador en un mes: su base, sus sumas y su neto.'
+}
+
+Table payroll_detalles {
+  id uuid [pk]
+  planilla_id uuid [ref: > planilla.id, not null]
+  payment_concept_id uuid [ref: > payment_concepts.id, not null]
+  monto_calculado decimal [not null]
+  calculo enum
+  valor decimal
+  descripcion string
+  estado string [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'Cada linea de esa planilla: que concepto se aplico y por cuanto.'
+}
+
+Table payment_concepts {
+  id uuid [pk]
+  nombre string [unique, not null]
+  etiqueta_boleta string
+  tipo string [not null]
+  calculo string
+  valor decimal
+  descripcion string
+  aplica_a_todos boolean [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'El catalogo de bonificaciones, descuentos, aportaciones y adelantos.'
+}
+
+Table concepto_alias {
+  id uuid [pk]
+  alias string [unique, not null]
+  payment_concept_id uuid [ref: > payment_concepts.id, not null]
+  confirmado_por string
+  created_at timestamp
+  updated_at timestamp
+  Note: 'Los nombres con los que el colegio llama a un concepto en sus Excel.'
+}
+
+// -- Documentos y avisos --
+Table documentos {
+  id uuid [pk]
+  empleado_id uuid [ref: > empleados.id, not null]
+  contrato_id uuid [ref: > contratos.id]
+  tipo string [not null]
+  archivo string [not null]
+  firmado_por string
+  codigo_firma string
+  fecha_firma timestamp
+  estado_firma enum [not null]
+  planilla_id uuid [ref: > planilla.id]
+  fecha_visto timestamp
+  fecha_aviso timestamp
+  aviso_correo string
+  fecha_descarga timestamp
+  descargas int [not null]
+  empleador_id uuid [ref: > empleados.id]
+  firmado_por_empleador string
+  codigo_firma_empleador string
+  fecha_firma_empleador timestamp
+  estado_firma_empleador enum [not null]
+  estado_registro string [not null]
+  created_at timestamp
+  updated_at timestamp
+  periodo_mes int
+  periodo_anio int
+  huella char
+  Note: 'El expediente: boletas, contratos firmados, hojas de vida y documentos anteriores.'
+}
+
+Table notificaciones {
+  id uuid [pk]
+  user_id bigint [ref: > users.id, not null]
+  tipo string [not null]
+  titulo string [not null]
+  mensaje string [not null]
+  documento_id uuid [ref: > documentos.id]
+  leida_at timestamp
+  created_at timestamp
+  updated_at timestamp
+  Note: 'Los avisos del trabajador (la campana).'
+}
+
+// -- Vacaciones --
+Table vacaciones {
+  id uuid [pk]
+  empleado_id uuid [ref: > empleados.id, not null]
+  periodo_id uuid [ref: > periodos.id]
+  fecha_inicio date [not null]
+  fecha_fin date [not null]
+  dias_solicitados integer [not null]
+  motivo text
+  observacion text
+  estado string [not null]
+  aprobado_por string
+  aprobado_at timestamp
+  estado_registro string [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'Solicitud de vacaciones, su estado y quien la respondio.'
+}
+
+// -- Seguridad y accesos --
+Table users {
+  id uuid [pk]
+  name string [not null]
+  email string [unique, not null]
+  email_verified_at timestamp
+  password string [not null]
+  debe_cambiar_password boolean [not null]
+  terminos_firmados boolean [not null]
+  terminos_firmados_en timestamp
+  terminos_version string
+  terminos_ip string
+  created_at timestamp
+  updated_at timestamp
+  rol_id uuid [ref: > roles.id]
+  empleado_id uuid [ref: > empleados.id]
+  estado_registro string [not null]
+  foto string
+  Note: 'La cuenta de acceso. Puede estar atada a un trabajador o ser solo del sistema.'
+}
+
+Table roles {
+  id uuid [pk]
+  nombre string [unique, not null]
+  descripcion string
+  created_at timestamp
+  updated_at timestamp
+  Note: 'admin, rrhh y empleado: la llave con la que el backend decide que se puede hacer.'
+}
+
+Table modulo_padre {
+  id uuid [pk]
+  nombre string [not null]
+  icono string
+  orden integer [not null]
+  estado_registro string [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'Los grupos de la barra lateral.'
+}
+
+Table modulos {
+  id uuid [pk]
+  modulo_padre_id uuid [ref: > modulo_padre.id, not null]
+  nombre string [not null]
+  ruta string
+  icono string
+  orden integer [not null]
+  estado_registro string [not null]
+  created_at timestamp
+  updated_at timestamp
+  Note: 'Los items del menu: a donde llevan y de que grupo cuelgan.'
+}
+
+Table rol_modulo {
+  id uuid [pk]
+  rol_id uuid [ref: > roles.id, not null]
+  modulo_id uuid [ref: > modulos.id, not null]
+  Note: 'Que modulos ve cada rol.'
+}
+
+Table auditoria {
+  id uuid [pk]
+  user_id bigint [ref: > users.id]
+  usuario_nombre string
+  accion string [not null]
+  entidad string [not null]
+  entidad_id string
+  descripcion string [not null]
+  cambios json
+  ip string
+  created_at timestamp [not null]
+  Note: 'Quien cambio que y cuando. Solo se escribe y se lee.'
+}

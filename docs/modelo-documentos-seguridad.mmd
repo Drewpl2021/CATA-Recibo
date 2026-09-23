@@ -1,0 +1,106 @@
+erDiagram
+    documentos {
+        uuid id PK
+        uuid empleado_id FK
+        uuid contrato_id FK
+        uuid planilla_id FK
+        uuid empleador_id FK
+        string tipo
+        string archivo
+        string firmado_por
+    }
+    notificaciones {
+        uuid id PK
+        bigint user_id FK
+        uuid documento_id FK
+        string tipo
+        string titulo
+        string mensaje
+        timestamp leida_at
+    }
+    users {
+        uuid rol_id FK
+        uuid empleado_id FK
+        string name
+        string email
+        timestamp email_verified_at
+        string password
+        boolean debe_cambiar_password
+        boolean terminos_firmados
+    }
+    roles {
+        uuid id PK
+        string nombre
+        string descripcion
+    }
+    modulos {
+        uuid id PK
+        uuid modulo_padre_id FK
+        string nombre
+        string ruta
+        string icono
+        integer orden
+    }
+    modulo_padre {
+        uuid id PK
+        string nombre
+        string icono
+        integer orden
+    }
+    rol_modulo {
+        uuid rol_id FK
+        uuid modulo_id FK
+    }
+    auditoria {
+        bigint user_id FK
+        string usuario_nombre
+        string accion
+        string entidad
+        string entidad_id
+        string descripcion
+        json cambios
+        string ip
+    }
+    empleados {
+        uuid id PK
+        uuid area_id FK
+        uuid cargo_id FK
+        uuid sede_id FK
+        string dni
+        string nombre
+        string apellido
+        string telefono
+    }
+    contratos {
+        uuid id PK
+        uuid empleado_id FK
+        enum tipo_contrato
+        date fecha_inicio
+        date fecha_fin
+        enum estado
+        enum motivo_fin
+        text observaciones
+    }
+    planilla {
+        uuid id PK
+        uuid periodo_id FK
+        uuid corrida_id FK
+        uuid empleado_id
+        integer mes
+        integer anio
+        decimal sueldo_base
+        decimal bonificaciones
+    }
+    roles ||--o{ users : "rol_id"
+    empleados ||--o{ users : "empleado_id"
+    modulo_padre ||--o{ modulos : "modulo_padre_id"
+    roles ||--o{ rol_modulo : "rol_id"
+    modulos ||--o{ rol_modulo : "modulo_id"
+    empleados ||--o{ contratos : "empleado_id"
+    empleados ||--o{ documentos : "empleado_id"
+    contratos ||--o{ documentos : "contrato_id"
+    planilla ||--o{ documentos : "planilla_id"
+    empleados ||--o{ documentos : "empleador_id"
+    documentos ||--o{ notificaciones : "documento_id"
+    users ||--o{ notificaciones : "user_id"
+    users ||--o{ auditoria : "user_id"

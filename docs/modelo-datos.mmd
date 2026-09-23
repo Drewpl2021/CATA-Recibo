@@ -1,0 +1,202 @@
+erDiagram
+    empleados {
+        uuid id PK
+        uuid area_id FK
+        uuid cargo_id FK
+        uuid sede_id FK
+        string dni
+        string nombre
+        string apellido
+        string telefono
+    }
+    contratos {
+        uuid id PK
+        uuid empleado_id FK
+        enum tipo_contrato
+        date fecha_inicio
+        date fecha_fin
+        enum estado
+        enum motivo_fin
+        text observaciones
+    }
+    identidades_firma {
+        uuid id PK
+        uuid empleado_id FK
+        bigint registrado_por FK
+        string firma_imagen
+        string huella_imagen
+    }
+    areas {
+        uuid id PK
+        string nombre
+        string descripcion
+        string estado
+    }
+    cargos {
+        uuid id PK
+        string nombre
+        string descripcion
+        string estado
+    }
+    sedes {
+        uuid id PK
+        string nombre
+        string direccion
+        string telefono
+        string estado
+    }
+    area_cargo {
+        uuid area_id FK
+        uuid cargo_id FK
+    }
+    periodos {
+        uuid id PK
+        string nombre
+        date fecha_inicio
+        date fecha_fin
+    }
+    planilla_corridas {
+        uuid id PK
+        uuid periodo_id FK
+        string nombre
+        integer mes
+        integer anio
+        enum estado
+        string observaciones
+    }
+    planilla {
+        uuid id PK
+        uuid periodo_id FK
+        uuid corrida_id FK
+        uuid empleado_id
+        integer mes
+        integer anio
+        decimal sueldo_base
+        decimal bonificaciones
+    }
+    payroll_detalles {
+        uuid id PK
+        uuid planilla_id FK
+        uuid payment_concept_id FK
+        decimal monto_calculado
+        enum calculo
+        decimal valor
+        string descripcion
+        string estado
+    }
+    payment_concepts {
+        uuid id PK
+        string nombre
+        string etiqueta_boleta
+        string tipo
+        string calculo
+        decimal valor
+        string descripcion
+        boolean aplica_a_todos
+    }
+    concepto_alias {
+        uuid id PK
+        uuid payment_concept_id FK
+        string alias
+        string confirmado_por
+    }
+    documentos {
+        uuid id PK
+        uuid empleado_id FK
+        uuid contrato_id FK
+        uuid planilla_id FK
+        uuid empleador_id FK
+        string tipo
+        string archivo
+        string firmado_por
+    }
+    notificaciones {
+        uuid id PK
+        bigint user_id FK
+        uuid documento_id FK
+        string tipo
+        string titulo
+        string mensaje
+        timestamp leida_at
+    }
+    vacaciones {
+        uuid id PK
+        uuid empleado_id FK
+        uuid periodo_id FK
+        date fecha_inicio
+        date fecha_fin
+        integer dias_solicitados
+        text motivo
+        text observacion
+    }
+    users {
+        uuid rol_id FK
+        uuid empleado_id FK
+        string name
+        string email
+        timestamp email_verified_at
+        string password
+        boolean debe_cambiar_password
+        boolean terminos_firmados
+    }
+    roles {
+        uuid id PK
+        string nombre
+        string descripcion
+    }
+    modulo_padre {
+        uuid id PK
+        string nombre
+        string icono
+        integer orden
+    }
+    modulos {
+        uuid id PK
+        uuid modulo_padre_id FK
+        string nombre
+        string ruta
+        string icono
+        integer orden
+    }
+    rol_modulo {
+        uuid rol_id FK
+        uuid modulo_id FK
+    }
+    auditoria {
+        bigint user_id FK
+        string usuario_nombre
+        string accion
+        string entidad
+        string entidad_id
+        string descripcion
+        json cambios
+        string ip
+    }
+    areas ||--o{ empleados : "area_id"
+    cargos ||--o{ empleados : "cargo_id"
+    sedes ||--o{ empleados : "sede_id"
+    roles ||--o{ users : "rol_id"
+    empleados ||--o{ users : "empleado_id"
+    empleados ||--o{ vacaciones : "empleado_id"
+    periodos ||--o{ vacaciones : "periodo_id"
+    periodos ||--o{ planilla_corridas : "periodo_id"
+    periodos ||--o{ planilla : "periodo_id"
+    planilla_corridas ||--o{ planilla : "corrida_id"
+    planilla ||--o{ payroll_detalles : "planilla_id"
+    payment_concepts ||--o{ payroll_detalles : "payment_concept_id"
+    modulo_padre ||--o{ modulos : "modulo_padre_id"
+    roles ||--o{ rol_modulo : "rol_id"
+    modulos ||--o{ rol_modulo : "modulo_id"
+    empleados ||--o{ contratos : "empleado_id"
+    empleados ||--o{ documentos : "empleado_id"
+    contratos ||--o{ documentos : "contrato_id"
+    planilla ||--o{ documentos : "planilla_id"
+    empleados ||--o{ documentos : "empleador_id"
+    empleados ||--o{ identidades_firma : "empleado_id"
+    users ||--o{ identidades_firma : "registrado_por"
+    documentos ||--o{ notificaciones : "documento_id"
+    users ||--o{ notificaciones : "user_id"
+    users ||--o{ auditoria : "user_id"
+    areas ||--o{ area_cargo : "area_id"
+    cargos ||--o{ area_cargo : "cargo_id"
+    payment_concepts ||--o{ concepto_alias : "payment_concept_id"
