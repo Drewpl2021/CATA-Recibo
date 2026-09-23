@@ -617,19 +617,38 @@ node docs/herramientas/dibujar-modelo.js modelo-planilla # uno solo
 Usa el Chrome que ya tienes instalado; no instala nada. Escribe el PNG (al
 doble de resolución, para imprimir) y el SVG (que se escala sin pixelarse).
 
-### 3. MySQL Workbench — ingeniería inversa de la base real
+### 3. MySQL Workbench — sin conectarse a nada
 
-Si quieres el gráfico sacado de la base que está corriendo, y no de las
-migraciones:
+En el repositorio va **`docs/modelo-datos.sql`**: la estructura completa de las
+22 tablas con sus 28 llaves foráneas, y **ni un dato dentro**. Workbench puede
+dibujar el modelo leyendo ese archivo, sin tocar ninguna base:
 
-1. *Database → Reverse Engineer*.
-2. Conexión: `127.0.0.1`, puerto `3307` (hay que publicarlo temporalmente, ver
-   [INSTALACION.md](../INSTALACION.md), capítulo 8), usuario `root`.
-3. Elige el esquema `colegio_db` y termina el asistente.
-4. Sale el diagrama con todas las tablas. *File → Export → PNG*.
+1. **File → Import → Reverse Engineer MySQL Create Script…**
+2. *Browse* y elige `docs/modelo-datos.sql`.
+3. Marca **"Place imported objects on a diagram"**.
+4. *Execute* → *Next* → *Finish*.
 
-Ojo con dos cosas: incluye también las ocho tablas de Laravel, y no verá la
-relación `planilla → empleados` porque no tiene llave foránea.
+Aparece el diagrama con las tablas y las relaciones ya trazadas. Para
+acomodarlo: **Arrange → Autolayout** (`Ctrl+Alt+L`) y después a mano. Para
+sacarlo: **File → Export → Export as PNG…** o *Export as Single Page PDF…*, y
+en **Model → Diagram Properties and Size** se le pone tamaño A4 apaisado para
+que entre en la hoja.
+
+El archivo ya viene sin las ocho tablas de Laravel. La relación
+`planilla → empleados` no se dibuja porque no tiene llave foránea: al final
+del `.sql` está la línea que la crea, comentada, por si la quieres ver.
+
+### 3b. Workbench contra la base que está corriendo
+
+Si prefieres el modelo de la base real en lugar del archivo:
+
+1. Publica el puerto de MySQL temporalmente (ver [INSTALACION.md](../INSTALACION.md),
+   capítulo 8) y conéctate a `127.0.0.1:3307` con el usuario `root`.
+2. *Database → Reverse Engineer* (`Ctrl+R`), elige el esquema `colegio_db`.
+3. En *Select Objects* quita las ocho tablas de Laravel: `cache`, `cache_locks`,
+   `jobs`, `job_batches`, `failed_jobs`, `sessions`, `password_reset_tokens`
+   y `personal_access_tokens`.
+4. Al terminar, vuelve a cerrar el puerto.
 
 ### 4. DBeaver — la alternativa libre
 
@@ -643,6 +662,15 @@ declara.
 python docs/herramientas/modelo-de-datos.py   # relee y reescribe .dbml y .mmd
 node docs/herramientas/dibujar-modelo.js      # vuelve a dibujar las imágenes
 ```
+
+Para rehacer también el `.sql` hace falta un MySQL a mano: se crea una base
+vacía, se corre `php artisan migrate` contra ella y se vuelca su estructura:
+
+```bash
+mysqldump -u USUARIO -p --no-data --skip-comments NOMBRE_DE_LA_BASE > docs/modelo-datos.sql
+```
+
+(quitándole después las ocho tablas de Laravel y la tabla `migrations`).
 
 Y si el cambio fue de fondo, revisa a mano la tabla de relaciones y el
 diccionario de este documento: esos dos los escribe una persona, no el script.
