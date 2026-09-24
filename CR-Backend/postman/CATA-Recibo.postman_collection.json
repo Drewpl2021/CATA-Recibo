@@ -4482,7 +4482,7 @@
         "description": "",
         "body": {
          "mode": "raw",
-         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
+         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA Central\", \"01/03/2026\", null, null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
          "options": {
           "raw": {
            "language": "json"
@@ -4578,7 +4578,7 @@
         "description": "",
         "body": {
          "mode": "raw",
-         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
+         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA Central\", \"01/03/2026\", null, null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
          "options": {
           "raw": {
            "language": "json"
@@ -4699,7 +4699,7 @@
         "description": "",
         "body": {
          "mode": "raw",
-         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA\", \"01/03/2026\", null, null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
+         "raw": "{\n  \"archivo\": \"Personal Postman.xlsx\",\n  \"columnas\": {{import_emp_columnas}},\n  \"filas\": [{\"numero\": 2, \"celdas\": [null, \"{{import_emp_dni}}\", \"Importado Postman\", \"Excel\", \"15/03/1990\", 951111222, \"Jr. Postman 123\", \"{{import_emp_correo}}\", null, \"TIC\", \"Soporte Técnico\", \"CATA Central\", \"01/03/2026\", null, null, \"Plazo fijo\", \"28/02/2027\", \"S/ 2,500.00\", \"ONP\", null, null, null, null, null, null, \"No\", null, null, null, null, null]}],\n  \"cvs\": [\"{{import_emp_dni}}\"]\n}",
          "options": {
           "raw": {
            "language": "json"
@@ -7444,13 +7444,13 @@
            "// Se borran las cuatro de un tiron para dejar la coleccion como estaba.",
            "// Borrar una corrida NO borra pagos: estas nacieron vacias.",
            "var ids = (pm.collectionVariables.get('corridas_anuales') || '').split(',').filter(Boolean);",
-           "var base = pm.collectionVariables.get('base_url');",
+           "var base = pm.variables.get('base_url');",
            "var token = pm.collectionVariables.get('rrhh_token');",
            "var pendientes = ids.length;",
            "pm.test('habia cuatro planillas anuales que limpiar', function () { pm.expect(ids.length).to.eql(4); });",
            "ids.forEach(function (id) {",
            "    pm.sendRequest({",
-           "        url: base + '/planilla-corridas/' + id,",
+           "        url: base + '/payroll-runs/' + id,",
            "        method: 'DELETE',",
            "        header: { Accept: 'application/json', Authorization: 'Bearer ' + token },",
            "    }, function (err, res) {",
