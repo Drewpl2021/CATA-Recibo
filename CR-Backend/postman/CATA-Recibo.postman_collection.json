@@ -486,13 +486,13 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/terminos/aceptar",
+       "raw": "{{base_url}}/terms/accept",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "terminos",
-        "aceptar"
+        "terms",
+        "accept"
        ]
       },
       "description": "Toda cuenta firma los terminos antes de usar el sistema, tambien Admin y RR.HH.: sin esto todo lo demas responde 428.",
@@ -585,12 +585,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados",
+       "raw": "{{base_url}}/employees",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ]
       },
       "description": "Antes la firma solo se pedia al cambiar la contrasena, asi que quien ya tenia una suya no firmaba nunca. Ahora es un candado para todos, como el de la contrasena."
@@ -623,12 +623,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/terminos",
+       "raw": "{{base_url}}/terms",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "terminos"
+        "terms"
        ]
       },
       "description": "Los terminos tienen que poder leerse con la cuenta trabada, o no habria forma de salir del candado."
@@ -664,13 +664,13 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/terminos/aceptar",
+       "raw": "{{base_url}}/terms/accept",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "terminos",
-        "aceptar"
+        "terms",
+        "accept"
        ]
       },
       "description": "Toda cuenta firma los terminos antes de usar el sistema, tambien Admin y RR.HH.: sin esto todo lo demas responde 428.",
@@ -799,12 +799,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/olvide-password",
+       "raw": "{{base_url}}/forgot-password",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "olvide-password"
+        "forgot-password"
        ]
       },
       "body": {
@@ -844,12 +844,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/olvide-password",
+       "raw": "{{base_url}}/forgot-password",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "olvide-password"
+        "forgot-password"
        ]
       },
       "body": {
@@ -1574,12 +1574,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/cargos",
+         "raw": "{{base_url}}/positions",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "cargos"
+          "positions"
          ]
         },
         "body": {
@@ -1622,12 +1622,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/cargos",
+         "raw": "{{base_url}}/positions",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "cargos"
+          "positions"
          ]
         }
        },
@@ -1660,12 +1660,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/cargos/{{cargo_id}}",
+         "raw": "{{base_url}}/positions/{{cargo_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "cargos",
+          "positions",
           "{{cargo_id}}"
          ]
         }
@@ -1703,12 +1703,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/cargos/{{cargo_id}}",
+         "raw": "{{base_url}}/positions/{{cargo_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "cargos",
+          "positions",
           "{{cargo_id}}"
          ]
         },
@@ -1755,12 +1755,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/cargos",
+         "raw": "{{base_url}}/positions",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "cargos"
+          "positions"
          ]
         },
         "body": {
@@ -1803,12 +1803,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/cargos/{{cargo_practicante_id}}",
+         "raw": "{{base_url}}/positions/{{cargo_practicante_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "cargos",
+          "positions",
           "{{cargo_practicante_id}}"
          ]
         }
@@ -1863,12 +1863,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/cargos",
+         "raw": "{{base_url}}/positions",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "cargos"
+          "positions"
          ]
         },
         "description": "Un cargo puede acotarse a las areas donde tiene sentido. 'Docente' esta en tres areas a la vez: por eso la relacion es de varios a varios y no una columna.",
@@ -1924,12 +1924,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/cargos?area_id={{area_id}}&size=200",
+         "raw": "{{base_url}}/positions?area_id={{area_id}}&size=200",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "cargos"
+          "positions"
          ],
          "query": [
           {
@@ -2015,12 +2015,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/sedes",
+         "raw": "{{base_url}}/campuses",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "sedes"
+          "campuses"
          ]
         },
         "body": {
@@ -2063,12 +2063,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/sedes",
+         "raw": "{{base_url}}/campuses",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "sedes"
+          "campuses"
          ]
         }
        },
@@ -2101,12 +2101,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/sedes/{{sede_id}}",
+         "raw": "{{base_url}}/campuses/{{sede_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "sedes",
+          "campuses",
           "{{sede_id}}"
          ]
         }
@@ -2144,12 +2144,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/sedes/{{sede_id}}",
+         "raw": "{{base_url}}/campuses/{{sede_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "sedes",
+          "campuses",
           "{{sede_id}}"
          ]
         },
@@ -2196,12 +2196,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/sedes",
+         "raw": "{{base_url}}/campuses",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "sedes"
+          "campuses"
          ]
         },
         "body": {
@@ -2244,12 +2244,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/sedes/{{sede_anexo_id}}",
+         "raw": "{{base_url}}/campuses/{{sede_anexo_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "sedes",
+          "campuses",
           "{{sede_anexo_id}}"
          ]
         }
@@ -2292,12 +2292,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/periodos",
+         "raw": "{{base_url}}/periods",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos"
+          "periods"
          ]
         },
         "body": {
@@ -2340,12 +2340,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/periodos",
+         "raw": "{{base_url}}/periods",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos"
+          "periods"
          ]
         }
        },
@@ -2378,12 +2378,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/periodos/{{periodo_id}}",
+         "raw": "{{base_url}}/periods/{{periodo_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos",
+          "periods",
           "{{periodo_id}}"
          ]
         }
@@ -2421,12 +2421,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/periodos/{{periodo_id}}",
+         "raw": "{{base_url}}/periods/{{periodo_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos",
+          "periods",
           "{{periodo_id}}"
          ]
         },
@@ -2473,12 +2473,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/periodos",
+         "raw": "{{base_url}}/periods",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos"
+          "periods"
          ]
         },
         "body": {
@@ -2521,12 +2521,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/periodos/{{periodo_extra_id}}",
+         "raw": "{{base_url}}/periods/{{periodo_extra_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos",
+          "periods",
           "{{periodo_extra_id}}"
          ]
         }
@@ -2972,12 +2972,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos-padre",
+         "raw": "{{base_url}}/module-groups",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos-padre"
+          "module-groups"
          ]
         },
         "body": {
@@ -3020,12 +3020,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos-padre",
+         "raw": "{{base_url}}/module-groups",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos-padre"
+          "module-groups"
          ]
         }
        },
@@ -3058,12 +3058,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos-padre/{{modulo_padre_id}}",
+         "raw": "{{base_url}}/module-groups/{{modulo_padre_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos-padre",
+          "module-groups",
           "{{modulo_padre_id}}"
          ]
         }
@@ -3101,12 +3101,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos-padre/{{modulo_padre_id}}",
+         "raw": "{{base_url}}/module-groups/{{modulo_padre_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos-padre",
+          "module-groups",
           "{{modulo_padre_id}}"
          ]
         },
@@ -3153,12 +3153,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos-padre",
+         "raw": "{{base_url}}/module-groups",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos-padre"
+          "module-groups"
          ]
         },
         "body": {
@@ -3201,12 +3201,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos-padre/{{modulo_padre_soporte_id}}",
+         "raw": "{{base_url}}/module-groups/{{modulo_padre_soporte_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos-padre",
+          "module-groups",
           "{{modulo_padre_soporte_id}}"
          ]
         }
@@ -3249,12 +3249,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos",
+         "raw": "{{base_url}}/modules",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos"
+          "modules"
          ]
         },
         "body": {
@@ -3297,12 +3297,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos",
+         "raw": "{{base_url}}/modules",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos"
+          "modules"
          ]
         }
        },
@@ -3335,12 +3335,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos/{{modulo_id}}",
+         "raw": "{{base_url}}/modules/{{modulo_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos",
+          "modules",
           "{{modulo_id}}"
          ]
         }
@@ -3378,12 +3378,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos/{{modulo_id}}",
+         "raw": "{{base_url}}/modules/{{modulo_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos",
+          "modules",
           "{{modulo_id}}"
          ]
         },
@@ -3430,12 +3430,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos",
+         "raw": "{{base_url}}/modules",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos"
+          "modules"
          ]
         },
         "body": {
@@ -3478,12 +3478,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos/{{modulo_reporte_id}}",
+         "raw": "{{base_url}}/modules/{{modulo_reporte_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos",
+          "modules",
           "{{modulo_reporte_id}}"
          ]
         }
@@ -3526,12 +3526,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos/{{modulo_id}}/roles",
+         "raw": "{{base_url}}/modules/{{modulo_id}}/roles",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos",
+          "modules",
           "{{modulo_id}}",
           "roles"
          ]
@@ -3575,12 +3575,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/modulos/{{modulo_id}}",
+         "raw": "{{base_url}}/modules/{{modulo_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "modulos",
+          "modules",
           "{{modulo_id}}"
          ]
         }
@@ -3708,12 +3708,12 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/empleados",
+       "raw": "{{base_url}}/employees",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ]
       }
      }
@@ -3746,12 +3746,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados",
+       "raw": "{{base_url}}/employees",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ]
       }
      }
@@ -3787,12 +3787,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados/{{empleado_id}}",
+       "raw": "{{base_url}}/employees/{{empleado_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados",
+        "employees",
         "{{empleado_id}}"
        ]
       }
@@ -3817,12 +3817,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados/{{empleado_id}}",
+       "raw": "{{base_url}}/employees/{{empleado_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados",
+        "employees",
         "{{empleado_id}}"
        ]
       },
@@ -3898,12 +3898,12 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/empleados/{{empleado_id}}",
+       "raw": "{{base_url}}/employees/{{empleado_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados",
+        "employees",
         "{{empleado_id}}"
        ]
       }
@@ -3939,14 +3939,14 @@
        ]
       },
       "url": {
-       "raw": "{{base_url}}/empleados/{{empleado_id}}/identidad-firma",
+       "raw": "{{base_url}}/employees/{{empleado_id}}/signature",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados",
+        "employees",
         "{{empleado_id}}",
-        "identidad-firma"
+        "signature"
        ]
       },
       "description": "RRHH registra la firma y/o huella de CUALQUIER empleado (se guardan en identidades_firma, disco privado). En Postman, ve a Body > form-data y selecciona un archivo .png/.jpg manualmente en 'firma' y/o 'huella' antes de enviar — se puede mandar uno solo o ambos."
@@ -3989,12 +3989,12 @@
        "raw": "{\n    \"dni\": \"70999123\",\n    \"nombre\": \"Sin\",\n    \"apellido\": \"FechaFin\",\n    \"area_id\": \"{{area_id}}\",\n    \"cargo_id\": \"{{cargo_id}}\",\n    \"sede_id\": \"{{sede_id}}\",\n    \"telefono\": \"999111222\",\n    \"direccion\": \"Av. Prueba 1\",\n    \"fecha_ingreso\": \"2026-03-01\",\n    \"fecha_nacimiento\": \"1990-01-01\",\n    \"sueldo_base\": 2000,\n    \"tipo_contrato\": \"plazo_fijo\",\n    \"email\": \"sinfechafin@ejemplo.edu.pe\",\n    \"rol_id\": \"{{rol_empleado_id}}\",\n    \"sistema_pensiones\": \"ONP\"\n}"
       },
       "url": {
-       "raw": "{{base_url}}/empleados",
+       "raw": "{{base_url}}/employees",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ]
       },
       "description": "Un plazo fijo sin fecha de termino no es un contrato: el alta lo rechaza."
@@ -4033,12 +4033,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/consulta-dni/123",
+         "raw": "{{base_url}}/dni-lookup/123",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "consulta-dni",
+          "dni-lookup",
           "123"
          ]
         },
@@ -4078,12 +4078,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/consulta-dni/{{empleado_dni}}",
+         "raw": "{{base_url}}/dni-lookup/{{empleado_dni}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "consulta-dni",
+          "dni-lookup",
           "{{empleado_dni}}"
          ]
         },
@@ -4121,12 +4121,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/consulta-dni/99999999",
+         "raw": "{{base_url}}/dni-lookup/99999999",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "consulta-dni",
+          "dni-lookup",
           "99999999"
          ]
         },
@@ -4179,12 +4179,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/empleados",
+         "raw": "{{base_url}}/employees",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "empleados"
+          "employees"
          ]
         },
         "description": "Se manda sistema_pensiones en null y, a proposito, una AFP y un CUSPP: el backend tiene que quedarse con el nulo y descartar los otros dos.",
@@ -4230,12 +4230,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla",
+         "raw": "{{base_url}}/payrolls",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla"
+          "payrolls"
          ]
         },
         "description": "La planilla se crea igual que la de cualquiera: lo que cambia es lo que el motor le mete dentro.",
@@ -4286,12 +4286,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/payroll-detalles?planilla_id={{planilla_sin_pension_id}}",
+         "raw": "{{base_url}}/payroll-details?planilla_id={{planilla_sin_pension_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "payroll-detalles"
+          "payroll-details"
          ],
          "query": [
           {
@@ -4340,12 +4340,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados/{{empleado_id}}",
+       "raw": "{{base_url}}/employees/{{empleado_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados",
+        "employees",
         "{{empleado_id}}"
        ]
       },
@@ -4378,7 +4378,7 @@
           "value": "application/json"
          }
         ],
-        "url": "{{base_url}}/importacion-empleados/modelo",
+        "url": "{{base_url}}/employee-import/template",
         "description": "El Excel vacío para llenar: los títulos que se reconocen, listas desplegables de área, cargo, sede y demás, y una hoja de instrucciones."
        },
        "event": [
@@ -4415,7 +4415,7 @@
           "type": "text"
          }
         ],
-        "url": "{{base_url}}/importacion-empleados/reconocer",
+        "url": "{{base_url}}/employee-import/recognize",
         "description": "Los mismos títulos que salen al descargar la lista: RR.HH. descarga, corrige y vuelve a subir.",
         "body": {
          "mode": "raw",
@@ -4478,7 +4478,7 @@
           "type": "text"
          }
         ],
-        "url": "{{base_url}}/importacion-empleados/previsualizar",
+        "url": "{{base_url}}/employee-import/preview",
         "description": "",
         "body": {
          "mode": "raw",
@@ -4528,7 +4528,7 @@
           "type": "text"
          }
         ],
-        "url": "{{base_url}}/importacion-empleados/previsualizar",
+        "url": "{{base_url}}/employee-import/preview",
         "description": "",
         "body": {
          "mode": "raw",
@@ -4574,7 +4574,7 @@
           "type": "text"
          }
         ],
-        "url": "{{base_url}}/importacion-empleados/aplicar",
+        "url": "{{base_url}}/employee-import/apply",
         "description": "",
         "body": {
          "mode": "raw",
@@ -4613,7 +4613,7 @@
           "value": "application/json"
          }
         ],
-        "url": "{{base_url}}/empleados?search={{import_emp_dni}}&page=0&size=5",
+        "url": "{{base_url}}/employees?search={{import_emp_dni}}&page=0&size=5",
         "description": ""
        },
        "event": [
@@ -4645,7 +4645,7 @@
           "value": "application/json"
          }
         ],
-        "url": "{{base_url}}/importacion-empleados/hoja-de-vida",
+        "url": "{{base_url}}/employee-import/resume",
         "description": "",
         "body": {
          "mode": "formdata",
@@ -4695,7 +4695,7 @@
           "type": "text"
          }
         ],
-        "url": "{{base_url}}/importacion-empleados/aplicar",
+        "url": "{{base_url}}/employee-import/apply",
         "description": "",
         "body": {
          "mode": "raw",
@@ -4910,12 +4910,12 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/contratos",
+       "raw": "{{base_url}}/contracts",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "contratos"
+        "contracts"
        ]
       }
      }
@@ -4939,12 +4939,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos",
+       "raw": "{{base_url}}/documents",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos"
+        "documents"
        ]
       },
       "body": {
@@ -4991,12 +4991,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos",
+       "raw": "{{base_url}}/documents",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos"
+        "documents"
        ]
       },
       "body": {
@@ -5044,12 +5044,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados",
+       "raw": "{{base_url}}/employees",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ]
       },
       "body": {
@@ -5109,12 +5109,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos",
+       "raw": "{{base_url}}/documents",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos"
+        "documents"
        ]
       },
       "body": {
@@ -5169,12 +5169,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/contratos?empleado_id={{empleado_id}}",
+       "raw": "{{base_url}}/contracts?empleado_id={{empleado_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "contratos"
+        "contracts"
        ],
        "query": [
         {
@@ -5216,12 +5216,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/contratos/{{contrato_id}}",
+       "raw": "{{base_url}}/contracts/{{contrato_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "contratos",
+        "contracts",
         "{{contrato_id}}"
        ]
       }
@@ -5274,12 +5274,12 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/planilla",
+       "raw": "{{base_url}}/payrolls",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla"
+        "payrolls"
        ]
       }
      }
@@ -5312,12 +5312,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/planilla?empleado_id={{empleado_id}}",
+       "raw": "{{base_url}}/payrolls?empleado_id={{empleado_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla"
+        "payrolls"
        ],
        "query": [
         {
@@ -5357,12 +5357,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/planilla/{{planilla_id}}",
+       "raw": "{{base_url}}/payrolls/{{planilla_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla",
+        "payrolls",
         "{{planilla_id}}"
        ]
       }
@@ -5411,12 +5411,12 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/planilla/{{planilla_id}}",
+       "raw": "{{base_url}}/payrolls/{{planilla_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla",
+        "payrolls",
         "{{planilla_id}}"
        ]
       }
@@ -5464,12 +5464,12 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/payroll-detalles",
+       "raw": "{{base_url}}/payroll-details",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles"
+        "payroll-details"
        ]
       }
      }
@@ -5489,12 +5489,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/planilla/{{planilla_id}}",
+       "raw": "{{base_url}}/payrolls/{{planilla_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla",
+        "payrolls",
         "{{planilla_id}}"
        ]
       }
@@ -5544,12 +5544,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/payroll-detalles?planilla_id={{planilla_id}}",
+       "raw": "{{base_url}}/payroll-details?planilla_id={{planilla_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles"
+        "payroll-details"
        ],
        "query": [
         {
@@ -5575,12 +5575,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/payroll-detalles/{{payroll_detalle_id}}",
+       "raw": "{{base_url}}/payroll-details/{{payroll_detalle_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles",
+        "payroll-details",
         "{{payroll_detalle_id}}"
        ]
       }
@@ -5618,12 +5618,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/payroll-detalles/{{payroll_detalle_id}}",
+       "raw": "{{base_url}}/payroll-details/{{payroll_detalle_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles",
+        "payroll-details",
         "{{payroll_detalle_id}}"
        ]
       },
@@ -5666,12 +5666,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/planilla/{{planilla_id}}",
+       "raw": "{{base_url}}/payrolls/{{planilla_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla",
+        "payrolls",
         "{{planilla_id}}"
        ]
       }
@@ -5708,12 +5708,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/payroll-detalles/{{payroll_detalle_id}}",
+       "raw": "{{base_url}}/payroll-details/{{payroll_detalle_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles",
+        "payroll-details",
         "{{payroll_detalle_id}}"
        ]
       }
@@ -5747,12 +5747,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/planilla/{{planilla_id}}",
+       "raw": "{{base_url}}/payrolls/{{planilla_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla",
+        "payrolls",
         "{{planilla_id}}"
        ]
       }
@@ -5789,12 +5789,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/planilla/{{planilla_id}}",
+       "raw": "{{base_url}}/payrolls/{{planilla_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla",
+        "payrolls",
         "{{planilla_id}}"
        ]
       }
@@ -5833,12 +5833,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/payroll-detalles",
+       "raw": "{{base_url}}/payroll-details",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles"
+        "payroll-details"
        ]
       },
       "body": {
@@ -5881,12 +5881,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/planilla/{{planilla_id}}",
+       "raw": "{{base_url}}/payrolls/{{planilla_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla",
+        "payrolls",
         "{{planilla_id}}"
        ]
       }
@@ -5923,12 +5923,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/payroll-detalles/{{payroll_detalle_descuento_id}}",
+       "raw": "{{base_url}}/payroll-details/{{payroll_detalle_descuento_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles",
+        "payroll-details",
         "{{payroll_detalle_descuento_id}}"
        ]
       }
@@ -5962,12 +5962,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/planilla/{{planilla_id}}",
+       "raw": "{{base_url}}/payrolls/{{planilla_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla",
+        "payrolls",
         "{{planilla_id}}"
        ]
       }
@@ -6008,12 +6008,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/payroll-detalles",
+       "raw": "{{base_url}}/payroll-details",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles"
+        "payroll-details"
        ]
       },
       "body": {
@@ -6067,12 +6067,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/payroll-detalles/{{detalle_porcentaje_id}}",
+       "raw": "{{base_url}}/payroll-details/{{detalle_porcentaje_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles",
+        "payroll-details",
         "{{detalle_porcentaje_id}}"
        ]
       },
@@ -6118,12 +6118,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/payroll-detalles/{{detalle_porcentaje_id}}",
+       "raw": "{{base_url}}/payroll-details/{{detalle_porcentaje_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles",
+        "payroll-details",
         "{{detalle_porcentaje_id}}"
        ]
       },
@@ -6173,12 +6173,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/payroll-detalles/{{detalle_porcentaje_id}}",
+       "raw": "{{base_url}}/payroll-details/{{detalle_porcentaje_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles",
+        "payroll-details",
         "{{detalle_porcentaje_id}}"
        ]
       }
@@ -6275,12 +6275,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/periodos",
+         "raw": "{{base_url}}/periods",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos"
+          "periods"
          ]
         },
         "body": {
@@ -6327,12 +6327,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/empleados",
+         "raw": "{{base_url}}/employees",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "empleados"
+          "employees"
          ]
         },
         "body": {
@@ -6389,14 +6389,14 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/periodos/{{periodo_masivo_id}}/generar-planilla",
+         "raw": "{{base_url}}/periods/{{periodo_masivo_id}}/generate-payroll",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos",
+          "periods",
           "{{periodo_masivo_id}}",
-          "generar-planilla"
+          "generate-payroll"
          ]
         },
         "body": {
@@ -6442,14 +6442,14 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/periodos/{{periodo_masivo_id}}/generar-planilla",
+         "raw": "{{base_url}}/periods/{{periodo_masivo_id}}/generate-payroll",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos",
+          "periods",
           "{{periodo_masivo_id}}",
-          "generar-planilla"
+          "generate-payroll"
          ]
         },
         "body": {
@@ -6513,12 +6513,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla/{{planilla_deivi_id}}",
+         "raw": "{{base_url}}/payrolls/{{planilla_deivi_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla",
+          "payrolls",
           "{{planilla_deivi_id}}"
          ]
         }
@@ -6579,14 +6579,14 @@
          "raw": "{\n    \"mes\": 8,\n    \"anio\": \"{{anio}}\",\n    \"empleado_ids\": [\n        \"{{empleado_id}}\"\n    ]\n}"
         },
         "url": {
-         "raw": "{{base_url}}/periodos/{{periodo_masivo_id}}/generar-planilla",
+         "raw": "{{base_url}}/periods/{{periodo_masivo_id}}/generate-payroll",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos",
+          "periods",
           "{{periodo_masivo_id}}",
-          "generar-planilla"
+          "generate-payroll"
          ]
         },
         "description": "Sin empleado_ids la generacion alcanza a TODO el personal activo. Con la lista, solo a esos: es lo que usa la pantalla cuando se elige un grupo. Tambien se puede acotar con area_id, cargo_id o sede_id en vez de la lista."
@@ -6611,12 +6611,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/empleados",
+         "raw": "{{base_url}}/employees",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "empleados"
+          "employees"
          ]
         },
         "body": {
@@ -6673,14 +6673,14 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/periodos/{{periodo_masivo_id}}/generar-planilla",
+         "raw": "{{base_url}}/periods/{{periodo_masivo_id}}/generate-payroll",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos",
+          "periods",
           "{{periodo_masivo_id}}",
-          "generar-planilla"
+          "generate-payroll"
          ]
         },
         "body": {
@@ -6724,12 +6724,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla/{{planilla_tardia_id}}",
+         "raw": "{{base_url}}/payrolls/{{planilla_tardia_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla",
+          "payrolls",
           "{{planilla_tardia_id}}"
          ]
         }
@@ -6772,14 +6772,14 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/periodos/{{periodo_masivo_id}}/generar-planilla",
+         "raw": "{{base_url}}/periods/{{periodo_masivo_id}}/generate-payroll",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos",
+          "periods",
           "{{periodo_masivo_id}}",
-          "generar-planilla"
+          "generate-payroll"
          ]
         },
         "body": {
@@ -6842,14 +6842,14 @@
          "raw": "{\n    \"mes\": 8,\n    \"anio\": \"{{anio}}\",\n    \"empleado_ids\": []\n}"
         },
         "url": {
-         "raw": "{{base_url}}/periodos/{{periodo_masivo_id}}/generar-planilla",
+         "raw": "{{base_url}}/periods/{{periodo_masivo_id}}/generate-payroll",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "periodos",
+          "periods",
           "{{periodo_masivo_id}}",
-          "generar-planilla"
+          "generate-payroll"
          ]
         },
         "description": "Mandar la lista vacia es distinto de no mandarla: se entiende como un error, no como 'a todos'."
@@ -6931,14 +6931,14 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/payment-concepts/{{payment_concept_onp_id}}/aplicar-a-grupo",
+         "raw": "{{base_url}}/payment-concepts/{{payment_concept_onp_id}}/apply-to-group",
          "host": [
           "{{base_url}}"
          ],
          "path": [
           "payment-concepts",
           "{{payment_concept_onp_id}}",
-          "aplicar-a-grupo"
+          "apply-to-group"
          ]
         },
         "body": {
@@ -6984,14 +6984,14 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/payment-concepts/{{payment_concept_otros_ingreso_id}}/aplicar-a-grupo",
+         "raw": "{{base_url}}/payment-concepts/{{payment_concept_otros_ingreso_id}}/apply-to-group",
          "host": [
           "{{base_url}}"
          ],
          "path": [
           "payment-concepts",
           "{{payment_concept_otros_ingreso_id}}",
-          "aplicar-a-grupo"
+          "apply-to-group"
          ]
         },
         "body": {
@@ -7037,14 +7037,14 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/payment-concepts/{{payment_concept_grupo_id}}/aplicar-a-grupo",
+         "raw": "{{base_url}}/payment-concepts/{{payment_concept_grupo_id}}/apply-to-group",
          "host": [
           "{{base_url}}"
          ],
          "path": [
           "payment-concepts",
           "{{payment_concept_grupo_id}}",
-          "aplicar-a-grupo"
+          "apply-to-group"
          ]
         },
         "body": {
@@ -7091,12 +7091,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla/{{planilla_deivi_id}}",
+         "raw": "{{base_url}}/payrolls/{{planilla_deivi_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla",
+          "payrolls",
           "{{planilla_deivi_id}}"
          ]
         }
@@ -7161,12 +7161,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla?periodo_id={{periodo_masivo_id}}&page=0&size=50",
+         "raw": "{{base_url}}/payrolls?periodo_id={{periodo_masivo_id}}&page=0&size=50",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla"
+          "payrolls"
          ],
          "query": [
           {
@@ -7241,12 +7241,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas",
+         "raw": "{{base_url}}/payroll-runs",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas"
+          "payroll-runs"
          ]
         },
         "description": "Crear la planilla y armarle dentro las filas del grupo en una sola llamada. Aca todos quedan omitidos porque 07.1 ya les genero agosto, que es exactamente lo que debe pasar: darle dos veces no duplica ni pisa lo ajustado a mano."
@@ -7310,12 +7310,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas",
+         "raw": "{{base_url}}/payroll-runs",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas"
+          "payroll-runs"
          ]
         },
         "description": "Del periodo salen sus meses, y de cada mes una planilla: una planilla paga UN mes. Aca se crean vacias a proposito, que es lo que hace RR.HH. al abrir el ano escolar antes de meterles gente."
@@ -7372,12 +7372,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas",
+         "raw": "{{base_url}}/payroll-runs",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas"
+          "payroll-runs"
          ]
         },
         "description": "Volver a lanzarlo completa lo que falta sin tocar lo que ya estaba: los meses repetidos se saltan en vez de hacer fallar la llamada entera."
@@ -7422,12 +7422,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas",
+         "raw": "{{base_url}}/payroll-runs",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas"
+          "payroll-runs"
          ]
         },
         "description": "El mes 13 no existe. Se corta en la validacion y no llega a crear nada."
@@ -7490,12 +7490,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas?size=1",
+         "raw": "{{base_url}}/payroll-runs?size=1",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas"
+          "payroll-runs"
          ],
          "query": [
           {
@@ -7551,14 +7551,14 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_id}}/mover",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_id}}/move",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_id}}",
-          "mover"
+          "move"
          ]
         },
         "description": "Es como se sacan las planillas de \"Sin agrupar\": se meten en la que les toca sin volver a generarlas."
@@ -7598,12 +7598,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla?corrida_id={{corrida_id}}&page=0&size=50",
+         "raw": "{{base_url}}/payrolls?corrida_id={{corrida_id}}&page=0&size=50",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla"
+          "payrolls"
          ],
          "query": [
           {
@@ -7670,14 +7670,14 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_id}}/mover",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_id}}/move",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_id}}",
-          "mover"
+          "move"
          ]
         },
         "description": "Una planilla de agosto dentro de la corrida de septiembre haria que los totales del mes no cuadren con la suma de sus filas."
@@ -7725,12 +7725,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas",
+         "raw": "{{base_url}}/payroll-runs",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas"
+          "payroll-runs"
          ]
         },
         "description": "Dos planillas con el mismo nombre en el mismo mes serian indistinguibles en la pantalla."
@@ -7778,12 +7778,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_id}}",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_id}}"
          ]
         },
@@ -7832,12 +7832,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_id}}",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_id}}"
          ]
         },
@@ -7886,12 +7886,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_id}}",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_id}}"
          ]
         },
@@ -7937,14 +7937,14 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_id}}/generar",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_id}}/generate",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_id}}",
-          "generar"
+          "generate"
          ]
         },
         "description": "El candado del estado cerrada."
@@ -7976,12 +7976,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_id}}",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_id}}"
          ]
         },
@@ -8030,12 +8030,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_id}}",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_id}}"
          ]
         },
@@ -8071,12 +8071,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_id}}",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_id}}"
          ]
         },
@@ -8116,12 +8116,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla/{{planilla_deivi_id}}",
+         "raw": "{{base_url}}/payrolls/{{planilla_deivi_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla",
+          "payrolls",
           "{{planilla_deivi_id}}"
          ]
         },
@@ -8168,12 +8168,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas",
+         "raw": "{{base_url}}/payroll-runs",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas"
+          "payroll-runs"
          ]
         },
         "description": "CONCEPTO-A-PLANILLA — Nace vacia (07.1 ya genero agosto para todos), asi que se le mueve gente en la siguiente."
@@ -8222,14 +8222,14 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_conceptos_id}}/mover",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_conceptos_id}}/move",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_conceptos_id}}",
-          "mover"
+          "move"
          ]
         },
         "description": "CONCEPTO-A-PLANILLA — Para poder aplicarle el concepto a alguien."
@@ -8280,14 +8280,14 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/payment-concepts/{{payment_concept_onp_id}}/aplicar-a-grupo",
+         "raw": "{{base_url}}/payment-concepts/{{payment_concept_onp_id}}/apply-to-group",
          "host": [
           "{{base_url}}"
          ],
          "path": [
           "payment-concepts",
           "{{payment_concept_onp_id}}",
-          "aplicar-a-grupo"
+          "apply-to-group"
          ]
         },
         "description": "CONCEPTO-A-PLANILLA — El blindaje sigue puesto tambien cuando se pide por planilla, no solo por lista."
@@ -8348,14 +8348,14 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/payment-concepts/{{payment_concept_aplicable_id}}/aplicar-a-grupo",
+         "raw": "{{base_url}}/payment-concepts/{{payment_concept_aplicable_id}}/apply-to-group",
          "host": [
           "{{base_url}}"
          ],
          "path": [
           "payment-concepts",
           "{{payment_concept_aplicable_id}}",
-          "aplicar-a-grupo"
+          "apply-to-group"
          ]
         },
         "description": "CONCEPTO-A-PLANILLA — El caso bueno: solo el id de la planilla, y el backend resuelve el mes y a quienes."
@@ -8408,14 +8408,14 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/payment-concepts/{{payment_concept_aplicable_id}}/aplicar-a-grupo",
+         "raw": "{{base_url}}/payment-concepts/{{payment_concept_aplicable_id}}/apply-to-group",
          "host": [
           "{{base_url}}"
          ],
          "path": [
           "payment-concepts",
           "{{payment_concept_aplicable_id}}",
-          "aplicar-a-grupo"
+          "apply-to-group"
          ]
         },
         "description": "El caso de verdad: aplicar un Subsidio de Maternidad a las tres madres de la planilla de docentes, no a los cuarenta. La planilla y la lista de personas se cruzan; antes la lista se pisaba con 'todos los de la planilla' y el concepto se lo llevaba entero."
@@ -8463,14 +8463,14 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/payment-concepts/{{payment_concept_aplicable_id}}/aplicar-a-grupo",
+         "raw": "{{base_url}}/payment-concepts/{{payment_concept_aplicable_id}}/apply-to-group",
          "host": [
           "{{base_url}}"
          ],
          "path": [
           "payment-concepts",
           "{{payment_concept_aplicable_id}}",
-          "aplicar-a-grupo"
+          "apply-to-group"
          ]
         },
         "description": "Aplicarle un concepto de esta planilla a alguien que no esta dentro no es un descuido menor: le mueve el sueldo a quien no tocaba. Se corta y se dice."
@@ -8518,12 +8518,12 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_conceptos_id}}",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_conceptos_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_conceptos_id}}"
          ]
         },
@@ -8572,14 +8572,14 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/payment-concepts/{{payment_concept_aplicable_id}}/aplicar-a-grupo",
+         "raw": "{{base_url}}/payment-concepts/{{payment_concept_aplicable_id}}/apply-to-group",
          "host": [
           "{{base_url}}"
          ],
          "path": [
           "payment-concepts",
           "{{payment_concept_aplicable_id}}",
-          "aplicar-a-grupo"
+          "apply-to-group"
          ]
         },
         "description": "CONCEPTO-A-PLANILLA — Una planilla ya pagada no se toca ni por esta puerta."
@@ -8636,13 +8636,13 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/boletas/generar-masivo",
+         "raw": "{{base_url}}/payslips/generate-bulk",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "boletas",
-          "generar-masivo"
+          "payslips",
+          "generate-bulk"
          ]
         },
         "description": "Desde dentro de una planilla se emiten solo las boletas de su gente, y el mes sale de ella. Antes el boton solo sabia del mes y emitia las de todo el colegio."
@@ -8676,12 +8676,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla-corridas/{{corrida_conceptos_id}}",
+         "raw": "{{base_url}}/payroll-runs/{{corrida_conceptos_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla-corridas",
+          "payroll-runs",
           "{{corrida_conceptos_id}}"
          ]
         },
@@ -8722,7 +8722,7 @@
           "value": "Bearer {{rrhh_token}}"
          }
         ],
-        "url": "{{base_url}}/importacion-conceptos/modelo?mes=9&anio=2026",
+        "url": "{{base_url}}/concept-import/template?mes=9&anio=2026",
         "description": "La gente con planilla en ese mes ya puesta, y una columna por cada concepto que se puede importar."
        }
       },
@@ -8754,7 +8754,7 @@
           "value": "Bearer {{rrhh_token}}"
          }
         ],
-        "url": "{{base_url}}/importacion-conceptos/modelo?anio=2026",
+        "url": "{{base_url}}/concept-import/template?anio=2026",
         "description": ""
        }
       },
@@ -8807,7 +8807,7 @@
           }
          }
         },
-        "url": "{{base_url}}/planilla-corridas",
+        "url": "{{base_url}}/payroll-runs",
         "description": "Un mes que no usa ninguna otra carpeta, para que la importación trabaje sobre planillas recién generadas y abiertas."
        }
       },
@@ -8843,7 +8843,7 @@
           "value": "Bearer {{rrhh_token}}"
          }
         ],
-        "url": "{{base_url}}/planilla?mes=7&anio={{anio}}&page=0&size=5",
+        "url": "{{base_url}}/payrolls?mes=7&anio={{anio}}&page=0&size=5",
         "description": ""
        }
       },
@@ -8950,7 +8950,7 @@
           }
          }
         },
-        "url": "{{base_url}}/importacion-conceptos/reconocer",
+        "url": "{{base_url}}/concept-import/recognize",
         "description": ""
        }
       },
@@ -9011,7 +9011,7 @@
           }
          }
         },
-        "url": "{{base_url}}/importacion-conceptos/previsualizar",
+        "url": "{{base_url}}/concept-import/preview",
         "description": ""
        }
       },
@@ -9058,7 +9058,7 @@
           }
          }
         },
-        "url": "{{base_url}}/importacion-conceptos/previsualizar",
+        "url": "{{base_url}}/concept-import/preview",
         "description": ""
        }
       },
@@ -9103,7 +9103,7 @@
           }
          }
         },
-        "url": "{{base_url}}/importacion-conceptos/aplicar",
+        "url": "{{base_url}}/concept-import/apply",
         "description": ""
        }
       },
@@ -9148,7 +9148,7 @@
           }
          }
         },
-        "url": "{{base_url}}/importacion-conceptos/previsualizar",
+        "url": "{{base_url}}/concept-import/preview",
         "description": ""
        }
       },
@@ -9195,7 +9195,7 @@
           }
          }
         },
-        "url": "{{base_url}}/importacion-conceptos/aplicar",
+        "url": "{{base_url}}/concept-import/apply",
         "description": ""
        }
       },
@@ -9232,7 +9232,7 @@
           "value": "Bearer {{rrhh_token}}"
          }
         ],
-        "url": "{{base_url}}/planilla?mes=7&anio={{anio}}&search={{import_dni}}&page=0&size=5",
+        "url": "{{base_url}}/payrolls?mes=7&anio={{anio}}&search={{import_dni}}&page=0&size=5",
         "description": ""
        }
       },
@@ -9282,7 +9282,7 @@
           }
          }
         },
-        "url": "{{base_url}}/importacion-conceptos/reconocer",
+        "url": "{{base_url}}/concept-import/recognize",
         "description": ""
        }
       },
@@ -9327,7 +9327,7 @@
           }
          }
         },
-        "url": "{{base_url}}/importacion-conceptos/aplicar",
+        "url": "{{base_url}}/concept-import/apply",
         "description": ""
        }
       },
@@ -9370,7 +9370,7 @@
           }
          }
         },
-        "url": "{{base_url}}/importacion-conceptos/reconocer",
+        "url": "{{base_url}}/concept-import/recognize",
         "description": ""
        }
       },
@@ -9403,7 +9403,7 @@
           "value": "Bearer {{rrhh_token}}"
          }
         ],
-        "url": "{{base_url}}/planilla-corridas/{{import_corrida_id}}",
+        "url": "{{base_url}}/payroll-runs/{{import_corrida_id}}",
         "description": ""
        }
       }
@@ -9451,14 +9451,14 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/payment-concepts/{{payment_concept_otros_ingreso_id}}/aplicar-a-grupo",
+       "raw": "{{base_url}}/payment-concepts/{{payment_concept_otros_ingreso_id}}/apply-to-group",
        "host": [
         "{{base_url}}"
        ],
        "path": [
         "payment-concepts",
         "{{payment_concept_otros_ingreso_id}}",
-        "aplicar-a-grupo"
+        "apply-to-group"
        ]
       },
       "description": "CONCEPTO-CON-MONTO - Antes esto era un callejon sin salida: los conceptos sin regla en el catalogo no se podian aplicar a un grupo, y en el catalogo real son diecinueve de veintidos."
@@ -9514,14 +9514,14 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/payment-concepts/{{payment_concept_otros_ingreso_id}}/aplicar-a-grupo",
+       "raw": "{{base_url}}/payment-concepts/{{payment_concept_otros_ingreso_id}}/apply-to-group",
        "host": [
         "{{base_url}}"
        ],
        "path": [
         "payment-concepts",
         "{{payment_concept_otros_ingreso_id}}",
-        "aplicar-a-grupo"
+        "apply-to-group"
        ]
       },
       "description": "CONCEPTO-CON-MONTO - El monto se da en el momento, que es lo normal: un prestamo o un adelanto no tienen un valor de catalogo."
@@ -9570,14 +9570,14 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/payment-concepts/{{payment_concept_otros_ingreso_id}}/aplicar-a-grupo",
+       "raw": "{{base_url}}/payment-concepts/{{payment_concept_otros_ingreso_id}}/apply-to-group",
        "host": [
         "{{base_url}}"
        ],
        "path": [
         "payment-concepts",
         "{{payment_concept_otros_ingreso_id}}",
-        "aplicar-a-grupo"
+        "apply-to-group"
        ]
       },
       "description": "CONCEPTO-CON-MONTO - El porcentaje va sobre el sueldo de cada trabajador, no sobre un promedio."
@@ -9612,12 +9612,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/boleta/{{empleado_id}}/{{mes}}/{{anio}}",
+       "raw": "{{base_url}}/payslips/{{empleado_id}}/{{mes}}/{{anio}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "boleta",
+        "payslips",
         "{{empleado_id}}",
         "{{mes}}",
         "{{anio}}"
@@ -9658,12 +9658,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos?empleado_id={{empleado_id}}",
+       "raw": "{{base_url}}/documents?empleado_id={{empleado_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos"
+        "documents"
        ],
        "query": [
         {
@@ -9716,12 +9716,12 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/documentos",
+       "raw": "{{base_url}}/documents",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos"
+        "documents"
        ]
       }
      }
@@ -9754,12 +9754,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos/{{documento_id}}",
+       "raw": "{{base_url}}/documents/{{documento_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos",
+        "documents",
         "{{documento_id}}"
        ]
       }
@@ -9791,14 +9791,14 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos/{{documento_id}}/descargar",
+       "raw": "{{base_url}}/documents/{{documento_id}}/download",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos",
+        "documents",
         "{{documento_id}}",
-        "descargar"
+        "download"
        ]
       },
       "description": "RRHH descarga el archivo físico ya persistido en disco (storage/app/private) — no vuelve a generar/calcular nada, solo sirve el PDF guardado en Documento.archivo. Usa 'Send and Download' en Postman para guardarlo."
@@ -9848,14 +9848,14 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/documentos/{{documento_id}}/firmar-empleador",
+       "raw": "{{base_url}}/documents/{{documento_id}}/sign-as-employer",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos",
+        "documents",
         "{{documento_id}}",
-        "firmar-empleador"
+        "sign-as-employer"
        ]
       },
       "description": "RRHH (que también es un Empleado en este sistema) firma el lado 'Firma Empleador' de la boleta, re-validando su propia contraseña (mismo bloqueo de 3 intentos que el lado del trabajador). Esto regenera y congela el PDF con su firma+huella estampadas, si las tiene registradas en identidades_firma."
@@ -9886,14 +9886,14 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos/{{documento_id}}/descargar",
+       "raw": "{{base_url}}/documents/{{documento_id}}/download",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos",
+        "documents",
         "{{documento_id}}",
-        "descargar"
+        "download"
        ]
       },
       "description": "Confirma que, tras la firma del empleador, el archivo persistido en disco se regeneró incluyendo ese sello (usa 'Send and Download' para verlo)."
@@ -9945,13 +9945,13 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/boletas/generar-masivo",
+       "raw": "{{base_url}}/payslips/generate-bulk",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "boletas",
-        "generar-masivo"
+        "payslips",
+        "generate-bulk"
        ]
       },
       "description": "Recorre todos los empleados activos con planilla en ese mes/año: crea el Documento tipo boleta (y envía el correo) al que aún no lo tenga, y cuenta como 'omitida' al que ya lo tenía — idempotente, se puede correr varias veces sin duplicar."
@@ -9976,12 +9976,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos",
+       "raw": "{{base_url}}/documents",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos"
+        "documents"
        ]
       },
       "body": {
@@ -10029,12 +10029,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos/{{documento_intento_id}}",
+       "raw": "{{base_url}}/documents/{{documento_intento_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos",
+        "documents",
         "{{documento_intento_id}}"
        ]
       },
@@ -10081,12 +10081,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos",
+       "raw": "{{base_url}}/documents",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos"
+        "documents"
        ]
       },
       "body": {
@@ -10128,12 +10128,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos/{{documento_intento_id}}",
+       "raw": "{{base_url}}/documents/{{documento_intento_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos",
+        "documents",
         "{{documento_intento_id}}"
        ]
       }
@@ -10192,7 +10192,7 @@
           "value": "Bearer {{rrhh_token}}"
          }
         ],
-        "url": "{{base_url}}/expedientes?page=0&size=5",
+        "url": "{{base_url}}/employee-files?page=0&size=5",
         "description": "Antes «Documentos» abría Mis Documentos y RR.HH. veía archivos sin saber de quién eran."
        }
       },
@@ -10222,7 +10222,7 @@
           "value": "Bearer {{rrhh_token}}"
          }
         ],
-        "url": "{{base_url}}/expedientes?page=0&size=50&filtro=sin_hoja_de_vida",
+        "url": "{{base_url}}/employee-files?page=0&size=50&filtro=sin_hoja_de_vida",
         "description": ""
        }
       },
@@ -10251,7 +10251,7 @@
           "value": "Bearer {{rrhh_token}}"
          }
         ],
-        "url": "{{base_url}}/expedientes?page=0&size=5&filtro=cualquiera",
+        "url": "{{base_url}}/employee-files?page=0&size=5&filtro=cualquiera",
         "description": ""
        }
       },
@@ -10286,7 +10286,7 @@
           "value": "Bearer {{rrhh_token}}"
          }
         ],
-        "url": "{{base_url}}/expedientes/{{expediente_empleado_id}}",
+        "url": "{{base_url}}/employee-files/{{expediente_empleado_id}}",
         "description": ""
        }
       },
@@ -10315,7 +10315,7 @@
           "value": "Bearer {{rrhh_token}}"
          }
         ],
-        "url": "{{base_url}}/expedientes/00000000-0000-0000-0000-000000000000",
+        "url": "{{base_url}}/employee-files/00000000-0000-0000-0000-000000000000",
         "description": ""
        }
       }
@@ -10345,7 +10345,7 @@
           "type": "text"
          }
         ],
-        "url": "{{base_url}}/documentos-anteriores/previsualizar",
+        "url": "{{base_url}}/legacy-documents/preview",
         "description": "No guarda nada. Solo llega lo que el navegador leyó de cada archivo.",
         "body": {
          "mode": "raw",
@@ -10389,7 +10389,7 @@
           "value": "application/json"
          }
         ],
-        "url": "{{base_url}}/documentos-anteriores",
+        "url": "{{base_url}}/legacy-documents",
         "description": "",
         "body": {
          "mode": "formdata",
@@ -10452,7 +10452,7 @@
           "value": "application/json"
          }
         ],
-        "url": "{{base_url}}/documentos-anteriores",
+        "url": "{{base_url}}/legacy-documents",
         "description": "",
         "body": {
          "mode": "formdata",
@@ -10517,7 +10517,7 @@
           "type": "text"
          }
         ],
-        "url": "{{base_url}}/documentos-anteriores/previsualizar",
+        "url": "{{base_url}}/legacy-documents/preview",
         "description": "",
         "body": {
          "mode": "raw",
@@ -10557,7 +10557,7 @@
           "value": "application/json"
          }
         ],
-        "url": "{{base_url}}/documentos/{{documento_anterior_id}}",
+        "url": "{{base_url}}/documents/{{documento_anterior_id}}",
         "description": ""
        },
        "event": [
@@ -10588,7 +10588,7 @@
         "value": "application/json"
        }
       ],
-      "url": "{{base_url}}/empleados/{{empleado_id}}/firma-imagen",
+      "url": "{{base_url}}/employees/{{empleado_id}}/signature-image",
       "description": "RR.HH. y Administracion pueden ver la firma de cualquiera; un trabajador, solo la suya (403 en otro caso)."
      },
      "event": [
@@ -10654,12 +10654,12 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/vacaciones",
+       "raw": "{{base_url}}/vacations",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "vacaciones"
+        "vacations"
        ]
       },
       "description": "Se mandan a proposito dias_solicitados=1, estado=aprobado y aprobado_por: antes se creaban tal cual (mass assignment) y cualquiera podia darse vacaciones ya aprobadas. Ahora los dias salen de las fechas y el estado lo pone el sistema."
@@ -10693,12 +10693,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/vacaciones?empleado_id={{empleado_id}}",
+       "raw": "{{base_url}}/vacations?empleado_id={{empleado_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "vacaciones"
+        "vacations"
        ],
        "query": [
         {
@@ -10754,12 +10754,12 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/vacaciones/{{vacacion_id}}",
+       "raw": "{{base_url}}/vacations/{{vacacion_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "vacaciones",
+        "vacations",
         "{{vacacion_id}}"
        ]
       }
@@ -10780,13 +10780,13 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/vacaciones/saldo?empleado_id={{empleado_id}}",
+       "raw": "{{base_url}}/vacations/balance?empleado_id={{empleado_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "vacaciones",
-        "saldo"
+        "vacations",
+        "balance"
        ],
        "query": [
         {
@@ -10835,12 +10835,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/vacaciones",
+       "raw": "{{base_url}}/vacations",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "vacaciones"
+        "vacations"
        ]
       },
       "body": {
@@ -10937,12 +10937,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mis-modulos",
+       "raw": "{{base_url}}/my-modules",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-modulos"
+        "my-modules"
        ]
       },
       "description": "Sin este freno bastaba con llamar al API por fuera para seguir usando la contrasena publica."
@@ -11003,12 +11003,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/terminos",
+         "raw": "{{base_url}}/terms",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "terminos"
+          "terms"
          ]
         },
         "description": "El texto vive en el codigo y va versionado: la version que cada uno acepta queda guardada, porque decir 'acepto los terminos' sin decir cuales no prueba nada."
@@ -11049,12 +11049,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/cambiar-password",
+         "raw": "{{base_url}}/change-password",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "cambiar-password"
+          "change-password"
          ]
         },
         "description": "El candado esta en el backend y no solo en la pantalla: por la API tampoco se puede saltar el orden.",
@@ -11099,13 +11099,13 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/terminos/aceptar",
+         "raw": "{{base_url}}/terms/accept",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "terminos",
-          "aceptar"
+          "terms",
+          "accept"
          ]
         },
         "description": "Es una aceptacion: tiene que haber un acto de aceptar, no basta con llamar a la ruta.",
@@ -11155,13 +11155,13 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/terminos/aceptar",
+         "raw": "{{base_url}}/terms/accept",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "terminos",
-          "aceptar"
+          "terms",
+          "accept"
          ]
         },
         "description": "Se guarda quien, cuando, que version y la IP: es lo mismo que probaba la hoja firmada.",
@@ -11209,13 +11209,13 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/terminos/aceptar",
+         "raw": "{{base_url}}/terms/accept",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "terminos",
-          "aceptar"
+          "terms",
+          "accept"
          ]
         },
         "description": "Volver a entrar a la pantalla no debe pisar la fecha de la primera firma: esa es la que vale.",
@@ -11262,12 +11262,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/terminos",
+         "raw": "{{base_url}}/terms",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "terminos"
+          "terms"
          ]
         },
         "description": "Lo que lee la pantalla para saber si tiene que pedir la firma o pasar directo a la contrasena."
@@ -11303,12 +11303,12 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/cambiar-password",
+       "raw": "{{base_url}}/change-password",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "cambiar-password"
+        "change-password"
        ]
       },
       "description": "Va aqui arriba a proposito: mientras la cuenta siga con el DNI, el resto de la seccion responderia 423. OJO: si vuelves a correr solo el login del empleado sin reseed, la contrasena ya es NuevaClave123."
@@ -11395,12 +11395,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mis-modulos",
+       "raw": "{{base_url}}/my-modules",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-modulos"
+        "my-modules"
        ]
       }
      }
@@ -11433,12 +11433,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mi-planilla?mes={{mes}}&anio={{anio}}",
+       "raw": "{{base_url}}/my-payroll?mes={{mes}}&anio={{anio}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mi-planilla"
+        "my-payroll"
        ],
        "query": [
         {
@@ -11484,12 +11484,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mis-documentos",
+       "raw": "{{base_url}}/my-documents",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-documentos"
+        "my-documents"
        ]
       }
      }
@@ -11522,14 +11522,14 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mis-documentos/{{documento_id}}/visto",
+       "raw": "{{base_url}}/my-documents/{{documento_id}}/viewed",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-documentos",
+        "my-documents",
         "{{documento_id}}",
-        "visto"
+        "viewed"
        ]
       }
      }
@@ -11548,7 +11548,7 @@
         "value": "application/json"
        }
       ],
-      "url": "{{base_url}}/documentos/{{documento_id}}/ver",
+      "url": "{{base_url}}/documents/{{documento_id}}/view",
       "description": "Leer antes de firmar: una firma sobre algo que no se pudo leer no prueba nada. Abrirla deja anotado que la reviso."
      },
      "event": [
@@ -11578,7 +11578,7 @@
         "value": "application/json"
        }
       ],
-      "url": "{{base_url}}/documentos/{{documento_id}}/descargar",
+      "url": "{{base_url}}/documents/{{documento_id}}/download",
       "description": "Llevarse el PDF es el final del camino: revisar, firmar, descargar. RR.HH. si puede bajarla siempre."
      },
      "event": [
@@ -11635,14 +11635,14 @@
        }
       },
       "url": {
-       "raw": "{{base_url}}/mis-documentos/{{documento_id}}/firmar",
+       "raw": "{{base_url}}/my-documents/{{documento_id}}/sign",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-documentos",
+        "my-documents",
         "{{documento_id}}",
-        "firmar"
+        "sign"
        ]
       },
       "description": "Pide la contrasena actual del empleado para 're-autenticar' la firma. Va por variable porque para entonces ya la cambio: mandar el DNI gastaba los 3 intentos y cerraba la sesion. Ojo: tiene un limite de 3 intentos fallidos antes de cerrar la sesion."
@@ -11672,12 +11672,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mis-boletas/{{mes}}/{{anio}}",
+       "raw": "{{base_url}}/my-payslips/{{mes}}/{{anio}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-boletas",
+        "my-payslips",
         "{{mes}}",
         "{{anio}}"
        ]
@@ -11710,14 +11710,14 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/documentos/{{documento_id}}/descargar",
+       "raw": "{{base_url}}/documents/{{documento_id}}/download",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "documentos",
+        "documents",
         "{{documento_id}}",
-        "descargar"
+        "download"
        ]
       },
       "description": "El mismo endpoint que usa RRHH (documentos/{id}/descargar), pero aquí el que pide es el propio empleado dueño del documento — el controller valida ownership y lo deja pasar. Un empleado distinto recibiría 403 (verificado manualmente, no en este flujo lineal)."
@@ -11753,12 +11753,12 @@
        ]
       },
       "url": {
-       "raw": "{{base_url}}/mi-identidad-firma",
+       "raw": "{{base_url}}/my-signature",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mi-identidad-firma"
+        "my-signature"
        ]
       },
       "description": "El propio empleado registra SU firma y/o huella (mismo endpoint de datos que usa RRHH, pero autolimitado a su propio empleado_id). En Postman, adjunta un archivo manualmente en 'firma' y/o 'huella' antes de enviar."
@@ -11779,12 +11779,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/vacaciones",
+       "raw": "{{base_url}}/vacations",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "vacaciones"
+        "vacations"
        ]
       },
       "description": "Antes este mismo GET le devolvia a cualquiera con sesion las vacaciones de todo el colegio."
@@ -11826,12 +11826,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/vacaciones",
+       "raw": "{{base_url}}/vacations",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "vacaciones"
+        "vacations"
        ]
       },
       "body": {
@@ -11873,12 +11873,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/vacaciones/{{vacacion_propia_id}}",
+       "raw": "{{base_url}}/vacations/{{vacacion_propia_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "vacaciones",
+        "vacations",
         "{{vacacion_propia_id}}"
        ]
       },
@@ -11935,12 +11935,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mis-notificaciones?page=0&size=5",
+       "raw": "{{base_url}}/my-notifications?page=0&size=5",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-notificaciones"
+        "my-notifications"
        ],
        "query": [
         {
@@ -11987,14 +11987,14 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mis-notificaciones/{{aviso_id}}/leida",
+       "raw": "{{base_url}}/my-notifications/{{aviso_id}}/read",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-notificaciones",
+        "my-notifications",
         "{{aviso_id}}",
-        "leida"
+        "read"
        ]
       },
       "description": "Es idempotente: repetirlo no pisa la fecha de la primera vez."
@@ -12028,14 +12028,14 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mis-notificaciones/{{aviso_id}}/leida",
+       "raw": "{{base_url}}/my-notifications/{{aviso_id}}/read",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-notificaciones",
+        "my-notifications",
         "{{aviso_id}}",
-        "leida"
+        "read"
        ]
       },
       "description": "El user_id sale del token, no de la peticion: RRHH no puede tocar el aviso de un docente."
@@ -12094,12 +12094,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/mis-documentos?tipo=boleta&page=0&size=5",
+         "raw": "{{base_url}}/my-documents?tipo=boleta&page=0&size=5",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "mis-documentos"
+          "my-documents"
          ],
          "query": [
           {
@@ -12145,12 +12145,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/mis-boletas/{{mes}}/{{anio}}",
+         "raw": "{{base_url}}/my-payslips/{{mes}}/{{anio}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "mis-boletas",
+          "my-payslips",
           "{{mes}}",
           "{{anio}}"
          ]
@@ -12184,12 +12184,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/mis-boletas/{{mes}}/{{anio}}",
+         "raw": "{{base_url}}/my-payslips/{{mes}}/{{anio}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "mis-boletas",
+          "my-payslips",
           "{{mes}}",
           "{{anio}}"
          ]
@@ -12237,12 +12237,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/mis-documentos?tipo=boleta&page=0&size=5",
+         "raw": "{{base_url}}/my-documents?tipo=boleta&page=0&size=5",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "mis-documentos"
+          "my-documents"
          ],
          "query": [
           {
@@ -12303,12 +12303,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/documentos?tipo=boleta&page=0&size=20",
+         "raw": "{{base_url}}/documents?tipo=boleta&page=0&size=20",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "documentos"
+          "documents"
          ],
          "query": [
           {
@@ -12356,12 +12356,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/consulta-dni/99999999",
+       "raw": "{{base_url}}/dni-lookup/99999999",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "consulta-dni",
+        "dni-lookup",
         "99999999"
        ]
       },
@@ -12385,7 +12385,7 @@
           "value": "application/json"
          }
         ],
-        "url": "{{base_url}}/mis-documentos/hoja-de-vida",
+        "url": "{{base_url}}/my-documents/resume",
         "description": "El empleado sale del token: no hay forma de colgarle un archivo al expediente de otro.",
         "body": {
          "mode": "formdata",
@@ -12431,7 +12431,7 @@
           "value": "application/json"
          }
         ],
-        "url": "{{base_url}}/mis-documentos/hoja-de-vida",
+        "url": "{{base_url}}/my-documents/resume",
         "description": "",
         "body": {
          "mode": "formdata",
@@ -12479,7 +12479,7 @@
           "type": "text"
          }
         ],
-        "url": "{{base_url}}/mis-documentos/{{cv_propio_id}}/visto",
+        "url": "{{base_url}}/my-documents/{{cv_propio_id}}/viewed",
         "description": "",
         "body": {
          "mode": "raw",
@@ -12518,7 +12518,7 @@
           "value": "application/json"
          }
         ],
-        "url": "{{base_url}}/mis-documentos?sin_firmar=1&page=0&size=50",
+        "url": "{{base_url}}/my-documents?sin_firmar=1&page=0&size=50",
         "description": ""
        },
        "response": [],
@@ -12549,7 +12549,7 @@
           "value": "application/json"
          }
         ],
-        "url": "{{base_url}}/importacion-empleados/modelo",
+        "url": "{{base_url}}/employee-import/template",
         "description": ""
        },
        "response": [],
@@ -12579,7 +12579,7 @@
           "value": "application/json"
          }
         ],
-        "url": "{{base_url}}/expedientes?page=0&size=5",
+        "url": "{{base_url}}/employee-files?page=0&size=5",
         "description": ""
        },
        "response": [],
@@ -12617,7 +12617,7 @@
         "type": "text"
        }
       ],
-      "url": "{{base_url}}/documentos-anteriores/previsualizar",
+      "url": "{{base_url}}/legacy-documents/preview",
       "description": "",
       "body": {
        "mode": "raw",
@@ -12655,7 +12655,7 @@
         "value": "application/json"
        }
       ],
-      "url": "{{base_url}}/mi-firma-imagen",
+      "url": "{{base_url}}/my-signature-image",
       "description": "La firma que el trabajador dibuja en Mis Documentos. Vive en el disco privado, asi que va por su propia ruta."
      },
      "event": [
@@ -12696,12 +12696,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados",
+       "raw": "{{base_url}}/employees",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ]
       },
       "body": {
@@ -12761,12 +12761,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/empleados/{{empleado_descartable_id}}",
+         "raw": "{{base_url}}/employees/{{empleado_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "empleados",
+          "employees",
           "{{empleado_descartable_id}}"
          ]
         }
@@ -12804,12 +12804,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/empleados/{{empleado_descartable_id}}",
+         "raw": "{{base_url}}/employees/{{empleado_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "empleados",
+          "employees",
           "{{empleado_descartable_id}}"
          ]
         },
@@ -13137,14 +13137,14 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/users/{{user_admin_id}}/restablecer-password",
+         "raw": "{{base_url}}/users/{{user_admin_id}}/reset-password",
          "host": [
           "{{base_url}}"
          ],
          "path": [
           "users",
           "{{user_admin_id}}",
-          "restablecer-password"
+          "reset-password"
          ]
         },
         "description": "Escalada de privilegios: solo un Administrador repone a otro Administrador."
@@ -13179,14 +13179,14 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/users/{{user_descartable_id}}/restablecer-password",
+         "raw": "{{base_url}}/users/{{user_descartable_id}}/reset-password",
          "host": [
           "{{base_url}}"
          ],
          "path": [
           "users",
           "{{user_descartable_id}}",
-          "restablecer-password"
+          "reset-password"
          ]
         },
         "description": "Para el docente que se quedo fuera y no puede usar el correo. Se le cierran las sesiones y queda obligado a cambiarla."
@@ -13271,12 +13271,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/mis-modulos",
+         "raw": "{{base_url}}/my-modules",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "mis-modulos"
+          "my-modules"
          ]
         }
        },
@@ -13337,13 +13337,13 @@
          }
         },
         "url": {
-         "raw": "{{base_url}}/terminos/aceptar",
+         "raw": "{{base_url}}/terms/accept",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "terminos",
-          "aceptar"
+          "terms",
+          "accept"
          ]
         },
         "description": "A quien RR.HH. le repone la contrasena le pasa lo mismo que al que entra por primera vez: con la cuenta trabada solo puede leer y firmar los terminos, y recien despues poner su contrasena. Se firma aqui para que el siguiente paso sea el que de verdad se quiere probar."
@@ -13368,12 +13368,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/cambiar-password",
+         "raw": "{{base_url}}/change-password",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "cambiar-password"
+          "change-password"
          ]
         },
         "body": {
@@ -13417,12 +13417,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/cambiar-password",
+         "raw": "{{base_url}}/change-password",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "cambiar-password"
+          "change-password"
          ]
         },
         "body": {
@@ -13460,12 +13460,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/mis-modulos",
+         "raw": "{{base_url}}/my-modules",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "mis-modulos"
+          "my-modules"
          ]
         }
        },
@@ -13508,12 +13508,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/contratos",
+         "raw": "{{base_url}}/contracts",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "contratos"
+          "contracts"
          ]
         },
         "body": {
@@ -13556,12 +13556,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/contratos/{{contrato_descartable_id}}",
+         "raw": "{{base_url}}/contracts/{{contrato_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "contratos",
+          "contracts",
           "{{contrato_descartable_id}}"
          ]
         }
@@ -13599,12 +13599,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/contratos/{{contrato_descartable_id}}",
+         "raw": "{{base_url}}/contracts/{{contrato_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "contratos",
+          "contracts",
           "{{contrato_descartable_id}}"
          ]
         },
@@ -13650,12 +13650,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/contratos/{{contrato_descartable_id}}",
+         "raw": "{{base_url}}/contracts/{{contrato_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "contratos",
+          "contracts",
           "{{contrato_descartable_id}}"
          ]
         },
@@ -13699,12 +13699,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla",
+         "raw": "{{base_url}}/payrolls",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla"
+          "payrolls"
          ]
         },
         "body": {
@@ -13748,12 +13748,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla/{{planilla_descartable_id}}",
+         "raw": "{{base_url}}/payrolls/{{planilla_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla",
+          "payrolls",
           "{{planilla_descartable_id}}"
          ]
         }
@@ -13791,12 +13791,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla/{{planilla_descartable_id}}",
+         "raw": "{{base_url}}/payrolls/{{planilla_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla",
+          "payrolls",
           "{{planilla_descartable_id}}"
          ]
         },
@@ -13844,12 +13844,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/planilla/{{planilla_descartable_id}}",
+         "raw": "{{base_url}}/payrolls/{{planilla_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "planilla",
+          "payrolls",
           "{{planilla_descartable_id}}"
          ]
         },
@@ -13893,12 +13893,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/documentos",
+         "raw": "{{base_url}}/documents",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "documentos"
+          "documents"
          ]
         },
         "body": {
@@ -13941,12 +13941,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/documentos/{{documento_descartable_id}}",
+         "raw": "{{base_url}}/documents/{{documento_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "documentos",
+          "documents",
           "{{documento_descartable_id}}"
          ]
         }
@@ -13984,12 +13984,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/documentos/{{documento_descartable_id}}",
+         "raw": "{{base_url}}/documents/{{documento_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "documentos",
+          "documents",
           "{{documento_descartable_id}}"
          ]
         },
@@ -14034,12 +14034,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/documentos/{{documento_descartable_id}}",
+         "raw": "{{base_url}}/documents/{{documento_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "documentos",
+          "documents",
           "{{documento_descartable_id}}"
          ]
         },
@@ -14083,12 +14083,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/vacaciones",
+         "raw": "{{base_url}}/vacations",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "vacaciones"
+          "vacations"
          ]
         },
         "body": {
@@ -14136,12 +14136,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/vacaciones",
+         "raw": "{{base_url}}/vacations",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "vacaciones"
+          "vacations"
          ]
         },
         "body": {
@@ -14185,12 +14185,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/vacaciones/{{vacacion_descartable_id}}",
+         "raw": "{{base_url}}/vacations/{{vacacion_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "vacaciones",
+          "vacations",
           "{{vacacion_descartable_id}}"
          ]
         }
@@ -14230,12 +14230,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/vacaciones/{{vacacion_descartable_id}}",
+         "raw": "{{base_url}}/vacations/{{vacacion_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "vacaciones",
+          "vacations",
           "{{vacacion_descartable_id}}"
          ]
         },
@@ -14280,12 +14280,12 @@
          }
         ],
         "url": {
-         "raw": "{{base_url}}/vacaciones/{{vacacion_descartable_id}}",
+         "raw": "{{base_url}}/vacations/{{vacacion_descartable_id}}",
          "host": [
           "{{base_url}}"
          ],
          "path": [
-          "vacaciones",
+          "vacations",
           "{{vacacion_descartable_id}}"
          ]
         },
@@ -14322,12 +14322,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados/{{empleado_descartable_id}}",
+       "raw": "{{base_url}}/employees/{{empleado_descartable_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados",
+        "employees",
         "{{empleado_descartable_id}}"
        ]
       },
@@ -14362,12 +14362,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados/{{empleado_descartable_id}}",
+       "raw": "{{base_url}}/employees/{{empleado_descartable_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados",
+        "employees",
         "{{empleado_descartable_id}}"
        ]
       }
@@ -14578,12 +14578,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados?page=0&size=50&search=colegio.com",
+       "raw": "{{base_url}}/employees?page=0&size=50&search=colegio.com",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ],
        "query": [
         {
@@ -14637,12 +14637,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/planilla?page=0&size=2",
+       "raw": "{{base_url}}/payrolls?page=0&size=2",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla"
+        "payrolls"
        ],
        "query": [
         {
@@ -14900,12 +14900,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mis-documentos?page=0&size=2",
+       "raw": "{{base_url}}/my-documents?page=0&size=2",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-documentos"
+        "my-documents"
        ],
        "query": [
         {
@@ -14952,12 +14952,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mis-documentos?tipo=boleta&anio=1999&page=0&size=5",
+       "raw": "{{base_url}}/my-documents?tipo=boleta&anio=1999&page=0&size=5",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-documentos"
+        "my-documents"
        ],
        "query": [
         {
@@ -15016,12 +15016,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/mis-documentos?page=0&size=50",
+       "raw": "{{base_url}}/my-documents?page=0&size=50",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "mis-documentos"
+        "my-documents"
        ],
        "query": [
         {
@@ -15078,12 +15078,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/payroll-detalles?planilla_id={{planilla_id}}&page=0&size=1",
+       "raw": "{{base_url}}/payroll-details?planilla_id={{planilla_id}}&page=0&size=1",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "payroll-detalles"
+        "payroll-details"
        ],
        "query": [
         {
@@ -15136,12 +15136,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/planilla?empleado_ids={{empleado_id}}&page=0&size=10",
+       "raw": "{{base_url}}/payrolls?empleado_ids={{empleado_id}}&page=0&size=10",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "planilla"
+        "payrolls"
        ],
        "query": [
         {
@@ -15458,13 +15458,13 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/dashboard/exportar?mes={{mes}}&anio={{anio}}&sede_id={{sede_id}}",
+       "raw": "{{base_url}}/dashboard/export?mes={{mes}}&anio={{anio}}&sede_id={{sede_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
         "dashboard",
-        "exportar"
+        "export"
        ],
        "query": [
         {
@@ -15510,13 +15510,13 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/dashboard/exportar?mes=13&anio={{anio}}",
+       "raw": "{{base_url}}/dashboard/export?mes=13&anio={{anio}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
         "dashboard",
-        "exportar"
+        "export"
        ],
        "query": [
         {
@@ -15560,13 +15560,13 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/dashboard/exportar",
+       "raw": "{{base_url}}/dashboard/export",
        "host": [
         "{{base_url}}"
        ],
        "path": [
         "dashboard",
-        "exportar"
+        "export"
        ]
       },
       "description": "PANEL-DE-CONTROL - Si la pantalla no la ve, el archivo tampoco se baja."
@@ -15603,12 +15603,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados?page=0&size=1",
+       "raw": "{{base_url}}/employees?page=0&size=1",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ],
        "query": [
         {
@@ -15661,12 +15661,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados?page=0&size=50&estado=inactivo",
+       "raw": "{{base_url}}/employees?page=0&size=50&estado=inactivo",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ],
        "query": [
         {
@@ -15720,12 +15720,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados?page=0&size=50&tipo_contrato=plazo_fijo",
+       "raw": "{{base_url}}/employees?page=0&size=50&tipo_contrato=plazo_fijo",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ],
        "query": [
         {
@@ -15776,12 +15776,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados?page=0&size=50&mes={{mes}}&anio={{anio}}&boleta=sin",
+       "raw": "{{base_url}}/employees?page=0&size=50&mes={{mes}}&anio={{anio}}&boleta=sin",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ],
        "query": [
         {
@@ -15843,12 +15843,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados?page=0&size=50&mes={{mes}}&anio={{anio}}&boleta=con",
+       "raw": "{{base_url}}/employees?page=0&size=50&mes={{mes}}&anio={{anio}}&boleta=con",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ],
        "query": [
         {
@@ -15904,12 +15904,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados?page=0&size=10&tipo_contrato=lo-que-sea",
+       "raw": "{{base_url}}/employees?page=0&size=10&tipo_contrato=lo-que-sea",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados"
+        "employees"
        ],
        "query": [
         {
@@ -15961,13 +15961,13 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados/exportar?tipo_contrato=plazo_fijo",
+       "raw": "{{base_url}}/employees/export?tipo_contrato=plazo_fijo",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados",
-        "exportar"
+        "employees",
+        "export"
        ],
        "query": [
         {
@@ -16015,12 +16015,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/empleados/{{empleado_id}}",
+       "raw": "{{base_url}}/employees/{{empleado_id}}",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "empleados",
+        "employees",
         "{{empleado_id}}"
        ]
       },
@@ -16071,12 +16071,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/auditoria?entidad=empleado&entidad_id={{empleado_id}}&page=0&size=5",
+       "raw": "{{base_url}}/audit-log?entidad=empleado&entidad_id={{empleado_id}}&page=0&size=5",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "auditoria"
+        "audit-log"
        ],
        "query": [
         {
@@ -16131,12 +16131,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/auditoria?entidad=usuario&page=0&size=100",
+       "raw": "{{base_url}}/audit-log?entidad=usuario&page=0&size=100",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "auditoria"
+        "audit-log"
        ],
        "query": [
         {
@@ -16187,12 +16187,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/auditoria?accion=aplicó&page=0&size=5",
+       "raw": "{{base_url}}/audit-log?accion=aplicó&page=0&size=5",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "auditoria"
+        "audit-log"
        ],
        "query": [
         {
@@ -16238,12 +16238,12 @@
        }
       ],
       "url": {
-       "raw": "{{base_url}}/auditoria",
+       "raw": "{{base_url}}/audit-log",
        "host": [
         "{{base_url}}"
        ],
        "path": [
-        "auditoria"
+        "audit-log"
        ]
       },
       "description": "Es justamente donde se ve lo que hizo RR.HH.: solo Admin."

@@ -37,6 +37,6 @@ export class DashboardService {
   exportar(mes: number, anio: number, sedeId?: string | null): Observable<Blob> {
     let params = new HttpParams().set('mes', String(mes)).set('anio', String(anio));
     if (sedeId) params = params.set('sede_id', sedeId);
-    return this.http.get(`${this.url}/exportar`, { params, responseType: 'blob' });
+    return this.http.get(`${this.url}/export`, { params, responseType: 'blob' });
   }
 }

@@ -24,10 +24,10 @@ export class NotificacionService extends EntityDataService<Notificacion> {
   public noLeidas$ = this.noLeidasSubject.asObservable();
 
   constructor(http: HttpClient) {
-    super(http, 'mis-notificaciones');
+    super(http, 'my-notifications');
   }
 
-  /** GET /mis-notificaciones?page=&size= — del más nuevo al más viejo. */
+  /** GET /my-notifications?page=&size= — del más nuevo al más viejo. */
   listar(page = 0, size = 5): Observable<ApiResponse<PaginaNotificaciones>> {
     return (this.getPagina({ page, size }) as Observable<ApiResponse<PaginaNotificaciones>>).pipe(
       tap((res) => {
@@ -36,17 +36,17 @@ export class NotificacionService extends EntityDataService<Notificacion> {
     );
   }
 
-  /** PATCH /mis-notificaciones/{id}/leida */
+  /** PATCH /my-notifications/{id}/read */
   marcarLeida(id: string): Observable<ApiResponse<Notificacion>> {
     return this.http
-      .patch<ApiResponse<Notificacion>>(`${this.baseUrl}/${id}/leida`, {})
+      .patch<ApiResponse<Notificacion>>(`${this.baseUrl}/${id}/read`, {})
       .pipe(tap(() => this.noLeidasSubject.next(Math.max(0, this.noLeidasSubject.value - 1))));
   }
 
-  /** POST /mis-notificaciones/marcar-todas */
+  /** POST /my-notifications/mark-all */
   marcarTodas(): Observable<ApiResponse<{ marcadas: number }>> {
     return this.http
-      .post<ApiResponse<{ marcadas: number }>>(`${this.baseUrl}/marcar-todas`, {})
+      .post<ApiResponse<{ marcadas: number }>>(`${this.baseUrl}/mark-all`, {})
       .pipe(tap(() => this.noLeidasSubject.next(0)));
   }
 }

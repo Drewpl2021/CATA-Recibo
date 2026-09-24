@@ -30,9 +30,9 @@ class ExigirTerminos
     private const PERMITIDAS = [
         'api/me',
         'api/logout',
-        'api/cambiar-password',
-        'api/terminos',
-        'api/terminos/aceptar',
+        'api/change-password',
+        'api/terms',
+        'api/terms/accept',
     ];
 
     public function handle(Request $request, Closure $next): Response

@@ -8,155 +8,155 @@ export const END_POINTS = {
     login: 'login',
     logout: 'logout',
     me: 'me',
-    cambiarPassword: 'cambiar-password',
-    olvidePassword: 'olvide-password',
-    restablecerPassword: 'restablecer-password',
+    cambiarPassword: 'change-password',
+    olvidePassword: 'forgot-password',
+    restablecerPassword: 'reset-password',
     /** Los términos de uso: el papel que antes se firmaba a mano. */
-    terminos: 'terminos',
-    aceptarTerminos: 'terminos/aceptar',
+    terminos: 'terms',
+    aceptarTerminos: 'terms/accept',
   },
 
   /** Configuración base — RRHH y Admin (ver routes/api.php, grupo rol:rrhh,admin). */
   configuracion: {
     areas: 'areas',
-    cargos: 'cargos',
-    sedes: 'sedes',
-    periodos: 'periodos',
+    cargos: 'positions',
+    sedes: 'campuses',
+    periodos: 'periods',
     paymentConcepts: 'payment-concepts',
     roles: 'roles',
   },
 
   /** Solo Admin. */
   admin: {
-    modulos: 'modulos',
-    modulosPadre: 'modulos-padre',
+    modulos: 'modules',
+    modulosPadre: 'module-groups',
     /** Quién cambió qué. Solo lectura. */
-    auditoria: 'auditoria',
+    auditoria: 'audit-log',
   },
 
   personal: {
-    empleados: 'empleados',
-    contratos: 'contratos',
+    empleados: 'employees',
+    contratos: 'contracts',
     users: 'users',
   },
 
   planilla: {
-    planilla: 'planilla',
+    planilla: 'payrolls',
     /** Las planillas con nombre que agrupan a los trabajadores. */
-    corridas: 'planilla-corridas',
-    payrollDetalles: 'payroll-detalles',
-    documentos: 'documentos',
-    vacaciones: 'vacaciones',
+    corridas: 'payroll-runs',
+    payrollDetalles: 'payroll-details',
+    documentos: 'documents',
+    vacaciones: 'vacations',
   },
 
   /** Autoservicio del empleado autenticado. */
   autoservicio: {
-    miPlanilla: 'mi-planilla',
-    misBoletas: 'mis-boletas',
-    misDocumentos: 'mis-documentos',
-    misModulos: 'mis-modulos',
-    miIdentidadFirma: 'mi-identidad-firma',
+    miPlanilla: 'my-payroll',
+    misBoletas: 'my-payslips',
+    misDocumentos: 'my-documents',
+    misModulos: 'my-modules',
+    miIdentidadFirma: 'my-signature',
     /** GET — los bytes de la firma que uno mismo registró */
-    miFirmaImagen: 'mi-firma-imagen',
+    miFirmaImagen: 'my-signature-image',
   },
 } as const;
 
 /** Rutas que no son CRUD plano y llevan segmentos extra. */
 export const END_POINTS_ACCIONES = {
-  /** GET boleta/{empleado_id}/{mes}/{anio} */
+  /** GET payslips/{employee_id}/{month}/{year} */
   boletaIndividual: (empleadoId: string, mes: number | string, anio: number | string) =>
-    `boleta/${empleadoId}/${mes}/${anio}`,
+    `payslips/${empleadoId}/${mes}/${anio}`,
 
-  /** GET mis-boletas/{mes}/{anio} */
-  miBoleta: (mes: number | string, anio: number | string) => `mis-boletas/${mes}/${anio}`,
+  /** GET my-payslips/{month}/{year} */
+  miBoleta: (mes: number | string, anio: number | string) => `my-payslips/${mes}/${anio}`,
 
-  /** POST boletas/generar-masivo */
-  boletasMasivo: 'boletas/generar-masivo',
+  /** POST payslips/generate-bulk */
+  boletasMasivo: 'payslips/generate-bulk',
 
-  /** POST periodos/{id}/generar-planilla */
-  generarPlanillaPeriodo: (periodoId: string) => `periodos/${periodoId}/generar-planilla`,
+  /** POST periods/{id}/generate-payroll */
+  generarPlanillaPeriodo: (periodoId: string) => `periods/${periodoId}/generate-payroll`,
 
-  /** POST payment-concepts/{id}/aplicar-a-grupo */
-  aplicarConceptoGrupo: (conceptoId: string) => `payment-concepts/${conceptoId}/aplicar-a-grupo`,
+  /** POST payment-concepts/{id}/apply-to-group */
+  aplicarConceptoGrupo: (conceptoId: string) => `payment-concepts/${conceptoId}/apply-to-group`,
 
-  /** GET documentos/{id}/descargar — bajárselo; el suyo, solo firmado */
-  descargarDocumento: (documentoId: string) => `documentos/${documentoId}/descargar`,
-  /** GET documentos/{id}/ver — abrirlo en pantalla; deja anotado que lo revisó */
-  verDocumento: (documentoId: string) => `documentos/${documentoId}/ver`,
+  /** GET documents/{id}/download — bajárselo; el suyo, solo firmado */
+  descargarDocumento: (documentoId: string) => `documents/${documentoId}/download`,
+  /** GET documents/{id}/view — abrirlo en pantalla; deja anotado que lo revisó */
+  verDocumento: (documentoId: string) => `documents/${documentoId}/view`,
 
-  /** POST documentos/subir — adjuntar un archivo (hoja de vida, contrato firmado) */
-  subirDocumento: 'documentos/subir',
+  /** POST documents/upload — adjuntar un archivo (hoja de vida, contrato firmado) */
+  subirDocumento: 'documents/upload',
 
-  /** POST y DELETE mi-foto — la foto de perfil del usuario autenticado */
-  miFoto: 'mi-foto',
+  /** POST y DELETE my-photo — la foto de perfil del usuario autenticado */
+  miFoto: 'my-photo',
 
-  /** GET users/{id}/foto — los bytes de la imagen, desde el disco privado */
-  fotoDeUsuario: (userId: number | string) => `users/${userId}/foto`,
+  /** GET users/{id}/photo — los bytes de la imagen, desde el disco privado */
+  fotoDeUsuario: (userId: number | string) => `users/${userId}/photo`,
 
-  /** POST documentos/{id}/firmar-empleador */
-  firmarComoEmpleador: (documentoId: string) => `documentos/${documentoId}/firmar-empleador`,
+  /** POST documents/{id}/sign-as-employer */
+  firmarComoEmpleador: (documentoId: string) => `documents/${documentoId}/sign-as-employer`,
 
-  /** PATCH mis-documentos/{id}/visto */
-  marcarDocumentoVisto: (documentoId: string) => `mis-documentos/${documentoId}/visto`,
+  /** PATCH my-documents/{id}/viewed */
+  marcarDocumentoVisto: (documentoId: string) => `my-documents/${documentoId}/viewed`,
 
-  /** POST mis-documentos/{id}/firmar */
-  firmarMiDocumento: (documentoId: string) => `mis-documentos/${documentoId}/firmar`,
+  /** POST my-documents/{id}/sign */
+  firmarMiDocumento: (documentoId: string) => `my-documents/${documentoId}/sign`,
 
-  /** POST mis-documentos/hoja-de-vida — el trabajador sube su propio CV */
-  subirMiHojaDeVida: 'mis-documentos/hoja-de-vida',
+  /** POST my-documents/resume — el trabajador sube su propio CV */
+  subirMiHojaDeVida: 'my-documents/resume',
 
-  /** POST empleados/{id}/identidad-firma */
-  identidadFirmaEmpleado: (empleadoId: string) => `empleados/${empleadoId}/identidad-firma`,
-  /** GET empleados/{id}/firma-imagen — los bytes de su firma (RR.HH. y Administración) */
-  firmaImagenDeEmpleado: (empleadoId: string) => `empleados/${empleadoId}/firma-imagen`,
+  /** POST employees/{id}/signature */
+  identidadFirmaEmpleado: (empleadoId: string) => `employees/${empleadoId}/signature`,
+  /** GET employees/{id}/signature-image — los bytes de su firma (RR.HH. y Administración) */
+  firmaImagenDeEmpleado: (empleadoId: string) => `employees/${empleadoId}/signature-image`,
 
-  /** GET vacaciones/saldo?empleado_id=&anio= */
-  saldoVacaciones: 'vacaciones/saldo',
+  /** GET vacations/balance?empleado_id=&anio= */
+  saldoVacaciones: 'vacations/balance',
 
-  /** POST users/{id}/restablecer-password */
-  restablecerPasswordUsuario: (userId: string) => `users/${userId}/restablecer-password`,
+  /** POST users/{id}/reset-password */
+  restablecerPasswordUsuario: (userId: string) => `users/${userId}/reset-password`,
 
-  /** POST modulos/{id}/roles */
-  asignarRolesModulo: (moduloId: string) => `modulos/${moduloId}/roles`,
+  /** POST modules/{id}/roles */
+  asignarRolesModulo: (moduloId: string) => `modules/${moduloId}/roles`,
 
-  /** GET consulta-dni/{dni} — quién es esa persona, para el alta */
-  consultaDni: (dni: string) => `consulta-dni/${dni}`,
+  /** GET dni-lookup/{dni} — quién es esa persona, para el alta */
+  consultaDni: (dni: string) => `dni-lookup/${dni}`,
 
-  /** GET planilla/exportar?... — el reporte completo de la planilla en Excel */
-  exportarPlanilla: 'planilla/exportar',
+  /** GET payrolls/export?... — el reporte completo de la planilla en Excel */
+  exportarPlanilla: 'payrolls/export',
 
-  /** POST planilla/{id}/conceptos — deja sus líneas como diga la pantalla */
-  sincronizarConceptosPlanilla: (planillaId: string) => `planilla/${planillaId}/conceptos`,
+  /** POST payrolls/{id}/concepts — deja sus líneas como diga la pantalla */
+  sincronizarConceptosPlanilla: (planillaId: string) => `payrolls/${planillaId}/concepts`,
 
-  /** GET empleados/exportar?search= — la lista del personal en Excel */
-  exportarEmpleados: 'empleados/exportar',
+  /** GET employees/export?search= — la lista del personal en Excel */
+  exportarEmpleados: 'employees/export',
 
-  /** GET expedientes?page&size&search&filtro — Documentos del personal, por trabajador */
-  expedientes: 'expedientes',
-  /** GET expedientes/{empleadoId} — el expediente de un trabajador */
-  expediente: (empleadoId: string) => `expedientes/${empleadoId}`,
+  /** GET employee-files?page&size&search&filtro — Documentos del personal, por trabajador */
+  expedientes: 'employee-files',
+  /** GET employee-files/{employeeId} — el expediente de un trabajador */
+  expediente: (empleadoId: string) => `employee-files/${empleadoId}`,
 
-  /** POST importacion-conceptos/{paso} — cargar conceptos desde el Excel de RR.HH. */
+  /** POST concept-import/{step} — cargar conceptos desde el Excel de RR.HH. */
   importacionConceptos: {
     /** GET ?mes=&anio= — el Excel modelo del mes, para llenar */
-    modelo: 'importacion-conceptos/modelo',
-    reconocer: 'importacion-conceptos/reconocer',
-    previsualizar: 'importacion-conceptos/previsualizar',
-    aplicar: 'importacion-conceptos/aplicar',
+    modelo: 'concept-import/template',
+    reconocer: 'concept-import/recognize',
+    previsualizar: 'concept-import/preview',
+    aplicar: 'concept-import/apply',
   },
 
-  /** POST importacion-empleados/{paso} — altas y cambios desde Excel, y los CVs en lote */
+  /** POST employee-import/{step} — altas y cambios desde Excel, y los CVs en lote */
   importacionEmpleados: {
     /** GET — el Excel modelo vacío, con listas desplegables e instrucciones */
-    modelo: 'importacion-empleados/modelo',
-    reconocer: 'importacion-empleados/reconocer',
-    previsualizar: 'importacion-empleados/previsualizar',
-    aplicar: 'importacion-empleados/aplicar',
-    hojaDeVida: 'importacion-empleados/hoja-de-vida',
+    modelo: 'employee-import/template',
+    reconocer: 'employee-import/recognize',
+    previsualizar: 'employee-import/preview',
+    aplicar: 'employee-import/apply',
+    hojaDeVida: 'employee-import/resume',
   },
   /** Boletas y contratos de antes del sistema, en lote: se revisa y se sube de a uno */
   documentosAnteriores: {
-    previsualizar: 'documentos-anteriores/previsualizar',
-    subir: 'documentos-anteriores',
+    previsualizar: 'legacy-documents/preview',
+    subir: 'legacy-documents',
   },
 } as const;

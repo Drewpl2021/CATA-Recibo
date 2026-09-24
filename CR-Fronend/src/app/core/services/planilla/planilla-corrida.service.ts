@@ -32,7 +32,7 @@ export class PlanillaCorridaService extends EntityDataService<PlanillaCorrida> {
     grupo: { empleado_ids?: string[]; area_id?: string | null; cargo_id?: string | null; sede_id?: string | null }
   ): Observable<ApiResponse<ResultadoGeneracion>> {
     return this.http.post<ApiResponse<ResultadoGeneracion>>(
-      `${environment.apiUrl}/${END_POINTS.planilla.corridas}/${corridaId}/generar`,
+      `${environment.apiUrl}/${END_POINTS.planilla.corridas}/${corridaId}/generate`,
       grupo
     );
   }
@@ -40,7 +40,7 @@ export class PlanillaCorridaService extends EntityDataService<PlanillaCorrida> {
   /** Mete planillas que ya existen dentro de esta corrida. */
   mover(corridaId: string, planillaIds: string[]): Observable<ApiResponse<{ movidas: number; yaEstaban: number; corrida: PlanillaCorrida }>> {
     return this.http.post<ApiResponse<{ movidas: number; yaEstaban: number; corrida: PlanillaCorrida }>>(
-      `${environment.apiUrl}/${END_POINTS.planilla.corridas}/${corridaId}/mover`,
+      `${environment.apiUrl}/${END_POINTS.planilla.corridas}/${corridaId}/move`,
       { planilla_ids: planillaIds }
     );
   }
@@ -48,7 +48,7 @@ export class PlanillaCorridaService extends EntityDataService<PlanillaCorrida> {
   /** Las saca de su corrida y las deja en "Sin agrupar". No borra nada. */
   sacar(planillaIds: string[]): Observable<ApiResponse<{ sacadas: number }>> {
     return this.http.post<ApiResponse<{ sacadas: number }>>(
-      `${environment.apiUrl}/${END_POINTS.planilla.corridas}/sacar`,
+      `${environment.apiUrl}/${END_POINTS.planilla.corridas}/detach`,
       { planilla_ids: planillaIds }
     );
   }
