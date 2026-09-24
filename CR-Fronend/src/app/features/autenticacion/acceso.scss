@@ -54,13 +54,38 @@
   overflow: hidden;
   background-color: var(--acceso-papel);
   box-shadow: 0 30px 70px -20px var(--acceso-sombra);
-  /* Un solo momento al cargar: la tarjeta aparece una vez y se queda
-     quieta. Nada de entradas encadenadas. */
+  /* Un solo momento al cargar, en tres tiempos: la tarjeta, el sello y
+     el nombre. Medio segundo en total y se acabó; nada se mueve después
+     ni al pasar el mouse. */
   animation: acceso-entra 0.45s ease-out both;
 }
 
 @keyframes acceso-entra {
   from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.sello {
+  animation: acceso-sello 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.14s both;
+}
+
+@keyframes acceso-sello {
+  from { opacity: 0; transform: scale(0.82); }
+  to   { opacity: 1; transform: none; }
+}
+
+.acceso__institucion,
+.acceso__colegio,
+.acceso__filo {
+  animation: acceso-sube 0.4s ease-out both;
+}
+
+.acceso__institucion { animation-delay: 0.26s; }
+.acceso__colegio     { animation-delay: 0.31s; }
+.acceso__filo        { animation-delay: 0.38s; }
+
+@keyframes acceso-sube {
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
 }
 
@@ -94,14 +119,19 @@
   text-align: center;
   clip-path: ellipse(100% 104% at 0% 50%);
   background-color: var(--acceso-panel);
-  /* Guilloché: los anillos finos de los documentos que valen. Es lo
-     único que decora el panel, y a esta opacidad no compite con el
-     escudo. */
+  /* Tres capas, de arriba abajo: una luz suave detrás del escudo, el
+     guilloché —los anillos finos de los documentos que valen— y el
+     rayado que le da grano. La luz es lo que hace que el sello parezca
+     apoyado sobre el papel y no pegado encima. */
   background-image:
+    radial-gradient(120% 70% at 50% 26%,
+      rgba(255, 255, 255, 0.10) 0%, transparent 62%),
     repeating-radial-gradient(circle at 30% 30%,
       rgba(244, 180, 26, 0.11) 0 1px, transparent 1px 11px),
     repeating-linear-gradient(115deg,
-      rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 16px);
+      rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 16px),
+    linear-gradient(170deg,
+      rgba(255, 255, 255, 0.06) 0%, transparent 40%, rgba(0, 0, 0, 0.22) 100%);
 }
 
 .acceso--invertido .acceso__panel {
@@ -109,6 +139,33 @@
   margin-left: -74px;
   padding: 46px 44px 46px 100px;
   clip-path: ellipse(100% 104% at 100% 50%);
+}
+
+/* ── El picado de la costura ───────────────────────────────────
+   La tarjeta es el talón de una boleta, así que la unión entre el panel
+   y el papel se pica como se pica un talón para desprenderlo. La elipse
+   del path es la MISMA del clip-path del panel (centro en el borde
+   izquierdo, rx = ancho, ry = 104% del alto), por eso la línea cae justo
+   sobre el borde a cualquier tamaño.
+
+   `preserveAspectRatio="none"` estira el dibujo con la caja;
+   `vector-effect` evita que ese estirón engorde el trazo. */
+.acceso__picado {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 2 8;
+}
+
+.acceso--invertido .acceso__picado {
+  transform: scaleX(-1);
 }
 
 /* El archivo del escudo viene con fondo blanco cuadrado, así que el
@@ -454,6 +511,17 @@
     clip-path: ellipse(140% 100% at 50% 0%);
   }
 
+  /* De pie, la costura se acuesta: la elipse pasa a estar centrada en el
+     borde de arriba (ellipse(140% 100% at 50% 0%)) y el picado sigue su
+     arco de abajo. */
+  .acceso--invertido .acceso__picado {
+    transform: none;
+  }
+
+  .acceso__picado path {
+    d: path('M -90,0 A 137,97 0 0 0 190,0');
+  }
+
   .sello {
     width: 104px;
     height: 104px;
@@ -507,7 +575,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .acceso__ticket {
+  .acceso__ticket,
+  .sello,
+  .acceso__institucion,
+  .acceso__colegio,
+  .acceso__filo {
     animation: none;
   }
 }
