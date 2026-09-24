@@ -25,13 +25,13 @@ class ExigirCambioPassword
     private const PERMITIDAS = [
         'api/me',
         'api/logout',
-        'api/cambiar-password',
+        'api/change-password',
         // Los términos van antes que la contraseña, así que tienen que poder
         // leerse y firmarse con el bloqueo puesto. Sin esto, el primer
         // ingreso se queda sin salida: no puede cambiar la contraseña
         // porque no ha firmado, y no puede firmar porque está trabado.
-        'api/terminos',
-        'api/terminos/aceptar',
+        'api/terms',
+        'api/terms/accept',
     ];
 
     public function handle(Request $request, Closure $next): Response
