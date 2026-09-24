@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contrato;
+use App\Models\Empleado;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -75,6 +76,8 @@ class ContratoController extends Controller
             'estado'        => 'vigente',
         ]);
 
+        $this->ponerAlDiaLaFicha($request->empleado_id);
+
         $contrato->load('empleado', 'documentos');
 
         return response()->json(['success' => true, 'data' => $contrato], 201);
@@ -100,16 +103,48 @@ class ContratoController extends Controller
         ]);
 
         $contrato->update($datos);
+        $this->ponerAlDiaLaFicha($contrato->empleado_id);
+
         $contrato->load('empleado', 'documentos');
 
         return response()->json(['success' => true, 'data' => $contrato]);
     }
 
     public function destroy(string $id)
-{
-    $contrato = Contrato::findOrFail($id);
-    $contrato->update(['estado_registro' => 'inactivo']);
+    {
+        $contrato = Contrato::findOrFail($id);
+        $contrato->update(['estado_registro' => 'inactivo']);
+        $this->ponerAlDiaLaFicha($contrato->empleado_id);
 
-    return response()->json(['success' => true, 'data' => ['message' => 'Contrato desactivado correctamente.']]);
-}
+        return response()->json(['success' => true, 'data' => ['message' => 'Contrato desactivado correctamente.']]);
+    }
+
+    /**
+     * Copia a la ficha el tipo del contrato que quede vigente.
+     *
+     * El contrato es el que manda —es el papel que se firma—, pero la ficha
+     * guarda una copia del tipo, y hay pantallas que leen esa copia: los
+     * filtros de personal y de planilla, y la columna del reporte de
+     * planilla. Si no se copia, al renovar acá la ficha se queda con el tipo
+     * viejo y el sistema vuelve a decir dos cosas distintas de la misma
+     * persona —lo mismo que pasaba al revés cuando solo se editaba la ficha—.
+     */
+    private function ponerAlDiaLaFicha(?string $empleadoId): void
+    {
+        if (! $empleadoId) {
+            return;
+        }
+
+        $vigente = Contrato::where('empleado_id', $empleadoId)
+            ->where('estado', 'vigente')
+            ->where('estado_registro', 'activo')
+            ->latest('fecha_inicio')
+            ->first();
+
+        // Sin contrato vigente no se toca nada: la ficha conserva lo último
+        // que se supo de él, que es mejor que dejarla en blanco.
+        if ($vigente) {
+            Empleado::where('id', $empleadoId)->update(['tipo_contrato' => $vigente->tipo_contrato]);
+        }
+    }
 }

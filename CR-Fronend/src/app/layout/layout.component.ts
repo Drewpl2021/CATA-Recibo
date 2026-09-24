@@ -5,8 +5,8 @@ import { CommonModule } from '@angular/common';
 import { AuthService,
   NotificacionService,
 } from '../core/services';
-import { MisModulosService } from '../core/services';
-import { ModuloPadre, Notificacion } from '../core/models';
+import { MisModulosService, PrimerosPasosService } from '../core/services';
+import { MiPerfil, ModuloPadre, Notificacion } from '../core/models';
 import { MisDocumentosService } from '../core/services';
 import { Documento } from '../core/models';
 import { ToastService } from '../core/services';
@@ -111,6 +111,38 @@ export class LayoutComponent implements OnInit {
   empleadoData: Empleado | null = null;
 
   /**
+   * Los datos de la CUENTA, que existen siempre.
+   *
+   * Administración y RR.HH. no tienen ficha de trabajador —son cuentas para
+   * operar el sistema—, así que su perfil enseña esto: su rol, su correo y
+   * desde cuándo existe la cuenta.
+   */
+  cuentaData: MiPerfil['cuenta'] | null = null;
+
+  // ── Primeros pasos ──
+
+  /**
+   * La guía vive dentro de la pantalla de inicio de cada rol (el Panel de
+   * Control o Mis Boletas), como un panel más. Desde el menú no se "abre":
+   * se lleva al inicio y se avisa al panel para que vuelva a salir aunque
+   * ya lo hubieran ocultado.
+   */
+  abrirGuia(): void {
+    this.showUserMenu = false;
+    this.showProfileModal = false;
+    this.showPasswordModal = false;
+    this.showNotifications = false;
+
+    this.router.navigateByUrl(this.authService.rutaInicioSegunRol());
+    this.primerosPasosService.mostrar();
+  }
+
+  /** Una fecha suelta del perfil, en palabras. */
+  fechaDeCuenta(valor?: string | null): string {
+    return valor ? fechaLegible(valor) : '—';
+  }
+
+  /**
    * La foto de perfil, ya en memoria.
    *
    * Es una URL de objeto (blob:), no la ruta del servidor: la imagen vive en
@@ -197,6 +229,7 @@ export class LayoutComponent implements OnInit {
     private empleadoService: EmpleadoService,
     private fotoPerfilService: FotoPerfilService,
     public themeService: ThemeService,
+    private primerosPasosService: PrimerosPasosService,
     private cdr: ChangeDetectorRef
   ) {
     this.cargarDatosUsuario();
@@ -508,6 +541,7 @@ export class LayoutComponent implements OnInit {
     // 1. Cargar menú dinámico
     this.cargarModulos();
 
+
     // 2. Suscribirse a boletas pendientes
     // El servicio ya manda solo los que le faltan firmar: acá no se filtra.
     this.misDocumentosService.documentos$.subscribe({
@@ -807,15 +841,25 @@ export class LayoutComponent implements OnInit {
       }
     }, 0);
     
-    const empleadoId = this.authService.getEmpleadoId();
-    if (empleadoId && !this.empleadoData) {
-      this.empleadoService.getById(empleadoId).subscribe({
-        next: (res) => { 
+    // Su propio perfil, por la ruta del autoservicio. Antes se pedía a
+    // employees/{id}, que es solo de RR.HH. y Administración: al trabajador
+    // le contestaba 403 y el perfil se quedaba con un guion en cada dato,
+    // que es justo lo que veía alguien recién dado de alta.
+    //
+    // Se pide SIEMPRE, tenga ficha o no: las cuentas de Administración y
+    // RR.HH. nacen sin trabajador detrás y aun así tienen qué enseñar.
+    if (!this.cuentaData) {
+      this.empleadoService.miPerfil().subscribe({
+        next: (res) => {
           if (res.success) {
-            this.empleadoData = res.data; 
+            this.empleadoData = res.data.empleado;
+            this.cuentaData = res.data.cuenta;
+            this.cdr.detectChanges();
           }
         },
-        error: (err) => { console.error('Error fetching empleado data:', err); }
+        // Sin aviso rojo: el perfil se abre igual con lo que ya se sabe de
+        // la sesión (su nombre, su correo y su rol).
+        error: () => undefined,
       });
     }
   }

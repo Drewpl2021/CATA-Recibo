@@ -207,6 +207,13 @@ class DashboardController extends Controller
             [0 => LibroExcel::TEXTO]
         );
 
+        // La misma hoja de filtros que los otros dos reportes, para que los
+        // tres se lean igual y quede escrito quién bajó qué.
+        $this->hojaDeFiltros($libro, [
+            'Mes y año' => $periodo,
+            'Sede'      => $sede ? $nombreSede : 'Todas las sedes',
+        ], $request->user()?->name);
+
         return $libro->descargar($this->nombreExcelSeguro(
             'Panel de control ' . $periodo . ($sede ? ' - ' . $nombreSede : '')
         ));

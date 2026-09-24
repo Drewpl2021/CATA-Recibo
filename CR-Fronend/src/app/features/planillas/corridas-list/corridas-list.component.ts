@@ -25,6 +25,8 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectorEmpleadosComponent } from '../../../shared/components/selector-empleados/selector-empleados.component';
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 
 /**
  * Planillas: el primer nivel, las corridas del mes.
@@ -47,6 +49,7 @@ import { SelectorEmpleadosComponent } from '../../../shared/components/selector-
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
+    FiltrosComponent,
   ],
   templateUrl: './corridas-list.component.html',
 })
@@ -165,6 +168,7 @@ export class CorridasListComponent implements OnInit {
         if (areas.success) this.areas = areas.data;
         if (cargos.success) this.cargos = cargos.data;
         if (sedes.success) this.sedes = sedes.data;
+        this.ponerOpcionesDeFiltro();
 
         // Si a alguien le dio tiempo de abrir el modal antes de que llegaran
         // los periodos, se le pone el primero ahora: si no, se queda con el
@@ -176,6 +180,53 @@ export class CorridasListComponent implements OnInit {
       },
       error: () => this.toastService.error('Aviso', 'No se pudieron cargar los datos de los filtros.'),
     });
+  }
+
+  /**
+   * Los filtros del trabajador, en el embudo de la tabla.
+   *
+   * Una planilla del mes no tiene sede: la tiene la gente que lleva dentro,
+   * así que "Sede: Jerusalén" deja las planillas que tengan a alguien de
+   * Jerusalén. Y el Excel del mes sale con esos mismos filtros puestos, que
+   * es para lo que más sirve: bajar la planilla de UNA sede.
+   */
+  filtros: ValoresFiltro = {};
+
+  camposFiltro: CampoFiltro[] = [
+    { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
+    { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
+    { clave: 'cargo_id', etiqueta: 'Cargo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+    {
+      clave: 'tipo_contrato', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos',
+      opciones: [
+        { valor: 'indeterminado', etiqueta: 'Indeterminado' },
+        { valor: 'plazo_fijo', etiqueta: 'Plazo fijo' },
+        { valor: 'suplencia', etiqueta: 'Suplencia' },
+        { valor: 'practicas', etiqueta: 'Prácticas' },
+      ],
+    },
+    {
+      clave: 'estado_empleado', etiqueta: 'Estado del trabajador', tipo: 'opciones', vacio: 'Todos',
+      opciones: [
+        { valor: 'activo', etiqueta: 'Activos' },
+        { valor: 'inactivo', etiqueta: 'Cesados' },
+      ],
+    },
+  ];
+
+  /** Las opciones salen de los catálogos que la pantalla ya tiene. */
+  private ponerOpcionesDeFiltro(): void {
+    const poner = (clave: string, lista: { id: string; nombre: string }[]) => {
+      const campo = this.camposFiltro.find((c) => c.clave === clave);
+      if (!campo) return;
+      campo.opciones = (lista ?? [])
+        .map((x) => ({ valor: x.id, etiqueta: x.nombre }))
+        .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es'));
+    };
+
+    poner('sede_id', this.sedes);
+    poner('area_id', this.areas);
+    poner('cargo_id', this.cargos);
   }
 
   get empleadosActivos(): Empleado[] {
@@ -218,6 +269,7 @@ export class CorridasListComponent implements OnInit {
         search: this.busqueda || undefined,
         mes: this.filtroMes || undefined,
         anio: this.filtroAnio || undefined,
+        ...this.filtros,
       })
       .subscribe({
         next: (res) => {
@@ -610,6 +662,8 @@ export class CorridasListComponent implements OnInit {
       .exportar({
         mes: this.filtroMes || undefined,
         anio: this.filtroAnio || undefined,
+        // Los del embudo: lo que se ve filtrado es lo que baja.
+        ...this.filtros,
       })
       .subscribe({
         next: (blob) => {

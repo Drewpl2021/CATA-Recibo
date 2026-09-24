@@ -83,7 +83,20 @@ export class SeccionLaboralesComponent extends SeccionEmpleadoBase {
    */
   get llevaFechaFin(): boolean {
     const tipo = this.form.get('tipo_contrato')?.value;
-    return this.esNuevo && !!tipo && tipo !== 'indeterminado';
+    return !!tipo && tipo !== 'indeterminado';
+  }
+
+  /**
+   * Se está cambiando el tipo de contrato de alguien que ya trabaja acá.
+   *
+   * Cambiarlo no es corregir un dato suyo: es firmar otro contrato. Al
+   * guardar se cierra el de ahora y empieza uno nuevo, así que hay que
+   * decirlo ANTES, no después.
+   */
+  get cambioDeContrato(): boolean {
+    const tipo = this.form.get('tipo_contrato')?.value;
+    return !this.esNuevo && !!this.contratoVigente && !!tipo
+      && tipo !== this.contratoVigente.tipo_contrato;
   }
 
   /** El que está corriendo ahora, si lo hay. */

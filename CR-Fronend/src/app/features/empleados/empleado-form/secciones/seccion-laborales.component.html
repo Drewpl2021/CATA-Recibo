@@ -64,10 +64,24 @@
         <option *ngFor="let t of tiposContrato" [value]="t.value">{{ t.label }}</option>
       </select>
       <small class="form-error" *ngIf="invalido('tipo_contrato')">{{ error('tipo_contrato') }}</small>
-      <small class="form-ayuda" *ngIf="!invalido('tipo_contrato')">
+      <small class="form-ayuda" *ngIf="!invalido('tipo_contrato') && esNuevo">
         Con esto se le crea su primer contrato, con fecha de inicio el día de ingreso.
       </small>
+      <small class="form-ayuda" *ngIf="!invalido('tipo_contrato') && !esNuevo && !cambioDeContrato">
+        Es el tipo de su contrato vigente. Cambiarlo acá le abre uno nuevo.
+      </small>
     </div>
+
+    <!-- Cambiar el tipo no es corregir un dato: es firmar otro contrato, y
+         de eso dependen sus vacaciones y lo que dice su boleta. Por eso se
+         avisa antes de guardar y no después. -->
+    <p class="form-nota form-nota--alerta rejilla-campos--completo" *ngIf="cambioDeContrato">
+      Al guardar se cerrará su contrato de
+      <strong>{{ etiquetaTipoContrato(contratoVigente!.tipo_contrato) }}</strong>
+      y empezará uno de
+      <strong>{{ etiquetaTipoContrato(form.get('tipo_contrato')?.value) }}</strong>
+      desde hoy. El anterior queda en su historial, acá abajo.
+    </p>
 
     <!-- Solo los contratos con plazo llevan fecha de término; el indeterminado no. -->
     <div class="form-group" *ngIf="llevaFechaFin">

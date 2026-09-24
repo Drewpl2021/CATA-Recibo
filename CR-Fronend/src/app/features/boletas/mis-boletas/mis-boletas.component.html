@@ -6,6 +6,10 @@
   [cargandoCifras]="cargando"
 ></app-page-header>
 
+<!-- Qué le falta para tener su cuenta lista. Se va solo cuando no falta
+     nada, y se puede ocultar. -->
+<app-primeros-pasos></app-primeros-pasos>
+
 <section class="panel-filtros">
   <div class="panel-filtros__campos panel-filtros__campos--compacto">
     <div class="campo-filtro campo-filtro--corto">
@@ -20,8 +24,8 @@
 
 <div class="alert-error" *ngIf="errorMsg">
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" stroke-width="2">
-    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
   </svg>
   {{ errorMsg }}
 </div>
@@ -53,16 +57,15 @@
         <span class="form-ayuda" *ngIf="!boletaAbierta?.firmado">Fírmala y podrás descargarla.</span>
         <button class="btn-primary" *ngIf="boletaAbierta?.firmado" (click)="descargarPdfDirecto()">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           </svg>
           Descargar
         </button>
         <button class="btn-close" (click)="closePdfModal()" aria-label="Cerrar">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
           </svg>
         </button>
       </div>

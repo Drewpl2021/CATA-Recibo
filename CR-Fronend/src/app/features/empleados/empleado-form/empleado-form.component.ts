@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,9 +13,10 @@ import {
   ToastService,
   ContratoService,
   DocumentoService,
+  FotoPerfilService,
 } from '../../../core/services';
 import { Area, Cargo, Documento, Empleado, EmpleadoPayload, Rol, Sede,
-  Contrato,
+  Contrato, Usuario,
 } from '../../../core/models';
 import { mensajeErrorApi } from '../../../core/utils';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -57,7 +58,7 @@ function noFutura(control: AbstractControl): ValidationErrors | null {
   ],
   templateUrl: './empleado-form.component.html',
 })
-export class EmpleadoFormComponent implements OnInit {
+export class EmpleadoFormComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private ruta = inject(ActivatedRoute);
   private router = inject(Router);
@@ -68,6 +69,7 @@ export class EmpleadoFormComponent implements OnInit {
   private rolService = inject(RolService);
   private contratoService = inject(ContratoService);
   private documentoService = inject(DocumentoService);
+  private fotoPerfilService = inject(FotoPerfilService);
   private toastService = inject(ToastService);
 
   modo: 'nuevo' | 'editar' | 'ver' = 'nuevo';
@@ -82,6 +84,18 @@ export class EmpleadoFormComponent implements OnInit {
 
   /** La hoja de vida que ya tiene en su expediente, si la tiene. */
   hojaDeVida: Documento | null = null;
+
+  /** La cuenta con la que entra al sistema. Sin ella no hay foto que pedir. */
+  usuarioVinculado: Usuario | null = null;
+
+  /**
+   * Su foto, ya convertida en una URL de memoria.
+   *
+   * La imagen vive en el disco privado: no se puede poner su ruta en el
+   * `src` porque esa petición iría sin el token. Se pide como bytes y el
+   * navegador la pinta desde la memoria; al salir de la ficha se suelta.
+   */
+  fotoUrl: string | null = null;
 
   /**
    * El CV elegido en el paso 4, pendiente de subir.
@@ -192,6 +206,23 @@ export class EmpleadoFormComponent implements OnInit {
       next: (res) => {
         if (res.success) this.contratos = res.data;
         this.cargandoContratos = false;
+
+        // El tipo y la fecha de término salen de su CONTRATO VIGENTE, que es
+        // el que manda. La ficha guarda una copia del tipo y puede haber
+        // quedado vieja; si el formulario enseñara esa copia, con solo
+        // guardar se le crearía un contrato del tipo equivocado.
+        const vigente = this.contratos.find((c) => c.estado === 'vigente');
+        if (!vigente) return;
+
+        if (vigente.tipo_contrato) {
+          this.form.patchValue({ tipo_contrato: vigente.tipo_contrato });
+        }
+
+        // Sin esto, al editar a alguien con contrato a plazo el campo de la
+        // fecha salía vacío y obligatorio a la vez.
+        if (vigente.fecha_fin && !this.form.get('fecha_fin_contrato')!.value) {
+          this.form.patchValue({ fecha_fin_contrato: vigente.fecha_fin.slice(0, 10) });
+        }
       },
       error: () => {
         // No es crítico: la ficha se puede ver y editar igual.
@@ -352,6 +383,7 @@ export class EmpleadoFormComponent implements OnInit {
     this.ajustarValidacionAfp();
     this.ajustarFechaFinContrato();
     this.cargarHojaDeVida(e.id);
+    this.cargarFoto(e);
   }
 
   /**
@@ -369,6 +401,62 @@ export class EmpleadoFormComponent implements OnInit {
       },
       error: () => undefined,
     });
+  }
+
+  /**
+   * La foto que el propio trabajador subió a su cuenta.
+   *
+   * Acá solo se mira: la foto es suya y la cambia él desde Mi Perfil. Si no
+   * tiene, ni se le pregunta al servidor —el campo `foto` de su usuario ya
+   * lo dice— y se quedan sus iniciales.
+   */
+  private cargarFoto(e: Empleado): void {
+    this.usuarioVinculado = e.usuario ?? null;
+    this.liberarFoto();
+
+    if (!this.usuarioVinculado?.id || !this.usuarioVinculado.foto) return;
+
+    this.fotoPerfilService.ver(this.usuarioVinculado.id).subscribe({
+      next: (blob) => {
+        this.liberarFoto();
+        this.fotoUrl = URL.createObjectURL(blob);
+      },
+      // Sin aviso si falla: la ficha se lee igual con las iniciales, y un
+      // error acá no debería ensuciar la pantalla de edición.
+      error: () => this.liberarFoto(),
+    });
+  }
+
+  /** Suelta la URL de memoria: si no, cada ficha abierta deja una colgada. */
+  private liberarFoto(): void {
+    if (this.fotoUrl) {
+      URL.revokeObjectURL(this.fotoUrl);
+      this.fotoUrl = null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.liberarFoto();
+  }
+
+  /** Nombre y apellido, para la cabecera de la ficha. */
+  get nombreCompleto(): string {
+    const v = this.form.getRawValue();
+    return `${v.nombre ?? ''} ${v.apellido ?? ''}`.trim();
+  }
+
+  /** Lo que se ve en el círculo cuando todavía no hay foto. */
+  get iniciales(): string {
+    const v = this.form.getRawValue();
+    return ((v.nombre ?? '').charAt(0) + (v.apellido ?? '').charAt(0)).toUpperCase();
+  }
+
+  /** "Cargo · Sede": a quién se está mirando, sin bajar hasta el paso 2. */
+  get resumenPersona(): string {
+    const v = this.form.getRawValue();
+    const cargo = this.cargos.find((c) => c.id === v.cargo_id)?.nombre;
+    const sede = this.sedes.find((s) => s.id === v.sede_id)?.nombre;
+    return [cargo, sede].filter(Boolean).join(' · ');
   }
 
   /** El paso que se está viendo ahora mismo. */

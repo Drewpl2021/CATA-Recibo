@@ -13,6 +13,8 @@ use App\Http\Controllers\PlanillaCorridaController;
 use App\Http\Controllers\FotoPerfilController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\BoletaController;
+use App\Http\Controllers\MiPerfilController;
+use App\Http\Controllers\PrimerosPasosController;
 use App\Http\Controllers\MiPlanillaController;
 use App\Http\Controllers\MiBoletaController;
 use App\Http\Controllers\AreaController;
@@ -85,6 +87,14 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     Route::get('/dashboard/export', [DashboardController::class, 'exportar'])->middleware('rol:admin,rrhh');
 
     // Empleado autenticado — sus propios datos
+    // Su ficha, para la tarjeta de "Mi perfil". Va acá y no en el grupo de
+    // RR.HH. porque cada quien mira LO SUYO: pedirla a employees/{id} le
+    // daba 403 al trabajador y su perfil salía en blanco.
+    Route::get('my-profile',              [MiPerfilController::class, 'ver']);
+    // La guía de qué hacer primero, según su rol. El progreso se calcula
+    // de los datos; lo único que se guarda es si ya se le abrió sola.
+    Route::get('my-first-steps',          [PrimerosPasosController::class, 'ver']);
+    Route::post('my-first-steps/seen',    [PrimerosPasosController::class, 'marcarVista']);
     Route::get('my-payroll',              [MiPlanillaController::class, 'index']);
     Route::get('my-payslips/{month}/{year}', [MiBoletaController::class, 'descargar']);
     Route::get('my-documents',           [MisDocumentosController::class, 'index']);

@@ -16,6 +16,7 @@ class PlanillaController extends Controller
     use ExportaExcel;
     /**
      * GET /planilla?empleado_id=&empleado_ids=&mes=&anio=&periodo_id=&corrida_id=&sin_corrida=&page=&size=&search=
+     *     &sede_id=&area_id=&cargo_id=&tipo_contrato=&estado_empleado=
      *
      * Es la tabla que más crece del sistema: un registro por trabajador y
      * por mes. Los filtros van sobre el índice planilla_empleado_periodo_idx
@@ -48,6 +49,16 @@ class PlanillaController extends Controller
      */
     private function consultaFiltrada(Request $request, array $relaciones): Builder
     {
+        // Se valida lo que viene de la pantalla: un id inventado en la
+        // dirección tiene que ser un aviso, no una consulta rara a la base.
+        $request->validate([
+            'sede_id'         => 'nullable|uuid|exists:sedes,id',
+            'area_id'         => 'nullable|uuid|exists:areas,id',
+            'cargo_id'        => 'nullable|uuid|exists:cargos,id',
+            'tipo_contrato'   => 'nullable|in:indeterminado,plazo_fijo,suplencia,practicas',
+            'estado_empleado' => 'nullable|in:activo,inactivo',
+        ]);
+
         $query = Planilla::with($relaciones);
 
         if ($request->filled('empleado_id')) {
@@ -83,6 +94,29 @@ class PlanillaController extends Controller
         if ($request->filled('empleado_ids')) {
             $ids = array_slice(array_filter(explode(',', (string) $request->input('empleado_ids'))), 0, 200);
             $query->whereIn('empleado_id', $ids);
+        }
+
+        // Filtros que miran al TRABAJADOR, no a la planilla. Son los que
+        // permiten bajar "la planilla de la sede Jerusalén" o "la de los
+        // docentes": la planilla no guarda sede ni área, las tiene su
+        // empleado. Van todos en un solo whereHas para no repetir la
+        // subconsulta una vez por filtro.
+        $delTrabajador = array_filter([
+            'sede_id'       => $request->input('sede_id'),
+            'area_id'       => $request->input('area_id'),
+            'cargo_id'      => $request->input('cargo_id'),
+            'tipo_contrato' => $request->input('tipo_contrato'),
+            'estado'        => $request->input('estado_empleado'),
+        ], fn ($valor) => $valor !== null && $valor !== '');
+
+        if ($delTrabajador) {
+            $query->whereHas('empleado', function (Builder $q) use ($delTrabajador) {
+                foreach ($delTrabajador as $columna => $valor) {
+                    // Con el prefijo de la tabla: áreas, cargos y sedes
+                    // también tienen `estado`, y MySQL no sabría de cuál.
+                    $q->where('empleados.' . $columna, $valor);
+                }
+            });
         }
 
         $rolNombre = $request->user()->rol?->nombre;
@@ -249,11 +283,53 @@ class PlanillaController extends Controller
 
         $libro = new LibroExcel();
         $this->hojaDeReporte($libro, 'Planilla', $cabecera, $filas, $estiloColumnas, $estiloFilas);
+        $this->hojaDeFiltros($libro, $this->filtrosDelReporte($request), $request->user()?->name);
 
         return $libro->descargar($this->nombreDelArchivo($request, $planillas->first()));
     }
 
     /** "Planilla TIC - Septiembre 2026.xlsx", o el mes suelto. */
+    /**
+     * Los filtros de la pantalla, escritos como los lee una persona: con el
+     * nombre de la sede y del mes, no con el id ni el número.
+     *
+     * @return array<string, string|null>
+     */
+    private function filtrosDelReporte(Request $request): array
+    {
+        $mes  = $request->input('mes');
+        $anio = $request->input('anio');
+
+        $periodo = match (true) {
+            $mes && $anio => \App\Support\Meses::nombre((int) $mes) . ' ' . $anio,
+            (bool) $mes   => \App\Support\Meses::nombre((int) $mes) . ' de todos los años',
+            (bool) $anio  => 'Todo el año ' . $anio,
+            default       => null,
+        };
+
+        $empleado = $request->filled('empleado_id')
+            ? Empleado::find($request->input('empleado_id'))
+            : null;
+
+        return [
+            'Mes y año'            => $periodo,
+            'Año escolar'          => $this->nombreDeCatalogo(\App\Models\Periodo::class, $request->input('periodo_id')),
+            'Sede'                 => $this->nombreDeCatalogo(\App\Models\Sede::class, $request->input('sede_id')),
+            'Área'                 => $this->nombreDeCatalogo(\App\Models\Area::class, $request->input('area_id')),
+            'Cargo'                => $this->nombreDeCatalogo(\App\Models\Cargo::class, $request->input('cargo_id')),
+            'Tipo de contrato'     => $request->input('tipo_contrato'),
+            'Estado del trabajador' => match ($request->input('estado_empleado')) {
+                'activo'   => 'Solo activos',
+                'inactivo' => 'Solo cesados',
+                default    => null,
+            },
+            'Trabajador'           => $empleado ? $empleado->apellido . ', ' . $empleado->nombre : null,
+            'Planilla'             => $this->nombreDeCatalogo(\App\Models\PlanillaCorrida::class, $request->input('corrida_id')),
+            'Solo sin agrupar'     => $request->boolean('sin_corrida') ? 'Sí' : null,
+            'Búsqueda'             => $request->input('search'),
+        ];
+    }
+
     private function nombreDelArchivo(Request $request, ?Planilla $primera): string
     {
         $mes  = (int) ($request->input('mes') ?: $primera->mes ?? 0);

@@ -11,7 +11,7 @@ import { environment } from '../../../../environments/environment';
  * multipart y una descarga de bytes.
  *
  * Lo importante: la imagen vive en el DISCO PRIVADO, así que no se puede
- * pintar con `<img src="…/foto">` a secas — esa petición no lleva el token y
+ * pintar con `<img src="…/photo">` a secas — esa petición no lleva el token y
  * el backend la rechazaría. Se pide como blob (el interceptor sí le pone la
  * cabecera) y la pantalla la convierte en una URL de memoria con
  * URL.createObjectURL.
@@ -21,7 +21,7 @@ export class FotoPerfilService {
   private readonly apiUrl = environment.apiUrl;
   private http = inject(HttpClient);
 
-  /** POST /mi-foto — cada quien sube la suya. */
+  /** POST /my-photo — cada quien sube la suya. */
   subirMia(foto: File): Observable<ApiResponse<{ foto: string | null }>> {
     const formData = new FormData();
     formData.append('foto', foto);
@@ -32,14 +32,14 @@ export class FotoPerfilService {
     );
   }
 
-  /** DELETE /mi-foto — vuelve a las iniciales. */
+  /** DELETE /my-photo — vuelve a las iniciales. */
   quitarMia(): Observable<ApiResponse<{ foto: string | null }>> {
     return this.http.delete<ApiResponse<{ foto: string | null }>>(
       `${this.apiUrl}/${END_POINTS_ACCIONES.miFoto}`
     );
   }
 
-  /** GET /users/{id}/foto — los bytes de la imagen. */
+  /** GET /users/{id}/photo — los bytes de la imagen. */
   ver(userId: number | string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${END_POINTS_ACCIONES.fotoDeUsuario(userId)}`, {
       responseType: 'blob',

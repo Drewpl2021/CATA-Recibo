@@ -90,3 +90,29 @@ export interface SesionData {
    */
   debe_cambiar_password?: boolean;
 }
+
+/** Un paso de la guía de primeros pasos. */
+export interface PasoGuia {
+  clave: string;
+  titulo: string;
+  detalle: string;
+  /** Clave del catálogo de íconos. */
+  icono: string;
+  /** A dónde lleva el botón del paso. */
+  ruta: string;
+  hecho: boolean;
+}
+
+/**
+ * La guía de qué hacer al entrar, según el rol.
+ *
+ * `vista` dice si ya se le abrió sola alguna vez; lo demás se calcula en el
+ * servidor con los datos de verdad, así que no puede quedar desfasado.
+ */
+export interface PrimerosPasos {
+  vista: boolean;
+  rol: string | null;
+  pasos: PasoGuia[];
+  hechos: number;
+  total: number;
+}

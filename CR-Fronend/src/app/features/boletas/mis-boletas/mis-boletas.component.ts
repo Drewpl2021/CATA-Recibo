@@ -12,6 +12,7 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { nombreMes } from '../../../shared/constants';
+import { PrimerosPasosComponent } from '../../../shared/components/primeros-pasos/primeros-pasos.component';
 
 /**
  * Una fila de la tabla: la boleta ya masticada para pintarla.
@@ -52,7 +53,7 @@ export interface BoletaRow {
 @Component({
   selector: 'app-mis-boletas',
   standalone: true,
-  imports: [CommonModule, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent, FormModalComponent],
+  imports: [CommonModule, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent, FormModalComponent, PrimerosPasosComponent],
   templateUrl: './mis-boletas.component.html',
   styleUrl: './mis-boletas.component.scss'
 })

@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { Empleado, EmpleadoPayload } from '../../models';
-import { END_POINTS, END_POINTS_ACCIONES, EntityDataService } from '../../utils';
+import { Empleado, EmpleadoPayload, MiPerfil } from '../../models';
+import { ApiResponse, END_POINTS, END_POINTS_ACCIONES, EntityDataService } from '../../utils';
 
 @Injectable({ providedIn: 'root' })
 export class EmpleadoService extends EntityDataService<Empleado> {
@@ -37,6 +37,19 @@ export class EmpleadoService extends EntityDataService<Empleado> {
    */
   paraSelector() {
     return this.getAll({ formato: 'selector' });
+  }
+
+  /**
+   * GET /my-profile — la ficha de quien está dentro, para "Mi perfil".
+   *
+   * No se usa getById(): esa ruta es solo de RR.HH. y Administración, así
+   * que al trabajador le contestaba 403 y su perfil salía con guiones. Acá
+   * el id sale de su sesión, no de la dirección.
+   */
+  miPerfil(): Observable<ApiResponse<MiPerfil>> {
+    return this.http.get<ApiResponse<MiPerfil>>(
+      `${environment.apiUrl}/${END_POINTS.autoservicio.miPerfil}`
+    );
   }
 
   /**

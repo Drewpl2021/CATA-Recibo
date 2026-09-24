@@ -51,6 +51,12 @@ export const END_POINTS = {
 
   /** Autoservicio del empleado autenticado. */
   autoservicio: {
+    /** GET — la ficha de uno mismo, para la tarjeta de "Mi perfil". */
+    miPerfil: 'my-profile',
+    /** GET — qué le toca hacer primero, según su rol. */
+    primerosPasos: 'my-first-steps',
+    /** POST — "Entendido": la guía ya no se abre sola. */
+    primerosPasosVistos: 'my-first-steps/seen',
     miPlanilla: 'my-payroll',
     misBoletas: 'my-payslips',
     misDocumentos: 'my-documents',

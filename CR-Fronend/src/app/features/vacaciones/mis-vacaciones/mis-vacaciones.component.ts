@@ -55,7 +55,15 @@ export class MisVacacionesComponent implements OnInit {
 
   get cifras(): CifraCabecera[] {
     return [
-      { icono: 'beach', valor: this.saldo?.diasDisponibles ?? 0, etiqueta: 'Días libres', tono: 'success' },
+      {
+        icono: 'beach',
+        valor: this.saldo?.diasDisponibles ?? 0,
+        // Quien no puede pedirlas igual acumula días: se los pagan como
+        // "Vacaciones Truncas" al terminar el contrato. Llamarlos "libres"
+        // haría creer que se pueden tomar.
+        etiqueta: this.puedeSolicitar ? 'Días libres' : 'Días acumulados',
+        tono: this.puedeSolicitar ? 'success' : 'muted',
+      },
       { icono: 'clock', valor: this.saldo?.diasUsados ?? 0, etiqueta: 'Ya pedidos', tono: 'warning' },
       { icono: 'layers', valor: this.saldo?.diasGanados ?? 0, etiqueta: 'Del año', tono: 'brand' },
     ];
