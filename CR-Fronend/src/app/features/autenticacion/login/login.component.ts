@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services';
@@ -7,7 +7,7 @@ import { AuthService } from '../../../core/services';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './login.component.html',
   styleUrl: '../acceso.scss'
 })
@@ -17,6 +17,14 @@ export class LoginComponent {
   showPassword = false;
   isLoading = false;
   errorMsg = '';
+
+  /**
+   * Bloq Mayús puesto mientras se escribe la contraseña.
+   *
+   * Es el motivo más común de "mi clave no entra" y el único que la
+   * persona no puede ver: el campo va en puntos. Se avisa y ya.
+   */
+  mayusculasActivas = false;
 
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -71,8 +79,11 @@ export class LoginComponent {
   }
 
 
-  irAOlvide(): void {
-    this.router.navigate(['/olvide-password']);
+  revisarMayusculas(evento: KeyboardEvent): void {
+    // getModifierState no existe en todos los eventos sintéticos (las
+    // pruebas disparan algunos a mano), por eso se comprueba antes.
+    this.mayusculasActivas = typeof evento.getModifierState === 'function'
+      && evento.getModifierState('CapsLock');
   }
 
   togglePassword(): void {

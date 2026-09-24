@@ -12,18 +12,17 @@
       <!-- Esta pantalla es pública. No describe cómo se crean las cuentas,
            quién las crea ni con qué credenciales nacen: cualquiera de esos
            datos le ahorra trabajo a quien intente entrar sin permiso. -->
-      <p class="acceso__invitacion">Acceso restringido</p>
-      <p class="acceso__motivo">
-        Sistema de uso exclusivo para personal autorizado. Si requieres
-        asistencia, contacta al administrador del sistema.
-      </p>
+      <p class="acceso__motivo">Boletas de pago y documentos del personal</p>
     </aside>
 
     <div class="acceso__hoja">
       <h1 class="acceso__titulo">Iniciar sesión</h1>
-      <p class="acceso__intro">Ingresa tus credenciales para continuar.</p>
+      <p class="acceso__intro">Sistema de uso exclusivo para el personal del colegio.</p>
 
-      <div class="auth-alert auth-alert-error" *ngIf="errorMsg">
+      <!-- role="alert" para que el lector de pantalla lo anuncie solo: sin
+           esto, quien no ve la pantalla escribe mal su clave y no se entera
+           de que pasó nada. -->
+      <div class="auth-alert auth-alert-error" *ngIf="errorMsg" role="alert">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
         </svg>
@@ -32,7 +31,10 @@
 
       <form [formGroup]="form" (ngSubmit)="onLogin()">
         <div class="campo">
-          <label class="solo-lectores" for="email">Correo electrónico</label>
+          <!-- Etiqueta a la vista y no solo para el lector: con el nombre del
+               campo dentro del marcador, al escribir desaparece y ya nadie
+               sabe cuál es cuál. -->
+          <label class="campo__etiqueta" for="email">Correo electrónico</label>
           <div class="campo__control">
             <span class="campo__icono" aria-hidden="true">
               <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -44,18 +46,20 @@
               type="email"
               id="email"
               formControlName="email"
-              placeholder="Ingresa tu correo electrónico"
+              placeholder="nombre@colegio.edu.pe"
               [class.is-invalid]="emailInvalido"
+              [attr.aria-invalid]="emailInvalido || null"
+              [attr.aria-describedby]="emailInvalido ? 'error-email' : null"
               autocomplete="username"
             />
           </div>
-          <small class="form-error" *ngIf="emailInvalido">
+          <small class="form-error" id="error-email" *ngIf="emailInvalido">
             Escribe un correo electrónico válido.
           </small>
         </div>
 
         <div class="campo campo--con-ojo">
-          <label class="solo-lectores" for="password">Contraseña</label>
+          <label class="campo__etiqueta" for="password">Contraseña</label>
           <div class="campo__control">
             <span class="campo__icono" aria-hidden="true">
               <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -67,9 +71,13 @@
               [type]="showPassword ? 'text' : 'password'"
               id="password"
               formControlName="password"
-              placeholder="Contraseña"
+              placeholder=""
               [class.is-invalid]="passwordInvalido"
+              [attr.aria-invalid]="passwordInvalido || null"
+              [attr.aria-describedby]="passwordInvalido ? 'error-password' : null"
               autocomplete="current-password"
+              (keyup)="revisarMayusculas($event)"
+              (blur)="mayusculasActivas = false"
             />
             <button type="button" class="campo__ojo" (click)="togglePassword()"
               [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
@@ -85,7 +93,11 @@
               </svg>
             </button>
           </div>
-          <small class="form-error" *ngIf="passwordInvalido">Escribe tu contraseña.</small>
+          <small class="form-error" id="error-password" *ngIf="passwordInvalido">Escribe tu contraseña.</small>
+          <!-- El error de contraseña más común, y el que nadie ve venir. -->
+          <small class="campo__aviso" *ngIf="mayusculasActivas && !passwordInvalido" role="status">
+            Bloq Mayús está activado.
+          </small>
         </div>
 
         <button type="submit" class="btn-primary acceso__enviar" [disabled]="isLoading">
@@ -94,12 +106,10 @@
         </button>
       </form>
 
-      <div class="acceso__pie">
-        <p>
-          ¿Olvidaste tu contraseña? <a (click)="irAOlvide()">Recupérala por correo</a>.
-          Si requieres asistencia, contacta al administrador del sistema.
-        </p>
-      </div>
+      <p class="acceso__pie">
+        ¿Olvidaste tu contraseña?
+        <a routerLink="/olvide-password">Recupérala por correo</a>
+      </p>
     </div>
 
   </div>

@@ -137,19 +137,22 @@
 }
 
 .acceso__institucion {
-  margin: 22px 0 0;
-  font-size: 13px;
+  margin: 24px 0 0;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 1.3;
   color: var(--acceso-panel-apoyo);
 }
 
+/* El nombre del colegio es lo que esta pantalla tiene que decir, así
+   que se dice en grande. Antes iba a 23px, del tamaño de un pie de
+   foto: el escudo hablaba y el nombre acompañaba. */
 .acceso__colegio {
-  margin: 3px 0 0;
-  font-size: 23px;
+  margin: 4px 0 0;
+  font-size: 34px;
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
   color: var(--acceso-panel-texto);
 }
 
@@ -162,19 +165,35 @@
   background-color: var(--accent);
 }
 
+/* El titular del panel. En el login no se usa —ahí el nombre del colegio
+   ya es el titular—, pero las otras tres pantallas sí lo necesitan para
+   decir en una línea qué toca hacer. */
 .acceso__invitacion {
-  margin: 0;
-  font-size: 20px;
+  margin: 0 0 8px;
+  font-size: 19px;
   font-weight: 700;
+  line-height: 1.25;
   color: var(--acceso-panel-texto);
 }
 
+/* La línea de apoyo. En el login dice qué es el sistema; en las demás,
+   qué va a pasar. El "acceso restringido" y el "contacta al
+   administrador" que había acá se repetían palabra por palabra en el pie
+   del formulario, en la misma pantalla. */
 .acceso__motivo {
-  margin: 8px 0 20px;
-  max-width: 30ch;
+  margin: 0 0 20px;
+  max-width: 28ch;
   font-size: 13.5px;
   line-height: 1.55;
+  /* Reparte las palabras entre los renglones en vez de dejar una sola
+     colgando al final. */
+  text-wrap: balance;
   color: var(--acceso-panel-apoyo);
+}
+
+/* El login no lleva botón debajo, así que su línea no necesita el hueco. */
+.acceso__panel > .acceso__motivo:last-child {
+  margin-bottom: 0;
 }
 
 /* Botón de contorno: la puerta a la otra pantalla. No compite con el
@@ -209,9 +228,11 @@
   justify-content: center;
 }
 
+/* Alineado a la izquierda, como el papel que es: el eje de las
+   etiquetas, los campos y el botón es el mismo, y la vista baja en
+   línea recta en vez de rebotar de un centro a otro. */
 .acceso__titulo {
   margin: 0 0 6px;
-  text-align: center;
   font-size: 31px;
   font-weight: 800;
   letter-spacing: -0.025em;
@@ -219,9 +240,8 @@
 }
 
 .acceso__intro {
-  margin: 0 auto 26px;
-  max-width: 46ch;
-  text-align: center;
+  margin: 0 0 26px;
+  max-width: 44ch;
   font-size: 13.5px;
   line-height: 1.55;
   color: var(--text-muted);
@@ -250,6 +270,18 @@
 /* ── Campo píldora ─────────────────────────────────────────────── */
 .campo {
   position: relative;
+}
+
+/* La etiqueta se ve. Antes vivía solo para el lector de pantalla y el
+   nombre del campo iba de marcador: al escribir se borraba y el
+   formulario quedaba mudo. */
+.campo__etiqueta {
+  display: block;
+  margin: 0 0 6px;
+  padding-left: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-soft);
 }
 
 .campo__control {
@@ -282,11 +314,20 @@
   color: var(--input-placeholder);
 }
 
+/* El campo activo se marca con el dorado: es el acento del colegio y en
+   esta pantalla no aparecía en ningún sitio salvo el filo del panel.
+   Además se distingue del borde rojo del error sin depender del color
+   (el dorado engorda el borde, el rojo no). */
 .campo input:focus {
   outline: none;
-  border-color: var(--brand-500);
+  border-color: var(--accent);
   background-color: var(--surface);
-  box-shadow: var(--input-focus-shadow);
+  box-shadow: 0 0 0 4px rgba(244, 180, 26, 0.22);
+}
+
+.campo input:focus + .campo__ojo,
+.campo__control:focus-within .campo__icono {
+  color: var(--accent-dark);
 }
 
 .campo input.is-invalid {
@@ -318,6 +359,17 @@
   padding-right: 48px;
 }
 
+/* Bloq Mayús: ni error ni ayuda, un aviso. Va en ámbar, que es como se
+   avisa en el resto de la app. */
+.campo__aviso {
+  display: block;
+  margin-top: 7px;
+  padding-left: 20px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--warning-text);
+}
+
 .campo .form-error,
 .campo .form-ayuda {
   display: block;
@@ -330,18 +382,19 @@
    acá dentro estaba encapsulada. */
 
 /* ── Botón y pie ───────────────────────────────────────────────── */
+/* De ancho completo: es la única acción de la pantalla, y en el celular
+   un botón ancho se acierta con el pulgar sin mirar. */
 .acceso__enviar {
-  align-self: center;
-  margin-top: 6px;
-  padding: 13px 46px;
+  justify-content: center;
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px 24px;
   border-radius: 999px;
   font-size: 15px;
 }
 
 .acceso__pie {
-  margin: 26px auto 0;
-  max-width: 42ch;
-  text-align: center;
+  margin: 22px 0 0;
   font-size: 13px;
   line-height: 1.55;
   color: var(--text-muted);
@@ -351,13 +404,23 @@
   margin: 0;
 }
 
-.acceso__pie a {
-  color: var(--brand-500);
+/* Las acciones del pie (pedir otro enlace, cerrar sesión) son botones y
+   no enlaces: un <a> sin href no recibe foco, así que con el teclado no
+   se podían usar. Se ven igual. */
+.acceso__pie a,
+.acceso__pie .enlace {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
   font-weight: 600;
+  color: var(--brand-500);
   text-decoration: none;
+  cursor: pointer;
 }
 
-.acceso__pie a:hover {
+.acceso__pie a:hover,
+.acceso__pie .enlace:hover {
   text-decoration: underline;
 }
 
@@ -397,8 +460,8 @@
   }
 
   .acceso__colegio {
-    margin-top: 18px;
-    font-size: 17px;
+    margin-top: 16px;
+    font-size: 26px;
   }
 
   .acceso__filo {
@@ -406,8 +469,9 @@
   }
 
   .acceso__invitacion {
-    font-size: 18px;
+    font-size: 17px;
   }
+
 
   /* la panza del panel baja 46px sobre el papel: el formulario tiene
      que arrancar por debajo. El selector invertido se repite porque si
