@@ -1352,6 +1352,12 @@
    "payment_concept_id",
    "payment_concepts",
    "cascade"
+  ],
+  [
+   "planilla",
+   "empleado_id",
+   "empleados",
+   "restrict"
   ]
  ]
 }

@@ -66,9 +66,9 @@ erDiagram
     }
     planilla {
         uuid id PK
+        uuid empleado_id FK
         uuid periodo_id FK
         uuid corrida_id FK
-        uuid empleado_id
         integer mes
         integer anio
         decimal sueldo_base
@@ -200,3 +200,4 @@ erDiagram
     areas ||--o{ area_cargo : "area_id"
     cargos ||--o{ area_cargo : "cargo_id"
     payment_concepts ||--o{ concepto_alias : "payment_concept_id"
+    empleados ||--o{ planilla : "empleado_id"

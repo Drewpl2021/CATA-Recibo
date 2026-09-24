@@ -1,6 +1,6 @@
 # Modelo de datos — CATA-Recibo
 
-La base tiene **22 tablas del negocio** y **28 relaciones** entre ellas. Todo lo
+La base tiene **22 tablas del negocio** y **29 relaciones** entre ellas. Todo lo
 que está en este documento sale de leer las migraciones del proyecto, así que
 describe la base que se va a crear de verdad —no un dibujo hecho aparte que se
 queda viejo a la primera semana—.
@@ -91,6 +91,7 @@ registro del que dependen.
 | `documentos.empleado_id` | `empleados.id` | muchos a 1 | se borran con él | El expediente de un trabajador. |
 | `documentos.empleador_id` | `empleados.id` | muchos a 1 | queda en blanco | Quién firmó como empleador. |
 | `identidades_firma.empleado_id` | `empleados.id` | muchos a 1 | se borran con él | Su firma y su huella, una sola por trabajador. |
+| `planilla.empleado_id` | `empleados.id` | muchos a 1 | **no deja borrar** | De quién es esa planilla. **No deja borrar** al trabajador: una planilla es el registro de un pago y tiene que conservarse. |
 | `users.empleado_id` | `empleados.id` | muchos a 1 | queda en blanco | La cuenta de acceso de un trabajador. Las cuentas de sistema (admin, RR.HH.) van sin ficha. |
 | `vacaciones.empleado_id` | `empleados.id` | muchos a 1 | se borran con él | Las solicitudes de un trabajador. |
 | `modulos.modulo_padre_id` | `modulo_padre.id` | muchos a 1 | se borran con él | De qué grupo del menú cuelga. |
@@ -110,31 +111,23 @@ registro del que dependen.
 | `identidades_firma.registrado_por` | `users.id` | muchos a 1 | queda en blanco | Qué cuenta la registró. |
 | `notificaciones.user_id` | `users.id` | muchos a 1 | se borran con él | A qué cuenta le llega. |
 
-### Relaciones que existen en el sistema pero no en la base
+### La única columna sin llave foránea, y por qué está bien así
 
-Hay una que conviene saber, porque el gráfico no la dibuja: **`planilla.empleado_id`
-no tiene llave foránea**. La columna está y tiene su índice, el código la usa
-(`Planilla::empleado()`), pero la base no la vigila.
+`auditoria.entidad_id` guarda el id de **lo que se cambió**, y lo que se cambió
+puede ser un trabajador, una planilla o un concepto de pago: la columna apunta a
+una tabla distinta según el caso, así que no puede tener una llave foránea que
+diga a cuál.
 
-En la práctica significa que, si alguien borrara un trabajador directamente con
-una consulta SQL, sus planillas quedarían apuntando a una ficha que ya no
-existe. Por la aplicación no puede pasar —dar de baja no borra a nadie, deja al
-trabajador inactivo—, pero es una puerta abierta.
+Y tampoco debe tenerla. La bitácora tiene que **sobrevivir al borrado de aquello
+de lo que habla**: si se elimina un registro, la anotación de quién lo cambió y
+cuándo sigue ahí, que es justamente para lo que sirve. Por eso la tabla guarda
+también el nombre del usuario además de su id.
 
-Se cierra con una migración de una línea:
-
-```php
-$table->foreign('empleado_id')->references('id')->on('empleados')->restrictOnDelete();
-```
-
-Antes de aplicarla hay que comprobar que no haya planillas huérfanas, o la
-migración falla:
-
-```sql
-SELECT COUNT(*) FROM planilla p
-LEFT JOIN empleados e ON e.id = p.empleado_id
-WHERE e.id IS NULL;
-```
+> Hasta el 23/09/2026 faltaba además la de `planilla.empleado_id`: la columna
+> estaba, el código usaba la relación, pero la base no la vigilaba. Se pasó por
+> alto al crear la tabla —en esa misma migración sí se declararon las otras dos—
+> y ya está puesta, con `RESTRICT`: la base se niega a borrar a un trabajador que
+> tenga planillas, antes que llevarse su historial de pagos.
 
 ---
 
@@ -634,9 +627,8 @@ sacarlo: **File → Export → Export as PNG…** o *Export as Single Page PDF�
 en **Model → Diagram Properties and Size** se le pone tamaño A4 apaisado para
 que entre en la hoja.
 
-El archivo ya viene sin las ocho tablas de Laravel. La relación
-`planilla → empleados` no se dibuja porque no tiene llave foránea: al final
-del `.sql` está la línea que la crea, comentada, por si la quieres ver.
+El archivo ya viene sin las ocho tablas de Laravel, y trae las 29 relaciones,
+así que el diagrama sale completo.
 
 ### 3b. Workbench contra la base que está corriendo
 

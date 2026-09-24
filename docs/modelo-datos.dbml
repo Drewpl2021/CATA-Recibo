@@ -127,7 +127,7 @@ Table planilla_corridas {
 
 Table planilla {
   id uuid [pk]
-  empleado_id uuid [not null]
+  empleado_id uuid [ref: > empleados.id, not null]
   mes integer [not null]
   anio integer [not null]
   periodo_id uuid [ref: > periodos.id]
