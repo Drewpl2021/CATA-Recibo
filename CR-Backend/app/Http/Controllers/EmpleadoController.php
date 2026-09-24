@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Contrato;
+use Carbon\Carbon;
 use App\Models\Empleado;
 use App\Models\User;
 use App\Models\Rol;
@@ -94,6 +95,131 @@ class EmpleadoController extends Controller
      * Los tres últimos (planilla, boleta) necesitan mes y año: son el estado
      * de ESE mes, no del trabajador.
      */
+    /**
+     * Los filtros puestos, escritos como los lee una persona.
+     *
+     * @return array<string, string|null>
+     */
+    private function filtrosDelReporte(Request $request): array
+    {
+        $mes  = $request->input('mes');
+        $anio = $request->input('anio');
+        $delMes = $mes && $anio ? \App\Support\Meses::nombre((int) $mes) . ' ' . $anio : null;
+
+        return [
+            'Estado'            => match ($request->input('estado')) {
+                'activo'   => 'Solo activos',
+                'inactivo' => 'Solo cesados',
+                default    => null,
+            },
+            'Sede'              => $this->nombreDeCatalogo(\App\Models\Sede::class, $request->input('sede_id')),
+            'Área'              => $this->nombreDeCatalogo(\App\Models\Area::class, $request->input('area_id')),
+            'Cargo'             => $this->nombreDeCatalogo(\App\Models\Cargo::class, $request->input('cargo_id')),
+            'Tipo de contrato'  => $request->input('tipo_contrato'),
+            'Sistema de pensión' => match ($request->input('sistema_pensiones')) {
+                'ninguno' => 'No aporta a ninguna',
+                null, ''  => null,
+                default   => $request->input('sistema_pensiones'),
+            },
+            'Forma de pago'     => $request->input('forma_pago'),
+            'Sin sueldo puesto' => $request->boolean('sin_sueldo') ? 'Sí' : null,
+            'Ingresó desde'     => $request->input('ingreso_desde'),
+            'Ingresó hasta'     => $request->input('ingreso_hasta'),
+            'Planilla del mes'  => match ($request->input('planilla')) {
+                'con' => 'Con planilla en ' . ($delMes ?? 'el mes elegido'),
+                'sin' => 'Sin planilla en ' . ($delMes ?? 'el mes elegido'),
+                default => null,
+            },
+            'Boleta del mes'    => match ($request->input('boleta')) {
+                'con'         => 'Con boleta en ' . ($delMes ?? 'el mes elegido'),
+                'sin'         => 'Sin boleta en ' . ($delMes ?? 'el mes elegido'),
+                'sin_firmar'  => 'Con boleta sin firmar en ' . ($delMes ?? 'el mes elegido'),
+                default       => null,
+            },
+            'Búsqueda'          => $request->input('search'),
+        ];
+    }
+
+    /**
+     * Pone el contrato de acuerdo con lo que dice la ficha.
+     *
+     * Se compara contra el CONTRATO VIGENTE, no contra lo que tenía la ficha
+     * antes: así, una ficha que ya se había ido por su lado —el caso que
+     * destapó esto— se arregla sola la próxima vez que se guarde.
+     *
+     * Tres casos:
+     *   · No tiene contrato todavía → se le crea el que dice su ficha, desde
+     *     su fecha de ingreso.
+     *   · Mismo tipo → a lo más cambió la fecha de término, y se actualiza.
+     *   · Otro tipo → se cierra el de ahora y empieza uno nuevo hoy, igual
+     *     que al renovar desde Contratos. El anterior queda en su historial.
+     */
+    private function moverContratoSiCambio(Request $request, Empleado $empleado): void
+    {
+        if (! $request->filled('tipo_contrato')) {
+            return;
+        }
+
+        $tipo    = $request->input('tipo_contrato');
+        $fin     = $request->input('fecha_fin_contrato') ?: null;
+        $llevaFin = $tipo !== 'indeterminado';
+        $vigente = $empleado->contratoVigente()->first();
+
+        if (! $vigente) {
+            Contrato::create([
+                'empleado_id'   => $empleado->id,
+                'tipo_contrato' => $tipo,
+                'fecha_inicio'  => $empleado->fecha_ingreso,
+                'fecha_fin'     => $llevaFin ? $fin : null,
+                'estado'        => 'vigente',
+                'observaciones' => 'Creado desde la ficha del trabajador.',
+            ]);
+
+            return;
+        }
+
+        if ($vigente->tipo_contrato === $tipo) {
+            $finViejo = $vigente->fecha_fin ? Carbon::parse($vigente->fecha_fin)->toDateString() : null;
+
+            if ($llevaFin && $fin && $fin !== $finViejo) {
+                $vigente->update(['fecha_fin' => $fin]);
+            }
+
+            return;
+        }
+
+        // Un contrato con plazo sin fecha de término no es un contrato: hay
+        // que saber cuándo acaba, y por eso se pide antes de moverlo.
+        if ($llevaFin && ! $fin) {
+            abort(422, 'Para cambiarlo a ese tipo de contrato hace falta la fecha de término.');
+        }
+
+        DB::transaction(function () use ($vigente, $empleado, $tipo, $fin, $llevaFin) {
+            $hoy = now()->toDateString();
+
+            $vigente->update([
+                'estado'     => 'finalizado',
+                // Si ya tenía una fecha de término pasada, se respeta; si no,
+                // se cierra hoy, que es cuando de verdad dejó de regir.
+                'fecha_fin'  => $vigente->fecha_fin && Carbon::parse($vigente->fecha_fin)->lt(now())
+                    ? $vigente->fecha_fin
+                    : $hoy,
+                'motivo_fin' => $vigente->motivo_fin ?: 'otro',
+                'observaciones' => trim(($vigente->observaciones ? $vigente->observaciones . ' ' : '')
+                    . 'Cerrado al cambiarle el tipo de contrato desde la ficha.'),
+            ]);
+
+            Contrato::create([
+                'empleado_id'   => $empleado->id,
+                'tipo_contrato' => $tipo,
+                'fecha_inicio'  => $hoy,
+                'fecha_fin'     => $llevaFin ? $fin : null,
+                'estado'        => 'vigente',
+                'observaciones' => 'Creado al cambiarle el tipo de contrato desde la ficha.',
+            ]);
+        });
+    }
+
     private function aplicarFiltrosDePersonal(Request $request, Builder $query): void
     {
         $request->validate([
@@ -296,6 +422,8 @@ class EmpleadoController extends Controller
 
         $libro = new LibroExcel();
         $this->hojaDeReporte($libro, 'Empleados', $cabecera, $filas, $estiloColumnas);
+        // Al final: la importación lee la primera hoja, que es la de datos.
+        $this->hojaDeFiltros($libro, $this->filtrosDelReporte($request), $request->user()?->name);
 
         return $libro->descargar($this->nombreExcelSeguro('Empleados ' . now()->format('Y-m-d')));
     }
@@ -363,6 +491,9 @@ class EmpleadoController extends Controller
             'tiene_hijos'        => 'nullable|boolean',
             'sueldo_base'        => 'nullable|numeric|min:0',
             'tipo_contrato'      => 'nullable|in:indeterminado,plazo_fijo,suplencia,practicas',
+            // No es columna del empleado: es la fecha de término de su
+            // contrato, y se usa para moverlo cuando acá se cambia el tipo.
+            'fecha_fin_contrato' => 'nullable|date',
             'forma_pago'         => 'nullable|in:banco,efectivo,otro,honorarios',
             'sede_id'            => 'nullable|uuid|exists:sedes,id',
             // Email del usuario vinculado: se acepta editar aquí mismo porque no todos
@@ -392,6 +523,11 @@ class EmpleadoController extends Controller
         }
 
         $empleado->update($request->except(['email', 'rol_id']));
+
+        // El contrato manda sobre la ficha: es el papel que firma la persona
+        // y el que miran las vacaciones, la boleta y los reportes. Si acá se
+        // cambió el tipo, hay que mover también el contrato.
+        $this->moverContratoSiCambio($request, $empleado);
 
         if ($request->filled('email') && $usuario) {
             $usuario->update(['email' => $request->email]);

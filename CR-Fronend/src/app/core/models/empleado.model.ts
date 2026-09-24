@@ -138,3 +138,24 @@ export interface PersonaPorDni {
   yaEsEmpleado?: { id: string; nombre: string; estado: string };
   mensaje?: string;
 }
+
+/**
+ * Lo que devuelve GET /my-profile, para la tarjeta de "Mi perfil".
+ *
+ * Vienen dos cosas porque no toda cuenta es de un trabajador: las de
+ * Administración y RR.HH. nacen sin ficha (son para operar el sistema, no
+ * personas en planilla), y aun así su perfil tiene qué enseñar.
+ */
+export interface MiPerfil {
+  /** Su ficha de trabajador, o null si la cuenta no está vinculada a una. */
+  empleado: Empleado | null;
+  cuenta: {
+    nombre: string;
+    correo: string;
+    rol: string | null;
+    estado: string | null;
+    creada_en: string | null;
+    terminos_estado: string | null;
+    terminos_en: string | null;
+  };
+}

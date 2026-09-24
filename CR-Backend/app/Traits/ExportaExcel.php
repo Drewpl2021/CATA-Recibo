@@ -15,6 +15,57 @@ use App\Support\LibroExcel;
  */
 trait ExportaExcel
 {
+    /**
+     * La hoja "Filtros": con qué se filtró, quién lo bajó y cuándo.
+     *
+     * Sin esto, dos archivos con el mismo nombre —uno de una sede y otro de
+     * todo el colegio— no se distinguen una semana después, y el que revisa
+     * no tiene cómo saber si le falta gente o es que se filtró.
+     *
+     * Se agrega SIEMPRE al final del libro: la importación de empleados lee
+     * la primera hoja, así que la de datos tiene que seguir siendo la
+     * primera.
+     *
+     * @param  array<string, string|null>  $filtros  etiqueta => lo que se eligió
+     */
+    protected function hojaDeFiltros(LibroExcel $libro, array $filtros, ?string $quien = null): void
+    {
+        $filas = [['Filtro', 'Lo que se eligió']];
+
+        foreach ($filtros as $etiqueta => $valor) {
+            if ($valor !== null && $valor !== '') {
+                $filas[] = [$etiqueta, (string) $valor];
+            }
+        }
+
+        if (count($filas) === 1) {
+            $filas[] = ['Sin filtros', 'Salió todo lo que hay registrado'];
+        }
+
+        $filas[] = ['', ''];
+        $filas[] = ['Descargado el', now()->format('d/m/Y H:i')];
+
+        if ($quien) {
+            $filas[] = ['Descargado por', $quien];
+        }
+
+        $libro->hoja('Filtros', $filas, [
+            'anchos'      => [0 => 28, 1 => 46],
+            'estiloFilas' => [0 => LibroExcel::TITULO],
+            'altoFilas'   => [0 => 26],
+        ]);
+    }
+
+    /** El nombre de un área, cargo o sede a partir de su id. */
+    protected function nombreDeCatalogo(string $clase, mixed $id): ?string
+    {
+        if (! $id) {
+            return null;
+        }
+
+        return $clase::find($id)?->nombre ?? (string) $id;
+    }
+
     /** Un nombre de archivo sin caracteres que Windows rechace. */
     protected function nombreExcelSeguro(string $texto): string
     {

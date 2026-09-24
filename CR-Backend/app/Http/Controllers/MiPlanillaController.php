@@ -11,14 +11,12 @@ class MiPlanillaController extends Controller
     {
         $empleado_id = $request->user()->empleado_id;
 
-        if (!$empleado_id) {
-            return response()->json([
-                'success' => false,
-                'data'    => ['message' => 'Tu usuario no tiene empleado vinculado.']
-            ], 403);
-        }
-
-        $query = Planilla::with('empleado')->where('empleado_id', $empleado_id);
+        // Sin ficha no hay planilla que enseñar, y eso no es un error de
+        // permisos: es que esa cuenta no cobra por planilla. Se responde la
+        // lista vacía en vez de un 403.
+        $query = Planilla::with('empleado')
+            ->whereRaw($empleado_id ? '1 = 1' : '1 = 0')
+            ->where('empleado_id', $empleado_id);
 
         if ($request->has('mes'))
             $query->where('mes', $request->mes);

@@ -21,6 +21,8 @@ import {
 } from 'ng-apexcharts';
 
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { PrimerosPasosComponent } from '../../../shared/components/primeros-pasos/primeros-pasos.component';
 import { DashboardService, SedeService, ToastService } from '../../../core/services';
 import { ContratoPorVencer, CumpleanosDelMes, Dashboard, DatoGrafico, PendienteRrhh, Sede } from '../../../core/models';
 import { fechaLegible, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
@@ -53,7 +55,8 @@ import {
 @Component({
   selector: 'app-dashboard-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgApexchartsModule, FormModalComponent],
+  imports: [CommonModule, FormsModule, NgApexchartsModule, FormModalComponent, IconComponent,
+    PrimerosPasosComponent],
   templateUrl: './dashboard-view.component.html',
   styleUrl: './dashboard-view.component.scss',
 })
@@ -494,13 +497,13 @@ export class DashboardViewComponent implements OnInit {
         label: 'Nómina del mes',
         value: this.enSoles(r.nominaDelMes),
         sub: this.etiquetaPeriodo,
-        icon: 'money', color: 'var(--success-text)', bg: 'var(--success-bg)',
+        icon: 'wallet', color: 'var(--success-text)', bg: 'var(--success-bg)',
       },
       {
         label: 'Boletas emitidas',
         value: `${porcentajeBoletas}%`,
         sub: `${r.boletasEmitidas} de ${r.planillasDelMes} planillas`,
-        icon: 'file', color: 'var(--warning-text)', bg: 'var(--warning-bg)',
+        icon: 'receipt', color: 'var(--warning-text)', bg: 'var(--warning-bg)',
       },
       {
         label: 'Contratos por vencer',

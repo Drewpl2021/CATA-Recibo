@@ -30,6 +30,7 @@ class PlanillaCorridaController extends Controller
 
     /**
      * GET /planilla-corridas?mes=&anio=&periodo_id=&page=&size=&search=
+     *     &sede_id=&area_id=&cargo_id=&tipo_contrato=&estado_empleado=
      */
     public function index(Request $request)
     {
@@ -47,12 +48,51 @@ class PlanillaCorridaController extends Controller
             }
         }
 
+        $this->filtrarPorElTrabajador($request, $query);
+
         return $this->responderListado(
             $request,
             $query,
             ['nombre', 'observaciones'],
             fn (Builder $filtradas) => $this->cifrasDeCabecera($request, $filtradas)
         );
+    }
+
+    /**
+     * Deja solo las planillas que tienen gente de esa sede, área o cargo.
+     *
+     * La corrida no sabe de sedes: las sabe la gente que lleva dentro. Se
+     * usa para lo mismo que en el listado de trabajadores —"enséñame lo de
+     * Jerusalén"— y, sobre todo, para que el Excel del mes salga con esa
+     * misma gente y no con el colegio entero.
+     */
+    private function filtrarPorElTrabajador(Request $request, Builder $query): void
+    {
+        $request->validate([
+            'sede_id'         => 'nullable|uuid|exists:sedes,id',
+            'area_id'         => 'nullable|uuid|exists:areas,id',
+            'cargo_id'        => 'nullable|uuid|exists:cargos,id',
+            'tipo_contrato'   => 'nullable|in:indeterminado,plazo_fijo,suplencia,practicas',
+            'estado_empleado' => 'nullable|in:activo,inactivo',
+        ]);
+
+        $delTrabajador = array_filter([
+            'sede_id'       => $request->input('sede_id'),
+            'area_id'       => $request->input('area_id'),
+            'cargo_id'      => $request->input('cargo_id'),
+            'tipo_contrato' => $request->input('tipo_contrato'),
+            'estado'        => $request->input('estado_empleado'),
+        ], fn ($valor) => $valor !== null && $valor !== '');
+
+        if (! $delTrabajador) {
+            return;
+        }
+
+        $query->whereHas('planillas.empleado', function (Builder $q) use ($delTrabajador) {
+            foreach ($delTrabajador as $columna => $valor) {
+                $q->where('empleados.' . $columna, $valor);
+            }
+        });
     }
 
     /**

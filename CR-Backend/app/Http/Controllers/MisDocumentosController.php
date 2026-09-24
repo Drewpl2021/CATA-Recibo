@@ -34,9 +34,12 @@ class MisDocumentosController extends Controller
     public function index(Request $request)
     {
         $empleado_id = $request->user()->empleado_id;
-        if (!$empleado_id) {
-            return response()->json(['success' => false, 'message' => 'Sin empleado vinculado.'], 403);
-        }
+
+        // Una cuenta sin ficha —las de Administración y RR.HH., que son para
+        // operar el sistema— simplemente no tiene documentos, que no es lo
+        // mismo que no tener permiso. Antes acá salía un 403 y la campana de
+        // la barra de arriba fallaba en CADA pantalla del administrador.
+        // Ahora devuelve la lista vacía, que es la verdad.
 
         // Ordenado por el periodo que representa, no por cuándo se registró.
         //
@@ -51,7 +54,8 @@ class MisDocumentosController extends Controller
         // ListadoPaginado significa "relación", no "tabla".
         // Se trae la sede y la cuenta para poder pintar la "Entidad" y los
         // datos de contacto de la fila sin una consulta por boleta.
-        $query = Documento::where('documentos.empleado_id', $empleado_id)
+        $query = Documento::whereRaw($empleado_id ? '1 = 1' : '1 = 0')
+            ->where('documentos.empleado_id', $empleado_id)
             ->with(['planilla', 'empleado:id,nombre,apellido,telefono,sede_id', 'empleado.sede:id,nombre', 'empleado.usuario:id,empleado_id,email'])
             ->leftJoin('planilla', 'documentos.planilla_id', '=', 'planilla.id')
             ->select('documentos.*')

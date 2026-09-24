@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class FotoPerfilController extends Controller
 {
-    /** POST /mi-foto */
+    /** POST /my-photo */
     public function subirMia(Request $request)
     {
         $request->validate([
@@ -53,7 +53,7 @@ class FotoPerfilController extends Controller
         return response()->json(['success' => true, 'data' => ['foto' => $ruta]]);
     }
 
-    /** DELETE /mi-foto — vuelve a las iniciales. */
+    /** DELETE /my-photo — vuelve a las iniciales. */
     public function quitarMia(Request $request)
     {
         $usuario = $request->user();
@@ -65,7 +65,7 @@ class FotoPerfilController extends Controller
     }
 
     /**
-     * GET /users/{id}/foto — la imagen, con permiso comprobado.
+     * GET /users/{id}/photo — la imagen, con permiso comprobado.
      *
      * Devuelve los bytes y no una URL porque el archivo está en el disco
      * privado. El navegador no puede pedirla con `<img src>` a secas: la

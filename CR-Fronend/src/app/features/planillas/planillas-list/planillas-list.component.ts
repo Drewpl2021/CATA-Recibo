@@ -34,6 +34,8 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import {
   SelectorEmpleadosComponent,
   AlcanceGrupo,
@@ -60,6 +62,7 @@ import {
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
+    FiltrosComponent,
   ],
   templateUrl: './planillas-list.component.html',
 })
@@ -332,6 +335,7 @@ export class PlanillasListComponent implements OnInit {
         if (areas.success) this.areas = areas.data;
         if (cargos.success) this.cargos = cargos.data;
         if (sedes.success) this.sedes = sedes.data;
+        this.ponerOpcionesDeFiltro();
       },
       error: () => {
         this.toastService.error('Aviso', 'No se pudieron cargar los datos de los filtros.');
@@ -368,9 +372,61 @@ export class PlanillasListComponent implements OnInit {
    */
   masaSalarial = 0;
 
+  /**
+   * Los filtros del trabajador, en el panel compartido del embudo.
+   *
+   * La planilla no guarda sede ni área —las tiene su empleado—, así que el
+   * backend las busca a través de él. Sirven para lo de siempre en el
+   * colegio: "la planilla de Jerusalén" o "la de los docentes", y sobre todo
+   * para BAJARLA así, porque el Excel sale con estos mismos filtros puestos.
+   */
+  filtros: ValoresFiltro = {};
+
+  camposFiltro: CampoFiltro[] = [
+    { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
+    { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
+    { clave: 'cargo_id', etiqueta: 'Cargo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+    {
+      clave: 'tipo_contrato', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos',
+      opciones: [
+        { valor: 'indeterminado', etiqueta: 'Indeterminado' },
+        { valor: 'plazo_fijo', etiqueta: 'Plazo fijo' },
+        { valor: 'suplencia', etiqueta: 'Suplencia' },
+        { valor: 'practicas', etiqueta: 'Prácticas' },
+      ],
+    },
+    {
+      // "estado_empleado" y no "estado": la planilla tiene el suyo propio y
+      // el backend necesita saber de cuál de los dos se le habla.
+      clave: 'estado_empleado', etiqueta: 'Estado del trabajador', tipo: 'opciones', vacio: 'Todos',
+      opciones: [
+        { valor: 'activo', etiqueta: 'Activos' },
+        { valor: 'inactivo', etiqueta: 'Cesados' },
+      ],
+    },
+  ];
+
+  /** Las opciones salen de los catálogos que la pantalla ya tiene cargados. */
+  private ponerOpcionesDeFiltro(): void {
+    const poner = (clave: string, lista: { id: string; nombre: string }[]) => {
+      const campo = this.camposFiltro.find((c) => c.clave === clave);
+      if (!campo) return;
+      campo.opciones = (lista ?? [])
+        .map((x) => ({ valor: x.id, etiqueta: x.nombre }))
+        .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es'));
+    };
+
+    poner('sede_id', this.sedes);
+    poner('area_id', this.areas);
+    poner('cargo_id', this.cargos);
+  }
+
   /** ¿Hay algún filtro puesto? Con todo vacío no hay nada que limpiar. */
   get hayFiltros(): boolean {
-    return !!(this.filtroMes || this.filtroAnio || this.filtroEmpleado || this.filtroPeriodo);
+    return !!(
+      this.filtroMes || this.filtroAnio || this.filtroEmpleado || this.filtroPeriodo ||
+      Object.values(this.filtros).some((v) => v !== '' && v !== null && v !== undefined)
+    );
   }
 
   /** Lo que se está viendo, en palabras: "Mayo 2026", "Todo 2026", etc. */
@@ -426,6 +482,7 @@ export class PlanillasListComponent implements OnInit {
         periodo_id: this.filtroPeriodo || undefined,
         corrida_id: this.corridaId || undefined,
         sin_corrida: this.modoSinAgrupar || undefined,
+        ...this.filtros,
       })
       .subscribe({
         next: (res) => {
@@ -455,6 +512,7 @@ export class PlanillasListComponent implements OnInit {
     this.filtroAnio = '';
     this.filtroEmpleado = '';
     this.filtroPeriodo = '';
+    this.filtros = {};
     this.cargar();
   }
 
@@ -957,6 +1015,9 @@ export class PlanillasListComponent implements OnInit {
         periodo_id: this.filtroPeriodo || undefined,
         corrida_id: this.corridaId || undefined,
         sin_corrida: this.modoSinAgrupar || undefined,
+        // Los del embudo: sede, área, cargo, contrato y estado. Lo que se
+        // ve filtrado en la tabla es lo que baja en el archivo.
+        ...this.filtros,
       })
       .subscribe({
         next: (blob) => {

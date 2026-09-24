@@ -46,9 +46,9 @@ class ModuloSeeder extends Seeder
             // Boletas y Finanzas — admin y rrhh
             ['padre' => $idBoletas, 'nombre' => 'Empleados',  'ruta' => '/empleados',  'icono' => 'people',        'orden' => 1, 'roles' => [$admin, $rrhh]],
             ['padre' => $idBoletas, 'nombre' => 'Planillas',  'ruta' => '/planillas',  'icono' => 'table_chart',   'orden' => 2, 'roles' => [$admin, $rrhh]],
-            ['padre' => $idBoletas, 'nombre' => 'Boletas',    'ruta' => '/boletas',    'icono' => 'description',   'orden' => 3, 'roles' => [$admin, $rrhh]],
+            ['padre' => $idBoletas, 'nombre' => 'Boletas',    'ruta' => '/boletas',    'icono' => 'receipt_long',   'orden' => 3, 'roles' => [$admin, $rrhh]],
             ['padre' => $idBoletas, 'nombre' => 'Documentos', 'ruta' => '/documentos', 'icono' => 'folder',        'orden' => 4, 'roles' => [$admin, $rrhh]],
-            ['padre' => $idBoletas, 'nombre' => 'Contratos',  'ruta' => '/contratos',  'icono' => 'description',   'orden' => 5, 'roles' => [$admin, $rrhh]],
+            ['padre' => $idBoletas, 'nombre' => 'Contratos',  'ruta' => '/contratos',  'icono' => 'clipboard_check',   'orden' => 5, 'roles' => [$admin, $rrhh]],
             // Las solicitudes de todo el personal, para aprobar o rechazar.
             // El trabajador tiene la suya en Mi Espacio.
             ['padre' => $idBoletas, 'nombre' => 'Vacaciones', 'ruta' => '/vacaciones', 'icono' => 'beach', 'orden' => 6, 'roles' => [$admin, $rrhh]],
@@ -60,7 +60,7 @@ class ModuloSeeder extends Seeder
             ['padre' => $idConfig, 'nombre' => 'Sedes',          'ruta' => '/sedes',          'icono' => 'location_on', 'orden' => 3, 'roles' => [$admin, $rrhh]],
             ['padre' => $idConfig, 'nombre' => 'Periodos',       'ruta' => '/periodos',       'icono' => 'date_range',  'orden' => 4, 'roles' => [$admin, $rrhh]],
             ['padre' => $idConfig, 'nombre' => 'Conceptos de Pago', 'ruta' => '/conceptos-pago', 'icono' => 'money',       'orden' => 5, 'roles' => [$admin, $rrhh]],
-            ['padre' => $idConfig, 'nombre' => 'Usuarios',       'ruta' => '/usuarios',       'icono' => 'people',      'orden' => 6, 'roles' => [$admin]],
+            ['padre' => $idConfig, 'nombre' => 'Usuarios',       'ruta' => '/usuarios',       'icono' => 'user_check',      'orden' => 6, 'roles' => [$admin]],
             ['padre' => $idConfig, 'nombre' => 'Roles',          'ruta' => '/roles',          'icono' => 'shield',      'orden' => 7, 'roles' => [$admin]],
             ['padre' => $idConfig, 'nombre' => 'Módulos',        'ruta' => '/modulos',        'icono' => 'view_module', 'orden' => 8, 'roles' => [$admin]],
             ['padre' => $idConfig, 'nombre' => 'Módulos Padre',  'ruta' => '/modulos-padre',  'icono' => 'folder_open', 'orden' => 9, 'roles' => [$admin]],
