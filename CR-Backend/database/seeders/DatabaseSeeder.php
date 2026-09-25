@@ -25,6 +25,29 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Antes que nada: ¿están las tablas?
+        //
+        // Sembrar sobre una base sin migrar reventaba con un
+        // "Base table or view not found: area_cargo", que no le dice a nadie
+        // qué hacer. Pasa más de lo que parece: las migraciones corren al
+        // arrancar el contenedor y tardan unos segundos, así que un db:seed
+        // lanzado de inmediato llega antes que ellas.
+        $faltan = array_filter(
+            ['roles', 'areas', 'cargos', 'area_cargo', 'sedes', 'modulos', 'users'],
+            fn (string $tabla) => ! \Illuminate\Support\Facades\Schema::hasTable($tabla)
+        );
+
+        if ($faltan) {
+            $this->command?->error('  Esta base todavía no tiene las tablas: falta ' . implode(', ', $faltan) . '.');
+            $this->command?->warn('  Corre primero las migraciones y vuelve a sembrar:');
+            $this->command?->warn('      php artisan migrate --force');
+            $this->command?->warn('      php artisan db:seed --force');
+            $this->command?->warn('  O las dos cosas de un tirón, si quieres empezar de cero:');
+            $this->command?->warn('      php artisan migrate:fresh --seed --force');
+
+            return;
+        }
+
         // Freno de mano: esta siembra vacía los catálogos y vuelve a crear los
         // roles, así que en un sistema que ya está en uso dejaría al personal
         // sin área, sin cargo y sin permisos. Si ya hay gente dentro, no se
