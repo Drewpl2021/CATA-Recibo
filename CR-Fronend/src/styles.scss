@@ -2168,7 +2168,6 @@ td.celda-numero {
   animation: fadeIn 0.2s ease-out;
 }
 
-.modal-card,
 /* Con un modal abierto, la página de debajo no se mueve: antes, la rueda
    se llevaba el fondo y al cerrar uno aparecía en otro sitio. La clase la
    pone y la quita app-form-modal, contando los que haya abiertos. */
@@ -2176,6 +2175,10 @@ body.con-modal {
   overflow: hidden;
 }
 
+/* OJO: las dos van juntas. Al meter la regla de arriba entre ellas, la
+   tarjeta de "¿seguro que quieres borrarlo?" se quedó sin fondo y salía
+   transparente sobre la pantalla. */
+.modal-card,
 .modal-container {
   background-color: var(--surface);
   border-radius: var(--radius-lg);
