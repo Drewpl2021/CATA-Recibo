@@ -1,39 +1,18 @@
-<section class="section-panel pasos" *ngIf="visible" aria-label="Primeros pasos">
+<div class="pasos" *ngIf="guia">
   <header class="pasos__cabecera">
-    <span class="pasos__icono" aria-hidden="true">
-      <app-icon icono="clipboard_check" [tamano]="20"></app-icon>
-    </span>
-
     <div class="pasos__titulos">
       <h2 class="pasos__titulo">Primeros pasos</h2>
       <p class="pasos__intro">{{ intro }}</p>
     </div>
-
-    <div class="pasos__avance">
-      <span class="pasos__cifra">{{ guia?.hechos }} de {{ guia?.total }} listos</span>
-      <div class="pasos__barra" role="progressbar" [attr.aria-valuenow]="guia?.hechos"
-        aria-valuemin="0" [attr.aria-valuemax]="guia?.total">
-        <span [style.width.%]="avance"></span>
-      </div>
-    </div>
-
-    <div class="pasos__acciones">
-      <!-- Plegar deja el avance a la vista sin la lista; ocultar lo quita
-           para siempre. Son cosas distintas y por eso son dos botones. -->
-      <button type="button" class="btn-secondary pasos__plegar" (click)="plegado = !plegado"
-        [attr.aria-expanded]="!plegado" [attr.aria-label]="plegado ? 'Ver los pasos' : 'Plegar los pasos'">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-          [class.pasos__flecha--plegada]="plegado" class="pasos__flecha">
-          <path d="m6 9 6 6 6-6"/>
-        </svg>
-      </button>
-
-      <button type="button" class="btn-secondary" (click)="ocultar()">Ya lo tengo</button>
-    </div>
+    <span class="pasos__cifra">{{ guia.hechos }} de {{ guia.total }} listos</span>
   </header>
 
-  <ol class="pasos__lista" *ngIf="!plegado">
+  <div class="pasos__barra" role="progressbar" [attr.aria-valuenow]="guia.hechos"
+    aria-valuemin="0" [attr.aria-valuemax]="guia.total">
+    <span [style.width.%]="avance"></span>
+  </div>
+
+  <ol class="pasos__lista" *ngIf="pendientes.length">
     <li class="pasos__paso" *ngFor="let paso of pendientes">
       <span class="pasos__numero" aria-hidden="true">{{ paso.numero }}</span>
 
@@ -47,4 +26,14 @@
       </button>
     </li>
   </ol>
-</section>
+
+  <!-- Cuando no falta nada el foquito sigue estando, así que tiene que
+       decir algo: enseña que está todo hecho. -->
+  <p class="pasos__listo" *ngIf="!pendientes.length">
+    Ya está todo listo. Cuando haga falta algo nuevo, aparecerá acá.
+  </p>
+
+  <footer class="pasos__pie" *ngIf="pendientes.length && !guia.vista">
+    <button type="button" class="btn-secondary" (click)="noInsistir()">Ya lo tengo</button>
+  </footer>
+</div>

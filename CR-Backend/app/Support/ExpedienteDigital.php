@@ -22,6 +22,43 @@ final class ExpedienteDigital
     public const HOJA_DE_VIDA = 'hoja_de_vida';
 
     /**
+     * Los papeles que trae el propio trabajador.
+     *
+     * Antes todo esto entraba como "otro" y en el expediente no se
+     * distinguía una foto de un certificado. Cada uno con su tipo se
+     * encuentra, se cuenta y se le puede pedir a quien no lo ha traído.
+     */
+    public const FOTO        = 'foto';
+    public const DNI         = 'dni';
+    public const CERTIFICADO = 'certificado';
+    public const OTRO        = 'otro';
+
+    /** Lo que puede subir el trabajador desde Mis Documentos. */
+    public const PERSONALES = [self::HOJA_DE_VIDA, self::FOTO, self::DNI, self::CERTIFICADO, self::OTRO];
+
+    /** Todo lo que acepta el expediente, incluido lo que emite el colegio. */
+    public const TIPOS = [
+        'boleta', 'contrato', 'cts', 'vacaciones_truncas', 'comprobante_transferencia',
+        self::HOJA_DE_VIDA, self::FOTO, self::DNI, self::CERTIFICADO, self::OTRO,
+    ];
+
+    /** Cómo se llama cada tipo en pantalla. */
+    public const NOMBRES = [
+        'boleta'                    => 'Boleta',
+        'contrato'                  => 'Contrato',
+        'cts'                       => 'CTS',
+        'vacaciones_truncas'        => 'Vacaciones truncas',
+        'comprobante_transferencia' => 'Comprobante de transferencia',
+        self::HOJA_DE_VIDA          => 'Hoja de vida',
+        self::FOTO                  => 'Foto',
+        self::DNI                   => 'Copia del DNI',
+        self::CERTIFICADO           => 'Certificado de estudios',
+        self::OTRO                  => 'Otro',
+        self::BOLETA_ANTERIOR       => 'Boleta anterior',
+        self::CONTRATO_ANTERIOR     => 'Contrato anterior',
+    ];
+
+    /**
      * Los archivos de antes del sistema: boletas y contratos que RR.HH. sacó
      * del Excel de la planilla y sube en lote (DocumentosAnterioresController).
      *
@@ -44,7 +81,10 @@ final class ExpedienteDigital
      *
      * Los archivos anteriores tampoco: son copias de algo que ya pasó.
      */
-    public const SIN_FIRMA = [self::HOJA_DE_VIDA, self::BOLETA_ANTERIOR, self::CONTRATO_ANTERIOR];
+    public const SIN_FIRMA = [
+        self::HOJA_DE_VIDA, self::FOTO, self::DNI, self::CERTIFICADO, self::OTRO,
+        self::BOLETA_ANTERIOR, self::CONTRATO_ANTERIOR,
+    ];
 
     /**
      * Qué se acepta, igual en todos los caminos. Word entra a propósito: la
@@ -61,9 +101,11 @@ final class ExpedienteDigital
     /** Lo que se le contesta a quien intenta firmar algo que no se firma. */
     public static function porQueNoSeFirma(?string $tipo): string
     {
-        return $tipo === self::HOJA_DE_VIDA
-            ? 'La hoja de vida es un documento tuyo: no se firma.'
-            : 'Es un archivo anterior al sistema, guardado como copia: no se firma.';
+        if (in_array($tipo, self::PERSONALES, true)) {
+            return 'Es un documento tuyo, no algo que el colegio te entregue: no se firma.';
+        }
+
+        return 'Es un archivo anterior al sistema, guardado como copia: no se firma.';
     }
 
     /** El SHA-256 del archivo: dos archivos iguales tienen la misma huella. */
@@ -101,9 +143,14 @@ final class ExpedienteDigital
          * archivo sigue en disco— para que la ficha enseñe un solo CV y aun
          * así quede rastro de cuál había antes.
          */
-        if ($tipo === self::HOJA_DE_VIDA) {
+        // La hoja de vida y la foto son UNA: la vigente. Al subir otra, la
+        // anterior se da de baja en vez de borrarse —su archivo sigue en
+        // disco— para que el expediente enseñe una sola y aun así quede
+        // rastro de cuál había antes. Los certificados no: de esos se
+        // guardan todos los que traiga.
+        if (in_array($tipo, [self::HOJA_DE_VIDA, self::FOTO], true)) {
             Documento::where('empleado_id', $empleadoId)
-                ->where('tipo', self::HOJA_DE_VIDA)
+                ->where('tipo', $tipo)
                 ->where('estado_registro', 'activo')
                 ->update(['estado_registro' => 'inactivo']);
         }

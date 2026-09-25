@@ -107,8 +107,12 @@ export class EmisionBoletaListComponent implements OnInit {
     { campo: 'cargo.nombre', header: 'Cargo', ancho: '20%' },
     { campo: 'area.nombre', header: 'Área', ancho: '20%' },
     {
-      campo: 'id', header: 'Boleta del mes', tipo: 'badge', ancho: '15%',
-      formatear: (_v, e) => (this.empleadosEditados.has(e.id) ? 'Armada' : 'Sin armar'),
+      // Se llamaba "Boleta del mes" y enseñaba si tenía PLANILLA. No es lo
+      // mismo: la boleta es el papel que sale después, y decir que la de
+      // alguien está "sin armar" cuando nadie le armó su planilla hacía
+      // creer que el sistema ya le había hecho una.
+      campo: 'id', header: 'Planilla del mes', tipo: 'badge', ancho: '15%',
+      formatear: (_v, e) => (this.empleadosEditados.has(e.id) ? 'Armada' : 'Le falta'),
       badgeSeveridad: (_v, e) => (this.empleadosEditados.has(e.id) ? 'success' : 'warning'),
     },
   ];
@@ -127,18 +131,15 @@ export class EmisionBoletaListComponent implements OnInit {
         etiqueta: this.hayFiltros ? 'En la lista' : 'Trabajadores',
         tono: 'brand',
       },
-      { icono: 'receipt', valor: this.planillasDelMes, etiqueta: 'Boletas armadas', tono: 'success' },
-      {
-        icono: 'clock',
-        valor: Math.max(this.totalDelColegio - this.planillasDelMes, 0),
-        etiqueta: 'Sin armar',
-        tono: 'warning',
-      },
+      { icono: 'receipt', valor: this.planillasDelMes, etiqueta: 'Con planilla', tono: 'success' },
+      { icono: 'clock', valor: this.sinPlanilla, etiqueta: 'Les falta', tono: 'warning' },
     ];
   }
 
   get hayFiltros(): boolean {
-    return Object.keys(this.filtros).length > 0;
+    // La vista de arriba (con/sin planilla) no cuenta como filtro: si
+    // contara, la cifra diría siempre "En la lista".
+    return Object.keys(this.filtros).some((clave) => clave !== 'planilla');
   }
 
   accionesFila: AccionPersonalizada<Empleado>[] = [
@@ -178,7 +179,50 @@ export class EmisionBoletaListComponent implements OnInit {
    * Los de boleta y planilla son del MES que se está armando, así que
    * viajan con el mes y el año de arriba.
    */
-  filtros: ValoresFiltro = {};
+  /**
+   * Se abre con los que YA tienen su planilla del mes.
+   *
+   * Son los únicos que pueden tener boleta: la boleta sale de la planilla.
+   * Con la lista completa, un colegio de 100 trabajadores enseñaba diez
+   * páginas de gente sin nada que emitir.
+   */
+  filtros: ValoresFiltro = { planilla: 'con' };
+
+  /** Cuál de los tres chips está marcado. '' es "todos". */
+  get vista(): string {
+    return this.filtros['planilla'] ?? '';
+  }
+
+  verSolo(valor: 'con' | 'sin' | ''): void {
+    const filtros = { ...this.filtros };
+
+    if (valor) {
+      filtros['planilla'] = valor;
+    } else {
+      delete filtros['planilla'];
+    }
+
+    this.filtros = filtros;
+    this.pagina = 0;
+    this.cargarEmpleados();
+  }
+
+  /** A cuántos les falta la planilla del mes. */
+  get sinPlanilla(): number {
+    return Math.max(this.totalDelColegio - this.planillasDelMes, 0);
+  }
+
+  /** Lo que dice la tabla cuando no hay filas, según lo que se esté viendo. */
+  get mensajeTabla(): string {
+    if (this.vista === 'con') {
+      return 'Todavía no hay ninguna planilla armada de este mes. Mira a quiénes les falta y ármalas.';
+    }
+    if (this.vista === 'sin') {
+      return 'No le falta la planilla a nadie: están todas armadas.';
+    }
+
+    return 'No se encontraron trabajadores.';
+  }
 
   camposFiltro: CampoFiltro[] = [
     {
@@ -187,13 +231,6 @@ export class EmisionBoletaListComponent implements OnInit {
         { valor: 'sin', etiqueta: 'Le falta' },
         { valor: 'sin_firmar', etiqueta: 'Emitida, sin firmar' },
         { valor: 'con', etiqueta: 'Ya emitida' },
-      ],
-    },
-    {
-      clave: 'planilla', etiqueta: 'Planilla del mes', tipo: 'opciones', vacio: 'No importa',
-      opciones: [
-        { valor: 'sin', etiqueta: 'Sin armar' },
-        { valor: 'con', etiqueta: 'Ya armada' },
       ],
     },
     { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },

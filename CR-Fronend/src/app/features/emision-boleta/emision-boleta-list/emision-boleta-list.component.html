@@ -88,8 +88,31 @@
   [acciones]="[]"
   [accionesPersonalizadas]="accionesFila"
   (accionPersonalizada)="abrirModal($event.fila)"
-  mensajeVacio="No se encontraron trabajadores."
+  [mensajeVacio]="mensajeTabla"
 >
+  <!-- La boleta sale de la planilla, así que la pantalla abre con los que ya
+       la tienen. El segundo chip es la otra pregunta de siempre: "¿a
+       quiénes les falta?". -->
+  <div tableActions class="chips-filtro">
+    <button type="button" class="chip-filtro" [class.chip-filtro--activo]="vista === 'con'"
+      (click)="verSolo('con')">
+      Con planilla
+      <span class="chip-filtro__cuenta">{{ planillasDelMes }}</span>
+    </button>
+
+    <button type="button" class="chip-filtro" [class.chip-filtro--activo]="vista === 'sin'"
+      (click)="verSolo('sin')">
+      Les falta
+      <span class="chip-filtro__cuenta">{{ sinPlanilla }}</span>
+    </button>
+
+    <button type="button" class="chip-filtro" [class.chip-filtro--activo]="!vista"
+      (click)="verSolo('')">
+      Todos
+      <span class="chip-filtro__cuenta">{{ totalDelColegio }}</span>
+    </button>
+  </div>
+
   <!-- Mientras se emite, la pregunta es "¿a quién le falta?": eso ahora se
        filtra en vez de buscarse fila por fila. -->
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"

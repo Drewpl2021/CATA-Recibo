@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnChanges, OnDestroy, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /**
@@ -20,7 +20,16 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   templateUrl: './form-modal.component.html',
 })
-export class FormModalComponent {
+export class FormModalComponent implements OnChanges, OnDestroy {
+  /**
+   * Cuántos modales hay abiertos a la vez.
+   *
+   * El visor de un documento se abre ENCIMA del expediente, así que al
+   * cerrar el de arriba el fondo no debe soltarse todavía. Por eso se
+   * cuentan en vez de poner y quitar la clase a lo bruto.
+   */
+  private static abiertos = 0;
+
   @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
 
@@ -38,7 +47,68 @@ export class FormModalComponent {
   cerrar(): void {
     if (this.guardando) return;
     this.visible = false;
+    this.soltarElFondo();
     this.visibleChange.emit(false);
     this.cancelar.emit();
+  }
+
+  /**
+   * Escape cierra, como en cualquier ventana.
+   *
+   * Faltaba: la única salida eran la equis o el clic fuera, y quien escribe
+   * con el teclado tenía que ir a buscar el ratón.
+   */
+  @HostListener('document:keydown.escape')
+  alPulsarEscape(): void {
+    if (this.visible) this.cerrar();
+  }
+
+  /**
+   * Dónde EMPEZÓ el clic.
+   *
+   * Cerrar en cuanto se suelta el ratón sobre el fondo tenía una trampa: al
+   * seleccionar un texto de dentro y soltar fuera, el modal se cerraba y se
+   * perdía lo escrito. Ahora solo cierra si el clic empezó y terminó fuera.
+   */
+  private empezoFuera = false;
+
+  alPresionarEnElFondo(evento: MouseEvent): void {
+    this.empezoFuera = evento.target === evento.currentTarget;
+  }
+
+  alSoltarEnElFondo(evento: MouseEvent): void {
+    if (this.empezoFuera && evento.target === evento.currentTarget) {
+      this.cerrar();
+    }
+    this.empezoFuera = false;
+  }
+
+  ngOnChanges(): void {
+    // El fondo no se mueve mientras hay un modal encima: con la rueda se
+    // iba la pantalla de debajo y al cerrar aparecía en otro sitio.
+    if (this.visible && !this.fondoTomado) {
+      this.fondoTomado = true;
+      FormModalComponent.abiertos++;
+      document.body.classList.add('con-modal');
+    } else if (!this.visible) {
+      this.soltarElFondo();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.soltarElFondo();
+  }
+
+  private fondoTomado = false;
+
+  private soltarElFondo(): void {
+    if (!this.fondoTomado) return;
+
+    this.fondoTomado = false;
+    FormModalComponent.abiertos = Math.max(0, FormModalComponent.abiertos - 1);
+
+    if (FormModalComponent.abiertos === 0) {
+      document.body.classList.remove('con-modal');
+    }
   }
 }

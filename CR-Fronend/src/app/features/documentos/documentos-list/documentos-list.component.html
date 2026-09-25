@@ -1,7 +1,7 @@
 <app-page-header
   icono="folder_shared"
   titulo="Mis Documentos"
-  subtitulo="Tus boletas y documentos laborales. Acá los revisas, los firmas y subes tu hoja de vida."
+  subtitulo="Tus boletas y tus documentos. Acá los revisas, los firmas y subes los tuyos: tu hoja de vida, tu foto, la copia de tu DNI o un certificado."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
 >
@@ -19,7 +19,7 @@
       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
     </svg>
-    Subir mi hoja de vida
+    Subir un documento
   </button>
 </app-page-header>
 
@@ -65,28 +65,46 @@
   </div>
 </app-form-modal>
 
-<!-- Subir la hoja de vida -->
+<!-- Subir uno de sus documentos -->
 <app-form-modal
   [(visible)]="modalCv"
-  titulo="Subir mi hoja de vida"
-  textoGuardar="Guardar hoja de vida"
+  titulo="Subir un documento"
+  textoGuardar="Guardar"
   ancho="560px"
   [guardando]="subiendoCv"
   (guardar)="subirCv()"
   (cancelar)="cerrarSubirCv()"
 >
   <div class="form-fields">
+    <div class="form-group">
+      <label for="tipoPropio">¿Qué estás subiendo? *</label>
+      <select id="tipoPropio" class="form-control" [(ngModel)]="tipoASubir" name="tipoPropio">
+        <option *ngFor="let t of tiposPropios" [value]="t.value">{{ t.label }}</option>
+      </select>
+      <small class="form-ayuda">
+        Tus boletas y tus contratos no se suben acá: los emite el colegio y te llegan solos.
+      </small>
+    </div>
+
     <app-selector-archivo
       [extensiones]="['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']"
       [pesoMaximoMb]="5"
       [(archivos)]="cv"
       [ocupado]="subiendoCv"
       textoOcupado="Subiendo…"
-      texto="Arrastra aquí tu hoja de vida o haz clic para elegirla"
+      [texto]="'Arrastra aquí tu ' + nombreTipoASubir.toLowerCase() + ' o haz clic para elegirlo'"
       ayuda="PDF, Word o imagen, hasta 5 MB."
     ></app-selector-archivo>
+
     <p class="form-nota">
-      Se guarda en tu expediente. Si ya tenías una, esta la reemplaza y la anterior queda en el historial.
+      Se guarda en tu expediente, donde lo ve Recursos Humanos.
+      <ng-container *ngIf="tipoASubir === 'hoja_de_vida' || tipoASubir === 'foto'">
+        Si ya tenías {{ tipoASubir === 'foto' ? 'una foto' : 'una hoja de vida' }},
+        esta la reemplaza y la anterior queda en el historial.
+      </ng-container>
+      <ng-container *ngIf="tipoASubir === 'certificado' || tipoASubir === 'dni' || tipoASubir === 'otro'">
+        Puedes subir varios: no se reemplazan entre ellos.
+      </ng-container>
     </p>
   </div>
 </app-form-modal>

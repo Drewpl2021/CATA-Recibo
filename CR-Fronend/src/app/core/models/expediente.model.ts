@@ -34,6 +34,10 @@ export interface Expediente {
   hoja_de_vida: Documento | null;
   /** Las que se reemplazaron: siguen guardadas, pero ya no son la vigente. */
   hojas_anteriores: Documento[];
+  /** Lo que trae el trabajador: hoja de vida, foto, DNI, certificados. */
+  personales: Documento[];
+  /** Meses con planilla armada a los que todavía no se les emitió boleta. */
+  boletas_sin_emitir: { id: string; mes: number; anio: number; total: number }[];
   contratos: ContratoDelExpediente[];
   /** Contratos de antes del sistema: archivos sueltos, sin contrato registrado. */
   contratos_anteriores: Documento[];

@@ -5,7 +5,7 @@ import { AuthService, DocumentoService, IdentidadFirmaService, MisDocumentosServ
 import { Documento } from '../../../core/models';
 import {
   documentoSeFirma,
-  esPdf,
+  sePuedeVer,
   estadoFirmaLegible,
   guardarArchivo,
   mensajeErrorApi,
@@ -22,6 +22,7 @@ import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { LienzoFirmaComponent } from '../../../shared/components/lienzo-firma/lienzo-firma.component';
 import { SelectorArchivoComponent } from '../../../shared/components/selector-archivo/selector-archivo.component';
 import { VisorDocumentoComponent } from '../../../shared/components/visor-documento/visor-documento.component';
+import { TIPO_DOCUMENTO_PROPIO } from '../../../shared/constants';
 
 /**
  * Mis Documentos: lo que el trabajador tiene a su nombre.
@@ -115,7 +116,7 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
    * ve y se descarga, pero no se firma.
    */
   acciones: AccionPersonalizada<Documento>[] = [
-    { id: 'ver', titulo: 'Ver este documento', icono: 'description', visible: (doc) => esPdf(doc) },
+    { id: 'ver', titulo: 'Ver este documento', icono: 'description', visible: (doc) => sePuedeVer(doc) },
     {
       id: 'descargar', titulo: 'Descargar este documento', icono: 'folder_open',
       // Lo que se firma se descarga después de firmarlo: leerlo, sí; llevárselo,
@@ -292,9 +293,21 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── La hoja de vida ──
+  // ── Sus propios documentos ──
 
-  abrirSubirCv(): void {
+  /** Lo que puede subir él: sus papeles, no lo que emite el colegio. */
+  tiposPropios = TIPO_DOCUMENTO_PROPIO;
+
+  /** Qué está subiendo. Arranca en la hoja de vida, que es lo más común. */
+  tipoASubir = 'hoja_de_vida';
+
+  /** El nombre del tipo elegido, para los textos del modal. */
+  get nombreTipoASubir(): string {
+    return this.tiposPropios.find((t) => t.value === this.tipoASubir)?.label ?? 'documento';
+  }
+
+  abrirSubirCv(tipo = 'hoja_de_vida'): void {
+    this.tipoASubir = tipo;
     this.cv = [];
     this.modalCv = true;
   }
@@ -307,16 +320,16 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
   subirCv(): void {
     const archivo = this.cv[0];
     if (!archivo) {
-      this.toastService.warning('Falta el archivo', 'Elige el archivo de tu hoja de vida.');
+      this.toastService.warning('Falta el archivo', `Elige el archivo de tu ${this.nombreTipoASubir.toLowerCase()}.`);
       return;
     }
 
     this.subiendoCv = true;
-    this.misDocumentosService.subirHojaDeVida(archivo).subscribe({
+    this.misDocumentosService.subirHojaDeVida(archivo, this.tipoASubir).subscribe({
       next: (res) => {
         this.subiendoCv = false;
         if (res.success) {
-          this.toastService.success('Hoja de vida guardada', 'Ya está en tu expediente.');
+          this.toastService.success(`${this.nombreTipoASubir} guardada`, 'Ya está en tu expediente.');
           this.cerrarSubirCv();
           this.cargar();
         }

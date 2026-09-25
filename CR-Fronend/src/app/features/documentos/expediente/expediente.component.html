@@ -53,23 +53,30 @@
     <header class="expediente-bloque__cabecera">
       <span class="expediente-bloque__icono"><app-icon icono="person" [tamano]="19"></app-icon></span>
       <div class="expediente-bloque__titulos">
-        <h2 class="seccion-form__titulo">Hoja de vida</h2>
-        <span class="form-ayuda">La sube el trabajador desde Mis Documentos, o tú desde aquí. No se firma.</span>
+        <h2 class="seccion-form__titulo">Sus documentos</h2>
+        <span class="form-ayuda">Lo que trae el trabajador: hoja de vida, foto, copia del DNI y certificados. Los sube él desde Mis Documentos, o tú desde aquí. No se firman.</span>
       </div>
       <button type="button" class="btn-secondary" (click)="abrirSubir('hoja_de_vida')">
-        {{ e.hoja_de_vida ? 'Reemplazar' : 'Subir hoja de vida' }}
+        <app-icon icono="upload" [tamano]="15"></app-icon>
+        Subir un documento
       </button>
     </header>
 
     <div class="section-panel expediente-bloque__panel">
-      <ng-container *ngIf="e.hoja_de_vida as hoja; else sinHoja">
+      <ng-container *ngIf="e.hoja_de_vida as hoja">
         <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: hoja, titulo: 'Hoja de vida vigente', puedeQuitar: false }"></ng-container>
       </ng-container>
-      <ng-template #sinHoja>
+
+      <!-- Su foto, la copia de su DNI y sus certificados. -->
+      <ng-container *ngFor="let doc of otrosPersonales">
+        <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: doc, titulo: '', puedeQuitar: true }"></ng-container>
+      </ng-container>
+
+      <ng-container *ngIf="!e.hoja_de_vida && !otrosPersonales.length">
         <p class="expediente-vacio">
-          Todavía no tiene hoja de vida en el sistema. Puede subirla él mismo desde Mis Documentos.
+          Todavía no ha traído ningún documento. Puede subirlos él mismo desde Mis Documentos.
         </p>
-      </ng-template>
+      </ng-container>
 
       <details class="expediente-historial" *ngIf="e.hojas_anteriores.length">
         <summary>
@@ -117,6 +124,7 @@
         <div class="contrato-tarjeta__pie">
           <span *ngIf="!c.documentos.length">Todavía no tiene el contrato firmado adjunto.</span>
           <button type="button" class="btn-secondary" (click)="abrirSubir('contrato', c.id)">
+            <app-icon icono="upload" [tamano]="15"></app-icon>
             {{ c.documentos.length ? 'Adjuntar otro documento' : 'Adjuntar contrato firmado' }}
           </button>
         </div>
@@ -168,8 +176,23 @@
         <h2 class="seccion-form__titulo">Boletas</h2>
         <span class="form-ayuda">Mes a mes: cuándo la revisó, la descargó y la firmó. Las de antes del sistema salen como «Archivo anterior».</span>
       </div>
-      <button type="button" class="btn-secondary" (click)="subirAnteriores()">Subir boletas anteriores</button>
+      <button type="button" class="btn-secondary" (click)="subirAnteriores()">
+        <app-icon icono="upload" [tamano]="15"></app-icon>
+        Subir boletas anteriores
+      </button>
     </header>
+
+    <!-- Tiene planilla de esos meses, pero nadie emitió la boleta. Sin esto
+         el expediente decía "todavía no tiene boletas" y parecía que el
+         sistema se las había perdido. -->
+    <div class="form-nota form-nota--accion" *ngIf="e.boletas_sin_emitir?.length">
+      <div>
+        <strong>{{ e.boletas_sin_emitir.length }} mes(es) con planilla y sin boleta emitida:</strong>
+        {{ mesesSinEmitir }}. La boleta sale de la planilla, así que hasta que se emita no
+        aparece acá.
+      </div>
+      <button type="button" class="btn-primary" (click)="irAEmitir()">Ir a emitir</button>
+    </div>
 
     <app-data-table
       entidad="esta boleta"
@@ -192,7 +215,10 @@
         <h2 class="seccion-form__titulo">Otros documentos</h2>
         <span class="form-ayuda">CTS, vacaciones truncas, comprobantes y lo que se subió sin un contrato.</span>
       </div>
-      <button type="button" class="btn-secondary" (click)="abrirSubir('otro')">Subir otro documento</button>
+      <button type="button" class="btn-secondary" (click)="abrirSubir('otro')">
+        <app-icon icono="upload" [tamano]="15"></app-icon>
+        Subir otro documento
+      </button>
     </header>
 
     <app-data-table
@@ -218,7 +244,7 @@
       <span>Subido el {{ fecha(doc.created_at) }}, en {{ formato(doc) }}</span>
     </div>
     <div class="documento-fila__acciones">
-      <button type="button" class="btn-secondary" *ngIf="esPdf(doc)" (click)="ver(doc)">Ver</button>
+      <button type="button" class="btn-secondary" *ngIf="sePuedeVer(doc)" (click)="ver(doc)">Ver</button>
       <button type="button" class="btn-secondary" (click)="descargar(doc)">Descargar</button>
       <button type="button" class="btn-secondary documento-fila__quitar" *ngIf="puedeQuitar" (click)="quitar(doc)">Quitar</button>
     </div>

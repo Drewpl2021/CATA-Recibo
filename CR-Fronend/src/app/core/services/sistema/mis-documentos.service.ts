@@ -85,9 +85,15 @@ export class MisDocumentosService {
    * Reemplaza al que tuviera; el anterior queda en el historial. El
    * empleado lo pone el backend a partir de la sesión.
    */
-  subirHojaDeVida(archivo: File): Observable<ApiResponse<Documento>> {
+  /**
+   * Sube uno de SUS documentos: hoja de vida, foto, copia del DNI,
+   * certificado u otro. Sin tipo se guarda como hoja de vida, que es como
+   * funcionaba antes.
+   */
+  subirHojaDeVida(archivo: File, tipo?: string): Observable<ApiResponse<Documento>> {
     const datos = new FormData();
     datos.append('archivo', archivo);
+    if (tipo) datos.append('tipo', tipo);
     return this.http.post<ApiResponse<Documento>>(
       `${this.apiUrl}/${END_POINTS_ACCIONES.subirMiHojaDeVida}`,
       datos

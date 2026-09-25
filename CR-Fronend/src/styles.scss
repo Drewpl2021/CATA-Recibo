@@ -2169,6 +2169,13 @@ td.celda-numero {
 }
 
 .modal-card,
+/* Con un modal abierto, la página de debajo no se mueve: antes, la rueda
+   se llevaba el fondo y al cerrar uno aparecía en otro sitio. La clase la
+   pone y la quita app-form-modal, contando los que haya abiertos. */
+body.con-modal {
+  overflow: hidden;
+}
+
 .modal-container {
   background-color: var(--surface);
   border-radius: var(--radius-lg);
@@ -2464,6 +2471,37 @@ td.celda-numero {
   align-items: center;
   gap: 10px;
   margin-left: auto;
+}
+
+/*
+ * Todos los botones de una cabecera miden lo mismo.
+ *
+ * Convivían tres medidas —el primario con 10/20, el secundario con 6/12 y
+ * el chip de la firma con los suyos—, y donde se juntaban salían
+ * escalonados: en el expediente, "Volver a Documentos" 33 px, "Ver su
+ * ficha" 29 px y "Subir documento" 36 px, uno al lado del otro.
+ *
+ * Se iguala acá, en la cabecera, y no en .btn-secondary: ese mismo botón se
+ * usa en las filas de una tabla, donde tiene que ser chico.
+ */
+/* La barra del panel juega en la misma liga: el paso de mes, el selector de
+   sede y el botón de exportar iban a 32, 34 y 36 px. */
+.dash-header .barra-filtros > * {
+  min-height: 36px;
+}
+
+/* Sin el ">": en varias pantallas los botones van dentro de un div que los
+   agrupa, y con hijo directo se quedaban fuera de la regla. */
+.page-header__actions button,
+.page-header__actions a,
+.page-header__actions label {
+  min-height: 36px;
+  padding: 8px 16px;
+  font-size: 13.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .form-fields {
@@ -3506,40 +3544,49 @@ textarea.form-control {
 }
 
 /*
- * Primeros pasos: lo que falta por dejar listo.
+ * Primeros pasos: lo que falta por dejar listo, detrás del foquito.
  *
- * Es un panel de la pantalla de inicio —hereda de .section-panel—, no un
- * cartel ni un modal. Fue las dos cosas antes y las dos estorbaban: una
- * tapaba el trabajo y la otra seguía al usuario por todas las pantallas.
- * Una lista de pendientes es contenido de la página de inicio.
+ * Fue un modal que saltaba al entrar, un aviso encima de todas las
+ * pantallas y un panel de la pantalla de inicio. Las tres formas ocupaban
+ * sitio de trabajo para algo que solo hace falta los primeros días; detrás
+ * de un ícono está a mano y no estorba nunca.
  *
  * Los pasos van numerados, cosa que en otras listas sobra, porque acá el
  * orden es información: sin sedes no hay dónde poner al trabajador, y sin
- * trabajadores no hay planilla. Cada paso conserva el número que le toca en
+ * trabajadores no hay planilla. Cada uno conserva el número que le toca en
  * la guía completa, así el 4 sigue siendo el cuarto aunque los tres de
  * antes ya estén hechos.
  */
+.guia-foco {
+  position: relative;
+  display: inline-flex;
+}
+
+/* El desplegable cuelga del botón. Nada de position: fixed: la cabecera
+   tiene ancestros con transform y el panel acabaría a media pantalla. */
+.guia-foco__panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 10px;
+  width: min(420px, calc(100vw - 32px));
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+}
+
 .pasos {
   padding: 18px 20px;
-  margin-bottom: 20px;
 }
 
 .pasos__cabecera {
   display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.pasos__icono {
-  width: 38px;
-  height: 38px;
-  flex-shrink: 0;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--brand-100);
-  color: var(--brand-700);
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .pasos__titulos {
@@ -3548,7 +3595,7 @@ textarea.form-control {
 
 .pasos__titulo {
   margin: 0;
-  font-size: 1.02rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--heading);
 }
@@ -3556,21 +3603,13 @@ textarea.form-control {
 .pasos__intro {
   margin: 2px 0 0;
   color: var(--text-muted);
-  font-size: 0.87rem;
-}
-
-.pasos__avance {
-  margin-left: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-  min-width: 160px;
+  font-size: 0.85rem;
 }
 
 .pasos__cifra {
+  margin-left: auto;
   color: var(--text-muted);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -3578,6 +3617,7 @@ textarea.form-control {
 .pasos__barra {
   width: 100%;
   height: 6px;
+  margin-top: 12px;
   border-radius: var(--radius-full);
   background: var(--surface-hover);
   overflow: hidden;
@@ -3591,57 +3631,44 @@ textarea.form-control {
   transition: width 0.35s ease;
 }
 
-.pasos__acciones {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.pasos__plegar {
-  padding: 7px 10px;
-}
-
-.pasos__flecha {
-  transition: transform 0.2s ease;
-}
-
-.pasos__flecha--plegada {
-  transform: rotate(-90deg);
-}
-
 .pasos__lista {
   list-style: none;
-  margin: 14px 0 0;
-  padding: 14px 0 0;
-  border-top: 1px solid var(--border);
+  margin: 6px 0 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
 }
 
+/*
+ * Dos columnas: el número y, a su lado, el texto con su botón debajo.
+ *
+ * Con todo en fila —número, texto, botón— el detalle caía en una columna de
+ * tres palabras dentro de un panel de 400 px; y dejando que el botón
+ * saltara de línea solo, el número se quedaba huérfano arriba.
+ */
 .pasos__paso {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 11px 0;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 6px 12px;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border);
 }
 
 .pasos__paso:last-child {
   border-bottom: none;
-  padding-bottom: 0;
+  padding-bottom: 4px;
 }
 
 /* El número del paso, el que le toca en la guía completa. */
 .pasos__numero {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
   background: var(--brand-100);
   color: var(--brand-700);
@@ -3650,29 +3677,44 @@ textarea.form-control {
 }
 
 .pasos__texto {
+  grid-column: 2;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
-  flex: 1;
 }
 
 .pasos__texto strong {
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .pasos__texto span {
   color: var(--text-muted);
-  font-size: 0.86rem;
-  line-height: 1.5;
-  max-width: 62ch;
+  font-size: 0.83rem;
+  line-height: 1.45;
 }
 
 .pasos__ir {
-  flex-shrink: 0;
-  padding: 7px 14px;
+  /* Debajo del texto y alineado con él, no con el número. */
+  grid-column: 2;
+  justify-self: start;
+  padding: 5px 12px;
+  font-size: 0.82rem;
+}
+
+.pasos__listo {
+  margin: 14px 0 0;
+  color: var(--text-muted);
   font-size: 0.86rem;
+}
+
+.pasos__pie {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 
 /*
@@ -4729,30 +4771,14 @@ textarea.form-control {
     align-items: stretch;
   }
 
-  /* Primeros pasos: todo en columna, que de lado el detalle cae en tres
-     palabras por línea. */
-  .pasos__cabecera {
-    flex-wrap: wrap;
-  }
-
-  .pasos__avance {
-    margin-left: 0;
-    align-items: stretch;
-    width: 100%;
-    order: 3;
-  }
-
-  .pasos__acciones {
-    margin-left: auto;
-  }
-
-  .pasos__paso {
-    flex-wrap: wrap;
-  }
-
-  .pasos__ir {
-    width: 100%;
-    margin-left: 40px;
+  /* El desplegable del foquito, casi a lo ancho del teléfono. Sigue
+     colgando del botón (nada de position: fixed: la cabecera tiene
+     ancestros con transform y el panel acabaría a media pantalla). */
+  .guia-foco__panel {
+    width: calc(100vw - 24px);
+    /* Se corre a la derecha de la pantalla, no del botón, para no salirse
+       por el borde. */
+    right: -12px;
   }
 
   /* La persona de la ficha: la foto encima del nombre, que de lado no
@@ -5029,11 +5055,31 @@ textarea.form-control {
 
 .lista-archivos__peso { color: var(--text-muted); font-size: 12.5px; }
 
-/* El visor de PDF dentro de un app-form-modal: pdf.js necesita un alto fijo. */
+/* El visor dentro de un app-form-modal: pdf.js necesita un alto fijo. */
 .visor-documento {
   height: 70vh;
   min-height: 420px;
   overflow: auto;
+  /* Centrado para las imágenes: una foto de carnet en una caja de 960 px
+     pegada a la izquierda se ve como un descuido. */
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* El PDF sigue ocupando todo el ancho; la imagen, solo lo que necesita. */
+.visor-documento app-visor-pdf {
+  flex: 1;
+  min-width: 0;
+}
+
+.visor-documento__imagen {
+  max-width: 100%;
+  /* Cabe entera sin rodar la rueda: el alto lo pone el visor. */
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  background: var(--surface-hover);
 }
 
 /* Los botones del pie de un app-form-modal cuando se ponen a mano. */
@@ -5280,8 +5326,9 @@ textarea.form-control {
   display: flex;
   align-items: center;
   gap: 10px;
+  /* La misma altura que el resto de botones de la cabecera. */
   padding: 6px 14px;
-  min-height: 42px;
+  min-height: 36px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   background-color: var(--surface);
