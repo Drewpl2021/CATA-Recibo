@@ -22,6 +22,7 @@ import { IconComponent } from '../shared/components/icon/icon.component';
 import { FormModalComponent } from '../shared/components/form-modal/form-modal.component';
 import { PistaDirective } from '../shared/directives/pista.directive';
 import { fechaLegible, mensajeErrorApi, tieneLetrasYNumeros } from '../core/utils';
+import { PrimerosPasosComponent } from '../shared/components/primeros-pasos/primeros-pasos.component';
 
 /** Un paso de las migas de pan de la barra de arriba. */
 interface Miga {
@@ -35,7 +36,7 @@ interface Miga {
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, IconComponent, PistaDirective, FormModalComponent],
+  imports: [CommonModule, RouterModule, FormsModule, IconComponent, PistaDirective, FormModalComponent, PrimerosPasosComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss'
 })
@@ -122,19 +123,43 @@ export class LayoutComponent implements OnInit {
   // ── Primeros pasos ──
 
   /**
-   * La guía vive dentro de la pantalla de inicio de cada rol (el Panel de
-   * Control o Mis Boletas), como un panel más. Desde el menú no se "abre":
-   * se lleva al inicio y se avisa al panel para que vuelva a salir aunque
-   * ya lo hubieran ocultado.
+   * La guía vive detrás del foquito de la barra de arriba.
+   *
+   * No ocupa sitio en ninguna pantalla y está siempre a mano: se abre
+   * cuando uno quiere y se cierra al ir a hacer el paso. El globito enseña
+   * cuántos faltan, y deja de insistir cuando pulsa "Ya lo tengo".
    */
+  mostrarGuia = false;
+
+  /** Cuántos pasos le faltan. 0 = el globito no sale. */
+  pasosPendientes = 0;
+
+  /** Los pasos están todos hechos: el foquito sigue, sin globito. */
+  guiaCompleta = false;
+
+  toggleGuia(): void {
+    this.mostrarGuia = !this.mostrarGuia;
+
+    if (this.mostrarGuia) {
+      this.showUserMenu = false;
+      this.showProfileModal = false;
+      this.showPasswordModal = false;
+      this.showNotifications = false;
+      // Se vuelve a pedir al abrir: puede haber avanzado desde que entró.
+      this.primerosPasosService.cargar();
+    }
+  }
+
+  cerrarGuia(): void {
+    this.mostrarGuia = false;
+    this.cdr.detectChanges();
+  }
+
+  /** Desde el menú del usuario: lo mismo que pulsar el foquito. */
   abrirGuia(): void {
     this.showUserMenu = false;
-    this.showProfileModal = false;
-    this.showPasswordModal = false;
-    this.showNotifications = false;
-
-    this.router.navigateByUrl(this.authService.rutaInicioSegunRol());
-    this.primerosPasosService.mostrar();
+    this.mostrarGuia = false;
+    this.toggleGuia();
   }
 
   /** Una fecha suelta del perfil, en palabras. */
@@ -541,6 +566,17 @@ export class LayoutComponent implements OnInit {
     // 1. Cargar menú dinámico
     this.cargarModulos();
 
+    // El globito del foquito: cuántos primeros pasos le faltan.
+    this.primerosPasosService.estado$.subscribe((estado) => {
+      this.pasosPendientes = estado ? estado.total - estado.hechos : 0;
+      // Si ya pulsó "Ya lo tengo", el foquito deja de contar: sigue ahí
+      // para mirar, pero no insiste.
+      if (estado?.vista) this.pasosPendientes = 0;
+      this.guiaCompleta = !!estado && estado.hechos >= estado.total;
+      this.cdr.detectChanges();
+    });
+    this.primerosPasosService.cargar();
+
 
     // 2. Suscribirse a boletas pendientes
     // El servicio ya manda solo los que le faltan firmar: acá no se filtra.
@@ -601,7 +637,40 @@ export class LayoutComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   alPulsarEscape(): void {
+    // Primero lo de encima: el panel o el modal que esté abierto. Solo si no
+    // hay nada abierto, Escape cierra el menú del teléfono.
+    if (this.showProfileModal || this.showNotifications || this.showPasswordModal
+        || this.showUserMenu || this.mostrarGuia) {
+      this.showProfileModal = false;
+      this.showNotifications = false;
+      this.showPasswordModal = false;
+      this.showUserMenu = false;
+      this.mostrarGuia = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.cerrarMenuEnMovil();
+  }
+
+  /**
+   * Dónde EMPEZÓ el clic sobre el fondo de un modal.
+   *
+   * Igual que en app-form-modal: al seleccionar un texto de dentro y soltar
+   * el ratón fuera, el modal se cerraba de golpe.
+   */
+  private clicEmpezoFuera = false;
+
+  alPresionarEnElFondo(evento: MouseEvent): void {
+    this.clicEmpezoFuera = evento.target === evento.currentTarget;
+  }
+
+  /** Cierra solo si el clic empezó y terminó en el fondo. */
+  seCierraDesdeElFondo(evento: MouseEvent): boolean {
+    const cierra = this.clicEmpezoFuera && evento.target === evento.currentTarget;
+    this.clicEmpezoFuera = false;
+
+    return cierra;
   }
 
   /**

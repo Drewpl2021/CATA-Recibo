@@ -127,6 +127,33 @@
           </svg>
         </button>
 
+        <!-- ── Primeros pasos ──────────────────────────────────────
+             Detrás de un foquito: está siempre a mano y no ocupa sitio en
+             ninguna pantalla. El globito cuenta los que faltan y se apaga
+             cuando pulsa "Ya lo tengo". -->
+        <div class="guia-foco">
+          <button class="icon-btn" (click)="toggleGuia()" style="position: relative;"
+            [appPista]="pasosPendientes > 0
+              ? 'Primeros pasos (' + pasosPendientes + ' por hacer)'
+              : (guiaCompleta ? 'Primeros pasos: todo listo' : 'Primeros pasos')"
+            pistaLado="abajo"
+            [attr.aria-expanded]="mostrarGuia"
+            [attr.aria-label]="pasosPendientes > 0
+              ? 'Primeros pasos, ' + pasosPendientes + ' por hacer'
+              : 'Primeros pasos'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18h6"/><path d="M10 22h4"/>
+              <path d="M15.1 14c.4-1.3 1.2-2.1 2.1-3.1A6 6 0 1 0 6 10c0 1.7.8 2.8 1.9 3.9C8.8 14.9 9.6 15.7 10 17"/>
+            </svg>
+            <span class="badge" *ngIf="pasosPendientes > 0">{{ pasosPendientes }}</span>
+          </button>
+
+          <div class="guia-foco__panel" *ngIf="mostrarGuia" role="dialog" aria-label="Primeros pasos">
+            <app-primeros-pasos (cerrar)="cerrarGuia()"></app-primeros-pasos>
+          </div>
+        </div>
+
         <button class="icon-btn" (click)="toggleNotifications()" style="position: relative;"
           [appPista]="noLeidas > 0 ? 'Tus avisos (' + noLeidas + ' sin leer)' : 'Tus avisos'"
           pistaLado="abajo"
@@ -139,7 +166,9 @@
         </button>
 
         <!-- Modal Mi Perfil (Movido aquí junto al de notificaciones) -->
-        <div class="modal-overlay" *ngIf="showProfileModal" (click)="closeProfile()">
+        <div class="modal-overlay" *ngIf="showProfileModal"
+          (mousedown)="alPresionarEnElFondo($event)"
+          (click)="seCierraDesdeElFondo($event) && closeProfile()">
           <div class="modal-container" (click)="$event.stopPropagation()" style="max-width: 760px;">
             <div class="modal-header modal-header--marca">
               <h2>Mi perfil</h2>
@@ -365,7 +394,9 @@
        Los avisos vienen guardados del backend con su fecha, no de contar
        documentos sin firmar: así el historial se mantiene aunque la boleta
        ya esté firmada, y se puede paginar. -->
-  <div class="modal-overlay" *ngIf="showNotifications" (click)="cerrarNotificaciones()">
+  <div class="modal-overlay" *ngIf="showNotifications"
+    (mousedown)="alPresionarEnElFondo($event)"
+    (click)="seCierraDesdeElFondo($event) && cerrarNotificaciones()">
     <div class="modal-container avisos" (click)="$event.stopPropagation()">
       <div class="modal-header modal-header--marca">
         <div class="avisos__titulo">

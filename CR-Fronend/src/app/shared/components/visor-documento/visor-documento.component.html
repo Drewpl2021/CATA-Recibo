@@ -7,7 +7,18 @@
 >
   <div class="visor-documento">
     @defer (when visible) {
-      <app-visor-pdf [src]="url"></app-visor-pdf>
+      <app-visor-pdf *ngIf="modo === 'pdf'" [src]="url"></app-visor-pdf>
+
+      <!-- Una foto, la copia del DNI, un certificado escaneado. -->
+      <img *ngIf="modo === 'imagen'" class="visor-documento__imagen" [src]="url"
+        [alt]="nombreDocumento(documento)" />
+
+      <!-- Word: el navegador no lo muestra, y decirlo es mejor que bajarlo
+           sin avisar. -->
+      <p class="form-nota" *ngIf="documento && modo === 'no-se-puede'">
+        Este archivo es de {{ formato(documento) }} y no se puede ver desde acá.
+        Descárgalo para abrirlo en tu computadora.
+      </p>
     } @placeholder {
       <p class="form-nota">Abriendo el documento…</p>
     }

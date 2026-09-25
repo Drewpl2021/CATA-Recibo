@@ -9,6 +9,7 @@ use App\Models\Contrato;
 use App\Models\Empleado;
 use App\Models\Planilla;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -64,7 +65,7 @@ class DocumentoController extends Controller
         $datos = $request->validate([
             'empleado_id' => 'required|exists:empleados,id',
             'contrato_id' => 'nullable|uuid|exists:contratos,id',
-            'tipo' => 'required|in:boleta,contrato,cts,vacaciones_truncas,comprobante_transferencia,hoja_de_vida,otro',
+            'tipo' => ['required', Rule::in(ExpedienteDigital::TIPOS)],
             // Ruta relativa dentro de storage y nada más: sin "..", sin
             // ruta absoluta y sin barras invertidas. Flysystem ya frena la
             // travesía de directorios al descargar, pero aceptar la cadena
@@ -125,7 +126,7 @@ class DocumentoController extends Controller
         $datos = $request->validate([
             'empleado_id' => 'required|uuid|exists:empleados,id',
             'contrato_id' => 'nullable|uuid|exists:contratos,id',
-            'tipo'        => 'required|in:boleta,contrato,cts,vacaciones_truncas,comprobante_transferencia,hoja_de_vida,otro',
+            'tipo'        => ['required', Rule::in(ExpedienteDigital::TIPOS)],
             // Word entra a propósito: la mitad de las hojas de vida llegan
             // en .docx y obligar a convertirlas a PDF es trabajo que RR.HH.
             // acabaría haciendo a mano.
@@ -189,7 +190,7 @@ class DocumentoController extends Controller
         $documento = Documento::findOrFail($id);
 
         $datos = $request->validate([
-            'tipo'    => 'sometimes|in:boleta,contrato,cts,vacaciones_truncas,comprobante_transferencia,hoja_de_vida,otro',
+            'tipo'    => ['sometimes', Rule::in(ExpedienteDigital::TIPOS)],
             'archivo' => ['sometimes', 'string', 'max:255', 'regex:/^[A-Za-z0-9._\/-]+$/', 'not_regex:/\.\./'],
         ]);
 

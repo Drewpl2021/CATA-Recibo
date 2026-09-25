@@ -135,10 +135,10 @@
 <!-- ── Los documentos de un contrato: verlos, bajarlos y adjuntar otro ── -->
 <app-form-modal
   [(visible)]="modalDocsVisible"
-  [titulo]="'Documentos de ' + nombreEmpleado(contratoElegido?.empleado)"
+  [titulo]="'Contrato firmado de ' + nombreEmpleado(contratoElegido?.empleado)"
   ancho="720px"
   [guardando]="subiendo"
-  textoGuardar="Adjuntar documento"
+  textoGuardar="Subir el contrato"
   (guardar)="subirDocumento()"
   (cancelar)="cerrarDocumentos()"
 >

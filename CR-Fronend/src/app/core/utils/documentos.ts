@@ -31,6 +31,9 @@ export const NOMBRE_TIPO_DOCUMENTO: Record<string, string> = {
 /** Lo que RR.HH. puede subir a mano. La boleta no: la genera el sistema. */
 export const TIPOS_DOCUMENTO_SUBIBLES: readonly { value: string; label: string }[] = [
   { value: 'hoja_de_vida', label: 'Hoja de vida' },
+  { value: 'foto', label: 'Foto' },
+  { value: 'dni', label: 'Copia del DNI' },
+  { value: 'certificado', label: 'Certificado de estudios' },
   { value: 'contrato', label: 'Contrato firmado' },
   { value: 'cts', label: 'CTS' },
   { value: 'vacaciones_truncas', label: 'Vacaciones truncas' },
@@ -72,6 +75,23 @@ export function severidadFirma(doc: Documento): 'success' | 'info' | 'warning' {
 
 export function esPdf(doc: Documento): boolean {
   return (doc.archivo ?? '').toLowerCase().endsWith('.pdf');
+}
+
+/** Las imágenes que el navegador pinta sin ayuda de nadie. */
+const IMAGENES = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+
+export function esImagen(doc: Documento): boolean {
+  return IMAGENES.includes(extensionDocumento(doc));
+}
+
+/**
+ * Se puede mirar sin bajarlo: los PDF y las imágenes.
+ *
+ * Word queda fuera porque el navegador no lo muestra; ese se descarga, y el
+ * visor lo dice en vez de bajarlo a escondidas.
+ */
+export function sePuedeVer(doc: Documento): boolean {
+  return esPdf(doc) || esImagen(doc);
 }
 
 export function extensionDocumento(doc: Documento): string {

@@ -6,6 +6,7 @@ use App\Support\ExpedienteDigital;
 use App\Traits\ListadoPaginado;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
@@ -223,10 +224,21 @@ class MisDocumentosController extends Controller
      */
     public function subirHojaDeVida(Request $request)
     {
-        $request->validate(['archivo' => ExpedienteDigital::REGLA_ARCHIVO], [
-            'archivo.required' => 'Elige el archivo de tu hoja de vida.',
-            'archivo.mimes'    => 'La hoja de vida tiene que ser PDF, Word o una imagen (JPG o PNG).',
+        // Sin `tipo` es la hoja de vida, como antes: la ruta vieja
+        // (my-documents/resume) sigue sirviendo igual.
+        $tipo = $request->input('tipo', ExpedienteDigital::HOJA_DE_VIDA);
+
+        $request->validate([
+            'archivo' => ExpedienteDigital::REGLA_ARCHIVO,
+            // Solo los suyos: una boleta o un contrato los emite el colegio,
+            // y dejar que se los suba él mismo sería dejarle escribir su
+            // propia boleta.
+            'tipo'    => ['nullable', Rule::in(ExpedienteDigital::PERSONALES)],
+        ], [
+            'archivo.required' => 'Elige el archivo que quieres subir.',
+            'archivo.mimes'    => 'El archivo tiene que ser PDF, Word o una imagen (JPG o PNG).',
             'archivo.max'      => 'El archivo pasa de 5 MB.',
+            'tipo.in'          => 'Ese tipo de documento no lo subes tú: lo emite el colegio.',
         ]);
 
         $empleadoId = $request->user()->empleado_id;
@@ -237,7 +249,7 @@ class MisDocumentosController extends Controller
             ], 403);
         }
 
-        $documento = ExpedienteDigital::guardar($empleadoId, ExpedienteDigital::HOJA_DE_VIDA, $request->file('archivo'));
+        $documento = ExpedienteDigital::guardar($empleadoId, $tipo, $request->file('archivo'));
 
         return response()->json(['success' => true, 'data' => $documento], 201);
     }

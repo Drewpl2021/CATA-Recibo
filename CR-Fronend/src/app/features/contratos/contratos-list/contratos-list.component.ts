@@ -151,7 +151,7 @@ export class ContratosListComponent implements OnInit {
   tiposDocumento = TIPO_DOCUMENTO_OPCIONES;
 
   accionesExtra: AccionPersonalizada<Contrato>[] = [
-    { id: 'documentos', titulo: 'Ver y adjuntar sus documentos', icono: 'description' },
+    { id: 'documentos', titulo: 'Subir el contrato firmado', icono: 'upload' },
   ];
 
   alAccionar(evento: { accion: string; fila: Contrato }): void {

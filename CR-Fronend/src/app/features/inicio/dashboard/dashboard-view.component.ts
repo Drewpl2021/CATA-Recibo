@@ -22,7 +22,6 @@ import {
 
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
-import { PrimerosPasosComponent } from '../../../shared/components/primeros-pasos/primeros-pasos.component';
 import { DashboardService, SedeService, ToastService } from '../../../core/services';
 import { ContratoPorVencer, CumpleanosDelMes, Dashboard, DatoGrafico, PendienteRrhh, Sede } from '../../../core/models';
 import { fechaLegible, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
@@ -55,8 +54,7 @@ import {
 @Component({
   selector: 'app-dashboard-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgApexchartsModule, FormModalComponent, IconComponent,
-    PrimerosPasosComponent],
+  imports: [CommonModule, FormsModule, NgApexchartsModule, FormModalComponent, IconComponent],
   templateUrl: './dashboard-view.component.html',
   styleUrl: './dashboard-view.component.scss',
 })

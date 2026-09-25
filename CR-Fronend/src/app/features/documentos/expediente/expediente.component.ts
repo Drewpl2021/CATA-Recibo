@@ -9,7 +9,7 @@ import {
   TIPOS_DOCUMENTO_SUBIBLES,
   diasHasta,
   esDocumentoAnterior,
-  esPdf,
+  sePuedeVer,
   estadoFirmaLegible,
   fechaDeDia,
   fechaLegible,
@@ -85,8 +85,26 @@ export class ExpedienteComponent implements OnInit, OnDestroy {
   @ViewChild(LienzoFirmaComponent) private lienzo?: LienzoFirmaComponent;
   readonly tiposSubibles = TIPOS_DOCUMENTO_SUBIBLES;
 
+  /** Sus papeles, menos la hoja de vida vigente, que va en su propia fila. */
+  get otrosPersonales(): Documento[] {
+    const vigente = this.expediente?.hoja_de_vida?.id;
+    return (this.expediente?.personales ?? []).filter((d) => d.id !== vigente);
+  }
+
+  /** "Mayo 2026, Junio 2026": los meses que esperan su boleta. */
+  get mesesSinEmitir(): string {
+    return (this.expediente?.boletas_sin_emitir ?? [])
+      .map((p) => `${nombreMes(p.mes)} ${p.anio}`)
+      .join(', ');
+  }
+
+  /** Lleva a emitir las boletas del mes que falta (el más reciente). */
+  irAEmitir(): void {
+    this.router.navigate(['/inicio/emision-boleta']);
+  }
+
   readonly nombreDocumento = nombreDocumento;
-  readonly esPdf = esPdf;
+  readonly sePuedeVer = sePuedeVer;
   readonly formato = formatoDocumento;
 
   readonly columnasBoletas: ColumnaTabla<Documento>[] = [
@@ -108,7 +126,7 @@ export class ExpedienteComponent implements OnInit, OnDestroy {
   ];
 
   readonly accionesBoletas: AccionPersonalizada<Documento>[] = [
-    { id: 'ver', titulo: 'Ver la boleta', icono: 'description', visible: (d) => esPdf(d) },
+    { id: 'ver', titulo: 'Ver la boleta', icono: 'description', visible: (d) => sePuedeVer(d) },
     { id: 'descargar', titulo: 'Descargar la boleta', icono: 'folder_open' },
     // Solo la subida a mano se quita: la que generó el sistema es la constancia del pago.
     { id: 'quitar', titulo: 'Quitar del expediente', icono: 'remove_circle', severidad: 'danger', visible: (d) => esDocumentoAnterior(d) },
@@ -120,7 +138,7 @@ export class ExpedienteComponent implements OnInit, OnDestroy {
   ];
 
   readonly accionesOtros: AccionPersonalizada<Documento>[] = [
-    { id: 'ver', titulo: 'Ver el documento', icono: 'description', visible: (d) => esPdf(d) },
+    { id: 'ver', titulo: 'Ver el documento', icono: 'description', visible: (d) => sePuedeVer(d) },
     { id: 'descargar', titulo: 'Descargar el documento', icono: 'folder_open' },
     { id: 'quitar', titulo: 'Quitar del expediente', icono: 'remove_circle', severidad: 'danger' },
   ];

@@ -8,6 +8,23 @@ export const TIPO_DOCUMENTO_OPCIONES: readonly Opcion[] = [
   { label: 'Vacaciones truncas', value: 'vacaciones_truncas' },
   { label: 'Comprobante de transferencia', value: 'comprobante_transferencia' },
   { label: 'Hoja de vida', value: 'hoja_de_vida' },
+  { label: 'Foto', value: 'foto' },
+  { label: 'Copia del DNI', value: 'dni' },
+  { label: 'Certificado de estudios', value: 'certificado' },
+  { label: 'Otro', value: 'otro' },
+];
+
+/**
+ * Lo que sube el propio trabajador desde Mis Documentos.
+ *
+ * Son SUS papeles. Lo que emite el colegio —boleta, contrato, CTS— no está
+ * en esta lista: dejarle subir su propia boleta sería dejarle escribirla.
+ */
+export const TIPO_DOCUMENTO_PROPIO: readonly Opcion[] = [
+  { label: 'Hoja de vida', value: 'hoja_de_vida' },
+  { label: 'Foto', value: 'foto' },
+  { label: 'Copia del DNI', value: 'dni' },
+  { label: 'Certificado de estudios', value: 'certificado' },
   { label: 'Otro', value: 'otro' },
 ];
 

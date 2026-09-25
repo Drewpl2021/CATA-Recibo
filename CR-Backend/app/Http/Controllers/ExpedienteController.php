@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Documento;
 use App\Models\Empleado;
+use App\Models\Planilla;
 use App\Support\ExpedienteDigital;
 use App\Traits\ListadoPaginado;
 use Illuminate\Database\Eloquent\Builder;
@@ -98,11 +99,33 @@ class ExpedienteController extends Controller
             ->sortByDesc(fn (Documento $d) => $this->periodoParaOrdenar($d))
             ->values();
 
-        // Lo que no es boleta, ni hoja de vida, ni cuelga de un contrato suyo.
+        // Los papeles que trae él: hoja de vida, foto, copia del DNI,
+        // certificados. Van juntos porque se leen juntos —"¿qué ha traído
+        // esta persona?"— y porque ninguno se firma.
+        $personales = $activos
+            ->whereIn('tipo', ExpedienteDigital::PERSONALES)
+            ->reject(fn (Documento $d) => in_array($d->contrato_id, $idsContratos, true))
+            ->sortByDesc('created_at')
+            ->values();
+
+        // Lo que emite el colegio y no es boleta ni contrato: CTS,
+        // vacaciones truncas, comprobantes de transferencia.
         $otros = $activos
-            ->reject(fn (Documento $d) => in_array($d->tipo, ['boleta', ExpedienteDigital::HOJA_DE_VIDA, ...ExpedienteDigital::ANTERIORES], true)
+            ->reject(fn (Documento $d) => in_array($d->tipo, ['boleta', ...ExpedienteDigital::PERSONALES, ...ExpedienteDigital::ANTERIORES], true)
                 || in_array($d->contrato_id, $idsContratos, true))
             ->values();
+
+        // Los meses que tienen planilla pero todavía no tienen boleta.
+        //
+        // Sin esto, el expediente de alguien con seis planillas y ninguna
+        // boleta emitida decía "todavía no tiene boletas", y parecía que el
+        // sistema se las había perdido.
+        $mesesConBoleta = $boletas->map(fn (Documento $d) => $d->planilla_id)->filter()->all();
+        $sinEmitir = Planilla::where('empleado_id', $empleado->id)
+            ->whereNotIn('id', $mesesConBoleta)
+            ->orderByDesc('anio')
+            ->orderByDesc('mes')
+            ->get(['id', 'mes', 'anio', 'total']);
 
         return response()->json([
             'success' => true,
@@ -115,6 +138,8 @@ class ExpedienteController extends Controller
                 ]))->values(),
                 'contratos_anteriores' => $contratosAnteriores,
                 'boletas'          => $boletas,
+                'boletas_sin_emitir' => $sinEmitir,
+                'personales'       => $personales,
                 'otros'            => $otros,
                 'dias_por_vencer'  => self::DIAS_POR_VENCER,
             ],
