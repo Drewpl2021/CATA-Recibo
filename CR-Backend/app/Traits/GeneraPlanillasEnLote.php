@@ -150,10 +150,12 @@ trait GeneraPlanillasEnLote
             $fila = $base + ['estado' => 'generada', 'planilla_id' => $planilla->id];
 
             // Si se le prorrateó, se dice: un sueldo distinto al de su ficha
-            // sin explicación parece un error de cálculo.
+            // sin explicación parece un error de cálculo. "Hábiles" y no
+            // "días" a secas: sin la palabra, "5 de 30" parece un recorte
+            // brutal en vez del prorrateo de lunes a viernes que es.
             if ($reparto['entro_este_mes']) {
                 $fila['motivo'] = 'Ingresó el ' . Carbon::parse($empleado->fecha_ingreso)->format('d/m/Y')
-                    . ": se le pagan {$reparto['dias_pagados']} de {$reparto['dias_del_mes']} días";
+                    . ": se le pagan {$reparto['dias_pagados']} de {$reparto['dias_habiles_del_mes']} días hábiles";
             }
 
             $detalle[] = $fila;

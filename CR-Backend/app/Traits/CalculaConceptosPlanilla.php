@@ -576,8 +576,12 @@ trait CalculaConceptosPlanilla
         $inicioMes = \Carbon\Carbon::create($anio, $mes, 1)->startOfMonth();
         $finMes    = \Carbon\Carbon::create($anio, $mes, 1)->endOfMonth();
 
-        $contratoVigente    = $empleado->contratos()->where('estado', 'vigente')->latest('fecha_inicio')->first();
-        $contratoFinalizado = $empleado->contratos()->where('estado', 'finalizado')->latest('fecha_fin')->first();
+        // estado_registro = activo: un contrato eliminado desde la pantalla de
+        // Contratos no toca 'estado' (solo se apaga estado_registro), y sin
+        // este filtro la boleta le seguía imprimiendo la categoría y la fecha
+        // de cese de un contrato que RR.HH. ya había quitado.
+        $contratoVigente    = $empleado->contratos()->where('estado', 'vigente')->where('estado_registro', 'activo')->latest('fecha_inicio')->first();
+        $contratoFinalizado = $empleado->contratos()->where('estado', 'finalizado')->where('estado_registro', 'activo')->latest('fecha_fin')->first();
 
         $tipoContrato = $contratoVigente->tipo_contrato ?? $empleado->tipo_contrato;
         $categoria    = $tipoContrato ? ucfirst(str_replace('_', ' ', $tipoContrato)) : '-';
@@ -597,18 +601,33 @@ trait CalculaConceptosPlanilla
     /**
      * Cómo se reparten los días de un mes para un trabajador concreto.
      *
-     * Devuelve tres cosas y la proporción que sale de ellas:
+     * Devuelve, entre otras cosas, la proporción con la que se prorratea el
+     * sueldo:
      *
-     *   dias_del_mes   los que tiene el mes (28, 30, 31)
-     *   dias_pagados   por los que le toca cobrar: si entró el día 20, son 11,
-     *                  no 30. Antes se le pagaba el mes entero aunque hubiera
-     *                  entrado la semana pasada.
-     *   dias_vacaciones  los que estuvo de descanso, que TAMBIÉN se pagan
-     *   dias_trabajados  los que realmente vino, que es lo que va en la boleta
+     *   dias_del_mes          los que tiene el mes de calendario (28, 30, 31)
+     *   dias_habiles_del_mes  los que cuentan de verdad: solo lunes a viernes
+     *   dias_pagados          los hábiles por los que le toca cobrar: si entró
+     *                         el jueves 24, son los hábiles del 24 al fin de
+     *                         mes, no el rango completo de días
+     *   dias_vacaciones       los que estuvo de descanso, que TAMBIÉN se pagan
+     *   dias_trabajados       los que realmente vino, que es lo que va en la boleta
      *
-     * La proporción es dias_pagados / dias_del_mes, y con ella se prorratea el
-     * sueldo al crear la planilla. Las vacaciones NO entran en esa proporción:
-     * son remuneradas, así que quien las toma cobra igual.
+     * La proporción es dias_pagados / dias_habiles_del_mes —los DOS lados en
+     * días hábiles, no uno en hábiles y el otro en calendario—: quien trabajó
+     * el mes ENTERO tiene que seguir dando proporción 1.0 y cobrando su
+     * sueldo completo. Mezclar hábiles arriba con calendario abajo le
+     * recortaba el sueldo a TODO el mundo, todos los meses, en un 20-25%
+     * —se detectó antes de entrar a producción, calculando a mano el caso de
+     * alguien con el mes entero trabajado—.
+     *
+     * Decisión del colegio, no de la ley: el Perú paga el descanso semanal
+     * obligatorio (D.Leg. 713) dentro del sueldo mensual fijo, así que lo
+     * normal en un sistema de planilla es contar TODOS los días de
+     * calendario, sábado y domingo incluidos. Acá se cuenta distinto porque
+     * así se pidió expresamente (2026-09-28): si en algún momento se
+     * cuestiona por qué la boleta de alguien que entró a mitad de semana no
+     * le paga el fin de semana que quedó dentro del tramo, la respuesta está
+     * en este comentario, no en un bug.
      *
      * Nota de lo que todavía no cubre: el cese a mitad de mes. Cuando a alguien
      * se le termina el contrato el día 12, esto le sigue pagando hasta fin de
@@ -619,6 +638,7 @@ trait CalculaConceptosPlanilla
         $inicioMes = \Carbon\Carbon::create($anio, $mes, 1)->startOfMonth();
         $finMes    = \Carbon\Carbon::create($anio, $mes, 1)->endOfMonth();
         $diasDelMes = $inicioMes->daysInMonth;
+        $diasHabilesDelMes = $this->diasHabilesEntre($inicioMes, $finMes);
 
         $ingreso = $empleado->fecha_ingreso
             ? \Carbon\Carbon::parse($empleado->fecha_ingreso)->startOfDay()
@@ -627,30 +647,49 @@ trait CalculaConceptosPlanilla
         // Todavía no había entrado: no le corresponde nada de este mes.
         if ($ingreso && $ingreso->gt($finMes)) {
             return [
-                'dias_del_mes'    => $diasDelMes,
-                'dias_pagados'    => 0,
-                'dias_vacaciones' => 0,
-                'dias_trabajados' => 0,
-                'proporcion'      => 0.0,
-                'entro_este_mes'  => false,
+                'dias_del_mes'         => $diasDelMes,
+                'dias_habiles_del_mes' => $diasHabilesDelMes,
+                'dias_pagados'         => 0,
+                'dias_vacaciones'      => 0,
+                'dias_trabajados'      => 0,
+                'proporcion'           => 0.0,
+                'entro_este_mes'       => false,
             ];
         }
 
         // Desde cuándo cuenta: su fecha de ingreso si cae dentro del mes, o el
         // día 1 si ya estaba desde antes.
         $desde = ($ingreso && $ingreso->gt($inicioMes)) ? $ingreso : $inicioMes;
-        $diasPagados = (int) $desde->diffInDays($finMes) + 1;
+        $diasPagados = $this->diasHabilesEntre($desde, $finMes);
 
         $diasVacaciones = $this->diasDeVacacionesEnElMes($empleado->id, $desde, $finMes);
 
         return [
-            'dias_del_mes'    => $diasDelMes,
-            'dias_pagados'    => $diasPagados,
-            'dias_vacaciones' => $diasVacaciones,
-            'dias_trabajados' => max(0, $diasPagados - $diasVacaciones),
-            'proporcion'      => round($diasPagados / $diasDelMes, 6),
-            'entro_este_mes'  => $ingreso && $ingreso->gt($inicioMes),
+            'dias_del_mes'         => $diasDelMes,
+            'dias_habiles_del_mes' => $diasHabilesDelMes,
+            'dias_pagados'         => $diasPagados,
+            'dias_vacaciones'      => $diasVacaciones,
+            'dias_trabajados'      => max(0, $diasPagados - $diasVacaciones),
+            'proporcion'           => $diasHabilesDelMes > 0 ? round($diasPagados / $diasHabilesDelMes, 6) : 0.0,
+            'entro_este_mes'       => $ingreso && $ingreso->gt($inicioMes),
         ];
+    }
+
+    /** Cuántos lunes a viernes hay entre dos fechas, ambas incluidas. */
+    private function diasHabilesEntre(\Carbon\Carbon $desde, \Carbon\Carbon $hasta): int
+    {
+        $dias   = 0;
+        $cursor = $desde->copy()->startOfDay();
+        $limite = $hasta->copy()->startOfDay();
+
+        while ($cursor->lte($limite)) {
+            if ($cursor->isWeekday()) {
+                $dias++;
+            }
+            $cursor->addDay();
+        }
+
+        return $dias;
     }
 
     /**
