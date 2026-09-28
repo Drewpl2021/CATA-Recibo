@@ -1,0 +1,61 @@
+flowchart TD
+    Inicio(["RR.HH. tiene un Excel<br/>con el padrón de trabajadores"]) --> A1
+
+    subgraph P1["Paso 1 · Subir archivos"]
+        direction TB
+        A1["Descargar el Excel modelo<br/>(trae las listas de área, cargo y sede)"] --> A2["Llenarlo en Excel"]
+        A2 --> A3["Subirlo al asistente (wizard)"]
+        A3 --> A4["El NAVEGADOR lee el archivo<br/>(read-excel-file). No se sube al servidor"]
+        A4 --> A5{"¿Hay una fila con<br/>columna DNI entre<br/>las 15 primeras?"}
+        A5 -- sí --> A6["Esa fila son los títulos"]
+        A5 -- no --> A7["Se toma la primera fila con datos"]
+    end
+
+    A6 --> B1
+    A7 --> B1
+
+    subgraph P2["Paso 2 · Reconocer columnas"]
+        direction TB
+        B1["Se mandan SOLO los títulos:<br/>POST /importacion-empleados/reconocer"] --> B2{"¿Qué es cada columna?"}
+        B2 -- "DNI, Nombre, Cargo…" --> B3["Reconocida sola"]
+        B2 -- "Rol / Perfil" --> B4["Se ignora sin avisar<br/>(eso no se importa)"]
+        B2 -- "Apellido y Nombre<br/>en una sola columna" --> B5["Error: pide separarlas"]
+        B2 -- "no se parece a nada" --> B6["RR.HH. la asigna a mano<br/>o la deja fuera"]
+        B3 --> B7
+        B4 --> B7
+        B5 --> B7
+        B6 --> B7
+        B7["RR.HH. revisa y confirma<br/>el mapeo de columnas"]
+    end
+
+    B7 --> C1
+
+    subgraph P3["Paso 3 · Revisar cambios"]
+        direction TB
+        C1["Se manda el archivo completo:<br/>POST /importacion-empleados/previsualizar<br/>(todavía NO guarda nada)"] --> C2{"¿El DNI de<br/>la fila ya existe?"}
+        C2 -- no existe --> C3["Fila de ALTA<br/>(igual que Nuevo Empleado)"]
+        C2 -- existe --> C4{"¿La celda tiene<br/>algo escrito?"}
+        C4 -- vacía --> C5["No se toca ese campo<br/>(vacío ≠ borrar)"]
+        C4 -- con dato --> C6["Fila de CAMBIO<br/>solo en ese campo"]
+        C3 --> C7
+        C5 --> C7
+        C6 --> C7
+        C7["Tabla: qué pasaría fila por fila,<br/>con sus errores si los hay"]
+        C7 --> C8{"¿Quedó algún<br/>error?"}
+    end
+
+    C8 -- sí --> Corrige["RR.HH. corrige el Excel<br/>y lo vuelve a subir"] --> A3
+    C8 -- no --> D1
+
+    subgraph P4["Paso 4 · Aplicar"]
+        direction TB
+        D1["POST /importacion-empleados/aplicar<br/>(vuelve a validar todo, por si algo cambió)"] --> D2["Transacción de base de datos:<br/>TODO se guarda, o NADA"]
+        D2 --> D3["Altas → AltaDeEmpleado::crear<br/>(ficha + cuenta + contrato inicial)"]
+        D2 --> D4["Cambios → solo los campos<br/>con celda llena"]
+        D3 --> D5
+        D4 --> D5
+        D5["Se anota en Auditoría:<br/>quién importó, cuántas altas y cambios"]
+        D5 --> D6["Hojas de vida: se suben<br/>una por una, buscando por DNI<br/>(un archivo malo no tumba a los demás)"]
+    end
+
+    D6 --> Fin(["Padrón cargado,<br/>con su expediente"])

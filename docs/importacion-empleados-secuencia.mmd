@@ -1,0 +1,40 @@
+sequenceDiagram
+    actor H as RR.HH.
+    participant N as Navegador (Angular)
+    participant API as API (Laravel)
+    participant DB as MySQL
+
+    H->>N: Sube el Excel llenado
+    N->>N: Lee el archivo con read-excel-file<br/>(el archivo NO sale del navegador)
+    N->>API: POST /reconocer  { columnas }
+    API-->>N: qué campo es cada columna
+    N->>H: Muestra el mapeo para confirmar
+    H->>N: Confirma o corrige columnas
+
+    N->>API: POST /previsualizar  { columnas, filas }
+    API->>DB: por cada fila, busca el DNI
+    DB-->>API: existe / no existe
+    API->>API: decide ALTA o CAMBIO<br/>(celda vacía = no tocar)
+    API-->>N: tabla con el resultado y los errores
+    N->>H: Revisa la tabla
+
+    alt hay errores
+        H->>N: Corrige el Excel
+        N->>API: vuelve a /previsualizar
+    else sin errores
+        H->>N: "Aplicar"
+        N->>API: POST /aplicar  { columnas, filas }
+        API->>API: valida todo de nuevo
+        API->>DB: BEGIN TRANSACTION
+        API->>DB: altas → crear empleado + usuario + contrato
+        API->>DB: cambios → actualizar solo lo escrito
+        API->>DB: COMMIT (todo o nada)
+        API->>DB: registrar en Auditoría
+        API-->>N: resumen: X altas, Y cambios
+        loop por cada hoja de vida
+            N->>API: POST /hoja-de-vida  { dni, archivo }
+            API->>DB: buscar empleado por DNI
+            API-->>N: guardada / con error
+        end
+        N->>H: "Listo: X altas, Y actualizaciones"
+    end
