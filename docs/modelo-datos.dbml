@@ -261,6 +261,7 @@ Table users {
   empleado_id uuid [ref: > empleados.id]
   estado_registro string [not null]
   foto string
+  guia_vista_en timestamp
   Note: 'La cuenta de acceso. Puede estar atada a un trabajador o ser solo del sistema.'
 }
 

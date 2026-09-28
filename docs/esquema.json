@@ -948,6 +948,40 @@
     ]
    ]
   },
+  "planilla_historial": {
+   "columnas": [
+    [
+     "planilla_id",
+     "string",
+     ""
+    ],
+    [
+     "total_anterior",
+     "decimal(10,2)",
+     "nullable"
+    ],
+    [
+     "total_nuevo",
+     "decimal(10,2)",
+     "nullable"
+    ],
+    [
+     "estado_anterior",
+     "string",
+     "nullable"
+    ],
+    [
+     "estado_nuevo",
+     "string",
+     "nullable"
+    ],
+    [
+     "cambiado_en",
+     "timestamp",
+     ""
+    ]
+   ]
+  },
   "rol_modulo": {
    "columnas": [
     [
@@ -1105,6 +1139,11 @@
     [
      "foto",
      "string",
+     "nullable"
+    ],
+    [
+     "guia_vista_en",
+     "timestamp",
      "nullable"
     ]
    ]

@@ -1,6 +1,6 @@
 # Modelo de datos — CATA-Recibo
 
-La base tiene **22 tablas del negocio** y **29 relaciones** entre ellas. Todo lo
+La base tiene **23 tablas del negocio** (la última, `planilla_historial`, la escribe un trigger de la base) y **29 relaciones** entre ellas. Todo lo
 que está en este documento sale de leer las migraciones del proyecto, así que
 describe la base que se va a crear de verdad —no un dibujo hecho aparte que se
 queda viejo a la primera semana—.
