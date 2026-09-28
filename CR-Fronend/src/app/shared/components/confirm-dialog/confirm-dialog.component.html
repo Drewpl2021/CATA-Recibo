@@ -1,15 +1,20 @@
 <div class="modal-overlay" *ngIf="request as r" (click)="cancelar()">
   <div class="modal-card" (click)="$event.stopPropagation()">
-    <!-- El tacho solo cuando de verdad se va a borrar algo. Para confirmar
-         una acción normal (aprobar unas vacaciones, por ejemplo) va un visto
-         azul: el rojo del tacho hacía que aprobar pareciera destruir. -->
-    <div class="modal-icon-danger" *ngIf="r.options.variante !== 'default'">
+    <!--
+      El tacho SOLO con variante:'danger', puesto a propósito. Antes era al
+      revés (todo lo que no dijera 'default' salía con el tacho), y como
+      'variante' es opcional, la pantalla que se olvidaba de escribirlo
+      —"Sacar de esta planilla", "Recalcular sueldo"— heredaba el tacho rojo
+      sin querer, en acciones que no borran nada. Con lo neutro como
+      default, olvidarse de la variante sale seguro y no da miedo de más.
+    -->
+    <div class="modal-icon-danger" *ngIf="r.options.variante === 'danger'">
       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>
       </svg>
     </div>
 
-    <div class="modal-icon-brand" *ngIf="r.options.variante === 'default'">
+    <div class="modal-icon-brand" *ngIf="r.options.variante !== 'danger'">
       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
       </svg>
@@ -18,7 +23,7 @@
     <p>{{ r.options.mensaje }}</p>
     <div class="modal-actions">
       <button class="btn-secondary-modal" (click)="cancelar()">{{ r.options.cancelarTexto ?? 'Cancelar' }}</button>
-      <button [class]="r.options.variante === 'default' ? 'btn-primary' : 'btn-danger-modal'"
+      <button [class]="r.options.variante === 'danger' ? 'btn-danger-modal' : 'btn-primary'"
         (click)="aceptar()">{{ r.options.aceptarTexto ?? 'Confirmar' }}</button>
     </div>
   </div>

@@ -549,6 +549,8 @@ export class PlanillasListComponent implements OnInit {
         mensaje: `${this.nombreEmpleado(planilla)} saldrá de "${this.corrida?.nombre}" y pasará a `
           + '"Sin agrupar". Su planilla y sus conceptos no se tocan: solo deja de estar agrupado.',
         aceptarTexto: 'Sí, sacar',
+        // No se borra nada: el tacho rojo daría a entender otra cosa.
+        variante: 'default',
       })
       .then((aceptado) => {
         if (!aceptado) return;
