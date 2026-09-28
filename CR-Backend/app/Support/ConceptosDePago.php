@@ -46,6 +46,16 @@ final class ConceptosDePago
     /** El sueldo del mes: sale de la ficha del trabajador, nunca es una línea. */
     public const REMUNERACION_BASICA = 'Remuneración Básica';
 
+    /**
+     * La vía de plazo fijo, suplencia y prácticas: ellos no piden descanso,
+     * se les paga esto al terminar el contrato. El monto es manual (un
+     * doceavo del sueldo por mes trabajado, que RR.HH. calcula aparte), pero
+     * el NOMBRE sí lo necesita el código: es la única forma de impedir que
+     * se le aplique a alguien con contrato indeterminado, que cobra sus
+     * vacaciones de verdad y no debería cobrar además esto.
+     */
+    public const VACACIONES_TRUNCAS = 'Vacaciones Truncas';
+
     // ── Las dos bolsas genéricas ──────────────────────────────────
     public const OTROS_INGRESOS      = 'Otros Conceptos (Ingresos)';
     public const OTROS_DESCUENTOS    = 'Otros Conceptos (Descuentos)';

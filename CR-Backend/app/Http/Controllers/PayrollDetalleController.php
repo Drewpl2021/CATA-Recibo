@@ -1,9 +1,12 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\PayrollDetalle;
+use App\Models\PaymentConcept;
 use App\Models\Planilla;
+use App\Support\ConceptosDePago;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use App\Traits\ListadoPaginado;
 
 class PayrollDetalleController extends Controller
@@ -91,6 +94,8 @@ class PayrollDetalleController extends Controller
         ]);
 
         $planilla = Planilla::findOrFail($datos['planilla_id']);
+
+        $this->rechazarTruncasParaIndeterminado($datos['payment_concept_id'], $planilla);
 
         $nuevo = [
             'planilla_id'        => $datos['planilla_id'],
@@ -180,6 +185,32 @@ class PayrollDetalleController extends Controller
         }
 
         return response()->json(['success' => true, 'data' => $detalle->load('paymentConcept')]);
+    }
+
+    /**
+     * "Vacaciones Truncas" es la vía de plazo fijo, suplencia y prácticas:
+     * quien tiene contrato indeterminado ya cobra sus vacaciones de verdad
+     * (días de descanso pagados), así que aplicarle además esto sería
+     * pagarle dos veces por lo mismo. El monto es manual —nada más en este
+     * concepto se calcula solo— así que este es el único candado posible.
+     */
+    private function rechazarTruncasParaIndeterminado(string $paymentConceptId, Planilla $planilla): void
+    {
+        $concepto = PaymentConcept::find($paymentConceptId);
+
+        if (! $concepto || $concepto->nombre !== ConceptosDePago::VACACIONES_TRUNCAS) {
+            return;
+        }
+
+        $empleado = $planilla->empleado;
+
+        if ($empleado && $empleado->tipoContratoVigente() === 'indeterminado') {
+            throw ValidationException::withMessages([
+                'payment_concept_id' => [
+                    'Vacaciones Truncas no aplica: con contrato indeterminado se piden los días de descanso, no se pagan.',
+                ],
+            ]);
+        }
     }
 
     /**

@@ -59,7 +59,7 @@ class PaymentConceptSeeder extends Seeder
                 'descripcion' => 'El 10% de la RMV para quien tiene hijos menores de 18, o hasta 24 si siguen estudiando. Lo calcula el sistema mirando "tiene hijos" en su ficha.',
             ],
             [
-                'nombre' => 'Vacaciones Truncas',
+                'nombre' => ConceptosDePago::VACACIONES_TRUNCAS,
                 'tipo' => 'bonificacion', 'calculo' => null, 'valor' => null,
                 'descripcion' => 'Un doceavo del sueldo por cada mes completo trabajado, de las vacaciones ganadas y no tomadas. Es la vía de plazo fijo, suplencia y prácticas: ellos no piden descanso, se les paga con este concepto.',
             ],
