@@ -1150,9 +1150,22 @@ td.celda-numero {
 /* Rejilla de casillas para marcar varios de una lista corta: las áreas de
    un cargo, los cargos de un área. En columna, quince opciones obligan a
    desplazar el modal entero para llegar al botón de guardar. */
-/* El buscador de la rejilla, pegado encima de ella. */
-.buscador-opciones {
+/* El buscador de la rejilla, pegado encima de ella, con su botón de limpiar
+   —antes solo se salía borrando letra por letra, igual que le pasaba al
+   buscador de las tablas. */
+.buscador-opciones-envoltura {
+  position: relative;
   margin-bottom: 8px;
+}
+
+.buscador-opciones {
+  margin-bottom: 0;
+  padding-right: 30px;
+}
+
+.buscador-opciones-clear {
+  @extend %btn-limpiar-campo;
+  right: 6px;
 }
 
 .rejilla-opciones {
@@ -1780,7 +1793,14 @@ td.celda-numero {
   pointer-events: none;
 }
 
-.buscador-personas__campo .form-control { padding-left: 36px; }
+.buscador-personas__campo .form-control { padding-left: 36px; padding-right: 30px; }
+
+/* El «×» de este campo solo borra el texto: los filtros de área/cargo/sede
+   siguen puestos. El botón "Limpiar" de al lado ya borra todo junto. */
+.buscador-personas__campo-clear {
+  @extend %btn-limpiar-campo;
+  right: 6px;
+}
 
 .buscador-personas__filtros {
   display: flex;
@@ -2675,6 +2695,8 @@ textarea.form-control {
 
 .data-table-search input {
   padding-left: 38px;
+  /* Sitio para el botón de limpiar, para que un texto largo no quede debajo. */
+  padding-right: 30px;
 }
 
 .data-table-search-icon {
@@ -2684,6 +2706,38 @@ textarea.form-control {
   transform: translateY(-50%);
   color: var(--text-muted);
   pointer-events: none;
+}
+
+/* El botón «×» de limpiar un campo de búsqueda: la misma forma en las tres
+   pantallas que lo necesitan (la tabla, los selectores de casillas de
+   Áreas/Cargos, y el buscador de personas). Solo existe con algo escrito
+   (*ngIf en cada plantilla); lo único que cambia entre ellos es el `right`,
+   así que va aparte de la forma. */
+%btn-limpiar-campo {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+}
+
+.data-table-search-clear {
+  @extend %btn-limpiar-campo;
+  right: 6px;
 }
 
 .data-table-toolbar-actions {

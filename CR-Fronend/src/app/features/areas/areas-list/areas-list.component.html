@@ -58,9 +58,18 @@
     <div class="form-group">
       <label>¿Qué cargos son propios de esta área?</label>
 
-      <input type="text" class="form-control buscador-opciones" [(ngModel)]="buscadorCargos"
-        [ngModelOptions]="{ standalone: true }" placeholder="Busca un cargo por su nombre…"
-        aria-label="Buscar un cargo" />
+      <div class="buscador-opciones-envoltura">
+        <input #campoBuscadorCargos type="text" class="form-control buscador-opciones" [(ngModel)]="buscadorCargos"
+          [ngModelOptions]="{ standalone: true }" placeholder="Busca un cargo por su nombre…"
+          (keydown.escape)="alPulsarEscapeEnBuscadorCargos(campoBuscadorCargos)"
+          aria-label="Buscar un cargo" />
+        <button *ngIf="buscadorCargos" type="button" class="buscador-opciones-clear" title="Borrar búsqueda"
+          aria-label="Borrar búsqueda" (click)="limpiarBuscadorCargos(campoBuscadorCargos)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
 
       <div class="rejilla-opciones">
         <label class="check-item" *ngFor="let c of cargosVisibles" [class.is-activo]="estaMarcado(c.id)">

@@ -126,6 +126,21 @@ export class CargosListComponent implements OnInit {
     return this.areasElegidas.has(areaId);
   }
 
+  /** El botón «×» del buscador de áreas: limpia y devuelve el foco. */
+  limpiarBuscadorAreas(campo: HTMLInputElement): void {
+    this.buscadorAreas = '';
+    campo.focus();
+  }
+
+  /** Escape en dos pasos, igual que el buscador de las tablas. */
+  alPulsarEscapeEnBuscadorAreas(campo: HTMLInputElement): void {
+    if (this.buscadorAreas) {
+      this.limpiarBuscadorAreas(campo);
+    } else {
+      campo.blur();
+    }
+  }
+
   alternarArea(areaId: string): void {
     if (this.areasElegidas.has(areaId)) {
       this.areasElegidas.delete(areaId);

@@ -409,6 +409,27 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     this.establecerPaginaActual(1);
   }
 
+  /** El botón «×»: limpia y devuelve el foco al campo, para seguir usándolo. */
+  limpiarBusqueda(campo: HTMLInputElement): void {
+    this.busqueda = '';
+    this.onBuscar();
+    campo.focus();
+  }
+
+  /**
+   * Escape en el buscador, en dos pasos: si hay algo escrito, lo primero es
+   * borrarlo sin quitar el foco (como el botón «×», por si se sigue
+   * escribiendo); si ya estaba vacío, un segundo Escape suelta el foco y
+   * ahí sí se "sale" del buscador del todo.
+   */
+  alPulsarEscapeEnBuscador(campo: HTMLInputElement): void {
+    if (this.busqueda) {
+      this.limpiarBusqueda(campo);
+    } else {
+      campo.blur();
+    }
+  }
+
   irAPagina(pagina: number): void {
     if (pagina < 1 || pagina > this.totalPaginas) return;
     if (this.paginacionServidor) {

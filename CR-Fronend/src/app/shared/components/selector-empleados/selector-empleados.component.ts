@@ -102,6 +102,25 @@ export class SelectorEmpleadosComponent implements OnChanges {
     this.filtroSede = '';
   }
 
+  /**
+   * El botón «×» de DENTRO del campo: solo borra el texto escrito, sin
+   * tocar los filtros de área/cargo/sede. "Limpiar" (arriba) borra todo
+   * junto; esto es para cuando solo se quiere corregir lo que se escribió.
+   */
+  limpiarBusquedaTexto(campo: HTMLInputElement): void {
+    this.busqueda = '';
+    campo.focus();
+  }
+
+  /** Escape en dos pasos, igual que el resto de buscadores de la app. */
+  alPulsarEscapeEnBusqueda(campo: HTMLInputElement): void {
+    if (this.busqueda) {
+      this.limpiarBusquedaTexto(campo);
+    } else {
+      campo.blur();
+    }
+  }
+
   // ────────── Lo marcado ──────────
 
   estaMarcado(id: string): boolean {

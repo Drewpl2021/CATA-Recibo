@@ -6,8 +6,19 @@
       <svg class="data-table-search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
       </svg>
-      <input type="text" class="form-control" [(ngModel)]="busqueda" (ngModelChange)="onBuscar()"
+      <input #campoBusqueda type="text" class="form-control" [(ngModel)]="busqueda" (ngModelChange)="onBuscar()"
+        (keydown.escape)="alPulsarEscapeEnBuscador(campoBusqueda)"
         [placeholder]="textoBuscador" [attr.aria-label]="textoBuscador" />
+      <!-- Antes solo se salía borrando letra por letra. La primera vez que se
+           pulsa Escape limpia sin quitar el foco (se puede seguir escribiendo);
+           si ya estaba vacío, Escape suelta el foco: dos formas de "salir"
+           además del botón. -->
+      <button *ngIf="busqueda" type="button" class="data-table-search-clear" title="Borrar búsqueda"
+        aria-label="Borrar búsqueda" (click)="limpiarBusqueda(campoBusqueda)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+        </svg>
+      </button>
     </div>
     <div class="data-table-toolbar-actions">
       <ng-content select="[tableActions]"></ng-content>
