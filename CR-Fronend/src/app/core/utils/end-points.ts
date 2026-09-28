@@ -134,6 +134,9 @@ export const END_POINTS_ACCIONES = {
   /** POST payrolls/{id}/concepts — deja sus líneas como diga la pantalla */
   sincronizarConceptosPlanilla: (planillaId: string) => `payrolls/${planillaId}/concepts`,
 
+  /** PUT payrolls/{id}/recalcular — vuelve a tomar el sueldo actual de la ficha */
+  recalcularPlanilla: (planillaId: string) => `payrolls/${planillaId}/recalcular`,
+
   /** GET employees/export?search= — la lista del personal en Excel */
   exportarEmpleados: 'employees/export',
 

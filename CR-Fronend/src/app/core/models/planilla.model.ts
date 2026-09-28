@@ -1,5 +1,6 @@
 import { PaymentConcept } from './configuracion.model';
 import { Empleado } from './empleado.model';
+import { PlanillaCorrida } from './planilla-corrida.model';
 
 export interface Planilla {
   /** Opcional porque los formularios arman el objeto antes de guardarlo. */
@@ -23,6 +24,8 @@ export interface Planilla {
   estado_registro?: string;
   empleado?: Empleado | null;
   payroll_detalles?: PayrollDetalle[];
+  /** Solo la manda `show()`: para saber si "Recalcular sueldo" tiene sentido ofrecerlo. */
+  corrida?: PlanillaCorrida | null;
 }
 
 export interface PlanillaPayload {

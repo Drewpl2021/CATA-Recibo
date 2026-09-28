@@ -81,6 +81,21 @@ export class PlanillaService extends EntityDataService<Planilla> {
   }
 
   /**
+   * PUT /planilla/{id}/recalcular — vuelve a tomar el sueldo ACTUAL de la
+   * ficha del trabajador, lo prorratea de nuevo por los días que le tocan
+   * ese mes, y regenera pensión, EsSalud, Asignación Familiar y Renta de
+   * 5ta. Hace falta porque generar la planilla es una foto: si el sueldo
+   * de la ficha cambia después, la planilla se queda con el viejo hasta
+   * que alguien pida esto. No toca las líneas que RR.HH. agregó a mano.
+   */
+  recalcular(planillaId: string): Observable<ApiResponse<Planilla>> {
+    return this.http.put<ApiResponse<Planilla>>(
+      `${environment.apiUrl}/${END_POINTS_ACCIONES.recalcularPlanilla(planillaId)}`,
+      {}
+    );
+  }
+
+  /**
    * GET /planilla/exportar — el reporte completo en Excel.
    *
    * Toma los mismos filtros que el listado a propósito: lo que se ve en

@@ -494,7 +494,9 @@ class PlanillaController extends Controller
 
     public function show(string $id)
     {
-        $planilla = Planilla::with('empleado')->findOrFail($id);
+        // 'corrida': la pantalla lo necesita para saber si puede ofrecer
+        // "Recalcular sueldo" — una corrida cerrada ya se pagó.
+        $planilla = Planilla::with('empleado', 'corrida')->findOrFail($id);
         return response()->json(['success' => true, 'data' => $planilla]);
     }
 
@@ -518,6 +520,77 @@ class PlanillaController extends Controller
         $planilla->recalcularTotal();
 
         return response()->json(['success' => true, 'data' => $planilla->fresh()]);
+    }
+
+    /**
+     * PUT /planilla/{id}/recalcular
+     *
+     * Generar la planilla es una FOTO del sueldo de ese momento
+     * (GeneraPlanillasEnLote::generarLote guarda `sueldoDelMes()` y ya no lo
+     * vuelve a tocar). Si RR.HH. corrige el sueldo de alguien DESPUÉS de
+     * haberle generado la planilla del mes, esa planilla se queda con el
+     * sueldo viejo para siempre — nada la actualiza sola. Este botón es ese
+     * "algo": vuelve a leer el sueldo ACTUAL de la ficha, lo prorratea de
+     * nuevo por los días que le tocan ese mes, y regenera los conceptos que
+     * el propio sistema controla.
+     *
+     * Lo que NO toca: las líneas que RR.HH. agregó a mano o aplicó desde el
+     * catálogo puntualmente (un bono, un adelanto) — generarConceptosAutomaticos()
+     * solo crea o actualiza los conceptos que ya eran suyos (pensión, EsSalud,
+     * Asignación Familiar, Gratificación, Renta de 5ta, y los del catálogo
+     * marcados "aplica a todos"). Y si la Renta de 5ta deja de aplicar porque
+     * el sueldo nuevo es menor, la línea vieja se borra sola: eso ya lo hace
+     * generarYPersistirRenta5ta().
+     */
+    public function recalcular(string $id)
+    {
+        $planilla = Planilla::with('empleado', 'corrida')->findOrFail($id);
+
+        if ($planilla->corrida?->estaCerrada()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta planilla está cerrada: no se le puede recalcular el sueldo. Ábrela primero.',
+            ], 422);
+        }
+
+        $empleado = $planilla->empleado;
+        if (! $empleado) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta planilla no tiene un trabajador asociado.',
+            ], 422);
+        }
+
+        $sueldoNuevo = $this->sueldoDelMes($empleado, $planilla->mes, $planilla->anio);
+
+        if ($sueldoNuevo === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Según la ficha, este trabajador todavía no había ingresado en ese mes.',
+            ], 422);
+        }
+
+        $sueldoAnterior = (float) $planilla->sueldo_base;
+
+        $planilla->update(['sueldo_base' => $sueldoNuevo]);
+        $this->generarConceptosAutomaticos($planilla, $empleado);
+        $planilla->recalcularTotal();
+
+        if (round($sueldoAnterior, 2) !== round($sueldoNuevo, 2)) {
+            \App\Models\Auditoria::registrar(
+                'recalculó',
+                'planilla',
+                (string) $planilla->id,
+                'Recalculó el sueldo de ' . trim($empleado->nombre . ' ' . $empleado->apellido)
+                    . " en la planilla de {$planilla->mes}/{$planilla->anio}",
+                ['sueldo_base' => [number_format($sueldoAnterior, 2, '.', ''), number_format($sueldoNuevo, 2, '.', '')]]
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => $planilla->fresh()->load('payrollDetalles.paymentConcept', 'empleado'),
+        ]);
     }
 
     public function destroy(string $id)

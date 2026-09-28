@@ -18,6 +18,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 
 /** Los tipos que restan del sueldo, para saber cómo pintar cada línea. */
 const TIPOS_QUE_RESTAN = ['descuento', 'adelanto'];
@@ -46,7 +47,7 @@ const SEVERIDAD_POR_TIPO: Record<string, 'success' | 'danger' | 'info' | 'warnin
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent,
+    PageHeaderComponent, DataTableComponent, FormModalComponent, PistaDirective,
   ],
   templateUrl: './planilla-detalle.component.html',
 })
@@ -248,6 +249,52 @@ export class PlanillaDetalleComponent implements OnInit {
         this.cargando = false;
         this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo cargar la planilla.'));
       },
+    });
+  }
+
+  recalculando = false;
+
+  /** Una corrida cerrada ya se pagó: no se le mueve el sueldo. */
+  get corridaCerrada(): boolean {
+    return this.planilla?.corrida?.estado === 'cerrada';
+  }
+
+  /**
+   * Vuelve a tomar el sueldo ACTUAL de la ficha del trabajador y regenera
+   * los conceptos que calcula el sistema (pensión, EsSalud, Asignación
+   * Familiar, Renta de 5ta). Hace falta porque generar la planilla es una
+   * foto del sueldo de ese momento: si alguien corrige el sueldo en la
+   * ficha DESPUÉS, esta planilla se queda con el sueldo viejo hasta que se
+   * pida esto. No toca los bonos o descuentos que se agregaron a mano.
+   */
+  recalcular(): void {
+    if (!this.planilla) return;
+
+    this.confirmService.confirmar({
+      titulo: 'Recalcular el sueldo',
+      mensaje: `Se va a volver a tomar el sueldo actual de la ficha de ${this.nombreEmpleado} `
+        + 'y a prorratearlo de nuevo por los días de este mes. Los bonos o descuentos '
+        + 'que se agregaron a mano no se tocan.',
+      aceptarTexto: 'Sí, recalcular',
+      // No se borra nada: el tacho rojo daría a entender otra cosa.
+      variante: 'default',
+    }).then((aceptado) => {
+      if (!aceptado) return;
+
+      this.recalculando = true;
+      this.planillaService.recalcular(this.planillaId).subscribe({
+        next: (res) => {
+          this.recalculando = false;
+          if (res.success) {
+            this.toastService.success('Sueldo recalculado', 'La planilla quedó al día con la ficha del trabajador.');
+            this.cargar();
+          }
+        },
+        error: (err) => {
+          this.recalculando = false;
+          this.toastService.error('No se pudo recalcular', mensajeErrorApi(err, 'Intenta de nuevo en un momento.'));
+        },
+      });
     });
   }
 

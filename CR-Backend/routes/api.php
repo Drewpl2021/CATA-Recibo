@@ -215,6 +215,10 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // Va antes del apiResource de planilla por el mismo motivo de siempre:
         // con un segmento más, no choca con show({id}).
         Route::post('payrolls/{id}/concepts', [PlanillaController::class, 'sincronizarConceptos']);
+        // Vuelve a leer el sueldo actual de la ficha y lo prorratea de nuevo:
+        // generar la planilla es una foto, y esto es lo único que revela y
+        // repara la foto vieja. Ver PlanillaController::recalcular.
+        Route::put('payrolls/{id}/recalcular', [PlanillaController::class, 'recalcular']);
         // Importar conceptos desde el Excel de RR.HH.: todas las planillas del
         // mes de una vez. Tres pasos; el Excel se lee en el navegador y solo
         // llegan sus celdas. Ver ImportacionConceptosController. "modelo" es
