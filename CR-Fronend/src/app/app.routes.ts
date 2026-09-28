@@ -48,7 +48,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-      { path: 'dashboard', loadComponent: () => import('./features/inicio/dashboard/dashboard-view.component').then(m => m.DashboardViewComponent) },
+      // Es la única pantalla de RR.HH./Admin a la que TODOS llegan sin
+      // querer: las migas de pan y el logo apuntan aquí en cualquier
+      // pantalla, para cualquier rol (layout.component.ts). Sin este guard,
+      // un trabajador que le da clic a "Inicio" entraba al panel entero: la
+      // API sí lo rechazaba (rol:admin,rrhh) y no veía cifras, pero la
+      // pantalla —sus filtros, sus gráficos vacíos— se llegaba a cargar.
+      { path: 'dashboard', canActivate: [soloRrhhOAdmin], loadComponent: () => import('./features/inicio/dashboard/dashboard-view.component').then(m => m.DashboardViewComponent) },
       { path: 'mis-boletas', loadComponent: () => import('./features/boletas/mis-boletas/mis-boletas.component').then(m => m.MisBoletasComponent) },
       // Mis Documentos: lo que cada quien tiene a su nombre. Para todos.
       { path: 'mis-documentos', loadComponent: () => import('./features/documentos/documentos-list/documentos-list.component').then(m => m.DocumentosListComponent) },
