@@ -121,12 +121,28 @@ class Empleado extends Model
     {
         return $this->hasOne(Contrato::class)
             ->where('estado', 'vigente')
+            // Un contrato eliminado (estado_registro = inactivo) no manda:
+            // el botón "Eliminar" de Contratos solo apaga estado_registro,
+            // nunca toca 'estado'. Sin este filtro, un contrato ya borrado
+            // seguía contando para las vacaciones y para el tipo que se
+            // imprime en la boleta, como si nunca se hubiera eliminado.
+            ->where('estado_registro', 'activo')
             ->latest('fecha_inicio');
     }
 
     public function tipoContratoVigente(): ?string
     {
-        return $this->contratoVigente()->first()?->tipo_contrato ?? $this->tipo_contrato;
+        // La caída a `tipo_contrato` es solo para quien NUNCA tuvo un
+        // Contrato (fichas de antes del módulo). Si ya tiene alguno —aunque
+        // sea uno eliminado o finalizado—, manda el módulo de Contratos y
+        // punto: caer a la copia de la ficha reabriría el mismo hueco que
+        // contratoVigente() ya cierra, porque esa copia nunca se borra sola
+        // al eliminar el contrato vigente.
+        if ($this->contratos()->exists()) {
+            return $this->contratoVigente()->first()?->tipo_contrato;
+        }
+
+        return $this->tipo_contrato;
     }
 
     /**
