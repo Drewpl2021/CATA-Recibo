@@ -27,6 +27,16 @@ import { PdfViewerModule } from 'ng2-pdf-viewer';
       style="display: block; width: 100%; height: 100%;"
     ></pdf-viewer>
   `,
+  styles: `
+    /* Sin esto el host es "inline" por defecto: el height:100% de adentro
+       no tiene contra qué medirse y el visor queda con 0 de alto —
+       invisible aunque el PDF cargue bien. */
+    :host {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  `,
 })
 export class VisorPdfComponent {
   /** La dirección del PDF: vale una URL o un object URL de un blob. */
