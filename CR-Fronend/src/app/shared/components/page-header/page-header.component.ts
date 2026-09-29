@@ -68,4 +68,18 @@ export class PageHeaderComponent implements OnChanges {
   get mostrarGuion(): boolean {
     return this.cargandoCifras && !this.yaHuboCifras;
   }
+
+  /**
+   * `cifras` suele ser un getter que arma un arreglo nuevo en cada vuelta de
+   * detección de cambios (ver VacacionesListComponent.cifras, por ejemplo).
+   * Sin esto, *ngFor no reconoce "es la misma cifra, solo cambió el número"
+   * y DESTRUYE y vuelve a crear los elementos del DOM en cada recarga — con
+   * el elemento recién creado, la transición de arriba no tiene de dónde
+   * partir y el número aparece de golpe, aunque la clase de opacidad esté
+   * bien puesta. La etiqueta ("Pendientes", "Aprobadas"...) no cambia entre
+   * una carga y la siguiente, así que sirve de identidad estable.
+   */
+  porEtiqueta(_indice: number, c: CifraCabecera): string {
+    return c.etiqueta;
+  }
 }

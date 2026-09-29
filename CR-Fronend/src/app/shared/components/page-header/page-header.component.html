@@ -10,7 +10,7 @@
   </div>
 
   <div class="cifras-cabecera" *ngIf="cifras.length" [class.cifras-cabecera--refrescando]="cargandoCifras && !mostrarGuion">
-    <div class="cifras-cabecera__dato" *ngFor="let c of cifras"
+    <div class="cifras-cabecera__dato" *ngFor="let c of cifras; trackBy: porEtiqueta"
       [ngClass]="'cifras-cabecera__dato--' + (c.tono || 'brand')">
       <app-icon [icono]="c.icono" [tamano]="17"></app-icon>
       <strong>{{ mostrarGuion ? '—' : (c.valor | number) }}</strong>
