@@ -187,6 +187,8 @@ export class EmisionBoletaListComponent implements OnInit {
   formulario!: FormularioBoleta;
   planillaActual: Planilla | null = null;
   private _formularioOriginal: string = '';
+  /** true: se abrió con la clave, sobre una boleta ya emitida. Sin botón de emitir. */
+  modoCorrigiendo = false;
 
   generandoPDF = false;
   generandoMasivo = false;
@@ -472,11 +474,19 @@ export class EmisionBoletaListComponent implements OnInit {
       this.abrirDesbloqueo(empleado);
       return;
     }
-    this.abrirFormularioEdicion(empleado);
+    this.abrirFormularioEdicion(empleado, false);
   }
 
-  private abrirFormularioEdicion(empleado: Empleado): void {
+  /**
+   * Con `corrigiendo` en true (se llegó con la clave, boleta ya emitida) el
+   * formulario abre igual, pero sin el botón de "Emitir Boleta Oficial": ese
+   * es el acto de primera vez —avisa al trabajador, queda de evidencia—, y
+   * repetirlo por una corrección le mandaría un segundo aviso de algo que ya
+   * tenía. Ahí solo se guardan los montos y se refresca el PDF.
+   */
+  private abrirFormularioEdicion(empleado: Empleado, corrigiendo: boolean): void {
     this.empleadoSeleccionado = empleado;
+    this.modoCorrigiendo = corrigiendo;
     this.formulario = this.getFormularioVacio();
     this.showModal = true;
     document.body.style.overflow = 'hidden';
@@ -526,7 +536,7 @@ export class EmisionBoletaListComponent implements OnInit {
         if (res.success) {
           const empleado = this.empleadoADesbloquear!;
           this.cerrarPasswordModal();
-          this.abrirFormularioEdicion(empleado);
+          this.abrirFormularioEdicion(empleado, true);
           return;
         }
         this.passwordErrorMsg = res.message || 'No se pudo verificar la contraseña.';
@@ -640,6 +650,7 @@ export class EmisionBoletaListComponent implements OnInit {
     this.showModal = false;
     this.empleadoSeleccionado = null;
     this.planillaActual = null;
+    this.modoCorrigiendo = false;
     document.body.style.overflow = '';
   }
 
@@ -824,6 +835,7 @@ export class EmisionBoletaListComponent implements OnInit {
         if (res.success) {
           this.planillaActual = res.data;
           this.empleadosEditados.add(this.empleadoSeleccionado!.id);
+          this.empleadosConBoletaEmitida.add(this.empleadoSeleccionado!.id);
 
           // Ahora generamos y descargamos el PDF
           this.boletaService.generarBoletaEmpleado(this.empleadoSeleccionado!.id, mes, anio).subscribe({

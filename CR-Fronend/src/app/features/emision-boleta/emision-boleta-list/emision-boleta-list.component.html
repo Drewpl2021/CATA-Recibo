@@ -136,6 +136,12 @@
     <!-- CUERPO DEL MODAL -->
     <div class="modal-body">
 
+      <div class="form-nota form-nota--aviso" *ngIf="modoCorrigiendo">
+        <app-icon icono="lock" [tamano]="16"></app-icon>
+        Esta boleta ya se emitió. Los cambios se guardan y el PDF archivado se actualiza,
+        pero no se vuelve a avisar al trabajador ni a "emitirla" de nuevo.
+      </div>
+
       <!-- === SECCIÓN AZUL: Datos del Empleado (solo lectura) === -->
       <div class="seccion-datos-empleado">
         <div class="seccion-titulo azul">
@@ -275,14 +281,27 @@
     <!-- FOOTER CON BOTONES -->
     <div class="modal-footer">
       <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
-      <button class="btn-borrador" (click)="guardarBorrador()">
-        <app-icon icono="save" [tamano]="16"></app-icon>
-        Guardar Borrador
-      </button>
-      <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF">
-        <app-icon icono="check" [tamano]="16"></app-icon>
-        {{ generandoPDF ? 'Generando PDF...' : 'Emitir Boleta Oficial' }}
-      </button>
+
+      <!-- Corrigiendo una boleta que ya salió: solo guardar el monto y
+           refrescar el PDF archivado. Nada de "Emitir": esa boleta ya se
+           avisó una vez, y no toca avisar dos. -->
+      <ng-container *ngIf="modoCorrigiendo; else botonesDeEmision">
+        <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF">
+          <app-icon icono="save" [tamano]="16"></app-icon>
+          {{ generandoPDF ? 'Guardando...' : 'Guardar cambios y actualizar PDF' }}
+        </button>
+      </ng-container>
+
+      <ng-template #botonesDeEmision>
+        <button class="btn-borrador" (click)="guardarBorrador()">
+          <app-icon icono="save" [tamano]="16"></app-icon>
+          Guardar Borrador
+        </button>
+        <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF">
+          <app-icon icono="check" [tamano]="16"></app-icon>
+          {{ generandoPDF ? 'Generando PDF...' : 'Emitir Boleta Oficial' }}
+        </button>
+      </ng-template>
     </div>
 
   </div><!-- fin boleta-modal -->

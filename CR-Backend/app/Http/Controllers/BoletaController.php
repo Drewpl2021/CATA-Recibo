@@ -43,10 +43,18 @@ class BoletaController extends Controller
             ], 404);
         }
 
-        ['pdf' => $pdf, 'archivo' => $archivo, 'numero_boleta' => $numero_boleta, 'documento' => $documento]
+        ['pdf' => $pdf, 'archivo' => $archivo, 'numero_boleta' => $numero_boleta, 'documento' => $documento, 'nuevo' => $nuevo]
             = $this->construirBoleta($empleado, $planilla, (int) $mes, (int) $anio);
 
-        $this->avisarBoletaLista($empleado, (int) $mes, (int) $anio, $numero_boleta, $documento?->id);
+        // Solo se avisa la PRIMERA vez que sale esta boleta. Con la boleta ya
+        // emitida, la única forma de volver a pasar por acá es la corrección
+        // con clave desde Emisión de Boletas (ver EmisionBoletaListComponent):
+        // un aumento de último momento no es un segundo "tu boleta ya está
+        // lista" — el trabajador ya la tenía, y de paso ya pudo haberla
+        // firmado.
+        if ($nuevo) {
+            $this->avisarBoletaLista($empleado, (int) $mes, (int) $anio, $numero_boleta, $documento?->id);
+        }
 
         return $pdf->download($archivo);
     }
@@ -114,7 +122,12 @@ class BoletaController extends Controller
             ->where('tipo', 'boleta')
             ->first();
 
-        if (!$documento) {
+        // Si ya existía, esto es una corrección (o generarMasivo la saltó
+        // antes de llegar aquí) — no una emisión nueva. generar() lo usa
+        // para no volver a avisarle al trabajador de algo que ya tenía.
+        $nuevo = !$documento;
+
+        if ($nuevo) {
             $documento = Documento::create([
                 'empleado_id'  => $empleado_id,
                 'planilla_id'  => $planilla->id,
@@ -156,7 +169,7 @@ class BoletaController extends Controller
             Storage::disk('local')->put($rutaArchivo, $pdf->output());
         }
 
-        return ['pdf' => $pdf, 'documento' => $documento, 'archivo' => $archivo, 'numero_boleta' => $numero_boleta];
+        return ['pdf' => $pdf, 'documento' => $documento, 'archivo' => $archivo, 'numero_boleta' => $numero_boleta, 'nuevo' => $nuevo];
     }
 
     /**
