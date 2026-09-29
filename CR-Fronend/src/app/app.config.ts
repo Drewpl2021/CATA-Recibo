@@ -1,5 +1,5 @@
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
-import { NavigationError, provideRouter, withNavigationErrorHandler } from '@angular/router';
+import { NavigationError, provideRouter, withNavigationErrorHandler, withViewTransitions } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
@@ -34,7 +34,11 @@ function recargarSiFaltaUnTrozo(error: NavigationError): void {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes, withNavigationErrorHandler(recargarSiFaltaUnTrozo)),
+    // De una pantalla a otra ya no es un corte seco: el navegador funde el
+    // contenido viejo con el nuevo (API nativa de transiciones de vista). La
+    // duración y el respeto a "menos movimiento" van en styles.scss, sobre
+    // ::view-transition-*(root).
+    provideRouter(routes, withNavigationErrorHandler(recargarSiFaltaUnTrozo), withViewTransitions()),
     provideHttpClient(withInterceptors([authInterceptor])),
   ]
 };
