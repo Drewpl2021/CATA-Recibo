@@ -74,6 +74,17 @@ export class EmisionBoletaListComponent implements OnInit {
   empleadosEditados = new Set<string>();
 
   /**
+   * De los trabajadores QUE SE ESTÁN VIENDO, a quiénes ya se les emitió la
+   * boleta de este mes —uno por uno o en la emisión masiva, da lo mismo—.
+   *
+   * Es lo que apaga "Editar": una vez que la boleta salió, cambiar la
+   * planilla por detrás la deja mintiendo sobre lo que el trabajador ya
+   * recibió (y pudo haber firmado). Si hace falta corregirla, se anula la
+   * boleta primero desde Documentos, no se pisa por acá.
+   */
+  empleadosConBoletaEmitida = new Set<string>();
+
+  /**
    * Cuantas planillas hay en todo el mes. Es distinto de empleadosEditados:
    * ese conjunto es de la página, y este número decide si el mes está sin
    * empezar (y toca enseñar el aviso de "generar la planilla del mes").
@@ -145,7 +156,13 @@ export class EmisionBoletaListComponent implements OnInit {
   }
 
   accionesFila: AccionPersonalizada<Empleado>[] = [
-    { id: 'editar', titulo: 'Revisar y editar los conceptos de su boleta', icono: 'money', etiqueta: 'Editar' },
+    {
+      id: 'editar', titulo: 'Revisar y editar los conceptos de su boleta', icono: 'money', etiqueta: 'Editar',
+      // Con la boleta ya emitida (una por una o en masa) no se puede seguir
+      // editando la planilla de atrás: quedaría mintiendo sobre lo que el
+      // trabajador ya recibió.
+      visible: (e) => !this.empleadosConBoletaEmitida.has(e.id),
+    },
   ];
 
   // Modal state
@@ -396,12 +413,16 @@ export class EmisionBoletaListComponent implements OnInit {
         next: (res) => {
           if (res.success) {
             this.empleadosEditados = new Set(res.data.content.map((p) => p.empleado_id));
+            this.empleadosConBoletaEmitida = new Set(
+              res.data.content.filter((p) => p.documento_boleta).map((p) => p.empleado_id)
+            );
           }
           this.cargandoEmpleados = false;
         },
         error: () => {
           // Si falla, las filas salen como "sin armar": se sigue pudiendo editar.
           this.empleadosEditados.clear();
+          this.empleadosConBoletaEmitida.clear();
           this.cargandoEmpleados = false;
         },
       });
@@ -426,6 +447,16 @@ export class EmisionBoletaListComponent implements OnInit {
   }
 
   abrirModal(empleado: Empleado): void {
+    // El botón ya se esconde con la boleta emitida; esto es el respaldo por
+    // si la fila quedó con datos viejos en caché.
+    if (this.empleadosConBoletaEmitida.has(empleado.id)) {
+      this.toastService.warning(
+        'Boleta ya emitida',
+        `Ya se emitió la boleta de ${empleado.nombre} ${empleado.apellido} de este mes; no se puede editar desde acá.`
+      );
+      return;
+    }
+
     this.empleadoSeleccionado = empleado;
     this.formulario = this.getFormularioVacio();
     this.showModal = true;

@@ -26,6 +26,12 @@ export interface Planilla {
   payroll_detalles?: PayrollDetalle[];
   /** Solo la manda `show()`: para saber si "Recalcular sueldo" tiene sentido ofrecerlo. */
   corrida?: PlanillaCorrida | null;
+  /**
+   * La boleta que salió de esta planilla, si ya se emitió. Solo la manda el
+   * índice cuando se pregunta con `?empleado_ids=` (Emisión de Boletas): es
+   * lo que decide si "Editar" se puede abrir o ya es tarde para tocarla.
+   */
+  documento_boleta?: { id: string; estado_firma?: string } | null;
 }
 
 export interface PlanillaPayload {

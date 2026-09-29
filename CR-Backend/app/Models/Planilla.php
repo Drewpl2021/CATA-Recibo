@@ -65,6 +65,12 @@ class Planilla extends Model
         return $this->hasMany(PayrollDetalle::class, 'planilla_id');
     }
 
+    /** La boleta que salió de esta planilla, si ya se emitió. */
+    public function documentoBoleta()
+    {
+        return $this->hasOne(Documento::class, 'planilla_id')->where('tipo', 'boleta');
+    }
+
     /**
      * Recalcula y guarda el total real de la planilla:
      * sueldo_base + bonificaciones (manual + conceptos) - descuentos (manual + conceptos) - adelantos.
