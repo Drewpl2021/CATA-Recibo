@@ -52,6 +52,13 @@ services:
     depends_on:
       base:
         condition: service_healthy
+    # "localhost" aquí adentro es el propio contenedor, no el VPS que lo
+    # aloja. Si la base del padrón (RENSUN) vive en ese mismo servidor pero
+    # fuera de Docker, hay que llamarla por este nombre — no por localhost
+    # ni 127.0.0.1 — o la conexión nunca sale del contenedor. Ver
+    # RENSUN_DB_HOST en .env.example.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment: &entorno-php
       APP_NAME: ${APP_NAME:-CATA-Recibo}
       APP_ENV: production
@@ -171,6 +178,8 @@ services:
         condition: service_healthy
       app:
         condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       <<: *entorno-php
       # No migra ni cachea: de eso se encarga "app".
@@ -192,6 +201,8 @@ services:
         condition: service_healthy
       app:
         condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       <<: *entorno-php
       ROL: reloj
