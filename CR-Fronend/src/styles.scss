@@ -5271,36 +5271,6 @@ textarea.form-control {
   }
 }
 
-/* ── Cambiar de pantalla ──────────────────────────────────────
-   withViewTransitions() (app.config.ts) hace que el navegador funda la
-   pantalla vieja con la nueva en vez de cortar en seco. El navegador ya
-   trae un fundido por defecto; esto solo lo acorta (la espera real ya la
-   avisa .barra-navegacion, este fundido es el remate al llegar) y evita
-   que la pantalla vieja se quede encima tapando a la nueva mientras dura
-   el cruce. */
-::view-transition-old(root) {
-  animation: 120ms ease-out both fade-out-pantalla;
-}
-
-::view-transition-new(root) {
-  animation: 160ms ease-in both fade-in-pantalla;
-}
-
-@keyframes fade-out-pantalla {
-  to { opacity: 0; }
-}
-
-@keyframes fade-in-pantalla {
-  from { opacity: 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none;
-  }
-}
-
 /* ── La caja de firma ────────────────────────────────────────
    Es el recuadro de la boleta de papel: el trazo, la línea y el nombre
    debajo. El mismo objeto sirve para dibujar, para enseñar la firma
