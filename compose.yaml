@@ -20,6 +20,14 @@ services:
   base:
     image: mysql:8.4
     restart: unless-stopped
+    # MySQL 8 trae el binary log activado de fábrica, y con eso encendido
+    # exige el privilegio SUPER para crear triggers y procedimientos — algo
+    # que el usuario de la aplicación no tiene ni debe tener. Sin esta
+    # bandera, la migración que deja trg_planilla_historial y
+    # sp_resumen_planilla se cae con el error 1419 apenas la base arranca
+    # de cero. Es la salida que la propia MySQL sugiere en ese mensaje;
+    # aquí es segura porque la base no replica hacia otro servidor.
+    command: --log-bin-trust-function-creators=1
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_USER: ${DB_USERNAME}
