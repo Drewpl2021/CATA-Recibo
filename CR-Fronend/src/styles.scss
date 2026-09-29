@@ -2431,6 +2431,21 @@ body.con-modal {
   border: 1px solid var(--border);
 }
 
+/* Recargar con números ya puestos (cambiar de filtro, de página, buscar)
+   los atenúa en vez de taparlos con guiones — mismo trato que la tabla en
+   .data-table--refrescando, para que cabecera y cuerpo cambien juntos y no
+   se sienta un salto seco. */
+.cifras-cabecera--refrescando {
+  opacity: 0.6;
+  transition: opacity 0.15s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cifras-cabecera--refrescando {
+    transition: none;
+  }
+}
+
 .cifras-cabecera__dato {
   display: flex;
   flex-direction: column;

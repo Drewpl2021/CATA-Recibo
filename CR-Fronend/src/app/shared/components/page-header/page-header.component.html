@@ -9,11 +9,11 @@
     </div>
   </div>
 
-  <div class="cifras-cabecera" *ngIf="cifras.length">
+  <div class="cifras-cabecera" *ngIf="cifras.length" [class.cifras-cabecera--refrescando]="cargandoCifras && !mostrarGuion">
     <div class="cifras-cabecera__dato" *ngFor="let c of cifras"
       [ngClass]="'cifras-cabecera__dato--' + (c.tono || 'brand')">
       <app-icon [icono]="c.icono" [tamano]="17"></app-icon>
-      <strong>{{ cargandoCifras ? '—' : (c.valor | number) }}</strong>
+      <strong>{{ mostrarGuion ? '—' : (c.valor | number) }}</strong>
       <span>{{ c.etiqueta }}</span>
     </div>
   </div>

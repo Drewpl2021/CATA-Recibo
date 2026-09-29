@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 
@@ -31,7 +31,7 @@ export interface CifraCabecera {
   imports: [CommonModule, IconComponent],
   templateUrl: './page-header.component.html',
 })
-export class PageHeaderComponent {
+export class PageHeaderComponent implements OnChanges {
   @Input({ required: true }) titulo = '';
   @Input() subtitulo = '';
 
@@ -49,4 +49,23 @@ export class PageHeaderComponent {
 
   /** Mientras carga muestra un guion en vez de un cero que no es cierto. */
   @Input() cargandoCifras = false;
+
+  /**
+   * Si ya se vio alguna cifra de verdad. Cambiar de filtro, de página o
+   * buscar también prende `cargandoCifras` un instante, y sin esto los
+   * números se tapaban con guiones y volvían a saltar a lo suyo en cada
+   * clic —el mismo parpadeo seco que ya se arregló en la tabla—. El guion
+   * queda solo para la carga de verdad: la primera, antes de tener nada
+   * que enseñar. Después, el número viejo se queda ahí, un poco apagado,
+   * hasta que llega el nuevo.
+   */
+  private yaHuboCifras = false;
+
+  ngOnChanges(): void {
+    if (!this.cargandoCifras && this.cifras.length) this.yaHuboCifras = true;
+  }
+
+  get mostrarGuion(): boolean {
+    return this.cargandoCifras && !this.yaHuboCifras;
+  }
 }
