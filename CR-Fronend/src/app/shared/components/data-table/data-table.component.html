@@ -22,7 +22,9 @@
   </div>
 
   <div class="table-responsive">
-    <table class="data-table" [class.data-table--refrescando]="cargando && filaPagina.length > 0">
+    <table class="data-table"
+      [class.data-table--refrescando]="cargando && filasEnPantalla.length > 0"
+      [class.data-table--vaciando]="saliendoAVacio">
       <thead>
         <tr>
           <th *ngIf="seleccionable" class="celda-marca">
@@ -51,12 +53,12 @@
             <span class="esqueleto esqueleto--linea" style="width: 60px;"></span>
           </td>
         </tr>
-        <tr *ngIf="!cargando && filaPagina.length === 0">
+        <tr *ngIf="!cargando && !saliendoAVacio && filasEnPantalla.length === 0">
           <td [attr.colspan]="columnas.length + (seleccionable ? 1 : 0) + (numerarFilas ? 1 : 0) + (acciones.length || accionesPersonalizadas.length ? 1 : 0)" class="data-table-empty">
             {{ mensajeVacio }}
           </td>
         </tr>
-        <tr *ngFor="let fila of filaPagina; let i = index" [class.fila-marcada]="estaMarcada(fila)">
+        <tr *ngFor="let fila of filasEnPantalla; let i = index" [class.fila-marcada]="estaMarcada(fila)">
           <td *ngIf="seleccionable" class="celda-marca">
             <input type="checkbox" [checked]="estaMarcada(fila)" (change)="alternarFila(fila)"
               [attr.aria-label]="'Marcar esta fila'" />

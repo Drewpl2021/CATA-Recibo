@@ -1047,8 +1047,21 @@ a.migas__paso:hover {
   transition: opacity 0.15s ease-out;
 }
 
+/* El filtro que deja la tabla en cero (Rechazadas sin ninguna, por
+   ejemplo): las filas viejas no desaparecen de un salto, se apagan del
+   todo en 0,16s y RECIÉN entonces el componente las quita y aparece el
+   mensaje vacío (que entra con su propio fundido, filas-entran). Pasar de
+   un filtro con filas a otro con filas no necesita esto — ahí siempre
+   queda algo pintado y el cambio ya se ve suave. */
+.data-table--vaciando tbody {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease-in;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .data-table--refrescando tbody {
+  .data-table--refrescando tbody,
+  .data-table--vaciando tbody {
     transition: none;
   }
 }

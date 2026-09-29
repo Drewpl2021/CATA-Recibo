@@ -257,6 +257,7 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
 
   ngOnDestroy(): void {
     this.suscripcion?.unsubscribe();
+    clearTimeout(this.temporizadorVacio);
   }
 
   /**
@@ -363,10 +364,52 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
       // seguir contando filas que ya no se ven es la forma de aplicarle algo
       // a alguien sin querer.
       if (this.marcadas.size) this.limpiarSeleccion();
+    } else if (changes['datos'] && !this.paginacionServidor) {
+      this.establecerPaginaActual(1);
+    }
+    this.actualizarFilasEnPantalla();
+  }
+
+  /**
+   * Lo que la plantilla pinta de verdad. Casi siempre es igual a
+   * `filaPagina`; la excepción es el filtro que deja la tabla en cero.
+   */
+  filasEnPantalla: T[] = [];
+  /** Mientras esto es true, filasEnPantalla todavía tiene las filas VIEJAS, apagándose. */
+  saliendoAVacio = false;
+  private temporizadorVacio?: ReturnType<typeof setTimeout>;
+
+  /**
+   * De filas a "no hay nada" la tabla se vaciaba de un salto: `filaPagina`
+   * pasaba de diez elementos a cero en el mismo instante en que `cargando`
+   * se apagaba, así que *ngFor las quitaba todas de encima sin transición
+   * ninguna —el "parece forzado" que se reportó—. De un filtro con filas a
+   * otro con filas no pasa esto: la cantidad cambia, pero siempre queda algo
+   * pintado, y ESO si se ve suave.
+   *
+   * Por eso el arreglo es solo para el caso de "quedó en cero": las filas
+   * viejas se quedan un instante más (apagándose con
+   * .data-table--vaciando), y recién cuando termina esa salida se cambia de
+   * verdad a filasEnPantalla = [] y aparece el mensaje vacío, que entra con
+   * su propio fundido (.data-table tbody tr:not(.fila-esqueleto)).
+   */
+  private actualizarFilasEnPantalla(): void {
+    const nuevas = this.filaPagina;
+
+    if (nuevas.length === 0 && this.filasEnPantalla.length > 0 && !this.cargando) {
+      this.saliendoAVacio = true;
+      clearTimeout(this.temporizadorVacio);
+      this.temporizadorVacio = setTimeout(() => {
+        this.filasEnPantalla = [];
+        this.saliendoAVacio = false;
+      }, 160);
       return;
     }
-    if (changes['datos'] && !this.paginacionServidor) {
-      this.establecerPaginaActual(1);
+
+    if (nuevas.length > 0 || !this.cargando) {
+      clearTimeout(this.temporizadorVacio);
+      this.saliendoAVacio = false;
+      this.filasEnPantalla = nuevas;
     }
   }
 
