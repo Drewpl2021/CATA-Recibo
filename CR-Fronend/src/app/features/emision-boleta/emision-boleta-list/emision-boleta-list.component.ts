@@ -18,6 +18,8 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { MESES_OPCIONES } from '../../../shared/constants';
+import { formatoDia } from '../../../core/utils';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 export interface FormularioBoleta {
   remuneracionBasica: number | null;
@@ -51,7 +53,7 @@ export interface FormularioBoleta {
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, PistaDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent],
+  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })
@@ -812,7 +814,7 @@ export class EmisionBoletaListComponent implements OnInit {
       descuentoAutorizadoDiezmo: null, descuentoOtros: null, descuentoEscolaridad: null,
       essalud9: null, sctr: null, adelanto: null,
       ciudad: 'CATA',
-      fechaEmision: now.toLocaleDateString('es-PE'),
+      fechaEmision: formatoDia(now),
       mes: this.mesGlobal,
       anio: this.anioGlobal
     };

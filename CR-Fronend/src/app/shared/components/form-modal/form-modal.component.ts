@@ -1,5 +1,6 @@
 import { Component, EventEmitter, HostListener, Input, OnChanges, OnDestroy, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from '../icon/icon.component';
 
 /**
  * Cascarón reciclable para CUALQUIER formulario de crear/editar en modal.
@@ -17,7 +18,7 @@ import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-form-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [IconComponent, CommonModule],
   templateUrl: './form-modal.component.html',
 })
 export class FormModalComponent implements OnChanges, OnDestroy {

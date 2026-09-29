@@ -4,20 +4,14 @@
   [subtitulo]="subtitulo"
 >
   <button headerActions type="button" class="btn-secondary" (click)="volver()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>
-    </svg>
+    <app-icon icono="arrow_left" [tamano]="16"></app-icon>
     Volver a Documentos
   </button>
   <button headerActions type="button" class="btn-secondary" *ngIf="expediente" (click)="verFicha()">
     Ver su ficha
   </button>
   <button headerActions type="button" class="btn-primary" *ngIf="expediente" (click)="abrirSubir()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    </svg>
+    <app-icon icono="upload" [tamano]="16"></app-icon>
     Subir documento
   </button>
 </app-page-header>

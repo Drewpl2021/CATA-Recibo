@@ -31,6 +31,7 @@ import {
   AlcanceGrupo,
 } from '../../../shared/components/selector-empleados/selector-empleados.component';
 import { forkJoin } from 'rxjs';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 /**
  * Periodos (RR.HH. y Admin).
@@ -47,7 +48,7 @@ import { forkJoin } from 'rxjs';
 @Component({
   selector: 'app-periodos-list',
   standalone: true,
-  imports: [
+  imports: [IconComponent, 
     CommonModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
   ],

@@ -10,6 +10,7 @@ import { ColumnaTabla } from '../../../shared/components/data-table/data-table.m
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { esRolDelSistema, etiquetaRol } from '../../../shared/constants';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 /**
  * Roles del sistema (solo Admin).
@@ -24,7 +25,7 @@ import { esRolDelSistema, etiquetaRol } from '../../../shared/constants';
 @Component({
   selector: 'app-roles-list',
   standalone: true,
-  imports: [
+  imports: [IconComponent, 
     CommonModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent,
   ],

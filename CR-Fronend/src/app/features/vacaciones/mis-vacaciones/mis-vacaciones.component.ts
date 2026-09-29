@@ -10,6 +10,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 /**
  * Mis Vacaciones — lo que ve cada trabajador de las suyas.
@@ -26,7 +27,7 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 @Component({
   selector: 'app-mis-vacaciones',
   standalone: true,
-  imports: [
+  imports: [IconComponent, 
     CommonModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent,
   ],

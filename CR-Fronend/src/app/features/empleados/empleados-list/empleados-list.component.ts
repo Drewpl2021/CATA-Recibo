@@ -12,6 +12,7 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 /**
  * Listado del personal (RR.HH. y Admin).
@@ -25,7 +26,7 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 @Component({
   selector: 'app-empleados-list',
   standalone: true,
-  imports: [CommonModule, PageHeaderComponent, DataTableComponent, FiltrosComponent],
+  imports: [IconComponent, CommonModule, PageHeaderComponent, DataTableComponent, FiltrosComponent],
   templateUrl: './empleados-list.component.html',
 })
 export class EmpleadosListComponent implements OnInit {

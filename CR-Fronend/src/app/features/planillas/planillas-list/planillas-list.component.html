@@ -5,18 +5,12 @@
 >
   <div headerActions style="display: flex; gap: 12px; flex-wrap: wrap;">
     <button class="btn-secondary" (click)="volver()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>
-      </svg>
+      <app-icon icono="arrow_left" [tamano]="16"></app-icon>
       Volver a Planillas
     </button>
 
     <button class="btn-primary" *ngIf="corridaId && !estaCerrada" (click)="abrirGenerar()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 5v14"/><path d="M5 12h14"/>
-      </svg>
+      <app-icon icono="plus" [tamano]="16"></app-icon>
       Agregar trabajadores
     </button>
 
@@ -24,20 +18,14 @@
          en gris se perdía entre los demás botones. Usa el par --accent /
          --on-accent, que está pensado para leerse en claro y en oscuro. -->
     <button class="btn-warning" *ngIf="corridaId && !estaCerrada" (click)="abrirConcepto()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01"/><path d="M18 12h.01"/>
-      </svg>
+      <app-icon icono="money" [tamano]="16"></app-icon>
       Aplicar concepto
     </button>
 
     <!-- El reporte completo: lo que se ve en pantalla, con una columna por
          concepto. Dentro de una planilla baja solo la suya. -->
     <button class="btn-exportar" (click)="exportar()" [disabled]="exportando">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6"/><path d="m15 15-3 3-3-3"/>
-      </svg>
+      <app-icon icono="excel" [tamano]="16"></app-icon>
       {{ exportando ? 'Generando…' : 'Descargar reporte' }}
     </button>
   </div>
@@ -104,10 +92,7 @@
     </div>
 
     <button type="button" class="btn-limpiar" [disabled]="!hayFiltros" (click)="limpiarFiltros()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-      </svg>
+      <app-icon icono="close" [tamano]="15"></app-icon>
       Limpiar
     </button>
   </div>

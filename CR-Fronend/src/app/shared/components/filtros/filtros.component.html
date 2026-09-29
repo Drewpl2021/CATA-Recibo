@@ -5,10 +5,7 @@
   <button type="button" class="filtros__chip" *ngFor="let c of chipsVisibles"
     (click)="quitar(c.clave)" [title]="'Quitar «' + c.texto + '»'">
     {{ c.texto }}
-    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
-      <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-    </svg>
+    <app-icon icono="close" [tamano]="12"></app-icon>
   </button>
 
   <span class="filtros__mas" *ngIf="chipsDeMas" [title]="'Hay ' + chipsDeMas + ' filtro(s) más puestos'">
@@ -19,10 +16,7 @@
     <button type="button" class="boton-filtros" [class.boton-filtros--activo]="cuantosActivos"
       (click)="alternar($event)" [attr.aria-expanded]="abierto"
       [attr.aria-label]="cuantosActivos ? cuantosActivos + ' filtros puestos' : 'Filtrar la tabla'">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/>
-      </svg>
+      <app-icon icono="filter" [tamano]="16"></app-icon>
       Filtros
       <span class="boton-filtros__cuenta" *ngIf="cuantosActivos">{{ cuantosActivos }}</span>
     </button>

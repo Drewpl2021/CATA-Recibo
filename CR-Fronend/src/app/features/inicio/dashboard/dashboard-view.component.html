@@ -17,50 +17,30 @@
       <div class="filtro-periodo" [class.filtro-periodo--elegido]="mesMovido">
         <button type="button" class="filtro-periodo__paso" (click)="moverMes(-1)"
           [attr.aria-label]="'Ver ' + etiquetaMesVecino(-1)" [title]="etiquetaMesVecino(-1)">
-          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m15 18-6-6 6-6"/>
-          </svg>
+          <app-icon icono="chevron_left" [tamano]="17"></app-icon>
         </button>
 
         <button type="button" class="filtro-periodo__valor" (click)="alternarCalendario($event)"
           [attr.aria-expanded]="calendarioAbierto" aria-label="Elegir el mes">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/>
-            <path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/>
-          </svg>
+          <app-icon icono="date_range" [tamano]="15"></app-icon>
           {{ nombreMes(filtroMes) }} {{ filtroAnio }}
-          <svg class="filtro-periodo__flecha" [class.filtro-periodo__flecha--abierta]="calendarioAbierto"
-            xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m6 9 6 6 6-6"/>
-          </svg>
+          <app-icon icono="chevron_down" [tamano]="13" class="filtro-periodo__flecha" [class.filtro-periodo__flecha--abierta]="calendarioAbierto"></app-icon>
         </button>
 
         <button type="button" class="filtro-periodo__paso" (click)="moverMes(1)"
           [attr.aria-label]="'Ver ' + etiquetaMesVecino(1)" [title]="etiquetaMesVecino(1)">
-          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m9 18 6-6-6-6"/>
-          </svg>
+          <app-icon icono="chevron_right" [tamano]="17"></app-icon>
         </button>
 
         <!-- Los doce meses de un vistazo, en vez de una lista desplegable -->
         <div class="selector-mes" *ngIf="calendarioAbierto" (click)="$event.stopPropagation()">
           <div class="selector-mes__anio">
             <button type="button" (click)="moverAnioDelCalendario(-1)" aria-label="Año anterior">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m15 18-6-6 6-6"/>
-              </svg>
+              <app-icon icono="chevron_left" [tamano]="14"></app-icon>
             </button>
             {{ anioDelCalendario }}
             <button type="button" (click)="moverAnioDelCalendario(1)" aria-label="Año siguiente">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m9 18 6-6-6-6"/>
-              </svg>
+              <app-icon icono="chevron_right" [tamano]="14"></app-icon>
             </button>
           </div>
 
@@ -79,29 +59,19 @@
       <div class="segmentado" *ngIf="sedes.length && sedes.length <= 3" role="group" aria-label="Sede">
         <button type="button" class="segmentado__opcion" [class.segmentado__opcion--activa]="!filtroSede"
           (click)="elegirSede('')">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/>
-            <rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/>
-          </svg>
+          <app-icon icono="view_module" [tamano]="14"></app-icon>
           Todas
         </button>
 
         <button type="button" class="segmentado__opcion" *ngFor="let s of sedes"
           [class.segmentado__opcion--activa]="filtroSede === s.id" (click)="elegirSede(s.id)">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 10c0 5-5.5 10.2-7.4 11.8a1 1 0 0 1-1.2 0C9.5 20.2 4 15 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>
-          </svg>
+          <app-icon icono="location_on" [tamano]="14"></app-icon>
           {{ s.nombre }}
         </button>
       </div>
 
       <div class="filtro-select" *ngIf="sedes.length > 3">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 10c0 5-5.5 10.2-7.4 11.8a1 1 0 0 1-1.2 0C9.5 20.2 4 15 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>
-        </svg>
+        <app-icon icono="location_on" [tamano]="15"></app-icon>
         <select [(ngModel)]="filtroSede" (ngModelChange)="alFiltrar()" aria-label="Sede">
           <option value="">Todas las sedes</option>
           <option *ngFor="let s of sedes" [value]="s.id">{{ s.nombre }}</option>
@@ -116,30 +86,21 @@
         [class.boton-cumpleanos--hoy]="hayCumpleanosHoy" (click)="abrirCumpleanos($event)"
         [title]="'Ver los cumpleaños de ' + nombreMes(filtroMes)"
         [attr.aria-label]="cumpleanos.length + ' cumpleaños en ' + nombreMes(filtroMes)">
-        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
-          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/>
-        </svg>
+        <app-icon icono="cake" [tamano]="17"></app-icon>
         <span class="boton-cumpleanos__cuenta">{{ cumpleanos.length }}</span>
       </button>
 
       <!-- El panel, tal como se está viendo, en un Excel -->
       <button type="button" class="btn-exportar btn-exportar--compacto" (click)="exportar()"
         [disabled]="exportando || cargando" [title]="'Exportar el panel de ' + loQueSeVe + ' a Excel'">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6"/><path d="m15 15-3 3-3-3"/>
-        </svg>
+        <app-icon icono="excel" [tamano]="16"></app-icon>
         {{ exportando ? 'Generando…' : 'Exportar' }}
       </button>
       </div>
 
       <!-- Solo aparece cuando hay a dónde volver -->
       <button type="button" class="chip-filtro" *ngIf="hayFiltros" (click)="limpiarFiltros()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/>
-        </svg>
+        <app-icon icono="rotate_ccw" [tamano]="14"></app-icon>
         Este mes
       </button>
     </div>
@@ -156,11 +117,7 @@
         (click)="irAResolver(p)">
         <strong class="pendiente__cuantos">{{ p.cuantos }}</strong>
         <span class="pendiente__texto">{{ p.texto }}</span>
-        <svg class="pendiente__flecha" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-        </svg>
+        <app-icon icono="arrow_right" [tamano]="16" class="pendiente__flecha"></app-icon>
       </button>
     </div>
 

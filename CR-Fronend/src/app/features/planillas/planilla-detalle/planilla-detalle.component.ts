@@ -19,6 +19,7 @@ import { ColumnaTabla } from '../../../shared/components/data-table/data-table.m
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 /** Los tipos que restan del sueldo, para saber cómo pintar cada línea. */
 const TIPOS_QUE_RESTAN = ['descuento', 'adelanto'];
@@ -45,7 +46,7 @@ const SEVERIDAD_POR_TIPO: Record<string, 'success' | 'danger' | 'info' | 'warnin
 @Component({
   selector: 'app-planilla-detalle',
   standalone: true,
-  imports: [
+  imports: [IconComponent, 
     CommonModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, PistaDirective,
   ],

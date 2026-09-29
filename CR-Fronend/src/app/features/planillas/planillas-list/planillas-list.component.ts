@@ -35,7 +35,8 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
-import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';import { IconComponent } from '../../../shared/components/icon/icon.component';
+
 import {
   SelectorEmpleadosComponent,
   AlcanceGrupo,
@@ -59,7 +60,7 @@ import {
 @Component({
   selector: 'app-planillas-list',
   standalone: true,
-  imports: [
+  imports: [IconComponent, 
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
     FiltrosComponent,

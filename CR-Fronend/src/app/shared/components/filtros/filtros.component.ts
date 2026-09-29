@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { CampoFiltro, ValoresFiltro } from './filtros.models';
+import { IconComponent } from '../icon/icon.component';
 
 /**
  * El icono de filtros de una tabla, con su panel.
@@ -29,7 +30,7 @@ import { CampoFiltro, ValoresFiltro } from './filtros.models';
 @Component({
   selector: 'app-filtros',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [IconComponent, CommonModule, FormsModule],
   templateUrl: './filtros.component.html',
 })
 export class FiltrosComponent {

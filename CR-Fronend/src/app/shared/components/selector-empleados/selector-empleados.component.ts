@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Area, Cargo, Empleado, Sede } from '../../../core/models';
+import { IconComponent } from '../icon/icon.component';
 
 /** A quiénes alcanza una operación masiva. */
 export type AlcanceGrupo = 'todos' | 'elegidos';
@@ -28,7 +29,7 @@ export type AlcanceGrupo = 'todos' | 'elegidos';
 @Component({
   selector: 'app-selector-empleados',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [IconComponent, CommonModule, FormsModule],
   templateUrl: './selector-empleados.component.html',
 })
 export class SelectorEmpleadosComponent implements OnChanges {

@@ -7,17 +7,11 @@
 >
   <div headerActions style="display: flex; gap: 12px; align-items: center;">
     <button class="btn-secondary" (click)="aplicarBonosMasivos()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01"/><path d="M18 12h.01"/>
-      </svg>
+      <app-icon icono="money" [tamano]="16"></app-icon>
       Aplicar Grati / CTS
     </button>
     <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="M9 15h6"/>
-      </svg>
+      <app-icon icono="receipt" [tamano]="16"></app-icon>
       {{ generandoMasivo ? 'Emitiendo...' : 'Emitir masivamente' }}
     </button>
   </div>
@@ -128,18 +122,14 @@
     <!-- HEADER DEL MODAL -->
     <div class="modal-header">
       <div class="modal-header-left">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>
-        </svg>
+        <app-icon icono="file"></app-icon>
         <div>
           <h2>Emisión de Boleta de Pago</h2>
           <span class="modal-subtitle">{{ empleadoSeleccionado?.nombre }} {{ empleadoSeleccionado?.apellido }}</span>
         </div>
       </div>
       <button class="btn-modal-close" (click)="cerrarModal()" appPista="Cerrar" aria-label="Cerrar">
-        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-        </svg>
+        <app-icon icono="close" [tamano]="22"></app-icon>
       </button>
     </div>
 
@@ -149,9 +139,7 @@
       <!-- === SECCIÓN AZUL: Datos del Empleado (solo lectura) === -->
       <div class="seccion-datos-empleado">
         <div class="seccion-titulo azul">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-          </svg>
+          <app-icon icono="person" [tamano]="15"></app-icon>
           Datos del Trabajador
           <span class="tag-auto">Carga automática del sistema</span>
         </div>
@@ -187,9 +175,7 @@
       <!-- === SECCIÓN ROJA: Ingresos, Descuentos, Aportaciones (editable) === -->
       <div class="seccion-financiera">
         <div class="seccion-titulo rojo">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01"/><path d="M18 12h.01"/>
-          </svg>
+          <app-icon icono="money" [tamano]="15"></app-icon>
           Detalle Financiero
         </div>
 
@@ -220,7 +206,7 @@
             <div class="fin-fila"><span class="fin-concepto" title="Se calcula según su AFP">SPP: Fondo Pensiones</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.sppFondoPensiones" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
             <div class="fin-fila"><span class="fin-concepto" title="1.37%, igual para todas las AFP">SPP: Prima de Seguro</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.sppPrimaSeguro" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
             <div class="fin-fila"><span class="fin-concepto" title="Cambia según cuál sea su AFP">SPP: Comisión</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.sppComision" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
-            <div class="fin-fila"><span class="fin-concepto" title="Se calcula automáticamente en la boleta oficial según las retenciones de Ley">I.R. 5ta Categoría <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color: var(--text-muted); margin-left: 4px;" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span><input type="text" class="fin-input" placeholder="Automático en PDF" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed; text-align: right;"></div>
+            <div class="fin-fila"><span class="fin-concepto" title="Se calcula automáticamente en la boleta oficial según las retenciones de Ley">I.R. 5ta Categoría <app-icon icono="info" [tamano]="12" style="color: var(--text-muted); margin-left: 4px;"></app-icon></span><input type="text" class="fin-input" placeholder="Automático en PDF" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed; text-align: right;"></div>
             <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Alimentación</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoAlimentacion" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Bazar</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoBazar" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Descuento Autorizado - Diezmo</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoAutorizadoDiezmo" min="0" step="0.01"></div>
@@ -266,9 +252,7 @@
       <!-- === SECCIÓN AMARILLA: Firmas y Emisión === -->
       <div class="seccion-firmas">
         <div class="seccion-titulo amarillo">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
-          </svg>
+          <app-icon icono="shield" [tamano]="15"></app-icon>
           Confirmación y Firmas
         </div>
         <div class="firmas-content">
@@ -292,15 +276,11 @@
     <div class="modal-footer">
       <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
       <button class="btn-borrador" (click)="guardarBorrador()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>
-        </svg>
+        <app-icon icono="save" [tamano]="16"></app-icon>
         Guardar Borrador
       </button>
       <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 6 9 17l-5-5"/>
-        </svg>
+        <app-icon icono="check" [tamano]="16"></app-icon>
         {{ generandoPDF ? 'Generando PDF...' : 'Emitir Boleta Oficial' }}
       </button>
     </div>

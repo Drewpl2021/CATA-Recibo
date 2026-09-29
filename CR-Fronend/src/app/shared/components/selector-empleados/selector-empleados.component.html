@@ -19,18 +19,13 @@
   <!-- Buscador y filtros. Acotan la lista de verdad: lo que se ve es lo que hay. -->
   <div class="buscador-personas">
     <div class="buscador-personas__campo">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-      </svg>
+      <app-icon class="buscador-personas__lupa" icono="search" [tamano]="16"></app-icon>
       <input #campoBusquedaPersonas type="text" class="form-control" [(ngModel)]="busqueda"
         (keydown.escape)="alPulsarEscapeEnBusqueda(campoBusquedaPersonas)"
         placeholder="Busca por nombre, apellido o DNI..." aria-label="Buscar trabajador" />
       <button *ngIf="busqueda" type="button" class="buscador-personas__campo-clear" title="Borrar búsqueda"
         aria-label="Borrar búsqueda" (click)="limpiarBusquedaTexto(campoBusquedaPersonas)">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-        </svg>
+        <app-icon icono="close" [tamano]="16"></app-icon>
       </button>
     </div>
 
@@ -51,10 +46,7 @@
       </select>
 
       <button type="button" class="btn-limpiar" [disabled]="!hayFiltros" (click)="limpiarFiltros()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-        </svg>
+        <app-icon icono="close" [tamano]="14"></app-icon>
         Limpiar
       </button>
     </div>

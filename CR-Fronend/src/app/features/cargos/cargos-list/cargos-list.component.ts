@@ -14,11 +14,12 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-cargos-list',
   standalone: true,
-  imports: [
+  imports: [IconComponent, 
     CommonModule, ReactiveFormsModule, FormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent,
   ],

@@ -18,6 +18,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 const SEVERIDAD_ESTADO: Record<string, 'success' | 'secondary' | 'info'> = {
   vigente: 'success',
@@ -39,7 +40,7 @@ const SEVERIDAD_ESTADO: Record<string, 'success' | 'secondary' | 'info'> = {
 @Component({
   selector: 'app-contratos-list',
   standalone: true,
-  imports: [
+  imports: [IconComponent, 
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent,
   ],

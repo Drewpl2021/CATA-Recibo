@@ -1786,7 +1786,10 @@ td.celda-numero {
   align-items: center;
 }
 
-.buscador-personas__campo svg {
+/* Con clase propia y no ".buscador-personas__campo svg": ese selector
+   también agarraba el ícono del botón «×» de al lado y lo corría a la
+   derecha, fuera de su círculo. */
+.buscador-personas__lupa {
   position: absolute;
   left: 12px;
   color: var(--text-faint);

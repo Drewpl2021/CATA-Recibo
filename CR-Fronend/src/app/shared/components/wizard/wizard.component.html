@@ -18,17 +18,9 @@
           <app-icon *ngIf="paso.icono && !completado(i) && !tieneErrores(i)"
             [icono]="paso.icono" [tamano]="18"></app-icon>
 
-          <svg *ngIf="completado(i)" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 6 9 17l-5-5"/>
-          </svg>
+          <app-icon icono="check" [tamano]="16" *ngIf="completado(i)"></app-icon>
 
-          <svg *ngIf="tieneErrores(i)" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"
-            stroke-linecap="round">
-            <circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><path d="M12 17h.01"/>
-          </svg>
+          <app-icon icono="alert_circle" [tamano]="16" *ngIf="tieneErrores(i)"></app-icon>
 
           <span *ngIf="!paso.icono && !completado(i) && !tieneErrores(i)">{{ i + 1 }}</span>
         </span>

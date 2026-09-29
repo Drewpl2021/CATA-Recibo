@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../../core/services';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-emision-descuentos-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent],
+  imports: [IconComponent, CommonModule, FormsModule, PageHeaderComponent],
   templateUrl: './emision-descuentos-form.component.html',
   styleUrl: './emision-descuentos-form.component.scss'
 })

@@ -28,6 +28,7 @@ import { SeccionLaboralesComponent } from './secciones/seccion-laborales.compone
 import { SeccionPlanillaComponent } from './secciones/seccion-planilla.component';
 import { SeccionComplementariosComponent } from './secciones/seccion-complementarios.component';
 import { SeccionAccesoComponent } from './secciones/seccion-acceso.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 /** Rechaza fechas posteriores a hoy (el backend valida `before_or_equal:today`). */
 function noFutura(control: AbstractControl): ValidationErrors | null {
@@ -50,7 +51,7 @@ function noFutura(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-empleado-form',
   standalone: true,
-  imports: [
+  imports: [IconComponent, 
     CommonModule, ReactiveFormsModule,
     PageHeaderComponent, WizardComponent,
     SeccionPersonalesComponent, SeccionLaboralesComponent, SeccionPlanillaComponent,

@@ -5,12 +5,13 @@ import { NIVEL_ESTUDIOS_OPCIONES } from '../../../../shared/constants';
 import { Documento } from '../../../../core/models';
 import { SelectorArchivoComponent } from '../../../../shared/components/selector-archivo/selector-archivo.component';
 import { SeccionEmpleadoBase } from './seccion-base';
+import { IconComponent } from '../../../../shared/components/icon/icon.component';
 
 /** Paso 4: estudios, hoja de vida y a quién avisar. Todo opcional. */
 @Component({
   selector: 'app-seccion-complementarios',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, SelectorArchivoComponent],
+  imports: [IconComponent, CommonModule, ReactiveFormsModule, SelectorArchivoComponent],
   templateUrl: './seccion-complementarios.component.html',
 })
 export class SeccionComplementariosComponent extends SeccionEmpleadoBase {

@@ -27,6 +27,7 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 import { SelectorEmpleadosComponent } from '../../../shared/components/selector-empleados/selector-empleados.component';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 /**
  * Planillas: el primer nivel, las corridas del mes.
@@ -46,7 +47,7 @@ import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/f
 @Component({
   selector: 'app-corridas-list',
   standalone: true,
-  imports: [
+  imports: [IconComponent, 
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
     FiltrosComponent,

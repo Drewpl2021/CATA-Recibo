@@ -6,9 +6,7 @@
   [cargandoCifras]="cargando"
 >
   <button headerActions class="btn-primary" (click)="nuevo()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 5v14"/><path d="M5 12h14"/>
-    </svg>
+    <app-icon icono="plus" [tamano]="16"></app-icon>
     Nuevo Contrato
   </button>
 </app-page-header>
@@ -155,10 +153,7 @@
       <div class="detalle-masivo__fila" *ngFor="let d of documentos">
         <span>{{ etiqueta(tiposDocumento, d.tipo) }}</span>
         <button type="button" class="btn-exportar" (click)="descargarDocumento(d)">
-          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6"/><path d="m15 15-3 3-3-3"/>
-          </svg>
+          <app-icon icono="file_down" [tamano]="16"></app-icon>
           Descargar
         </button>
       </div>

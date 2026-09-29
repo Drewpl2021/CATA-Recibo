@@ -7,6 +7,7 @@ import { SeccionEmpleadoBase } from './seccion-base';
 import { ConsultaDniService, ToastService } from '../../../../core/services';
 import { PersonaPorDni } from '../../../../core/models';
 import { mensajeErrorApi } from '../../../../core/utils';
+import { IconComponent } from '../../../../shared/components/icon/icon.component';
 
 /**
  * Paso 1: quién es la persona.
@@ -22,7 +23,7 @@ import { mensajeErrorApi } from '../../../../core/utils';
 @Component({
   selector: 'app-seccion-personales',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [IconComponent, CommonModule, ReactiveFormsModule],
   templateUrl: './seccion-personales.component.html',
 })
 export class SeccionPersonalesComponent extends SeccionEmpleadoBase {
