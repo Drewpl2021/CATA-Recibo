@@ -85,3 +85,60 @@ describe('DataTableComponent — buscador', () => {
     expect(componente.filaFiltradas.length).toBe(3);
   });
 });
+
+describe('DataTableComponent — el esqueleto solo en la carga de verdad', () => {
+  let fixture: ComponentFixture<DataTableComponent<Fila>>;
+  let componente: DataTableComponent<Fila>;
+
+  const columnas: ColumnaTabla<Fila>[] = [{ campo: 'nombre', header: 'Nombre' }];
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [DataTableComponent] });
+    fixture = TestBed.createComponent<DataTableComponent<Fila>>(DataTableComponent);
+    componente = fixture.componentInstance;
+    componente.columnas = columnas;
+  });
+
+  const tabla = () => fixture.debugElement.query(By.css('table.data-table')).nativeElement as HTMLElement;
+
+  it('primera carga, sin filas todavía: se ve el esqueleto', () => {
+    componente.datos = [];
+    componente.cargando = true;
+    fixture.detectChanges();
+
+    expect(componente.filasEsqueleto.length).toBeGreaterThan(0);
+    expect(tabla().classList.contains('data-table--refrescando')).toBeFalse();
+  });
+
+  /**
+   * El bug real (2026-09-29): recargar la tabla DESPUÉS de aplicar un
+   * concepto a un grupo dibujaba el esqueleto encima de las filas que ya
+   * estaban — un parpadeo raro, porque las filas viejas seguían ahí abajo
+   * hasta que llegaba la respuesta. Ahora, con datos ya puestos, no hay
+   * esqueleto: la tabla solo se atenúa un poco.
+   */
+  it('recargar con filas ya puestas: nada de esqueleto, solo se atenúa', () => {
+    componente.datos = [{ nombre: 'Ana' }, { nombre: 'Karina' }];
+    componente.paginacionServidor = true;
+    fixture.detectChanges();
+
+    componente.cargando = true;
+    fixture.detectChanges();
+
+    expect(componente.filasEsqueleto.length).toBe(0);
+    expect(componente.filaPagina.length).toBe(2);
+    expect(tabla().classList.contains('data-table--refrescando')).toBeTrue();
+  });
+
+  it('cuando termina de cargar, se quita el atenuado', () => {
+    componente.datos = [{ nombre: 'Ana' }];
+    componente.paginacionServidor = true;
+    componente.cargando = true;
+    fixture.detectChanges();
+
+    componente.cargando = false;
+    fixture.detectChanges();
+
+    expect(tabla().classList.contains('data-table--refrescando')).toBeFalse();
+  });
+});

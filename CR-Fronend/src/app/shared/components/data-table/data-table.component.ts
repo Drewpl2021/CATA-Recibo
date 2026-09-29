@@ -265,7 +265,14 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
    * alto cuando lleguen los datos de verdad.
    */
   get filasEsqueleto(): number[] {
-    if (!this.cargando) return [];
+    // Solo en la carga de verdad: la primera vez, o cuando el filtro dejó
+    // la tabla en cero. Si ya había filas —recargar tras aplicar un
+    // concepto, cambiar de página, lo que sea— esas filas se quedan donde
+    // estaban (las pinta filaPagina) y el esqueleto no se dibuja ENCIMA:
+    // eso era el parpadeo raro, un instante con las barras grises apiladas
+    // sobre una tabla que ya se veía bien. Que se note que algo cambió lo
+    // hace .data-table--refrescando, sin mover ni una fila de su sitio.
+    if (!this.cargando || this.filaPagina.length > 0) return [];
 
     // Tantas como va a traer la página, no menos: con ocho fijas la tabla
     // crecía dos filas al llegar los datos y la pantalla daba un salto.

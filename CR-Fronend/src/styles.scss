@@ -1036,6 +1036,23 @@ a.migas__paso:hover {
   background-color: var(--table-hover-bg);
 }
 
+/* Recargar CON filas ya puestas (después de aplicar un concepto, cambiar de
+   filtro...) atenúa la tabla en vez de tapar todo con el esqueleto: las
+   filas viejas siguen donde estaban, solo se ven un poco apagadas mientras
+   llegan las nuevas. El esqueleto completo queda solo para la carga inicial
+   (filasEsqueleto, en el componente). */
+.data-table--refrescando tbody {
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity 0.15s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-table--refrescando tbody {
+    transition: none;
+  }
+}
+
 .doc-name {
   display: flex;
   align-items: center;
