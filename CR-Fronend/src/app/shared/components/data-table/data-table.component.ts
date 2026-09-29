@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, debounceTime, distinctUntilChanged } from 'rxjs';
 import { AccionPersonalizada, ColumnaTabla, leerCampo } from './data-table.models';
-import { fechaLegible } from '../../../core/utils';
+import { fechaHoraLegible, fechaLegible, formatoDiaHora } from '../../../core/utils';
 import { IconComponent } from '../icon/icon.component';
 import { PistaDirective } from '../../directives/pista.directive';
 
@@ -459,17 +459,16 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     const crudo = leerCampo(fila, columna.campo);
     if (columna.formatear) return columna.formatear(crudo, fila);
     if (columna.tipo === 'fecha' && crudo) return fechaLegible(crudo);
-    if (columna.tipo === 'fecha-hora' && crudo) return new Date(crudo).toLocaleString('es-PE');
+    // Antes con toLocaleString('es-PE'): el formato lo ponía el navegador de
+    // cada quien. Ahora sale "dd/mm/aaaa hh:mm" en todas las máquinas.
+    if (columna.tipo === 'fecha-hora' && crudo) return fechaHoraLegible(crudo);
     // 'hito' devuelve "dd/mm/aaaa hh:mm" y la plantilla lo parte en dos
     // líneas; sin fecha devuelve cadena vacía, que es lo que hace que se
     // pinte la raya en vez de la marca.
     if (columna.tipo === 'hito') {
       if (!crudo) return '';
       const f = new Date(crudo);
-      if (isNaN(f.getTime())) return '';
-      const dosCifras = (n: number) => String(n).padStart(2, '0');
-      return `${dosCifras(f.getDate())}/${dosCifras(f.getMonth() + 1)}/${f.getFullYear()} `
-        + `${dosCifras(f.getHours())}:${dosCifras(f.getMinutes())}`;
+      return isNaN(f.getTime()) ? '' : formatoDiaHora(f);
     }
     // Con separador de miles: "S/ 9,114.40". Sin él, un sueldo de cinco
     // cifras y uno de cuatro se parecen demasiado en una columna, y el panel

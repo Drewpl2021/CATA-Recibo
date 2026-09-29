@@ -31,7 +31,7 @@ Las dos corren también solas en cada push (`.github/workflows/pruebas.yml`).
 | `Feature/VacacionesTruncasTest` | **Vacaciones Truncas** (la vía de plazo fijo, suplencia y prácticas) se rechaza para un contrato indeterminado — que ya cobra sus vacaciones de verdad—, y se acepta para los otros tres tipos. |
 | `Feature/RecalcularPlanillaTest` | **`PUT /payrolls/{id}/recalcular`** (2026-09-28): generar una planilla es una foto del sueldo de ese momento; este endpoint vuelve a prorratear con el sueldo actual de la ficha, regenera pensión/EsSalud/Asignación Familiar/Renta de 5ta, no toca las líneas puestas a mano, se bloquea si la corrida está cerrada, y queda anotado en Auditoría con el antes y el después. |
 
-### Frontend — 110 pruebas
+### Frontend — 112 pruebas
 
 Los buscadores de las tablas, de los selectores de casillas (Áreas/Cargos) y
 del selector de personas comparten el mismo bug encontrado el 2026-09-28
@@ -50,7 +50,7 @@ botón «×» + Escape en dos pasos. Cuatro archivos lo prueban por separado:
 | `auth.service.spec` | Login, sesión en `localStorage`, rutas según rol, aviso único de sesión caducada. |
 | `identificar-documento.spec` | Lectura de PDFs antiguos: tipo, DNI, mes y año, con tildes, "setiembre", diciembre firmado en enero. |
 | `documentos.spec` | Nombres, formatos y estado de firma de los documentos. |
-| `utilidades.spec` | Validador de clave, fechas sin desfase de zona horaria, mensajes de error de Laravel. |
+| `utilidades.spec` | Validador de clave, fechas sin desfase de zona horaria y **siempre dd/mm/aaaa** (antes el formato lo ponía el navegador de cada quien), mensajes de error de Laravel. |
 | `toast-y-confirm.spec` | Avisos, silencio de errores y el resultado masivo (**cero hechas es un error, no un éxito verde**). |
 | `app.component.spec` | La aplicación arranca y monta sus piezas. |
 

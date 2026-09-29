@@ -1,5 +1,8 @@
 <!doctype html>
-<html lang="en">
+<!-- es-PE y no "en": los campos de fecha nativos de algunos navegadores
+     (Firefox, Safari) se dibujan según el idioma de la página, y con "en"
+     mostraban mm/dd/aaaa — el 01/12 se leía como 12 de enero. -->
+<html lang="es-PE">
 <head>
   <meta charset="utf-8">
   <title>CATA Recibo — Sistema de Gestión RRHH</title>
@@ -10,7 +13,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Sin la fuente "Material Icons": ninguna pantalla la usa (los íconos
+       salen del catálogo, shared/icons/icon-map.ts) y se descargaba igual en
+       cada carga de página. -->
 </head>
 <body>
   <app-root></app-root>

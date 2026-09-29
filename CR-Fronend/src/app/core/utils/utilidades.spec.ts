@@ -1,6 +1,6 @@
 import { FormControl } from '@angular/forms';
 import { claveConLetrasYNumeros, tieneLetrasYNumeros } from './clave-segura';
-import { fechaLegible } from './fecha';
+import { fechaHoraLegible, fechaLegible } from './fecha';
 import { mensajeErrorApi } from './error-api';
 
 describe('claveConLetrasYNumeros', () => {
@@ -28,7 +28,19 @@ describe('fechaLegible', () => {
   it('no corre la fecha un día por la zona horaria', () => {
     // 2026-03-01 no debe convertirse en 28 de febrero.
     const texto = fechaLegible('2026-03-01');
-    expect(texto).toBe(new Date(2026, 2, 1).toLocaleDateString('es-PE'));
+    expect(texto).toBe('01/03/2026');
+  });
+
+  it('sale siempre dd/mm/aaaa, con ceros, sin depender del navegador', () => {
+    // Antes usaba toLocaleDateString('es-PE') y el formato cambiaba de una
+    // computadora a otra según su idioma y región.
+    expect(fechaLegible('2026-12-01')).toBe('01/12/2026');
+    expect(fechaLegible('2026-01-09')).toBe('09/01/2026');
+  });
+
+  it('con hora: dd/mm/aaaa hh:mm', () => {
+    expect(fechaHoraLegible('2026-12-01T09:05:00')).toBe('01/12/2026 09:05');
+    expect(fechaHoraLegible(null)).toBe('');
   });
 
   it('devuelve vacío para valores vacíos', () => {

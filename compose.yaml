@@ -59,6 +59,14 @@ services:
       APP_DEBUG: "false"
       APP_URL: ${APP_URL}
       APP_TIMEZONE: America/Lima
+      # El idioma, igual que la hora. El .env de la máquina no entra a la
+      # imagen (.dockerignore), y sin estas líneas Laravel arrancaba en
+      # inglés: la boleta firmaba "28 de September de 2026" y los mensajes
+      # de validación salían en inglés, aunque en local todo se viera en
+      # castellano.
+      APP_LOCALE: es
+      APP_FALLBACK_LOCALE: es
+      APP_FAKER_LOCALE: es_PE
       FRONTEND_URL: ${APP_URL}
 
       DB_CONNECTION: mysql
