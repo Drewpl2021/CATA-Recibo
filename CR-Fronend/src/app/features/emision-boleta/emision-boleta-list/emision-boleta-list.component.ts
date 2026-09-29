@@ -1,7 +1,7 @@
 import { inject, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AreaService, CargoService, SedeService } from '../../../core/services';
+import { AreaService, AuthService, CargoService, SedeService } from '../../../core/services';
 import { EmpleadoService } from '../../../core/services';
 import { Empleado } from '../../../core/models';
 import { BoletaService } from '../../../core/services';
@@ -16,9 +16,10 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { MESES_OPCIONES } from '../../../shared/constants';
-import { formatoDia } from '../../../core/utils';
+import { formatoDia, mensajeErrorApi } from '../../../core/utils';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 export interface FormularioBoleta {
@@ -53,7 +54,7 @@ export interface FormularioBoleta {
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent],
+  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })
@@ -158,12 +159,27 @@ export class EmisionBoletaListComponent implements OnInit {
   accionesFila: AccionPersonalizada<Empleado>[] = [
     {
       id: 'editar', titulo: 'Revisar y editar los conceptos de su boleta', icono: 'money', etiqueta: 'Editar',
-      // Con la boleta ya emitida (una por una o en masa) no se puede seguir
-      // editando la planilla de atrás: quedaría mintiendo sobre lo que el
-      // trabajador ya recibió.
       visible: (e) => !this.empleadosConBoletaEmitida.has(e.id),
     },
+    {
+      // Con la boleta ya emitida (una por una o en masa) no se edita
+      // directo: quedaría mintiendo sobre lo que el trabajador ya recibió.
+      // Pero a veces sí hace falta —un aumento de último momento, un dato
+      // que salió mal—, así que no queda cerrado del todo: pide de nuevo la
+      // clave de quien lo abre.
+      id: 'desbloquear', titulo: 'Ya se emitió su boleta de este mes. Pon tu clave para poder corregirla.',
+      icono: 'lock', etiqueta: 'Bloqueado', severidad: 'warning',
+      visible: (e) => this.empleadosConBoletaEmitida.has(e.id),
+    },
   ];
+
+  // ── Desbloquear una boleta ya emitida ──
+  private authService = inject(AuthService);
+  showPasswordModal = false;
+  empleadoADesbloquear: Empleado | null = null;
+  passwordDesbloqueo = '';
+  passwordErrorMsg = '';
+  verificandoPassword = false;
 
   // Modal state
   showModal = false;
@@ -446,24 +462,80 @@ export class EmisionBoletaListComponent implements OnInit {
     return this.mesesDisponibles.find(m => m.num === num)?.nombre || '';
   }
 
+  /**
+   * Punto de entrada único de la tabla, sea cual sea el botón que se pulsó
+   * ("Editar" o el candado "Bloqueado"): si la fila está bloqueada pide la
+   * clave primero; si no, abre el formulario directo.
+   */
   abrirModal(empleado: Empleado): void {
-    // El botón ya se esconde con la boleta emitida; esto es el respaldo por
-    // si la fila quedó con datos viejos en caché.
     if (this.empleadosConBoletaEmitida.has(empleado.id)) {
-      this.toastService.warning(
-        'Boleta ya emitida',
-        `Ya se emitió la boleta de ${empleado.nombre} ${empleado.apellido} de este mes; no se puede editar desde acá.`
-      );
+      this.abrirDesbloqueo(empleado);
       return;
     }
+    this.abrirFormularioEdicion(empleado);
+  }
 
+  private abrirFormularioEdicion(empleado: Empleado): void {
     this.empleadoSeleccionado = empleado;
     this.formulario = this.getFormularioVacio();
     this.showModal = true;
     document.body.style.overflow = 'hidden';
-    
+
     // Cargar la planilla del empleado para el periodo GLOBAL seleccionado
     this.cargarPlanillaDelEmpleado(empleado.id, this.mesGlobal, this.anioGlobal, empleado);
+  }
+
+  // ── Desbloquear una boleta ya emitida ──
+
+  private abrirDesbloqueo(empleado: Empleado): void {
+    this.empleadoADesbloquear = empleado;
+    this.passwordDesbloqueo = '';
+    this.passwordErrorMsg = '';
+    this.showPasswordModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  cerrarPasswordModal(): void {
+    this.showPasswordModal = false;
+    this.empleadoADesbloquear = null;
+    this.passwordDesbloqueo = '';
+    this.passwordErrorMsg = '';
+    this.verificandoPassword = false;
+    document.body.style.overflow = '';
+  }
+
+  /**
+   * Confirma la clave de quien está en la sesión (RR.HH./Admin, no la del
+   * trabajador) y, si es correcta, recién ahí abre el formulario. Un aumento
+   * de último momento o un dato que salió mal sí se puede corregir, pero
+   * queda a nombre de quien puso su propia clave para hacerlo.
+   */
+  confirmarDesbloqueo(): void {
+    if (!this.empleadoADesbloquear) return;
+    if (!this.passwordDesbloqueo) {
+      this.passwordErrorMsg = 'Escribe tu contraseña para continuar.';
+      return;
+    }
+
+    this.verificandoPassword = true;
+    this.passwordErrorMsg = '';
+
+    this.authService.verificarPassword(this.passwordDesbloqueo).subscribe({
+      next: (res) => {
+        this.verificandoPassword = false;
+        if (res.success) {
+          const empleado = this.empleadoADesbloquear!;
+          this.cerrarPasswordModal();
+          this.abrirFormularioEdicion(empleado);
+          return;
+        }
+        this.passwordErrorMsg = res.message || 'No se pudo verificar la contraseña.';
+      },
+      error: (err) => {
+        this.verificandoPassword = false;
+        this.passwordErrorMsg = mensajeErrorApi(err, 'Contraseña incorrecta o el servidor no respondió.');
+      },
+    });
   }
 
   cargarPlanillaDelEmpleado(empleadoId: string, mes: number, anio: number, empleado: Empleado): void {

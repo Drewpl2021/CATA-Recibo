@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Models\Rol;
 use App\Models\Empleado;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -151,6 +152,53 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'data'    => ['message' => 'Contraseña actualizada correctamente.'],
+        ]);
+    }
+
+    /**
+     * POST /verify-password — confirma la clave de quien está en la sesión,
+     * sin tocar nada más.
+     *
+     * La usa Emisión de Boletas para destrabar la edición de una planilla
+     * cuya boleta ya se emitió: quien la reabre tiene que volver a poner SU
+     * propia clave, no la del trabajador. Mismo límite de 3 intentos que
+     * firmar una boleta (MisDocumentosController::firmar): esto reabre algo
+     * que ya se le entregó a alguien, así que no se prueba a lo loco.
+     */
+    public function verificarPassword(Request $request)
+    {
+        $request->validate(['password' => 'required|string']);
+
+        $user        = $request->user();
+        $intentosKey = 'intentos_verificar_password_' . $user->id;
+        $intentos    = Cache::get($intentosKey, 0);
+
+        if (! Hash::check($request->password, $user->password)) {
+            $intentos++;
+            Cache::put($intentosKey, $intentos, now()->addMinutes(15));
+
+            if ($intentos >= 3) {
+                $user->tokens()->delete();
+                Cache::forget($intentosKey);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Se superó el límite de 3 intentos. Su sesión ha sido cerrada.'
+                ], 403);
+            }
+
+            $intentosRestantes = 3 - $intentos;
+            return response()->json([
+                'success' => false,
+                'message' => "Contraseña incorrecta. Le quedan {$intentosRestantes} intento(s).",
+            ], 401);
+        }
+
+        Cache::forget($intentosKey);
+
+        return response()->json([
+            'success' => true,
+            'data'    => ['message' => 'Contraseña verificada.'],
         ]);
     }
 

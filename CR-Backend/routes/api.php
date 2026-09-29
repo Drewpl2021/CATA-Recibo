@@ -110,6 +110,9 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     Route::post('my-documents/resume', [MisDocumentosController::class, 'subirHojaDeVida']);
     Route::get('my-modules', [MisModulosController::class, 'index']);
     Route::put('change-password', [AuthController::class, 'cambiarPassword']);
+    // Confirma la CLAVE de quien está en la sesión, sin cambiar nada. La usa
+    // Emisión de Boletas para destrabar la edición de una boleta ya emitida.
+    Route::post('verify-password', [AuthController::class, 'verificarPassword']);
 
     // Los términos de uso: el papel que antes se firmaba a mano. Los firma
     // cada trabajador desde su cuenta, así que van entre las rutas de

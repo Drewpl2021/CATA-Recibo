@@ -61,6 +61,20 @@ export class AuthService {
   }
 
   /**
+   * Confirma la CLAVE de quien está en la sesión, sin cambiar nada.
+   *
+   * La usa Emisión de Boletas para destrabar la edición de una planilla cuya
+   * boleta ya se emitió: 3 intentos, y al cuarto el backend cierra la sesión
+   * (mismo límite que firmar una boleta).
+   */
+  verificarPassword(password: string): Observable<ApiResponse<{ message: string }>> {
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/${END_POINTS.auth.verificarPassword}`,
+      { password }
+    );
+  }
+
+  /**
    * Los términos de uso, y si esta persona ya los firmó.
    *
    * Se puede consultar y firmar con la cuenta trabada del primer ingreso:

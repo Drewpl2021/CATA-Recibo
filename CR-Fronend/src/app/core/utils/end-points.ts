@@ -9,6 +9,7 @@ export const END_POINTS = {
     logout: 'logout',
     me: 'me',
     cambiarPassword: 'change-password',
+    verificarPassword: 'verify-password',
     olvidePassword: 'forgot-password',
     restablecerPassword: 'reset-password',
     /** Los términos de uso: el papel que antes se firmaba a mano. */

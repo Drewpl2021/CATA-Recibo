@@ -287,3 +287,27 @@
 
   </div><!-- fin boleta-modal -->
 </div><!-- fin overlay -->
+
+<!-- Pide la clave de RR.HH./Admin antes de reabrir una boleta ya emitida -->
+<app-form-modal
+  [visible]="showPasswordModal"
+  titulo="Boleta ya emitida"
+  textoGuardar="Desbloquear y editar"
+  [guardando]="verificandoPassword"
+  (guardar)="confirmarDesbloqueo()"
+  (cancelar)="cerrarPasswordModal()"
+>
+  <div class="form-fields">
+    <p class="form-nota">
+      Ya se emitió la boleta de <strong>{{ empleadoADesbloquear?.nombre }} {{ empleadoADesbloquear?.apellido }}</strong>
+      de {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}. Para corregirla de todos modos
+      (un aumento, un dato que salió mal), pon tu contraseña.
+    </p>
+    <div class="form-group">
+      <label for="passwordDesbloqueo">Tu contraseña</label>
+      <input id="passwordDesbloqueo" type="password" class="form-control" [(ngModel)]="passwordDesbloqueo"
+        placeholder="Tu contraseña" autocomplete="current-password" (keyup.enter)="confirmarDesbloqueo()" />
+      <small class="form-error" *ngIf="passwordErrorMsg">{{ passwordErrorMsg }}</small>
+    </div>
+  </div>
+</app-form-modal>
