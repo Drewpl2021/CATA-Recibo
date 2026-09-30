@@ -275,6 +275,7 @@
 
 /* ── Hoja del formulario ───────────────────────────────────────── */
 .acceso__hoja {
+  position: relative;
   flex: 1;
   min-width: 0;
   /* del lado de la curva hace falta más aire: la panza del panel
@@ -283,12 +284,30 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  /* El mismo guilloché del panel azul, pero casi invisible: el papel de
+     un documento de valor lleva su propio grano, no solo el timbre. Va
+     de fondo, nunca puede competir con el texto. */
+  background-image:
+    repeating-radial-gradient(circle at 92% 8%,
+      rgba(27, 66, 130, 0.05) 0 1px, transparent 1px 12px);
+  background-position: top right;
+  background-repeat: no-repeat;
+  background-size: 70% 60%;
+}
+
+.acceso--invertido .acceso__hoja {
+  background-position: top left;
 }
 
 /* El título y la bajada van centrados sobre la hoja; los campos de abajo
-   siguen su propio eje a la izquierda, como el papel que son. */
+   siguen su propio eje a la izquierda, como el papel que son. El filo
+   dorado debajo repite el del panel: son el mismo trazo partido en dos
+   por la costura. */
 .acceso__titulo {
-  margin: 0 0 6px;
+  position: relative;
+  z-index: 1;
+  margin: 0 0 14px;
+  padding-bottom: 14px;
   font-size: 31px;
   font-weight: 800;
   letter-spacing: -0.025em;
@@ -296,7 +315,21 @@
   text-align: center;
 }
 
+.acceso__titulo::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 44px;
+  height: 3px;
+  border-radius: 2px;
+  background-color: var(--accent);
+  transform: translateX(-50%);
+}
+
 .acceso__intro {
+  position: relative;
+  z-index: 1;
   margin: 0 0 26px;
   max-width: 44ch;
   margin-left: auto;
