@@ -295,36 +295,17 @@
   background-size: 70% 60%;
 }
 
-.acceso--invertido .acceso__hoja {
-  background-position: top left;
-}
-
 /* El título y la bajada van centrados sobre la hoja; los campos de abajo
-   siguen su propio eje a la izquierda, como el papel que son. El filo
-   dorado debajo repite el del panel: son el mismo trazo partido en dos
-   por la costura. */
+   siguen su propio eje a la izquierda, como el papel que son. */
 .acceso__titulo {
   position: relative;
   z-index: 1;
-  margin: 0 0 14px;
-  padding-bottom: 14px;
+  margin: 0 0 6px;
   font-size: 31px;
   font-weight: 800;
   letter-spacing: -0.025em;
   color: var(--heading);
   text-align: center;
-}
-
-.acceso__titulo::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 44px;
-  height: 3px;
-  border-radius: 2px;
-  background-color: var(--accent);
-  transform: translateX(-50%);
 }
 
 .acceso__intro {
@@ -342,6 +323,7 @@
 
 .acceso--invertido .acceso__hoja {
   padding: 52px 92px 52px 52px;
+  background-position: top left;
 }
 
 /* El ritmo vertical lo lleva el formulario con un solo gap. */
