@@ -285,23 +285,26 @@
   justify-content: center;
 }
 
-/* Alineado a la izquierda, como el papel que es: el eje de las
-   etiquetas, los campos y el botón es el mismo, y la vista baja en
-   línea recta en vez de rebotar de un centro a otro. */
+/* El título y la bajada van centrados sobre la hoja; los campos de abajo
+   siguen su propio eje a la izquierda, como el papel que son. */
 .acceso__titulo {
   margin: 0 0 6px;
   font-size: 31px;
   font-weight: 800;
   letter-spacing: -0.025em;
   color: var(--heading);
+  text-align: center;
 }
 
 .acceso__intro {
   margin: 0 0 26px;
   max-width: 44ch;
+  margin-left: auto;
+  margin-right: auto;
   font-size: 13.5px;
   line-height: 1.55;
   color: var(--text-muted);
+  text-align: center;
 }
 
 .acceso--invertido .acceso__hoja {
