@@ -468,10 +468,17 @@
   font-size: 15px;
 }
 
+/* Separado del botón por una costura propia —punteada, como el picado
+   de la tarjeta— en vez de flotar suelto debajo. Centrado: es la única
+   nota de la hoja que no sigue el eje de los campos, porque no es parte
+   del formulario sino un cierre, como el pie de una boleta. */
 .acceso__pie {
-  margin: 22px 0 0;
+  margin: 24px 0 0;
+  padding-top: 18px;
+  border-top: 1px dashed var(--border);
   font-size: 13px;
   line-height: 1.55;
+  text-align: center;
   color: var(--text-muted);
 }
 
