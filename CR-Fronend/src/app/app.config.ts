@@ -1,5 +1,5 @@
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
-import { NavigationError, provideRouter, withNavigationErrorHandler } from '@angular/router';
+import { NavigationError, provideRouter, withNavigationErrorHandler, withViewTransitions } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
@@ -34,7 +34,12 @@ function recargarSiFaltaUnTrozo(error: NavigationError): void {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes, withNavigationErrorHandler(recargarSiFaltaUnTrozo)),
+    // El fundido entre una pantalla y la siguiente: withViewTransitions()
+    // envuelve cada navegación en document.startViewTransition() sola, sin
+    // tocar los componentes. Donde el navegador no la trae (Firefox viejo,
+    // Safari viejo), Angular lo nota y navega igual, sin animación — nunca
+    // rompe nada. El cómo se ve —la curva, cuánto dura— va en styles.scss.
+    provideRouter(routes, withNavigationErrorHandler(recargarSiFaltaUnTrozo), withViewTransitions()),
     provideHttpClient(withInterceptors([authInterceptor])),
   ]
 };

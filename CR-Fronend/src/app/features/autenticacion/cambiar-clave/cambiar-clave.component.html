@@ -57,7 +57,16 @@
 
       <!-- ══ Paso 1: los términos ══════════════════════════════════ -->
       <ng-container *ngIf="paso === 'terminos'">
-        <p class="acceso__intro" *ngIf="cargandoTerminos">Cargando el documento…</p>
+        <div class="terminos" *ngIf="cargandoTerminos" aria-hidden="true">
+          <span class="esqueleto esqueleto--titulo"></span>
+          <span class="esqueleto esqueleto--linea"></span>
+          <span class="esqueleto esqueleto--linea"></span>
+          <span class="esqueleto esqueleto--linea esqueleto--media"></span>
+          <span class="esqueleto esqueleto--titulo" style="margin-top: 16px;"></span>
+          <span class="esqueleto esqueleto--linea"></span>
+          <span class="esqueleto esqueleto--linea esqueleto--corta"></span>
+        </div>
+        <span class="solo-lectores" *ngIf="cargandoTerminos" role="status">Cargando el documento…</span>
 
         <ng-container *ngIf="!cargandoTerminos && terminos as doc">
           <p class="terminos__aviso" *ngIf="doc.esVersionNueva">

@@ -6,7 +6,30 @@
 </app-page-header>
 
 <div class="section-panel section-panel--formulario">
-  <p *ngIf="cargando" class="data-table-empty">Cargando…</p>
+  <!-- La silueta del formulario: la foto, los pasos y los campos, en vez
+       de la palabra "Cargando...". Igual que el menú y el Panel de
+       Control: el hueco ya tiene la forma de lo que va a aparecer. -->
+  <div class="empleado-form-esqueleto" *ngIf="cargando" aria-hidden="true">
+    <div class="ficha-persona">
+      <span class="esqueleto esqueleto--circulo ficha-persona__foto"></span>
+      <div class="ficha-persona__datos" style="flex: 1;">
+        <span class="esqueleto esqueleto--linea esqueleto--media" style="height: 18px;"></span>
+        <span class="esqueleto esqueleto--linea esqueleto--corta" style="margin-bottom: 0;"></span>
+      </div>
+    </div>
+
+    <div class="empleado-form-esqueleto__pasos">
+      <span class="esqueleto" *ngFor="let p of [1, 2, 3, 4, 5]" style="height: 36px;"></span>
+    </div>
+
+    <div class="rejilla-campos">
+      <div class="form-group" *ngFor="let c of [1, 2, 3, 4, 5, 6]">
+        <span class="esqueleto esqueleto--linea esqueleto--corta" style="height: 11px;"></span>
+        <span class="esqueleto" style="height: 38px;"></span>
+      </div>
+    </div>
+  </div>
+  <span class="solo-lectores" *ngIf="cargando" role="status">Cargando los datos del trabajador…</span>
 
   <ng-container *ngIf="!cargando">
     <!-- A quién se está mirando, con la foto que él mismo subió a su cuenta.

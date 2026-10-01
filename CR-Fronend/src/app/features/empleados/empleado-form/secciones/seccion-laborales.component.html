@@ -123,7 +123,14 @@
 <div class="seccion-form" *ngIf="!esNuevo">
   <h3 class="seccion-form__titulo">Sus contratos</h3>
 
-  <p class="form-ayuda" *ngIf="cargandoContratos">Cargando sus contratos…</p>
+  <ul class="lista-contratos" *ngIf="cargandoContratos" aria-hidden="true">
+    <li class="lista-contratos__item" *ngFor="let c of [1, 2]">
+      <span class="esqueleto" style="width: 76px; height: 20px; border-radius: var(--radius-full);"></span>
+      <span class="esqueleto esqueleto--linea esqueleto--corta" style="margin-bottom: 0;"></span>
+      <span class="esqueleto esqueleto--linea esqueleto--media" style="margin-bottom: 0;"></span>
+    </li>
+  </ul>
+  <span class="solo-lectores" *ngIf="cargandoContratos" role="status">Cargando sus contratos…</span>
 
   <p class="form-nota" *ngIf="!cargandoContratos && !contratos.length">
     Este trabajador no tiene ningún contrato registrado. Créaselo desde

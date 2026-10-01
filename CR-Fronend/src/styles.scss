@@ -4657,6 +4657,19 @@ textarea.form-control {
   border-radius: var(--radius-md);
 }
 
+/* La fila de pasos del formulario de empleado, mientras trae los datos
+   de un trabajador para editar o ver. */
+.empleado-form-esqueleto__pasos {
+  display: flex;
+  gap: 10px;
+  margin: 24px 0;
+}
+
+.empleado-form-esqueleto__pasos .esqueleto {
+  flex: 1;
+  border-radius: var(--radius-full);
+}
+
 /* ============================================
    CÍRCULO DE CARGA
    ============================================
@@ -5315,6 +5328,48 @@ textarea.form-control {
     width: 100%;
     animation: none;
     opacity: 0.45;
+  }
+}
+
+/* ── El fundido entre una pantalla y la siguiente ─────────────
+   withViewTransitions() (en app.config.ts) envuelve cada navegación en
+   document.startViewTransition(): el navegador saca una foto de cómo
+   estaba la página, hace el cambio, y anima entre las dos fotos solo.
+
+   Por nombrar .content-area, es SOLO el contenido el que se funde —el
+   menú lateral y la cabecera, que no cambian de una pantalla a otra, se
+   quedan quietos—. Sin el nombre, el navegador funde la página ENTERA, y
+   el menú parpadeaba en cada clic aunque no tuviera nada que cambiar. */
+.content-area {
+  view-transition-name: contenido;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(contenido) {
+  animation: contenido-sale 0.16s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+::view-transition-new(contenido) {
+  animation: contenido-entra 0.18s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes contenido-sale {
+  to { opacity: 0; }
+}
+
+@keyframes contenido-entra {
+  from { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
 
