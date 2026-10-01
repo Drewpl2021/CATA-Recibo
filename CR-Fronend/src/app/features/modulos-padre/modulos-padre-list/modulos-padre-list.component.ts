@@ -61,8 +61,11 @@ export class ModulosPadreListComponent implements OnInit {
   iconos = CLAVES_ICONO;
 
   columnas: ColumnaTabla<ModuloPadreAdmin>[] = [
-    { campo: 'orden', header: 'Orden', ancho: '10%' },
     { campo: 'nombre', header: 'Grupo', ancho: '35%' },
+    // Después de Grupo y no al principio: pegado al "#" de la fila (que
+    // numera por la tabla), dos columnas de número seguidas al principio
+    // se leían como una sola cosa repetida. Mismo criterio que Módulos.
+    { campo: 'orden', header: 'Orden', ancho: '10%' },
     { campo: 'icono', header: 'Ícono', tipo: 'icono' },
   ];
 
