@@ -7,7 +7,6 @@ use App\Models\Documento;
 use App\Models\Empleado;
 use App\Models\Planilla;
 use App\Models\Sede;
-use App\Support\LibroExcel;
 use App\Support\Meses;
 use App\Traits\ExportaExcel;
 use Carbon\Carbon;
@@ -15,6 +14,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Chart\Chart;
+use PhpOffice\PhpSpreadsheet\Chart\DataSeries;
+use PhpOffice\PhpSpreadsheet\Chart\DataSeriesValues;
+use PhpOffice\PhpSpreadsheet\Chart\Legend;
+use PhpOffice\PhpSpreadsheet\Chart\PlotArea;
+use PhpOffice\PhpSpreadsheet\Chart\Title as ChartTitle;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 /**
  * Las cifras del Panel de Control.
@@ -122,6 +132,24 @@ class DashboardController extends Controller
      * se acaban y los cumpleaños. Los montos van como número, así que en
      * Excel se pueden sumar sin tocarlos.
      */
+    /**
+     * El panel entero en un Excel, con el filtro que se está mirando.
+     *
+     * Lo que se ve es lo que baja: el mismo mes y la misma sede. Antes
+     * bajaba solo texto y números —ni uno solo de los gráficos que se ven
+     * en pantalla—, así que para enseñarlo en una reunión había que
+     * rearmar los gráficos a mano en Excel. Ahora van adentro de verdad:
+     * son gráficos NATIVOS (apuntan a las celdas de al lado, no son una
+     * foto), así que se pueden tocar, cambiarles el color, o copiarlos a
+     * una presentación como cualquier gráfico hecho a mano.
+     *
+     * Es el único reporte de la app que usa PhpSpreadsheet en vez de
+     * LibroExcel —el escritor propio, sin librería, que arma el resto de
+     * los Excel del sistema—: un gráfico de verdad implica varias piezas
+     * de XML relacionadas entre sí (el dibujo, el gráfico, la hoja que los
+     * aloja), justo el tipo de detalle de formato para el que sí conviene
+     * apoyarse en una librería ya probada en vez de escribirlo a mano.
+     */
     public function exportar(Request $request)
     {
         ['mes' => $mes, 'anio' => $anio, 'sede' => $sede] = $this->filtroPedido($request);
@@ -130,16 +158,17 @@ class DashboardController extends Controller
         $resumen = $datos['resumen'];
         $firma   = $datos['firmaBoletas'];
 
-        $periodo     = Meses::nombre($mes) . ' ' . $anio;
-        $nombreSede  = $sede ? (Sede::find($sede)->nombre ?? 'Sede') : 'Todas las sedes';
+        $periodo    = Meses::nombre($mes) . ' ' . $anio;
+        $nombreSede = $sede ? (Sede::find($sede)->nombre ?? 'Sede') : 'Todas las sedes';
 
         // Etiqueta y monto / etiqueta y cuenta, tal como los manda el panel.
-        $conMonto = fn (array $lista) => array_map(fn ($x) => [$x['etiqueta'], $x['valor'], true], $lista);
+        $conMonto  = fn (array $lista) => array_map(fn ($x) => [$x['etiqueta'], $x['valor'], true], $lista);
         $conCuenta = fn (array $lista) => array_map(fn ($x) => [$x['etiqueta'], $x['valor']], $lista);
 
-        $libro = new LibroExcel();
+        $libro = new Spreadsheet();
+        $libro->getProperties()->setTitle('Panel de control ' . $periodo)->setCreator('CATA-Recibo');
 
-        $this->hojaDeCifras($libro, 'Resumen', [
+        $this->hojaResumen($libro, [
             'Lo que se está mirando' => [
                 ['Periodo', $periodo],
                 ['Sede', $nombreSede],
@@ -164,21 +193,21 @@ class DashboardController extends Controller
             ),
         ]);
 
-        $this->hojaDeCifras($libro, 'Nómina', [
-            'A dónde se va la nómina (S/)'      => $conMonto($datos['composicionNomina']),
-            'Remuneración por área (S/)'        => $conMonto($datos['remuneracionPorArea']),
-            'Los conceptos que más pesan (S/)'  => $conMonto($datos['topConceptos']),
-            "Nómina mes a mes de {$anio} (S/)"  => $conMonto($datos['tendenciaNomina']),
+        $this->hojaConGraficos($libro, 'Nómina', [
+            'A dónde se va la nómina (S/)'      => ['datos' => $conMonto($datos['composicionNomina']), 'grafico' => 'barras'],
+            'Remuneración por área (S/)'        => ['datos' => $conMonto($datos['remuneracionPorArea']), 'grafico' => 'barras'],
+            'Los conceptos que más pesan (S/)'  => ['datos' => $conMonto($datos['topConceptos']), 'grafico' => 'barras'],
+            "Nómina mes a mes de {$anio} (S/)"  => ['datos' => $conMonto($datos['tendenciaNomina']), 'grafico' => 'linea'],
         ]);
 
-        $this->hojaDeCifras($libro, 'Plantilla', [
-            'Personal por sede'          => $conCuenta($datos['personalPorSede']),
-            'Sistema de pensiones'       => $conCuenta($datos['sistemaPensiones']),
-            'Tipo de contrato'           => $conCuenta($datos['tipoContrato']),
-            'Antigüedad en el colegio'   => $conCuenta($datos['antiguedad']),
+        $this->hojaConGraficos($libro, 'Plantilla', [
+            'Personal por sede'         => ['datos' => $conCuenta($datos['personalPorSede']), 'grafico' => 'dona'],
+            'Sistema de pensiones'      => ['datos' => $conCuenta($datos['sistemaPensiones']), 'grafico' => 'dona'],
+            'Tipo de contrato'          => ['datos' => $conCuenta($datos['tipoContrato']), 'grafico' => 'torta'],
+            'Antigüedad en el colegio'  => ['datos' => $conCuenta($datos['antiguedad']), 'grafico' => 'barras'],
         ]);
 
-        $this->hojaDeReporte(
+        $this->tablaSimple(
             $libro,
             'Contratos por vencer',
             ['Trabajador', 'Cargo', 'Vence el', 'Días que faltan'],
@@ -188,11 +217,10 @@ class DashboardController extends Controller
                 Carbon::parse($c['fecha'])->format('d/m/Y'),
                 $c['dias'],
             ], $datos['contratosPorVencer']),
-            // La fecha como texto: escrita así, Excel no la reinterpreta.
-            [2 => LibroExcel::TEXTO]
+            columnasTexto: [2]
         );
 
-        $this->hojaDeReporte(
+        $this->tablaSimple(
             $libro,
             'Cumpleaños',
             ['Día', 'Trabajador', 'Cargo', 'Área', 'Sede', 'Cumple'],
@@ -204,19 +232,41 @@ class DashboardController extends Controller
                 $c['sede'],
                 $c['edad'] > 0 ? $c['edad'] . ' años' : '',
             ], $datos['cumpleanos']),
-            [0 => LibroExcel::TEXTO]
+            columnasTexto: [0]
         );
 
-        // La misma hoja de filtros que los otros dos reportes, para que los
-        // tres se lean igual y quede escrito quién bajó qué.
-        $this->hojaDeFiltros($libro, [
-            'Mes y año' => $periodo,
-            'Sede'      => $sede ? $nombreSede : 'Todas las sedes',
-        ], $request->user()?->name);
+        // La misma hoja de filtros que los otros reportes del sistema, para
+        // que se lean igual y quede escrito quién bajó qué.
+        $filtrosFilas = [['Mes y año', $periodo], ['Sede', $sede ? $nombreSede : 'Todas las sedes']];
+        $this->tablaSimple($libro, 'Filtros', ['Filtro', 'Lo que se eligió'], $filtrosFilas);
+        $hojaFiltros = $libro->getSheetByName('Filtros');
+        $filaExtra = count($filtrosFilas) + 3;
+        $hojaFiltros->setCellValue("A{$filaExtra}", 'Descargado el');
+        $hojaFiltros->setCellValue("B{$filaExtra}", now()->format('d/m/Y H:i'));
+        if ($quien = $request->user()?->name) {
+            $hojaFiltros->setCellValue('A' . ($filaExtra + 1), 'Descargado por');
+            $hojaFiltros->setCellValue('B' . ($filaExtra + 1), $quien);
+        }
 
-        return $libro->descargar($this->nombreExcelSeguro(
-            'Panel de control ' . $periodo . ($sede ? ' - ' . $nombreSede : '')
-        ));
+        // "Resumen" es la que se abre primero: es la misma que arma
+        // hojaResumen() reutilizando la hoja en blanco que trae
+        // Spreadsheet() recién creada, así que ya queda de primera sin
+        // tener que reordenar nada acá.
+        $libro->setActiveSheetIndex(0);
+
+        $ruta = tempnam(sys_get_temp_dir(), 'panel');
+        $escritor = new Xlsx($libro);
+        // Sin esto, PhpSpreadsheet arma el archivo IGUAL pero se guarda los
+        // gráficos para sí: por default no los escribe al .xlsx.
+        $escritor->setIncludeCharts(true);
+        $escritor->save($ruta);
+        $libro->disconnectWorksheets();
+
+        return response()
+            ->download($ruta, $this->nombreExcelSeguro(
+                'Panel de control ' . $periodo . ($sede ? ' - ' . $nombreSede : '')
+            ), ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
+            ->deleteFileAfterSend(true);
     }
 
     /** Cuándo se bajó el archivo, para saber de qué día son las cifras. */
@@ -226,41 +276,241 @@ class DashboardController extends Controller
     }
 
     /**
-     * Una hoja de "concepto y valor", con sus secciones.
-     *
-     * El panel no es una tabla: son cifras sueltas agrupadas por tema. Una
-     * hoja por gráfico serían diez pestañas; así cada hoja lleva sus bloques
-     * separados por un título, que es como se leen en pantalla.
+     * La hoja "Resumen": las cifras sueltas de siempre, y una dona con la
+     * firma de las boletas del mes —el único bloque de esta hoja que
+     * también es un gráfico en pantalla (el anillo de firmadas/vistas/
+     * pendientes), así que además de la tabla lleva su gráfico al lado.
      *
      * @param  array<string, array<int, array{0: string, 1: mixed, 2?: bool}>>  $bloques
-     *         título de la sección => filas [concepto, valor, es monto]
      */
-    private function hojaDeCifras(LibroExcel $libro, string $nombre, array $bloques): void
+    private function hojaResumen(Spreadsheet $libro, array $bloques): void
     {
-        $filas = [];
-        $estiloFilas = [];
+        $hoja = $libro->getActiveSheet();
+        $hoja->setTitle('Resumen');
+
+        $rangos = $this->escribirBloques($hoja, 1, $bloques);
+        $this->anchoColumnas($hoja, [1 => 36, 2 => 18]);
+
+        if (isset($rangos['Firma de las boletas del mes'])) {
+            $this->agregarGrafico($hoja, 'dona', 'Firma de las boletas del mes', $rangos['Firma de las boletas del mes'], 'D2');
+        }
+    }
+
+    /**
+     * Una hoja de "concepto y valor" con varios bloques, cada uno con su
+     * propio gráfico flotando a la derecha de la tabla —la tabla no se
+     * toca: el gráfico apunta a esas mismas celdas, nunca lleva los
+     * números adentro.
+     *
+     * @param  array<string, array{datos: array<int, array{0: string, 1: mixed, 2?: bool}>, grafico: string}>  $bloques
+     *         título de la sección => datos [concepto, valor, es monto] + qué tipo de gráfico
+     */
+    private function hojaConGraficos(Spreadsheet $libro, string $nombre, array $bloques): void
+    {
+        $hoja = $libro->createSheet();
+        $hoja->setTitle($nombre);
+
+        $soloDatos = array_map(fn (array $b) => $b['datos'], $bloques);
+        $rangos = $this->escribirBloques($hoja, 1, $soloDatos);
+        $this->anchoColumnas($hoja, [1 => 34, 2 => 16]);
+
+        $filaGrafico = 2;
+        foreach ($bloques as $titulo => $bloque) {
+            if (! isset($rangos[$titulo])) {
+                continue;
+            }
+
+            $this->agregarGrafico($hoja, $bloque['grafico'], $titulo, $rangos[$titulo], "D{$filaGrafico}");
+            // Cada gráfico ocupa unas 15 filas de alto; el siguiente empieza
+            // debajo del anterior, con un respiro de 2 filas entre los dos.
+            $filaGrafico += 17;
+        }
+    }
+
+    /**
+     * Escribe varios bloques de "concepto y valor" uno debajo del otro, en
+     * las columnas A y B desde la fila indicada —la misma idea que tenía
+     * la vieja hojaDeCifras, ahora con PhpSpreadsheet porque estas hojas
+     * también llevan gráficos—. Devuelve en qué filas cayó cada bloque: un
+     * gráfico de Excel no lleva los números adentro, apunta a celdas de la
+     * hoja, así que hace falta saber exactamente dónde quedó cada cosa.
+     *
+     * @param  array<string, array<int, array{0: string, 1: mixed, 2?: bool}>>  $bloques
+     * @return array<string, array{colCategorias: string, colValores: string, filaInicio: int, filaFin: int}>
+     */
+    private function escribirBloques(Worksheet $hoja, int $filaInicial, array $bloques): array
+    {
+        $fila = $filaInicial;
+        $rangos = [];
 
         foreach ($bloques as $titulo => $lineas) {
-            // Una línea en blanco entre secciones: se distinguen de un vistazo.
-            if ($filas) {
-                $filas[] = ['', ''];
-            }
+            $hoja->setCellValue("A{$fila}", $titulo);
+            $hoja->mergeCells("A{$fila}:B{$fila}");
+            $hoja->getStyle("A{$fila}")->getFont()->setBold(true)->setSize(12);
+            $hoja->getStyle("A{$fila}")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E7EEF9');
+            $fila++;
 
-            $filas[] = [$titulo, ''];
-            // Las claves van corridas una fila porque hojaDeReporte pone los
-            // títulos de columna delante.
-            $estiloFilas[count($filas)] = LibroExcel::TITULO_OPCIONAL;
+            $filaInicioBloque = $fila;
 
             foreach ($lineas as $linea) {
-                $filas[] = [$linea[0], $linea[1]];
-                $estiloFilas[count($filas)] = [
-                    LibroExcel::NORMAL,
-                    ($linea[2] ?? false) ? LibroExcel::MONTO : LibroExcel::NORMAL,
-                ];
+                $hoja->setCellValue("A{$fila}", (string) $linea[0]);
+                // setCellValue a secas y no Explicit: la mayoría de estos
+                // valores SÍ son números (para poder sumarlos en Excel sin
+                // tocarlos), pero el bloque "Lo que se está mirando" trae
+                // texto (el periodo, la sede, la fecha de descarga) — forzar
+                // tipo numérico ahí habría dejado celdas rotas.
+                $hoja->setCellValue("B{$fila}", $linea[1]);
+                if ($linea[2] ?? false) {
+                    $hoja->getStyle("B{$fila}")->getNumberFormat()->setFormatCode('#,##0.00');
+                }
+                $fila++;
             }
+
+            $rangos[$titulo] = [
+                'colCategorias' => 'A',
+                'colValores'    => 'B',
+                'filaInicio'    => $filaInicioBloque,
+                'filaFin'       => $fila - 1,
+            ];
+
+            $fila++; // línea en blanco entre bloques, igual que se leían en pantalla
         }
 
-        $this->hojaDeReporte($libro, $nombre, ['Concepto', 'Valor'], $filas, [], $estiloFilas);
+        return $rangos;
+    }
+
+    /**
+     * Un gráfico NATIVO de Excel: apunta a las celdas donde ya se escribió
+     * el bloque (ver escribirBloques()) en vez de llevar los números
+     * adentro, así que se puede editar, recolorear o copiar a una
+     * presentación como cualquier gráfico hecho a mano en Excel.
+     *
+     * $tipo: 'barras' | 'linea' | 'dona' | 'torta'.
+     */
+    private function agregarGrafico(Worksheet $hoja, string $tipo, string $titulo, array $rango, string $celdaAncla): void
+    {
+        $cuantos = $rango['filaFin'] - $rango['filaInicio'] + 1;
+        if ($cuantos < 1) {
+            // El bloque salió vacío (sin planillas ese mes, por ejemplo): un
+            // gráfico sin ni un punto no dice nada, mejor no ponerlo.
+            return;
+        }
+
+        $hojaNombre = $hoja->getTitle();
+        $rangoCategorias = "'{$hojaNombre}'!\${$rango['colCategorias']}\${$rango['filaInicio']}:\${$rango['colCategorias']}\${$rango['filaFin']}";
+        $rangoValores    = "'{$hojaNombre}'!\${$rango['colValores']}\${$rango['filaInicio']}:\${$rango['colValores']}\${$rango['filaFin']}";
+
+        $categorias = [new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_STRING, $rangoCategorias, null, $cuantos)];
+        // El azul institucional en las de una sola serie (barras y líneas);
+        // en las de varios colores (dona, torta) se deja la paleta que ya
+        // trae Excel, que distingue bien sus porciones sin tener que
+        // pintarlas una por una.
+        $colorSerie = in_array($tipo, ['dona', 'torta'], true) ? null : '1B4282';
+        $valores = [new DataSeriesValues(DataSeriesValues::DATASERIES_TYPE_NUMBER, $rangoValores, null, $cuantos, null, null, $colorSerie)];
+
+        $tipoReal = match ($tipo) {
+            'barras' => DataSeries::TYPE_BARCHART,
+            'linea'  => DataSeries::TYPE_LINECHART,
+            'dona'   => DataSeries::TYPE_DONUTCHART,
+            'torta'  => DataSeries::TYPE_PIECHART,
+            default  => DataSeries::TYPE_BARCHART,
+        };
+
+        $agrupacion = match ($tipo) {
+            'barras' => DataSeries::GROUPING_CLUSTERED,
+            'linea'  => DataSeries::GROUPING_STANDARD,
+            default  => null,
+        };
+
+        // Las barras van horizontales (DIRECTION_BAR): "Remuneración por
+        // área" y "Los conceptos que más pesan" traen nombres largos —el
+        // nombre de un área, el de un concepto de pago— que en una barra
+        // vertical se amontonan de costado y no se leen.
+        $direccion = $tipo === 'barras' ? DataSeries::DIRECTION_BAR : null;
+
+        $serie = new DataSeries($tipoReal, $agrupacion, [0], [], $categorias, $valores, $direccion);
+
+        $plotArea = new PlotArea(null, [$serie]);
+        $leyenda = in_array($tipo, ['dona', 'torta'], true) ? new Legend(Legend::POSITION_RIGHT, null, false) : null;
+        $grafico = new Chart(uniqid('grafico_'), new ChartTitle($titulo), $leyenda, $plotArea);
+
+        $grafico->setTopLeftPosition($celdaAncla);
+        [$colAncla, $filaAncla] = Coordinate::coordinateFromString($celdaAncla);
+        $colFin = Coordinate::stringFromColumnIndex(Coordinate::columnIndexFromString($colAncla) + 6);
+        $grafico->setBottomRightPosition($colFin . ((int) $filaAncla + 15));
+
+        $hoja->addChart($grafico);
+    }
+
+    /**
+     * Una tabla simple: títulos en azul, primera fila fija y cada columna
+     * tan ancha como lo que lleva dentro — lo mismo que hacía hojaDeReporte
+     * con LibroExcel, pero con PhpSpreadsheet porque este libro ya no usa
+     * aquel escritor.
+     *
+     * @param  array<int, string>             $titulos
+     * @param  array<int, array<int, mixed>>  $filas
+     * @param  array<int, int>                $columnasTexto  columnas (desde 0) que NUNCA se
+     *         reinterpretan como número o fecha — las fechas escritas como
+     *         "15/03/2026" van acá, para que Excel no las vuelva a
+     *         convertir y de paso les cambie el formato.
+     */
+    private function tablaSimple(
+        Spreadsheet $libro,
+        string $nombre,
+        array $titulos,
+        array $filas,
+        bool $conTitulos = true,
+        array $columnasTexto = []
+    ): void {
+        $hoja = $libro->createSheet();
+        $hoja->setTitle($nombre);
+
+        $filaActual = 1;
+
+        if ($conTitulos) {
+            foreach ($titulos as $i => $titulo) {
+                $col = Coordinate::stringFromColumnIndex($i + 1);
+                $hoja->setCellValue("{$col}{$filaActual}", $titulo);
+            }
+            $hoja->getStyle('A1:' . Coordinate::stringFromColumnIndex(count($titulos)) . '1')
+                ->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+            $hoja->getStyle('A1:' . Coordinate::stringFromColumnIndex(max(count($titulos), 1)) . '1')
+                ->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('1B4282');
+            $hoja->freezePane('A2');
+            $filaActual++;
+        }
+
+        foreach ($filas as $fila) {
+            foreach (array_values($fila) as $i => $valor) {
+                $col = Coordinate::stringFromColumnIndex($i + 1);
+                if (in_array($i, $columnasTexto, true)) {
+                    $hoja->setCellValueExplicit("{$col}{$filaActual}", (string) $valor, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                } else {
+                    $hoja->setCellValue("{$col}{$filaActual}", $valor);
+                }
+            }
+            $filaActual++;
+        }
+
+        // El ancho de cada columna sale de las primeras filas: mirar
+        // miles de filas de un reporte grande costaría más que escribirlo.
+        $referencia = $titulos ?: ($filas[0] ?? []);
+        foreach (array_values($referencia) as $i => $_) {
+            $largo = mb_strlen((string) ($referencia[$i] ?? ''));
+            foreach (array_slice($filas, 0, 200) as $fila) {
+                $largo = max($largo, mb_strlen((string) (array_values($fila)[$i] ?? '')));
+            }
+            $hoja->getColumnDimension(Coordinate::stringFromColumnIndex($i + 1))->setWidth(min(38, max(10, $largo + 2)));
+        }
+    }
+
+    /** @param  array<int, float>  $anchos  columna (desde 1) => ancho */
+    private function anchoColumnas(Worksheet $hoja, array $anchos): void
+    {
+        foreach ($anchos as $col => $ancho) {
+            $hoja->getColumnDimension(Coordinate::stringFromColumnIndex($col))->setWidth($ancho);
+        }
     }
 
     /** Las cuatro cifras de arriba. */

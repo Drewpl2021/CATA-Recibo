@@ -120,7 +120,9 @@ export class DashboardViewComponent implements OnInit {
   exportando = false;
 
   /**
-   * El panel entero en un Excel, con el filtro que está puesto.
+   * El panel entero en un Excel, con el filtro que está puesto — con
+   * gráficos de Excel de verdad, no solo las cifras en texto (ver
+   * DashboardController::exportar en el backend).
    *
    * El nombre lo arma la pantalla y no se lee de la respuesta porque el
    * backend no expone Content-Disposition al navegador.
@@ -132,7 +134,7 @@ export class DashboardViewComponent implements OnInit {
       next: (blob) => {
         guardarArchivo(blob, `Panel de control ${this.loQueSeVe.replace(' · ', ' - ')}.xlsx`);
         this.exportando = false;
-        this.toastService.success('Reporte descargado', `El panel de ${this.loQueSeVe}, en cinco hojas.`);
+        this.toastService.success('Reporte descargado', `El panel de ${this.loQueSeVe}, en cinco hojas, con sus gráficos.`);
       },
       error: (err) => {
         this.exportando = false;

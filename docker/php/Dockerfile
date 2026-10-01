@@ -25,12 +25,20 @@ COPY CR-Backend/composer.json CR-Backend/composer.lock ./
 
 # --no-scripts: los scripts de Laravel necesitan el código de la
 # aplicación, que en este punto todavía no está copiado.
+#
+# --ignore-platform-reqs: esta etapa usa la imagen oficial de Composer,
+# que no trae gd ni las demás extensiones que piden ni Laravel ni
+# PhpSpreadsheet (el Excel con gráficos del panel) — acá solo se RESUELVE
+# el vendor/, no se ejecuta ningún código que las necesite de verdad. Las
+# extensiones de verdad van en la imagen de abajo, la que sí corre la
+# aplicación.
 RUN composer install \
         --no-dev \
         --no-scripts \
         --no-autoloader \
         --prefer-dist \
-        --no-interaction
+        --no-interaction \
+        --ignore-platform-reqs
 
 # Ahora sí el código, para armar el mapa de clases optimizado.
 COPY CR-Backend/ ./
@@ -45,10 +53,13 @@ FROM php:8.3-fpm-alpine AS aplicacion
 COPY --from=mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /usr/local/bin/
 
 # pdo_mysql — la base de datos.
-# gd         — las imágenes del PDF de la boleta (el escudo, la firma).
-# zip        — lo pide Composer para descomprimir paquetes.
+# gd         — las imágenes del PDF de la boleta (el escudo, la firma) y
+#              los gráficos que arma PhpSpreadsheet para el Excel del panel.
+# zip        — lo pide Composer, y también el .xlsx del panel (es un zip).
+# mbstring, fileinfo — las pide PhpSpreadsheet; a diferencia de zip y gd,
+#              esta imagen base no las trae de fábrica.
 # opcache    — sin esto PHP recompila el código en cada petición.
-RUN install-php-extensions pdo_mysql gd zip opcache
+RUN install-php-extensions pdo_mysql gd zip mbstring fileinfo opcache
 
 WORKDIR /var/www/html
 
