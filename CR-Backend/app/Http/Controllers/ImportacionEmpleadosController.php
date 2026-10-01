@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Area;
 use App\Models\Auditoria;
+use App\Models\Cargo;
 use App\Models\Empleado;
 use App\Models\User;
 use App\Services\AltaDeEmpleado;
@@ -100,6 +102,22 @@ class ImportacionEmpleadosController extends Controller
         }
 
         DB::transaction(function () use ($r) {
+            // Las áreas antes que los cargos: un cargo nuevo se liga al
+            // área con la que apareció en el Excel (ver crearSiFalta), así
+            // que esa área tiene que existir primero. El id ya venía
+            // decidido desde que se revisó el archivo —acá solo se
+            // materializa—, así las filas de abajo, que ya traen ese
+            // mismo id escrito, encuentran la fila real al guardarse.
+            foreach ($r['nuevos']['area'] as $id => $area) {
+                Area::create(['id' => $id, 'nombre' => $area['nombre']]);
+            }
+            foreach ($r['nuevos']['cargo'] as $id => $cargo) {
+                $creado = Cargo::create(['id' => $id, 'nombre' => $cargo['nombre']]);
+                if ($cargo['areas']) {
+                    $creado->areas()->attach(array_keys($cargo['areas']));
+                }
+            }
+
             foreach ($r['filas'] as $fila) {
                 if ($fila['modo'] === 'alta') {
                     AltaDeEmpleado::crear($fila['_datos']);
@@ -130,15 +148,27 @@ class ImportacionEmpleadosController extends Controller
 
         $resumen = $this->paraPantalla($r)['resumen'];
 
+        // Si la importación creó cargos o áreas solos, queda anotado: es un
+        // cambio al catálogo de todo el colegio, no solo a estas fichas, y
+        // alguien tiene que poder responder después "¿de dónde salió este
+        // cargo?" sin adivinar.
+        $creados = array_filter([
+            $resumen['areas_nuevas'] ? count($resumen['areas_nuevas']) . ' área(s) nueva(s): ' . implode(', ', $resumen['areas_nuevas']) : null,
+            $resumen['cargos_nuevos'] ? count($resumen['cargos_nuevos']) . ' cargo(s) nuevo(s): ' . implode(', ', $resumen['cargos_nuevos']) : null,
+        ]);
+
         Auditoria::registrar(
             'importó',
             'empleado',
             null,
-            "Importó empleados desde Excel: {$resumen['altas']} altas y {$resumen['actualizaciones']} actualizaciones",
+            "Importó empleados desde Excel: {$resumen['altas']} altas y {$resumen['actualizaciones']} actualizaciones"
+                . ($creados ? '. Creó ' . implode(' y ', $creados) . '.' : ''),
             [
                 'archivo'         => $r['archivo'],
                 'altas'           => $resumen['altas'],
                 'actualizaciones' => $resumen['actualizaciones'],
+                'areas_nuevas'    => $resumen['areas_nuevas'],
+                'cargos_nuevos'   => $resumen['cargos_nuevos'],
             ]
         );
 
@@ -214,6 +244,13 @@ class ImportacionEmpleadosController extends Controller
             'archivo' => $datos['archivo'] ?? null,
             'errores' => [], 'advertencias' => [], 'filas' => [],
             'filas_leidas' => 0, 'sin_cambios' => 0, 'cvs' => 0, 'cvs_sin_trabajador' => [],
+            // Cargos y áreas que el archivo trae y el sistema todavía no
+            // tiene: id => ['nombre'=>, 'areas'=>?]. Ver
+            // ColumnasDeEmpleado::crearSiFalta(). No se crean todavía —eso
+            // pasa en aplicar()—, pero quedan anotados para avisar en la
+            // revisión y, sobre todo, para que las filas de abajo usen el
+            // id correcto antes de que la fila exista de verdad.
+            'nuevos' => ['area' => [], 'cargo' => []],
         ];
 
         // ── Las columnas ─────────────────────────────────────────
@@ -289,6 +326,18 @@ class ImportacionEmpleadosController extends Controller
                 continue;
             }
             $vistosDni[$clave] = $numero;
+
+            // Área antes que Cargo, y las dos antes que el resto: si el
+            // cargo es nuevo, necesita saber a qué área va (ver
+            // crearSiFalta). El orden de las columnas en el Excel no
+            // importa, este orden es el que manda siempre.
+            $areaId = null;
+            if (isset($mapa['area'])) {
+                $areaId = ColumnasDeEmpleado::crearSiFalta('area', LectorDeCeldas::texto($celdas[$mapa['area']] ?? null), $catalogos, $r['nuevos']);
+            }
+            if (isset($mapa['cargo'])) {
+                ColumnasDeEmpleado::crearSiFalta('cargo', LectorDeCeldas::texto($celdas[$mapa['cargo']] ?? null), $catalogos, $r['nuevos'], $areaId);
+            }
 
             // Cada celda con algo escrito, ya leída.
             $valores  = [];
@@ -574,6 +623,10 @@ class ImportacionEmpleadosController extends Controller
                 'advertencias'       => count($r['advertencias']),
                 'cvs'                => $r['cvs'],
                 'cvs_sin_trabajador' => $r['cvs_sin_trabajador'],
+                // Nombres nomás, para el aviso de "esto se va a crear": el
+                // id es un detalle interno que a RR.HH. no le dice nada.
+                'areas_nuevas'  => array_values(array_map(fn ($a) => $a['nombre'], $r['nuevos']['area'])),
+                'cargos_nuevos' => array_values(array_map(fn ($c) => $c['nombre'], $r['nuevos']['cargo'])),
             ],
             'filas' => $filas->map(fn ($f) => array_filter($f, fn ($clave) => ! str_starts_with($clave, '_'), ARRAY_FILTER_USE_KEY))->values()->all(),
             'errores'      => $r['errores'],

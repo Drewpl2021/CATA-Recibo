@@ -160,6 +160,21 @@
       </div>
     </div>
 
+    <!-- El cargo y el área que no existían se crean solos al aplicar —no
+         es un error, es un aviso de qué más va a pasar además de las
+         altas y actualizaciones de arriba. -->
+    <div class="form-nota form-nota--aviso" *ngIf="vista.resumen.areas_nuevas.length || vista.resumen.cargos_nuevos.length">
+      <strong>Esto se va a crear, además de los trabajadores:</strong>
+      <ul class="importacion-avisos">
+        <li *ngIf="vista.resumen.areas_nuevas.length">
+          {{ vista.resumen.areas_nuevas.length === 1 ? 'Área nueva' : 'Áreas nuevas' }}: {{ vista.resumen.areas_nuevas.join(', ') }}
+        </li>
+        <li *ngIf="vista.resumen.cargos_nuevos.length">
+          {{ vista.resumen.cargos_nuevos.length === 1 ? 'Cargo nuevo' : 'Cargos nuevos' }}: {{ vista.resumen.cargos_nuevos.join(', ') }}
+        </li>
+      </ul>
+    </div>
+
     <div class="form-nota form-nota--alerta" *ngIf="vista.errores.length">
       <strong>No se puede aplicar todavía.</strong> Corrige estos errores en tu Excel, vuelve a subirlo y revisa
       otra vez. Mientras haya un solo error no se guarda nada.

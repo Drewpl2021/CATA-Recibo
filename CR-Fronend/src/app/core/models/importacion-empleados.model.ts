@@ -67,6 +67,9 @@ export interface ResumenImportacionEmpleados {
   advertencias: number;
   cvs: number;
   cvs_sin_trabajador: string[];
+  /** Áreas y cargos que el Excel trae y el sistema todavía no tiene: se crean al aplicar. */
+  areas_nuevas: string[];
+  cargos_nuevos: string[];
 }
 
 export interface VistaPreviaEmpleados {

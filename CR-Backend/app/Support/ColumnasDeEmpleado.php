@@ -7,6 +7,7 @@ use App\Models\Cargo;
 use App\Models\Rol;
 use App\Models\Sede;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * Los datos de la ficha de un trabajador que se pueden traer desde un Excel.
@@ -310,6 +311,58 @@ final class ColumnasDeEmpleado
     }
 
     /**
+     * Si el cargo o el área que trae el Excel no existen, se crean —a
+     * diferencia de sede y rol, que son un puñado fijo de opciones reales
+     * (cuatro locales, tres roles) y nunca se inventan solos. Cargo y Área
+     * sí crecen con normalidad: un colegio abre una especialidad nueva, y
+     * frenar TODA la importación por eso —cuando RR.HH. ya escribió algo
+     * razonable— es más trabajo que confiar en lo que puso.
+     *
+     * No escribe en la base todavía: inventa el id que va a tener (el
+     * mismo que usará el cargo/área de verdad si la importación se
+     * confirma) y lo dejar visto en $catalogos, como si ya existiera —así
+     * leer() no necesita saber que es nuevo, lo encuentra igual. $nuevos
+     * es lo que el controlador usa para crearlos de verdad al aplicar, y
+     * para avisarle a RR.HH. en la revisión qué se va a crear.
+     *
+     * El mismo nombre escrito en varias filas usa el MISMO id las veces
+     * que aparezca: no se duplica un cargo por repetirlo.
+     */
+    public static function crearSiFalta(string $campo, ?string $texto, array &$catalogos, array &$nuevos, ?string $areaId = null): ?string
+    {
+        if ($texto === null || $texto === '') {
+            return null;
+        }
+
+        $normal = ReconocedorDeColumnas::normalizar($texto);
+
+        if (isset($catalogos[$campo][$normal])) {
+            $id = $catalogos[$campo][$normal]['id'];
+            // Ya existía, o ya lo había inventado otra fila de este mismo
+            // archivo: si es un cargo y ahora aparece con un área distinta,
+            // se le suma —"Docente de Inglés" puede valer en Primaria Y en
+            // Secundaria si el Excel lo usa en las dos—.
+            if ($campo === 'cargo' && $areaId && isset($nuevos['cargo'][$id])) {
+                $nuevos['cargo'][$id]['areas'][$areaId] = true;
+            }
+
+            return $id;
+        }
+
+        $id     = (string) Str::uuid();
+        $bonito = mb_convert_case(mb_strtolower($texto), MB_CASE_TITLE, 'UTF-8');
+
+        $catalogos[$campo][$normal] = ['id' => $id, 'nombre' => $bonito];
+        $catalogos['porId'][$id]    = $bonito;
+
+        $nuevos[$campo][$id] = $campo === 'cargo'
+            ? ['nombre' => $bonito, 'areas' => $areaId ? [$areaId => true] : []]
+            : ['nombre' => $bonito];
+
+        return $id;
+    }
+
+    /**
      * Lee una celda de un campo.
      *
      * @return array{valor: mixed, error: ?string, omitir: bool}
@@ -367,6 +420,25 @@ final class ColumnasDeEmpleado
             case 'catalogo':
                 if (isset($catalogos[$campo][$normal])) {
                     return $bien($catalogos[$campo][$normal]['id']);
+                }
+
+                // Sede y Rol son catálogos fijos y cortos —cuatro locales,
+                // tres roles—, así que "Central" o "Osis" sueltos (sin el
+                // "CATA" que todos dan por sabido) son casi siempre la
+                // misma sede dicha corto, no un error. Si el texto cabe
+                // DENTRO del nombre guardado (o al revés) y eso pasa con
+                // una sola opción, se acepta directo: no hace falta pedirle
+                // a RR.HH. que escriba el nombre completo si ya alcanza
+                // para no confundirse con ninguna otra.
+                if (in_array($campo, ['sede', 'rol'], true)) {
+                    $contenidos = array_filter(
+                        $catalogos[$campo],
+                        fn ($item) => str_contains(ReconocedorDeColumnas::normalizar($item['nombre']), $normal)
+                            || str_contains($normal, ReconocedorDeColumnas::normalizar($item['nombre']))
+                    );
+                    if (count($contenidos) === 1) {
+                        return $bien(reset($contenidos)['id']);
+                    }
                 }
 
                 $mejor   = null;
