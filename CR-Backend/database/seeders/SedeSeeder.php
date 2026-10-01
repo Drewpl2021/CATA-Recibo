@@ -23,7 +23,7 @@ class SedeSeeder extends Seeder
         Sede::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        $sedes = ['CATA Central', 'CATA Jerusalén', 'CATA Osis', 'CATA Inicial'];
+        $sedes = ['CATA Central', 'CATA Jerusalén', 'CATA Oasis', 'CATA Inicial'];
 
         foreach ($sedes as $nombre) {
             Sede::create(['nombre' => $nombre, 'estado' => 'activo']);

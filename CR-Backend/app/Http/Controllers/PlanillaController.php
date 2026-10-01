@@ -377,10 +377,23 @@ class PlanillaController extends Controller
             ], 422);
         }
 
+        $empleado = Empleado::findOrFail($request->empleado_id);
+
+        // A quien ya cesó no se le arma planilla nueva: generarlas en lote
+        // (empleadosDelGrupo, en GeneraPlanillasEnLote) ya filtra por
+        // estado activo, pero esta es la puerta de "una por una" y le
+        // faltaba el mismo seguro — el desplegable de la pantalla ya
+        // esconde a los cesados, pero eso es el frontend, no una regla.
+        if ($empleado->estado !== 'activo') {
+            return response()->json([
+                'success' => false,
+                'message' => "{$empleado->nombre} {$empleado->apellido} está cesado: no se le pueden armar planillas nuevas.",
+            ], 422);
+        }
+
         // Jalar sueldo_base directamente del empleado — no se puede editar.
         // Si entró a mitad de mes se prorratea por los días que le tocan: darle
         // el mes entero a quien empezó el día 28 es pagarle de más.
-        $empleado    = Empleado::findOrFail($request->empleado_id);
         $sueldo_base = $this->sueldoDelMes($empleado, (int) $request->mes, (int) $request->anio);
 
         if ($sueldo_base === null) {

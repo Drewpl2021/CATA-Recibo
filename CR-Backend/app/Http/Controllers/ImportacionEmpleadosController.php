@@ -417,9 +417,14 @@ class ImportacionEmpleadosController extends Controller
         // Quien ya se fue se registra solo para guardar sus documentos: pide
         // mucho menos, y entra sin acceso y con el contrato ya cerrado.
         $cesado = ($valores['estado'] ?? 'activo') === 'inactivo';
+
+        // La fecha de cese ya dice que está cesado, aunque la columna
+        // Estado no lo diga (o ni siquiera esté en el Excel): no hace
+        // falta llenar las dos de acuerdo para que cuente.
         if (! $cesado && array_key_exists('fecha_cese', $valores)) {
-            $r['errores'][] = $this->aviso($numero, $dni, null, 'Tiene fecha de cese, pero su estado no es «Cesado». Escribe Cesado en «Estado», o borra la fecha.');
-            return;
+            $cesado = true;
+            $valores['estado'] = 'inactivo';
+            $r['advertencias'][] = $this->aviso($numero, $dni, null, 'Tiene fecha de cese: se registra como Cesado aunque la columna Estado no lo diga.');
         }
 
         $requeridos = $cesado ? ColumnasDeEmpleado::REQUERIDOS_ALTA_CESADO : ColumnasDeEmpleado::REQUERIDOS_ALTA;
@@ -503,11 +508,21 @@ class ImportacionEmpleadosController extends Controller
         // la cuenta a alguien, y se decide mirando su ficha.
         $estadoFinal = $valores['estado'] ?? $existente->estado;
         $cese        = $valores['fecha_cese'] ?? null;
-        $problema    = match (true) {
+
+        // La fecha de cese ya dice que está cesado, sin importar qué diga
+        // (o no diga) la columna Estado: no hace falta llenar las dos de
+        // acuerdo. Si alguien ya dado de baja trae una fecha de cese nueva,
+        // esto de paso evita el intento raro de "reactivar y cesar a la
+        // vez" — gana la fecha de cese.
+        if ($cese !== null && $estadoFinal !== 'inactivo') {
+            $estadoFinal = 'inactivo';
+            $valores['estado'] = 'inactivo';
+            $r['advertencias'][] = $this->aviso($numero, $dni, null, 'Tiene fecha de cese: se registra como Cesado aunque la columna Estado no lo diga.');
+        }
+
+        $problema = match (true) {
             $existente->estado === 'inactivo' && $estadoFinal === 'activo'
                 => 'Está dado de baja. Para volver a activarlo, hazlo desde su ficha en Empleados.',
-            $estadoFinal === 'activo' && $cese !== null
-                => 'Tiene fecha de cese, pero su estado es «Activo». Escribe Cesado en «Estado», o borra la fecha.',
             $existente->estado === 'activo' && $estadoFinal === 'inactivo' && $cese === null
                 => 'Para darlo de baja falta la «Fecha de cese».',
             $cese !== null && $cese > now()->toDateString()

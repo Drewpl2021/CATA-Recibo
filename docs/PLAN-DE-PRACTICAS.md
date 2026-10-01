@@ -19,7 +19,7 @@
 ## 1. INTRODUCCIÓN
 
 El Colegio Adventista "Túpac Amaru" es una institución educativa privada de
-Juliaca que opera en cuatro locales —CATA Central, CATA Jerusalén, CATA Osis y
+Juliaca que opera en cuatro locales —CATA Central, CATA Jerusalén, CATA Oasis y
 CATA Inicial— con personal docente, administrativo y de servicio distribuido
 entre ellos.
 
@@ -117,7 +117,7 @@ las prácticas.
 
 ### 3.2. Alcance organizacional
 
-- **Sedes**: las cuatro (CATA Central, CATA Jerusalén, CATA Osis, CATA Inicial).
+- **Sedes**: las cuatro (CATA Central, CATA Jerusalén, CATA Oasis, CATA Inicial).
 - **Usuarios**: Recursos Humanos, Dirección y la totalidad del personal en
   planilla, cada uno con acceso a lo que le corresponde.
 

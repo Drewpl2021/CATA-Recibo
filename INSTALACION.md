@@ -141,7 +141,7 @@ Deja lo indispensable para empezar a trabajar:
 - Los **3 roles** (admin, rrhh, empleado) y el **menú** del sistema
 - **15 áreas** y **34 cargos**
 - **26 conceptos de pago** (sueldo, gratificación, ONP, AFP, EsSalud, descuentos…)
-- Las **4 sedes**: CATA Central, CATA Jerusalén, CATA Osis, CATA Inicial
+- Las **4 sedes**: CATA Central, CATA Jerusalén, CATA Oasis, CATA Inicial
 - Las **2 cuentas** del paso 3
 
 **No siembra ningún trabajador**: la plantilla nace vacía y la llenas tú, una

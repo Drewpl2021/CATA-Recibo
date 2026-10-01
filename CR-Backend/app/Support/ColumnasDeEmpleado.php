@@ -95,13 +95,13 @@ final class ColumnasDeEmpleado
         'tipo_contrato' => [
             // "Plazo indeterminado" es como lo escribe RR.HH. a veces —las
             // mismas dos palabras de "Plazo fijo", solo que al revés—, así
-            // que es un sinónimo seguro. "Contratado" queda afuera a
-            // propósito: no es obvio si el colegio lo usa para "Plazo
-            // fijo" o para otra cosa, y el tipo de contrato es un dato
-            // legal — mejor que RR.HH. lo diga explícito en la fila que no
-            // adivinarlo mal para todo un Excel.
+            // que es un sinónimo seguro. "Contratado"/"Contrato" también:
+            // confirmado que en el colegio significa Plazo fijo, con su
+            // "Fin de contrato" aparte, en su propia columna (la fecha de
+            // verdad, no la palabra).
             'indeterminado' => 'indeterminado', 'plazo indeterminado' => 'indeterminado',
             'plazo fijo' => 'plazo_fijo', 'plazo_fijo' => 'plazo_fijo',
+            'contratado' => 'plazo_fijo', 'contrato' => 'plazo_fijo',
             'suplencia' => 'suplencia', 'practicas' => 'practicas', 'practica' => 'practicas',
         ],
         'sistema_pensiones' => [
