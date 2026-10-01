@@ -146,14 +146,18 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
   /**
    * Numerar las filas: 1, 2, 3...
    *
-   * En una lista de veinte áreas no hace falta; en una de ciento cincuenta
-   * planillas sí, porque es la única forma de decir "mira la 87" o de saber
-   * por dónde vas sin ir contando con el dedo.
+   * Prendido por defecto en TODA la app: antes cada pantalla lo pedía por
+   * su cuenta y la mitad se quedaba sin número, así que una lista se veía
+   * distinta de la de al lado sin ningún motivo. Es la única forma de decir
+   * "mira la 87" o de saber por dónde vas sin ir contando con el dedo —y en
+   * una lista corta no estorba, así que no hace falta decidir caso por caso.
    *
    * La cuenta NO se reinicia en cada página: en la página 2 de diez en diez
-   * la primera fila es la 11, no la 1.
+   * la primera fila es la 11, no la 1. Se puede apagar con
+   * [numerarFilas]="false" en la pantalla que de verdad no lo necesite
+   * (una tabla ya numerada por otra columna, por ejemplo).
    */
-  @Input() numerarFilas = false;
+  @Input() numerarFilas = true;
 
   /**
    * Marcar filas con casillas, para actuar sobre unas cuantas.
