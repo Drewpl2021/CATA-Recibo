@@ -750,6 +750,14 @@ a.migas__paso:hover {
   flex: 1;
   padding: 32px;
   overflow-y: auto;
+  /* Para los saltos con ancla (el índice del expediente, por ejemplo):
+     de un salto seco a un recorrido corto, que es lo que avisa "fuiste
+     A ESTA sección" en vez de "la pantalla cambió sola". */
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-area { scroll-behavior: auto; }
 }
 
 .page-title {
@@ -4416,12 +4424,54 @@ textarea.form-control {
   flex-wrap: wrap;
 }
 
+/* El índice de secciones: los mismos cinco nombres del "De un vistazo" de
+   abajo, pero como atajos. En un expediente largo —boletas de años, varios
+   contratos— sin esto había que acordarse en qué orden bajaban las
+   secciones; con esto se ve la lista entera de un vistazo y se salta
+   directo. Reutiliza .chip-filtro, el mismo chip de los filtros de
+   Documentos del personal: es la misma idea, "a dónde quiero ir". */
+.expediente__indice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* .chip-filtro es de siempre un <button>; acá es un <a href="#...">, que
+   por defecto sale subrayado. */
+.expediente__indice .chip-filtro {
+  text-decoration: none;
+}
+
+/* Cada sección empieza con su propia costura arriba —salvo la primera—,
+   así una no se lee pegada a la de encima. Antes todas compartían el
+   mismo "gap" del contenedor y, bajando rápido, costaba notar dónde
+   terminaba "Sus documentos" y dónde empezaba "Contratos". */
+.expediente-bloque + .expediente-bloque {
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+
+/* El ancla del índice de arriba apunta a este elemento (lleva el id), no
+   a su cabecera de adentro: el scroll-margin va acá, para que el salto no
+   deje el título pegado al borde de la pantalla. */
+.expediente-bloque {
+  scroll-margin-top: 16px;
+}
+
 .expediente-bloque__cabecera {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
   flex-wrap: wrap;
+}
+
+/* El título de cada bloque, un escalón por encima del texto de ayuda de
+   al lado: en .seccion-form (los pasos del formulario de empleado) 15px
+   bastaba porque no competía con un ícono de 36px junto a él. Acá sí, y
+   se perdía entre el ícono y la descripción. */
+.expediente-bloque__titulos .seccion-form__titulo {
+  font-size: 17px;
 }
 
 .expediente-bloque__icono {
@@ -4434,6 +4484,15 @@ textarea.form-control {
   border-radius: var(--radius-sm);
   background-color: var(--brand-100);
   color: var(--brand-700);
+}
+
+/* "Su firma" es la única sección que no es un papel más: es el trazo que
+   vale como aceptación. El mismo dorado del sello del login, en su uso de
+   siempre —acento, badge, nunca fondo grande—, para que al bajar por el
+   expediente se note cuál sección es distinta de las demás. */
+.expediente-bloque__icono--firma {
+  background-color: rgba(244, 180, 26, 0.16);
+  color: var(--accent-dark);
 }
 
 .expediente-bloque__titulos {

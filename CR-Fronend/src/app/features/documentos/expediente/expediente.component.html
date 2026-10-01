@@ -42,8 +42,34 @@
     </div>
   </div>
 
+  <!-- El índice: los cinco bloques de abajo, para saltar directo a uno sin
+       bajar a ciegas. En un expediente con varios años de boletas y
+       contratos, la página es larga. -->
+  <nav class="expediente__indice" aria-label="Ir a una sección del expediente">
+    <a class="chip-filtro" href="#expediente-documentos">
+      <app-icon icono="person" [tamano]="15"></app-icon>
+      Sus documentos
+    </a>
+    <a class="chip-filtro" href="#expediente-contratos">
+      <app-icon icono="badge" [tamano]="15"></app-icon>
+      Contratos
+    </a>
+    <a class="chip-filtro" href="#expediente-firma">
+      <app-icon icono="signature" [tamano]="15"></app-icon>
+      Su firma
+    </a>
+    <a class="chip-filtro" href="#expediente-boletas">
+      <app-icon icono="receipt" [tamano]="15"></app-icon>
+      Boletas
+    </a>
+    <a class="chip-filtro" href="#expediente-otros">
+      <app-icon icono="folder" [tamano]="15"></app-icon>
+      Otros documentos
+    </a>
+  </nav>
+
   <!-- ══ Hoja de vida ══════════════════════════════════════════ -->
-  <section class="expediente-bloque">
+  <section class="expediente-bloque" id="expediente-documentos">
     <header class="expediente-bloque__cabecera">
       <span class="expediente-bloque__icono"><app-icon icono="person" [tamano]="19"></app-icon></span>
       <div class="expediente-bloque__titulos">
@@ -84,7 +110,7 @@
   </section>
 
   <!-- ══ Contratos ═════════════════════════════════════════════ -->
-  <section class="expediente-bloque">
+  <section class="expediente-bloque" id="expediente-contratos">
     <header class="expediente-bloque__cabecera">
       <span class="expediente-bloque__icono"><app-icon icono="badge" [tamano]="19"></app-icon></span>
       <div class="expediente-bloque__titulos">
@@ -134,9 +160,9 @@
   </section>
 
   <!-- ══ Su firma ══════════════════════════════════════════════ -->
-  <section class="expediente-bloque">
+  <section class="expediente-bloque" id="expediente-firma">
     <header class="expediente-bloque__cabecera">
-      <span class="expediente-bloque__icono"><app-icon icono="signature" [tamano]="19"></app-icon></span>
+      <span class="expediente-bloque__icono expediente-bloque__icono--firma"><app-icon icono="signature" [tamano]="19"></app-icon></span>
       <div class="expediente-bloque__titulos">
         <h2 class="seccion-form__titulo">Su firma</h2>
         <span class="form-ayuda">
@@ -163,7 +189,7 @@
   </section>
 
   <!-- ══ Boletas ═══════════════════════════════════════════════ -->
-  <section class="expediente-bloque">
+  <section class="expediente-bloque" id="expediente-boletas">
     <header class="expediente-bloque__cabecera">
       <span class="expediente-bloque__icono"><app-icon icono="receipt" [tamano]="19"></app-icon></span>
       <div class="expediente-bloque__titulos">
@@ -202,7 +228,7 @@
   </section>
 
   <!-- ══ Otros documentos ══════════════════════════════════════ -->
-  <section class="expediente-bloque">
+  <section class="expediente-bloque" id="expediente-otros">
     <header class="expediente-bloque__cabecera">
       <span class="expediente-bloque__icono"><app-icon icono="folder" [tamano]="19"></app-icon></span>
       <div class="expediente-bloque__titulos">
