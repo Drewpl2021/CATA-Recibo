@@ -635,6 +635,32 @@ export class LayoutComponent implements OnInit {
     this.sidebarVisible = false;
   }
 
+  /**
+   * Clic en cualquier otro lado de la pantalla cierra el panel que esté
+   * abierto pegado a su botón.
+   *
+   * El foquito de "Primeros pasos" y el menú del usuario (el del avatar) no
+   * son modales de pantalla completa —flotan junto a su botón, sin fondo
+   * oscuro detrás— así que no tenían con qué detectar un clic "afuera": se
+   * quedaban abiertos hasta que alguien volvía a tocar el mismo botón. Acá
+   * sí hay un fondo (Mi perfil, Avisos) y ese clic ya estaba resuelto.
+   *
+   * `closest` deja pasar el clic sobre el propio botón o sobre cualquier
+   * ítem DE DENTRO del panel: ahí el toggle o la acción del ítem ya hacen
+   * lo suyo, y cerrar de más les pisaría el resultado.
+   */
+  @HostListener('document:click', ['$event'])
+  alHacerClicFuera(evento: MouseEvent): void {
+    const objetivo = evento.target as HTMLElement;
+
+    if (this.showUserMenu && !objetivo.closest('.user-profile-container')) {
+      this.showUserMenu = false;
+    }
+    if (this.mostrarGuia && !objetivo.closest('.guia-foco')) {
+      this.mostrarGuia = false;
+    }
+  }
+
   @HostListener('document:keydown.escape')
   alPulsarEscape(): void {
     // Primero lo de encima: el panel o el modal que esté abierto. Solo si no
