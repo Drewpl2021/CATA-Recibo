@@ -477,6 +477,22 @@ body {
   gap: 20px;
 }
 
+/* El botón del menú + las migas de pan. Vivía con estilo en línea y sin
+   min-width: 0, así que en el celular, compitiendo por sitio con los
+   íconos de la derecha, no se encogía limpio —las migas se amontonaban
+   contra el borde en vez de recortarse con los "..." que .migas ya tiene
+   preparados—. flex: 1 le da TODO el sitio que sobra después de los
+   íconos de la derecha (que no ceden), y min-width: 0 es lo que deja a
+   un hijo flexible encogerse por debajo de su contenido; sin eso,
+   overflow: hidden no llega a activarse nunca. */
+.top-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
+}
+
 /* ── Migas de pan: dónde estás, al lado del menú ──────────────── */
 .migas {
   display: flex;
