@@ -92,7 +92,15 @@ final class ColumnasDeEmpleado
             'de baja' => 'inactivo', 'baja' => 'inactivo', 'dado de baja' => 'inactivo', 'retirado' => 'inactivo', 'retirada' => 'inactivo',
         ],
         'tipo_contrato' => [
-            'indeterminado' => 'indeterminado', 'plazo fijo' => 'plazo_fijo', 'plazo_fijo' => 'plazo_fijo',
+            // "Plazo indeterminado" es como lo escribe RR.HH. a veces —las
+            // mismas dos palabras de "Plazo fijo", solo que al revés—, así
+            // que es un sinónimo seguro. "Contratado" queda afuera a
+            // propósito: no es obvio si el colegio lo usa para "Plazo
+            // fijo" o para otra cosa, y el tipo de contrato es un dato
+            // legal — mejor que RR.HH. lo diga explícito en la fila que no
+            // adivinarlo mal para todo un Excel.
+            'indeterminado' => 'indeterminado', 'plazo indeterminado' => 'indeterminado',
+            'plazo fijo' => 'plazo_fijo', 'plazo_fijo' => 'plazo_fijo',
             'suplencia' => 'suplencia', 'practicas' => 'practicas', 'practica' => 'practicas',
         ],
         'sistema_pensiones' => [
@@ -128,6 +136,23 @@ final class ColumnasDeEmpleado
         'afp'               => 'Habitat, Integra, Prima o Profuturo',
         'forma_pago'        => 'Banco, Efectivo, Honorarios u Otro',
         'nivel_estudios'    => 'Primaria, Secundaria, Técnico, Universitario, Maestría o Doctorado',
+    ];
+
+    /**
+     * Fechas que pueden no tener fin todavía. En "Fecha de cese" y "Fin de
+     * contrato" es normal que RR.HH. escriba "Indeterminado" en vez de
+     * dejarlo en blanco —es justo lo que significa un contrato o un
+     * trabajador sin fecha de salida—, y eso no es un error de formato:
+     * es la respuesta correcta a esa columna. En "Fecha de nacimiento" o
+     * "Fecha de ingreso" ese mismo texto SÍ sería un error —todos tienen
+     * una—, así que esto no se aplica ahí.
+     */
+    private const FECHAS_INDETERMINABLES = ['fecha_cese', 'fecha_fin_contrato'];
+
+    /** Cómo se escribe "no tiene fecha" en esas dos columnas. */
+    private const SIN_FECHA = [
+        'indeterminado', 'indeterminada', 'plazo indeterminado', 'sin fecha',
+        'no aplica', 'n/a', 'na', 'ninguna', 'ninguno', 'sigue laborando', 'actualmente laborando',
     ];
 
     /** El nombre de la columna en la tabla empleados. */
@@ -314,6 +339,12 @@ final class ColumnasDeEmpleado
                 return ctype_digit((string) $digitos) ? $bien($digitos) : $mal("«{$texto}» tiene que llevar solo números.");
 
             case 'fecha':
+                if (in_array($campo, self::FECHAS_INDETERMINABLES, true) && in_array($normal, self::SIN_FECHA, true)) {
+                    // No es un error: es la forma en que RR.HH. dice "todavía
+                    // no tiene fecha" en una columna que puede no tenerla.
+                    return ['valor' => null, 'error' => null, 'omitir' => true];
+                }
+
                 $fecha = LectorDeCeldas::fecha($crudo);
 
                 return $fecha ? $bien($fecha) : $mal("«{$texto}» no es una fecha. Escríbela como día/mes/año, por ejemplo 15/03/2026.");
