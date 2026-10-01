@@ -30,5 +30,67 @@
   (cambioPagina)="irAPagina($event)"
   (cambioBusqueda)="buscar($event)"
   [camposBusqueda]="['descripcion', 'usuario_nombre']"
+  [acciones]="acciones"
+  [accionesPersonalizadas]="accionesAuditoria"
+  (accionPersonalizada)="alAccionar($event)"
   mensajeVacio="Todavía no hay nada anotado. Aparece aquí en cuanto alguien cambie un sueldo, una cuenta, un concepto o una planilla."
 ></app-data-table>
+
+<!-- El detalle de un registro: la columna "Antes → después" de la tabla
+     amontona los cambios en una sola línea con punto y coma, que para un
+     cambio con muchos campos a la vez (una edición grande de la ficha, una
+     aplicación en bloque) se vuelve ilegible. Acá cada campo va en su
+     propia línea. La contraseña sigue oculta —eso lo hace el backend,
+     nunca llega el valor de verdad— pero todo lo demás se ve completo. -->
+<app-form-modal
+  [(visible)]="modalDetalle"
+  titulo="Qué pasó"
+  [ocultarBotonesPorDefecto]="true"
+  (cancelar)="cerrarDetalle()"
+>
+  <div class="form-fields" *ngIf="registroVisto as r">
+    <div class="rejilla-campos">
+      <div class="form-group">
+        <label>Cuándo</label>
+        <p class="form-nota">{{ fechaCompleta(r.created_at) }}</p>
+      </div>
+      <div class="form-group">
+        <label>Quién</label>
+        <p class="form-nota">
+          {{ r.usuario_nombre || '—' }}
+          <span class="form-ayuda" *ngIf="r.ip"> · desde {{ r.ip }}</span>
+        </p>
+      </div>
+      <div class="form-group">
+        <label>Acción</label>
+        <p class="form-nota">
+          <span class="status-badge" [ngClass]="'status-badge-' + colorAccion(r.accion)">{{ etiquetaAccion(r.accion) }}</span>
+        </p>
+      </div>
+      <div class="form-group">
+        <label>Sobre</label>
+        <p class="form-nota">{{ etiquetaEntidad(r.entidad) }}</p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Qué pasó</label>
+      <p class="form-nota">{{ r.descripcion }}</p>
+    </div>
+
+    <div class="form-group" *ngIf="cambiosLegibles(r).length">
+      <label>Los cambios, uno por uno</label>
+      <ul class="lista-contratos">
+        <li class="lista-contratos__item" *ngFor="let c of cambiosLegibles(r)">
+          <strong>{{ c.campo }}</strong>
+          <span *ngIf="c.esPar">{{ c.antes }} → {{ c.despues }}</span>
+          <span *ngIf="!c.esPar">{{ c.despues }}</span>
+        </li>
+      </ul>
+    </div>
+
+    <p class="form-nota" *ngIf="!cambiosLegibles(r).length">
+      Esta acción no lleva campos de antes/después —fue un alta o una baja, no un cambio.
+    </p>
+  </div>
+</app-form-modal>
