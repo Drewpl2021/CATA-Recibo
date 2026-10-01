@@ -330,7 +330,12 @@ final class LibroExcel
         .   '<fill><patternFill patternType="none"/></fill>'
         .   '<fill><patternFill patternType="gray125"/></fill>'
         .   '<fill><patternFill patternType="solid"><fgColor rgb="FF1B4282"/><bgColor indexed="64"/></patternFill></fill>'
-        .   '<fill><patternFill patternType="solid"><fgColor rgb="FF5B7DB1"/><bgColor indexed="64"/></patternFill></fill>'
+        // Celeste de verdad, no el mismo azul desteñido: antes era un
+        // #5B7DB1 que a simple vista se leía como "el mismo azul, pero
+        // pálido", y la idea de esta cabecera es que SE NOTE que la
+        // columna es distinta (opcional) de un vistazo, no que haya que
+        // fijarse dos veces.
+        .   '<fill><patternFill patternType="solid"><fgColor rgb="FF5DADE2"/><bgColor indexed="64"/></patternFill></fill>'
         .   '<fill><patternFill patternType="solid"><fgColor rgb="FF9B2C2C"/><bgColor indexed="64"/></patternFill></fill>'
         .   '<fill><patternFill patternType="solid"><fgColor rgb="FF8A5A12"/><bgColor indexed="64"/></patternFill></fill>'
         .   '<fill><patternFill patternType="solid"><fgColor rgb="FF4A5568"/><bgColor indexed="64"/></patternFill></fill>'
