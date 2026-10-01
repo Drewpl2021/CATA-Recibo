@@ -53,3 +53,38 @@ export function fechaHoraLegible(valor: unknown): string {
   const fecha = new Date(String(valor));
   return isNaN(fecha.getTime()) ? String(valor) : formatoDiaHora(fecha);
 }
+
+/**
+ * Cuánto tiempo pasó entre dos fechas de calendario, en palabras:
+ * "3 años y 4 meses", "8 meses", "Entra hoy". `hasta` es hoy si no se
+ * manda —para un trabajador activo—, o su fecha de cese si ya no lo está:
+ * la antigüedad de alguien que se fue no debería seguir creciendo cada
+ * día después de que se fue.
+ *
+ * Vive junto a fechaLegible porque lo necesita el mismo sitio: el
+ * expediente, para decir cuánto lleva alguien en el colegio sin que RR.HH.
+ * tenga que restar la fecha de ingreso a mano.
+ */
+export function antiguedad(desde: string | null | undefined, hasta?: string | null): string {
+  if (!desde) return '';
+
+  const [anioD, mesD, diaD] = String(desde).slice(0, 10).split('-').map(Number);
+  const fin = hasta ? String(hasta).slice(0, 10).split('-').map(Number) : null;
+  const [anioH, mesH, diaH] = fin ?? (() => {
+    const hoy = new Date();
+    return [hoy.getFullYear(), hoy.getMonth() + 1, hoy.getDate()];
+  })();
+
+  let anios = anioH - anioD;
+  let meses = mesH - mesD;
+  if (diaH < diaD) meses -= 1;
+  if (meses < 0) { anios -= 1; meses += 12; }
+
+  if (anios < 0 || (anios === 0 && meses === 0 && diaH <= diaD)) return 'Entra hoy';
+  if (anios === 0) return meses === 1 ? '1 mes' : `${meses} meses`;
+  if (meses === 0) return anios === 1 ? '1 año' : `${anios} años`;
+
+  const partesAnios = anios === 1 ? '1 año' : `${anios} años`;
+  const partesMeses = meses === 1 ? '1 mes' : `${meses} meses`;
+  return `${partesAnios} y ${partesMeses}`;
+}

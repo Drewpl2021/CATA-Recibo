@@ -4419,6 +4419,27 @@ textarea.form-control {
   gap: 28px;
 }
 
+/* La ficha reutiliza .ficha-persona tal cual la usa Editar empleado —
+   mismo tamaño de foto, mismo tipo— para que "quién es" se vea igual en
+   las dos pantallas. Solo se agrega lo que esta vista necesita de más. */
+.expediente__ficha {
+  margin-bottom: 0;
+}
+
+.expediente__ficha-linea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Acá el DNI y la antigüedad son un dato central, no una aclaración al
+   margen: sin la cursiva de .ficha-persona__nota, que es para cuando sí
+   lo es (el aviso de "todavía no sube su foto", por ejemplo). */
+.expediente__ficha-meta {
+  font-style: normal;
+}
+
 .expediente__resumen {
   margin-bottom: 0;
   flex-wrap: wrap;

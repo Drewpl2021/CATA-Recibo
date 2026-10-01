@@ -22,6 +22,26 @@
 
 <div class="expediente" *ngIf="expediente as e">
 
+  <!-- Quién es: junta lo que antes vivía repartido —el cargo y la sede
+       salían en el subtítulo de la cabecera, la antigüedad no salía en
+       ningún lado— en una sola ficha, la misma que usa Editar empleado. -->
+  <div class="ficha-persona expediente__ficha">
+    <span class="avatar ficha-persona__foto">{{ iniciales }}</span>
+    <div class="ficha-persona__datos">
+      <div class="expediente__ficha-linea">
+        <strong class="ficha-persona__nombre">{{ nombreCompleto }}</strong>
+        <span class="status-badge" [ngClass]="e.empleado.estado === 'inactivo' ? 'status-badge-secondary' : 'status-badge-success'">
+          {{ e.empleado.estado === 'inactivo' ? 'De baja' : 'Activo' }}
+        </span>
+      </div>
+      <span class="ficha-persona__resumen" *ngIf="puesto">{{ puesto }}</span>
+      <span class="ficha-persona__nota expediente__ficha-meta">
+        DNI {{ e.empleado.dni }}<ng-container *ngIf="antiguedadTexto"> · {{ antiguedadTexto }}</ng-container>
+        <ng-container *ngIf="e.empleado.estado === 'inactivo' && e.empleado.fecha_cese"> · cesó el {{ fecha(e.empleado.fecha_cese) }}</ng-container>
+      </span>
+    </div>
+  </div>
+
   <!-- De un vistazo -->
   <div class="resumen-masivo expediente__resumen">
     <div class="resumen-masivo__dato">

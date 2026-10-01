@@ -7,6 +7,7 @@ import { ConfirmService, DocumentoService, ExpedienteService, IdentidadFirmaServ
 import { Contrato, ContratoDelExpediente, Documento, Expediente } from '../../../core/models';
 import {
   TIPOS_DOCUMENTO_SUBIBLES,
+  antiguedad,
   diasHasta,
   esDocumentoAnterior,
   sePuedeVer,
@@ -170,24 +171,43 @@ export class ExpedienteComponent implements OnInit, OnDestroy {
     return e ? `${e.nombre} ${e.apellido}` : '';
   }
 
-  /** "DNI 81577382, Administrativo en Administración, sede CATA." */
+  /**
+   * Mientras carga nomás: una vez abierto el expediente, quién es se
+   * cuenta en la ficha de abajo —con foto, cargo, sede y antigüedad—,
+   * así que repetirlo acá en chiquito sería decir lo mismo dos veces.
+   */
   get subtitulo(): string {
-    const e = this.expediente?.empleado;
-    if (!e) return this.cargando ? 'Abriendo el expediente…' : '';
-
-    const puesto = [e.cargo?.nombre, e.area?.nombre ? `en ${e.area.nombre}` : ''].filter(Boolean).join(' ');
-    const partes = [
-      `DNI ${e.dni}`,
-      puesto,
-      e.sede?.nombre ? `sede ${e.sede.nombre}` : '',
-      e.estado === 'inactivo' ? (e.fecha_cese ? `cesó el ${fechaDeDia(e.fecha_cese)}` : 'dado de baja') : '',
-    ];
-    return partes.filter(Boolean).join(', ') + '.';
+    return this.expediente ? '' : (this.cargando ? 'Abriendo el expediente…' : '');
   }
 
   get iniciales(): string {
     const e = this.expediente?.empleado;
     return e ? `${e.nombre.charAt(0)}${e.apellido.charAt(0)}`.toUpperCase() : '';
+  }
+
+  /** "Cargo en Área, sede Tal." */
+  get puesto(): string {
+    const e = this.expediente?.empleado;
+    if (!e) return '';
+    const partes = [
+      [e.cargo?.nombre, e.area?.nombre ? `en ${e.area.nombre}` : ''].filter(Boolean).join(' '),
+      e.sede?.nombre ? `sede ${e.sede.nombre}` : '',
+    ];
+    return partes.filter(Boolean).join(', ');
+  }
+
+  /**
+   * "3 años y 4 meses": cuánto lleva en el colegio, contado desde su fecha
+   * de ingreso. Es el dato que faltaba —no está en ningún otro lado del
+   * expediente— y es justo el que junta dos cosas que antes vivían
+   * separadas: la ficha del empleado (de dónde sale fecha_ingreso) y el
+   * expediente de documentos.
+   */
+  get antiguedadTexto(): string {
+    const e = this.expediente?.empleado;
+    if (!e?.fecha_ingreso) return '';
+    const texto = antiguedad(e.fecha_ingreso, e.estado === 'inactivo' ? e.fecha_cese : null);
+    return texto ? `${texto} en el colegio` : '';
   }
 
   get contratoVigente(): ContratoDelExpediente | null {
