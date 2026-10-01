@@ -53,6 +53,9 @@ RUN install-php-extensions pdo_mysql gd zip opcache
 WORKDIR /var/www/html
 
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/cata.ini
+# Cuántas peticiones atiende el servidor al mismo tiempo — ver el propio
+# www.conf para el porqué y la cuenta para ajustarlo.
+COPY docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
 
 # El vendor primero y el código después: si solo cambia el código,
 # Docker reaprovecha la capa pesada de las dependencias.

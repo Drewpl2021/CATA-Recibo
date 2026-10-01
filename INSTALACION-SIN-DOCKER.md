@@ -313,6 +313,58 @@ Y reinicia PHP-FPM para que los tome:
 sudo systemctl restart php8.3-fpm
 ```
 
+**Antes de confiar el sistema a un día de mucha gente a la vez** (todo el
+colegio firmando su boleta el mismo día, por ejemplo): revisa cuántas
+peticiones puede atender PHP-FPM AL MISMO TIEMPO, porque el valor de
+fábrica del paquete de Ubuntu viene pensado para un sitio chico, no para
+doscientos docentes entrando juntos.
+
+```bash
+cat /etc/php/8.3/fpm/pool.d/www.conf | grep ^pm
+```
+
+Si `pm.max_children` sale en **5** (el valor por defecto), el servidor
+solo procesa 5 peticiones a la vez — el resto hace fila. No es que falle:
+la pantalla se siente trabada, y si doscientas personas entran a firmar
+en la misma ventana de minutos (no a lo largo del día, que eso sí lo
+aguanta sin drama), la fila se nota.
+
+Para subirlo, edita `/etc/php/8.3/fpm/pool.d/www.conf` y cambia el bloque
+`pm`:
+
+```ini
+pm = dynamic
+pm.max_children = 12
+pm.start_servers = 3
+pm.min_spare_servers = 2
+pm.max_spare_servers = 6
+pm.max_requests = 500
+```
+
+El número de `pm.max_children` depende de la RAM del servidor, no es el
+mismo para todos. La cuenta:
+
+```
+pm.max_children = (RAM que le sobra a PHP después de MySQL, nginx y el sistema) / (RAM por proceso PHP)
+```
+
+En este sistema, cada proceso PHP usa entre 40 y 100 MB en uso normal
+(`memory_limit = 512M` de arriba es el TECHO de emergencia para armar el
+PDF de toda la planilla de un jalón, no lo que gasta una petición
+cualquiera). Con esa cuenta: un VPS de 2 GB aguanta unos 10-12, uno de
+4 GB unos 20-25, uno de 8 GB 30-40 sin apuro. Si no sabes cuánta RAM
+tiene el servidor:
+
+```bash
+free -h
+```
+
+Reinicia PHP-FPM para que tome el cambio:
+
+```bash
+sudo systemctl restart php8.3-fpm
+```
+
 Prueba que el API responde:
 
 ```bash
