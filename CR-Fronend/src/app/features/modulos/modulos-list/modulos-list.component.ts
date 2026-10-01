@@ -84,7 +84,11 @@ export class ModulosListComponent implements OnInit {
   iconos = CLAVES_ICONO;
 
   columnas: ColumnaTabla<ModuloAdmin>[] = [
-    { campo: 'orden', header: '#', ancho: '6%' },
+    // "Orden" y no "#": con la numeración de filas (app-data-table lo trae
+    // por defecto) esa cabecera quedaba repetida, dos columnas de "#" una
+    // al lado de la otra. Esta es la posición DEL MÓDULO dentro de su
+    // grupo (el orden del menú), no la fila de la tabla.
+    { campo: 'orden', header: 'Orden', ancho: '10%' },
     { campo: 'nombre', header: 'Módulo', ancho: '20%' },
     { campo: 'modulo_padre.nombre', header: 'Grupo', ancho: '18%' },
     { campo: 'ruta', header: 'Ruta', ancho: '18%' },
