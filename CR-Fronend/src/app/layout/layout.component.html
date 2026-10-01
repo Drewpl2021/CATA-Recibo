@@ -390,7 +390,7 @@
 
         <article class="aviso" *ngFor="let a of avisos" [class.aviso--nuevo]="!a.leida">
           <span class="aviso__icono">
-            <app-icon icono="receipt" [tamano]="20"></app-icon>
+            <app-icon [icono]="iconoAviso(a)" [tamano]="20"></app-icon>
           </span>
 
           <div class="aviso__texto">
@@ -400,7 +400,7 @@
           </div>
 
           <button type="button" class="aviso__accion" (click)="abrirAviso(a, $event)">
-            {{ documentoPendienteDe(a) ? 'Firmar' : 'Ver boletas' }}
+            {{ textoAccionAviso(a) }}
           </button>
         </article>
       </div>

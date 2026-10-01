@@ -457,10 +457,24 @@ export class LayoutComponent implements OnInit {
     return this.documentosPendientes.find((d) => d.id === aviso.documento_id);
   }
 
+  /** El ícono del aviso: una boleta de papel, salvo el de RR.HH. que no tiene ninguna de por medio. */
+  iconoAviso(aviso: Notificacion): string {
+    return aviso.tipo === 'planilla_pendiente' ? 'table_chart' : 'receipt';
+  }
+
+  /** Qué dice el botón del aviso: tres casos, igual que abrirAviso(). */
+  textoAccionAviso(aviso: Notificacion): string {
+    if (this.documentoPendienteDe(aviso)) return 'Firmar';
+    if (aviso.tipo === 'planilla_pendiente') return 'Ir a planillas';
+    return 'Ver boletas';
+  }
+
   /**
    * Al tocar un aviso se marca leído y, si su boleta sigue pendiente, se abre
    * la firma rápida sin salir de acá. Si ya está firmada o el aviso es viejo,
-   * lleva a Mis Boletas.
+   * lleva a Mis Boletas — salvo que sea el aviso de RR.HH. "falta generar
+   * la planilla", que no tiene ninguna boleta a la que apuntar y lleva a
+   * Planillas en su lugar.
    *
    * Se sigue adelante aunque falle el marcado: dejar al usuario atascado
    * porque no se pudo actualizar un booleano sería peor.
@@ -482,6 +496,12 @@ export class LayoutComponent implements OnInit {
     }
 
     this.showNotifications = false;
+
+    if (aviso.tipo === 'planilla_pendiente') {
+      this.router.navigate(['/inicio/planillas']);
+      return;
+    }
+
     this.router.navigate(['/inicio/mis-boletas']);
   }
 
