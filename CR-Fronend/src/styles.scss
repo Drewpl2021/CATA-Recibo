@@ -239,7 +239,15 @@ body {
 /* App Layout */
 .app-container {
   display: flex;
+  /* 100vh de verdad, sin la barra del navegador celular: en el teléfono esa
+     barra (de direcciones, o la de "atrás/inicio") entra y sale de la
+     pantalla, y 100vh mide el alto como si no existiera. El contenedor salía
+     más alto de lo que de verdad se ve, y el pie del menú —"Cerrar
+     sesión"— quedaba tapado debajo del borde real de la pantalla, sin cómo
+     llegar a él. dvh mide el alto que el navegador REALMENTE muestra; el vh
+     de arriba queda de respaldo para el navegador que no conozca dvh. */
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   position: relative;
 }
@@ -570,6 +578,17 @@ a.migas__paso:hover {
 
 .user-profile:hover {
   background-color: var(--surface-hover);
+}
+
+/* El menú del usuario (el que cae desde el avatar, arriba a la derecha)
+   vive casi entero en estilo inline en el layout, pero el tope de alto va
+   acá: sin él, en una pantalla baja —un celular, sobre todo en horizontal—
+   el menú se salía por debajo del borde real de la pantalla y "Cerrar
+   sesión", que es el último ítem, quedaba inalcanzable. Con el tope, el
+   menú se desplaza por dentro en vez de desbordar. */
+.user-dropdown-menu {
+  max-height: calc(100dvh - var(--header-height) - 20px);
+  overflow-y: auto;
 }
 
 .avatar {
