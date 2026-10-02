@@ -237,6 +237,13 @@ class EmpleadoController extends Controller
             'ingreso_hasta'     => 'nullable|date',
             'planilla'          => 'nullable|in:con,sin',
             'boleta'            => 'nullable|in:con,sin,sin_firmar',
+            // El id de una planilla agrupada (corrida) o "sin_agrupar" para
+            // las que no están en ninguna.
+            'corrida_id'        => ['nullable', 'string', function ($atributo, $valor, $falla) {
+                if ($valor !== 'sin_agrupar' && ! \App\Models\PlanillaCorrida::whereKey($valor)->exists()) {
+                    $falla('Esa planilla no existe.');
+                }
+            }],
             'mes'               => 'nullable|integer|min:1|max:12',
             'anio'              => 'nullable|integer|min:2000',
         ]);
@@ -292,6 +299,17 @@ class EmpleadoController extends Controller
         }
 
         $planillasDelMes = \App\Models\Planilla::where('mes', $mes)->where('anio', $anio);
+
+        // En qué planilla (agrupada) está su planilla de ESTE mes. Una
+        // corrida es de un solo mes, así que una de otro mes no trae a nadie.
+        if ($request->filled('corrida_id')) {
+            $corrida = $request->input('corrida_id');
+            $deEsaPlanilla = (clone $planillasDelMes);
+            $corrida === 'sin_agrupar'
+                ? $deEsaPlanilla->whereNull('corrida_id')
+                : $deEsaPlanilla->where('corrida_id', $corrida);
+            $query->whereIn('empleados.id', $deEsaPlanilla->select('empleado_id'));
+        }
 
         if ($request->filled('planilla')) {
             $ids = (clone $planillasDelMes)->select('empleado_id');

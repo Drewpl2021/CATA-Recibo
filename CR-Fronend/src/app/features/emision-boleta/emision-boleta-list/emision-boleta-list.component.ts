@@ -1,7 +1,7 @@
 import { inject, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AreaService, AuthService, CargoService, SedeService, TipoContratoService } from '../../../core/services';
+import { AreaService, AuthService, CargoService, PlanillaCorridaService, SedeService, TipoContratoService } from '../../../core/services';
 import { EmpleadoService } from '../../../core/services';
 import { Empleado } from '../../../core/models';
 import { BoletaService } from '../../../core/services';
@@ -86,6 +86,13 @@ export class EmisionBoletaListComponent implements OnInit {
   empleadosConBoletaEmitida = new Set<string>();
 
   /**
+   * De los trabajadores QUE SE ESTÁN VIENDO, en qué planilla está su
+   * planilla de este mes: "Planilla TIC", o "Sin agrupar" si no está en
+   * ninguna. Quien no tiene planilla del mes no aparece aquí.
+   */
+  planillaDeEmpleado = new Map<string, string>();
+
+  /**
    * Cuantas planillas hay en todo el mes. Es distinto de empleadosEditados:
    * ese conjunto es de la página, y este número decide si el mes está sin
    * empezar (y toca enseñar el aviso de "generar la planilla del mes").
@@ -114,12 +121,18 @@ export class EmisionBoletaListComponent implements OnInit {
 
   columnas: ColumnaTabla<Empleado>[] = [
     {
-      campo: 'nombre', header: 'Nombres y apellidos', ancho: '28%',
+      campo: 'nombre', header: 'Nombres y apellidos', ancho: '24%',
       formatear: (_v, e) => `${e.nombre} ${e.apellido}`,
     },
-    { campo: 'dni', header: 'DNI', ancho: '12%' },
-    { campo: 'cargo.nombre', header: 'Cargo', ancho: '20%' },
-    { campo: 'area.nombre', header: 'Área', ancho: '20%' },
+    { campo: 'dni', header: 'DNI', ancho: '10%' },
+    { campo: 'cargo.nombre', header: 'Cargo', ancho: '17%' },
+    { campo: 'area.nombre', header: 'Área', ancho: '17%' },
+    {
+      // De qué planilla sale su boleta de este mes. La boleta no se agrupa
+      // aparte: es de su planilla, y la planilla ya sabe en qué grupo está.
+      campo: 'id', header: 'Planilla', ancho: '17%', romperTexto: true,
+      formatear: (_v, e) => this.planillaDeEmpleado.get(e.id) ?? '—',
+    },
     {
       // Se llamaba "Boleta del mes" y enseñaba si tenía PLANILLA. No es lo
       // mismo: la boleta es el papel que sale después, y decir que la de
@@ -214,6 +227,7 @@ export class EmisionBoletaListComponent implements OnInit {
   private cargoService = inject(CargoService);
   private sedeService = inject(SedeService);
   private tipoContratoService = inject(TipoContratoService);
+  private corridaService = inject(PlanillaCorridaService);
 
   mesesDisponibles = MESES_OPCIONES.map((m) => ({ num: m.value, nombre: m.label }));
 
@@ -281,6 +295,9 @@ export class EmisionBoletaListComponent implements OnInit {
         { valor: 'con', etiqueta: 'Ya emitida' },
       ],
     },
+    // Las opciones son las planillas del mes y año de arriba: cambian
+    // cuando cambia el periodo (ver cargarPlanillasDelMes).
+    { clave: 'corrida_id', etiqueta: 'Planilla', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'cargo_id', etiqueta: 'Cargo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
@@ -306,10 +323,43 @@ export class EmisionBoletaListComponent implements OnInit {
 
   private catalogosListos = false;
 
+  /**
+   * Las planillas de ESTE mes y año, para el filtro «Planilla».
+   *
+   * Una planilla agrupada es de un solo mes: la de septiembre no tiene a
+   * nadie en octubre. Por eso no se cargan todas, sino las del periodo de
+   * arriba, y se vuelven a pedir cada vez que se cambia.
+   */
+  private cargarPlanillasDelMes(): void {
+    const mes = Number(this.mesGlobal);
+    const anio = Number(this.anioGlobal);
+    const campo = this.camposFiltro.find((c) => c.clave === 'corrida_id');
+    if (!campo) return;
+
+    campo.ayuda = `Las de ${this.nombreMes(mes)} ${anio}.`;
+
+    this.corridaService.getAll({ mes, anio }).subscribe({
+      next: (res) => {
+        // Si mientras llegaba ya se cambió de mes, esta respuesta es vieja.
+        if (!res.success || mes !== Number(this.mesGlobal) || anio !== Number(this.anioGlobal)) return;
+
+        campo.opciones = [
+          ...res.data
+            .map((c) => ({ valor: c.id, etiqueta: c.nombre }))
+            .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es')),
+          // Las planillas del mes que no están en ningún grupo.
+          { valor: 'sin_agrupar', etiqueta: 'Sin agrupar' },
+        ];
+      },
+      error: () => this.toastService.error('Filtros', 'No se pudieron cargar las planillas del mes.'),
+    });
+  }
+
   /** Sedes, áreas y cargos: solo si se abre el panel. */
   cargarCatalogos(): void {
     if (this.catalogosListos) return;
     this.catalogosListos = true;
+    this.cargarPlanillasDelMes();
 
     forkJoin({
       sedes: this.sedeService.getAll(),
@@ -404,6 +454,21 @@ export class EmisionBoletaListComponent implements OnInit {
   }
 
   onGlobalPeriodChange(): void {
+    // La planilla elegida era del mes anterior: en este no tiene a nadie,
+    // y dejarla puesta enseñaba una tabla vacía sin explicación.
+    if (this.filtros['corrida_id']) {
+      const { corrida_id: _, ...resto } = this.filtros;
+      this.filtros = resto;
+    }
+
+    // Las opciones del filtro solo se cargan si ya se abrió el panel; si no,
+    // se cargarán al abrirlo, ya con el mes nuevo.
+    if (this.catalogosListos) {
+      const campo = this.camposFiltro.find((c) => c.clave === 'corrida_id');
+      if (campo) campo.opciones = [];
+      this.cargarPlanillasDelMes();
+    }
+
     this.pagina = 0;
     this.cargarEmpleados();
   }
@@ -420,6 +485,7 @@ export class EmisionBoletaListComponent implements OnInit {
     const ids = this.empleados.map((e) => e.id);
     if (ids.length === 0) {
       this.empleadosEditados.clear();
+      this.planillaDeEmpleado.clear();
       this.cargandoEmpleados = false;
       return;
     }
@@ -439,6 +505,11 @@ export class EmisionBoletaListComponent implements OnInit {
             this.empleadosConBoletaEmitida = new Set(
               res.data.content.filter((p) => p.documento_boleta).map((p) => p.empleado_id)
             );
+            // El backend ya manda cada planilla con su grupo: no hace
+            // falta otra consulta para saber de cuál viene.
+            this.planillaDeEmpleado = new Map(
+              res.data.content.map((p) => [p.empleado_id, p.corrida?.nombre ?? 'Sin agrupar'] as [string, string])
+            );
           }
           this.cargandoEmpleados = false;
         },
@@ -446,6 +517,7 @@ export class EmisionBoletaListComponent implements OnInit {
           // Si falla, las filas salen como "sin armar": se sigue pudiendo editar.
           this.empleadosEditados.clear();
           this.empleadosConBoletaEmitida.clear();
+          this.planillaDeEmpleado.clear();
           this.cargandoEmpleados = false;
         },
       });
