@@ -422,8 +422,11 @@ trait CalculaConceptosPlanilla
      * generación masiva por Periodo (PeriodoController::generarPlanilla), para que
      * ambos caminos generen exactamente los mismos conceptos de la misma forma.
      *
-     * Conceptos como Diezmo, Adelantos, Escolaridad, etc. siguen siendo manuales
-     * porque dependen de una autorización puntual del empleado, no de una regla fija.
+     * El Diezmo entra en el punto 2) —10% del sueldo, aplica_a_todos=true—,
+     * pero con una excepción: a quien tenga `aplica_diezmo = false` en su
+     * ficha se le salta, igual que la Asignación Familiar sale de
+     * `tiene_hijos`. Adelantos, Escolaridad, etc. sí siguen siendo manuales,
+     * porque dependen de una autorización puntual sin regla fija detrás.
      */
     protected function generarConceptosAutomaticos($planilla, $empleado): void
     {
@@ -518,6 +521,13 @@ trait CalculaConceptosPlanilla
             ->whereNotIn('nombre', self::CONCEPTOS_CON_CALCULO_ESPECIAL)
             ->get();
         foreach ($conceptosFijos as $concepto) {
+            // El Diezmo es el único "aplica_a_todos" con un interruptor por
+            // persona: vacío o "Sí" en su ficha sigue entrando en la planilla
+            // junto con los demás, y solo "No" lo saca de este bloque.
+            if ($concepto->nombre === \App\Support\ConceptosDePago::DIEZMO && ! $empleado->aplica_diezmo) {
+                continue;
+            }
+
             $monto = $concepto->calculo === 'porcentaje'
                 ? $sueldoBase * ((float) $concepto->valor / 100)
                 : (float) $concepto->valor;

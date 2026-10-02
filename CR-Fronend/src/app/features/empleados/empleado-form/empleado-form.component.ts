@@ -141,6 +141,9 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     // dígitos. Es la misma regla que aplica el backend.
     cci: ['', [Validators.pattern(/^[0-9]{20}$/)]],
     tiene_hijos: [false],
+    // El Diezmo se le aplica a todo el personal por defecto: el formulario
+    // arranca en true, igual que el valor por defecto de la columna.
+    aplica_diezmo: [true],
 
     // ── Complementarios ──
     nivel_estudios: [''],
@@ -374,6 +377,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       numero_cuenta: e.numero_cuenta ?? '',
       cci: e.cci ?? '',
       tiene_hijos: !!e.tiene_hijos,
+      aplica_diezmo: e.aplica_diezmo ?? true,
       nivel_estudios: e.nivel_estudios ?? '',
       especialidad: e.especialidad ?? '',
       institucion_estudios: e.institucion_estudios ?? '',
@@ -501,6 +505,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       numero_cuenta: oNull(v.numero_cuenta),
       cci: oNull(v.cci),
       tiene_hijos: !!v.tiene_hijos,
+      aplica_diezmo: !!v.aplica_diezmo,
       nivel_estudios: oNull(v.nivel_estudios),
       especialidad: oNull(v.especialidad),
       institucion_estudios: oNull(v.institucion_estudios),

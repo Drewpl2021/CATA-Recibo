@@ -14,7 +14,7 @@ class Empleado extends Model
      */
     protected array $camposAuditables = [
         'dni', 'nombre', 'apellido', 'sueldo_base', 'sistema_pensiones', 'afp', 'cuspp',
-        'entidad_financiera', 'numero_cuenta', 'cci', 'forma_pago', 'tiene_hijos',
+        'entidad_financiera', 'numero_cuenta', 'cci', 'forma_pago', 'tiene_hijos', 'aplica_diezmo',
         'cargo_id', 'area_id', 'sede_id', 'estado', 'tipo_contrato',
     ];
 
@@ -46,6 +46,7 @@ class Empleado extends Model
     'numero_cuenta',
     'cci',
     'tiene_hijos',
+    'aplica_diezmo',
     'sueldo_base',
     'tipo_contrato',
     'forma_pago',

@@ -172,6 +172,7 @@ return [
         'entidad_financiera' => 'entidad financiera',
         'numero_cuenta' => 'número de cuenta',
         'tiene_hijos' => 'tiene hijos',
+        'aplica_diezmo' => 'diezmo',
         'nivel_estudios' => 'nivel de estudios',
         'institucion_estudios' => 'institución de estudios',
         'contacto_emergencia_nombre' => 'contacto de emergencia',

@@ -43,6 +43,8 @@ export interface Empleado {
   /** Código de Cuenta Interbancario, 20 dígitos. Opcional. */
   cci?: string | null;
   tiene_hijos?: boolean;
+  /** El Diezmo (10% del sueldo) se le aplica a todos por defecto; en false queda excluido. */
+  aplica_diezmo?: boolean;
 
   /** Relación identidades_firma (backend: identidadFirma()) — disco privado. */
   identidad_firma?: IdentidadFirma | null;
@@ -86,6 +88,7 @@ export interface EmpleadoPayload {
   numero_cuenta?: string | null;
   cci?: string | null;
   tiene_hijos?: boolean;
+  aplica_diezmo?: boolean;
   forma_pago?: string | null;
   nivel_estudios?: string | null;
   especialidad?: string | null;

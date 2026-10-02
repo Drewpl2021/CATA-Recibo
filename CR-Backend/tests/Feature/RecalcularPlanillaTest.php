@@ -144,6 +144,43 @@ class RecalcularPlanillaTest extends TestCase
         $this->assertEquals(['181.82', '272.73'], $fila->cambios['sueldo_base']);
     }
 
+    public function test_diezmo_se_aplica_por_defecto_a_todos(): void
+    {
+        [$empleado, $planilla] = $this->planillaDeSeptiembre(800);
+        $empleado->update(['sistema_pensiones' => null]);
+        // Nadie dijo nada en su ficha: lo que manda es el default de la
+        // columna (true), no lo que haya quedado en el objeto en memoria.
+        $empleado->refresh();
+        $this->crearConceptoDiezmo();
+        $this->generarConceptosDePrueba($planilla, $empleado);
+
+        $linea = $planilla->payrollDetalles()->whereHas('paymentConcept', fn ($q) => $q->where('nombre', ConceptosDePago::DIEZMO))->first();
+
+        // Sueldo prorrateado 181.82 × 10% = 18.18.
+        $this->assertNotNull($linea, 'a nadie que no diga lo contrario se le salta el diezmo');
+        $this->assertEqualsWithDelta(18.18, (float) $linea->monto_calculado, 0.01);
+    }
+
+    public function test_diezmo_no_se_aplica_a_quien_no_lo_autoriza(): void
+    {
+        [$empleado, $planilla] = $this->planillaDeSeptiembre(800);
+        $empleado->update(['sistema_pensiones' => null, 'aplica_diezmo' => false]);
+        $this->crearConceptoDiezmo();
+        $this->generarConceptosDePrueba($planilla, $empleado);
+
+        $linea = $planilla->payrollDetalles()->whereHas('paymentConcept', fn ($q) => $q->where('nombre', ConceptosDePago::DIEZMO))->first();
+
+        $this->assertNull($linea, 'con aplica_diezmo=false no se le crea la línea');
+    }
+
+    private function crearConceptoDiezmo(): void
+    {
+        \App\Models\PaymentConcept::create([
+            'nombre' => ConceptosDePago::DIEZMO, 'tipo' => 'descuento',
+            'calculo' => 'porcentaje', 'valor' => 10.00, 'aplica_a_todos' => true,
+        ]);
+    }
+
     private function generarConceptosDePrueba($planilla, $empleado): void
     {
         \App\Models\PaymentConcept::create(['nombre' => ConceptosDePago::ASIGNACION_FAMILIAR, 'tipo' => 'bonificacion']);

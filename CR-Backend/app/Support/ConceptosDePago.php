@@ -16,8 +16,8 @@ namespace App\Support;
  * motor los busca desde aquí, así que no pueden separarse.
  *
  * Solo están los que el CÓDIGO necesita nombrar. Los demás conceptos del
- * catálogo (alimentación, diezmo, escolaridad...) son datos puros: se
- * agregan y se renombran desde la pantalla sin tocar nada de esto.
+ * catálogo (alimentación, escolaridad...) son datos puros: se agregan y
+ * se renombran desde la pantalla sin tocar nada de esto.
  */
 final class ConceptosDePago
 {
@@ -34,6 +34,15 @@ final class ConceptosDePago
      * catálogo sino de esa casilla, igual que EsSalud sale de su base.
      */
     public const ASIGNACION_FAMILIAR = 'Asignación Familiar';
+
+    /**
+     * Va `aplica_a_todos=true` al 10% del sueldo en el catálogo (ver
+     * PaymentConceptSeeder): a diferencia de los demás descuentos fijos,
+     * este SÍ tiene una excepción por persona —`aplica_diezmo` en su
+     * ficha—, así que el código necesita nombrarlo para saber a quién
+     * saltarse, igual que ASIGNACION_FAMILIAR sale de `tiene_hijos`.
+     */
+    public const DIEZMO = 'Descuento Autorizado - Diezmo';
 
     /**
      * Las dos líneas de julio y diciembre. El código las nombra porque su

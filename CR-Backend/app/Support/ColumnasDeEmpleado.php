@@ -56,6 +56,10 @@ final class ColumnasDeEmpleado
         'numero_cuenta'                => ['titulo' => 'N° de cuenta', 'tipo' => 'texto', 'alias' => ['n de cuenta', 'no de cuenta', 'nro de cuenta', 'numero de cuenta', 'cuenta', 'n cuenta']],
         'cci'                          => ['titulo' => 'CCI', 'tipo' => 'digitos', 'alias' => ['cci']],
         'tiene_hijos'                  => ['titulo' => 'Tiene hijos', 'tipo' => 'si_no', 'alias' => ['tiene hijos', 'hijos']],
+        // El Diezmo se le aplica a TODO el personal por defecto (10% del
+        // sueldo, ver PaymentConceptSeeder): esta columna es la excepción.
+        // Vacía o "Sí" = se le sigue aplicando; solo "No" lo excluye.
+        'aplica_diezmo'                => ['titulo' => 'Diezmo', 'tipo' => 'si_no', 'alias' => ['diezmo', 'aplica diezmo', 'descuento diezmo']],
         'nivel_estudios'               => ['titulo' => 'Nivel de estudios', 'tipo' => 'opcion', 'alias' => ['nivel de estudios', 'estudios', 'grado de instruccion']],
         'especialidad'                 => ['titulo' => 'Especialidad', 'tipo' => 'texto', 'alias' => ['especialidad', 'profesion']],
         'institucion_estudios'         => ['titulo' => 'Institución donde estudió', 'tipo' => 'texto', 'alias' => ['institucion donde estudio', 'institucion', 'universidad']],
@@ -278,6 +282,7 @@ final class ColumnasDeEmpleado
             'afp'               => array_values(self::LEGIBLE['afp']),
             'forma_pago'        => array_values(self::LEGIBLE['forma_pago']),
             'tiene_hijos'       => ['Sí', 'No'],
+            'aplica_diezmo'     => ['Sí', 'No'],
             'nivel_estudios'    => array_values(self::LEGIBLE['nivel_estudios']),
         ];
     }

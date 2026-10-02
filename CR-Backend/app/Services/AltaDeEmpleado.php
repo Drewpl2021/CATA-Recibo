@@ -47,6 +47,7 @@ final class AltaDeEmpleado
             // persona, y eso no hay forma de verlo hasta el reclamo.
             'cci'                => 'nullable|regex:/^[0-9]{20}$/',
             'tiene_hijos'        => 'nullable|boolean',
+            'aplica_diezmo'      => 'nullable|boolean',
             'sueldo_base'        => 'required|numeric|min:0',
             'tipo_contrato'      => 'required|in:indeterminado,plazo_fijo,suplencia,practicas',
             // Un plazo fijo, una suplencia o unas prácticas SIN fecha de término no

@@ -354,7 +354,7 @@ class EmpleadoController extends Controller
             'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Fecha de cese', 'Tipo de contrato', 'Fin de contrato',
             'Sueldo base', 'Sistema de pensión', 'AFP', 'CUSPP',
             'Forma de pago', 'Banco', 'N° de cuenta', 'CCI',
-            'Tiene hijos', 'Nivel de estudios', 'Especialidad', 'Institución donde estudió',
+            'Tiene hijos', 'Diezmo', 'Nivel de estudios', 'Especialidad', 'Institución donde estudió',
             'Contacto de emergencia', 'Teléfono del contacto',
         ];
 
@@ -396,6 +396,7 @@ class EmpleadoController extends Controller
                 (string) ($e->numero_cuenta ?? ''),
                 (string) ($e->cci ?? ''),
                 $e->tiene_hijos ? 'Sí' : 'No',
+                $e->aplica_diezmo ? 'Sí' : 'No',
                 $e->nivel_estudios ?? '',
                 $e->especialidad ?? '',
                 $e->institucion_estudios ?? '',
@@ -489,6 +490,7 @@ class EmpleadoController extends Controller
             'numero_cuenta'      => 'nullable|string|max:50',
             'cci'                => 'nullable|regex:/^[0-9]{20}$/',
             'tiene_hijos'        => 'nullable|boolean',
+            'aplica_diezmo'      => 'nullable|boolean',
             'sueldo_base'        => 'nullable|numeric|min:0',
             'tipo_contrato'      => 'nullable|in:indeterminado,plazo_fijo,suplencia,practicas',
             // No es columna del empleado: es la fecha de término de su
