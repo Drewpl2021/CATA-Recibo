@@ -10,6 +10,7 @@ use App\Models\Contrato;
 use App\Models\Empleado;
 use App\Models\Rol;
 use App\Models\Sede;
+use App\Models\TipoContrato;
 use App\Models\User;
 
 /**
@@ -53,6 +54,14 @@ class UsuarioDemoSeeder extends Seeder
         $areas  = Area::pluck('id', 'nombre');
         $cargos = Cargo::pluck('id', 'nombre');
         $sedes  = Sede::pluck('id', 'nombre');
+        $tiposContrato = TipoContrato::pluck('id', 'nombre');
+
+        // Los valores viejos del ENUM, a cómo se llaman ahora en el catálogo.
+        $tipoContratoLegible = [
+            'indeterminado' => 'Plazo indeterminado',
+            'plazo_fijo'    => 'Contratado',
+            'practicas'     => 'Prácticas',
+        ];
 
         $conCuenta = 0;
 
@@ -63,15 +72,18 @@ class UsuarioDemoSeeder extends Seeder
             $contrato = $ficha['contrato'];
             unset($ficha['contrato']);
 
+            $tipoContratoId = $tiposContrato[$tipoContratoLegible[$ficha['tipo_contrato']] ?? $ficha['tipo_contrato']] ?? null;
+
             // 'area', 'cargo' y 'sede' son nombres legibles para escribir la
             // ficha de arriba; a la base van como id y no como columna.
             $datos = array_merge($ficha, [
-                'area_id'  => $areas[$ficha['area']]   ?? null,
-                'cargo_id' => $cargos[$ficha['cargo']] ?? null,
-                'sede_id'  => $sedes[$ficha['sede']]   ?? null,
-                'estado'   => 'activo',
+                'area_id'          => $areas[$ficha['area']]   ?? null,
+                'cargo_id'         => $cargos[$ficha['cargo']] ?? null,
+                'sede_id'          => $sedes[$ficha['sede']]   ?? null,
+                'tipo_contrato_id' => $tipoContratoId,
+                'estado'           => 'activo',
             ]);
-            unset($datos['area'], $datos['cargo'], $datos['sede']);
+            unset($datos['area'], $datos['cargo'], $datos['sede'], $datos['tipo_contrato']);
 
             // Los nulos se quitan en vez de mandarse: sistema_pensiones no
             // admite null y su valor por defecto en la tabla es 'ONP', que es
@@ -81,12 +93,12 @@ class UsuarioDemoSeeder extends Seeder
             $empleado = Empleado::create($datos);
 
             Contrato::create([
-                'empleado_id'   => $empleado->id,
-                'tipo_contrato' => $ficha['tipo_contrato'],
-                'fecha_inicio'  => $ficha['fecha_ingreso'],
-                'fecha_fin'     => $contrato['fecha_fin'] ?? null,
-                'estado'        => 'vigente',
-                'observaciones' => $contrato['observaciones'],
+                'empleado_id'      => $empleado->id,
+                'tipo_contrato_id' => $tipoContratoId,
+                'fecha_inicio'     => $ficha['fecha_ingreso'],
+                'fecha_fin'        => $contrato['fecha_fin'] ?? null,
+                'estado'           => 'vigente',
+                'observaciones'    => $contrato['observaciones'],
             ]);
 
             if ($cuenta) {

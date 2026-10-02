@@ -6,6 +6,7 @@ use App\Models\Area;
 use App\Models\Cargo;
 use App\Models\Rol;
 use App\Models\Sede;
+use App\Models\TipoContrato;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -44,7 +45,9 @@ final class ColumnasDeEmpleado
         // Para registrar a quien ya se fue y guardar sus boletas de antes.
         'estado'                       => ['titulo' => 'Estado', 'tipo' => 'opcion', 'alias' => ['estado', 'situacion', 'condicion', 'estado laboral']],
         'fecha_cese'                   => ['titulo' => 'Fecha de cese', 'tipo' => 'fecha', 'alias' => ['fecha de cese', 'fecha cese', 'cese', 'fecha de baja', 'fecha de salida', 'fecha de retiro']],
-        'tipo_contrato'                => ['titulo' => 'Tipo de contrato', 'tipo' => 'opcion', 'alias' => ['tipo de contrato', 'tipo contrato', 'contrato', 'modalidad']],
+        // Catálogo administrable (pantalla Tipos de Contrato), igual que
+        // área/cargo/sede: tiene que EXISTIR, no se inventa desde el Excel.
+        'tipo_contrato'                => ['titulo' => 'Tipo de contrato', 'tipo' => 'catalogo', 'alias' => ['tipo de contrato', 'tipo contrato', 'contrato', 'modalidad']],
         'fecha_fin_contrato'           => ['titulo' => 'Fin de contrato', 'tipo' => 'fecha', 'alias' => ['fin de contrato', 'fecha fin de contrato', 'fecha de fin de contrato', 'fin del contrato', 'vencimiento']],
         'sueldo_base'                  => ['titulo' => 'Sueldo base', 'tipo' => 'monto', 'alias' => ['sueldo base', 'sueldo', 'remuneracion basica', 'haber basico', 'basico']],
         'sistema_pensiones'            => ['titulo' => 'Sistema de pensión', 'tipo' => 'opcion', 'alias' => ['sistema de pension', 'sistema pensionario', 'pension', 'regimen pensionario']],
@@ -101,18 +104,6 @@ final class ColumnasDeEmpleado
             'cesado' => 'inactivo', 'cesada' => 'inactivo', 'cese' => 'inactivo', 'inactivo' => 'inactivo', 'inactiva' => 'inactivo',
             'de baja' => 'inactivo', 'baja' => 'inactivo', 'dado de baja' => 'inactivo', 'retirado' => 'inactivo', 'retirada' => 'inactivo',
         ],
-        'tipo_contrato' => [
-            // "Plazo indeterminado" es como lo escribe RR.HH. a veces —las
-            // mismas dos palabras de "Plazo fijo", solo que al revés—, así
-            // que es un sinónimo seguro. "Contratado"/"Contrato" también:
-            // confirmado que en el colegio significa Plazo fijo, con su
-            // "Fin de contrato" aparte, en su propia columna (la fecha de
-            // verdad, no la palabra).
-            'indeterminado' => 'indeterminado', 'plazo indeterminado' => 'indeterminado',
-            'plazo fijo' => 'plazo_fijo', 'plazo_fijo' => 'plazo_fijo',
-            'contratado' => 'plazo_fijo', 'contrato' => 'plazo_fijo',
-            'suplencia' => 'suplencia', 'practicas' => 'practicas', 'practica' => 'practicas',
-        ],
         'sistema_pensiones' => [
             'afp' => 'AFP', 'spp' => 'AFP', 'onp' => 'ONP', 'snp' => 'ONP',
             'no aporta' => null, 'ninguno' => null, 'sin pension' => null, 'no' => null,
@@ -136,7 +127,6 @@ final class ColumnasDeEmpleado
     /** Cómo se lee cada valor guardado, y qué se acepta al escribirlo. */
     private const LEGIBLE = [
         'estado'            => ['activo' => 'Activo', 'inactivo' => 'Cesado'],
-        'tipo_contrato'     => ['indeterminado' => 'Indeterminado', 'plazo_fijo' => 'Plazo fijo', 'suplencia' => 'Suplencia', 'practicas' => 'Prácticas'],
         'sistema_pensiones' => ['AFP' => 'AFP', 'ONP' => 'ONP'],
         'afp'               => ['Habitat' => 'Habitat', 'Integra' => 'Integra', 'Prima' => 'Prima', 'Profuturo' => 'Profuturo'],
         'tipo_comision_afp' => ['flujo' => 'Flujo', 'mixta' => 'Mixta'],
@@ -146,7 +136,6 @@ final class ColumnasDeEmpleado
 
     private const ACEPTA = [
         'estado'            => 'Activo o Cesado',
-        'tipo_contrato'     => 'Indeterminado, Plazo fijo, Suplencia o Prácticas',
         'sistema_pensiones' => 'AFP, ONP o No aporta',
         'afp'               => 'Habitat, Integra, Prima o Profuturo',
         'tipo_comision_afp' => 'Flujo o Mixta',
@@ -174,12 +163,12 @@ final class ColumnasDeEmpleado
     /** El nombre de la columna en la tabla empleados. */
     public static function atributoDe(string $campo): string
     {
-        return in_array($campo, ['area', 'cargo', 'sede', 'rol'], true) ? $campo . '_id' : $campo;
+        return in_array($campo, ['area', 'cargo', 'sede', 'rol', 'tipo_contrato'], true) ? $campo . '_id' : $campo;
     }
 
     public static function campoDeAtributo(string $atributo): string
     {
-        return in_array($atributo, ['area_id', 'cargo_id', 'sede_id', 'rol_id'], true) ? substr($atributo, 0, -3) : $atributo;
+        return in_array($atributo, ['area_id', 'cargo_id', 'sede_id', 'rol_id', 'tipo_contrato_id'], true) ? substr($atributo, 0, -3) : $atributo;
     }
 
     /** Para que los mensajes de validación digan "Sueldo base" y no "sueldo_base". */
@@ -287,8 +276,8 @@ final class ColumnasDeEmpleado
             'area'              => $nombres(Area::class),
             'cargo'             => $nombres(Cargo::class),
             'sede'              => $nombres(Sede::class),
+            'tipo_contrato'     => $nombres(TipoContrato::class),
             'estado'            => array_values(self::LEGIBLE['estado']),
-            'tipo_contrato'     => array_values(self::LEGIBLE['tipo_contrato']),
             'sistema_pensiones' => [...array_values(self::LEGIBLE['sistema_pensiones']), 'No aporta'],
             'afp'               => array_values(self::LEGIBLE['afp']),
             'tipo_comision_afp' => array_values(self::LEGIBLE['tipo_comision_afp']),
@@ -305,9 +294,9 @@ final class ColumnasDeEmpleado
      */
     public static function catalogos(): array
     {
-        $catalogos = ['area' => [], 'cargo' => [], 'sede' => [], 'rol' => [], 'porId' => []];
+        $catalogos = ['area' => [], 'cargo' => [], 'sede' => [], 'rol' => [], 'tipo_contrato' => [], 'porId' => []];
 
-        foreach (['area' => Area::class, 'cargo' => Cargo::class, 'sede' => Sede::class, 'rol' => Rol::class] as $campo => $modelo) {
+        foreach (['area' => Area::class, 'cargo' => Cargo::class, 'sede' => Sede::class, 'rol' => Rol::class, 'tipo_contrato' => TipoContrato::class] as $campo => $modelo) {
             foreach ($modelo::query()->get(['id', 'nombre']) as $fila) {
                 $catalogos[$campo][ReconocedorDeColumnas::normalizar($fila->nombre)] = ['id' => $fila->id, 'nombre' => $fila->nombre];
                 $catalogos['porId'][$fila->id] = $fila->nombre;
@@ -435,6 +424,20 @@ final class ColumnasDeEmpleado
                     : $mal("«{$texto}» no vale en «{$definicion['titulo']}». Se acepta: " . self::ACEPTA[$campo] . '.');
 
             case 'catalogo':
+                // Dos formas sueltas de decir "Contratado", confirmadas con
+                // el colegio: "Contrato" a secas (que si no, el genérico de
+                // abajo lo confundiría con "Contrato/Parcial", porque las dos
+                // palabras empiezan igual) y "Plazo fijo" (el nombre que este
+                // mismo sistema usaba antes de este cambio, así que puede
+                // aparecer en un Excel exportado de antes).
+                if (
+                    $campo === 'tipo_contrato'
+                    && in_array($normal, ['contrato', 'plazo fijo', 'plazo_fijo'], true)
+                    && isset($catalogos[$campo]['contratado'])
+                ) {
+                    return $bien($catalogos[$campo]['contratado']['id']);
+                }
+
                 if (isset($catalogos[$campo][$normal])) {
                     return $bien($catalogos[$campo][$normal]['id']);
                 }
@@ -447,7 +450,7 @@ final class ColumnasDeEmpleado
                 // una sola opción, se acepta directo: no hace falta pedirle
                 // a RR.HH. que escriba el nombre completo si ya alcanza
                 // para no confundirse con ninguna otra.
-                if (in_array($campo, ['sede', 'rol'], true)) {
+                if (in_array($campo, ['sede', 'rol', 'tipo_contrato'], true)) {
                     $contenidos = array_filter(
                         $catalogos[$campo],
                         fn ($item) => str_contains(ReconocedorDeColumnas::normalizar($item['nombre']), $normal)
@@ -466,7 +469,7 @@ final class ColumnasDeEmpleado
                         [$puntaje, $mejor] = [$parecido, $item['nombre']];
                     }
                 }
-                $que = ['area' => 'ningún área', 'cargo' => 'ningún cargo', 'sede' => 'ninguna sede', 'rol' => 'ningún rol'][$campo];
+                $que = ['area' => 'ningún área', 'cargo' => 'ningún cargo', 'sede' => 'ninguna sede', 'rol' => 'ningún rol', 'tipo_contrato' => 'ningún tipo de contrato'][$campo];
                 $sugerencia = $mejor && $puntaje >= 0.6 ? " ¿Quisiste decir «{$mejor}»?" : '';
 
                 return $mal("No hay {$que} «{$texto}».{$sugerencia}");

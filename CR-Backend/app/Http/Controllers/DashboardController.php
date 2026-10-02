@@ -595,21 +595,15 @@ class DashboardController extends Controller
     /** Con qué tipo de contrato está cada quien. */
     private function tipoContrato(): array
     {
-        $nombres = [
-            'indeterminado' => 'Indeterminado',
-            'plazo_fijo'    => 'Plazo fijo',
-            'suplencia'     => 'Suplencia',
-            'practicas'     => 'Prácticas',
-        ];
-
         $filas = Contrato::query()
-            ->where('estado', 'vigente')
-            ->where('estado_registro', 'activo')
-            ->groupBy('tipo_contrato')
-            ->get(['tipo_contrato', DB::raw('COUNT(*) as valor')]);
+            ->where('contratos.estado', 'vigente')
+            ->where('contratos.estado_registro', 'activo')
+            ->join('tipos_contrato', 'tipos_contrato.id', '=', 'contratos.tipo_contrato_id')
+            ->groupBy('tipos_contrato.id', 'tipos_contrato.nombre')
+            ->get(['tipos_contrato.nombre', DB::raw('COUNT(*) as valor')]);
 
         return $filas->map(fn ($f) => [
-            'etiqueta' => $nombres[$f->tipo_contrato] ?? $f->tipo_contrato,
+            'etiqueta' => $f->nombre,
             'valor'    => (int) $f->valor,
         ])->all();
     }

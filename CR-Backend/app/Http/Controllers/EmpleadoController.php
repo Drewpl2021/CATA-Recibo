@@ -115,7 +115,7 @@ class EmpleadoController extends Controller
             'Sede'              => $this->nombreDeCatalogo(\App\Models\Sede::class, $request->input('sede_id')),
             'Área'              => $this->nombreDeCatalogo(\App\Models\Area::class, $request->input('area_id')),
             'Cargo'             => $this->nombreDeCatalogo(\App\Models\Cargo::class, $request->input('cargo_id')),
-            'Tipo de contrato'  => $request->input('tipo_contrato'),
+            'Tipo de contrato'  => $this->nombreDeCatalogo(\App\Models\TipoContrato::class, $request->input('tipo_contrato_id')),
             'Sistema de pensión' => match ($request->input('sistema_pensiones')) {
                 'ninguno' => 'No aporta a ninguna',
                 null, ''  => null,
@@ -156,21 +156,21 @@ class EmpleadoController extends Controller
      */
     private function moverContratoSiCambio(Request $request, Empleado $empleado): void
     {
-        if (! $request->filled('tipo_contrato')) {
+        if (! $request->filled('tipo_contrato_id')) {
             return;
         }
 
-        $tipo    = $request->input('tipo_contrato');
+        $tipo    = $request->input('tipo_contrato_id');
         $fin     = $request->input('fecha_fin_contrato') ?: null;
-        $llevaFin = $tipo !== 'indeterminado';
+        $llevaFin = (bool) \App\Models\TipoContrato::find($tipo)?->requiere_fecha_fin;
         $vigente = $empleado->contratoVigente()->first();
 
         if (! $vigente) {
             Contrato::create([
-                'empleado_id'   => $empleado->id,
-                'tipo_contrato' => $tipo,
-                'fecha_inicio'  => $empleado->fecha_ingreso,
-                'fecha_fin'     => $llevaFin ? $fin : null,
+                'empleado_id'      => $empleado->id,
+                'tipo_contrato_id' => $tipo,
+                'fecha_inicio'     => $empleado->fecha_ingreso,
+                'fecha_fin'        => $llevaFin ? $fin : null,
                 'estado'        => 'vigente',
                 'observaciones' => 'Creado desde la ficha del trabajador.',
             ]);
@@ -178,7 +178,7 @@ class EmpleadoController extends Controller
             return;
         }
 
-        if ($vigente->tipo_contrato === $tipo) {
+        if ($vigente->tipo_contrato_id === $tipo) {
             $finViejo = $vigente->fecha_fin ? Carbon::parse($vigente->fecha_fin)->toDateString() : null;
 
             if ($llevaFin && $fin && $fin !== $finViejo) {
@@ -210,10 +210,10 @@ class EmpleadoController extends Controller
             ]);
 
             Contrato::create([
-                'empleado_id'   => $empleado->id,
-                'tipo_contrato' => $tipo,
-                'fecha_inicio'  => $hoy,
-                'fecha_fin'     => $llevaFin ? $fin : null,
+                'empleado_id'      => $empleado->id,
+                'tipo_contrato_id' => $tipo,
+                'fecha_inicio'     => $hoy,
+                'fecha_fin'        => $llevaFin ? $fin : null,
                 'estado'        => 'vigente',
                 'observaciones' => 'Creado al cambiarle el tipo de contrato desde la ficha.',
             ]);
@@ -227,7 +227,7 @@ class EmpleadoController extends Controller
             'area_id'           => 'nullable|uuid|exists:areas,id',
             'cargo_id'          => 'nullable|uuid|exists:cargos,id',
             'sede_id'           => 'nullable|uuid|exists:sedes,id',
-            'tipo_contrato'     => 'nullable|in:indeterminado,plazo_fijo,suplencia,practicas',
+            'tipo_contrato_id'  => 'nullable|uuid|exists:tipos_contrato,id',
             // "ninguno" no es un valor de la columna: es no aportar a ninguna
             // pensión, que en la base es NULL.
             'sistema_pensiones' => 'nullable|in:AFP,ONP,ninguno',
@@ -244,7 +244,7 @@ class EmpleadoController extends Controller
         // Con el prefijo de la tabla a propósito: areas, cargos y sedes
         // también tienen `estado`, y en cuanto una consulta las junta MySQL
         // no sabe de cuál se le habla.
-        foreach (['estado', 'area_id', 'cargo_id', 'sede_id', 'tipo_contrato', 'forma_pago'] as $campo) {
+        foreach (['estado', 'area_id', 'cargo_id', 'sede_id', 'tipo_contrato_id', 'forma_pago'] as $campo) {
             if ($request->filled($campo)) {
                 $query->where('empleados.' . $campo, $request->input($campo));
             }
@@ -332,7 +332,7 @@ class EmpleadoController extends Controller
      */
     public function exportar(Request $request)
     {
-        $query = Empleado::with('area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'usuario.rol', 'contratoVigente')
+        $query = Empleado::with('area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'usuario.rol', 'contratoVigente.tipoContrato:id,nombre', 'tipoContrato:id,nombre')
             ->orderBy('apellido')
             ->orderBy('nombre');
 
@@ -382,7 +382,7 @@ class EmpleadoController extends Controller
                 // Del contrato vigente, no de la copia suelta de la ficha, que
                 // envejece. Y con su fin: sin él, un plazo fijo descargado no se
                 // podía volver a importar.
-                $e->contratoVigente->tipo_contrato ?? $e->tipo_contrato ?? '',
+                $e->contratoVigente?->tipoContrato?->nombre ?? $e->tipoContrato?->nombre ?? '',
                 $fecha($e->contratoVigente?->fecha_fin),
                 // Número de verdad, no texto: así se puede sumar y filtrar sin
                 // convertir nada, y la importación lo vuelve a leer igual.
@@ -494,7 +494,7 @@ class EmpleadoController extends Controller
             'tiene_hijos'        => 'nullable|boolean',
             'aplica_diezmo'      => 'nullable|boolean',
             'sueldo_base'        => 'nullable|numeric|min:0',
-            'tipo_contrato'      => 'nullable|in:indeterminado,plazo_fijo,suplencia,practicas',
+            'tipo_contrato_id'   => 'nullable|uuid|exists:tipos_contrato,id',
             // No es columna del empleado: es la fecha de término de su
             // contrato, y se usa para moverlo cuando acá se cambia el tipo.
             'fecha_fin_contrato' => 'nullable|date',

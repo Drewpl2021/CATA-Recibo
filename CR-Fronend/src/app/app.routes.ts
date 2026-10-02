@@ -93,6 +93,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/cargos/cargos-list/cargos-list.component').then(m => m.CargosListComponent),
       },
       {
+        path: 'tipos-contrato',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/tipos-contrato/tipos-contrato-list/tipos-contrato-list.component').then(m => m.TiposContratoListComponent),
+      },
+      {
         path: 'sedes',
         canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/sedes/sedes-list/sedes-list.component').then(m => m.SedesListComponent),

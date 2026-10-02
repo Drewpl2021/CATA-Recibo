@@ -20,7 +20,7 @@ class VacacionesTruncasTest extends TestCase
 
     private function planillaDe(string $tipoContrato): Planilla
     {
-        $empleado = $this->crearEmpleado(['tipo_contrato' => $tipoContrato]);
+        $empleado = $this->crearEmpleado(['tipo_contrato_id' => $this->idTipoContrato($tipoContrato)]);
 
         return Planilla::create([
             'empleado_id' => $empleado->id, 'mes' => 7, 'anio' => 2026,
@@ -39,7 +39,7 @@ class VacacionesTruncasTest extends TestCase
     public function test_se_rechaza_para_un_contrato_indeterminado(): void
     {
         $admin = $this->crearUsuario('admin');
-        $planilla = $this->planillaDe('indeterminado');
+        $planilla = $this->planillaDe('Plazo indeterminado');
         $concepto = $this->conceptoTruncas();
 
         $r = $this->actingAs($admin, 'sanctum')->postJson('/api/payroll-details', [
@@ -72,16 +72,16 @@ class VacacionesTruncasTest extends TestCase
     public static function tiposConDerecho(): array
     {
         return [
-            'plazo fijo' => ['plazo_fijo'],
-            'suplencia'  => ['suplencia'],
-            'prácticas'  => ['practicas'],
+            'contratado'       => ['Contratado'],
+            'contrato/parcial' => ['Contrato/Parcial'],
+            'prácticas'        => ['Prácticas'],
         ];
     }
 
     public function test_otros_conceptos_siguen_libres_para_un_indeterminado(): void
     {
         $admin = $this->crearUsuario('admin');
-        $planilla = $this->planillaDe('indeterminado');
+        $planilla = $this->planillaDe('Plazo indeterminado');
         $concepto = PaymentConcept::create(['nombre' => 'Bono de alimentación', 'tipo' => 'bonificacion']);
 
         $this->actingAs($admin, 'sanctum')->postJson('/api/payroll-details', [

@@ -648,8 +648,7 @@ trait CalculaConceptosPlanilla
         $contratoVigente    = $empleado->contratos()->where('estado', 'vigente')->where('estado_registro', 'activo')->latest('fecha_inicio')->first();
         $contratoFinalizado = $empleado->contratos()->where('estado', 'finalizado')->where('estado_registro', 'activo')->latest('fecha_fin')->first();
 
-        $tipoContrato = $contratoVigente->tipo_contrato ?? $empleado->tipo_contrato;
-        $categoria    = $tipoContrato ? ucfirst(str_replace('_', ' ', $tipoContrato)) : '-';
+        $categoria = $contratoVigente?->tipoContrato?->nombre ?? $empleado->tipoContrato?->nombre ?? '-';
 
         $reparto = $this->repartoDeDiasDelMes($empleado, $mes, $anio);
 

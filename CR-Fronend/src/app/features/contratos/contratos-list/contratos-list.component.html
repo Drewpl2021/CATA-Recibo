@@ -21,7 +21,7 @@
   [pagina]="pagina"
   (cambioPagina)="irAPagina($event)"
   (cambioBusqueda)="buscar($event)"
-  [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'empleado.dni', 'tipo_contrato']"
+  [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'empleado.dni', 'tipo_contrato.nombre']"
   [acciones]="['editar', 'eliminar']"
   [accionesPersonalizadas]="accionesExtra"
   mensajeVacio="No hay contratos que coincidan con el filtro."
@@ -75,9 +75,10 @@
     </p>
 
     <div class="form-group">
-      <label for="tipo_contrato">Tipo de contrato *</label>
-      <select id="tipo_contrato" class="form-control" formControlName="tipo_contrato">
-        <option *ngFor="let t of tipos" [value]="t.value">{{ t.label }}</option>
+      <label for="tipo_contrato_id">Tipo de contrato *</label>
+      <select id="tipo_contrato_id" class="form-control" formControlName="tipo_contrato_id">
+        <option value="">— Elige un tipo —</option>
+        <option *ngFor="let t of tiposContrato" [value]="t.id">{{ t.nombre }}</option>
       </select>
     </div>
 

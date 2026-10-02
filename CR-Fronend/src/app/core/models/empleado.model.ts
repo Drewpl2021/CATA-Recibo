@@ -1,4 +1,4 @@
-import { Area, Cargo, Sede } from './configuracion.model';
+import { Area, Cargo, Sede, TipoContrato } from './configuracion.model';
 import { Usuario } from './usuario.model';
 
 export interface IdentidadFirma {
@@ -26,14 +26,15 @@ export interface Empleado {
   area_id?: string | null;
   cargo_id?: string | null;
   sede_id?: string | null;
+  tipo_contrato_id?: string | null;
   area?: Area | null;
   cargo?: Cargo | null;
   sede?: Sede | null;
+  tipo_contrato?: TipoContrato | null;
   usuario?: Usuario | null;
 
   // Datos de planilla
   sueldo_base?: number | null;
-  tipo_contrato?: string | null;
   forma_pago?: string | null;
   sistema_pensiones?: string;
   afp?: string | null;
@@ -76,7 +77,7 @@ export interface EmpleadoPayload {
   fecha_ingreso: string;
   fecha_nacimiento: string | null;
   sueldo_base: number | null;
-  tipo_contrato: string | null;
+  tipo_contrato_id: string | null;
   /** Fin del primer contrato. Solo se manda si el tipo lleva plazo. */
   fecha_fin_contrato?: string | null;
   email: string;
@@ -103,7 +104,8 @@ export interface EmpleadoPayload {
 export interface Contrato {
   id: string;
   empleado_id: string;
-  tipo_contrato: string;
+  tipo_contrato_id: string;
+  tipo_contrato?: TipoContrato;
   fecha_inicio: string;
   fecha_fin?: string | null;
   estado: string;
@@ -114,7 +116,7 @@ export interface Contrato {
 
 export interface ContratoPayload {
   empleado_id: string;
-  tipo_contrato: string;
+  tipo_contrato_id: string;
   fecha_inicio: string;
   fecha_fin?: string | null;
   observaciones?: string | null;

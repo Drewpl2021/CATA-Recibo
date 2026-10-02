@@ -1,12 +1,10 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
-import { Area, Cargo, Contrato, Sede } from '../../../../core/models';
+import { Area, Cargo, Contrato, Sede, TipoContrato } from '../../../../core/models';
 import {
-  TIPO_CONTRATO_OPCIONES,
   ESTADO_EMPLEADO_OPCIONES,
   ESTADO_CONTRATO_OPCIONES,
-  TIPO_CONTRATO_CONTRATO_OPCIONES,
 } from '../../../../shared/constants';
 import { fechaLegible } from '../../../../core/utils';
 import { SeccionEmpleadoBase } from './seccion-base';
@@ -23,12 +21,13 @@ export class SeccionLaboralesComponent extends SeccionEmpleadoBase {
   @Input() areas: Area[] = [];
   @Input() cargos: Cargo[] = [];
   @Input() sedes: Sede[] = [];
+  /** El catálogo administrable de Tipos de Contrato (pantalla Configuración). */
+  @Input() tiposContrato: TipoContrato[] = [];
 
   /** Contratos que ya tiene. Vacío en un alta: todavía no existe ninguno. */
   @Input() contratos: Contrato[] = [];
   @Input() cargandoContratos = false;
 
-  tiposContrato = TIPO_CONTRATO_OPCIONES;
   estados = ESTADO_EMPLEADO_OPCIONES;
 
   /** Se avisa una vez cuando el cambio de área dejó fuera al cargo elegido. */
@@ -77,13 +76,14 @@ export class SeccionLaboralesComponent extends SeccionEmpleadoBase {
   }
 
   /**
-   * Un contrato indeterminado no acaba, así que pedirle fecha de término no
-   * tiene sentido. Los demás (plazo fijo, suplencia, prácticas) sí la llevan
-   * y el backend la exige.
+   * Lo decide el catálogo (`requiere_fecha_fin`), no un valor fijo: un
+   * contrato que no pide fecha de fin (hoy, Plazo indeterminado) no acaba,
+   * así que pedírsela no tiene sentido. Los demás sí la llevan y el backend
+   * la exige.
    */
   get llevaFechaFin(): boolean {
-    const tipo = this.form.get('tipo_contrato')?.value;
-    return !!tipo && tipo !== 'indeterminado';
+    const tipoId = this.form.get('tipo_contrato_id')?.value;
+    return !!this.tiposContrato.find((t) => t.id === tipoId)?.requiere_fecha_fin;
   }
 
   /**
@@ -94,9 +94,9 @@ export class SeccionLaboralesComponent extends SeccionEmpleadoBase {
    * decirlo ANTES, no después.
    */
   get cambioDeContrato(): boolean {
-    const tipo = this.form.get('tipo_contrato')?.value;
-    return !this.esNuevo && !!this.contratoVigente && !!tipo
-      && tipo !== this.contratoVigente.tipo_contrato;
+    const tipoId = this.form.get('tipo_contrato_id')?.value;
+    return !this.esNuevo && !!this.contratoVigente && !!tipoId
+      && tipoId !== this.contratoVigente.tipo_contrato_id;
   }
 
   /** El que está corriendo ahora, si lo hay. */
@@ -127,7 +127,9 @@ export class SeccionLaboralesComponent extends SeccionEmpleadoBase {
     return ESTADO_CONTRATO_OPCIONES.find((o) => o.value === valor)?.label ?? valor;
   }
 
-  etiquetaTipoContrato(valor: string): string {
-    return TIPO_CONTRATO_CONTRATO_OPCIONES.find((o) => o.value === valor)?.label ?? valor;
+  /** El nombre del tipo que está elegido ahora mismo en el formulario. */
+  etiquetaTipoContratoElegido(): string {
+    const id = this.form.get('tipo_contrato_id')?.value;
+    return this.tiposContrato.find((t) => t.id === id)?.nombre ?? '';
   }
 }

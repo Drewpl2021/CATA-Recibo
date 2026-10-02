@@ -73,24 +73,24 @@ class ModelosDelDominioTest extends TestCase
 
     public function test_solo_el_contrato_indeterminado_puede_tomar_vacaciones(): void
     {
-        foreach (['indeterminado' => true, 'plazo_fijo' => false, 'suplencia' => false, 'practicas' => false] as $tipo => $puede) {
-            $empleado = $this->crearEmpleado(['tipo_contrato' => $tipo]);
+        foreach (['Plazo indeterminado' => true, 'Contratado' => false, 'Contrato/Parcial' => false, 'Prácticas' => false] as $tipo => $puede) {
+            $empleado = $this->crearEmpleado(['tipo_contrato_id' => $this->idTipoContrato($tipo)]);
             $this->assertSame($puede, $empleado->puedeTomarVacaciones(), $tipo);
         }
     }
 
     public function test_el_contrato_vigente_manda_sobre_la_copia_de_la_ficha(): void
     {
-        $empleado = $this->crearEmpleado(['tipo_contrato' => 'suplencia']);
+        $empleado = $this->crearEmpleado(['tipo_contrato_id' => $this->idTipoContrato('Contratado')]);
 
         Contrato::unguard();
         Contrato::create([
-            'empleado_id' => $empleado->id, 'tipo_contrato' => 'indeterminado',
+            'empleado_id' => $empleado->id, 'tipo_contrato_id' => $this->idTipoContrato('Plazo indeterminado'),
             'estado' => 'vigente', 'fecha_inicio' => '2026-01-01',
         ]);
         Contrato::reguard();
 
-        $this->assertSame('indeterminado', $empleado->fresh()->tipoContratoVigente());
+        $this->assertSame('Plazo indeterminado', $empleado->fresh()->tipoContratoVigente()->nombre);
         $this->assertTrue($empleado->fresh()->puedeTomarVacaciones());
     }
 
@@ -103,11 +103,11 @@ class ModelosDelDominioTest extends TestCase
      */
     public function test_eliminar_el_contrato_vigente_le_quita_su_efecto(): void
     {
-        $empleado = $this->crearEmpleado(['tipo_contrato' => 'indeterminado']);
+        $empleado = $this->crearEmpleado(['tipo_contrato_id' => $this->idTipoContrato('Plazo indeterminado')]);
 
         Contrato::unguard();
         $contrato = Contrato::create([
-            'empleado_id' => $empleado->id, 'tipo_contrato' => 'indeterminado',
+            'empleado_id' => $empleado->id, 'tipo_contrato_id' => $this->idTipoContrato('Plazo indeterminado'),
             'estado' => 'vigente', 'fecha_inicio' => '2026-01-01',
         ]);
         Contrato::reguard();

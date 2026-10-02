@@ -1,7 +1,7 @@
 import { inject, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AreaService, AuthService, CargoService, SedeService } from '../../../core/services';
+import { AreaService, AuthService, CargoService, SedeService, TipoContratoService } from '../../../core/services';
 import { EmpleadoService } from '../../../core/services';
 import { Empleado } from '../../../core/models';
 import { BoletaService } from '../../../core/services';
@@ -213,6 +213,7 @@ export class EmisionBoletaListComponent implements OnInit {
   private areaService = inject(AreaService);
   private cargoService = inject(CargoService);
   private sedeService = inject(SedeService);
+  private tipoContratoService = inject(TipoContratoService);
 
   mesesDisponibles = MESES_OPCIONES.map((m) => ({ num: m.value, nombre: m.label }));
 
@@ -283,15 +284,7 @@ export class EmisionBoletaListComponent implements OnInit {
     { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'cargo_id', etiqueta: 'Cargo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
-    {
-      clave: 'tipo_contrato', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos',
-      opciones: [
-        { valor: 'indeterminado', etiqueta: 'Indeterminado' },
-        { valor: 'plazo_fijo', etiqueta: 'Plazo fijo' },
-        { valor: 'suplencia', etiqueta: 'Suplencia' },
-        { valor: 'practicas', etiqueta: 'Prácticas' },
-      ],
-    },
+    { clave: 'tipo_contrato_id', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos', opciones: [] },
     {
       clave: 'sistema_pensiones', etiqueta: 'Pensión', tipo: 'opciones', vacio: 'Todas',
       opciones: [
@@ -322,11 +315,13 @@ export class EmisionBoletaListComponent implements OnInit {
       sedes: this.sedeService.getAll(),
       areas: this.areaService.getAll(),
       cargos: this.cargoService.getAll(),
+      tiposContrato: this.tipoContratoService.getAll(),
     }).subscribe({
-      next: ({ sedes, areas, cargos }) => {
+      next: ({ sedes, areas, cargos, tiposContrato }) => {
         this.ponerOpciones('sede_id', sedes.data);
         this.ponerOpciones('area_id', areas.data);
         this.ponerOpciones('cargo_id', cargos.data);
+        this.ponerOpciones('tipo_contrato_id', tiposContrato.data);
       },
       error: () => {
         this.catalogosListos = false;

@@ -5,7 +5,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ExpedienteService, ToastService } from '../../../core/services';
 import { Contrato, FilaExpediente, FiltroExpedientes, ResumenExpedientes } from '../../../core/models';
 import { diasHasta, fechaDeDia, fechaLegible, mensajeErrorApi } from '../../../core/utils';
-import { TIPO_CONTRATO_CONTRATO_OPCIONES } from '../../../shared/constants';
 import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
@@ -154,10 +153,6 @@ export class ExpedientesListComponent implements OnInit {
 
   fecha(valor: string | null): string {
     return fechaLegible(valor);
-  }
-
-  tipoContrato(valor: string | null | undefined): string {
-    return TIPO_CONTRATO_CONTRATO_OPCIONES.find((o) => o.value === valor)?.label ?? 'Contrato';
   }
 
   /** "Hasta el 28/02/2027", "Vence en 12 días", "Sin fecha de fin". */

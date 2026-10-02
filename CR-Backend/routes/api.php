@@ -31,6 +31,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ModuloPadreController;
 use App\Http\Controllers\ModuloController;
 use App\Http\Controllers\ContratoController;
+use App\Http\Controllers\TipoContratoController;
 use App\Http\Controllers\IdentidadFirmaController;
 
 // Preflight CORS
@@ -210,6 +211,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('documents/{id}/sign-as-employer', [DocumentoController::class, 'firmarComoEmpleador']);
         Route::apiResource('areas',            AreaController::class);
         Route::apiResource('positions',           CargoController::class);
+        Route::apiResource('contract-types',      TipoContratoController::class);
         Route::apiResource('periods',         PeriodoController::class);
         Route::post('periods/{id}/generate-payroll', [PeriodoController::class, 'generarPlanilla']);
         Route::apiResource('payment-concepts', PaymentConceptController::class);

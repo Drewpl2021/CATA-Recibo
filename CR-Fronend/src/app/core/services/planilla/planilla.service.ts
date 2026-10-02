@@ -32,7 +32,7 @@ export class PlanillaService extends EntityDataService<Planilla> {
 
   /**
    * GET /planilla?empleado_id=&mes=&anio=&periodo_id=&page=&size=&search=
-   *     &sede_id=&area_id=&cargo_id=&tipo_contrato=&estado_empleado=
+   *     &sede_id=&area_id=&cargo_id=&tipo_contrato_id=&estado_empleado=
    */
   listarPagina(filtros: {
     empleado_id?: string;
@@ -43,7 +43,7 @@ export class PlanillaService extends EntityDataService<Planilla> {
     sede_id?: string;
     area_id?: string;
     cargo_id?: string;
-    tipo_contrato?: string;
+    tipo_contrato_id?: string;
     estado_empleado?: string;
     /** Las filas de UNA planilla con nombre. */
     corrida_id?: string;
@@ -114,7 +114,7 @@ export class PlanillaService extends EntityDataService<Planilla> {
     sede_id?: string;
     area_id?: string;
     cargo_id?: string;
-    tipo_contrato?: string;
+    tipo_contrato_id?: string;
     estado_empleado?: string;
   }): Observable<Blob> {
     return this.http.get(`${environment.apiUrl}/${END_POINTS_ACCIONES.exportarPlanilla}`, {

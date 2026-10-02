@@ -22,6 +22,7 @@ export const END_POINTS = {
     areas: 'areas',
     cargos: 'positions',
     sedes: 'campuses',
+    tiposContrato: 'contract-types',
     periodos: 'periods',
     paymentConcepts: 'payment-concepts',
     roles: 'roles',

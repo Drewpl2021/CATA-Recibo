@@ -204,7 +204,7 @@ class PayrollDetalleController extends Controller
 
         $empleado = $planilla->empleado;
 
-        if ($empleado && $empleado->tipoContratoVigente() === 'indeterminado') {
+        if ($empleado && $empleado->puedeTomarVacaciones()) {
             throw ValidationException::withMessages([
                 'payment_concept_id' => [
                     'Vacaciones Truncas no aplica: con contrato indeterminado se piden los días de descanso, no se pagan.',

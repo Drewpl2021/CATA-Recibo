@@ -21,7 +21,7 @@ import {
   nombreDocumento,
   severidadFirma,
 } from '../../../core/utils';
-import { ESTADO_CONTRATO_OPCIONES, TIPO_CONTRATO_CONTRATO_OPCIONES, nombreMes } from '../../../shared/constants';
+import { ESTADO_CONTRATO_OPCIONES, nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
@@ -233,10 +233,6 @@ export class ExpedienteComponent implements OnInit, OnDestroy {
 
   // ── Contratos ──
 
-  tipoContrato(valor: string | null | undefined): string {
-    return TIPO_CONTRATO_CONTRATO_OPCIONES.find((o) => o.value === valor)?.label ?? 'Contrato';
-  }
-
   estadoContrato(valor: string): string {
     return ESTADO_CONTRATO_OPCIONES.find((o) => o.value === valor)?.label ?? valor;
   }
@@ -262,7 +258,7 @@ export class ExpedienteComponent implements OnInit, OnDestroy {
   }
 
   etiquetaContrato(contrato: Contrato): string {
-    return `${this.tipoContrato(contrato.tipo_contrato)}, desde el ${fechaDeDia(contrato.fecha_inicio)}`;
+    return `${contrato.tipo_contrato?.nombre ?? 'Contrato'}, desde el ${fechaDeDia(contrato.fecha_inicio)}`;
   }
 
   fecha(valor: string | null | undefined): string {

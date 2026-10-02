@@ -30,7 +30,7 @@ class PlanillaCorridaController extends Controller
 
     /**
      * GET /planilla-corridas?mes=&anio=&periodo_id=&page=&size=&search=
-     *     &sede_id=&area_id=&cargo_id=&tipo_contrato=&estado_empleado=
+     *     &sede_id=&area_id=&cargo_id=&tipo_contrato_id=&estado_empleado=
      */
     public function index(Request $request)
     {
@@ -72,16 +72,16 @@ class PlanillaCorridaController extends Controller
             'sede_id'         => 'nullable|uuid|exists:sedes,id',
             'area_id'         => 'nullable|uuid|exists:areas,id',
             'cargo_id'        => 'nullable|uuid|exists:cargos,id',
-            'tipo_contrato'   => 'nullable|in:indeterminado,plazo_fijo,suplencia,practicas',
-            'estado_empleado' => 'nullable|in:activo,inactivo',
+            'tipo_contrato_id' => 'nullable|uuid|exists:tipos_contrato,id',
+            'estado_empleado'  => 'nullable|in:activo,inactivo',
         ]);
 
         $delTrabajador = array_filter([
-            'sede_id'       => $request->input('sede_id'),
-            'area_id'       => $request->input('area_id'),
-            'cargo_id'      => $request->input('cargo_id'),
-            'tipo_contrato' => $request->input('tipo_contrato'),
-            'estado'        => $request->input('estado_empleado'),
+            'sede_id'          => $request->input('sede_id'),
+            'area_id'          => $request->input('area_id'),
+            'cargo_id'         => $request->input('cargo_id'),
+            'tipo_contrato_id' => $request->input('tipo_contrato_id'),
+            'estado'           => $request->input('estado_empleado'),
         ], fn ($valor) => $valor !== null && $valor !== '');
 
         if (! $delTrabajador) {

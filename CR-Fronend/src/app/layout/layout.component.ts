@@ -16,7 +16,7 @@ import { EmpleadoService } from '../core/services';
 import { FotoPerfilService } from '../core/services';
 import { Empleado } from '../core/models';
 import {
-  etiquetaEstado, NOMBRE_ROL_LEGIBLE, TIPO_CONTRATO_OPCIONES, NIVEL_ESTUDIOS_OPCIONES,
+  etiquetaEstado, NOMBRE_ROL_LEGIBLE, NIVEL_ESTUDIOS_OPCIONES,
 } from '../shared/constants';
 import { IconComponent } from '../shared/components/icon/icon.component';
 import { FormModalComponent } from '../shared/components/form-modal/form-modal.component';
@@ -195,19 +195,9 @@ export class LayoutComponent implements OnInit {
     return this.empleadoData?.estado === 'inactivo';
   }
 
-  /**
-   * "Plazo fijo", no "plazo_fijo".
-   *
-   * La base guarda la clave con guion bajo, y sacarla cruda a una ficha que
-   * lee el propio trabajador se ve a medio hacer. La etiqueta sale del mismo
-   * catálogo que usa el formulario de alta, así que no hay dos maneras de
-   * llamar a lo mismo.
-   */
+  /** Ya viene legible del backend (relación con el catálogo Tipos de Contrato). */
   get tipoDeContrato(): string {
-    const valor = this.empleadoData?.tipo_contrato;
-    if (!valor) return '-';
-
-    return TIPO_CONTRATO_OPCIONES.find((t) => t.value === valor)?.label ?? valor;
+    return this.empleadoData?.tipo_contrato?.nombre ?? '-';
   }
 
   get nivelDeEstudios(): string {

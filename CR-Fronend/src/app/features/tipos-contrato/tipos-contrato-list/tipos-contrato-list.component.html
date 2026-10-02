@@ -1,0 +1,78 @@
+<app-page-header
+  icono="clipboard_check"
+  titulo="Tipos de Contrato"
+  subtitulo="Las categorías de contrato del colegio: cuáles piden fecha de fin y cuáles dan derecho a vacaciones reales."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <button headerActions class="btn-primary" (click)="nuevo()">
+    <app-icon icono="plus" [tamano]="16"></app-icon>
+    Nuevo Tipo de Contrato
+  </button>
+</app-page-header>
+
+<app-data-table
+  entidad="el tipo de contrato"
+  [columnas]="columnas"
+  [datos]="tipos"
+  [cargando]="cargando"
+  [paginacionServidor]="true"
+  [totalElementos]="total"
+  [pagina]="pagina"
+  (cambioPagina)="irAPagina($event)"
+  (cambioBusqueda)="buscar($event)"
+  [camposBusqueda]="['nombre']"
+  [acciones]="['editar', 'eliminar']"
+  mensajeVacio="Todavía no hay tipos de contrato registrados."
+  (editarFila)="editar($event)"
+  (eliminarFila)="eliminar($event)"
+></app-data-table>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="tipoEditando ? 'Editar Tipo de Contrato' : 'Nuevo Tipo de Contrato'"
+  ancho="620px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrarModal()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="nombre">Nombre *</label>
+      <input type="text" id="nombre" class="form-control" formControlName="nombre" placeholder="Ej. Contratado"
+        [class.is-invalid]="invalido('nombre')" />
+      <small class="form-error" *ngIf="invalido('nombre')">
+        El nombre es obligatorio (máximo 100 caracteres).
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label class="check-item check-item--bloque">
+        <input type="checkbox" formControlName="requiere_fecha_fin" />
+        <span>Pide fecha de fin de contrato</span>
+      </label>
+      <small class="form-ayuda">
+        Desmárcalo solo para un contrato que no termina (el indeterminado).
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label class="check-item check-item--bloque">
+        <input type="checkbox" formControlName="permite_vacaciones" />
+        <span>Puede tomar vacaciones reales</span>
+      </label>
+      <small class="form-ayuda">
+        Si no lo marcas, a quien tenga este tipo se le pagan sus días ganados
+        como "Vacaciones Truncas" al terminar el contrato, en vez de poder
+        pedirlos como descanso.
+      </small>
+    </div>
+
+    <div class="form-group">
+      <label for="estado">Estado</label>
+      <select id="estado" class="form-control" formControlName="estado">
+        <option *ngFor="let op of estadoOpciones" [value]="op.value">{{ op.label }}</option>
+      </select>
+    </div>
+  </form>
+</app-form-modal>

@@ -1,6 +1,7 @@
 // Configuración base
 export * from './configuracion/area.service';
 export * from './configuracion/cargo.service';
+export * from './configuracion/tipo-contrato.service';
 export * from './configuracion/sede.service';
 export * from './configuracion/periodo.service';
 export * from './configuracion/payment-concept.service';

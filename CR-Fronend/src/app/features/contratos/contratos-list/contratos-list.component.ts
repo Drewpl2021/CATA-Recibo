@@ -4,12 +4,11 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { forkJoin } from 'rxjs';
 
 import {
-  ContratoService, EmpleadoService, ToastService, ConfirmService, DocumentoService,
+  ContratoService, EmpleadoService, TipoContratoService, ToastService, ConfirmService, DocumentoService,
 } from '../../../core/services';
-import { Contrato, ContratoPayload, Documento, Empleado } from '../../../core/models';
+import { Contrato, ContratoPayload, Documento, Empleado, TipoContrato } from '../../../core/models';
 import { mensajeErrorApi } from '../../../core/utils';
 import {
-  TIPO_CONTRATO_CONTRATO_OPCIONES,
   ESTADO_CONTRATO_OPCIONES,
   MOTIVO_FIN_CONTRATO_OPCIONES,
   TIPO_DOCUMENTO_OPCIONES,
@@ -50,11 +49,13 @@ export class ContratosListComponent implements OnInit {
   private fb = inject(FormBuilder);
   private contratoService = inject(ContratoService);
   private empleadoService = inject(EmpleadoService);
+  private tipoContratoService = inject(TipoContratoService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
 
   contratos: Contrato[] = [];
   empleados: Empleado[] = [];
+  tiposContrato: TipoContrato[] = [];
   cargando = false;
 
   /** Filas por página; el backend corta y cuenta, acá solo se pinta. */
@@ -83,7 +84,6 @@ export class ContratosListComponent implements OnInit {
   filtroEmpleado = '';
   filtroEstado = '';
 
-  tipos = TIPO_CONTRATO_CONTRATO_OPCIONES;
   estados = ESTADO_CONTRATO_OPCIONES;
   motivos = MOTIVO_FIN_CONTRATO_OPCIONES;
 
@@ -98,7 +98,7 @@ export class ContratosListComponent implements OnInit {
       campo: 'tipo_contrato',
       header: 'Tipo',
       ancho: '15%',
-      formatear: (valor) => this.etiqueta(this.tipos, valor),
+      formatear: (_v, fila) => fila.tipo_contrato?.nombre ?? '—',
     },
     { campo: 'fecha_inicio', header: 'Desde', tipo: 'fecha', ancho: '12%' },
     {
@@ -125,7 +125,7 @@ export class ContratosListComponent implements OnInit {
 
   form = this.fb.group({
     empleado_id: ['', [Validators.required]],
-    tipo_contrato: ['plazo_fijo', [Validators.required]],
+    tipo_contrato_id: ['', [Validators.required]],
     fecha_inicio: ['', [Validators.required]],
     fecha_fin: [''],
     // Solo al editar: en el alta el backend siempre lo crea como vigente.
@@ -260,6 +260,15 @@ export class ContratosListComponent implements OnInit {
   ngOnInit(): void {
     this.cargar();
     this.cargarEmpleados();
+    this.tipoContratoService.getAll().subscribe({
+      next: (res) => { if (res.success) this.tiposContrato = res.data; },
+      error: () => this.toastService.error('Aviso', 'No se pudieron cargar los tipos de contrato.'),
+    });
+  }
+
+  /** "Contratado" es el tipo más común: el que arranca marcado al abrir "Nuevo". */
+  private idTipoPorDefecto(): string {
+    return this.tiposContrato.find((t) => t.nombre === 'Contratado')?.id ?? '';
   }
 
   invalido(campo: string): boolean {
@@ -360,7 +369,7 @@ export class ContratosListComponent implements OnInit {
   nuevo(): void {
     this.contratoEditando = null;
     this.form.reset({
-      tipo_contrato: 'plazo_fijo',
+      tipo_contrato_id: this.idTipoPorDefecto(),
       estado: 'vigente',
       motivo_fin: '',
       empleado_id: '',
@@ -372,7 +381,7 @@ export class ContratosListComponent implements OnInit {
     this.contratoEditando = contrato;
     this.form.patchValue({
       empleado_id: contrato.empleado_id,
-      tipo_contrato: contrato.tipo_contrato,
+      tipo_contrato_id: contrato.tipo_contrato_id,
       fecha_inicio: (contrato.fecha_inicio ?? '').slice(0, 10),
       fecha_fin: (contrato.fecha_fin ?? '').slice(0, 10),
       estado: contrato.estado,
@@ -385,7 +394,7 @@ export class ContratosListComponent implements OnInit {
   cerrarModal(): void {
     this.modalVisible = false;
     this.contratoEditando = null;
-    this.form.reset({ tipo_contrato: 'plazo_fijo', estado: 'vigente', motivo_fin: '', empleado_id: '' });
+    this.form.reset({ tipo_contrato_id: this.idTipoPorDefecto(), estado: 'vigente', motivo_fin: '', empleado_id: '' });
   }
 
   guardar(): void {
@@ -399,7 +408,7 @@ export class ContratosListComponent implements OnInit {
     // no pasa esas reglas, así que los opcionales vacíos se mandan como null.
     const base: ContratoPayload = {
       empleado_id: crudo.empleado_id!,
-      tipo_contrato: crudo.tipo_contrato!,
+      tipo_contrato_id: crudo.tipo_contrato_id!,
       fecha_inicio: crudo.fecha_inicio!,
       fecha_fin: crudo.fecha_fin || null,
       observaciones: crudo.observaciones || null,

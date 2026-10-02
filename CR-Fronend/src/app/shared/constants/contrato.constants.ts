@@ -1,12 +1,10 @@
 import { Opcion } from './models';
 
-/** Contrato.tipo_contrato — ContratoController (backend) */
-export const TIPO_CONTRATO_CONTRATO_OPCIONES: readonly Opcion[] = [
-  { label: 'Indeterminado', value: 'indeterminado' },
-  { label: 'Plazo fijo', value: 'plazo_fijo' },
-  { label: 'Suplencia', value: 'suplencia' },
-  { label: 'Prácticas', value: 'practicas' },
-];
+/**
+ * Contrato.tipo_contrato_id ya NO es una lista fija acá: es el catálogo
+ * administrable de Tipos de Contrato (TipoContratoService). Ver
+ * tipos-contrato-list para su CRUD.
+ */
 
 /** Contrato.estado */
 export const ESTADO_CONTRATO_OPCIONES: readonly Opcion[] = [

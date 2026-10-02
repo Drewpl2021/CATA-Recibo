@@ -57,15 +57,16 @@ class ModuloSeeder extends Seeder
             // siendo exclusivos de Admin (igual que el middleware rol: en routes/api.php).
             ['padre' => $idConfig, 'nombre' => 'Áreas',          'ruta' => '/areas',          'icono' => 'domain',      'orden' => 1, 'roles' => [$admin, $rrhh]],
             ['padre' => $idConfig, 'nombre' => 'Cargos',         'ruta' => '/cargos',         'icono' => 'badge',       'orden' => 2, 'roles' => [$admin, $rrhh]],
-            ['padre' => $idConfig, 'nombre' => 'Sedes',          'ruta' => '/sedes',          'icono' => 'location_on', 'orden' => 3, 'roles' => [$admin, $rrhh]],
-            ['padre' => $idConfig, 'nombre' => 'Periodos',       'ruta' => '/periodos',       'icono' => 'date_range',  'orden' => 4, 'roles' => [$admin, $rrhh]],
-            ['padre' => $idConfig, 'nombre' => 'Conceptos de Pago', 'ruta' => '/conceptos-pago', 'icono' => 'money',       'orden' => 5, 'roles' => [$admin, $rrhh]],
-            ['padre' => $idConfig, 'nombre' => 'Usuarios',       'ruta' => '/usuarios',       'icono' => 'user_check',      'orden' => 6, 'roles' => [$admin]],
-            ['padre' => $idConfig, 'nombre' => 'Roles',          'ruta' => '/roles',          'icono' => 'shield',      'orden' => 7, 'roles' => [$admin]],
-            ['padre' => $idConfig, 'nombre' => 'Módulos',        'ruta' => '/modulos',        'icono' => 'view_module', 'orden' => 8, 'roles' => [$admin]],
-            ['padre' => $idConfig, 'nombre' => 'Módulos Padre',  'ruta' => '/modulos-padre',  'icono' => 'folder_open', 'orden' => 9, 'roles' => [$admin]],
+            ['padre' => $idConfig, 'nombre' => 'Tipos de Contrato', 'ruta' => '/tipos-contrato', 'icono' => 'clipboard_check', 'orden' => 3, 'roles' => [$admin, $rrhh]],
+            ['padre' => $idConfig, 'nombre' => 'Sedes',          'ruta' => '/sedes',          'icono' => 'location_on', 'orden' => 4, 'roles' => [$admin, $rrhh]],
+            ['padre' => $idConfig, 'nombre' => 'Periodos',       'ruta' => '/periodos',       'icono' => 'date_range',  'orden' => 5, 'roles' => [$admin, $rrhh]],
+            ['padre' => $idConfig, 'nombre' => 'Conceptos de Pago', 'ruta' => '/conceptos-pago', 'icono' => 'money',       'orden' => 6, 'roles' => [$admin, $rrhh]],
+            ['padre' => $idConfig, 'nombre' => 'Usuarios',       'ruta' => '/usuarios',       'icono' => 'user_check',      'orden' => 7, 'roles' => [$admin]],
+            ['padre' => $idConfig, 'nombre' => 'Roles',          'ruta' => '/roles',          'icono' => 'shield',      'orden' => 8, 'roles' => [$admin]],
+            ['padre' => $idConfig, 'nombre' => 'Módulos',        'ruta' => '/modulos',        'icono' => 'view_module', 'orden' => 9, 'roles' => [$admin]],
+            ['padre' => $idConfig, 'nombre' => 'Módulos Padre',  'ruta' => '/modulos-padre',  'icono' => 'folder_open', 'orden' => 10, 'roles' => [$admin]],
             // Quién cambió qué. Solo Admin: es donde se ve lo que hizo RR.HH.
-            ['padre' => $idConfig, 'nombre' => 'Auditoría',      'ruta' => '/auditoria',      'icono' => 'clock',       'orden' => 10, 'roles' => [$admin]],
+            ['padre' => $idConfig, 'nombre' => 'Auditoría',      'ruta' => '/auditoria',      'icono' => 'clock',       'orden' => 11, 'roles' => [$admin]],
 
             // Mi Espacio — admin, rrhh y empleado
             ['padre' => $idEspacio, 'nombre' => 'Mis Boletas',    'ruta' => '/mis-boletas',    'icono' => 'receipt_long',  'orden' => 1, 'roles' => [$admin, $rrhh, $empleado]],

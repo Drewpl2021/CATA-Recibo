@@ -6,6 +6,7 @@ use App\Models\Cargo;
 use App\Models\Contrato;
 use App\Models\Empleado;
 use App\Models\User;
+use App\Rules\FechaFinSegunTipoContrato;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -50,11 +51,12 @@ final class AltaDeEmpleado
             'tiene_hijos'        => 'nullable|boolean',
             'aplica_diezmo'      => 'nullable|boolean',
             'sueldo_base'        => 'required|numeric|min:0',
-            'tipo_contrato'      => 'required|in:indeterminado,plazo_fijo,suplencia,practicas',
-            // Un plazo fijo, una suplencia o unas prácticas SIN fecha de término no
-            // son un contrato: hay que saber cuándo acaba. El indeterminado es el
-            // único que no lleva fin, y ahí el campo sobra.
-            'fecha_fin_contrato' => 'required_unless:tipo_contrato,indeterminado|nullable|date|after:fecha_ingreso',
+            'tipo_contrato_id'   => 'required|uuid|exists:tipos_contrato,id',
+            // Un tipo de contrato que exija fecha de fin (todos salvo el que
+            // el catálogo marque `requiere_fecha_fin=false` — hoy, Plazo
+            // indeterminado) sin ella no es un contrato: hay que saber
+            // cuándo acaba.
+            'fecha_fin_contrato' => ['nullable', 'date', 'after:fecha_ingreso', new FechaFinSegunTipoContrato()],
             'forma_pago'         => 'nullable|in:banco,efectivo,otro,honorarios',
             'sede_id'            => 'required|uuid|exists:sedes,id',
             'email'              => 'required|email|unique:users,email',
@@ -77,7 +79,7 @@ final class AltaDeEmpleado
     {
         $reglas = self::reglas();
 
-        foreach (['cargo_id', 'area_id', 'sede_id', 'telefono', 'direccion', 'sueldo_base', 'tipo_contrato', 'email', 'fecha_nacimiento'] as $campo) {
+        foreach (['cargo_id', 'area_id', 'sede_id', 'telefono', 'direccion', 'sueldo_base', 'tipo_contrato_id', 'email', 'fecha_nacimiento'] as $campo) {
             $reglas[$campo] = preg_replace('/^required\|/', 'nullable|', $reglas[$campo]);
         }
         $reglas['fecha_fin_contrato'] = 'nullable|date';
@@ -175,14 +177,15 @@ final class AltaDeEmpleado
             // fecha de ingreso. Las renovaciones se hacen luego desde Contratos, que
             // al crear una nueva cierra la anterior. Un cesado sin tipo de contrato
             // se queda sin él: inventarle uno sería peor que no tenerlo.
-            if (! empty($datos['tipo_contrato'])) {
+            if (! empty($datos['tipo_contrato_id'])) {
+                $tipoContrato = \App\Models\TipoContrato::find($datos['tipo_contrato_id']);
                 Contrato::create([
-                    'empleado_id'   => $empleado->id,
-                    'tipo_contrato' => $datos['tipo_contrato'],
-                    'fecha_inicio'  => $datos['fecha_ingreso'],
-                    'fecha_fin'     => match (true) {
+                    'empleado_id'      => $empleado->id,
+                    'tipo_contrato_id' => $datos['tipo_contrato_id'],
+                    'fecha_inicio'     => $datos['fecha_ingreso'],
+                    'fecha_fin'        => match (true) {
                         $cesado                                     => $datos['fecha_cese'],
-                        $datos['tipo_contrato'] === 'indeterminado' => null,
+                        ! ($tipoContrato?->requiere_fecha_fin ?? true) => null,
                         default                                     => $datos['fecha_fin_contrato'] ?? null,
                     },
                     'estado'        => $cesado ? 'finalizado' : 'vigente',

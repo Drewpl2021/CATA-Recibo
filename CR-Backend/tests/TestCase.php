@@ -4,11 +4,18 @@ namespace Tests;
 
 use App\Models\Empleado;
 use App\Models\Rol;
+use App\Models\TipoContrato;
 use App\Models\User;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
+    /** El id del tipo de contrato por su nombre, tal como lo siembra la migración del catálogo. */
+    protected function idTipoContrato(string $nombre): string
+    {
+        return TipoContrato::where('nombre', $nombre)->value('id');
+    }
+
     /** Un empleado mínimo y válido; `$datos` pisa lo que haga falta. */
     protected function crearEmpleado(array $datos = []): Empleado
     {
@@ -20,7 +27,7 @@ abstract class TestCase extends BaseTestCase
             'estado'            => 'activo',
             'sistema_pensiones' => 'ONP',
             'sueldo_base'       => 3000,
-            'tipo_contrato'     => 'indeterminado',
+            'tipo_contrato_id'  => $this->idTipoContrato('Plazo indeterminado'),
             'tiene_hijos'       => 0,
         ], $datos));
     }

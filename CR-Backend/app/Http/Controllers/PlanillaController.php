@@ -16,7 +16,7 @@ class PlanillaController extends Controller
     use ExportaExcel;
     /**
      * GET /planilla?empleado_id=&empleado_ids=&mes=&anio=&periodo_id=&corrida_id=&sin_corrida=&page=&size=&search=
-     *     &sede_id=&area_id=&cargo_id=&tipo_contrato=&estado_empleado=
+     *     &sede_id=&area_id=&cargo_id=&tipo_contrato_id=&estado_empleado=
      *
      * Es la tabla que más crece del sistema: un registro por trabajador y
      * por mes. Los filtros van sobre el índice planilla_empleado_periodo_idx
@@ -63,7 +63,7 @@ class PlanillaController extends Controller
             'sede_id'         => 'nullable|uuid|exists:sedes,id',
             'area_id'         => 'nullable|uuid|exists:areas,id',
             'cargo_id'        => 'nullable|uuid|exists:cargos,id',
-            'tipo_contrato'   => 'nullable|in:indeterminado,plazo_fijo,suplencia,practicas',
+            'tipo_contrato_id' => 'nullable|uuid|exists:tipos_contrato,id',
             'estado_empleado' => 'nullable|in:activo,inactivo',
         ]);
 
@@ -113,8 +113,8 @@ class PlanillaController extends Controller
             'sede_id'       => $request->input('sede_id'),
             'area_id'       => $request->input('area_id'),
             'cargo_id'      => $request->input('cargo_id'),
-            'tipo_contrato' => $request->input('tipo_contrato'),
-            'estado'        => $request->input('estado_empleado'),
+            'tipo_contrato_id' => $request->input('tipo_contrato_id'),
+            'estado'           => $request->input('estado_empleado'),
         ], fn ($valor) => $valor !== null && $valor !== '');
 
         if ($delTrabajador) {
@@ -151,7 +151,7 @@ class PlanillaController extends Controller
     public function exportar(Request $request)
     {
         $query = $this->consultaFiltrada($request, [
-            'empleado.area', 'empleado.cargo', 'empleado.sede',
+            'empleado.area', 'empleado.cargo', 'empleado.sede', 'empleado.tipoContrato',
             'corrida',
             'payrollDetalles.paymentConcept',
         ]);
@@ -223,7 +223,7 @@ class PlanillaController extends Controller
                 $e->sede->nombre ?? '',
                 $e && $e->fecha_ingreso ? \Carbon\Carbon::parse($e->fecha_ingreso)->format('d/m/Y') : '',
                 $e->estado ?? '',
-                $e->tipo_contrato ?? '',
+                $e->tipoContrato?->nombre ?? '',
                 // Vacío no es un olvido: es "no aporta a ninguna pensión".
                 $e && $e->sistema_pensiones ? $e->sistema_pensiones : 'No aporta',
                 $e->afp ?? '',
@@ -325,7 +325,7 @@ class PlanillaController extends Controller
             'Sede'                 => $this->nombreDeCatalogo(\App\Models\Sede::class, $request->input('sede_id')),
             'Área'                 => $this->nombreDeCatalogo(\App\Models\Area::class, $request->input('area_id')),
             'Cargo'                => $this->nombreDeCatalogo(\App\Models\Cargo::class, $request->input('cargo_id')),
-            'Tipo de contrato'     => $request->input('tipo_contrato'),
+            'Tipo de contrato'     => $this->nombreDeCatalogo(\App\Models\TipoContrato::class, $request->input('tipo_contrato_id')),
             'Estado del trabajador' => match ($request->input('estado_empleado')) {
                 'activo'   => 'Solo activos',
                 'inactivo' => 'Solo cesados',

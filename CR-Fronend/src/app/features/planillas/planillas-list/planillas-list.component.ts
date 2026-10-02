@@ -11,6 +11,7 @@ import {
   AreaService,
   CargoService,
   SedeService,
+  TipoContratoService,
   ToastService,
   ConfirmService,
   PlanillaCorridaService,
@@ -24,6 +25,7 @@ import {
   Periodo,
   Planilla,
   Sede,
+  TipoContrato,
   PlanillaCorrida,
   PaymentConcept,
   AplicacionConceptoGrupo,
@@ -79,6 +81,7 @@ export class PlanillasListComponent implements OnInit {
   private areaService = inject(AreaService);
   private cargoService = inject(CargoService);
   private sedeService = inject(SedeService);
+  private tipoContratoService = inject(TipoContratoService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
 
@@ -134,6 +137,7 @@ export class PlanillasListComponent implements OnInit {
   areas: Area[] = [];
   cargos: Cargo[] = [];
   sedes: Sede[] = [];
+  tiposContrato: TipoContrato[] = [];
 
   /**
    * Mes y año dejaron de ser campos sueltos: ahora se elige un mes DE LOS
@@ -329,13 +333,15 @@ export class PlanillasListComponent implements OnInit {
       areas: this.areaService.getAll(),
       cargos: this.cargoService.getAll(),
       sedes: this.sedeService.getAll(),
+      tiposContrato: this.tipoContratoService.getAll(),
     }).subscribe({
-      next: ({ empleados, periodos, areas, cargos, sedes }) => {
+      next: ({ empleados, periodos, areas, cargos, sedes, tiposContrato }) => {
         if (empleados.success) this.empleados = empleados.data;
         if (periodos.success) this.periodos = periodos.data;
         if (areas.success) this.areas = areas.data;
         if (cargos.success) this.cargos = cargos.data;
         if (sedes.success) this.sedes = sedes.data;
+        if (tiposContrato.success) this.tiposContrato = tiposContrato.data;
         this.ponerOpcionesDeFiltro();
       },
       error: () => {
@@ -387,15 +393,7 @@ export class PlanillasListComponent implements OnInit {
     { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'cargo_id', etiqueta: 'Cargo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
-    {
-      clave: 'tipo_contrato', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos',
-      opciones: [
-        { valor: 'indeterminado', etiqueta: 'Indeterminado' },
-        { valor: 'plazo_fijo', etiqueta: 'Plazo fijo' },
-        { valor: 'suplencia', etiqueta: 'Suplencia' },
-        { valor: 'practicas', etiqueta: 'Prácticas' },
-      ],
-    },
+    { clave: 'tipo_contrato_id', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos', opciones: [] },
     {
       // "estado_empleado" y no "estado": la planilla tiene el suyo propio y
       // el backend necesita saber de cuál de los dos se le habla.
@@ -420,6 +418,7 @@ export class PlanillasListComponent implements OnInit {
     poner('sede_id', this.sedes);
     poner('area_id', this.areas);
     poner('cargo_id', this.cargos);
+    poner('tipo_contrato_id', this.tiposContrato);
   }
 
   /** ¿Hay algún filtro puesto? Con todo vacío no hay nada que limpiar. */

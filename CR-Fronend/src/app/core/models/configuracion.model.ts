@@ -23,6 +23,23 @@ export interface AreaPayload {
   cargo_ids?: string[];
 }
 
+export interface TipoContrato {
+  id: string;
+  nombre: string;
+  /** Si no, el indeterminado: no pide fecha de fin. */
+  requiere_fecha_fin: boolean;
+  /** Solo el indeterminado hoy: puede pedir vacaciones reales (los demás cobran Vacaciones Truncas al terminar). */
+  permite_vacaciones: boolean;
+  estado?: EstadoCatalogo;
+}
+
+export interface TipoContratoPayload {
+  nombre: string;
+  requiere_fecha_fin?: boolean;
+  permite_vacaciones?: boolean;
+  estado?: EstadoCatalogo;
+}
+
 export interface Cargo {
   id: string;
   nombre: string;

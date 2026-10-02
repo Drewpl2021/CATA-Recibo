@@ -12,11 +12,12 @@ import {
   RolService,
   ToastService,
   ContratoService,
+  TipoContratoService,
   DocumentoService,
   FotoPerfilService,
 } from '../../../core/services';
 import { Area, Cargo, Documento, Empleado, EmpleadoPayload, Rol, Sede,
-  Contrato, Usuario,
+  Contrato, TipoContrato, Usuario,
 } from '../../../core/models';
 import { mensajeErrorApi } from '../../../core/utils';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -69,6 +70,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
   private sedeService = inject(SedeService);
   private rolService = inject(RolService);
   private contratoService = inject(ContratoService);
+  private tipoContratoService = inject(TipoContratoService);
   private documentoService = inject(DocumentoService);
   private fotoPerfilService = inject(FotoPerfilService);
   private toastService = inject(ToastService);
@@ -82,6 +84,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
   cargos: Cargo[] = [];
   sedes: Sede[] = [];
   roles: Rol[] = [];
+  tiposContrato: TipoContrato[] = [];
 
   /** La hoja de vida que ya tiene en su expediente, si la tiene. */
   hojaDeVida: Documento | null = null;
@@ -123,7 +126,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     cargo_id: ['', [Validators.required]],
     sede_id: ['', [Validators.required]],
     fecha_ingreso: ['', [Validators.required, noFutura]],
-    tipo_contrato: ['', [Validators.required]],
+    tipo_contrato_id: ['', [Validators.required]],
     // Obligatoria salvo en contrato indeterminado; el validador se pone y se
     // quita en ajustarFechaFinContrato(), según el tipo elegido.
     fecha_fin_contrato: [''],
@@ -196,7 +199,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     this.form.get('sistema_pensiones')!.valueChanges.subscribe(() => this.ajustarValidacionAfp());
     this.ajustarValidacionAfp();
     // Y la fecha de término solo se exige si el contrato lleva plazo.
-    this.form.get('tipo_contrato')!.valueChanges.subscribe(() => this.ajustarFechaFinContrato());
+    this.form.get('tipo_contrato_id')!.valueChanges.subscribe(() => this.ajustarFechaFinContrato());
     this.ajustarFechaFinContrato();
 
     this.cargarCatalogos();
@@ -222,8 +225,8 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
         const vigente = this.contratos.find((c) => c.estado === 'vigente');
         if (!vigente) return;
 
-        if (vigente.tipo_contrato) {
-          this.form.patchValue({ tipo_contrato: vigente.tipo_contrato });
+        if (vigente.tipo_contrato_id) {
+          this.form.patchValue({ tipo_contrato_id: vigente.tipo_contrato_id });
         }
 
         // Sin esto, al editar a alguien con contrato a plazo el campo de la
@@ -247,7 +250,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       },
       {
         id: 'laborales', titulo: 'Laborales', icono: 'badge',
-        campos: ['area_id', 'cargo_id', 'sede_id', 'fecha_ingreso', 'tipo_contrato', 'fecha_fin_contrato', 'sueldo_base'],
+        campos: ['area_id', 'cargo_id', 'sede_id', 'fecha_ingreso', 'tipo_contrato_id', 'fecha_fin_contrato', 'sueldo_base'],
       },
       {
         id: 'planilla', titulo: 'Planilla', icono: 'money',
@@ -291,10 +294,11 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
    * una fecha suelta de cuando el usuario probó otro tipo.
    */
   private ajustarFechaFinContrato(): void {
-    const tipo = this.form.get('tipo_contrato')?.value;
+    const tipoId = this.form.get('tipo_contrato_id')?.value;
+    const tipo = this.tiposContrato.find((t) => t.id === tipoId);
     const fechaFin = this.form.get('fecha_fin_contrato')!;
 
-    if (tipo && tipo !== 'indeterminado') {
+    if (tipo?.requiere_fecha_fin) {
       fechaFin.setValidators([Validators.required]);
     } else {
       fechaFin.clearValidators();
@@ -330,12 +334,14 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       cargos: this.cargoService.getAll(),
       sedes: this.sedeService.getAll(),
       roles: this.rolService.getAll(),
+      tiposContrato: this.tipoContratoService.getAll(),
     }).subscribe({
-      next: ({ areas, cargos, sedes, roles }) => {
+      next: ({ areas, cargos, sedes, roles, tiposContrato }) => {
         if (areas.success) this.areas = areas.data;
         if (cargos.success) this.cargos = cargos.data;
         if (sedes.success) this.sedes = sedes.data;
         if (roles.success) this.roles = roles.data;
+        if (tiposContrato.success) this.tiposContrato = tiposContrato.data;
 
         if (this.empleadoId) {
           this.cargarEmpleado(this.empleadoId);
@@ -378,7 +384,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       cargo_id: e.cargo_id ?? '',
       sede_id: e.sede_id ?? '',
       fecha_ingreso: (e.fecha_ingreso ?? '').slice(0, 10),
-      tipo_contrato: e.tipo_contrato ?? '',
+      tipo_contrato_id: e.tipo_contrato_id ?? '',
       sueldo_base: e.sueldo_base ?? null,
       estado: e.estado ?? 'activo',
       sistema_pensiones: e.sistema_pensiones ?? '',
@@ -501,10 +507,12 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       cargo_id: v.cargo_id!,
       sede_id: v.sede_id!,
       fecha_ingreso: v.fecha_ingreso!,
-      tipo_contrato: oNull(v.tipo_contrato),
-      // Solo viaja cuando el contrato tiene plazo; en el indeterminado el
-      // backend la ignora y guarda null.
-      fecha_fin_contrato: v.tipo_contrato === 'indeterminado' ? null : oNull(v.fecha_fin_contrato),
+      tipo_contrato_id: oNull(v.tipo_contrato_id),
+      // Solo viaja cuando el tipo elegido pide fecha de fin; si no la pide
+      // (hoy, Plazo indeterminado), el backend la ignora y guarda null.
+      fecha_fin_contrato: this.tiposContrato.find((t) => t.id === v.tipo_contrato_id)?.requiere_fecha_fin
+        ? oNull(v.fecha_fin_contrato)
+        : null,
       sueldo_base: v.sueldo_base === null ? null : Number(v.sueldo_base),
       estado: v.estado ?? 'activo',
       // Vacío es "no aporta a ninguna pensión", y así tiene que llegar al

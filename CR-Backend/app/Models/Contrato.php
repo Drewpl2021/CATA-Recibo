@@ -13,7 +13,7 @@ class Contrato extends Model
 
     protected $fillable = [
         'empleado_id',
-        'tipo_contrato',
+        'tipo_contrato_id',
         'fecha_inicio',
         'fecha_fin',
         'estado',
@@ -33,6 +33,11 @@ class Contrato extends Model
     public function empleado()
     {
         return $this->belongsTo(Empleado::class);
+    }
+
+    public function tipoContrato()
+    {
+        return $this->belongsTo(TipoContrato::class);
     }
 
     public function documentos()

@@ -1,12 +1,10 @@
 import { Opcion } from './models';
 
-/** Empleado.tipo_contrato — EmpleadoController@store/update (backend) */
-export const TIPO_CONTRATO_OPCIONES: readonly Opcion[] = [
-  { label: 'Indeterminado', value: 'indeterminado' },
-  { label: 'Plazo fijo', value: 'plazo_fijo' },
-  { label: 'Suplencia', value: 'suplencia' },
-  { label: 'Prácticas', value: 'practicas' },
-];
+/**
+ * Empleado.tipo_contrato_id ya NO es una lista fija acá: es el catálogo
+ * administrable de Tipos de Contrato (TipoContratoService), que cada
+ * pantalla carga en vivo. Ver tipos-contrato-list para su CRUD.
+ */
 
 /** Empleado.forma_pago */
 export const FORMA_PAGO_OPCIONES: readonly Opcion[] = [

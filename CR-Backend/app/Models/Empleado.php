@@ -15,7 +15,7 @@ class Empleado extends Model
     protected array $camposAuditables = [
         'dni', 'nombre', 'apellido', 'sueldo_base', 'sistema_pensiones', 'afp', 'tipo_comision_afp', 'cuspp',
         'entidad_financiera', 'numero_cuenta', 'cci', 'forma_pago', 'tiene_hijos', 'aplica_diezmo',
-        'cargo_id', 'area_id', 'sede_id', 'estado', 'tipo_contrato',
+        'cargo_id', 'area_id', 'sede_id', 'estado', 'tipo_contrato_id',
     ];
 
     protected string $entidadAuditada = 'empleado';
@@ -49,7 +49,7 @@ class Empleado extends Model
     'tiene_hijos',
     'aplica_diezmo',
     'sueldo_base',
-    'tipo_contrato',
+    'tipo_contrato_id',
     'forma_pago',
     'sede_id',
     'nivel_estudios',
@@ -132,7 +132,13 @@ class Empleado extends Model
             ->latest('fecha_inicio');
     }
 
-    public function tipoContratoVigente(): ?string
+    /** La copia suelta de la ficha: solo manda para quien nunca tuvo un Contrato. */
+    public function tipoContrato()
+    {
+        return $this->belongsTo(TipoContrato::class);
+    }
+
+    public function tipoContratoVigente(): ?TipoContrato
     {
         // La caída a `tipo_contrato` es solo para quien NUNCA tuvo un
         // Contrato (fichas de antes del módulo). Si ya tiene alguno —aunque
@@ -141,18 +147,19 @@ class Empleado extends Model
         // contratoVigente() ya cierra, porque esa copia nunca se borra sola
         // al eliminar el contrato vigente.
         if ($this->contratos()->exists()) {
-            return $this->contratoVigente()->first()?->tipo_contrato;
+            return $this->contratoVigente()->first()?->tipoContrato;
         }
 
-        return $this->tipo_contrato;
+        return $this->tipoContrato;
     }
 
     /**
      * Quién puede PEDIR vacaciones.
      *
-     * Solo el contrato indeterminado. A los otros tres —plazo fijo,
-     * suplencia y prácticas— el colegio no les da descanso a cuenta: se les
-     * paga con el concepto "Vacaciones Truncas" al terminar el contrato.
+     * Solo lo que el catálogo marque `permite_vacaciones` (hoy, únicamente
+     * "Plazo indeterminado"). A los demás —Contratado, Contrato/Parcial,
+     * Prácticas— el colegio no les da descanso a cuenta: se les paga con el
+     * concepto "Vacaciones Truncas" al terminar el contrato.
      *
      * Está acá y no en el controlador a propósito: la regla la consultan el
      * alta de la solicitud, la aprobación y la pantalla de saldo, y con tres
@@ -161,7 +168,7 @@ class Empleado extends Model
      */
     public function puedeTomarVacaciones(): bool
     {
-        return $this->tipoContratoVigente() === 'indeterminado';
+        return (bool) $this->tipoContratoVigente()?->permite_vacaciones;
     }
 
     public function identidadFirma()

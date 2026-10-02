@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 
 import { forkJoin } from 'rxjs';
 
-import { AreaService, CargoService, EmpleadoService, SedeService, ToastService, ConfirmService } from '../../../core/services';
+import { AreaService, CargoService, EmpleadoService, SedeService, TipoContratoService, ToastService, ConfirmService } from '../../../core/services';
 import { Empleado } from '../../../core/models';
 import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
@@ -35,6 +35,7 @@ export class EmpleadosListComponent implements OnInit {
   private areaService = inject(AreaService);
   private cargoService = inject(CargoService);
   private sedeService = inject(SedeService);
+  private tipoContratoService = inject(TipoContratoService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
 
@@ -75,15 +76,7 @@ export class EmpleadosListComponent implements OnInit {
     { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'cargo_id', etiqueta: 'Cargo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
-    {
-      clave: 'tipo_contrato', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos',
-      opciones: [
-        { valor: 'indeterminado', etiqueta: 'Indeterminado' },
-        { valor: 'plazo_fijo', etiqueta: 'Plazo fijo' },
-        { valor: 'suplencia', etiqueta: 'Suplencia' },
-        { valor: 'practicas', etiqueta: 'Prácticas' },
-      ],
-    },
+    { clave: 'tipo_contrato_id', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos', opciones: [] },
     {
       clave: 'sistema_pensiones', etiqueta: 'Pensión', tipo: 'opciones', vacio: 'Todas',
       opciones: [
@@ -131,11 +124,13 @@ export class EmpleadosListComponent implements OnInit {
       sedes: this.sedeService.getAll(),
       areas: this.areaService.getAll(),
       cargos: this.cargoService.getAll(),
+      tiposContrato: this.tipoContratoService.getAll(),
     }).subscribe({
-      next: ({ sedes, areas, cargos }) => {
+      next: ({ sedes, areas, cargos, tiposContrato }) => {
         this.ponerOpciones('sede_id', sedes.data);
         this.ponerOpciones('area_id', areas.data);
         this.ponerOpciones('cargo_id', cargos.data);
+        this.ponerOpciones('tipo_contrato_id', tiposContrato.data);
       },
       // Si falla, los otros filtros siguen sirviendo: no es motivo para
       // dejar el panel inservible.

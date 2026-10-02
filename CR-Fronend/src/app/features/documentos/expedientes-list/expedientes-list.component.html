@@ -54,7 +54,7 @@
 
   <ng-template appCelda="contrato_vigente" let-f>
     <ng-container *ngIf="f.contrato_vigente as contrato; else sinContrato">
-      <strong>{{ tipoContrato(contrato.tipo_contrato) }}</strong>
+      <strong>{{ contrato.tipo_contrato?.nombre }}</strong>
       <div class="form-ayuda" [class.texto-aviso]="porVencer(contrato)">{{ vigencia(contrato) }}</div>
     </ng-container>
     <ng-template #sinContrato>

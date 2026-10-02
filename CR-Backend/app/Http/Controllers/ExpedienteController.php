@@ -42,7 +42,7 @@ class ExpedienteController extends Controller
         $filtro = $request->input('filtro');
 
         $query = $this->personal($filtro === 'de_baja')
-            ->with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'contratoVigente'])
+            ->with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'contratoVigente.tipoContrato'])
             ->withCount([
                 'documentos as documentos_count'   => fn (Builder $q) => $q->where('estado_registro', 'activo'),
                 'documentos as boletas_por_firmar' => fn (Builder $q) => $this->boletasPorFirmar($q),
@@ -83,7 +83,7 @@ class ExpedienteController extends Controller
 
         $activos   = $documentos->where('estado_registro', 'activo');
         $hojas     = $documentos->where('tipo', ExpedienteDigital::HOJA_DE_VIDA);
-        $contratos = $empleado->contratos()->orderByDesc('fecha_inicio')->get();
+        $contratos = $empleado->contratos()->with('tipoContrato')->orderByDesc('fecha_inicio')->get();
         $idsContratos = $contratos->pluck('id')->all();
 
         // Del mes más reciente al más antiguo, por el periodo que representa y

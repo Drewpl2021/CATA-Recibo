@@ -38,11 +38,11 @@ class MiPerfilController extends Controller
         $empleado = $usuario->empleado_id
             ? Empleado::select([
                 'id', 'dni', 'nombre', 'apellido', 'telefono', 'direccion',
-                'fecha_nacimiento', 'fecha_ingreso', 'tipo_contrato', 'estado',
+                'fecha_nacimiento', 'fecha_ingreso', 'tipo_contrato_id', 'estado',
                 'nivel_estudios', 'especialidad', 'institucion_estudios',
                 'area_id', 'cargo_id', 'sede_id',
             ])
-                ->with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre'])
+                ->with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'tipoContrato:id,nombre'])
                 ->find($usuario->empleado_id)
             : null;
 

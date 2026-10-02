@@ -12,11 +12,12 @@ import {
   AreaService,
   CargoService,
   SedeService,
+  TipoContratoService,
   ToastService,
   ConfirmService,
 } from '../../../core/services';
 import {
-  Area, Cargo, Empleado, Periodo, PlanillaCorrida, PlanillaCorridaPayload, ResultadoVariosMeses, Sede,
+  Area, Cargo, Empleado, Periodo, PlanillaCorrida, PlanillaCorridaPayload, ResultadoVariosMeses, Sede, TipoContrato,
 } from '../../../core/models';
 import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { nombreMes } from '../../../shared/constants';
@@ -64,6 +65,7 @@ export class CorridasListComponent implements OnInit {
   private areaService = inject(AreaService);
   private cargoService = inject(CargoService);
   private sedeService = inject(SedeService);
+  private tipoContratoService = inject(TipoContratoService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
 
@@ -91,6 +93,7 @@ export class CorridasListComponent implements OnInit {
   areas: Area[] = [];
   cargos: Cargo[] = [];
   sedes: Sede[] = [];
+  tiposContrato: TipoContrato[] = [];
 
   // Modal de crear / editar
   modalVisible = false;
@@ -162,13 +165,15 @@ export class CorridasListComponent implements OnInit {
       areas: this.areaService.getAll(),
       cargos: this.cargoService.getAll(),
       sedes: this.sedeService.getAll(),
+      tiposContrato: this.tipoContratoService.getAll(),
     }).subscribe({
-      next: ({ periodos, empleados, areas, cargos, sedes }) => {
+      next: ({ periodos, empleados, areas, cargos, sedes, tiposContrato }) => {
         if (periodos.success) this.periodos = periodos.data;
         if (empleados.success) this.empleados = empleados.data;
         if (areas.success) this.areas = areas.data;
         if (cargos.success) this.cargos = cargos.data;
         if (sedes.success) this.sedes = sedes.data;
+        if (tiposContrato.success) this.tiposContrato = tiposContrato.data;
         this.ponerOpcionesDeFiltro();
 
         // Si a alguien le dio tiempo de abrir el modal antes de que llegaran
@@ -197,15 +202,7 @@ export class CorridasListComponent implements OnInit {
     { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'cargo_id', etiqueta: 'Cargo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
-    {
-      clave: 'tipo_contrato', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos',
-      opciones: [
-        { valor: 'indeterminado', etiqueta: 'Indeterminado' },
-        { valor: 'plazo_fijo', etiqueta: 'Plazo fijo' },
-        { valor: 'suplencia', etiqueta: 'Suplencia' },
-        { valor: 'practicas', etiqueta: 'Prácticas' },
-      ],
-    },
+    { clave: 'tipo_contrato_id', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos', opciones: [] },
     {
       clave: 'estado_empleado', etiqueta: 'Estado del trabajador', tipo: 'opciones', vacio: 'Todos',
       opciones: [
@@ -228,6 +225,7 @@ export class CorridasListComponent implements OnInit {
     poner('sede_id', this.sedes);
     poner('area_id', this.areas);
     poner('cargo_id', this.cargos);
+    poner('tipo_contrato_id', this.tiposContrato);
   }
 
   get empleadosActivos(): Empleado[] {

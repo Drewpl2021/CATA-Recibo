@@ -49,7 +49,7 @@
       <span>Hoja de vida</span>
     </div>
     <div class="resumen-masivo__dato">
-      <strong>{{ contratoVigente ? tipoContrato(contratoVigente.tipo_contrato) : 'Ninguno' }}</strong>
+      <strong>{{ contratoVigente?.tipo_contrato?.nombre ?? 'Ninguno' }}</strong>
       <span>Contrato vigente</span>
     </div>
     <div class="resumen-masivo__dato">
@@ -148,7 +148,7 @@
       <article class="contrato-tarjeta" *ngFor="let c of e.contratos" [class.contrato-tarjeta--vigente]="c.estado === 'vigente'">
         <header class="contrato-tarjeta__cabecera">
           <div>
-            <strong>{{ tipoContrato(c.tipo_contrato) }}</strong>
+            <strong>{{ c.tipo_contrato?.nombre }}</strong>
             <span class="form-ayuda">{{ vigencia(c) }}</span>
           </div>
           <div class="contrato-tarjeta__estado">

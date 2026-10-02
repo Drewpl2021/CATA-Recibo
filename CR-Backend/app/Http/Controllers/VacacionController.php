@@ -40,7 +40,7 @@ class VacacionController extends Controller
      * Lo que se le dice a quien no puede pedirlas. Está una sola vez porque
      * lo devuelven tres sitios: el saldo, el alta y la aprobación.
      */
-    const MOTIVO_SIN_DERECHO = 'Con contrato de %s no se piden vacaciones: '
+    const MOTIVO_SIN_DERECHO = 'Con tipo de contrato "%s" no se piden vacaciones: '
         . 'al terminar el contrato se le pagan con el concepto "Vacaciones Truncas".';
 
     /**
@@ -360,7 +360,7 @@ class VacacionController extends Controller
             // lleva ganados, y de ahí sale también lo que se le pague como
             // truncas. Lo que cambia con el contrato es si puede PEDIRLOS,
             // y eso va aparte en vez de falsear la cuenta con ceros.
-            'tipoContrato'    => $tipoContrato,
+            'tipoContrato'    => $tipoContrato?->nombre,
             'puedeSolicitar'  => (bool) $empleado?->puedeTomarVacaciones(),
             'motivo'          => $empleado && ! $empleado->puedeTomarVacaciones()
                 ? $this->motivoSinDerecho($tipoContrato)
@@ -368,17 +368,10 @@ class VacacionController extends Controller
         ];
     }
 
-    /** "plazo fijo", "prácticas"… como se lee, no como se guarda. */
-    private function motivoSinDerecho(?string $tipoContrato): string
+    /** Ya viene legible del catálogo (p. ej. "Contratado"): no hay nada que traducir. */
+    private function motivoSinDerecho(?\App\Models\TipoContrato $tipoContrato): string
     {
-        $legible = match ($tipoContrato) {
-            'plazo_fijo' => 'plazo fijo',
-            'suplencia'  => 'suplencia',
-            'practicas'  => 'prácticas',
-            default      => 'este tipo',
-        };
-
-        return sprintf(self::MOTIVO_SIN_DERECHO, $legible);
+        return sprintf(self::MOTIVO_SIN_DERECHO, $tipoContrato?->nombre ?? 'sin definir');
     }
 
     /**

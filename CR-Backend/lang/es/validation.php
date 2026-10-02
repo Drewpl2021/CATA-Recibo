@@ -164,7 +164,7 @@ return [
         'periodo_id' => 'periodo',
         'payment_concept_id' => 'concepto de pago',
         'sueldo_base' => 'sueldo base',
-        'tipo_contrato' => 'tipo de contrato',
+        'tipo_contrato_id' => 'tipo de contrato',
         'forma_pago' => 'forma de pago',
         'sistema_pensiones' => 'sistema de pensiones',
         'afp' => 'AFP',

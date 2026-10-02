@@ -18,7 +18,7 @@ class ContratoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Contrato::with('empleado', 'documentos');
+        $query = Contrato::with('empleado', 'documentos', 'tipoContrato');
 
         if ($request->filled('empleado_id')) {
             $query->where('empleado_id', $request->empleado_id);
@@ -35,7 +35,7 @@ class ContratoController extends Controller
         return $this->responderListado(
             $request,
             $query->orderBy('fecha_inicio', 'desc'),
-            ['empleado.nombre', 'empleado.apellido', 'empleado.dni', 'tipo_contrato'],
+            ['empleado.nombre', 'empleado.apellido', 'empleado.dni', 'tipoContrato.nombre'],
             // Las cifras de la cabecera: se cuentan sobre todo lo que pasa el
             // filtro, no sobre la página que se está viendo.
             fn (Builder $filtrada) => $this->conteoPorEstado($filtrada, 'estado', ['vigentes' => 'vigente', 'finalizados' => 'finalizado'])
@@ -45,11 +45,11 @@ class ContratoController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'empleado_id'   => 'required|uuid|exists:empleados,id',
-            'tipo_contrato' => 'required|in:indeterminado,plazo_fijo,suplencia,practicas',
-            'fecha_inicio'  => 'required|date',
-            'fecha_fin'     => 'nullable|date|after_or_equal:fecha_inicio',
-            'observaciones' => 'nullable|string',
+            'empleado_id'      => 'required|uuid|exists:empleados,id',
+            'tipo_contrato_id' => 'required|uuid|exists:tipos_contrato,id',
+            'fecha_inicio'     => 'required|date',
+            'fecha_fin'        => ['nullable', 'date', 'after_or_equal:fecha_inicio', new \App\Rules\FechaFinSegunTipoContrato()],
+            'observaciones'    => 'nullable|string',
         ]);
 
         $contratoVigente = Contrato::where('empleado_id', $request->empleado_id)
@@ -68,24 +68,24 @@ class ContratoController extends Controller
         }
 
         $contrato = Contrato::create([
-            'empleado_id'   => $request->empleado_id,
-            'tipo_contrato' => $request->tipo_contrato,
-            'fecha_inicio'  => $request->fecha_inicio,
-            'fecha_fin'     => $request->fecha_fin,
-            'observaciones' => $request->observaciones,
-            'estado'        => 'vigente',
+            'empleado_id'      => $request->empleado_id,
+            'tipo_contrato_id' => $request->tipo_contrato_id,
+            'fecha_inicio'     => $request->fecha_inicio,
+            'fecha_fin'        => $request->fecha_fin,
+            'observaciones'    => $request->observaciones,
+            'estado'           => 'vigente',
         ]);
 
         $this->ponerAlDiaLaFicha($request->empleado_id);
 
-        $contrato->load('empleado', 'documentos');
+        $contrato->load('empleado', 'documentos', 'tipoContrato');
 
         return response()->json(['success' => true, 'data' => $contrato], 201);
     }
 
     public function show(string $id)
     {
-        $contrato = Contrato::with('empleado', 'documentos')->findOrFail($id);
+        $contrato = Contrato::with('empleado', 'documentos', 'tipoContrato')->findOrFail($id);
         return response()->json(['success' => true, 'data' => $contrato]);
     }
 
@@ -94,18 +94,18 @@ class ContratoController extends Controller
         $contrato = Contrato::findOrFail($id);
 
         $datos = $request->validate([
-            'tipo_contrato' => 'sometimes|in:indeterminado,plazo_fijo,suplencia,practicas',
-            'fecha_inicio'  => 'sometimes|date',
-            'fecha_fin'     => 'nullable|date|after_or_equal:fecha_inicio',
-            'estado'        => 'sometimes|in:vigente,finalizado,renovado',
-            'motivo_fin'    => 'nullable|in:renuncia,despido,fin_contrato_plazo,fin_año_escolar,no_renovacion,jubilacion,otro',
-            'observaciones' => 'nullable|string',
+            'tipo_contrato_id' => 'sometimes|uuid|exists:tipos_contrato,id',
+            'fecha_inicio'     => 'sometimes|date',
+            'fecha_fin'        => ['nullable', 'date', 'after_or_equal:fecha_inicio', new \App\Rules\FechaFinSegunTipoContrato()],
+            'estado'           => 'sometimes|in:vigente,finalizado,renovado',
+            'motivo_fin'       => 'nullable|in:renuncia,despido,fin_contrato_plazo,fin_año_escolar,no_renovacion,jubilacion,otro',
+            'observaciones'    => 'nullable|string',
         ]);
 
         $contrato->update($datos);
         $this->ponerAlDiaLaFicha($contrato->empleado_id);
 
-        $contrato->load('empleado', 'documentos');
+        $contrato->load('empleado', 'documentos', 'tipoContrato');
 
         return response()->json(['success' => true, 'data' => $contrato]);
     }
@@ -144,7 +144,7 @@ class ContratoController extends Controller
         // Sin contrato vigente no se toca nada: la ficha conserva lo último
         // que se supo de él, que es mejor que dejarla en blanco.
         if ($vigente) {
-            Empleado::where('id', $empleadoId)->update(['tipo_contrato' => $vigente->tipo_contrato]);
+            Empleado::where('id', $empleadoId)->update(['tipo_contrato_id' => $vigente->tipo_contrato_id]);
         }
     }
 }
