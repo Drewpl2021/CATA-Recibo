@@ -75,12 +75,19 @@
   font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.3px;
+  // Hay una regla global ".modal-header h2 { color: var(--text) }" en
+  // styles.scss, para los modales sin fondo de marca. Un color puesto
+  // directo en el elemento le gana siempre a lo heredado del padre —así
+  // el título se leía oscuro sobre el degradado oscuro, casi invisible—,
+  // así que hay que fijarlo acá explícito, con el mismo token que usan
+  // los demás modales de marca (Mi perfil, Avisos).
+  color: var(--marca-text);
 }
 
 .modal-subtitle {
   display: block;
   font-size: 13px;
-  opacity: 0.8;
+  color: var(--marca-text-soft);
   margin-top: 2px;
 }
 
