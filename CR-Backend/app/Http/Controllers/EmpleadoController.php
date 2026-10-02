@@ -161,7 +161,7 @@ class EmpleadoController extends Controller
         }
 
         $tipo    = $request->input('tipo_contrato_id');
-        $fin     = $request->input('fecha_fin_contrato') ?: null;
+        $fin     = $request->input('fecha_cese') ?: null;
         $llevaFin = (bool) \App\Models\TipoContrato::find($tipo)?->requiere_fecha_fin;
         $vigente = $empleado->contratoVigente()->first();
 
@@ -351,7 +351,7 @@ class EmpleadoController extends Controller
         $cabecera = [
             'N°', 'DNI', 'Apellidos', 'Nombres', 'Fecha de nacimiento',
             'Teléfono', 'Dirección', 'Correo', 'Rol',
-            'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Fecha de cese', 'Tipo de contrato', 'Fin de contrato',
+            'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Fecha de cese', 'Tipo de contrato',
             'Sueldo base', 'Sistema de pensión', 'AFP', 'Tipo de comisión AFP', 'CUSPP',
             'Forma de pago', 'Banco', 'N° de cuenta', 'CCI',
             'Tiene hijos', 'Diezmo', 'Nivel de estudios', 'Especialidad', 'Institución donde estudió',
@@ -380,10 +380,8 @@ class EmpleadoController extends Controller
                 $e->estado === 'inactivo' ? 'Cesado' : 'Activo',
                 $fecha($e->fecha_cese),
                 // Del contrato vigente, no de la copia suelta de la ficha, que
-                // envejece. Y con su fin: sin él, un plazo fijo descargado no se
-                // podía volver a importar.
+                // envejece.
                 $e->contratoVigente?->tipoContrato?->nombre ?? $e->tipoContrato?->nombre ?? '',
-                $fecha($e->contratoVigente?->fecha_fin),
                 // Número de verdad, no texto: así se puede sumar y filtrar sin
                 // convertir nada, y la importación lo vuelve a leer igual.
                 $e->sueldo_base !== null ? round((float) $e->sueldo_base, 2) : null,
@@ -495,9 +493,6 @@ class EmpleadoController extends Controller
             'aplica_diezmo'      => 'nullable|boolean',
             'sueldo_base'        => 'nullable|numeric|min:0',
             'tipo_contrato_id'   => 'nullable|uuid|exists:tipos_contrato,id',
-            // No es columna del empleado: es la fecha de término de su
-            // contrato, y se usa para moverlo cuando acá se cambia el tipo.
-            'fecha_fin_contrato' => 'nullable|date',
             'forma_pago'         => 'nullable|in:banco,efectivo,otro,honorarios',
             'sede_id'            => 'nullable|uuid|exists:sedes,id',
             // Email del usuario vinculado: se acepta editar aquí mismo porque no todos
@@ -521,8 +516,13 @@ class EmpleadoController extends Controller
 
         $this->limpiarDatosDeAfp($request);
 
-        // Quien vuelve a estar activo ya no tiene fecha de cese.
-        if ($request->input('estado') === 'activo') {
+        // Quien se REACTIVA (estaba inactivo y pasa a activo) ya no tiene
+        // fecha de cese: la que tenía era de cuando se fue. No se limpia en
+        // cualquier guardado con estado=activo, porque ahora esta misma
+        // fecha también sirve para el fin programado de un contrato vigente
+        // —y el formulario manda "activo" en cada edición de alguien que ya
+        // lo está.
+        if ($empleado->estado === 'inactivo' && $request->input('estado') === 'activo') {
             $request->merge(['fecha_cese' => null]);
         }
 
@@ -596,8 +596,16 @@ class EmpleadoController extends Controller
     public function destroy(string $id)
     {
         $empleado = Empleado::findOrFail($id);
-        $empleado->update(['estado' => 'inactivo', 'fecha_cese' => $empleado->fecha_cese ?? now()->toDateString()]);
+        // Siempre hoy: una fecha de cese que ya tuviera era el fin programado
+        // de su contrato (puede ser futura), no la baja real que se está
+        // haciendo en este momento.
+        $empleado->update(['estado' => 'inactivo', 'fecha_cese' => now()->toDateString()]);
         $empleado->quitarAcceso();
+
+        // Igual que la baja por Excel: el contrato vigente se cierra en la
+        // misma fecha de cese, no se queda "vigente" para siempre.
+        $empleado->contratos()->where('estado', 'vigente')
+            ->update(['estado' => 'finalizado', 'fecha_fin' => $empleado->fecha_cese]);
 
         return response()->json(['success' => true, 'data' => ['message' => 'Empleado desactivado correctamente.']]);
     }

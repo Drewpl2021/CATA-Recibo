@@ -48,7 +48,6 @@ final class ColumnasDeEmpleado
         // Catálogo administrable (pantalla Tipos de Contrato), igual que
         // área/cargo/sede: tiene que EXISTIR, no se inventa desde el Excel.
         'tipo_contrato'                => ['titulo' => 'Tipo de contrato', 'tipo' => 'catalogo', 'alias' => ['tipo de contrato', 'tipo contrato', 'contrato', 'modalidad']],
-        'fecha_fin_contrato'           => ['titulo' => 'Fin de contrato', 'tipo' => 'fecha', 'alias' => ['fin de contrato', 'fecha fin de contrato', 'fecha de fin de contrato', 'fin del contrato', 'vencimiento']],
         'sueldo_base'                  => ['titulo' => 'Sueldo base', 'tipo' => 'monto', 'alias' => ['sueldo base', 'sueldo', 'remuneracion basica', 'haber basico', 'basico']],
         'sistema_pensiones'            => ['titulo' => 'Sistema de pensión', 'tipo' => 'opcion', 'alias' => ['sistema de pension', 'sistema pensionario', 'pension', 'regimen pensionario']],
         'afp'                          => ['titulo' => 'AFP', 'tipo' => 'opcion', 'alias' => ['afp']],
@@ -92,7 +91,7 @@ final class ColumnasDeEmpleado
      * Lo que NO se cambia desde el Excel a quien ya existe: el contrato se
      * renueva desde Contratos, que cierra el anterior y deja historial.
      */
-    public const NO_SE_ACTUALIZAN = ['tipo_contrato', 'fecha_fin_contrato', 'fecha_ingreso'];
+    public const NO_SE_ACTUALIZAN = ['tipo_contrato', 'fecha_ingreso'];
 
     /** Títulos que acompañan a la ficha pero no se importan. */
     private const INFORMATIVAS = ['n', 'no', 'nro', 'numero', 'item', 'edad'];
@@ -152,9 +151,9 @@ final class ColumnasDeEmpleado
      * "Fecha de ingreso" ese mismo texto SÍ sería un error —todos tienen
      * una—, así que esto no se aplica ahí.
      */
-    private const FECHAS_INDETERMINABLES = ['fecha_cese', 'fecha_fin_contrato'];
+    private const FECHAS_INDETERMINABLES = ['fecha_cese'];
 
-    /** Cómo se escribe "no tiene fecha" en esas dos columnas. */
+    /** Cómo se escribe "no tiene fecha" en esa columna. */
     private const SIN_FECHA = [
         'indeterminado', 'indeterminada', 'plazo indeterminado', 'sin fecha',
         'no aplica', 'n/a', 'na', 'ninguna', 'ninguno', 'sigue laborando', 'actualmente laborando',

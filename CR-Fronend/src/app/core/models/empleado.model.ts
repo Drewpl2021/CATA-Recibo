@@ -17,7 +17,7 @@ export interface Empleado {
   telefono?: string | null;
   direccion?: string | null;
   fecha_ingreso: string;
-  /** Cuándo dejó de trabajar; solo si está dado de baja. */
+  /** Cuándo dejó de trabajar, o cuándo termina su contrato actual si sigue activo. */
   fecha_cese?: string | null;
   fecha_nacimiento?: string | null;
   estado: string;
@@ -78,8 +78,11 @@ export interface EmpleadoPayload {
   fecha_nacimiento: string | null;
   sueldo_base: number | null;
   tipo_contrato_id: string | null;
-  /** Fin del primer contrato. Solo se manda si el tipo lleva plazo. */
-  fecha_fin_contrato?: string | null;
+  /**
+   * Fin del primer contrato (solo si el tipo lleva plazo) o cese real si se
+   * está registrando a alguien que ya se fue: es el mismo dato.
+   */
+  fecha_cese?: string | null;
   email: string;
   rol_id: string;
   estado?: string;

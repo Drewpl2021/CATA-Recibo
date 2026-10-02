@@ -139,6 +139,13 @@ class ImportacionEmpleadosController extends Controller
                     $empleado->quitarAcceso();
                     $empleado->contratos()->where('estado', 'vigente')
                         ->update(['estado' => 'finalizado', 'fecha_fin' => $empleado->fecha_cese]);
+                } elseif (array_key_exists('fecha_cese', $campos)) {
+                    // Sigue activo: la fecha que trajo es el fin programado
+                    // de su contrato actual, no una baja real. Se refleja en
+                    // el contrato vigente para que la planilla y el
+                    // expediente la vean igual.
+                    $empleado->contratos()->where('estado', 'vigente')
+                        ->update(['fecha_fin' => $empleado->fecha_cese]);
                 }
                 if ($correo !== null && $empleado->usuario) {
                     $empleado->usuario->update(['email' => $correo]);
@@ -299,7 +306,7 @@ class ImportacionEmpleadosController extends Controller
         // Contratos. Bloquear la carga entera por eso era peor que dejarlo
         // en blanco: la ficha y el contrato igual quedan creados, solo que
         // sin esa fecha hasta que se complete.
-        $reglasAlta['fecha_fin_contrato'] = 'nullable|date|after:fecha_ingreso';
+        $reglasAlta['fecha_cese'] = 'nullable|date|after_or_equal:fecha_ingreso';
         $reglasCambio = $this->comoOpcionales($reglasAlta);
         $reglasCesado = $this->sinConsultas(AltaDeEmpleado::reglasDeCesado());
         $atributos    = ColumnasDeEmpleado::atributos();
@@ -424,16 +431,10 @@ class ImportacionEmpleadosController extends Controller
     {
         // Quien ya se fue se registra solo para guardar sus documentos: pide
         // mucho menos, y entra sin acceso y con el contrato ya cerrado.
+        // La fecha de cese ya no implica por sí sola que está cesado: puede
+        // ser el fin programado del contrato de alguien que sigue activo.
+        // Quien manda es la columna Estado.
         $cesado = ($valores['estado'] ?? 'activo') === 'inactivo';
-
-        // La fecha de cese ya dice que está cesado, aunque la columna
-        // Estado no lo diga (o ni siquiera esté en el Excel): no hace
-        // falta llenar las dos de acuerdo para que cuente.
-        if (! $cesado && array_key_exists('fecha_cese', $valores)) {
-            $cesado = true;
-            $valores['estado'] = 'inactivo';
-            $r['advertencias'][] = $this->aviso($numero, $dni, null, 'Tiene fecha de cese: se registra como Cesado aunque la columna Estado no lo diga.');
-        }
 
         $requeridos = $cesado ? ColumnasDeEmpleado::REQUERIDOS_ALTA_CESADO : ColumnasDeEmpleado::REQUERIDOS_ALTA;
         $faltan = array_values(array_filter($requeridos, fn ($c) => ! array_key_exists($c, $valores)));
@@ -513,27 +514,22 @@ class ImportacionEmpleadosController extends Controller
         }
 
         // Dar de baja por el Excel, sí; volver a activar, no: eso le devuelve
-        // la cuenta a alguien, y se decide mirando su ficha.
+        // la cuenta a alguien, y se decide mirando su ficha. La fecha de
+        // cese ya no implica por sí sola que está cesado —puede ser el fin
+        // programado de un contrato vigente— así que quien manda sobre el
+        // estado es la columna Estado.
         $estadoFinal = $valores['estado'] ?? $existente->estado;
         $cese        = $valores['fecha_cese'] ?? null;
-
-        // La fecha de cese ya dice que está cesado, sin importar qué diga
-        // (o no diga) la columna Estado: no hace falta llenar las dos de
-        // acuerdo. Si alguien ya dado de baja trae una fecha de cese nueva,
-        // esto de paso evita el intento raro de "reactivar y cesar a la
-        // vez" — gana la fecha de cese.
-        if ($cese !== null && $estadoFinal !== 'inactivo') {
-            $estadoFinal = 'inactivo';
-            $valores['estado'] = 'inactivo';
-            $r['advertencias'][] = $this->aviso($numero, $dni, null, 'Tiene fecha de cese: se registra como Cesado aunque la columna Estado no lo diga.');
-        }
 
         $problema = match (true) {
             $existente->estado === 'inactivo' && $estadoFinal === 'activo'
                 => 'Está dado de baja. Para volver a activarlo, hazlo desde su ficha en Empleados.',
             $existente->estado === 'activo' && $estadoFinal === 'inactivo' && $cese === null
                 => 'Para darlo de baja falta la «Fecha de cese».',
-            $cese !== null && $cese > now()->toDateString()
+            // Una fecha futura solo es un problema si de verdad se está
+            // cesando a alguien: si sigue activo, es el fin programado de
+            // su contrato, y ese sí puede ser una fecha que todavía no llega.
+            $estadoFinal === 'inactivo' && $cese !== null && $cese > now()->toDateString()
                 => 'La fecha de cese no puede ser una fecha que todavía no llega.',
             $cese !== null && $cese < Carbon::parse($existente->fecha_ingreso)->toDateString()
                 => 'La fecha de cese es anterior a su fecha de ingreso.',

@@ -85,12 +85,12 @@
 
     <!-- Solo los contratos con plazo llevan fecha de término; el indeterminado no. -->
     <div class="form-group" *ngIf="llevaFechaFin">
-      <label for="fecha_fin_contrato">Fecha de término del contrato *</label>
-      <input type="date" id="fecha_fin_contrato" class="form-control"
-        formControlName="fecha_fin_contrato"
-        [class.is-invalid]="invalido('fecha_fin_contrato')" />
-      <small class="form-error" *ngIf="invalido('fecha_fin_contrato')">{{ error('fecha_fin_contrato') }}</small>
-      <small class="form-ayuda" *ngIf="!invalido('fecha_fin_contrato')">
+      <label for="fecha_cese">Fecha de término del contrato *</label>
+      <input type="date" id="fecha_cese" class="form-control"
+        formControlName="fecha_cese"
+        [class.is-invalid]="invalido('fecha_cese')" />
+      <small class="form-error" *ngIf="invalido('fecha_cese')">{{ error('fecha_cese') }}</small>
+      <small class="form-ayuda" *ngIf="!invalido('fecha_cese')">
         Cuándo acaba este contrato. Al renovarlo se crea uno nuevo y este queda cerrado.
       </small>
     </div>

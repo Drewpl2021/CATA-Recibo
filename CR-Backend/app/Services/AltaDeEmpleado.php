@@ -55,8 +55,9 @@ final class AltaDeEmpleado
             // Un tipo de contrato que exija fecha de fin (todos salvo el que
             // el catálogo marque `requiere_fecha_fin=false` — hoy, Plazo
             // indeterminado) sin ella no es un contrato: hay que saber
-            // cuándo acaba.
-            'fecha_fin_contrato' => ['nullable', 'date', 'after:fecha_ingreso', new FechaFinSegunTipoContrato()],
+            // cuándo acaba. Esta misma fecha es, si la persona llegara a
+            // cesar, su fecha de cese real — no son dos datos distintos.
+            'fecha_cese'         => ['nullable', 'date', 'after:fecha_ingreso', new FechaFinSegunTipoContrato()],
             'forma_pago'         => 'nullable|in:banco,efectivo,otro,honorarios',
             'sede_id'            => 'required|uuid|exists:sedes,id',
             'email'              => 'required|email|unique:users,email',
@@ -82,8 +83,7 @@ final class AltaDeEmpleado
         foreach (['cargo_id', 'area_id', 'sede_id', 'telefono', 'direccion', 'sueldo_base', 'tipo_contrato_id', 'email', 'fecha_nacimiento'] as $campo) {
             $reglas[$campo] = preg_replace('/^required\|/', 'nullable|', $reglas[$campo]);
         }
-        $reglas['fecha_fin_contrato'] = 'nullable|date';
-        $reglas['fecha_cese']         = 'required|date|after_or_equal:fecha_ingreso|before_or_equal:today';
+        $reglas['fecha_cese'] = 'required|date|after_or_equal:fecha_ingreso|before_or_equal:today';
 
         return $reglas;
     }
@@ -146,13 +146,15 @@ final class AltaDeEmpleado
      */
     public static function crear(array $datos): Empleado
     {
-        // Con fecha de cese es alguien que ya se fue: se registra para guardar
-        // sus documentos, pero sin acceso y con el contrato ya cerrado.
-        $cesado = ! empty($datos['fecha_cese']);
+        // Quien manda es la columna Estado, no la fecha de cese: esa misma
+        // fecha también puede ser el fin programado de un contrato de
+        // alguien que sigue activo (p.ej. un Contratado con plazo), así
+        // que su sola presencia ya no basta para decir que alguien se fue.
+        $cesado = ($datos['estado'] ?? 'activo') === 'inactivo';
 
         return DB::transaction(function () use ($datos, $cesado) {
             $empleado = Empleado::create(array_merge(
-                Arr::except($datos, ['email', 'rol_id', 'fecha_fin_contrato']),
+                Arr::except($datos, ['email', 'rol_id']),
                 $cesado ? ['estado' => 'inactivo'] : []
             ));
 
@@ -183,11 +185,9 @@ final class AltaDeEmpleado
                     'empleado_id'      => $empleado->id,
                     'tipo_contrato_id' => $datos['tipo_contrato_id'],
                     'fecha_inicio'     => $datos['fecha_ingreso'],
-                    'fecha_fin'        => match (true) {
-                        $cesado                                     => $datos['fecha_cese'],
-                        ! ($tipoContrato?->requiere_fecha_fin ?? true) => null,
-                        default                                     => $datos['fecha_fin_contrato'] ?? null,
-                    },
+                    'fecha_fin'        => ! ($tipoContrato?->requiere_fecha_fin ?? true)
+                        ? null
+                        : ($datos['fecha_cese'] ?? null),
                     'estado'        => $cesado ? 'finalizado' : 'vigente',
                     'observaciones' => $cesado
                         ? 'Contrato registrado al importar a un trabajador que ya cesó.'

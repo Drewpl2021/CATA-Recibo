@@ -128,8 +128,10 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     fecha_ingreso: ['', [Validators.required, noFutura]],
     tipo_contrato_id: ['', [Validators.required]],
     // Obligatoria salvo en contrato indeterminado; el validador se pone y se
-    // quita en ajustarFechaFinContrato(), según el tipo elegido.
-    fecha_fin_contrato: [''],
+    // quita en ajustarFechaCese(), según el tipo elegido. En el alta (estado
+    // siempre Activo) es el fin programado del contrato; en la edición
+    // también puede ser el cese real si se marca Cesado.
+    fecha_cese: [''],
     sueldo_base: [null as number | null, [Validators.required, Validators.min(0)]],
     estado: ['activo'],
 
@@ -199,8 +201,8 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     this.form.get('sistema_pensiones')!.valueChanges.subscribe(() => this.ajustarValidacionAfp());
     this.ajustarValidacionAfp();
     // Y la fecha de término solo se exige si el contrato lleva plazo.
-    this.form.get('tipo_contrato_id')!.valueChanges.subscribe(() => this.ajustarFechaFinContrato());
-    this.ajustarFechaFinContrato();
+    this.form.get('tipo_contrato_id')!.valueChanges.subscribe(() => this.ajustarFechaCese());
+    this.ajustarFechaCese();
 
     this.cargarCatalogos();
     if (this.empleadoId) this.cargarContratos();
@@ -218,21 +220,16 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
         if (res.success) this.contratos = res.data;
         this.cargandoContratos = false;
 
-        // El tipo y la fecha de término salen de su CONTRATO VIGENTE, que es
-        // el que manda. La ficha guarda una copia del tipo y puede haber
-        // quedado vieja; si el formulario enseñara esa copia, con solo
-        // guardar se le crearía un contrato del tipo equivocado.
+        // El tipo sale de su CONTRATO VIGENTE, que es el que manda. La ficha
+        // guarda una copia del tipo y puede haber quedado vieja; si el
+        // formulario enseñara esa copia, con solo guardar se le crearía un
+        // contrato del tipo equivocado. La fecha de término ya no hace
+        // falta traerla de acá: es `fecha_cese`, un dato propio de la ficha.
         const vigente = this.contratos.find((c) => c.estado === 'vigente');
         if (!vigente) return;
 
         if (vigente.tipo_contrato_id) {
           this.form.patchValue({ tipo_contrato_id: vigente.tipo_contrato_id });
-        }
-
-        // Sin esto, al editar a alguien con contrato a plazo el campo de la
-        // fecha salía vacío y obligatorio a la vez.
-        if (vigente.fecha_fin && !this.form.get('fecha_fin_contrato')!.value) {
-          this.form.patchValue({ fecha_fin_contrato: vigente.fecha_fin.slice(0, 10) });
         }
       },
       error: () => {
@@ -250,7 +247,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       },
       {
         id: 'laborales', titulo: 'Laborales', icono: 'badge',
-        campos: ['area_id', 'cargo_id', 'sede_id', 'fecha_ingreso', 'tipo_contrato_id', 'fecha_fin_contrato', 'sueldo_base'],
+        campos: ['area_id', 'cargo_id', 'sede_id', 'fecha_ingreso', 'tipo_contrato_id', 'fecha_cese', 'sueldo_base'],
       },
       {
         id: 'planilla', titulo: 'Planilla', icono: 'money',
@@ -293,10 +290,10 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
    * En el indeterminado ni se pide ni se manda: se limpia para que no quede
    * una fecha suelta de cuando el usuario probó otro tipo.
    */
-  private ajustarFechaFinContrato(): void {
+  private ajustarFechaCese(): void {
     const tipoId = this.form.get('tipo_contrato_id')?.value;
     const tipo = this.tiposContrato.find((t) => t.id === tipoId);
-    const fechaFin = this.form.get('fecha_fin_contrato')!;
+    const fechaFin = this.form.get('fecha_cese')!;
 
     if (tipo?.requiere_fecha_fin) {
       fechaFin.setValidators([Validators.required]);
@@ -385,6 +382,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       sede_id: e.sede_id ?? '',
       fecha_ingreso: (e.fecha_ingreso ?? '').slice(0, 10),
       tipo_contrato_id: e.tipo_contrato_id ?? '',
+      fecha_cese: (e.fecha_cese ?? '').slice(0, 10),
       sueldo_base: e.sueldo_base ?? null,
       estado: e.estado ?? 'activo',
       sistema_pensiones: e.sistema_pensiones ?? '',
@@ -405,7 +403,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       email: e.usuario?.email ?? '',
     });
     this.ajustarValidacionAfp();
-    this.ajustarFechaFinContrato();
+    this.ajustarFechaCese();
     this.cargarHojaDeVida(e.id);
     this.cargarFoto(e);
   }
@@ -510,8 +508,8 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       tipo_contrato_id: oNull(v.tipo_contrato_id),
       // Solo viaja cuando el tipo elegido pide fecha de fin; si no la pide
       // (hoy, Plazo indeterminado), el backend la ignora y guarda null.
-      fecha_fin_contrato: this.tiposContrato.find((t) => t.id === v.tipo_contrato_id)?.requiere_fecha_fin
-        ? oNull(v.fecha_fin_contrato)
+      fecha_cese: this.tiposContrato.find((t) => t.id === v.tipo_contrato_id)?.requiere_fecha_fin
+        ? oNull(v.fecha_cese)
         : null,
       sueldo_base: v.sueldo_base === null ? null : Number(v.sueldo_base),
       estado: v.estado ?? 'activo',
