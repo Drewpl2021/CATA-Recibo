@@ -50,10 +50,12 @@ class MiBoletaController extends Controller
             ->count();
         $numero_boleta = 'BOL-' . $anio . '-' . str_pad($correlativo, 4, '0', STR_PAD_LEFT);
 
-        // Base afecta a AFP/ONP/ESSALUD = sueldo_base + asignación familiar
-        // (misma regla que BoletaController — confirmado contra boleta física)
+        // Base afecta a AFP/ONP/ESSALUD/Diezmo = sueldo_base + asignación
+        // familiar + Bonificación por Cargo + Vacaciones Truncas, si la
+        // planilla ya las tiene (misma regla que BoletaController —
+        // confirmado contra el PLAME real)
         $asignacionFamiliar = $this->asignacionFamiliarDeLaPlanilla($planilla);
-        $baseAfecta         = (float) $planilla->sueldo_base + $asignacionFamiliar;
+        $baseAfecta         = (float) $planilla->sueldo_base + $asignacionFamiliar + $this->otrosIngresosAfectosDeLaPlanilla($planilla);
 
         $pension            = $this->calcularDescuentoPension($empleado, $baseAfecta);
         // La gratificación es una línea de la planilla (misma regla que

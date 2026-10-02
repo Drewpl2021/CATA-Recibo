@@ -76,11 +76,12 @@ class BoletaController extends Controller
 
         $archivo = "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf";
 
-        // Base afecta a AFP/ONP/ESSALUD = sueldo_base + asignación familiar
-        // (confirmado contra boleta física — la gratificación NO entra aquí,
-        // está exonerada por Ley 29351/30334)
+        // Base afecta a AFP/ONP/ESSALUD/Diezmo = sueldo_base + asignación
+        // familiar + Bonificación por Cargo + Vacaciones Truncas, si la
+        // planilla ya las tiene (confirmado contra el PLAME real — la
+        // gratificación NO entra aquí, está exonerada por Ley 29351/30334)
         $asignacionFamiliar = $this->asignacionFamiliarDeLaPlanilla($planilla);
-        $baseAfecta         = (float) $planilla->sueldo_base + $asignacionFamiliar;
+        $baseAfecta         = (float) $planilla->sueldo_base + $asignacionFamiliar + $this->otrosIngresosAfectosDeLaPlanilla($planilla);
 
         $pension       = $this->calcularDescuentoPension($empleado, $baseAfecta);
         // La gratificación no se calcula acá: en julio y diciembre es una línea

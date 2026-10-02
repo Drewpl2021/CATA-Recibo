@@ -191,6 +191,29 @@ class RecalcularPlanillaTest extends TestCase
         $this->assertEqualsWithDelta(29.48, (float) $linea->monto_calculado, 0.01);
     }
 
+    public function test_bonificacion_por_cargo_suma_a_la_base_de_onp_essalud_y_diezmo(): void
+    {
+        // Confirmado contra el PLAME real (hoja PLANILLA, columnas O+P+Q+R):
+        // la Bonificación por Cargo entra a la misma base que el sueldo y
+        // la Asignación Familiar para ONP, AFP, EsSalud Y Diezmo.
+        [$empleado, $planilla] = $this->planillaDeSeptiembre(800);
+        $empleado->update(['sistema_pensiones' => 'ONP', 'aplica_diezmo' => true]);
+        $this->crearConceptoDiezmo();
+        $cargo = \App\Models\PaymentConcept::create(['nombre' => \App\Support\ConceptosDePago::BONIFICACION_CARGO, 'tipo' => 'bonificacion']);
+        \App\Models\PayrollDetalle::create(['planilla_id' => $planilla->id, 'payment_concept_id' => $cargo->id, 'monto_calculado' => 100]);
+
+        $this->generarConceptosDePrueba($planilla, $empleado);
+
+        // Base = 181.82 (sueldo prorrateado) + 100 (bonificación por cargo) = 281.82.
+        $onp    = $planilla->payrollDetalles()->whereHas('paymentConcept', fn ($q) => $q->where('nombre', ConceptosDePago::ONP))->first();
+        $essalud = $planilla->payrollDetalles()->whereHas('paymentConcept', fn ($q) => $q->where('nombre', ConceptosDePago::ESSALUD))->first();
+        $diezmo = $planilla->payrollDetalles()->whereHas('paymentConcept', fn ($q) => $q->where('nombre', ConceptosDePago::DIEZMO))->first();
+
+        $this->assertEqualsWithDelta(36.64, (float) $onp->monto_calculado, 0.01, '281.82 × 13%');
+        $this->assertEqualsWithDelta(25.36, (float) $essalud->monto_calculado, 0.01, '281.82 × 9%');
+        $this->assertEqualsWithDelta(28.18, (float) $diezmo->monto_calculado, 0.01, '281.82 × 10%');
+    }
+
     public function test_comision_mixta_no_se_crea_en_la_planilla(): void
     {
         [$empleado, $planilla] = $this->planillaDeSeptiembre(800);

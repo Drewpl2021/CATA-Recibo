@@ -128,6 +128,28 @@ trait CalculaConceptosPlanilla
             ->sum('monto_calculado');
     }
 
+    /**
+     * Lo que ya tenga la planilla de Bonificación por Cargo y de Vacaciones
+     * Truncas también suma a la base de AFP/ONP/EsSalud y Diezmo — igual
+     * que la Asignación Familiar, y por la misma razón: ninguna de las dos
+     * sale de una fórmula del motor, así que solo se puede leer de la línea
+     * que ya exista en la planilla (o 0, si todavía no la agregaron).
+     *
+     * Confirmado contra el PLAME real: columnas O+P+Q+R de la hoja
+     * PLANILLA son exactamente Sueldo + Bonificación por Cargo +
+     * Asignación Familiar + Vacaciones Truncas, y esa es la base que usan
+     * sus fórmulas de ONP, AFP, EsSalud Y Diezmo, las cuatro por igual.
+     */
+    protected function otrosIngresosAfectosDeLaPlanilla($planilla): float
+    {
+        return (float) $planilla->payrollDetalles()
+            ->whereHas('paymentConcept', fn ($q) => $q->whereIn('nombre', [
+                \App\Support\ConceptosDePago::BONIFICACION_CARGO,
+                \App\Support\ConceptosDePago::VACACIONES_TRUNCAS,
+            ]))
+            ->sum('monto_calculado');
+    }
+
     private float $bonificacionExtraordinariaEssalud = 9.00;
 
     protected function calcularGratificacion($empleado, $sueldoBase, $mes, $anio): array
@@ -444,7 +466,9 @@ trait CalculaConceptosPlanilla
     {
         $sueldoBase         = (float) $planilla->sueldo_base;
         $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
-        $baseAfecta         = $sueldoBase + $asignacionFamiliar;
+        // + Bonificación por Cargo y Vacaciones Truncas si ya las tiene la
+        // planilla (ver el comentario largo en otrosIngresosAfectosDeLaPlanilla).
+        $baseAfecta = $sueldoBase + $asignacionFamiliar + $this->otrosIngresosAfectosDeLaPlanilla($planilla);
 
         /*
          * La Asignación Familiar, como línea de verdad.
@@ -551,10 +575,10 @@ trait CalculaConceptosPlanilla
                     continue;
                 }
 
-                // Va sobre sueldo + Asignación Familiar, igual que el PLAME
-                // real del colegio (ahí la fórmula resta CTS, Gratificación
-                // y Movilidad de la base — ninguna de esas entra en un mes
-                // normal, así que en la práctica queda sueldo + asignación).
+                // Va sobre $baseAfecta completa —sueldo + Asignación +
+                // Bonificación por Cargo + Vacaciones Truncas—, igual que
+                // el PLAME real: su fórmula es (Remuneración Bruta - CTS
+                // - Gratificación - Movilidad), que es exactamente eso.
                 $this->crearDetalleAutomatico($planilla, $concepto->nombre, $baseAfecta * ((float) $concepto->valor / 100));
                 continue;
             }

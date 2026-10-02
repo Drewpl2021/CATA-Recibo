@@ -36,6 +36,18 @@ final class ConceptosDePago
     public const ASIGNACION_FAMILIAR = 'Asignación Familiar';
 
     /**
+     * Es el mismo dato que la hoja PLANILLA del PLAME llama "Bonificación
+     * por Función" (columna P) — la boleta física del colegio la imprime
+     * como "Bonificación por Cargo" (hoja BOLPAGO, VLOOKUP a esa misma
+     * columna), así que el nombre de acá es el de la boleta, no el de la
+     * hoja interna. El código la necesita nombrar porque, igual que la
+     * Asignación Familiar, suma a la base de AFP/ONP/EsSalud y Diezmo
+     * (confirmado: columnas O+P+Q+R de PLANILLA = Sueldo+esto+Asignación
+     * +Vacaciones Truncas, la misma base que usan las cuatro).
+     */
+    public const BONIFICACION_CARGO = 'Bonificación por Cargo';
+
+    /**
      * Va `aplica_a_todos=true` al 10% del sueldo en el catálogo (ver
      * PaymentConceptSeeder): a diferencia de los demás descuentos fijos,
      * este SÍ tiene una excepción por persona —`aplica_diezmo` en su
@@ -59,9 +71,11 @@ final class ConceptosDePago
      * La vía de plazo fijo, suplencia y prácticas: ellos no piden descanso,
      * se les paga esto al terminar el contrato. El monto es manual (un
      * doceavo del sueldo por mes trabajado, que RR.HH. calcula aparte), pero
-     * el NOMBRE sí lo necesita el código: es la única forma de impedir que
-     * se le aplique a alguien con contrato indeterminado, que cobra sus
-     * vacaciones de verdad y no debería cobrar además esto.
+     * el NOMBRE sí lo necesita el código por dos razones: es la única forma
+     * de impedir que se le aplique a alguien con contrato indeterminado (que
+     * cobra sus vacaciones de verdad), y porque en el PLAME real también
+     * suma a la base de AFP/ONP/EsSalud y Diezmo, igual que la Asignación
+     * Familiar y la Bonificación por Cargo.
      */
     public const VACACIONES_TRUNCAS = 'Vacaciones Truncas';
 
