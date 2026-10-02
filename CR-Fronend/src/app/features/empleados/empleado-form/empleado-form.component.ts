@@ -114,7 +114,8 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
 
   form = this.fb.group({
     // ── Personales ──
-    dni: ['', [Validators.required, Validators.pattern(/^[0-9]{8}$/)]],
+    // 8 cifras es el DNI de siempre; 9 es un Carné de Extranjería.
+    dni: ['', [Validators.required, Validators.pattern(/^[0-9]{8,9}$/)]],
     nombre: ['', [Validators.required, Validators.maxLength(100)]],
     apellido: ['', [Validators.required, Validators.maxLength(100)]],
     fecha_nacimiento: ['', [Validators.required, noFutura]],

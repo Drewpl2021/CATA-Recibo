@@ -471,7 +471,7 @@ class EmpleadoController extends Controller
         $usuario  = $empleado->usuario;
 
         $request->validate([
-            'dni'                => 'sometimes|string|regex:/^[0-9]{8}$/|unique:empleados,dni,'.$id,
+            'dni'                => 'sometimes|string|regex:/^[0-9]{8,9}$/|unique:empleados,dni,'.$id,
             'nombre'             => 'sometimes|string|max:100',
             'apellido'           => 'sometimes|string|max:100',
             'cargo_id'           => 'sometimes|uuid|exists:cargos,id',

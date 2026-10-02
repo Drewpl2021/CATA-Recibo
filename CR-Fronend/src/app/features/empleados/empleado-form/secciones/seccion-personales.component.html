@@ -9,7 +9,7 @@
            menos erratas en el nombre que se va a imprimir en las boletas. -->
       <div class="campo-con-accion">
         <input type="text" id="dni" class="form-control" formControlName="dni"
-          inputmode="numeric" maxlength="8" placeholder="12345678"
+          inputmode="numeric" maxlength="9" placeholder="12345678"
           (input)="alEscribirDni()"
           (keydown.enter)="$event.preventDefault(); buscarPorDni()"
           [class.is-invalid]="invalido('dni')" />

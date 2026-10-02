@@ -332,8 +332,8 @@ class ImportacionEmpleadosController extends Controller
             }
 
             $clave = collect($dni['claves'])->first(fn ($c) => $existentes->has($c)) ?? $dni['claves'][count($dni['claves']) - 1];
-            if (! preg_match('/^[0-9]{8}$/', $clave)) {
-                $r['errores'][] = $this->aviso($numero, $dni['texto'], $titulos['dni'], "«{$dni['texto']}» no es un DNI: son 8 cifras.");
+            if (! preg_match('/^[0-9]{8,9}$/', $clave)) {
+                $r['errores'][] = $this->aviso($numero, $dni['texto'], $titulos['dni'], "«{$dni['texto']}» no es un DNI ni un Carné de Extranjería: son 8 o 9 cifras.");
                 continue;
             }
             if (isset($vistosDni[$clave])) {

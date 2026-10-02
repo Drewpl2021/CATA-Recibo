@@ -26,7 +26,10 @@ final class AltaDeEmpleado
     public static function reglas(): array
     {
         return [
-            'dni'                => 'required|string|regex:/^[0-9]{8}$/|unique:empleados',
+            // 8 cifras es el DNI de siempre; 9 es un Carné de Extranjería
+            // (el padrón de RENIEC solo tiene los de 8, pero un extranjero
+            // contratado es una persona real que igual hay que poder registrar).
+            'dni'                => 'required|string|regex:/^[0-9]{8,9}$/|unique:empleados',
             'nombre'             => 'required|string|max:100',
             'apellido'           => 'required|string|max:100',
             'cargo_id'           => 'required|uuid|exists:cargos,id',
