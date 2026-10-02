@@ -266,7 +266,15 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
 
   /** Al editar, el backend ignora `rol_id` y el correo pasa a ser opcional. */
   private ajustarValidacionSegunModo(): void {
-    if (this.esNuevo) return;
+    if (this.esNuevo) {
+      // Un alta siempre entra activo. La única forma de registrar a alguien
+      // ya cesado es el Excel (Fecha de cese + Estado juntos): este formulario
+      // no tiene esa fecha, así que dejar el desplegable abierto permitía
+      // crear un "Cesado" sin fecha de cese, una ficha a medio llenar que
+      // ni la baja real deja (eso se hace aparte, desde Empleados).
+      this.form.get('estado')!.disable();
+      return;
+    }
 
     const rol = this.form.get('rol_id')!;
     rol.clearValidators();

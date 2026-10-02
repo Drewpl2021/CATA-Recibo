@@ -108,9 +108,15 @@
 
     <div class="form-group">
       <label for="estado">Estado</label>
-      <select id="estado" class="form-control" formControlName="estado">
+      <select id="estado" class="form-control" formControlName="estado"
+        [style.background]="esNuevo ? 'var(--surface-alt)' : null"
+        [style.color]="esNuevo ? 'var(--text-muted)' : null"
+        [style.fontStyle]="esNuevo ? 'italic' : null">
         <option *ngFor="let e of estados" [value]="e.value">{{ e.label }}</option>
       </select>
+      <small class="form-ayuda" *ngIf="esNuevo">
+        Todo alta entra activa. Para registrar a alguien que ya cesó, se hace desde el Excel de importar empleados.
+      </small>
     </div>
   </div>
 </div>
