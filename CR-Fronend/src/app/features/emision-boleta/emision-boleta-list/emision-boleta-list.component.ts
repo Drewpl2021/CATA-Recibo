@@ -138,9 +138,11 @@ export class EmisionBoletaListComponent implements OnInit {
       // mismo: la boleta es el papel que sale después, y decir que la de
       // alguien está "sin armar" cuando nadie le armó su planilla hacía
       // creer que el sistema ya le había hecho una.
-      campo: 'id', header: 'Planilla del mes', tipo: 'badge', ancho: '15%',
-      formatear: (_v, e) => (this.empleadosEditados.has(e.id) ? 'Armada' : 'Le falta'),
-      badgeSeveridad: (_v, e) => (this.empleadosEditados.has(e.id) ? 'success' : 'warning'),
+      // Si la boleta de este mes ya se emitió. Decir "Armada" repetía lo que
+      // ya dice la columna Planilla: sin planilla no hay boleta que emitir.
+      campo: 'id', header: 'Estado', tipo: 'badge', ancho: '15%',
+      formatear: (_v, e) => (this.empleadosConBoletaEmitida.has(e.id) ? 'Emitida' : 'No emitida'),
+      badgeSeveridad: (_v, e) => (this.empleadosConBoletaEmitida.has(e.id) ? 'success' : 'warning'),
     },
   ];
 
@@ -171,7 +173,7 @@ export class EmisionBoletaListComponent implements OnInit {
 
   accionesFila: AccionPersonalizada<Empleado>[] = [
     {
-      id: 'editar', titulo: 'Revisar y editar los conceptos de su boleta', icono: 'money', etiqueta: 'Editar',
+      id: 'editar', titulo: 'Revisar y editar los conceptos de su boleta', icono: 'edit', etiqueta: 'Editar',
       visible: (e) => !this.empleadosConBoletaEmitida.has(e.id),
     },
     {
