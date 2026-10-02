@@ -203,6 +203,15 @@
             <div class="fin-fila"><span class="fin-concepto">Otros Conceptos / Subsidio</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.otrosConceptosSubsidio" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Compensación por Tiempo de Serv.</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.compensacionTiempoServicios" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Bonificación</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonificacion" min="0" step="0.01"></div>
+
+            <!-- Conceptos agregados desde Planillas/Importar Conceptos, sin
+                 campo fijo acá: de solo lectura, se editan desde donde se
+                 agregaron. -->
+            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraIngreso"
+              appPista="Agregado desde Planillas: se edita ahí, no acá">
+              <span class="fin-concepto">{{ c.nombre }}</span>
+              <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
+            </div>
           </div>
 
           <div class="fin-col fin-col-descuentos">
@@ -219,10 +228,21 @@
             <div class="fin-fila"><span class="fin-concepto">Descuento Otros Conceptos</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoOtros" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Desc. Pago Escolaridad Mensual</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoEscolaridad" min="0" step="0.01"></div>
 
+            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraDescuento"
+              appPista="Agregado desde Planillas: se edita ahí, no acá">
+              <span class="fin-concepto">{{ c.nombre }}</span>
+              <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
+            </div>
+
             <!-- ADELANTO -->
             <div class="fin-fila adelanto-row">
               <span class="fin-concepto adelanto-label">ADELANTO</span>
               <input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.adelanto" min="0" step="0.01">
+            </div>
+            <div class="fin-fila fin-fila--extra adelanto-row" *ngFor="let c of conceptosExtraAdelanto"
+              appPista="Agregado desde Planillas: se edita ahí, no acá">
+              <span class="fin-concepto adelanto-label">{{ c.nombre }}</span>
+              <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
             </div>
           </div>
 
@@ -230,6 +250,11 @@
             <!-- Lo paga el colegio sobre la base afecta: no se escribe a mano. -->
             <div class="fin-fila"><span class="fin-concepto" title="El 9% que aporta el colegio sobre su remuneración afecta">ESSALUD 9%</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.essalud9" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
             <div class="fin-fila"><span class="fin-concepto">SCTR</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sctr" min="0" step="0.01"></div>
+            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraAportacion"
+              appPista="Agregado desde Planillas: se edita ahí, no acá">
+              <span class="fin-concepto">{{ c.nombre }}</span>
+              <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
+            </div>
           </div>
 
           <!-- TOTALES -->

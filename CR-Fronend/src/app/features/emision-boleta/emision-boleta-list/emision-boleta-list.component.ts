@@ -187,6 +187,16 @@ export class EmisionBoletaListComponent implements OnInit {
   formulario!: FormularioBoleta;
   planillaActual: Planilla | null = null;
   private _formularioOriginal: string = '';
+
+  /**
+   * Líneas de la planilla que NO tienen un campo fijo acá —un concepto
+   * nuevo agregado desde Planillas o Importar Conceptos, que esta pantalla
+   * no "conoce" por nombre—. Antes se perdían de vista: la línea seguía
+   * guardada, pero esta pantalla la ignoraba en silencio. Se muestran aparte,
+   * de solo lectura (se editan desde donde se agregaron), para que RR.HH.
+   * vea SIEMPRE todo lo que tiene la planilla, no solo los ~20 de siempre.
+   */
+  conceptosExtra: { nombre: string; monto: number; tipo: string }[] = [];
   /** true: se abrió con la clave, sobre una boleta ya emitida. Sin botón de emitir. */
   modoCorrigiendo = false;
 
@@ -576,6 +586,7 @@ export class EmisionBoletaListComponent implements OnInit {
           this.formulario.descuentoAutorizadoDiezmo = null;
           this.formulario.descuentoEscolaridad = null;
           this.formulario.adelanto = null;
+          this.conceptosExtra = [];
         }
 
         // Recalcular montos dinámicos/previsionales
@@ -651,31 +662,54 @@ export class EmisionBoletaListComponent implements OnInit {
     this.empleadoSeleccionado = null;
     this.planillaActual = null;
     this.modoCorrigiendo = false;
+    this.conceptosExtra = [];
     document.body.style.overflow = '';
+  }
+
+  /** Las líneas de conceptosExtra que le tocan a cada columna de la pantalla. */
+  get conceptosExtraIngreso() {
+    return this.conceptosExtra.filter((c) => c.tipo === 'bonificacion');
+  }
+  get conceptosExtraDescuento() {
+    return this.conceptosExtra.filter((c) => c.tipo === 'descuento');
+  }
+  get conceptosExtraAportacion() {
+    return this.conceptosExtra.filter((c) => c.tipo === 'aportacion');
+  }
+  get conceptosExtraAdelanto() {
+    return this.conceptosExtra.filter((c) => c.tipo === 'adelanto');
+  }
+
+  private sumaExtra(lineas: { monto: number }[]): number {
+    return lineas.reduce((sum, c) => sum + (c.monto || 0), 0);
   }
 
   get totalIngresos(): number {
     const f = this.formulario;
-    return [
+    const fijos = [
       f.remuneracionBasica, f.bonificacionCargo, f.asignacionFamiliar,
       f.vacacionesTruncas, f.gratificacionesFiestas, f.bonifExtraordTemporal,
       f.otrosConceptosSubsidio, f.compensacionTiempoServicios, f.bonificacion
     ].reduce((sum: number, v) => sum + (v ? Number(v) : 0), 0);
+    return fijos + this.sumaExtra(this.conceptosExtraIngreso);
   }
 
   get totalDescuentos(): number {
     const f = this.formulario;
-    return [
+    const fijos = [
       f.onp13, f.sppFondoPensiones, f.sppPrimaSeguro, f.sppComision,
       f.ir5taCategoria, f.descuentoAlimentacion, f.descuentoBazar,
       f.descuentoAutorizadoDiezmo, f.descuentoOtros, f.descuentoEscolaridad,
       f.adelanto
     ].reduce((sum: number, v) => sum + (v ? Number(v) : 0), 0);
+    // El adelanto "extra" también resta del neto, igual que el campo fijo de Adelanto.
+    return fijos + this.sumaExtra(this.conceptosExtraDescuento) + this.sumaExtra(this.conceptosExtraAdelanto);
   }
 
   get totalAportaciones(): number {
-    return [(this.formulario.essalud9), (this.formulario.sctr)]
+    const fijos = [(this.formulario.essalud9), (this.formulario.sctr)]
       .reduce((sum: number, v) => sum + (v ? Number(v) : 0), 0);
+    return fijos + this.sumaExtra(this.conceptosExtraAportacion);
   }
 
   get totalNetoPagar(): number {
@@ -720,14 +754,24 @@ export class EmisionBoletaListComponent implements OnInit {
    * cargada de conceptos.
    */
   private cargarConceptosEnFormulario(planillaId: string): void {
+    this.conceptosExtra = [];
     this.detalleService.paginaDePlanilla(planillaId, 0, 200).subscribe({
       next: (res) => {
         if (!res.success) return;
 
         for (const linea of res.data.content) {
-          const campo = this.CAMPO_POR_CONCEPTO[linea.payment_concept?.nombre ?? ''];
+          const nombre = linea.payment_concept?.nombre ?? '';
+          const campo = this.CAMPO_POR_CONCEPTO[nombre];
           if (campo) {
             (this.formulario[campo] as number | null) = Number(linea.monto_calculado);
+          } else if (linea.payment_concept) {
+            // Un concepto que esta pantalla no tiene como campo fijo: se
+            // muestra aparte, no se pierde.
+            this.conceptosExtra.push({
+              nombre,
+              monto: Number(linea.monto_calculado),
+              tipo: linea.payment_concept.tipo,
+            });
           }
         }
 

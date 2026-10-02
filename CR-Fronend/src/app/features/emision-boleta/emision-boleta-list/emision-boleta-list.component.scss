@@ -285,6 +285,29 @@
   background: var(--info-bg);
 }
 
+// Conceptos agregados desde Planillas/Importar Conceptos, sin campo fijo
+// acá: de solo lectura, con el mismo aire que los campos "Automático" pero
+// con su propio aviso de dónde se editan.
+.fin-fila--extra .fin-concepto {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.fin-fila--extra .fin-concepto::after {
+  content: ' (de Planillas)';
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.fin-fila--extra .fin-input {
+  width: 110px;
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  font-style: italic;
+  cursor: not-allowed;
+  text-align: right;
+}
+
 .adelanto-row {
   background: var(--warning-bg);
   border-top: 1px solid var(--accent);
