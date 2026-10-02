@@ -291,7 +291,15 @@ class ImportacionEmpleadosController extends Controller
             ->mapWithKeys(fn (User $u) => [mb_strtolower($u->email) => $u->empleado_id])->all();
         $cvs = collect($datos['cvs'] ?? [])->map(fn ($d) => LectorDeCeldas::claveDni($d))->unique()->values();
 
-        $reglasAlta   = $this->sinConsultas(AltaDeEmpleado::reglas());
+        $reglasAlta = $this->sinConsultas(AltaDeEmpleado::reglas());
+        // En el alta de UNO solo tiene sentido exigir la fecha de fin del
+        // contrato: ahí RR.HH. la sabe. Importando a varios de una vez no —
+        // muchos ni siquiera la tienen a mano todavía, y es justo el dato
+        // que se termina de poner después, contrato por contrato, en
+        // Contratos. Bloquear la carga entera por eso era peor que dejarlo
+        // en blanco: la ficha y el contrato igual quedan creados, solo que
+        // sin esa fecha hasta que se complete.
+        $reglasAlta['fecha_fin_contrato'] = 'nullable|date|after:fecha_ingreso';
         $reglasCambio = $this->comoOpcionales($reglasAlta);
         $reglasCesado = $this->sinConsultas(AltaDeEmpleado::reglasDeCesado());
         $atributos    = ColumnasDeEmpleado::atributos();
