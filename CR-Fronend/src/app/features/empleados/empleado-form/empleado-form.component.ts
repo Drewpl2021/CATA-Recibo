@@ -133,6 +133,10 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     // ── Planilla ──
     sistema_pensiones: ['ONP'],
     afp: [''],
+    // "Flujo" por defecto: es el único esquema que existe para quien se
+    // afilió de 2013 en adelante. Solo cambia a "Mixta" quien ya está así
+    // en el PLAME real (afiliados de antes del 2013).
+    tipo_comision_afp: ['flujo'],
     cuspp: [''],
     forma_pago: [''],
     entidad_financiera: [''],
@@ -371,6 +375,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       estado: e.estado ?? 'activo',
       sistema_pensiones: e.sistema_pensiones ?? '',
       afp: e.afp ?? '',
+      tipo_comision_afp: e.tipo_comision_afp ?? 'flujo',
       cuspp: e.cuspp ?? '',
       forma_pago: e.forma_pago ?? '',
       entidad_financiera: e.entidad_financiera ?? '',
@@ -499,6 +504,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       // dictar se le descuenta el 13% que no le toca.
       sistema_pensiones: oNull(v.sistema_pensiones),
       afp: oNull(v.afp),
+      tipo_comision_afp: v.sistema_pensiones === 'AFP' ? (v.tipo_comision_afp || 'flujo') : null,
       cuspp: oNull(v.cuspp),
       forma_pago: oNull(v.forma_pago),
       entidad_financiera: oNull(v.entidad_financiera),

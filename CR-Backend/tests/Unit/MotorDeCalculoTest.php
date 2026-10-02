@@ -90,6 +90,24 @@ class MotorDeCalculoTest extends TestCase
         ];
     }
 
+    public function test_comision_mixta_no_descuenta_comision_de_afp(): void
+    {
+        // Afiliado de antes del 2013: la AFP cobra su comisión directo del
+        // fondo acumulado, no de la planilla. Confirmado contra el PLAME
+        // real del colegio (columna "TIPO COMISIÓN"), donde el 81% de los
+        // afiliados a AFP está en este esquema.
+        $e = $this->empleado(['sistema_pensiones' => 'AFP', 'afp' => 'Profuturo', 'tipo_comision_afp' => 'mixta']);
+
+        $r = $this->motor->calcularDescuentoPension($e, 3000);
+
+        $this->assertSame(
+            ['SPP. Fondo Pensiones' => 300.00, 'SPP. Prima de Seguro' => 41.10],
+            array_column($r['detalle'], 'monto', 'concepto'),
+            'sin línea de comisión: Fondo y Prima siguen igual'
+        );
+        $this->assertSame(341.10, $r['total']);
+    }
+
     public function test_sin_sistema_de_pensiones_no_se_descuenta_nada(): void
     {
         $r = $this->motor->calcularDescuentoPension($this->empleado(['sistema_pensiones' => null]), 3000);

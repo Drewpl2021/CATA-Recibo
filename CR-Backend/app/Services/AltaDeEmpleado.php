@@ -36,6 +36,7 @@ final class AltaDeEmpleado
             'estado'             => 'nullable|string|max:20',
             'sistema_pensiones'  => 'nullable|in:AFP,ONP',
             'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo|required_if:sistema_pensiones,AFP',
+            'tipo_comision_afp'  => 'nullable|in:flujo,mixta',
             // 12 caracteres entre letras y números: es como lo entrega la AFP
             // (052281JHPMM4). Antes se exigían 11 cifras, y con eso el sistema
             // rechazaba los CUSPP de su propio personal.
@@ -102,8 +103,9 @@ final class AltaDeEmpleado
     public static function limpiarAfp(array $datos): array
     {
         if (array_key_exists('sistema_pensiones', $datos) && $datos['sistema_pensiones'] !== 'AFP') {
-            $datos['afp']   = null;
-            $datos['cuspp'] = null;
+            $datos['afp']               = null;
+            $datos['cuspp']             = null;
+            $datos['tipo_comision_afp'] = null;
         }
 
         return $datos;

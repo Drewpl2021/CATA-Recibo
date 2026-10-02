@@ -49,6 +49,11 @@ final class ColumnasDeEmpleado
         'sueldo_base'                  => ['titulo' => 'Sueldo base', 'tipo' => 'monto', 'alias' => ['sueldo base', 'sueldo', 'remuneracion basica', 'haber basico', 'basico']],
         'sistema_pensiones'            => ['titulo' => 'Sistema de pensión', 'tipo' => 'opcion', 'alias' => ['sistema de pension', 'sistema pensionario', 'pension', 'regimen pensionario']],
         'afp'                          => ['titulo' => 'AFP', 'tipo' => 'opcion', 'alias' => ['afp']],
+        // Flujo (la normal desde 2013) o Mixta (de antes: la AFP cobra su
+        // comisión directo del fondo, así que no se le descuenta nada de
+        // comisión en planilla). Vacía = Flujo, que es el único esquema
+        // que existe para quien se afilió de 2013 en adelante.
+        'tipo_comision_afp'            => ['titulo' => 'Tipo de comisión AFP', 'tipo' => 'opcion', 'alias' => ['tipo de comision afp', 'tipo comision afp', 'comision afp', 'tipo comision', 'regimen de comision']],
         // Texto y no dígitos: el CUSPP lleva letras (052281JHPMM4).
         'cuspp'                        => ['titulo' => 'CUSPP', 'tipo' => 'texto', 'alias' => ['cuspp']],
         'forma_pago'                   => ['titulo' => 'Forma de pago', 'tipo' => 'opcion', 'alias' => ['forma de pago', 'pago']],
@@ -113,6 +118,10 @@ final class ColumnasDeEmpleado
             'no aporta' => null, 'ninguno' => null, 'sin pension' => null, 'no' => null,
         ],
         'afp' => ['habitat' => 'Habitat', 'integra' => 'Integra', 'prima' => 'Prima', 'profuturo' => 'Profuturo'],
+        'tipo_comision_afp' => [
+            'flujo' => 'flujo', 'por flujo' => 'flujo', 'comision por flujo' => 'flujo',
+            'mixta' => 'mixta', 'mixto' => 'mixta', 'comision mixta' => 'mixta',
+        ],
         'forma_pago' => [
             'banco' => 'banco', 'deposito' => 'banco', 'transferencia' => 'banco', 'efectivo' => 'efectivo',
             'honorarios' => 'honorarios', 'recibo por honorarios' => 'honorarios', 'otro' => 'otro',
@@ -130,6 +139,7 @@ final class ColumnasDeEmpleado
         'tipo_contrato'     => ['indeterminado' => 'Indeterminado', 'plazo_fijo' => 'Plazo fijo', 'suplencia' => 'Suplencia', 'practicas' => 'Prácticas'],
         'sistema_pensiones' => ['AFP' => 'AFP', 'ONP' => 'ONP'],
         'afp'               => ['Habitat' => 'Habitat', 'Integra' => 'Integra', 'Prima' => 'Prima', 'Profuturo' => 'Profuturo'],
+        'tipo_comision_afp' => ['flujo' => 'Flujo', 'mixta' => 'Mixta'],
         'forma_pago'        => ['banco' => 'Banco', 'efectivo' => 'Efectivo', 'honorarios' => 'Recibo por honorarios', 'otro' => 'Otro'],
         'nivel_estudios'    => ['primaria' => 'Primaria', 'secundaria' => 'Secundaria', 'tecnico' => 'Técnico', 'universitario' => 'Universitario', 'maestria' => 'Maestría', 'doctorado' => 'Doctorado'],
     ];
@@ -139,6 +149,7 @@ final class ColumnasDeEmpleado
         'tipo_contrato'     => 'Indeterminado, Plazo fijo, Suplencia o Prácticas',
         'sistema_pensiones' => 'AFP, ONP o No aporta',
         'afp'               => 'Habitat, Integra, Prima o Profuturo',
+        'tipo_comision_afp' => 'Flujo o Mixta',
         'forma_pago'        => 'Banco, Efectivo, Honorarios u Otro',
         'nivel_estudios'    => 'Primaria, Secundaria, Técnico, Universitario, Maestría o Doctorado',
     ];
@@ -280,6 +291,7 @@ final class ColumnasDeEmpleado
             'tipo_contrato'     => array_values(self::LEGIBLE['tipo_contrato']),
             'sistema_pensiones' => [...array_values(self::LEGIBLE['sistema_pensiones']), 'No aporta'],
             'afp'               => array_values(self::LEGIBLE['afp']),
+            'tipo_comision_afp' => array_values(self::LEGIBLE['tipo_comision_afp']),
             'forma_pago'        => array_values(self::LEGIBLE['forma_pago']),
             'tiene_hijos'       => ['Sí', 'No'],
             'aplica_diezmo'     => ['Sí', 'No'],

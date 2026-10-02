@@ -168,6 +168,7 @@ return [
         'forma_pago' => 'forma de pago',
         'sistema_pensiones' => 'sistema de pensiones',
         'afp' => 'AFP',
+        'tipo_comision_afp' => 'tipo de comisión AFP',
         'cuspp' => 'CUSPP',
         'entidad_financiera' => 'entidad financiera',
         'numero_cuenta' => 'número de cuenta',

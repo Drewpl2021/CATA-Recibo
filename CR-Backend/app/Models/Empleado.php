@@ -13,7 +13,7 @@ class Empleado extends Model
      * estado). El teléfono o la dirección no responden a ningún reclamo.
      */
     protected array $camposAuditables = [
-        'dni', 'nombre', 'apellido', 'sueldo_base', 'sistema_pensiones', 'afp', 'cuspp',
+        'dni', 'nombre', 'apellido', 'sueldo_base', 'sistema_pensiones', 'afp', 'tipo_comision_afp', 'cuspp',
         'entidad_financiera', 'numero_cuenta', 'cci', 'forma_pago', 'tiene_hijos', 'aplica_diezmo',
         'cargo_id', 'area_id', 'sede_id', 'estado', 'tipo_contrato',
     ];
@@ -41,6 +41,7 @@ class Empleado extends Model
     'estado',
     'sistema_pensiones',
     'afp',
+    'tipo_comision_afp',
     'cuspp',
     'entidad_financiera',
     'numero_cuenta',

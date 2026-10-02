@@ -352,7 +352,7 @@ class EmpleadoController extends Controller
             'N°', 'DNI', 'Apellidos', 'Nombres', 'Fecha de nacimiento',
             'Teléfono', 'Dirección', 'Correo', 'Rol',
             'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Fecha de cese', 'Tipo de contrato', 'Fin de contrato',
-            'Sueldo base', 'Sistema de pensión', 'AFP', 'CUSPP',
+            'Sueldo base', 'Sistema de pensión', 'AFP', 'Tipo de comisión AFP', 'CUSPP',
             'Forma de pago', 'Banco', 'N° de cuenta', 'CCI',
             'Tiene hijos', 'Diezmo', 'Nivel de estudios', 'Especialidad', 'Institución donde estudió',
             'Contacto de emergencia', 'Teléfono del contacto',
@@ -390,6 +390,7 @@ class EmpleadoController extends Controller
                 // Vacío no es un olvido: es "no aporta a ninguna pensión".
                 $e->sistema_pensiones ?: 'No aporta',
                 $e->afp ?? '',
+                $e->tipo_comision_afp === 'mixta' ? 'Mixta' : 'Flujo',
                 (string) ($e->cuspp ?? ''),
                 $e->forma_pago ?? '',
                 $e->entidad_financiera ?? '',
@@ -484,6 +485,7 @@ class EmpleadoController extends Controller
             'fecha_cese'         => 'nullable|date',
             'sistema_pensiones'  => 'sometimes|nullable|in:AFP,ONP',
             'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo',
+            'tipo_comision_afp'  => 'nullable|in:flujo,mixta',
             // Mismo formato que el alta: 12 caracteres, con letras y números.
             'cuspp'              => 'nullable|regex:/^[A-Za-z0-9]{12}$/|required_if:sistema_pensiones,AFP',
             'entidad_financiera' => 'nullable|string|max:100',
@@ -557,7 +559,7 @@ class EmpleadoController extends Controller
         }
 
         if ($request->input('sistema_pensiones') !== 'AFP') {
-            $request->merge(['afp' => null, 'cuspp' => null]);
+            $request->merge(['afp' => null, 'cuspp' => null, 'tipo_comision_afp' => null]);
         }
     }
 

@@ -173,6 +173,60 @@ class RecalcularPlanillaTest extends TestCase
         $this->assertNull($linea, 'con aplica_diezmo=false no se le crea la línea');
     }
 
+    public function test_diezmo_incluye_la_asignacion_familiar_en_su_base(): void
+    {
+        [$empleado, $planilla] = $this->planillaDeSeptiembre(800);
+        $empleado->update(['sistema_pensiones' => null, 'tiene_hijos' => 1]);
+        // aplica_diezmo no se tocó: sigue en el default de la columna (true),
+        // pero el objeto en memoria no lo sabe hasta refrescarlo.
+        $empleado->refresh();
+        $this->crearConceptoDiezmo();
+        $this->generarConceptosDePrueba($planilla, $empleado);
+
+        $linea = $planilla->payrollDetalles()->whereHas('paymentConcept', fn ($q) => $q->where('nombre', ConceptosDePago::DIEZMO))->first();
+
+        // (181.82 sueldo prorrateado + 113 asignación familiar) × 10% = 29.48.
+        // Confirmado contra el PLAME real: la base del diezmo es sueldo +
+        // asignación, no solo el sueldo.
+        $this->assertEqualsWithDelta(29.48, (float) $linea->monto_calculado, 0.01);
+    }
+
+    public function test_comision_mixta_no_se_crea_en_la_planilla(): void
+    {
+        [$empleado, $planilla] = $this->planillaDeSeptiembre(800);
+        $empleado->update(['sistema_pensiones' => 'AFP', 'afp' => 'Profuturo', 'tipo_comision_afp' => 'mixta']);
+        $this->crearConceptosAfp();
+        $this->generarConceptosDePrueba($planilla, $empleado);
+
+        $comision = $planilla->payrollDetalles()->whereHas('paymentConcept', fn ($q) => $q->where('nombre', ConceptosDePago::SPP_COMISION))->first();
+        $fondo    = $planilla->payrollDetalles()->whereHas('paymentConcept', fn ($q) => $q->where('nombre', ConceptosDePago::SPP_FONDO))->first();
+
+        $this->assertNull($comision, 'Mixta no paga comisión en planilla');
+        $this->assertNotNull($fondo, 'el Fondo de pensión sí se sigue descontando');
+        $this->assertEqualsWithDelta(18.18, (float) $fondo->monto_calculado, 0.01);
+    }
+
+    public function test_comision_flujo_si_se_crea_en_la_planilla(): void
+    {
+        [$empleado, $planilla] = $this->planillaDeSeptiembre(800);
+        $empleado->update(['sistema_pensiones' => 'AFP', 'afp' => 'Profuturo', 'tipo_comision_afp' => 'flujo']);
+        $this->crearConceptosAfp();
+        $this->generarConceptosDePrueba($planilla, $empleado);
+
+        $comision = $planilla->payrollDetalles()->whereHas('paymentConcept', fn ($q) => $q->where('nombre', ConceptosDePago::SPP_COMISION))->first();
+
+        // 181.82 sueldo prorrateado × 1.69% (Profuturo) = 3.07.
+        $this->assertNotNull($comision);
+        $this->assertEqualsWithDelta(3.07, (float) $comision->monto_calculado, 0.01);
+    }
+
+    private function crearConceptosAfp(): void
+    {
+        \App\Models\PaymentConcept::create(['nombre' => ConceptosDePago::SPP_FONDO, 'tipo' => 'descuento']);
+        \App\Models\PaymentConcept::create(['nombre' => ConceptosDePago::SPP_PRIMA_SEGURO, 'tipo' => 'descuento']);
+        \App\Models\PaymentConcept::create(['nombre' => ConceptosDePago::SPP_COMISION, 'tipo' => 'descuento']);
+    }
+
     private function crearConceptoDiezmo(): void
     {
         \App\Models\PaymentConcept::create([

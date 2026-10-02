@@ -35,9 +35,7 @@ trait CalculaConceptosPlanilla
         $sueldoBase = (float) $sueldoBase;
 
         if ($empleado->sistema_pensiones === 'AFP' && $empleado->afp) {
-            $comisionAfp = $this->comisionesAfp[$empleado->afp] ?? 0;
-
-            $aporte   = round($sueldoBase * ($this->aporteObligatorioAfp / 100), 2);
+            $aporte = round($sueldoBase * ($this->aporteObligatorioAfp / 100), 2);
 
             /*
              * Cada nombre con SU monto: la prima es la fija, la comisión la
@@ -54,19 +52,33 @@ trait CalculaConceptosPlanilla
              * dos casos, así que el error no salta en ninguna suma — solo
              * queda mal el nombre en la boleta y en la declaración.
              */
-            $prima    = round($sueldoBase * ($this->primaSeguroAfp / 100), 2);
-            $comision = round($sueldoBase * ($comisionAfp / 100), 2);
+            $prima = round($sueldoBase * ($this->primaSeguroAfp / 100), 2);
+
+            /*
+             * Comisión "Mixta" (afiliado de antes del 2013): la AFP la cobra
+             * directo del fondo acumulado, no de la planilla. El PLAME real
+             * del colegio confirma esto —columna "TIPO COMISIÓN"—, y en
+             * marzo 2026 el 81% de los afiliados a AFP del colegio (57 de
+             * 70) está en este esquema: cobrarles la comisión "por flujo"
+             * igual que al resto era un descuento que no les corresponde.
+             */
+            $comisionAfp = $empleado->tipo_comision_afp === 'mixta' ? 0 : ($this->comisionesAfp[$empleado->afp] ?? 0);
+            $comision    = round($sueldoBase * ($comisionAfp / 100), 2);
+
+            $detalle = [
+                ['concepto' => \App\Support\ConceptosDePago::SPP_FONDO, 'monto' => $aporte],
+                ['concepto' => \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, 'monto' => $prima],
+            ];
+            if ($comision > 0) {
+                $detalle[] = ['concepto' => \App\Support\ConceptosDePago::SPP_COMISION, 'monto' => $comision];
+            }
 
             return [
                 'tipo'    => 'AFP - ' . $empleado->afp,
                 // Las mismas etiquetas que el catálogo, para que la boleta y la
                 // pantalla de Conceptos de Pago no se llamen distinto.
-                'detalle' => [
-                    ['concepto' => \App\Support\ConceptosDePago::SPP_FONDO, 'monto' => $aporte],
-                    ['concepto' => \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, 'monto' => $prima],
-                    ['concepto' => \App\Support\ConceptosDePago::SPP_COMISION, 'monto' => $comision],
-                ],
-                'total' => round($aporte + $prima + $comision, 2),
+                'detalle' => $detalle,
+                'total'   => round($aporte + $prima + $comision, 2),
             ];
         }
 
@@ -497,9 +509,19 @@ trait CalculaConceptosPlanilla
             // Antes estos dos nombres iban cruzados; se enderezaron siguiendo
             // el PLAME del colegio. Ver el comentario largo en
             // calcularDescuentoPension() antes de tocarlo.
-            $comisionAfp = $this->comisionesAfp[$empleado->afp] ?? 0;
+            //
+            // "Mixta" no paga comisión en planilla —la AFP la cobra del
+            // fondo acumulado—, igual que en calcularDescuentoPension().
+            $comisionAfp = $empleado->tipo_comision_afp === 'mixta' ? 0 : ($this->comisionesAfp[$empleado->afp] ?? 0);
             if ($comisionAfp > 0) {
                 $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_COMISION, $baseAfecta * ($comisionAfp / 100), "AFP {$empleado->afp} ({$comisionAfp}%)");
+            } else {
+                // A quien pasa a Mixta después de ya tener la línea creada
+                // (o a quien cambia de AFP), se le quita: una comisión que
+                // ya no corresponde no debe quedar de un mes anterior.
+                \App\Models\PayrollDetalle::where('planilla_id', $planilla->id)
+                    ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', \App\Support\ConceptosDePago::SPP_COMISION))
+                    ->delete();
             }
         } elseif ($empleado->sistema_pensiones === 'ONP') {
             $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::ONP, $baseAfecta * ($this->porcentajeOnp / 100));
@@ -524,7 +546,16 @@ trait CalculaConceptosPlanilla
             // El Diezmo es el único "aplica_a_todos" con un interruptor por
             // persona: vacío o "Sí" en su ficha sigue entrando en la planilla
             // junto con los demás, y solo "No" lo saca de este bloque.
-            if ($concepto->nombre === \App\Support\ConceptosDePago::DIEZMO && ! $empleado->aplica_diezmo) {
+            if ($concepto->nombre === \App\Support\ConceptosDePago::DIEZMO) {
+                if (! $empleado->aplica_diezmo) {
+                    continue;
+                }
+
+                // Va sobre sueldo + Asignación Familiar, igual que el PLAME
+                // real del colegio (ahí la fórmula resta CTS, Gratificación
+                // y Movilidad de la base — ninguna de esas entra en un mes
+                // normal, así que en la práctica queda sueldo + asignación).
+                $this->crearDetalleAutomatico($planilla, $concepto->nombre, $baseAfecta * ((float) $concepto->valor / 100));
                 continue;
             }
 

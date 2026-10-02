@@ -46,6 +46,19 @@
           Código único del afiliado al sistema privado.
         </small>
       </div>
+
+      <div class="form-group">
+        <label for="tipo_comision_afp">Tipo de comisión</label>
+        <select id="tipo_comision_afp" class="form-control" formControlName="tipo_comision_afp">
+          <option value="flujo">Flujo</option>
+          <option value="mixta">Mixta</option>
+        </select>
+        <small class="form-ayuda">
+          "Flujo" es la normal, para quien se afilió de 2013 en adelante. En
+          "Mixta" (afiliados de antes) la AFP cobra su comisión del fondo
+          acumulado, así que no se le descuenta nada de comisión en planilla.
+        </small>
+      </div>
     </ng-container>
 
     <div class="form-group">

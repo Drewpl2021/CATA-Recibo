@@ -37,6 +37,8 @@ export interface Empleado {
   forma_pago?: string | null;
   sistema_pensiones?: string;
   afp?: string | null;
+  /** 'flujo' (normal desde 2013) o 'mixta' (de antes: la AFP cobra su comisión del fondo, no de la planilla). */
+  tipo_comision_afp?: string | null;
   cuspp?: string | null;
   entidad_financiera?: string | null;
   numero_cuenta?: string | null;
@@ -83,6 +85,7 @@ export interface EmpleadoPayload {
   /** null = no aporta a ninguna pensión (jubilado, extranjero con convenio). */
   sistema_pensiones?: string | null;
   afp?: string | null;
+  tipo_comision_afp?: string | null;
   cuspp?: string | null;
   entidad_financiera?: string | null;
   numero_cuenta?: string | null;
