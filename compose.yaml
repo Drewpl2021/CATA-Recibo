@@ -48,9 +48,15 @@ services:
       timeout: 5s
       retries: 20
       start_period: 30s
-    # Sin puertos publicados a propósito: la base solo se ve desde
-    # dentro de la red de Docker. Para entrar desde fuera, un túnel
-    # SSH — no un puerto abierto a internet.
+    # Antes sin puertos publicados a propósito: la base solo se veía desde
+    # dentro de la red de Docker. Atado a 127.0.0.1 nomás —ni al resto de la
+    # red local, ni mucho menos a internet— para poder entrar con Workbench
+    # desde la propia máquina. En un VPS, esto se quita y se entra por
+    # túnel SSH en su lugar.
+    ports:
+      # El 3306 del host ya lo tiene tomado otro MySQL de la máquina
+      # (Laragon/XAMPP); este contenedor se ve por el 3307 en su lugar.
+      - "127.0.0.1:3307:3306"
 
   app:
     build:
