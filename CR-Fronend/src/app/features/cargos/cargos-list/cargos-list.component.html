@@ -26,7 +26,11 @@
   mensajeVacio="Todavía no hay cargos registrados."
   (editarFila)="editar($event)"
   (eliminarFila)="eliminar($event)"
-></app-data-table>
+>
+  <!-- "¿Qué cargos tiene Biblioteca?": se contesta filtrando por área. -->
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
+    (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogoFiltro()"></app-filtros>
+</app-data-table>
 
 <app-form-modal
   [(visible)]="modalVisible"

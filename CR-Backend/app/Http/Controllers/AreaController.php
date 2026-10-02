@@ -20,9 +20,19 @@ class AreaController extends Controller
      */
     public function index(Request $request)
     {
+        $query = Area::query()->with('cargos:id,nombre')->orderBy('nombre');
+
+        // Qué áreas tienen ese cargo. Si el cargo es comodín (vale en
+        // todas, sin fila en el pivote) no sale ninguna: no está acotado a
+        // esta ni a ninguna otra, así que no hay nada que resaltar aquí.
+        if ($request->filled('cargo_id')) {
+            $cargo = $request->input('cargo_id');
+            $query->whereHas('cargos', fn (Builder $q) => $q->where('cargos.id', $cargo));
+        }
+
         return $this->responderListado(
             $request,
-            Area::query()->with('cargos:id,nombre')->orderBy('nombre'),
+            $query,
             ['nombre', 'descripcion'],
             // Las cifras de la cabecera: se cuentan sobre todo lo que pasa el
             // filtro, no sobre la página que se está viendo.

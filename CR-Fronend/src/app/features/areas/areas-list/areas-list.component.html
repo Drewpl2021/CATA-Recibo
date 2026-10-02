@@ -26,7 +26,11 @@
   mensajeVacio="Todavía no hay áreas registradas."
   (editarFila)="editar($event)"
   (eliminarFila)="eliminar($event)"
-></app-data-table>
+>
+  <!-- "¿En qué área está Biblioteca?": se contesta filtrando por cargo. -->
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
+    (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogoFiltro()"></app-filtros>
+</app-data-table>
 
 <app-form-modal
   [(visible)]="modalVisible"

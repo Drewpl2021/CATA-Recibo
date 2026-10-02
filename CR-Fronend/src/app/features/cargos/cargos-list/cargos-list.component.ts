@@ -15,13 +15,15 @@ import { ColumnaTabla } from '../../../shared/components/data-table/data-table.m
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 
 @Component({
   selector: 'app-cargos-list',
   standalone: true,
-  imports: [IconComponent, 
+  imports: [IconComponent,
     CommonModule, ReactiveFormsModule, FormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent,
+    PageHeaderComponent, DataTableComponent, FormModalComponent, FiltrosComponent,
   ],
   templateUrl: './cargos-list.component.html',
 })
@@ -44,6 +46,42 @@ export class CargosListComponent implements OnInit {
   /** Los conteos que manda el backend junto a la página. */
   activos = 0;
   inactivos = 0;
+
+  /** "¿Qué cargos tiene esta área?": filtra el servidor, no el navegador. */
+  filtros: ValoresFiltro = {};
+  camposFiltro: CampoFiltro[] = [
+    { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
+  ];
+
+  /** El catálogo del filtro, solo la primera vez que se abre el panel. */
+  private catalogoFiltroListo = false;
+
+  cargarCatalogoFiltro(): void {
+    if (this.catalogoFiltroListo) return;
+    this.catalogoFiltroListo = true;
+
+    this.areaService.getAll().subscribe({
+      next: (res) => {
+        if (!res.success) return;
+        const campo = this.camposFiltro.find((c) => c.clave === 'area_id');
+        if (campo) {
+          campo.opciones = res.data
+            .map((a) => ({ valor: a.id, etiqueta: a.nombre }))
+            .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es'));
+        }
+      },
+      error: () => {
+        this.catalogoFiltroListo = false;
+        this.toastService.error('Filtros', 'No se pudieron cargar las áreas.');
+      },
+    });
+  }
+
+  /** Cambió un filtro: se vuelve a la primera página. */
+  alFiltrar(): void {
+    this.pagina = 0;
+    this.cargar();
+  }
 
   /** Lo que pinta la cabecera: total, en uso y dados de baja. */
   get cifras(): CifraCabecera[] {
@@ -171,7 +209,12 @@ export class CargosListComponent implements OnInit {
   cargar(): void {
     this.cargando = true;
     this.cargoService
-      .getPagina({ page: this.pagina, size: this.TAMANO_PAGINA, search: this.busqueda || undefined })
+      .getPagina({
+        page: this.pagina,
+        size: this.TAMANO_PAGINA,
+        search: this.busqueda || undefined,
+        ...this.filtros,
+      })
       .subscribe({
       next: (res) => {
         if (res.success) {

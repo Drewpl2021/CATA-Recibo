@@ -15,6 +15,8 @@ import { ColumnaTabla } from '../../../shared/components/data-table/data-table.m
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 
 /**
  * Plantilla de referencia para las pantallas de Configuración Base.
@@ -24,9 +26,9 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 @Component({
   selector: 'app-areas-list',
   standalone: true,
-  imports: [IconComponent, 
+  imports: [IconComponent,
     CommonModule, ReactiveFormsModule, FormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent,
+    PageHeaderComponent, DataTableComponent, FormModalComponent, FiltrosComponent,
   ],
   templateUrl: './areas-list.component.html',
 })
@@ -49,6 +51,42 @@ export class AreasListComponent implements OnInit {
   /** Los conteos que manda el backend junto a la página. */
   activos = 0;
   inactivos = 0;
+
+  /** "¿En qué área está Biblioteca?": filtra el servidor, no el navegador. */
+  filtros: ValoresFiltro = {};
+  camposFiltro: CampoFiltro[] = [
+    { clave: 'cargo_id', etiqueta: 'Cargo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+  ];
+
+  /** El catálogo del filtro, solo la primera vez que se abre el panel. */
+  private catalogoFiltroListo = false;
+
+  cargarCatalogoFiltro(): void {
+    if (this.catalogoFiltroListo) return;
+    this.catalogoFiltroListo = true;
+
+    this.cargoService.getAll().subscribe({
+      next: (res) => {
+        if (!res.success) return;
+        const campo = this.camposFiltro.find((c) => c.clave === 'cargo_id');
+        if (campo) {
+          campo.opciones = res.data
+            .map((c) => ({ valor: c.id, etiqueta: c.nombre }))
+            .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es'));
+        }
+      },
+      error: () => {
+        this.catalogoFiltroListo = false;
+        this.toastService.error('Filtros', 'No se pudieron cargar los cargos.');
+      },
+    });
+  }
+
+  /** Cambió un filtro: se vuelve a la primera página. */
+  alFiltrar(): void {
+    this.pagina = 0;
+    this.cargar();
+  }
 
   /** Lo que pinta la cabecera: total, en uso y dados de baja. */
   get cifras(): CifraCabecera[] {
@@ -175,7 +213,12 @@ export class AreasListComponent implements OnInit {
   cargar(): void {
     this.cargando = true;
     this.areaService
-      .getPagina({ page: this.pagina, size: this.TAMANO_PAGINA, search: this.busqueda || undefined })
+      .getPagina({
+        page: this.pagina,
+        size: this.TAMANO_PAGINA,
+        search: this.busqueda || undefined,
+        ...this.filtros,
+      })
       .subscribe({
       next: (res) => {
         if (res.success) {
