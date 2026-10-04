@@ -5648,3 +5648,229 @@ textarea.form-control {
     display: none;
   }
 }
+
+/* ============================================================
+   Ajustes: pantallas de "encender/apagar" y de montos sueltos.
+   Las estrena Ajustes del sistema. Antes se armaba con
+   .panel-filtros, que es la franja azul de los filtros de una
+   lista: el título salía en versalitas diminutas y los campos
+   pegados al borde, sin aire.
+   ============================================================ */
+
+/* Una tarjeta debajo de otra, con el mismo aire entre todas. */
+.pila-paneles {
+  display: grid;
+  gap: 20px;
+}
+
+/* La descripción bajo el título de un .panel-header. */
+.panel-header__descripcion {
+  margin: 4px 0 0;
+  max-width: 72ch;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Lo que va a la derecha del título (un desplegable, un botón). */
+.panel-header__acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.panel-header__acciones .form-control {
+  width: auto;
+  min-width: 110px;
+}
+
+/* El botón a la altura del desplegable de al lado. */
+.panel-header__acciones > button { align-self: stretch; }
+
+/* Un ajuste: qué es, a la izquierda; el control, a la derecha. */
+.ajuste-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 24px;
+}
+
+/* Igual que el h2 de .panel-header: las dos tarjetas de la pantalla se leen al mismo nivel. */
+.ajuste-fila__titulo {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ajuste-fila__descripcion {
+  margin: 4px 0 0;
+  max-width: 64ch;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+/* Lo que pasa con el ajuste como está ahora: va debajo, más tenue. */
+.ajuste-detalle {
+  margin: 0;
+  padding: 16px 24px 20px 44px;
+  border-top: 1px solid var(--border);
+  background-color: var(--surface-alt);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--text-soft);
+}
+
+.ajuste-detalle li { max-width: 72ch; }
+
+/*
+ * Interruptor de sí/no. Es un checkbox de verdad (role="switch"): se
+ * marca con el teclado, lo lee un lector de pantalla y respeta
+ * [disabled]. Solo cambia cómo se ve.
+ */
+.interruptor {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.interruptor input {
+  appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  margin: 0;
+  border-radius: var(--radius-full);
+  background-color: var(--border-strong);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.interruptor input::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: var(--text-on-brand);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s;
+}
+
+.interruptor input:checked { background-color: var(--brand-600); }
+.interruptor input:checked::before { transform: translateX(20px); }
+
+.interruptor input:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+.interruptor input:disabled { cursor: wait; opacity: 0.6; }
+
+@media (prefers-reduced-motion: reduce) {
+  .interruptor input,
+  .interruptor input::before { transition: none; }
+}
+
+/* Montos agrupados (Generales, ONP y EsSalud, AFP), uno debajo de otro. */
+.grupo-montos {
+  padding: 20px 24px;
+}
+
+.grupo-montos + .grupo-montos { border-top: 1px solid var(--border); }
+
+.grupo-montos__titulo {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--heading);
+}
+
+/* Lo que vale para todo el grupo, dicho una vez y no bajo un solo campo. */
+.grupo-montos__descripcion {
+  margin: -8px 0 14px;
+  max-width: 72ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Columnas de ancho fijo: un monto de 4 cifras no necesita 500px. */
+.rejilla-montos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 210px));
+  gap: 16px 20px;
+}
+
+.rejilla-montos .form-group { margin: 0; }
+
+/* Un campo numérico con su unidad dentro: "S/ 5 500", "13 %". */
+.campo-unidad {
+  position: relative;
+}
+
+/* La cifra pegada a su unidad: "S/ 5500.00" a la izquierda, "13.00 %" a la derecha. */
+.campo-unidad .form-control {
+  font-variant-numeric: tabular-nums;
+}
+
+.campo-unidad--despues .form-control { text-align: right; }
+
+.campo-unidad__unidad {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.campo-unidad--antes .campo-unidad__unidad { left: 14px; }
+.campo-unidad--antes .form-control { padding-left: 38px; }
+.campo-unidad--despues .campo-unidad__unidad { right: 14px; }
+.campo-unidad--despues .form-control { padding-right: 34px; }
+
+/* El pie de una tarjeta con formulario: guardar y lo que conviene saber. */
+.panel-pie {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background-color: var(--surface-alt);
+}
+
+.panel-pie__nota {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* "Hay cambios sin guardar": se ve antes de irse de la pantalla. */
+.panel-pie__nota--pendiente {
+  color: var(--warning-text);
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .ajuste-fila { flex-direction: column; align-items: flex-start; }
+  .panel-header:has(.panel-header__acciones) { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .rejilla-montos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ajuste-fila, .grupo-montos, .panel-pie,
+  .pila-paneles .panel-header { padding-left: 16px; padding-right: 16px; }
+  .ajuste-detalle { padding-left: 36px; padding-right: 16px; }
+}

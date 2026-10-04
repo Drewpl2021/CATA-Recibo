@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { AjustesService, AjustesSistema, CamposValorLegal, ToastService, ValorLegal } from '../../core/services';
 import { mensajeErrorApi } from '../../core/utils';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { FormModalComponent } from '../../shared/components/form-modal/form-modal.component';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 
 /** Cómo se muestra cada monto de ley en la pantalla. */
 interface CampoLegal {
@@ -21,7 +23,7 @@ interface CampoLegal {
 @Component({
   selector: 'app-ajustes',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, FormModalComponent, IconComponent],
   templateUrl: './ajustes.component.html',
 })
 export class AjustesComponent implements OnInit {
@@ -38,33 +40,43 @@ export class AjustesComponent implements OnInit {
   // ────────── Montos de ley por año ──────────
 
   /** Agrupados como se leen en una boleta: lo general, ONP/EsSalud y AFP. */
-  readonly gruposLegales: { titulo: string; campos: CampoLegal[] }[] = [
+  readonly gruposLegales: { titulo: string; descripcion?: string; campos: CampoLegal[] }[] = [
     {
       titulo: 'Generales',
       campos: [
-        { clave: 'uit', etiqueta: 'UIT', unidad: 'S/', ayuda: 'Para la Renta de 5ta: no paga quien gana menos de 7 UIT al año.' },
-        { clave: 'asignacion_familiar', etiqueta: 'Asignación familiar', unidad: 'S/', ayuda: 'El 10% de la remuneración mínima (RMV) de ese año.' },
+        { clave: 'uit', etiqueta: 'UIT', unidad: 'S/', ayuda: 'No paga Renta de 5ta quien gana menos de 7 UIT al año.' },
+        { clave: 'asignacion_familiar', etiqueta: 'Asignación familiar', unidad: 'S/', ayuda: '10% del sueldo mínimo (RMV).' },
       ],
     },
     {
       titulo: 'ONP y EsSalud',
       campos: [
-        { clave: 'onp', etiqueta: 'ONP', unidad: '%' },
-        { clave: 'essalud', etiqueta: 'EsSalud', unidad: '%', ayuda: 'Lo aporta el colegio, no se le descuenta al trabajador.' },
+        { clave: 'onp', etiqueta: 'ONP', unidad: '%', ayuda: 'Se le descuenta al trabajador.' },
+        { clave: 'essalud', etiqueta: 'EsSalud', unidad: '%', ayuda: 'Lo paga el colegio.' },
       ],
     },
     {
       titulo: 'AFP',
+      descripcion: 'Las comisiones son las de flujo. A quien está en comisión mixta no se le cobra en planilla.',
       campos: [
         { clave: 'aporte_afp', etiqueta: 'Aporte al fondo', unidad: '%' },
         { clave: 'prima_seguro_afp', etiqueta: 'Prima de seguro', unidad: '%' },
         { clave: 'comision_habitat', etiqueta: 'Comisión Habitat', unidad: '%' },
         { clave: 'comision_integra', etiqueta: 'Comisión Integra', unidad: '%' },
         { clave: 'comision_prima', etiqueta: 'Comisión Prima', unidad: '%' },
-        { clave: 'comision_profuturo', etiqueta: 'Comisión Profuturo', unidad: '%', ayuda: 'Las comisiones son las de "flujo": a quien está en Mixta no se le cobra.' },
+        { clave: 'comision_profuturo', etiqueta: 'Comisión Profuturo', unidad: '%' },
       ],
     },
   ];
+
+  /** El modal de "Agregar año". */
+  modalAnioVisible = false;
+
+  abrirAgregarAnio(): void {
+    const anios = this.valoresLegales.map((v) => v.anio);
+    this.nuevoAnioLegal = Math.max(this.anioActual, ...anios) + 1;
+    this.modalAnioVisible = true;
+  }
 
   valoresLegales: ValorLegal[] = [];
   anioLegal: number | null = null;
@@ -101,7 +113,10 @@ export class AjustesComponent implements OnInit {
       return;
     }
     const { anio: _, ...campos } = fila;
-    this.edicionLegal = { ...campos };
+    // Con dos decimales, como se escriben en la planilla: "1.60", "113.00".
+    this.edicionLegal = Object.fromEntries(
+      Object.entries(campos).map(([clave, valor]) => [clave, Number(valor).toFixed(2)])
+    ) as unknown as CamposValorLegal;
   }
 
   guardarValoresLegales(): void {
@@ -136,6 +151,7 @@ export class AjustesComponent implements OnInit {
       next: (res) => {
         this.guardandoLegal = false;
         if (res.success) {
+          this.modalAnioVisible = false;
           this.toastService.success('Año agregado', `${anio} se creó con los montos del año anterior. Cambia los que hayan subido (la UIT casi siempre).`);
           this.cargarValoresLegales(anio);
         }

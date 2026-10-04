@@ -1,98 +1,122 @@
 <app-page-header
   icono="settings"
   titulo="Ajustes del sistema"
-  subtitulo="Lo que se enciende y apaga sin tocar código. Cada cambio se guarda al momento y queda en la Auditoría."
+  subtitulo="Lo que se enciende, se apaga o se actualiza sin tocar código. Cada cambio queda en la Auditoría."
 ></app-page-header>
 
 <p class="form-ayuda" *ngIf="cargando">Cargando los ajustes…</p>
 
-<section class="panel-filtros" *ngIf="ajustes">
-  <header class="panel-filtros__cabecera">
-    <div>
-      <h2 class="panel-filtros__titulo">Planillas de años anteriores</h2>
-      <p class="form-ayuda" style="margin: 4px 0 0;">
-        Para dejar de registro las boletas que antes se firmaban a mano: por ejemplo,
-        todo {{ anioActual - 1 }}.
-      </p>
+<div class="pila-paneles">
+  <!-- Un ajuste de sí/no: qué es a la izquierda, el interruptor a la derecha. -->
+  <section class="section-panel" *ngIf="ajustes">
+    <div class="ajuste-fila">
+      <div>
+        <h2 class="ajuste-fila__titulo" id="titulo-anios-anteriores">Planillas de años anteriores</h2>
+        <p class="ajuste-fila__descripcion">
+          Para dejar de registro las boletas que antes se firmaban a mano, por ejemplo
+          las de todo {{ anioActual - 1 }}.
+        </p>
+      </div>
+
+      <label class="interruptor">
+        <input type="checkbox" role="switch" aria-labelledby="titulo-anios-anteriores"
+          [checked]="ajustes.permitir_anios_anteriores" [disabled]="guardando"
+          (change)="cambiarAniosAnteriores($any($event.target).checked)" />
+        <span>{{ ajustes.permitir_anios_anteriores ? 'Activado' : 'Desactivado' }}</span>
+      </label>
     </div>
 
-    <label class="check-item" [class.is-activo]="ajustes.permitir_anios_anteriores">
-      <input type="checkbox" [checked]="ajustes.permitir_anios_anteriores" [disabled]="guardando"
-        (change)="cambiarAniosAnteriores($any($event.target).checked)" />
-      <span>{{ ajustes.permitir_anios_anteriores ? 'Activado' : 'Desactivado' }}</span>
-    </label>
-  </header>
-
-  <ul class="form-ayuda" style="margin: 12px 0 0; padding-left: 20px; line-height: 1.6;">
-    <ng-container *ngIf="ajustes.permitir_anios_anteriores; else apagado">
+    <ul class="ajuste-detalle" *ngIf="ajustes.permitir_anios_anteriores; else apagado">
       <li>RR.HH. puede crear planillas y emitir boletas de cualquier mes de años anteriores.</li>
       <li>Entran también quienes ya cesaron, si todavía trabajaban ese mes.</li>
-      <li>Esas boletas quedan como <strong>firmadas en papel</strong>: no se le avisa al
-        trabajador ni se le pide firmarlas.</li>
+      <li>Esas boletas quedan como firmadas en papel: no se le avisa al trabajador ni se le pide firmarlas.</li>
       <li>El sueldo sale de la ficha de hoy, aunque en ese año haya sido otro.</li>
-    </ng-container>
+    </ul>
     <ng-template #apagado>
-      <li>Solo se pueden crear planillas y emitir boletas de {{ anioActual }} en adelante.</li>
-      <li>Lo que ya se armó de años anteriores se queda como está.</li>
-      <li>Las boletas ya firmadas en papel se pueden seguir subiendo en
-        Documentos → Subir anteriores.</li>
+      <ul class="ajuste-detalle">
+        <li>Solo se pueden crear planillas y emitir boletas de {{ anioActual }} en adelante.</li>
+        <li>Lo que ya se armó de años anteriores se queda como está.</li>
+        <li>Las boletas ya firmadas en papel se pueden seguir subiendo en Documentos → Subir anteriores.</li>
+      </ul>
     </ng-template>
-  </ul>
-</section>
+  </section>
 
-<!-- Montos de ley por año: cada planilla se calcula con los de SU año. -->
-<section class="panel-filtros" style="margin-top: 16px;" *ngIf="valoresLegales.length">
-  <header class="panel-filtros__cabecera">
-    <div>
-      <h2 class="panel-filtros__titulo">Montos de ley por año</h2>
-      <p class="form-ayuda" style="margin: 4px 0 0;">
-        Cada planilla usa los de su propio año: la de 2025 con los de 2025. Si un año no
-        está cargado, se usan los del último año anterior.
-      </p>
-    </div>
+  <!-- Montos de ley: cada planilla se calcula con los de SU año. -->
+  <section class="section-panel" *ngIf="valoresLegales.length">
+    <header class="panel-header">
+      <div>
+        <h2>Montos de ley por año</h2>
+        <p class="panel-header__descripcion">
+          Cada planilla se calcula con los montos de su propio año. Si un año no está
+          cargado, se usan los del último año anterior.
+        </p>
+      </div>
 
-    <div class="campo-filtro campo-filtro--corto">
-      <label for="anioLegal">Año</label>
-      <select id="anioLegal" class="form-control" [ngModel]="anioLegal" (ngModelChange)="elegirAnioLegal($event)">
-        <option *ngFor="let v of valoresLegales" [ngValue]="v.anio">{{ v.anio }}</option>
-      </select>
-    </div>
-  </header>
+      <div class="panel-header__acciones">
+        <select id="anioLegal" class="form-control" aria-label="Año de los montos" [ngModel]="anioLegal" (ngModelChange)="elegirAnioLegal($event)"
+          [disabled]="guardandoLegal">
+          <option *ngFor="let v of valoresLegales" [ngValue]="v.anio">{{ v.anio }}</option>
+        </select>
+        <button type="button" class="btn-secondary" (click)="abrirAgregarAnio()" [disabled]="guardandoLegal">
+          <app-icon icono="plus" [tamano]="16"></app-icon>
+          Agregar año
+        </button>
+      </div>
+    </header>
 
-  <ng-container *ngIf="edicionLegal">
-    <div *ngFor="let grupo of gruposLegales" style="margin-top: 16px;">
-      <h3 class="form-ayuda" style="margin: 0 0 8px; font-weight: 600;">{{ grupo.titulo }}</h3>
-      <div class="rejilla-campos">
-        <div class="form-group" *ngFor="let c of grupo.campos">
-          <label [for]="'ley_' + c.clave">{{ c.etiqueta }} ({{ c.unidad }})</label>
-          <input type="number" class="form-control" [id]="'ley_' + c.clave" min="0" step="0.01"
-            [(ngModel)]="edicionLegal[c.clave]" [disabled]="guardandoLegal" />
-          <small class="form-ayuda" *ngIf="c.ayuda">{{ c.ayuda }}</small>
+    <ng-container *ngIf="edicionLegal">
+      <div class="grupo-montos" *ngFor="let grupo of gruposLegales">
+        <h3 class="grupo-montos__titulo">{{ grupo.titulo }}</h3>
+        <p class="grupo-montos__descripcion" *ngIf="grupo.descripcion">{{ grupo.descripcion }}</p>
+
+        <div class="rejilla-montos">
+          <div class="form-group" *ngFor="let c of grupo.campos">
+            <label [for]="'ley_' + c.clave">{{ c.etiqueta }}</label>
+            <div class="campo-unidad" [class.campo-unidad--antes]="c.unidad === 'S/'" [class.campo-unidad--despues]="c.unidad === '%'">
+              <span class="campo-unidad__unidad" aria-hidden="true">{{ c.unidad }}</span>
+              <input type="number" class="form-control" [id]="'ley_' + c.clave" min="0" step="0.01"
+                inputmode="decimal" [(ngModel)]="edicionLegal[c.clave]" [disabled]="guardandoLegal"
+                [attr.aria-describedby]="c.ayuda ? 'ayuda_' + c.clave : null" />
+            </div>
+            <small class="form-ayuda" *ngIf="c.ayuda" [id]="'ayuda_' + c.clave">{{ c.ayuda }}</small>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 16px;">
-      <button type="button" class="btn-primary" (click)="guardarValoresLegales()"
-        [disabled]="guardandoLegal || !hayCambiosLegales">
-        {{ guardandoLegal ? 'Guardando…' : 'Guardar los montos de ' + anioLegal }}
-      </button>
-      <small class="form-ayuda">
-        Cambiarlos no rehace las planillas ya armadas: se aplican a las que se generen o
-        recalculen desde ahora.
-      </small>
-    </div>
-  </ng-container>
+      <footer class="panel-pie">
+        <button type="button" class="btn-primary" (click)="guardarValoresLegales()"
+          [disabled]="guardandoLegal || !hayCambiosLegales">
+          {{ guardandoLegal ? 'Guardando…' : 'Guardar montos de ' + anioLegal }}
+        </button>
+        <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="hayCambiosLegales && !guardandoLegal">
+          Tienes cambios sin guardar en {{ anioLegal }}.
+        </p>
+        <p class="panel-pie__nota" *ngIf="!hayCambiosLegales">
+          Al guardar, solo cambian las planillas que se generen o recalculen desde ahora.
+        </p>
+      </footer>
+    </ng-container>
+  </section>
+</div>
 
-  <div style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border, #e5e7eb);">
-    <div class="campo-filtro campo-filtro--corto">
-      <label for="nuevoAnioLegal">Agregar el año</label>
+<!-- Un año nuevo nace con los montos del anterior: casi siempre solo sube la UIT. -->
+<app-form-modal
+  [(visible)]="modalAnioVisible"
+  titulo="Agregar un año"
+  textoGuardar="Agregar año"
+  [guardando]="guardandoLegal"
+  (guardar)="agregarAnioLegal()"
+  (cancelar)="modalAnioVisible = false"
+>
+  <div class="form-fields">
+    <div class="form-group">
+      <label for="nuevoAnioLegal">Año</label>
       <input id="nuevoAnioLegal" type="number" class="form-control" min="2000" max="2100"
         [(ngModel)]="nuevoAnioLegal" />
+      <small class="form-ayuda">
+        Se crea con los montos del año anterior. Después cambias los que hayan subido, casi
+        siempre la UIT.
+      </small>
     </div>
-    <button type="button" class="btn-secondary" (click)="agregarAnioLegal()" [disabled]="guardandoLegal">
-      Agregar
-    </button>
-    <small class="form-ayuda">Se crea con los montos del año anterior; después cambias los que hayan subido.</small>
   </div>
-</section>
+</app-form-modal>
