@@ -339,6 +339,12 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
         if (cargos.success) this.cargos = cargos.data;
         if (sedes.success) this.sedes = sedes.data;
         if (roles.success) this.roles = roles.data;
+
+        // Toda alta entra como empleado: el rol no se elige aquí (el backend
+        // igual lo fuerza). RR.HH. o Administrador lo da después un
+        // Administrador desde Usuarios.
+        const rolEmpleado = this.roles.find((r) => r.nombre === 'empleado');
+        if (this.esNuevo && rolEmpleado) this.form.patchValue({ rol_id: rolEmpleado.id });
         if (tiposContrato.success) this.tiposContrato = tiposContrato.data;
 
         if (this.empleadoId) {

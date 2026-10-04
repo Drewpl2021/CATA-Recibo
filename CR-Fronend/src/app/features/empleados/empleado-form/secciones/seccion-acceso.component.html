@@ -21,16 +21,16 @@
       </small>
     </div>
 
+    <!-- El rol no se elige al dar de alta: todos entran como empleado. -->
     <div class="form-group" *ngIf="esNuevo">
-      <label for="rol_id">Rol *</label>
-      <select id="rol_id" class="form-control" formControlName="rol_id"
-        [class.is-invalid]="invalido('rol_id')">
-        <option value="">— Elige un rol —</option>
-        <option *ngFor="let r of roles" [value]="r.id">{{ r.nombre }}</option>
-      </select>
-      <small class="form-error" *ngIf="invalido('rol_id')">{{ error('rol_id') }}</small>
-      <small class="form-ayuda" *ngIf="!invalido('rol_id')">
-        Decide qué verá en el menú. Lo normal para un docente es "empleado".
+      <label for="rol_fijo">Rol</label>
+      <input type="text" id="rol_fijo" class="form-control" value="Empleado" readonly />
+      <small class="form-error" *ngIf="!hayRolEmpleado">
+        No existe el rol «empleado». Pídele a un Administrador que lo cree en Configuración → Roles.
+      </small>
+      <small class="form-ayuda" *ngIf="hayRolEmpleado">
+        Todo trabajador nuevo entra como <strong>empleado</strong>. Si debe ser de RR.HH. o
+        Administrador, un Administrador le cambia el rol después desde <strong>Usuarios</strong>.
       </small>
     </div>
   </div>

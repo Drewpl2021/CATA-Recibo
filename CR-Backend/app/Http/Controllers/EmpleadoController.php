@@ -448,6 +448,19 @@ class EmpleadoController extends Controller
 
     public function store(Request $request)
     {
+        // Toda alta entra como empleado, igual que por el Excel. Dar acceso de
+        // RR.HH. o de Administrador no es parte de contratar a alguien: lo
+        // hace después un Administrador desde Usuarios. Se pisa lo que llegue,
+        // para que no se pueda saltar desde fuera de la pantalla.
+        $rolEmpleado = Rol::where('nombre', 'empleado')->value('id');
+        if (! $rolEmpleado) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No existe el rol «empleado». Créalo en Configuración → Roles antes de dar de alta a alguien.',
+            ], 422);
+        }
+        $request->merge(['rol_id' => $rolEmpleado]);
+
         // Las reglas viven en AltaDeEmpleado: las usa también la importación
         // desde Excel, y así las dos altas piden exactamente lo mismo.
         $request->validate(AltaDeEmpleado::reglas(), AltaDeEmpleado::mensajes());
@@ -455,14 +468,6 @@ class EmpleadoController extends Controller
         $this->limpiarDatosDeAfp($request);
 
         $this->exigirCargoDelArea($request->cargo_id, $request->area_id);
-
-        $rolAsignado = Rol::findOrFail($request->rol_id);
-        if ($rolAsignado->nombre === 'admin' && $request->user()->rol?->nombre !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'data'    => ['message' => 'Solo un Administrador puede asignar el rol de Administrador.'],
-            ], 403);
-        }
 
         // Las tres cosas nacen juntas o no nace ninguna: un empleado sin usuario
         // no puede entrar, y uno sin contrato queda con el historial en blanco

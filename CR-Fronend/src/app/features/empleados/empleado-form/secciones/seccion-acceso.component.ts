@@ -12,8 +12,8 @@ import { SeccionEmpleadoBase } from './seccion-base';
  * CONTRASEÑA INICIAL ES SU DNI. Por eso la pantalla lo dice en grande — es
  * lo que RR.HH. tiene que comunicarle al trabajador.
  *
- * Al editar, el rol ya no se toca desde acá (el backend lo ignora): se
- * cambia en la pantalla de Usuarios.
+ * El rol no se elige: toda alta entra como empleado (el backend lo fuerza).
+ * Al editar tampoco se toca desde acá: se cambia en la pantalla de Usuarios.
  */
 @Component({
   selector: 'app-seccion-acceso',
@@ -23,6 +23,11 @@ import { SeccionEmpleadoBase } from './seccion-base';
 })
 export class SeccionAccesoComponent extends SeccionEmpleadoBase {
   @Input() roles: Rol[] = [];
+
+  /** Si el catálogo trae el rol "empleado", que es con el que entra toda alta. */
+  get hayRolEmpleado(): boolean {
+    return !this.roles.length || this.roles.some((r) => r.nombre === 'empleado');
+  }
 
   /** El DNI escrito en el paso 1, que será su contraseña inicial. */
   get dni(): string {
