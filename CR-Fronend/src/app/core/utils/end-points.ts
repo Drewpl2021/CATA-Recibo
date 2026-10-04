@@ -34,6 +34,8 @@ export const END_POINTS = {
     modulosPadre: 'module-groups',
     /** Quién cambió qué. Solo lectura. */
     auditoria: 'audit-log',
+    /** GET (RR.HH. y Admin) y PUT (solo Admin): los ajustes del sistema. */
+    ajustes: 'settings',
   },
 
   personal: {

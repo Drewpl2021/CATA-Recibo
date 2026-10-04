@@ -78,7 +78,7 @@ class MisDocumentosController extends Controller
         // "Sin firmar" es lo que le falta firmar: la hoja de vida no se firma,
         // así que no tiene nada que hacer en la campana.
         if ($request->boolean('sin_firmar')) {
-            $query->where('estado_firma', '!=', 'firmado')
+            $query->whereNotIn('estado_firma', Documento::FIRMA_RESUELTA)
                 ->whereNotIn('tipo', ExpedienteDigital::SIN_FIRMA);
         }
 
@@ -178,6 +178,13 @@ class MisDocumentosController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'El documento ya está firmado.'
+            ], 422);
+        }
+
+        if ($documento->estado_firma === 'en_papel') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta boleta es de registro: ya la firmaste en papel en su momento.'
             ], 422);
         }
 

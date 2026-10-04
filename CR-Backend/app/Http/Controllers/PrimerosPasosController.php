@@ -82,7 +82,7 @@ class PrimerosPasosController extends Controller
         // firmaron en papel.
         $porFirmar = $empleadoId
             ? Documento::where('empleado_id', $empleadoId)
-                ->where('estado_firma', '!=', 'firmado')
+                ->whereNotIn('estado_firma', Documento::FIRMA_RESUELTA)
                 ->whereNotIn('tipo', ExpedienteDigital::SIN_FIRMA)
                 ->count()
             : 0;

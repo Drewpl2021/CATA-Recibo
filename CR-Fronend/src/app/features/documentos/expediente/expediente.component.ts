@@ -10,6 +10,7 @@ import {
   antiguedad,
   diasHasta,
   esDocumentoAnterior,
+  firmaResuelta,
   sePuedeVer,
   estadoFirmaLegible,
   fechaDeDia,
@@ -216,7 +217,7 @@ export class ExpedienteComponent implements OnInit, OnDestroy {
 
   /** Solo las que generó el sistema: una boleta anterior no se firma aquí. */
   get boletasFirmadas(): number {
-    return this.expediente?.boletas.filter((b) => b.tipo === 'boleta' && b.estado_firma === 'firmado').length ?? 0;
+    return this.expediente?.boletas.filter((b) => b.tipo === 'boleta' && firmaResuelta(b)).length ?? 0;
   }
 
   get boletasDelSistema(): number {

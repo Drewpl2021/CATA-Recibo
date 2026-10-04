@@ -1,7 +1,8 @@
 import { Empleado } from './empleado.model';
 import { Planilla } from './planilla.model';
 
-export type EstadoFirma = 'pendiente' | 'visto' | 'firmado';
+/** 'en_papel': boleta de un año anterior armada para registro; ya se firmó a mano. */
+export type EstadoFirma = 'pendiente' | 'visto' | 'firmado' | 'en_papel';
 
 export interface Documento {
   id: string;

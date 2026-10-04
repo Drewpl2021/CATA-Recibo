@@ -250,6 +250,9 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::put('vacations/{id}',    [VacacionController::class, 'update']);
 
         Route::post('payslips/generate-bulk', [BoletaController::class, 'generarMasivo']);
+
+        // Los ajustes del sistema: RR.HH. los lee, solo Admin los cambia.
+        Route::get('settings', [\App\Http\Controllers\ConfiguracionController::class, 'index']);
     });
 
     // ── Solo Administrador: gestión de roles y del sistema de permisos ──
@@ -257,6 +260,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // La auditoría: quién cambió qué. Solo lectura, y solo Admin —es
         // justamente donde se ve lo que hizo RR.HH.—.
         Route::get('audit-log', [AuditoriaController::class, 'index']);
+
+        Route::put('settings', [\App\Http\Controllers\ConfiguracionController::class, 'update']);
 
         Route::apiResource('roles', RolController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('module-groups', ModuloPadreController::class);

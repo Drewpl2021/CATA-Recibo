@@ -693,9 +693,11 @@ trait CalculaConceptosPlanilla
      * le paga el fin de semana que quedó dentro del tramo, la respuesta está
      * en este comentario, no en un bug.
      *
-     * Nota de lo que todavía no cubre: el cese a mitad de mes. Cuando a alguien
-     * se le termina el contrato el día 12, esto le sigue pagando hasta fin de
-     * mes. Hace falta lo mismo pero por el otro extremo.
+     * El cese a mitad de mes se mide igual pero por el otro extremo: quien
+     * cesó el día 12 cobra los hábiles hasta el 12. Solo para quien de verdad
+     * cesó (estado inactivo): en alguien activo la fecha de cese puede ser el
+     * fin programado de un contrato que luego se renovó, y recortarle el
+     * sueldo por eso sería un error.
      */
     protected function repartoDeDiasDelMes($empleado, int $mes, int $anio): array
     {
@@ -708,8 +710,13 @@ trait CalculaConceptosPlanilla
             ? \Carbon\Carbon::parse($empleado->fecha_ingreso)->startOfDay()
             : null;
 
-        // Todavía no había entrado: no le corresponde nada de este mes.
-        if ($ingreso && $ingreso->gt($finMes)) {
+        $cese = ($empleado->estado === 'inactivo' && $empleado->fecha_cese)
+            ? \Carbon\Carbon::parse($empleado->fecha_cese)->startOfDay()
+            : null;
+
+        // Todavía no había entrado, o ya se había ido: no le corresponde nada
+        // de este mes.
+        if (($ingreso && $ingreso->gt($finMes)) || ($cese && $cese->lt($inicioMes))) {
             return [
                 'dias_del_mes'         => $diasDelMes,
                 'dias_habiles_del_mes' => $diasHabilesDelMes,
@@ -718,15 +725,18 @@ trait CalculaConceptosPlanilla
                 'dias_trabajados'      => 0,
                 'proporcion'           => 0.0,
                 'entro_este_mes'       => false,
+                'salio_este_mes'       => false,
             ];
         }
 
         // Desde cuándo cuenta: su fecha de ingreso si cae dentro del mes, o el
         // día 1 si ya estaba desde antes.
         $desde = ($ingreso && $ingreso->gt($inicioMes)) ? $ingreso : $inicioMes;
-        $diasPagados = $this->diasHabilesEntre($desde, $finMes);
+        // Hasta cuándo: su fecha de cese si cesó dentro del mes, o fin de mes.
+        $hasta = ($cese && $cese->lt($finMes)) ? $cese : $finMes;
+        $diasPagados = $this->diasHabilesEntre($desde, $hasta);
 
-        $diasVacaciones = $this->diasDeVacacionesEnElMes($empleado->id, $desde, $finMes);
+        $diasVacaciones = $this->diasDeVacacionesEnElMes($empleado->id, $desde, $hasta);
 
         return [
             'dias_del_mes'         => $diasDelMes,
@@ -736,6 +746,7 @@ trait CalculaConceptosPlanilla
             'dias_trabajados'      => max(0, $diasPagados - $diasVacaciones),
             'proporcion'           => $diasHabilesDelMes > 0 ? round($diasPagados / $diasHabilesDelMes, 6) : 0.0,
             'entro_este_mes'       => $ingreso && $ingreso->gt($inicioMes),
+            'salio_este_mes'       => $cese && $cese->lt($finMes),
         ];
     }
 

@@ -5,6 +5,7 @@ import { AuthService, DocumentoService, IdentidadFirmaService, MisDocumentosServ
 import { Documento } from '../../../core/models';
 import {
   documentoSeFirma,
+  firmaResuelta,
   sePuedeVer,
   estadoFirmaLegible,
   guardarArchivo,
@@ -125,7 +126,7 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
     },
     {
       id: 'firmar', titulo: 'Firmar este documento', icono: 'signature', severidad: 'success',
-      visible: (doc) => documentoSeFirma(doc) && doc.estado_firma !== 'firmado',
+      visible: (doc) => documentoSeFirma(doc) && !firmaResuelta(doc),
     },
   ];
 
@@ -231,7 +232,7 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
 
   /** Lo que no se firma (hoja de vida, archivos anteriores) se baja siempre. */
   puedeDescargar(doc: Documento): boolean {
-    return !documentoSeFirma(doc) || doc.estado_firma === 'firmado';
+    return !documentoSeFirma(doc) || firmaResuelta(doc);
   }
 
   /**

@@ -5,6 +5,7 @@ namespace App\Traits;
 use App\Models\Empleado;
 use App\Models\Planilla;
 use App\Models\PlanillaCorrida;
+use App\Support\AniosAnteriores;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -52,11 +53,15 @@ trait GeneraPlanillasEnLote
     /**
      * El personal al que le toca esta corrida, ya resuelto.
      *
+     * Con $conQuienesYaCesaron (algún mes es de un año anterior) entran
+     * también los que hoy ya no están: en 2025 sí trabajaban. Cuáles de ellos
+     * le tocan a cada mes lo decide generarLote(), mes por mes.
+     *
      * @return \Illuminate\Database\Eloquent\Collection<int, Empleado>
      */
-    protected function empleadosDelGrupo(Request $request)
+    protected function empleadosDelGrupo(Request $request, bool $conQuienesYaCesaron = false)
     {
-        $consulta = Empleado::where('estado', 'activo');
+        $consulta = $conQuienesYaCesaron ? Empleado::query() : Empleado::where('estado', 'activo');
 
         if ($request->filled('empleado_ids')) {
             $consulta->whereIn('id', $request->empleado_ids);
@@ -91,6 +96,20 @@ trait GeneraPlanillasEnLote
         foreach ($empleados as $empleado) {
             $nombreCompleto = trim($empleado->nombre . ' ' . $empleado->apellido);
             $base = ['empleado' => $nombreCompleto, 'empleado_id' => $empleado->id];
+
+            // Quien ya cesó solo entra en un mes de un año anterior, y solo si
+            // todavía trabajaba ese mes.
+            if ($empleado->estado !== 'activo'
+                && ! (AniosAnteriores::esAnterior($anio) && AniosAnteriores::trabajabaEnElMes($empleado, $mes, $anio))) {
+                $omitidas++;
+                $detalle[] = $base + [
+                    'estado' => 'omitida',
+                    'motivo' => $empleado->fecha_cese
+                        ? 'Ya había cesado (el ' . Carbon::parse($empleado->fecha_cese)->format('d/m/Y') . ')'
+                        : 'Ya no trabaja en el colegio',
+                ];
+                continue;
+            }
 
             // Relanzar la generación no duplica: el que ya tiene su planilla
             // de ese mes se queda como está, con lo que se le haya ajustado.
@@ -155,6 +174,9 @@ trait GeneraPlanillasEnLote
             // brutal en vez del prorrateo de lunes a viernes que es.
             if ($reparto['entro_este_mes']) {
                 $fila['motivo'] = 'Ingresó el ' . Carbon::parse($empleado->fecha_ingreso)->format('d/m/Y')
+                    . ": se le pagan {$reparto['dias_pagados']} de {$reparto['dias_habiles_del_mes']} días hábiles";
+            } elseif ($reparto['salio_este_mes']) {
+                $fila['motivo'] = 'Cesó el ' . Carbon::parse($empleado->fecha_cese)->format('d/m/Y')
                     . ": se le pagan {$reparto['dias_pagados']} de {$reparto['dias_habiles_del_mes']} días hábiles";
             }
 

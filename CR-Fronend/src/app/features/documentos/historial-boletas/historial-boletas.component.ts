@@ -195,6 +195,7 @@ export class HistorialBoletasComponent implements OnInit {
 
   estadoLegible(estado: string): string {
     if (estado === 'firmado') return 'Firmado';
+    if (estado === 'en_papel') return 'Firmada en papel';
     if (estado === 'visto') return 'Visto';
     return 'Pendiente';
   }

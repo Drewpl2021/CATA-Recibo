@@ -98,7 +98,9 @@ class MiBoletaController extends Controller
                 'planilla_id'  => $planilla->id,
                 'tipo'         => 'boleta',
                 'archivo'      => $rutaArchivo,
-                'estado_firma' => 'pendiente',
+                // Igual que al emitirla desde RR.HH.: la de un año anterior ya
+                // se firmó en papel.
+                'estado_firma' => \App\Support\AniosAnteriores::esAnterior((int) $anio) ? 'en_papel' : 'pendiente',
             ]);
         }
 

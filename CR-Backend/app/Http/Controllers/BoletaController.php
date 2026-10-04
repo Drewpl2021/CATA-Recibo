@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Traits\CalculaConceptosPlanilla;
 use App\Mail\BoletaGenerada;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\AniosAnteriores;
 use App\Support\ConceptosDePago;
 use App\Support\Meses;
 use Illuminate\Http\Request;
@@ -43,6 +44,8 @@ class BoletaController extends Controller
             ], 404);
         }
 
+        AniosAnteriores::exigir((int) $anio);
+
         ['pdf' => $pdf, 'archivo' => $archivo, 'numero_boleta' => $numero_boleta, 'documento' => $documento, 'nuevo' => $nuevo]
             = $this->construirBoleta($empleado, $planilla, (int) $mes, (int) $anio);
 
@@ -52,7 +55,8 @@ class BoletaController extends Controller
         // un aumento de último momento no es un segundo "tu boleta ya está
         // lista" — el trabajador ya la tenía, y de paso ya pudo haberla
         // firmado.
-        if ($nuevo) {
+        // La de un año anterior tampoco: es de registro, ya la tenía en papel.
+        if ($nuevo && ! AniosAnteriores::esAnterior((int) $anio)) {
             $this->avisarBoletaLista($empleado, (int) $mes, (int) $anio, $numero_boleta, $documento?->id);
         }
 
@@ -69,8 +73,12 @@ class BoletaController extends Controller
     {
         $empleado_id = $empleado->id;
 
+        // El número va por PERIODO (enero es la 1, febrero la 2...), no por
+        // cuándo se creó la planilla: una boleta de 2025 armada en 2026 salía
+        // como BOL-2025-0000, porque no hay planillas CREADAS en 2025.
         $correlativo = Planilla::where('empleado_id', $empleado_id)
-            ->whereYear('created_at', $anio)
+            ->where('anio', $anio)
+            ->where('mes', '<=', $mes)
             ->count();
         $numero_boleta = 'BOL-' . $anio . '-' . str_pad($correlativo, 4, '0', STR_PAD_LEFT);
 
@@ -134,7 +142,9 @@ class BoletaController extends Controller
                 'planilla_id'  => $planilla->id,
                 'tipo'         => 'boleta',
                 'archivo'      => $rutaArchivo,
-                'estado_firma' => 'pendiente',
+                // La de un año anterior se arma para dejarla de registro: el
+                // trabajador ya la firmó a mano en su momento.
+                'estado_firma' => AniosAnteriores::esAnterior($anio) ? 'en_papel' : 'pendiente',
             ]);
         }
 
@@ -234,6 +244,9 @@ class BoletaController extends Controller
         $mes     = $corrida ? (int) $corrida->mes : (int) $request->mes;
         $anio    = $corrida ? (int) $corrida->anio : (int) $request->anio;
 
+        AniosAnteriores::exigir($anio);
+        $deRegistro = AniosAnteriores::esAnterior($anio);
+
         /*
          * Se recorren las PLANILLAS, con su empleado ya cargado, y no los
          * empleados uno por uno.
@@ -243,8 +256,10 @@ class BoletaController extends Controller
          * primer PDF. Ahora son dos en total: las planillas con todo lo que
          * pinta la boleta, y cuáles de ellas ya tienen la suya.
          */
+        // En un año anterior entran también los que hoy ya no están: si tienen
+        // planilla de ese mes, es que entonces trabajaban.
         $planillas = ($corrida ? $corrida->planillas() : Planilla::where('mes', $mes)->where('anio', $anio))
-            ->whereHas('empleado', fn ($q) => $q->where('estado', 'activo'))
+            ->when(! $deRegistro, fn ($q) => $q->whereHas('empleado', fn ($e) => $e->where('estado', 'activo')))
             ->with('empleado.area', 'empleado.cargo', 'empleado.identidadFirma')
             ->get();
 
@@ -269,14 +284,20 @@ class BoletaController extends Controller
             // Documento sin archivo — quedaba metadata sin nada que descargar).
             ['numero_boleta' => $numero_boleta, 'documento' => $documento]
                 = $this->construirBoleta($empleado, $planilla, $mes, $anio);
-            $this->avisarBoletaLista($empleado, $mes, $anio, $numero_boleta, $documento?->id);
+            // Las de registro no se avisan: serían cientos de correos de golpe
+            // por boletas que ya se firmaron en papel.
+            if (! $deRegistro) {
+                $this->avisarBoletaLista($empleado, $mes, $anio, $numero_boleta, $documento?->id);
+            }
             $generadas++;
         }
 
         // Quien está activo pero no tiene planilla ese mes. Solo cuenta al
         // emitir el mes entero: dentro de una planilla, los de fuera no son
         // "omitidos", simplemente no son de ella.
-        $sinPlanilla = $corrida
+        // En un año anterior no se cuenta: el personal activo de HOY no dice
+        // quién trabajaba entonces.
+        $sinPlanilla = ($corrida || $deRegistro)
             ? 0
             : max(0, Empleado::where('estado', 'activo')->count() - $planillas->count());
 

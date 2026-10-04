@@ -649,7 +649,9 @@ class DashboardController extends Controller
             ->pluck(DB::raw('COUNT(*)'), 'estado_firma');
 
         return [
-            'firmado'   => (int) ($porEstado['firmado'] ?? 0),
+            // La firmada en papel (boleta de registro de un año anterior)
+            // cuenta como firmada: no le falta nada.
+            'firmado'   => (int) ($porEstado['firmado'] ?? 0) + (int) ($porEstado['en_papel'] ?? 0),
             'visto'     => (int) ($porEstado['visto'] ?? 0),
             'pendiente' => (int) ($porEstado['pendiente'] ?? 0),
             'total'     => (int) $porEstado->sum(),

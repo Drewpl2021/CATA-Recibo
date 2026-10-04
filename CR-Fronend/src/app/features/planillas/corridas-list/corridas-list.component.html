@@ -145,17 +145,46 @@
          que se paga casi siempre, y se puede cambiar a cualquier otro del
          periodo. -->
     <div class="form-group" *ngIf="!corridaEditando && !resultadoMeses">
-      <label for="mesAnio">Mes a generar *</label>
-      <select id="mesAnio" class="form-control" formControlName="mesAnio"
+      <label for="mesAnio">{{ variosMeses ? 'Meses a generar *' : 'Mes a generar *' }}</label>
+
+      <select *ngIf="!variosMeses" id="mesAnio" class="form-control" formControlName="mesAnio"
         [class.is-invalid]="invalido('mesAnio')">
         <option value="">— Elige el mes —</option>
         <option *ngFor="let m of mesesDelPeriodo" [value]="m.valor">{{ m.etiqueta }}</option>
       </select>
 
+      <!-- Varios meses de golpe: para registrar los que ya pasaron, como un
+           año anterior. Solo salen los que ya empezaron; un mes futuro se
+           elige solo, arriba, con su aviso. -->
+      <ng-container *ngIf="variosMeses">
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <button type="button" class="btn-secondary" (click)="marcarTodosLosMeses()">Marcar todos</button>
+          <button type="button" class="btn-secondary" (click)="desmarcarMeses()" [disabled]="!mesesMarcados.size">Ninguno</button>
+        </div>
+        <div class="rejilla-opciones">
+          <label class="check-item" *ngFor="let m of mesesMarcables" [class.is-activo]="mesesMarcados.has(m.valor)">
+            <input type="checkbox" [checked]="mesesMarcados.has(m.valor)" (change)="alternarMes(m.valor)" />
+            <span>{{ m.etiqueta }}</span>
+          </label>
+        </div>
+      </ng-container>
+
+      <label class="check-item" *ngIf="mesesMarcables.length > 1" style="margin-top: 8px;">
+        <input type="checkbox" [checked]="variosMeses" (change)="alternarVariosMeses($any($event.target).checked)" />
+        <span>Varios meses de una vez (para registrar meses que ya pasaron, como un año anterior)</span>
+      </label>
+
       <small class="form-error" *ngIf="!mesesDelPeriodo.length">
         Elige un periodo para ver sus meses.
       </small>
       <small class="form-ayuda" *ngIf="mesesDelPeriodo.length && resumenDeMeses">{{ resumenDeMeses }}</small>
+
+      <p class="form-nota" *ngIf="esDeAnioAnterior" style="margin-top: 8px;">
+        <strong>Planilla de registro de un año anterior.</strong> Entran también quienes ya
+        cesaron, si todavía trabajaban ese mes. Sus boletas quedarán como
+        <strong>firmadas en papel</strong>: no se le avisa a nadie ni se le pide firmar.
+        Ojo: el sueldo sale de la ficha de hoy, aunque en ese año haya sido otro.
+      </p>
     </div>
 
     <p class="form-ayuda" *ngIf="corridaEditando">

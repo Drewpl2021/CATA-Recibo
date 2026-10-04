@@ -9,6 +9,13 @@ class Documento extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
+    /**
+     * Los estados en que la firma ya está resuelta: firmada en el sistema, o
+     * firmada en papel (la boleta de un año anterior armada para registro).
+     * Lo que NO está aquí es lo que le falta firmar al trabajador.
+     */
+    public const FIRMA_RESUELTA = ['firmado', 'en_papel'];
+
     protected $fillable = [
         'empleado_id',
         'contrato_id',

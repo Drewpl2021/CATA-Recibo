@@ -36,6 +36,7 @@ export * from './sistema/notificacion.service';
 export * from './sistema/dashboard.service';
 export * from './planilla/planilla-corrida.service';
 export * from './sistema/auditoria.service';
+export * from './sistema/ajustes.service';
 export * from './planilla/importacion-conceptos.service';
 export * from './personal/importacion-empleados.service';
 export * from './personal/expediente.service';

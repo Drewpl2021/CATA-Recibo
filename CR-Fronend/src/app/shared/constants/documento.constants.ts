@@ -33,6 +33,7 @@ export const ESTADO_FIRMA_OPCIONES: readonly Opcion[] = [
   { label: 'Pendiente', value: 'pendiente' },
   { label: 'Visto', value: 'visto' },
   { label: 'Firmado', value: 'firmado' },
+  { label: 'Firmada en papel', value: 'en_papel' },
 ];
 
 /** Severidad para .status-badge (ver DataTableComponent) según estado_firma */

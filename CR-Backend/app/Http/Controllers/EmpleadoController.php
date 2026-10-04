@@ -329,7 +329,7 @@ class EmpleadoController extends Controller
                 // recordarle, distinta de "no se le emitió".
                 'sin_firmar' => $query->whereIn(
                     'empleados.id',
-                    (clone $boletas)->where('estado_firma', '!=', 'firmado')->select('empleado_id')
+                    (clone $boletas)->whereNotIn('estado_firma', \App\Models\Documento::FIRMA_RESUELTA)->select('empleado_id')
                 ),
             };
         }

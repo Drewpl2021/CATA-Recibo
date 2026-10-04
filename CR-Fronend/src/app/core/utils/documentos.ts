@@ -60,16 +60,26 @@ export function documentoSeFirma(doc: Documento): boolean {
   return !DOCUMENTOS_SIN_FIRMA.includes(doc.tipo);
 }
 
+/**
+ * La firma ya está resuelta: firmada en el sistema, o firmada en papel (la
+ * boleta de un año anterior armada para registro). Igual que
+ * Documento::FIRMA_RESUELTA en el backend.
+ */
+export function firmaResuelta(doc: Pick<Documento, 'estado_firma'>): boolean {
+  return doc.estado_firma === 'firmado' || doc.estado_firma === 'en_papel';
+}
+
 export function estadoFirmaLegible(doc: Documento): string {
   if (!documentoSeFirma(doc)) return esDocumentoAnterior(doc) ? 'Archivo anterior' : 'Guardada';
   if (doc.estado_firma === 'firmado') return 'Firmado';
+  if (doc.estado_firma === 'en_papel') return 'Firmada en papel';
   if (doc.estado_firma === 'visto') return 'Visto';
   return 'Pendiente';
 }
 
 export function severidadFirma(doc: Documento): 'success' | 'info' | 'warning' {
   if (!documentoSeFirma(doc)) return 'info';
-  if (doc.estado_firma === 'firmado') return 'success';
+  if (firmaResuelta(doc)) return 'success';
   return doc.estado_firma === 'visto' ? 'info' : 'warning';
 }
 

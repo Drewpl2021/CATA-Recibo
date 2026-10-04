@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Periodo;
+use App\Support\AniosAnteriores;
 use App\Traits\GeneraPlanillasEnLote;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -92,7 +93,9 @@ class PeriodoController extends Controller
             ], 422);
         }
 
-        $empleados = $this->empleadosDelGrupo($request);
+        AniosAnteriores::exigir($anio);
+
+        $empleados = $this->empleadosDelGrupo($request, AniosAnteriores::esAnterior($anio));
 
         if ($empleados->isEmpty()) {
             return response()->json([

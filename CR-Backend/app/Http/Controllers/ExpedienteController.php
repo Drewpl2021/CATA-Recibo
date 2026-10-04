@@ -240,7 +240,7 @@ class ExpedienteController extends Controller
 
     private function boletasPorFirmar(Builder $q): Builder
     {
-        return $q->where('tipo', 'boleta')->where('estado_registro', 'activo')->where('estado_firma', '!=', 'firmado');
+        return $q->where('tipo', 'boleta')->where('estado_registro', 'activo')->whereNotIn('estado_firma', \App\Models\Documento::FIRMA_RESUELTA);
     }
 
     /** Vigente y con fin dentro del plazo; también el que ya pasó y nadie cerró. */

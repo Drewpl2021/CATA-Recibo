@@ -57,7 +57,7 @@ final class AccesoADocumento
         if (! self::esSuyo($documento, $usuario)) {
             return 'No tienes permiso para descargar este documento.';
         }
-        if (! ExpedienteDigital::seFirma($documento->tipo) || $documento->estado_firma === 'firmado') {
+        if (! ExpedienteDigital::seFirma($documento->tipo) || in_array($documento->estado_firma, Documento::FIRMA_RESUELTA, true)) {
             return null;
         }
 

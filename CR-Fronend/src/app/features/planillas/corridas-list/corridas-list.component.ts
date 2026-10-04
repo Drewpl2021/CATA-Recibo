@@ -322,6 +322,7 @@ export class CorridasListComponent implements OnInit {
     this.corridaEditando = null;
     this.alcance = 'todos';
     this.empleadosElegidos = [];
+    this.alternarVariosMeses(false);
 
     this.resultadoMeses = null;
 
@@ -342,6 +343,7 @@ export class CorridasListComponent implements OnInit {
   editar(corrida: PlanillaCorrida): void {
     this.corridaEditando = corrida;
     this.resultadoMeses = null;
+    this.alternarVariosMeses(false);
     this.form.reset({
       nombre: corrida.nombre,
       periodo_id: corrida.periodo_id ?? '',
@@ -416,6 +418,10 @@ export class CorridasListComponent implements OnInit {
 
     this.mesesDelPeriodo = periodo ? this.mesesQueCubre(periodo) : [];
 
+    // Lo marcado de otro periodo no se arrastra a este.
+    const marcables = new Set(this.mesesMarcables.map((m) => m.valor));
+    this.mesesMarcados = new Set([...this.mesesMarcados].filter((m) => marcables.has(m)));
+
     const elegido = this.form.get('mesAnio')!.value as string;
     if (elegido && this.mesesDelPeriodo.some((m) => m.valor === elegido)) return;
 
@@ -442,8 +448,69 @@ export class CorridasListComponent implements OnInit {
    * probado: cambiarlo obligaría a tocar el controlador sin necesidad.
    */
   get mesesElegidos(): string[] {
+    if (this.variosMeses) return [...this.mesesMarcados].sort();
+
     const valor = this.form.get('mesAnio')!.value as string;
     return valor ? [valor] : [];
+  }
+
+  // ────────── Varios meses de una vez ──────────
+
+  /**
+   * Marcar varios meses en vez de uno, para registrar los que ya pasaron
+   * (por ejemplo, todo 2025, cuyas boletas se firmaron en papel).
+   *
+   * Solo se pueden marcar meses que ya empezaron. Lo de abrir meses por
+   * adelantado de golpe se quitó a propósito (congelaba los sueldos de hoy
+   * en meses que aún no llegan), y eso sigue igual: un mes futuro se elige
+   * solo, uno por uno, con su aviso.
+   */
+  variosMeses = false;
+  mesesMarcados = new Set<string>();
+
+  private get mesEnCurso(): string {
+    const hoy = new Date();
+    return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  /** Los meses del periodo que ya empezaron: los únicos que se marcan de golpe. */
+  get mesesMarcables(): { valor: string; etiqueta: string }[] {
+    return this.mesesDelPeriodo.filter((m) => m.valor <= this.mesEnCurso);
+  }
+
+  alternarVariosMeses(activo: boolean): void {
+    this.variosMeses = activo;
+    this.mesesMarcados = new Set();
+
+    const mes = this.form.get('mesAnio')!;
+    // Con varios meses el desplegable no se usa: no puede quedar pidiendo
+    // un dato que ya no se ve.
+    mes.setValidators(activo ? [] : [Validators.required]);
+    mes.updateValueAndValidity();
+  }
+
+  alternarMes(valor: string): void {
+    const marcados = new Set(this.mesesMarcados);
+    if (marcados.has(valor)) {
+      marcados.delete(valor);
+    } else {
+      marcados.add(valor);
+    }
+    this.mesesMarcados = marcados;
+  }
+
+  /** Si lo elegido es de un año que ya pasó: ahí la planilla es de registro. */
+  get esDeAnioAnterior(): boolean {
+    const anioActual = new Date().getFullYear();
+    return this.mesesElegidos.some((m) => Number(m.slice(0, 4)) < anioActual);
+  }
+
+  marcarTodosLosMeses(): void {
+    this.mesesMarcados = new Set(this.mesesMarcables.map((m) => m.valor));
+  }
+
+  desmarcarMeses(): void {
+    this.mesesMarcados = new Set();
   }
 
   /** Lo que dice el botón de guardar. */
@@ -465,14 +532,24 @@ export class CorridasListComponent implements OnInit {
     return this.mesesElegidos.filter((m) => m > actual).length;
   }
 
-  /** El mes elegido en palabras: "Septiembre 2026". */
+  /** El mes elegido en palabras: "Septiembre 2026", o "12 meses (Enero 2025 a Diciembre 2025)". */
   get mesElegidoEtiqueta(): string {
-    return this.mesesDelPeriodo.find((m) => m.valor === this.mesesElegidos[0])?.etiqueta ?? '';
+    const elegidos = this.mesesElegidos;
+    const etiqueta = (valor: string) => this.mesesDelPeriodo.find((m) => m.valor === valor)?.etiqueta ?? '';
+
+    if (elegidos.length <= 1) return etiqueta(elegidos[0]);
+
+    return `${elegidos.length} meses (${etiqueta(elegidos[0])} a ${etiqueta(elegidos[elegidos.length - 1])})`;
   }
 
   /** Lo que va a pasar al guardar, en una frase. */
   get resumenDeMeses(): string {
-    return this.mesElegidoEtiqueta ? `Se creará la planilla de ${this.mesElegidoEtiqueta}.` : '';
+    const cuantos = this.mesesElegidos.length;
+    if (!cuantos) return '';
+
+    return cuantos === 1
+      ? `Se creará la planilla de ${this.mesElegidoEtiqueta}.`
+      : `Se crearán ${cuantos} planillas, una por mes, de enero a diciembre en orden: ${this.mesElegidoEtiqueta}.`;
   }
 
   /** El rango del periodo, en cristiano, para ponerlo bajo el campo. */
@@ -504,6 +581,11 @@ export class CorridasListComponent implements OnInit {
 
     if (this.corridaEditando) {
       this.actualizar();
+      return;
+    }
+
+    if (this.variosMeses && !this.mesesMarcados.size) {
+      this.toastService.error('Falta elegir', 'Marca al menos un mes.');
       return;
     }
 

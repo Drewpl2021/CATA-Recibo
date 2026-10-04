@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Planilla;
 use App\Models\PlanillaCorrida;
+use App\Support\AniosAnteriores;
 use App\Traits\GeneraPlanillasEnLote;
 use App\Traits\ListadoPaginado;
 use Illuminate\Database\Eloquent\Builder;
@@ -152,6 +153,16 @@ class PlanillaCorridaController extends Controller
             'generar'       => 'sometimes|boolean',
         ], $this->reglasDelGrupo()));
 
+        // Un año ya pasado solo si el Administrador lo tiene permitido. Se
+        // revisa antes de crear nada: con varios meses no puede quedar la
+        // mitad creada.
+        $anios = $request->filled('meses')
+            ? array_map(fn ($m) => (int) substr($m, 0, 4), $request->input('meses'))
+            : [(int) $datos['anio']];
+        foreach (array_unique($anios) as $anio) {
+            AniosAnteriores::exigir($anio);
+        }
+
         // Varios meses: se atiende aparte porque la respuesta es otra —una
         // lista de planillas y un resumen de todas, no una sola.
         if ($request->filled('meses')) {
@@ -182,7 +193,7 @@ class PlanillaCorridaController extends Controller
             return response()->json(['success' => true, 'data' => $this->conCifras($corrida)], 201);
         }
 
-        $empleados = $this->empleadosDelGrupo($request);
+        $empleados = $this->empleadosDelGrupo($request, AniosAnteriores::esAnterior((int) $datos['anio']));
 
         if ($empleados->isEmpty()) {
             // La corrida se queda creada y vacía a propósito: el usuario ya
@@ -238,8 +249,15 @@ class PlanillaCorridaController extends Controller
      */
     private function crearVariosMeses(Request $request, array $datos)
     {
+        // De enero a diciembre, sin importar el orden en que lleguen: la
+        // Renta de 5ta de cada mes resta lo ya retenido en los anteriores, y
+        // si marzo se arma antes que enero, enero todavía no tiene nada.
+        $meses = collect($request->input('meses'))->unique()->sort()->values()->all();
+
+        $hayAnioAnterior = collect($meses)->contains(fn ($m) => AniosAnteriores::esAnterior((int) substr($m, 0, 4)));
+
         $generar  = $request->boolean('generar');
-        $empleados = $generar ? $this->empleadosDelGrupo($request) : collect();
+        $empleados = $generar ? $this->empleadosDelGrupo($request, $hayAnioAnterior) : collect();
 
         $creadas   = [];
         $omitidas  = [];
@@ -248,7 +266,7 @@ class PlanillaCorridaController extends Controller
         $generadas = 0;
         $saltadas  = 0;
 
-        foreach ($request->input('meses') as $mesAnio) {
+        foreach ($meses as $mesAnio) {
             [$anio, $mes] = array_map('intval', explode('-', $mesAnio));
 
             $repetida = PlanillaCorrida::where('nombre', $datos['nombre'])
@@ -290,7 +308,7 @@ class PlanillaCorridaController extends Controller
             // El detalle trabajador por trabajador solo cuando es un mes: con
             // diez meses son mil quinientas filas que nadie va a leer, y el
             // resumen de arriba ya dice lo que hace falta.
-            if (count($request->input('meses')) === 1) {
+            if (count($meses) === 1) {
                 $detalle = $resultado['detalle'];
             }
 
@@ -443,7 +461,9 @@ class PlanillaCorridaController extends Controller
 
         $request->validate($this->reglasDelGrupo());
 
-        $empleados = $this->empleadosDelGrupo($request);
+        AniosAnteriores::exigir((int) $corrida->anio);
+
+        $empleados = $this->empleadosDelGrupo($request, AniosAnteriores::esAnterior((int) $corrida->anio));
 
         if ($empleados->isEmpty()) {
             return response()->json([

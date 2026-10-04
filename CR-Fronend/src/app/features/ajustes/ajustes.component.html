@@ -1,0 +1,41 @@
+<app-page-header
+  icono="settings"
+  titulo="Ajustes del sistema"
+  subtitulo="Lo que se enciende y apaga sin tocar código. Cada cambio se guarda al momento y queda en la Auditoría."
+></app-page-header>
+
+<p class="form-ayuda" *ngIf="cargando">Cargando los ajustes…</p>
+
+<section class="panel-filtros" *ngIf="ajustes">
+  <header class="panel-filtros__cabecera">
+    <div>
+      <h2 class="panel-filtros__titulo">Planillas de años anteriores</h2>
+      <p class="form-ayuda" style="margin: 4px 0 0;">
+        Para dejar de registro las boletas que antes se firmaban a mano: por ejemplo,
+        todo {{ anioActual - 1 }}.
+      </p>
+    </div>
+
+    <label class="check-item" [class.is-activo]="ajustes.permitir_anios_anteriores">
+      <input type="checkbox" [checked]="ajustes.permitir_anios_anteriores" [disabled]="guardando"
+        (change)="cambiarAniosAnteriores($any($event.target).checked)" />
+      <span>{{ ajustes.permitir_anios_anteriores ? 'Activado' : 'Desactivado' }}</span>
+    </label>
+  </header>
+
+  <ul class="form-ayuda" style="margin: 12px 0 0; padding-left: 20px; line-height: 1.6;">
+    <ng-container *ngIf="ajustes.permitir_anios_anteriores; else apagado">
+      <li>RR.HH. puede crear planillas y emitir boletas de cualquier mes de años anteriores.</li>
+      <li>Entran también quienes ya cesaron, si todavía trabajaban ese mes.</li>
+      <li>Esas boletas quedan como <strong>firmadas en papel</strong>: no se le avisa al
+        trabajador ni se le pide firmarlas.</li>
+      <li>El sueldo sale de la ficha de hoy, aunque en ese año haya sido otro.</li>
+    </ng-container>
+    <ng-template #apagado>
+      <li>Solo se pueden crear planillas y emitir boletas de {{ anioActual }} en adelante.</li>
+      <li>Lo que ya se armó de años anteriores se queda como está.</li>
+      <li>Las boletas ya firmadas en papel se pueden seguir subiendo en
+        Documentos → Subir anteriores.</li>
+    </ng-template>
+  </ul>
+</section>

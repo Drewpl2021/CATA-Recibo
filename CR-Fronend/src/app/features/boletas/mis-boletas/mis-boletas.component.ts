@@ -38,6 +38,8 @@ export interface BoletaRow {
   descargado: string | null;
   descargas: number;
   firmado: string | null;
+  /** Boleta de un año anterior armada para registro: ya se firmó a mano. */
+  enPapel: boolean;
   correo: string;
   celular: string;
 }
@@ -132,7 +134,7 @@ export class MisBoletasComponent implements OnInit {
     },
     {
       id: 'firmar', titulo: 'Firmar esta boleta', icono: 'signature', severidad: 'success',
-      visible: (b) => !b.firmado,
+      visible: (b) => !b.firmado && !b.enPapel,
     },
   ];
 
@@ -219,6 +221,7 @@ export class MisBoletasComponent implements OnInit {
       // El hito de la firma es la fecha; el estado_firma manda por si acaso
       // hubiera una firma vieja sin fecha guardada.
       firmado: d.estado_firma === 'firmado' ? (d.fecha_firma ?? d.created_at ?? null) : null,
+      enPapel: d.estado_firma === 'en_papel',
       // El correo del aviso va congelado en el documento; si esa boleta es
       // de antes de que se anotara, se cae al de la cuenta.
       correo: d.aviso_correo ?? d.empleado?.usuario?.email ?? '—',
@@ -231,7 +234,7 @@ export class MisBoletasComponent implements OnInit {
     if (!this.firmaPendienteId || this.boletas.length === 0) return;
     const boleta = this.boletas.find((b) => b.id === this.firmaPendienteId);
     this.firmaPendienteId = null;
-    if (boleta && !boleta.firmado) this.firmarBoleta(boleta);
+    if (boleta && !boleta.firmado && !boleta.enPapel) this.firmarBoleta(boleta);
   }
 
   alAccionar(evento: { accion: string; fila: BoletaRow }): void {
@@ -285,6 +288,10 @@ export class MisBoletasComponent implements OnInit {
   firmarBoleta(boleta: BoletaRow): void {
     if (boleta.firmado) {
       this.toastService.info('Ya firmada', `Firmaste esta boleta el ${this.formatFecha(boleta.firmado)}.`);
+      return;
+    }
+    if (boleta.enPapel) {
+      this.toastService.info('Firmada en papel', 'Esta boleta es de registro: ya la firmaste a mano en su momento.');
       return;
     }
     this.boletaAFirmar = boleta;

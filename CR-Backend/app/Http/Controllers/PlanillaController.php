@@ -377,6 +377,8 @@ class PlanillaController extends Controller
             ], 422);
         }
 
+        \App\Support\AniosAnteriores::exigir((int) $request->anio);
+
         $empleado = Empleado::findOrFail($request->empleado_id);
 
         // A quien ya cesó no se le arma planilla nueva: generarlas en lote
@@ -384,7 +386,12 @@ class PlanillaController extends Controller
         // estado activo, pero esta es la puerta de "una por una" y le
         // faltaba el mismo seguro — el desplegable de la pantalla ya
         // esconde a los cesados, pero eso es el frontend, no una regla.
-        if ($empleado->estado !== 'activo') {
+        // La excepción es un mes de un año anterior en el que todavía
+        // trabajaba: ahí la planilla es de registro.
+        $deRegistro = \App\Support\AniosAnteriores::esAnterior((int) $request->anio)
+            && \App\Support\AniosAnteriores::trabajabaEnElMes($empleado, (int) $request->mes, (int) $request->anio);
+
+        if ($empleado->estado !== 'activo' && ! $deRegistro) {
             return response()->json([
                 'success' => false,
                 'message' => "{$empleado->nombre} {$empleado->apellido} está cesado: no se le pueden armar planillas nuevas.",

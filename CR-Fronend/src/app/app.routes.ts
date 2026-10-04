@@ -230,6 +230,12 @@ export const routes: Routes = [
         canActivate: [soloAdmin],
         loadComponent: () => import('./features/auditoria/auditoria-list/auditoria-list.component').then(m => m.AuditoriaListComponent),
       },
+      {
+        // Lo que se enciende y apaga sin tocar código. Solo Admin.
+        path: 'ajustes',
+        canActivate: [soloAdmin],
+        loadComponent: () => import('./features/ajustes/ajustes.component').then(m => m.AjustesComponent),
+      },
       { path: '**', redirectTo: 'dashboard' }
     ]
   },
