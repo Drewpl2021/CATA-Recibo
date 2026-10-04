@@ -39,3 +39,60 @@
     </ng-template>
   </ul>
 </section>
+
+<!-- Montos de ley por año: cada planilla se calcula con los de SU año. -->
+<section class="panel-filtros" style="margin-top: 16px;" *ngIf="valoresLegales.length">
+  <header class="panel-filtros__cabecera">
+    <div>
+      <h2 class="panel-filtros__titulo">Montos de ley por año</h2>
+      <p class="form-ayuda" style="margin: 4px 0 0;">
+        Cada planilla usa los de su propio año: la de 2025 con los de 2025. Si un año no
+        está cargado, se usan los del último año anterior.
+      </p>
+    </div>
+
+    <div class="campo-filtro campo-filtro--corto">
+      <label for="anioLegal">Año</label>
+      <select id="anioLegal" class="form-control" [ngModel]="anioLegal" (ngModelChange)="elegirAnioLegal($event)">
+        <option *ngFor="let v of valoresLegales" [ngValue]="v.anio">{{ v.anio }}</option>
+      </select>
+    </div>
+  </header>
+
+  <ng-container *ngIf="edicionLegal">
+    <div *ngFor="let grupo of gruposLegales" style="margin-top: 16px;">
+      <h3 class="form-ayuda" style="margin: 0 0 8px; font-weight: 600;">{{ grupo.titulo }}</h3>
+      <div class="rejilla-campos">
+        <div class="form-group" *ngFor="let c of grupo.campos">
+          <label [for]="'ley_' + c.clave">{{ c.etiqueta }} ({{ c.unidad }})</label>
+          <input type="number" class="form-control" [id]="'ley_' + c.clave" min="0" step="0.01"
+            [(ngModel)]="edicionLegal[c.clave]" [disabled]="guardandoLegal" />
+          <small class="form-ayuda" *ngIf="c.ayuda">{{ c.ayuda }}</small>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 16px;">
+      <button type="button" class="btn-primary" (click)="guardarValoresLegales()"
+        [disabled]="guardandoLegal || !hayCambiosLegales">
+        {{ guardandoLegal ? 'Guardando…' : 'Guardar los montos de ' + anioLegal }}
+      </button>
+      <small class="form-ayuda">
+        Cambiarlos no rehace las planillas ya armadas: se aplican a las que se generen o
+        recalculen desde ahora.
+      </small>
+    </div>
+  </ng-container>
+
+  <div style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border, #e5e7eb);">
+    <div class="campo-filtro campo-filtro--corto">
+      <label for="nuevoAnioLegal">Agregar el año</label>
+      <input id="nuevoAnioLegal" type="number" class="form-control" min="2000" max="2100"
+        [(ngModel)]="nuevoAnioLegal" />
+    </div>
+    <button type="button" class="btn-secondary" (click)="agregarAnioLegal()" [disabled]="guardandoLegal">
+      Agregar
+    </button>
+    <small class="form-ayuda">Se crea con los montos del año anterior; después cambias los que hayan subido.</small>
+  </div>
+</section>

@@ -1,7 +1,7 @@
 import { inject, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AreaService, AuthService, CargoService, PlanillaCorridaService, SedeService, TipoContratoService } from '../../../core/services';
+import { AjustesService, AreaService, AuthService, CargoService, PlanillaCorridaService, SedeService, TipoContratoService, ValorLegal } from '../../../core/services';
 import { EmpleadoService } from '../../../core/services';
 import { Empleado } from '../../../core/models';
 import { BoletaService } from '../../../core/services';
@@ -627,7 +627,36 @@ export class EmisionBoletaListComponent implements OnInit {
     });
   }
 
+  /**
+   * Los montos de ley del año de la boleta (UIT, asignación familiar, % de
+   * pensión y EsSalud), los mismos con que el backend arma la planilla.
+   * Antes esta pantalla tenía su propia copia de las tasas, y bastaba que
+   * cambiaran en un lado para que la vista previa no cuadrara con la boleta.
+   */
+  private ley: ValorLegal | null = null;
+  private leyPara: number | null = null;
+  private ajustesService = inject(AjustesService);
+
   cargarPlanillaDelEmpleado(empleadoId: string, mes: number, anio: number, empleado: Empleado): void {
+    // Primero los montos de ese año; después, la planilla.
+    if (this.leyPara !== Number(anio)) {
+      const seguir = () => {
+        this.leyPara = Number(anio);
+        this.cargarPlanillaDelEmpleado(empleadoId, mes, anio, empleado);
+      };
+      this.ajustesService.valoresLegalesDelAnio(Number(anio)).subscribe({
+        next: (res) => {
+          this.ley = res.success ? res.data : null;
+          seguir();
+        },
+        error: () => {
+          this.ley = null;
+          seguir();
+        },
+      });
+      return;
+    }
+
     this.planillaService.listar({ empleado_id: empleadoId, mes, anio }).subscribe({
       next: (res) => {
         if (res.success && res.data.length > 0) {
@@ -685,32 +714,42 @@ export class EmisionBoletaListComponent implements OnInit {
 
   recalcularMontosDinamicos(): void {
     if (!this.empleadoSeleccionado) return;
+    // Sin los montos del año no se inventan: se dejan los que ya tenía.
+    const ley = this.ley;
+    if (!ley) return;
+
     const sueldo = this.formulario.remuneracionBasica ?? 0;
     const mes = this.formulario.mes;
+    const porciento = (tasa: number) => Number((sueldo * (tasa / 100)).toFixed(2));
 
-    // Asignación Familiar S/ 113.00 si tiene hijos
-    this.formulario.asignacionFamiliar = this.empleadoSeleccionado.tiene_hijos ? 113.00 : 0.00;
-    
+    // Asignación Familiar (10% de la RMV de ese año) si tiene hijos
+    this.formulario.asignacionFamiliar = this.empleadoSeleccionado.tiene_hijos ? ley.asignacion_familiar : 0.00;
+
     // Gratificación de julio y diciembre
     this.formulario.gratificacionesFiestas = [7, 12].includes(Number(mes)) ? sueldo : 0.00;
 
     // Aportes de Pensión (ONP / AFP)
     if (this.empleadoSeleccionado.sistema_pensiones === 'ONP') {
-      this.formulario.onp13 = Number((sueldo * 0.13).toFixed(2));
+      this.formulario.onp13 = porciento(ley.onp);
       this.formulario.sppFondoPensiones = null;
       this.formulario.sppPrimaSeguro = null;
       this.formulario.sppComision = null;
     } else if (this.empleadoSeleccionado.sistema_pensiones === 'AFP') {
       this.formulario.onp13 = null;
-      this.formulario.sppFondoPensiones = Number((sueldo * 0.10).toFixed(2));
-      this.formulario.sppPrimaSeguro = Number((sueldo * 0.0137).toFixed(2));
-      
-      const afp = this.empleadoSeleccionado.afp;
-      const tasaComision = afp === 'Habitat' ? 0.0147 :
-                           afp === 'Integra' ? 0.0155 :
-                           afp === 'Prima' ? 0.0160 :
-                           afp === 'Profuturo' ? 0.0169 : 0;
-      this.formulario.sppComision = Number((sueldo * tasaComision).toFixed(2));
+      this.formulario.sppFondoPensiones = porciento(ley.aporte_afp);
+      this.formulario.sppPrimaSeguro = porciento(ley.prima_seguro_afp);
+
+      // "Mixta" no paga comisión en planilla, igual que en el backend.
+      const comisiones: Record<string, number> = {
+        Habitat: ley.comision_habitat,
+        Integra: ley.comision_integra,
+        Prima: ley.comision_prima,
+        Profuturo: ley.comision_profuturo,
+      };
+      const tasaComision = this.empleadoSeleccionado.tipo_comision_afp === 'mixta'
+        ? 0
+        : comisiones[this.empleadoSeleccionado.afp ?? ''] ?? 0;
+      this.formulario.sppComision = porciento(tasaComision);
     } else {
       this.formulario.onp13 = null;
       this.formulario.sppFondoPensiones = null;
@@ -718,8 +757,7 @@ export class EmisionBoletaListComponent implements OnInit {
       this.formulario.sppComision = null;
     }
 
-    // Essalud (9%)
-    this.formulario.essalud9 = Number((sueldo * 0.09).toFixed(2));
+    this.formulario.essalud9 = porciento(ley.essalud);
   }
 
   cerrarModal(): void {

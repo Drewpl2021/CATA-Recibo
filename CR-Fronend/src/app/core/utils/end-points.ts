@@ -36,6 +36,8 @@ export const END_POINTS = {
     auditoria: 'audit-log',
     /** GET (RR.HH. y Admin) y PUT (solo Admin): los ajustes del sistema. */
     ajustes: 'settings',
+    /** GET (RR.HH. y Admin); POST y PUT /{anio} (solo Admin): los montos de ley por año. */
+    valoresLegales: 'legal-values',
   },
 
   personal: {

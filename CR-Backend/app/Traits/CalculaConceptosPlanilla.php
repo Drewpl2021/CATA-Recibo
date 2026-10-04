@@ -3,19 +3,16 @@ namespace App\Traits;
 
 trait CalculaConceptosPlanilla
 {
-    private array $comisionesAfp = [
-        'Habitat'   => 1.47,
-        'Integra'   => 1.55,
-        'Prima'     => 1.60,
-        'Profuturo' => 1.69,
-    ];
-
-    private float $aporteObligatorioAfp = 10.00;
-    private float $primaSeguroAfp = 1.37;
-    private float $porcentajeOnp = 13.00;
-    private float $porcentajeEssalud = 9.00;
-    private float $asignacionFamiliarMonto = 113.00;
-    private float $uitValor = 5500.00;
+    /**
+     * Los montos de ley (UIT, asignación familiar, % de pensión y EsSalud)
+     * del año de la planilla. Ya no están fijos aquí: cambian con los años,
+     * y una planilla de 2025 armada hoy tiene que usar los de 2025. Ver
+     * App\Models\ValorLegal. Sin año, los del año en curso.
+     */
+    protected function valoresLegales(?int $anio = null): \App\Models\ValorLegal
+    {
+        return \App\Models\ValorLegal::delAnio($anio ?? (int) now()->year);
+    }
 
     /**
      * Estos conceptos SIEMPRE se calculan con su propia lógica especial por empleado
@@ -30,12 +27,13 @@ trait CalculaConceptosPlanilla
      */
     private const CONCEPTOS_CON_CALCULO_ESPECIAL = \App\Support\ConceptosDePago::CALCULO_ESPECIAL;
 
-    protected function calcularDescuentoPension($empleado, $sueldoBase): array
+    protected function calcularDescuentoPension($empleado, $sueldoBase, ?int $anio = null): array
     {
         $sueldoBase = (float) $sueldoBase;
+        $ley        = $this->valoresLegales($anio);
 
         if ($empleado->sistema_pensiones === 'AFP' && $empleado->afp) {
-            $aporte = round($sueldoBase * ($this->aporteObligatorioAfp / 100), 2);
+            $aporte = round($sueldoBase * ($ley->aporte_afp / 100), 2);
 
             /*
              * Cada nombre con SU monto: la prima es la fija, la comisión la
@@ -52,7 +50,7 @@ trait CalculaConceptosPlanilla
              * dos casos, así que el error no salta en ninguna suma — solo
              * queda mal el nombre en la boleta y en la declaración.
              */
-            $prima = round($sueldoBase * ($this->primaSeguroAfp / 100), 2);
+            $prima = round($sueldoBase * ($ley->prima_seguro_afp / 100), 2);
 
             /*
              * Comisión "Mixta" (afiliado de antes del 2013): la AFP la cobra
@@ -62,7 +60,7 @@ trait CalculaConceptosPlanilla
              * 70) está en este esquema: cobrarles la comisión "por flujo"
              * igual que al resto era un descuento que no les corresponde.
              */
-            $comisionAfp = $empleado->tipo_comision_afp === 'mixta' ? 0 : ($this->comisionesAfp[$empleado->afp] ?? 0);
+            $comisionAfp = $empleado->tipo_comision_afp === 'mixta' ? 0 : $ley->comisionAfp($empleado->afp);
             $comision    = round($sueldoBase * ($comisionAfp / 100), 2);
 
             $detalle = [
@@ -93,7 +91,7 @@ trait CalculaConceptosPlanilla
             ];
         }
 
-        $monto = round($sueldoBase * ($this->porcentajeOnp / 100), 2);
+        $monto = round($sueldoBase * ($ley->onp / 100), 2);
         return [
             'tipo'    => 'ONP',
             'detalle' => [
@@ -103,9 +101,9 @@ trait CalculaConceptosPlanilla
         ];
     }
 
-    protected function calcularAsignacionFamiliar($empleado): float
+    protected function calcularAsignacionFamiliar($empleado, ?int $anio = null): float
     {
-        return $empleado->tiene_hijos ? $this->asignacionFamiliarMonto : 0.00;
+        return $empleado->tiene_hijos ? $this->valoresLegales($anio)->asignacion_familiar : 0.00;
     }
 
     /**
@@ -197,7 +195,7 @@ trait CalculaConceptosPlanilla
         $mesesTrabajados = $finSemestre->month - $inicioEfectivo->month + 1;
         $mesesTrabajados = min(6, max(0, $mesesTrabajados));
 
-        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
+        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado, $anio);
 
         $montoBase               = round(($sueldoBase * $mesesTrabajados) / 6, 2);
         $asignacionProrrateada   = round(($asignacionFamiliar * $mesesTrabajados) / 6, 2);
@@ -214,9 +212,9 @@ trait CalculaConceptosPlanilla
         ];
     }
 
-    protected function calcularEssalud($sueldoBase): float
+    protected function calcularEssalud($sueldoBase, ?int $anio = null): float
     {
-        return round((float) $sueldoBase * ($this->porcentajeEssalud / 100), 2);
+        return round((float) $sueldoBase * ($this->valoresLegales($anio)->essalud / 100), 2);
     }
 
     /**
@@ -274,7 +272,7 @@ trait CalculaConceptosPlanilla
         $tramo = self::TRAMOS_RENTA_5TA[$mes] ?? self::TRAMOS_RENTA_5TA[1];
 
         // La Asignación Familiar es remunerativa y también afecta a Renta de 5ta Categoría.
-        $remuneracionOrdinaria = $sueldoBase + $bonificaciones + $this->calcularAsignacionFamiliar($empleado);
+        $remuneracionOrdinaria = $sueldoBase + $bonificaciones + $this->calcularAsignacionFamiliar($empleado, $anio);
 
         $gratificacionJulio     = $this->calcularGratificacion($empleado, $sueldoBase, 7, $anio);
         $gratificacionDiciembre = $this->calcularGratificacion($empleado, $sueldoBase, 12, $anio);
@@ -287,12 +285,14 @@ trait CalculaConceptosPlanilla
             + $gratificacionesDelEjercicio
             + $ingresosExtraordinarios;
 
-        $exento = $this->uitValor * 7;
+        // La UIT del año de la planilla: la de 2025 no es la de 2026.
+        $uit    = $this->valoresLegales($anio)->uit;
+        $exento = $uit * 7;
         if ($ingresoAnual <= $exento) {
             return 0.00;
         }
 
-        $impuestoAnual = $this->aplicarTramosImpuestoRenta($ingresoAnual - $exento);
+        $impuestoAnual = $this->aplicarTramosImpuestoRenta($ingresoAnual - $exento, $uit);
         $retencionesAcumuladas = $this->retencionesRenta5taAcumuladas($empleado->id, $anio, $tramo['corte']);
 
         if ($mes === 12) {
@@ -305,9 +305,8 @@ trait CalculaConceptosPlanilla
     /**
      * Tramos progresivos acumulativos vigentes (8/14/17/20/30% sobre 5/20/35/45 UIT).
      */
-    private function aplicarTramosImpuestoRenta(float $rentaNeta): float
+    private function aplicarTramosImpuestoRenta(float $rentaNeta, float $uit): float
     {
-        $uit      = $this->uitValor;
         $impuesto = 0.00;
 
         $tramo1 = $uit * 5; // 8% hasta 5 UIT
@@ -465,7 +464,10 @@ trait CalculaConceptosPlanilla
     protected function generarConceptosAutomaticos($planilla, $empleado): void
     {
         $sueldoBase         = (float) $planilla->sueldo_base;
-        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado);
+        // Todos los montos de ley de esta planilla salen de SU año.
+        $anio               = (int) $planilla->anio;
+        $ley                = $this->valoresLegales($anio);
+        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado, $anio);
         // + Bonificación por Cargo y Vacaciones Truncas si ya las tiene la
         // planilla (ver el comentario largo en otrosIngresosAfectosDeLaPlanilla).
         $baseAfecta = $sueldoBase + $asignacionFamiliar + $this->otrosIngresosAfectosDeLaPlanilla($planilla);
@@ -521,10 +523,10 @@ trait CalculaConceptosPlanilla
         }
 
         if ($empleado->sistema_pensiones === 'AFP' && $empleado->afp) {
-            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_FONDO, $baseAfecta * ($this->aporteObligatorioAfp / 100));
+            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_FONDO, $baseAfecta * ($ley->aporte_afp / 100));
 
-            // La prima del seguro: 1.37%, igual para todas las AFP.
-            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, $baseAfecta * ($this->primaSeguroAfp / 100));
+            // La prima del seguro: la misma para todas las AFP.
+            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, $baseAfecta * ($ley->prima_seguro_afp / 100));
 
             // Y la comisión, que sí depende de cuál sea su AFP. Va con la tasa
             // escrita al lado porque es el dato que cambia de persona a
@@ -536,7 +538,7 @@ trait CalculaConceptosPlanilla
             //
             // "Mixta" no paga comisión en planilla —la AFP la cobra del
             // fondo acumulado—, igual que en calcularDescuentoPension().
-            $comisionAfp = $empleado->tipo_comision_afp === 'mixta' ? 0 : ($this->comisionesAfp[$empleado->afp] ?? 0);
+            $comisionAfp = $empleado->tipo_comision_afp === 'mixta' ? 0 : $ley->comisionAfp($empleado->afp);
             if ($comisionAfp > 0) {
                 $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_COMISION, $baseAfecta * ($comisionAfp / 100), "AFP {$empleado->afp} ({$comisionAfp}%)");
             } else {
@@ -548,13 +550,13 @@ trait CalculaConceptosPlanilla
                     ->delete();
             }
         } elseif ($empleado->sistema_pensiones === 'ONP') {
-            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::ONP, $baseAfecta * ($this->porcentajeOnp / 100));
+            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::ONP, $baseAfecta * ($ley->onp / 100));
         }
         // Sin sistema de pensiones no se crea ninguna línea: es el jubilado
         // que ya cobra su pensión o el extranjero con convenio. EsSalud sí se
         // le sigue aportando, que es cosa aparte.
 
-        $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::ESSALUD, $this->calcularEssalud($baseAfecta));
+        $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::ESSALUD, $this->calcularEssalud($baseAfecta, $anio));
 
         // Conceptos marcados como "fijo para todos" en el catálogo — EXCLUYENDO siempre
         // los de pensión/EsSalud/Renta 5ta, que arriba ya reciben su cálculo especial

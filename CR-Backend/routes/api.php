@@ -253,6 +253,9 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
 
         // Los ajustes del sistema: RR.HH. los lee, solo Admin los cambia.
         Route::get('settings', [\App\Http\Controllers\ConfiguracionController::class, 'index']);
+        // Los montos de ley por año (UIT, asignación familiar, % de pensión).
+        Route::get('legal-values',        [\App\Http\Controllers\ValorLegalController::class, 'index']);
+        Route::get('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'show'])->whereNumber('anio');
     });
 
     // ── Solo Administrador: gestión de roles y del sistema de permisos ──
@@ -262,6 +265,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::get('audit-log', [AuditoriaController::class, 'index']);
 
         Route::put('settings', [\App\Http\Controllers\ConfiguracionController::class, 'update']);
+        Route::post('legal-values',       [\App\Http\Controllers\ValorLegalController::class, 'store']);
+        Route::put('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'update'])->whereNumber('anio');
 
         Route::apiResource('roles', RolController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('module-groups', ModuloPadreController::class);

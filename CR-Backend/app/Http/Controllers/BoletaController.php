@@ -91,10 +91,10 @@ class BoletaController extends Controller
         $asignacionFamiliar = $this->asignacionFamiliarDeLaPlanilla($planilla);
         $baseAfecta         = (float) $planilla->sueldo_base + $asignacionFamiliar + $this->otrosIngresosAfectosDeLaPlanilla($planilla);
 
-        $pension       = $this->calcularDescuentoPension($empleado, $baseAfecta);
+        $pension       = $this->calcularDescuentoPension($empleado, $baseAfecta, $anio);
         // La gratificación no se calcula acá: en julio y diciembre es una línea
         // de la planilla y sale sola entre los conceptos de ingreso.
-        $essalud       = $this->calcularEssalud($baseAfecta);
+        $essalud       = $this->calcularEssalud($baseAfecta, $anio);
         // Recalcula y deja registrada la retención del mes (Art. 40 Reglamento LIR),
         // por si se agregaron bonos u otros ingresos después de crear la planilla.
         $renta5ta      = $this->generarYPersistirRenta5ta($planilla, $empleado);
