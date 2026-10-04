@@ -16,6 +16,8 @@ export interface AjustesSistema {
  */
 export interface ValorLegal {
   anio: number;
+  /** La denominación oficial del año, que va arriba en la boleta. Vacía, no se imprime. */
+  nombre_anio: string | null;
   uit: number;
   asignacion_familiar: number;
   onp: number;
@@ -29,6 +31,9 @@ export interface ValorLegal {
 }
 
 export type CamposValorLegal = Omit<ValorLegal, 'anio'>;
+
+/** Solo los montos (todo menos el año y su nombre): los que se escriben como número. */
+export type MontoLegal = Exclude<keyof CamposValorLegal, 'nombre_anio'>;
 
 @Injectable({ providedIn: 'root' })
 export class AjustesService {

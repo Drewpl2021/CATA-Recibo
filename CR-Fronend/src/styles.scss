@@ -5815,6 +5815,9 @@ textarea.form-control {
 
 .rejilla-montos .form-group { margin: 0; }
 
+/* Un campo de texto largo (una frase entera) sin cruzar toda la pantalla. */
+.campo-ancho { max-width: 720px; margin: 0; }
+
 /* Un campo numérico con su unidad dentro: "S/ 5 500", "13 %". */
 .campo-unidad {
   position: relative;

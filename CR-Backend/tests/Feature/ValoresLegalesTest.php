@@ -80,12 +80,37 @@ class ValoresLegalesTest extends TestCase
         $this->actingAs($rrhh, 'sanctum')->putJson('/api/legal-values/2025', ['uit' => 1])->assertForbidden();
     }
 
+    public function test_el_nombre_oficial_del_anio_se_edita_y_no_pasa_a_otros_anios(): void
+    {
+        $this->assertSame('Año de la recuperación y consolidación de la economía peruana', ValorLegal::nombreDelAnio(2025));
+
+        $this->actingAs($this->crearUsuario('admin'), 'sanctum')
+            ->putJson('/api/legal-values/2026', array_merge(ValorLegal::find(2026)->only(ValorLegal::CAMPOS), [
+                'nombre_anio' => '  Año de prueba del sistema  ',
+            ]))
+            ->assertOk();
+
+        $this->assertSame('Año de prueba del sistema', ValorLegal::nombreDelAnio(2026));
+        // 2030 usa los MONTOS de 2026, pero no su nombre: cada año tiene el suyo.
+        $this->assertSame(2026, ValorLegal::delAnio(2030)->anio);
+        $this->assertNull(ValorLegal::nombreDelAnio(2030));
+    }
+
+    public function test_sin_nombre_la_boleta_no_lleva_esa_linea(): void
+    {
+        ValorLegal::find(2026)->update(['nombre_anio' => '   ']);
+
+        $this->assertNull(ValorLegal::nombreDelAnio(2026));
+    }
+
     public function test_un_anio_nuevo_copia_lo_que_no_se_mande_del_anterior(): void
     {
         $this->actingAs($this->crearUsuario('admin'), 'sanctum')
             ->postJson('/api/legal-values', ['anio' => 2027, 'uit' => 5700])
             ->assertCreated()
             ->assertJsonPath('data.uit', 5700)
-            ->assertJsonPath('data.asignacion_familiar', 113);
+            ->assertJsonPath('data.asignacion_familiar', 113)
+            // El nombre no se copia: el de 2026 no es el de 2027.
+            ->assertJsonPath('data.nombre_anio', null);
     }
 }

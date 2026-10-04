@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { AjustesService, AjustesSistema, CamposValorLegal, ToastService, ValorLegal } from '../../core/services';
+import { AjustesService, AjustesSistema, CamposValorLegal, MontoLegal, ToastService, ValorLegal } from '../../core/services';
 import { mensajeErrorApi } from '../../core/utils';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { FormModalComponent } from '../../shared/components/form-modal/form-modal.component';
@@ -10,7 +10,7 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
 
 /** Cómo se muestra cada monto de ley en la pantalla. */
 interface CampoLegal {
-  clave: keyof CamposValorLegal;
+  clave: MontoLegal;
   etiqueta: string;
   unidad: 'S/' | '%';
   ayuda?: string;
@@ -88,7 +88,9 @@ export class AjustesComponent implements OnInit {
   get hayCambiosLegales(): boolean {
     const guardado = this.valoresLegales.find((v) => v.anio === this.anioLegal);
     if (!guardado || !this.edicionLegal) return false;
-    return this.gruposLegales.some((g) => g.campos.some((c) => Number(this.edicionLegal![c.clave]) !== Number(guardado[c.clave])));
+    const nombreCambio = (this.edicionLegal.nombre_anio ?? '').trim() !== (guardado.nombre_anio ?? '').trim();
+    return nombreCambio
+      || this.gruposLegales.some((g) => g.campos.some((c) => Number(this.edicionLegal![c.clave]) !== Number(guardado[c.clave])));
   }
 
   private cargarValoresLegales(elegir?: number): void {
@@ -112,26 +114,30 @@ export class AjustesComponent implements OnInit {
       this.edicionLegal = null;
       return;
     }
-    const { anio: _, ...campos } = fila;
-    // Con dos decimales, como se escriben en la planilla: "1.60", "113.00".
-    this.edicionLegal = Object.fromEntries(
-      Object.entries(campos).map(([clave, valor]) => [clave, Number(valor).toFixed(2)])
-    ) as unknown as CamposValorLegal;
+    const { anio: _, nombre_anio, ...montos } = fila;
+    // Los montos con dos decimales, como se escriben en la planilla: "1.60", "113.00".
+    this.edicionLegal = {
+      nombre_anio: nombre_anio ?? '',
+      ...Object.fromEntries(Object.entries(montos).map(([clave, valor]) => [clave, Number(valor).toFixed(2)])),
+    } as unknown as CamposValorLegal;
   }
 
   guardarValoresLegales(): void {
     if (this.anioLegal === null || !this.edicionLegal) return;
 
-    const valores = Object.fromEntries(
-      Object.entries(this.edicionLegal).map(([clave, valor]) => [clave, Number(valor)])
-    ) as unknown as CamposValorLegal;
+    const { nombre_anio, ...montos } = this.edicionLegal;
+    const valores = {
+      // Vacío se guarda como "sin nombre": la boleta no lleva esa línea.
+      nombre_anio: (nombre_anio ?? '').trim() || null,
+      ...Object.fromEntries(Object.entries(montos).map(([clave, valor]) => [clave, Number(valor)])),
+    } as unknown as CamposValorLegal;
 
     this.guardandoLegal = true;
     this.ajustesService.actualizarAnio(this.anioLegal, valores).subscribe({
       next: (res) => {
         this.guardandoLegal = false;
         if (res.success) {
-          this.toastService.success('Montos guardados', `Las planillas de ${this.anioLegal} que se armen o recalculen desde ahora usan estos montos.`);
+          this.toastService.success('Cambios guardados', `Las planillas y boletas de ${this.anioLegal} que se armen o recalculen desde ahora usan estos datos.`);
           this.cargarValoresLegales(this.anioLegal!);
         }
       },
@@ -152,7 +158,7 @@ export class AjustesComponent implements OnInit {
         this.guardandoLegal = false;
         if (res.success) {
           this.modalAnioVisible = false;
-          this.toastService.success('Año agregado', `${anio} se creó con los montos del año anterior. Cambia los que hayan subido (la UIT casi siempre).`);
+          this.toastService.success('Año agregado', `${anio} se creó con los montos del año anterior. Escribe su nombre oficial y cambia los montos que hayan subido (la UIT casi siempre).`);
           this.cargarValoresLegales(anio);
         }
       },

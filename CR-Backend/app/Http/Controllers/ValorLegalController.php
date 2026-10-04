@@ -58,6 +58,8 @@ class ValorLegalController extends Controller
         $porcentaje = "{$obligatorio}|numeric|min:0|max:100";
 
         return [
+            // Opcional siempre: sin él, la boleta solo no lleva esa línea.
+            'nombre_anio'         => 'sometimes|nullable|string|max:255',
             'uit'                 => "{$obligatorio}|numeric|min:1|max:100000",
             'asignacion_familiar' => "{$obligatorio}|numeric|min:0|max:10000",
             'onp'                 => $porcentaje,

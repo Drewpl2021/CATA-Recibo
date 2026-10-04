@@ -121,6 +121,7 @@ class MiBoletaController extends Controller
             'renta5ta'           => $renta5ta,
             'documento'          => $documento,
             'cabecera'           => $cabecera,
+            'nombre_anio'        => \App\Models\ValorLegal::nombreDelAnio((int) $anio),
         ];
 
         // Al trabajador se le da UNA sola copia: la del colegio no le sirve de

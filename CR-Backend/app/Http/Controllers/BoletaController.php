@@ -165,6 +165,7 @@ class BoletaController extends Controller
             'renta5ta'           => $renta5ta,
             'documento'          => $documento,
             'cabecera'           => $cabecera,
+            'nombre_anio'        => \App\Models\ValorLegal::nombreDelAnio($anio),
         ];
 
         $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'landscape');

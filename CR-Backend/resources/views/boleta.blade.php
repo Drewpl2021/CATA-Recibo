@@ -53,6 +53,14 @@
             text-align: center;
         }
 
+        /* Arriba de todo y discreta: es protocolo, no el título de la boleta. */
+        .encabezado-texto .nombre-anio {
+            font-size: 8px;
+            font-style: italic;
+            color: #45506A;
+            margin: 0 0 3px;
+        }
+
         .encabezado-texto h1 {
             font-size: 13px;
             color: #0E2650;
@@ -352,6 +360,10 @@
             <img src="{{ public_path('logo.png') }}">
         </div>
         <div class="encabezado-texto">
+            {{-- La denominación oficial del año, como en todo documento del Estado. Se edita en Ajustes. --}}
+            @if (!empty($nombre_anio))
+                <p class="nombre-anio">"{{ $nombre_anio }}"</p>
+            @endif
             <h1>Asociación Educativa Colegio Adventista Túpac Amaru</h1>
             <p class="ruc">RUC: {{ $colegioRuc }} — {{ $colegioDireccion }}</p>
             <h2>Boleta de Pago de Remuneraciones — {{ $mes_nombre }} {{ $anio }}</h2>

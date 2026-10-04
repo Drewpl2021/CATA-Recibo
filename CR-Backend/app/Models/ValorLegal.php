@@ -22,7 +22,8 @@ class ValorLegal extends Model
         'comision_habitat', 'comision_integra', 'comision_prima', 'comision_profuturo',
     ];
 
-    protected $fillable = ['anio', ...self::CAMPOS];
+    /** La denominación oficial del año. Va aparte de CAMPOS: no es un monto y no se copia al año siguiente. */
+    protected $fillable = ['anio', 'nombre_anio', ...self::CAMPOS];
 
     protected $casts = [
         'anio'                => 'integer',
@@ -38,7 +39,7 @@ class ValorLegal extends Model
         'comision_profuturo'  => 'float',
     ];
 
-    protected array $camposAuditables = self::CAMPOS;
+    protected array $camposAuditables = ['nombre_anio', ...self::CAMPOS];
     protected string $entidadAuditada = 'montos de ley';
 
     public function nombreAuditado(): string
@@ -64,6 +65,18 @@ class ValorLegal extends Model
     {
         return self::$leidos[$anio] ??= static::where('anio', '<=', $anio)->orderByDesc('anio')->first()
             ?? static::orderBy('anio')->firstOrFail();
+    }
+
+    /**
+     * La denominación oficial de ESE año, para la boleta. A diferencia de los
+     * montos, no se hereda del año anterior: cada año tiene la suya, y si
+     * falta es mejor no imprimir nada que imprimir la del año pasado.
+     */
+    public static function nombreDelAnio(int $anio): ?string
+    {
+        $nombre = static::where('anio', $anio)->value('nombre_anio');
+
+        return $nombre !== null && trim($nombre) !== '' ? trim($nombre) : null;
     }
 
     /** La comisión por flujo de esa AFP, en %. 0 si no es una de las cuatro. */
