@@ -406,9 +406,11 @@ class EmpleadoController extends Controller
                 round((float) $e->bonificacion_cargo, 2),
                 // Vacío no es un olvido: es "no aporta a ninguna pensión".
                 $e->sistema_pensiones ?: 'No aporta',
-                $e->afp ?? '',
-                $e->tipo_comision_afp === 'mixta' ? 'Mixta' : 'Flujo',
-                (string) ($e->cuspp ?? ''),
+                // A quien no está en AFP no le corresponde nada de esto: se
+                // dice, y la importación lo vuelve a leer igual.
+                $e->sistema_pensiones === 'AFP' ? ($e->afp ?? '') : 'No aplica',
+                $e->sistema_pensiones === 'AFP' ? ($e->tipo_comision_afp === 'mixta' ? 'Mixta' : 'Flujo') : 'No aplica',
+                $e->sistema_pensiones === 'AFP' ? (string) ($e->cuspp ?? '') : 'No aplica',
                 $e->forma_pago ?? '',
                 $e->entidad_financiera ?? '',
                 (string) ($e->numero_cuenta ?? ''),
@@ -509,7 +511,7 @@ class EmpleadoController extends Controller
             'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo',
             'tipo_comision_afp'  => 'nullable|in:flujo,mixta',
             // Mismo formato que el alta: 12 caracteres, con letras y números.
-            'cuspp'              => 'nullable|regex:/^[A-Za-z0-9]{12}$/|required_if:sistema_pensiones,AFP',
+            'cuspp'              => 'nullable|regex:/^[A-Za-zÑñ0-9]{12}$/u|required_if:sistema_pensiones,AFP',
             'entidad_financiera' => 'nullable|string|max:100',
             'numero_cuenta'      => 'nullable|string|max:50',
             'cci'                => 'nullable|regex:/^[0-9]{20}$/',

@@ -135,11 +135,17 @@ final class ColumnasDeEmpleado
         'nivel_estudios'    => ['primaria' => 'Primaria', 'secundaria' => 'Secundaria', 'tecnico' => 'Técnico', 'universitario' => 'Universitario', 'maestria' => 'Maestría', 'doctorado' => 'Doctorado'],
     ];
 
+    /** Las columnas de AFP, que a quien está en ONP no le corresponden. */
+    private const SIN_AFP_SI_NO_APLICA = ['afp', 'tipo_comision_afp', 'cuspp'];
+
+    /** Cómo se dice "no le corresponde" en esas columnas. */
+    private const NO_APLICA = ['no aplica', 'no corresponde', 'ninguna', 'ninguno', 'onp', 'no aporta', 'sin afp'];
+
     private const ACEPTA = [
         'estado'            => 'Activo o Cesado',
         'sistema_pensiones' => 'AFP, ONP o No aporta',
-        'afp'               => 'Habitat, Integra, Prima o Profuturo',
-        'tipo_comision_afp' => 'Flujo o Mixta',
+        'afp'               => 'Habitat, Integra, Prima, Profuturo o No aplica (si está en ONP)',
+        'tipo_comision_afp' => 'Flujo, Mixta o No aplica (si está en ONP)',
         'forma_pago'        => 'Banco, Efectivo, Honorarios u Otro',
         'nivel_estudios'    => 'Primaria, Secundaria, Técnico, Universitario, Maestría o Doctorado',
     ];
@@ -381,6 +387,13 @@ final class ColumnasDeEmpleado
         $normal     = ReconocedorDeColumnas::normalizar($texto);
         $bien       = fn ($valor) => ['valor' => $valor, 'error' => null, 'omitir' => false];
         $mal        = fn (string $mensaje) => ['valor' => null, 'error' => $mensaje, 'omitir' => false];
+
+        // A quien está en ONP (o no aporta) no le corresponde AFP, comisión
+        // ni CUSPP. "No aplica" lo dice sin dejar la celda vacía, que en el
+        // Excel se lee como "no cambiar nada".
+        if (in_array($campo, self::SIN_AFP_SI_NO_APLICA, true) && in_array($normal, self::NO_APLICA, true)) {
+            return $bien(null);
+        }
 
         switch ($definicion['tipo']) {
             case 'correo':

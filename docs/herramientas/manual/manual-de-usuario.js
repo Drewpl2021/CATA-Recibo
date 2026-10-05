@@ -321,6 +321,7 @@ const cap6 = [
   ...bullets([
     'Con un **DNI nuevo** se da de alta. Con uno que **ya existe**, solo se cambian las celdas que tengan algo escrito: **una celda vacía no borra nada**.',
     'Para registrar a alguien que **ya se fue**, pon **Cesado** en Estado y su fecha de cese.',
+    'A quien está en **ONP** (o no aporta) se le escribe **No aplica** en AFP, Tipo de comisión AFP y CUSPP: así el Excel queda lleno y se le borra cualquier dato de AFP que tuviera. El CUSPP acepta la Ñ.',
     'La **fecha de cese** de un contratado que sigue trabajando es el fin programado de su contrato: no lo da de baja. Quien manda es la columna Estado.',
     'El tipo de contrato y la fecha de ingreso de alguien que ya existe no se cambian desde el Excel: se hace desde Contratos.',
   ]),
@@ -663,13 +664,13 @@ const cap16 = [
   quienVe('Administrador y RR.HH.'),
   p('Para empezar a usar el sistema con los datos reales, en la carpeta **«Para importar (noviembre)»** están los archivos listos. Súbelos en este orden:'),
   ...tabla(['#', 'Archivo', 'Dónde se sube', 'Qué hace'], [
-    ['1', '1 - Empleados (bonificación por cargo, diezmo, AFP).xlsx', 'Empleados → Importar empleados', 'Pone la bonificación por cargo a 14 personas, quita el diezmo a 4 y pasa a Lanza Umiña a AFP Integra. Sacado del PLAME de setiembre.'],
+    ['1', '1 - Empleados (bonificación por cargo, diezmo, AFP).xlsx', 'Empleados → Importar empleados', 'Todas las celdas llenas, sacadas del PLAME de setiembre: bonificación por cargo (14 la tienen), diezmo (4 sin diezmo), sistema de pensión, AFP, comisión y CUSPP. Pasa a Lanza Umiña a AFP Integra.'],
     ['2', '2 - Calculo 5ta (enero y febrero, se sube en Ajustes).xlsx', 'Ajustes del sistema → Renta de 5ta', 'Carga lo cobrado y retenido en enero y febrero (21 trabajadores).'],
     ['3', '—', 'Planillas → Nueva planilla', 'Crea la planilla del mes con todo el personal activo.'],
     ['4', '3 - Conceptos del mes (escolaridad ya llena, lo demás por llenar).xlsx', 'Planillas → Importar conceptos', 'La escolaridad viene llena porque se repite cada mes. Llena comedor, copias, tardanzas, adelantos, movilidad, curso IA y corbatas con los montos del mes.'],
   ], [400, 3300, 2600, 3400]),
   p('El archivo «Referencia - Conceptos septiembre 2026 (copia del PLAME)» es solo para comparar: no se sube.'),
-  importante('Antes de subirlos, confirma con RR.HH. el **CUSPP de Lanza Umiña**: en el PLAME tiene una letra dañada y se puso 540581FLUZN0.'),
+  p('El archivo 1 viene **lleno en todas sus celdas** (94 trabajadores): a quienes están en ONP se les pone «No aplica» en AFP, comisión y CUSPP. El CUSPP de Lanza Umiña va como en el PLAME, con Ñ: 540581FLUZÑ0.'),
 ];
 
 // ── 17 ──────────────────────────────────────────────────────────────

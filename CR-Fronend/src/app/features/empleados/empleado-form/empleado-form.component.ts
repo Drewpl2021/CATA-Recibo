@@ -314,7 +314,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     if (esAfp) {
       afp.setValidators([Validators.required]);
       // 12 caracteres, con letras y números: así lo entrega la AFP.
-      cuspp.setValidators([Validators.required, Validators.pattern(/^[A-Za-z0-9]{12}$/)]);
+      cuspp.setValidators([Validators.required, Validators.pattern(/^[A-Za-zÑñ0-9]{12}$/)]);
     } else {
       afp.clearValidators();
       cuspp.clearValidators();
