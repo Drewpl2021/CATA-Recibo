@@ -674,10 +674,11 @@ const cap16 = [
   ...tabla(['#', 'Archivo', 'Dónde se sube', 'Qué hace'], [
     ['1', '1 - Empleados (alta completa de los 94).xlsx', 'Empleados → Importar empleados', 'Da de alta a los 94 trabajadores del PLAME con 27 columnas llenas: datos personales, correo, área, cargo, sede, ingreso, contrato, sueldo, bonificación por cargo, pensión, banco, hijos, diezmo y estudios. A cada uno se le crea su cuenta con su DNI como contraseña.'],
     ['2', '2 - Calculo 5ta (enero y febrero, se sube en Ajustes).xlsx', 'Ajustes del sistema → Renta de 5ta', 'Carga lo cobrado y retenido en enero y febrero (21 trabajadores).'],
-    ['3', '—', 'Planillas → Nueva planilla', 'Crea la planilla del mes con todo el personal activo.'],
-    ['4', '3 - Conceptos del mes (escolaridad ya llena, lo demás por llenar).xlsx', 'Planillas → Importar conceptos', 'La escolaridad viene llena porque se repite cada mes. Llena comedor, copias, tardanzas, adelantos, movilidad, curso IA y corbatas con los montos del mes.'],
+    ['3', '—', 'Planillas → Nueva planilla', 'Crea la planilla del mes con todo el personal activo (para la prueba: Septiembre 2026).'],
+    ['4', '3 - Conceptos de septiembre 2026 (completo, del PLAME).xlsx', 'Planillas → Importar conceptos (Septiembre 2026)', 'Para la prueba con setiembre: todos los descuentos y pagos variables del PLAME de setiembre (escolaridad, comedor, copias, tardanzas, adelantos, movilidad, curso IA, corbatas y polos): 256 montos.'],
   ], [400, 3300, 2600, 3400]),
-  p('El archivo «Referencia - Conceptos septiembre 2026 (copia del PLAME)» es solo para comparar: no se sube.'),
+  p('Para los meses reales en adelante se usa «Modelo - Conceptos de cada mes (escolaridad llena, lo demás por llenar)»: la escolaridad viene llena porque se repite; lo demás se llena con los montos de ese mes. También sirve el modelo que descarga la propia pantalla de Importar conceptos.'),
+  p('Con la planilla de setiembre creada y los cuatro pasos hechos, el total neto debe salir S/ 178,801.84 contra S/ 178,790.88 del PLAME (los S/ 10.96 son la Renta de 5ta de Lanza Umiña). Por ejemplo, Gatica Quispe: neto S/ 2,509.22.'),
   p('El archivo 1 viene **lleno en todas sus celdas**: a quienes están en ONP se les pone «No aplica» en AFP, comisión y CUSPP, y a quienes tienen contrato indeterminado «Indeterminado» en Fecha de cese. El CUSPP de Lanza Umiña va como en el PLAME, con Ñ: 540581FLUZÑ0. No lleva CCI, especialidad, institución ni contacto de emergencia porque RR.HH. no tiene esos datos: son opcionales y se completan después en la ficha.'),
   p('Esta secuencia se probó en una base de datos vacía: 94 altas sin errores, 21 trabajadores con enero y febrero cargados, 94 planillas de octubre generadas e iguales al PLAME en 93 de 94 trabajadores (la diferencia es la Renta de 5ta de Lanza Umiña: el Excel de 5ta le suma una asignación familiar que el PLAME no le paga).'),
 ];
