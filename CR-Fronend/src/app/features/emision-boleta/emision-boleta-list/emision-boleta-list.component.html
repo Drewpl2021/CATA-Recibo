@@ -116,7 +116,7 @@
 <!-- ============================================================ -->
 <!--  MODAL: FORMULARIO DE EMISIÓN DE BOLETA                      -->
 <!-- ============================================================ -->
-<div class="boleta-modal-overlay" *ngIf="showModal" (click)="cerrarModal()">
+<div class="boleta-modal-overlay" *ngIf="showModal" appAlCuerpo (click)="cerrarModal()">
   <div class="boleta-modal" (click)="$event.stopPropagation()">
 
     <!-- HEADER DEL MODAL -->

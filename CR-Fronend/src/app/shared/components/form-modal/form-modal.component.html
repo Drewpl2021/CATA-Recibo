@@ -1,4 +1,4 @@
-<div class="modal-overlay" *ngIf="visible"
+<div class="modal-overlay" *ngIf="visible" appAlCuerpo
   (mousedown)="alPresionarEnElFondo($event)" (click)="alSoltarEnElFondo($event)">
   <div class="modal-container" [style.max-width]="ancho" (click)="$event.stopPropagation()">
     <div class="modal-header" [class.modal-header--marca]="cabeceraMarca">

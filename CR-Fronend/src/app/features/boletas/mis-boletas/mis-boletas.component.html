@@ -42,7 +42,7 @@
 ></app-data-table>
 
 <!-- Visor de la boleta en PDF -->
-<div class="pdf-modal-overlay" *ngIf="showPdfModal" (click)="closePdfModal()">
+<div class="pdf-modal-overlay" *ngIf="showPdfModal" appAlCuerpo (click)="closePdfModal()">
   <div class="pdf-modal-container" (click)="$event.stopPropagation()">
     <div class="pdf-modal-header">
       <h3>{{ pdfBoletaName }}</h3>

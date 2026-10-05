@@ -12,6 +12,7 @@ import { ToastService } from '../../../core/services';
 import { ConfirmService } from '../../../core/services';
 import { Observable, of, map, switchMap, forkJoin } from 'rxjs';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
+import { AlCuerpoDirective } from '../../../shared/directives/al-cuerpo.directive';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
@@ -54,7 +55,7 @@ export interface FormularioBoleta {
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent],
+  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })

@@ -13,6 +13,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { nombreMes } from '../../../shared/constants';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { AlCuerpoDirective } from '../../../shared/directives/al-cuerpo.directive';
 
 /**
  * Una fila de la tabla: la boleta ya masticada para pintarla.
@@ -55,7 +56,7 @@ export interface BoletaRow {
 @Component({
   selector: 'app-mis-boletas',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent, FormModalComponent],
+  imports: [IconComponent, CommonModule, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent, FormModalComponent, AlCuerpoDirective],
   templateUrl: './mis-boletas.component.html',
   styleUrl: './mis-boletas.component.scss'
 })
