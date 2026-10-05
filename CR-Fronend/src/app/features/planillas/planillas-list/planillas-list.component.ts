@@ -30,7 +30,7 @@ import {
   PaymentConcept,
   AplicacionConceptoGrupo,
 } from '../../../core/models';
-import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
+import { diasHabilesDelMes, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { MESES_OPCIONES, nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
@@ -107,6 +107,11 @@ export class PlanillasListComponent implements OnInit {
 
   // ── Filtros (los resuelve el backend) ──
   filtroMes: number | '' = new Date().getMonth() + 1;
+
+  /** Días de lunes a viernes del mes que se está mirando. */
+  get diasDelMes(): number | null {
+    return this.filtroMes && this.filtroAnio ? diasHabilesDelMes(Number(this.filtroMes), Number(this.filtroAnio)) : null;
+  }
   filtroAnio: number | '' = new Date().getFullYear();
   filtroEmpleado = '';
   filtroPeriodo = '';

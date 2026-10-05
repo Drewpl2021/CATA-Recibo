@@ -19,7 +19,7 @@ import {
 import {
   Area, Cargo, Empleado, Periodo, PlanillaCorrida, PlanillaCorridaPayload, ResultadoVariosMeses, Sede, TipoContrato,
 } from '../../../core/models';
-import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
+import { diasHabilesDelMes, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
@@ -86,6 +86,11 @@ export class CorridasListComponent implements OnInit {
   // Filtros de arriba
   filtroMes: number | '' = new Date().getMonth() + 1;
   filtroAnio: number | '' = new Date().getFullYear();
+
+  /** Días de lunes a viernes del mes elegido (vacío si se mira el año entero). */
+  get diasDelMes(): number | null {
+    return this.filtroMes && this.filtroAnio ? diasHabilesDelMes(Number(this.filtroMes), Number(this.filtroAnio)) : null;
+  }
 
   // Catálogos para el modal
   periodos: Periodo[] = [];

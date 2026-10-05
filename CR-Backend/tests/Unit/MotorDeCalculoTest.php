@@ -239,8 +239,10 @@ class MotorDeCalculoTest extends TestCase
             'tipo_contrato_id' => $this->idTipoContrato('Contratado'),
         ]);
 
+        // Con sus decimales completos, como el Excel: 26.04096.
+        $this->assertEqualsWithDelta(26.04096, $this->motor->calcularRenta5taCategoria($gatica, 3300.80, 0, 10, 2026), 0.000001);
         foreach ([3, 10, 12] as $mes) {
-            $this->assertSame(26.04, $this->motor->calcularRenta5taCategoria($gatica, 3300.80, 0, $mes, 2026), "mes $mes");
+            $this->assertSame(26.04, round($this->motor->calcularRenta5taCategoria($gatica, 3300.80, 0, $mes, 2026), 2), "mes $mes");
         }
     }
 
@@ -255,7 +257,7 @@ class MotorDeCalculoTest extends TestCase
         $this->registrarRetencion($apaza, mes: 1, monto: 137.59, cobrado: 3852.50);
         $this->registrarRetencion($apaza, mes: 2, monto: 137.59, cobrado: 3852.50);
 
-        $this->assertSame(120.41, $this->motor->calcularRenta5taCategoria($apaza, 4046.50, 0, 4, 2026));
+        $this->assertSame(120.41, round($this->motor->calcularRenta5taCategoria($apaza, 4046.50, 0, 4, 2026), 2));
     }
 
     /**
@@ -272,11 +274,11 @@ class MotorDeCalculoTest extends TestCase
             ]);
         }
 
-        $this->assertSame(120.41, $this->motor->calcularRenta5taCategoria($apaza, 4046.50, 0, 11, 2026));
+        $this->assertSame(120.41, round($this->motor->calcularRenta5taCategoria($apaza, 4046.50, 0, 11, 2026), 2));
 
         // Si después sí se arma la planilla de enero, manda la planilla y no se suma dos veces.
         $this->registrarRetencion($apaza, mes: 1, monto: 137.59, cobrado: 3852.50);
-        $this->assertSame(120.41, $this->motor->calcularRenta5taCategoria($apaza, 4046.50, 0, 11, 2026));
+        $this->assertSame(120.41, round($this->motor->calcularRenta5taCategoria($apaza, 4046.50, 0, 11, 2026), 2));
     }
 
     /**
@@ -295,7 +297,7 @@ class MotorDeCalculoTest extends TestCase
         $cargo = PaymentConcept::create(['nombre' => ConceptosDePago::BONIFICACION_CARGO, 'tipo' => 'bonificacion']);
         PayrollDetalle::create(['planilla_id' => $octubre->id, 'payment_concept_id' => $cargo->id, 'monto_calculado' => 350]);
 
-        $this->assertSame(85.37, $this->motor->calcularRenta5taCategoria($chambi, 3011, 0, 10, 2026));
+        $this->assertSame(85.37, round($this->motor->calcularRenta5taCategoria($chambi, 3011, 0, 10, 2026), 2));
     }
 
     /** Quien entra en junio reparte entre los 7 meses que trabaja, no entre 10. */
@@ -303,10 +305,10 @@ class MotorDeCalculoTest extends TestCase
     {
         $nuevo = $this->crearEmpleado(['fecha_ingreso' => '2026-06-01', 'sueldo_base' => 8000]);
 
-        $this->assertSame(0.00, $this->motor->calcularRenta5taCategoria($nuevo, 8000, 0, 5, 2026));
+        $this->assertSame(0.00, round($this->motor->calcularRenta5taCategoria($nuevo, 8000, 0, 5, 2026), 2));
         // 8 000 × 7 + grat. julio 1/6 (1 453.33) + diciembre (8 720) = 66 173.33
         // − 38 500 = 27 673.33 → 2 200 + 173.33 × 14% = 2 224.27 ÷ 7 = 317.75.
-        $this->assertSame(317.75, $this->motor->calcularRenta5taCategoria($nuevo, 8000, 0, 9, 2026));
+        $this->assertSame(317.75, round($this->motor->calcularRenta5taCategoria($nuevo, 8000, 0, 9, 2026), 2));
     }
 
     // ── Reparto de días (solo lunes a viernes, decisión del colegio) ─

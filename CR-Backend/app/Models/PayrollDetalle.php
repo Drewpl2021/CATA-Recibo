@@ -11,7 +11,7 @@ class PayrollDetalle extends Model
     protected $fillable = ['id', 'planilla_id', 'payment_concept_id', 'monto_calculado', 'calculo', 'valor', 'descripcion', 'estado'];
 
     protected $casts = [
-        'monto_calculado' => 'decimal:2',
+        'monto_calculado' => 'decimal:6', // como el PLAME: se redondea solo el total
         'valor'           => 'decimal:2',
     ];
 

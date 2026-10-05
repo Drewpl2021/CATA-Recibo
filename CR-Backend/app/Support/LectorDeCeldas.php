@@ -104,8 +104,11 @@ final class LectorDeCeldas
      */
     public static function monto(mixed $crudo): ?float
     {
+        // Con sus decimales completos (hasta 6), como los guarda la planilla:
+        // una tardanza del PLAME vale 1.164375, no 1.16. Ver la migración
+        // 2026_10_05_000003. Un sueldo se guarda igual con 2 en su columna.
         if (is_int($crudo) || is_float($crudo)) {
-            return round((float) $crudo, 2);
+            return round((float) $crudo, 6);
         }
         if (! is_string($crudo)) {
             return null;
@@ -122,7 +125,7 @@ final class LectorDeCeldas
             $t = preg_match('/,\d{1,2}$/', $t) ? str_replace(',', '.', $t) : str_replace(',', '', $t);
         }
 
-        return preg_match('/^-?\d+(\.\d+)?$/', $t) ? round((float) $t, 2) : null;
+        return preg_match('/^-?\d+(\.\d+)?$/', $t) ? round((float) $t, 6) : null;
     }
 
     /**

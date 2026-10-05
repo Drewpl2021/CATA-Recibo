@@ -88,3 +88,18 @@ export function antiguedad(desde: string | null | undefined, hasta?: string | nu
   const partesMeses = meses === 1 ? '1 mes' : `${meses} meses`;
   return `${partesAnios} y ${partesMeses}`;
 }
+
+/**
+ * Cuántos días de lunes a viernes tiene un mes: los que se le pagan a quien
+ * trabaja el mes entero. Es la misma regla del backend
+ * (CalculaConceptosPlanilla::repartoDeDiasDelMes); octubre 2026 → 22.
+ */
+export function diasHabilesDelMes(mes: number, anio: number): number {
+  const dias = new Date(anio, mes, 0).getDate();
+  let habiles = 0;
+  for (let d = 1; d <= dias; d++) {
+    const semana = new Date(anio, mes - 1, d).getDay();
+    if (semana !== 0 && semana !== 6) habiles++;
+  }
+  return habiles;
+}

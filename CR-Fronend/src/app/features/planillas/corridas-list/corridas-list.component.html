@@ -33,6 +33,10 @@
     </div>
 
     <div class="panel-filtros__cifras">
+      <div class="cifra" *ngIf="diasDelMes" title="Días de lunes a viernes del mes: los que se le pagan a quien trabaja el mes entero">
+        <strong>{{ diasDelMes }}</strong>
+        <span>Días a pagar</span>
+      </div>
       <div class="cifra">
         <strong>{{ personas }}</strong>
         <span>Trabajadores</span>

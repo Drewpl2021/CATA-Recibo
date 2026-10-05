@@ -21,7 +21,7 @@ import { FiltrosComponent } from '../../../shared/components/filtros/filtros.com
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { MESES_OPCIONES } from '../../../shared/constants';
-import { formatoDia, mensajeErrorApi } from '../../../core/utils';
+import { diasHabilesDelMes, formatoDia, mensajeErrorApi } from '../../../core/utils';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 export interface FormularioBoleta {
@@ -215,6 +215,11 @@ export class EmisionBoletaListComponent implements OnInit {
    * vea SIEMPRE todo lo que tiene la planilla, no solo los ~20 de siempre.
    */
   conceptosExtra: { id: string; nombre: string; monto: number; tipo: string }[] = [];
+
+  /** Días de lunes a viernes del mes que se está armando. */
+  get diasDelMes(): number {
+    return diasHabilesDelMes(Number(this.mesGlobal), Number(this.anioGlobal));
+  }
 
   /**
    * El detalle escrito en las dos bolsas "Otros Conceptos" (por ejemplo
@@ -757,7 +762,8 @@ export class EmisionBoletaListComponent implements OnInit {
     // cargo + vacaciones truncas. Sobre esto van la pensión y EsSalud.
     const base = sueldo + (this.formulario.asignacionFamiliar ?? 0)
       + Number(this.formulario.bonificacionCargo ?? 0) + Number(this.formulario.vacacionesTruncas ?? 0);
-    const porciento = (tasa: number) => Number((base * (tasa / 100)).toFixed(2));
+    // Con todos sus decimales, como el backend y el Excel: se redondea solo el total.
+    const porciento = (tasa: number) => Number((base * (tasa / 100)).toFixed(6));
 
     // Gratificación de julio y diciembre
     this.formulario.gratificacionesFiestas = [7, 12].includes(Number(mes)) ? sueldo : 0.00;
@@ -797,7 +803,7 @@ export class EmisionBoletaListComponent implements OnInit {
 
     // EsSalud nunca sobre menos que el sueldo mínimo (RMV), igual que en el backend.
     this.formulario.essalud9 = base > 0
-      ? Number((Math.max(base, ley.rmv) * (ley.essalud / 100)).toFixed(2))
+      ? Number((Math.max(base, ley.rmv) * (ley.essalud / 100)).toFixed(6))
       : 0;
   }
 
@@ -950,6 +956,17 @@ export class EmisionBoletaListComponent implements OnInit {
         this.toastService.error('Aviso', 'No se pudieron cargar los conceptos ya guardados de esta planilla.');
       },
     });
+  }
+
+  /**
+   * Un monto con sus decimales completos (44.89485) mostrado como en la
+   * boleta (44.89). El total de la vista previa sigue sumando el completo.
+   */
+  dosDecimales(valor: number | null | undefined): number | null {
+    if (valor === null || valor === undefined) return null;
+    // Con notación "e2" y no "* 100": 239.085 * 100 da 23908.4999… y
+    // redondearía a 239.08, cuando la boleta (y el Excel) dicen 239.09.
+    return Number(Math.round(Number(`${Number(valor)}e2`)) + 'e-2');
   }
 
   // ── Agregar o quitar otro concepto desde la vista previa ──

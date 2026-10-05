@@ -102,10 +102,12 @@ class Planilla extends Model
          * tuvieran —no se toca ninguna planilla ya pagada—, pero dejan de
          * entrar en la cuenta.
          */
-        $total = (float) $this->sueldo_base
+        // Las líneas traen sus decimales completos (como el PLAME): el neto se
+        // redondea recién aquí, al final, igual que el Excel.
+        $total = round((float) $this->sueldo_base
             + $bonificacionesConcepto
             - $descuentosConcepto
-            - $adelantosConcepto;
+            - $adelantosConcepto, 2);
 
         $this->update(['total' => $total]);
 

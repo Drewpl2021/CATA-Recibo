@@ -483,7 +483,7 @@ class ImportacionConceptosController extends Controller
                 $linea = $columna['concepto_id']
                     ? $planilla->payrollDetalles->firstWhere('payment_concept_id', $columna['concepto_id'])
                     : null;
-                $antes = $linea ? round((float) $linea->monto_calculado, 2) : null;
+                $antes = $linea ? round((float) $linea->monto_calculado, 6) : null;
 
                 if ($monto == 0.0) {
                     if (! $linea) {
@@ -492,7 +492,7 @@ class ImportacionConceptosController extends Controller
                     $accion = 'quitar';
                 } elseif (! $linea) {
                     $accion = 'agregar';
-                } elseif (abs($antes - $monto) >= 0.005 || ($detalle !== null && $detalle !== $linea->descripcion)) {
+                } elseif (abs($antes - $monto) >= 0.0000005 || ($detalle !== null && $detalle !== $linea->descripcion)) {
                     $accion = 'cambiar';
                 } else {
                     continue; // ya está así

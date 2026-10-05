@@ -91,6 +91,28 @@ class BoletaImpresaTest extends TestCase
         $this->assertStringContainsString('class="otro-concepto"', $html);
     }
 
+    /**
+     * VIDAL QUISPE ERICK, PLAME de setiembre: el Excel suma las líneas con sus
+     * decimales (prima 39.83275, tardanza 1.164375) y redondea el total:
+     * descuentos 400.75 y neto 2,506.75. Redondeando cada línea antes salía
+     * 400.74 y 2,506.76.
+     */
+    public function test_el_neto_se_redondea_al_final_como_el_plame(): void
+    {
+        $empleado = $this->crearEmpleado();
+        $planilla = Planilla::create(['empleado_id' => $empleado->id, 'mes' => 9, 'anio' => 2026, 'sueldo_base' => 2794.50, 'total' => 0]);
+        foreach ([['Asignación Familiar', 'bonificacion', 113], ['SPP. Fondo Pensiones', 'descuento', 290.75],
+                  ['SPP. Prima de Seguro', 'descuento', 39.83275], ['Descuento Autorizado - Tardanzas y Faltas', 'descuento', 1.164375],
+                  ['Descuento por Curso IA', 'descuento', 60], ['Descuento Corbatas y Polos', 'descuento', 9]] as [$nombre, $tipo, $monto]) {
+            $c = \App\Models\PaymentConcept::firstOrCreate(['nombre' => $nombre], ['tipo' => $tipo]);
+            PayrollDetalle::create(['planilla_id' => $planilla->id, 'payment_concept_id' => $c->id, 'monto_calculado' => $monto]);
+        }
+
+        $this->assertSame(2506.75, $planilla->recalcularTotal());
+        $prima = PayrollDetalle::whereHas('paymentConcept', fn ($q) => $q->where('nombre', 'SPP. Prima de Seguro'))->first();
+        $this->assertEqualsWithDelta(39.83275, (float) $prima->getRawOriginal('monto_calculado'), 0.0000001);
+    }
+
     public function test_no_se_agrega_dos_veces_el_mismo_concepto_en_el_mes(): void
     {
         $empleado = $this->crearEmpleado();

@@ -9,6 +9,14 @@ trait CalculaConceptosPlanilla
      * y una planilla de 2025 armada hoy tiene que usar los de 2025. Ver
      * App\Models\ValorLegal. Sin año, los del año en curso.
      */
+    /**
+     * Los montos calculados (pensión, EsSalud, diezmo, Renta de 5ta) se
+     * guardan con 6 decimales, como los deja el Excel del colegio: 44.89485
+     * y no 44.89. Se redondea solo al sumar el total y al mostrarlos. Ver la
+     * migración 2026_10_05_000003.
+     */
+    public const DECIMALES = 6;
+
     protected function valoresLegales(?int $anio = null): \App\Models\ValorLegal
     {
         return \App\Models\ValorLegal::delAnio($anio ?? (int) now()->year);
@@ -55,7 +63,7 @@ trait CalculaConceptosPlanilla
         $ley        = $this->valoresLegales($anio);
 
         if ($empleado->sistema_pensiones === 'AFP' && $empleado->afp) {
-            $aporte = round($sueldoBase * ($ley->aporte_afp / 100), 2);
+            $aporte = round($sueldoBase * ($ley->aporte_afp / 100), self::DECIMALES);
 
             /*
              * Cada nombre con SU monto: la prima es la fija, la comisión la
@@ -74,7 +82,7 @@ trait CalculaConceptosPlanilla
              */
             $prima = $this->exentoDePrimaAfp($empleado, $mes, $anio)
                 ? 0.0
-                : round($sueldoBase * ($ley->prima_seguro_afp / 100), 2);
+                : round($sueldoBase * ($ley->prima_seguro_afp / 100), self::DECIMALES);
 
             /*
              * Comisión "Mixta" (afiliado de antes del 2013): la AFP la cobra
@@ -85,7 +93,7 @@ trait CalculaConceptosPlanilla
              * igual que al resto era un descuento que no les corresponde.
              */
             $comisionAfp = $empleado->tipo_comision_afp === 'mixta' ? 0 : $ley->comisionAfp($empleado->afp);
-            $comision    = round($sueldoBase * ($comisionAfp / 100), 2);
+            $comision    = round($sueldoBase * ($comisionAfp / 100), self::DECIMALES);
 
             $detalle = [
                 ['concepto' => \App\Support\ConceptosDePago::SPP_FONDO, 'monto' => $aporte],
@@ -103,7 +111,7 @@ trait CalculaConceptosPlanilla
                 // Las mismas etiquetas que el catálogo, para que la boleta y la
                 // pantalla de Conceptos de Pago no se llamen distinto.
                 'detalle' => $detalle,
-                'total'   => round($aporte + $prima + $comision, 2),
+                'total'   => round($aporte + $prima + $comision, self::DECIMALES),
             ];
         }
 
@@ -118,7 +126,7 @@ trait CalculaConceptosPlanilla
             ];
         }
 
-        $monto = round($sueldoBase * ($ley->onp / 100), 2);
+        $monto = round($sueldoBase * ($ley->onp / 100), self::DECIMALES);
         return [
             'tipo'    => 'ONP',
             'detalle' => [
@@ -259,7 +267,7 @@ trait CalculaConceptosPlanilla
         $ley  = $this->valoresLegales($anio);
         $base = max($sueldoBase, $ley->rmv * $proporcionDelMes);
 
-        return round($base * ($ley->essalud / 100), 2);
+        return round($base * ($ley->essalud / 100), self::DECIMALES);
     }
 
     /** Qué parte del mes trabajó (1 = el mes entero), para el piso de EsSalud. */
@@ -444,7 +452,7 @@ trait CalculaConceptosPlanilla
 
         $impuestoAnual = $this->aplicarTramosImpuestoRenta($proyeccion - $exento, $ley->uit);
 
-        return round(max(0, ($impuestoAnual - $retenidoEneroFebrero) / $mesesMarzoDiciembre), 2);
+        return round(max(0, ($impuestoAnual - $retenidoEneroFebrero) / $mesesMarzoDiciembre), self::DECIMALES);
     }
 
     /**
@@ -827,7 +835,7 @@ trait CalculaConceptosPlanilla
         \App\Models\PayrollDetalle::updateOrCreate(
             ['planilla_id' => $planilla->id, 'payment_concept_id' => $concepto->id],
             [
-                'monto_calculado' => round($monto, 2),
+                'monto_calculado' => round($monto, self::DECIMALES),
                 // Sin descripción cuando no hay nada que decir.
                 //
                 // La descripción se IMPRIME en la boleta pegada al nombre
