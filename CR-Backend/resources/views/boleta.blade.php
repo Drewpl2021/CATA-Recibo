@@ -542,7 +542,7 @@
                 </tr>
             </table>
             @if ($pension['total'] > 0)
-            <p class="nota">El descuento por {{ $pension['tipo'] }} se calcula sobre la remuneración básica según tasas vigentes {{ $anio }}.</p>
+            <p class="nota">El descuento por {{ $pension['tipo'] }} se calcula sobre la remuneración afecta (básica + asignación familiar + bonificación por cargo + vacaciones truncas) según las tasas de {{ $anio }}.</p>
             @else
             {{-- Sin sistema de pensiones no hay nada que explicar, y la nota
                  quedaba como "El descuento por No aporta se calcula...". --}}

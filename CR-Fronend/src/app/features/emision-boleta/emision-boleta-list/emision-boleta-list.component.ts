@@ -1094,14 +1094,6 @@ export class EmisionBoletaListComponent implements OnInit {
     });
   }
 
-  aplicarBonosMasivos(): void {
-    // Solo un botón dummy por ahora para la demo
-    this.toastService.info(
-      'Función en desarrollo',
-      'La asignación masiva de Gratificación y CTS se implementará en la próxima versión del sistema.'
-    );
-  }
-
   emitirTodasLasBoletas(): void {
     // Contra el total del colegio y no contra la lista: emitir masivamente
     // va por todo el mes, así que un filtro puesto no puede bloquearlo.

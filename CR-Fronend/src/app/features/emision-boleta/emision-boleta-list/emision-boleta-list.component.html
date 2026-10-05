@@ -6,10 +6,6 @@
   [cargandoCifras]="cargandoEmpleados"
 >
   <div headerActions style="display: flex; gap: 12px; align-items: center;">
-    <button class="btn-secondary" (click)="aplicarBonosMasivos()">
-      <app-icon icono="money" [tamano]="16"></app-icon>
-      Aplicar Grati / CTS
-    </button>
     <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo">
       <app-icon icono="receipt" [tamano]="16"></app-icon>
       {{ generandoMasivo ? 'Emitiendo...' : 'Emitir masivamente' }}

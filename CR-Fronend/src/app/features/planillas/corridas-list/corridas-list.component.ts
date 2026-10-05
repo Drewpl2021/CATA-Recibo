@@ -150,6 +150,9 @@ export class CorridasListComponent implements OnInit {
 
   acciones: AccionPersonalizada<PlanillaCorrida>[] = [
     { id: 'abrir', titulo: 'Ver los trabajadores de esta planilla', icono: 'people', etiqueta: 'Ver' },
+    // Ya pagada: se cierra para que nadie le mueva cifras. Si hay que corregir, se reabre.
+    { id: 'cerrar', titulo: 'Cerrar la planilla (ya se pagó)', icono: 'lock', severidad: 'warning', visible: (c) => c.estado !== 'cerrada' },
+    { id: 'reabrir', titulo: 'Abrir la planilla para corregirla', icono: 'rotate_ccw', severidad: 'warning', visible: (c) => c.estado === 'cerrada' },
   ];
 
   ngOnInit(): void {
@@ -304,6 +307,21 @@ export class CorridasListComponent implements OnInit {
 
   alAccionar(evento: { accion: string; fila: PlanillaCorrida }): void {
     if (evento.accion === 'abrir') this.abrir(evento.fila);
+    if (evento.accion === 'cerrar' || evento.accion === 'reabrir') this.confirmarCierre(evento.fila);
+  }
+
+  /** Cerrar o abrir, pero preguntando antes: cambia lo que se puede hacer con su gente. */
+  private confirmarCierre(corrida: PlanillaCorrida): void {
+    const cerrando = corrida.estado !== 'cerrada';
+    this.confirmService.confirmar({
+      titulo: cerrando ? 'Cerrar la planilla' : 'Abrir la planilla',
+      mensaje: cerrando
+        ? `«${corrida.nombre}» quedará como está: no se le podrán agregar ni sacar trabajadores, recalcular sueldos ni cambiar conceptos. Ciérrala cuando ya esté pagada.`
+        : `«${corrida.nombre}» volverá a aceptar cambios: agregar gente, recalcular y ajustar conceptos. Ciérrala de nuevo cuando termines.`,
+      aceptarTexto: cerrando ? 'Sí, cerrarla' : 'Sí, abrirla',
+    }).then((ok) => {
+      if (ok) this.alternarCierre(corrida);
+    });
   }
 
   // ────────── Crear y editar ──────────

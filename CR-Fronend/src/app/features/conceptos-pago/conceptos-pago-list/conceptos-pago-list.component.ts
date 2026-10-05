@@ -182,8 +182,9 @@ export class ConceptosPagoListComponent implements OnInit {
       header: 'Automático',
       ancho: '14%',
       tipo: 'badge',
-      formatear: (valor) => (valor ? 'A todos' : 'Manual'),
-      badgeSeveridad: (valor) => (valor ? 'info' : 'secondary'),
+      // Los de ley (pensión, EsSalud, asignación, 5ta) los pone el sistema a cada quien.
+      formatear: (valor, fila) => (fila.de_ley || fila.calculo_especial ? 'Lo calcula el sistema' : valor ? 'A todos' : 'Manual'),
+      badgeSeveridad: (valor, fila) => (fila.de_ley || fila.calculo_especial || valor ? 'info' : 'secondary'),
     },
     { campo: 'descripcion', header: 'Descripción' },
   ];
