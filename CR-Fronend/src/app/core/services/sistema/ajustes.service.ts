@@ -21,7 +21,10 @@ export interface ValorLegal {
   uit: number;
   /** Remuneración mínima vital: el piso sobre el que se calcula EsSalud. */
   rmv: number;
-  asignacion_familiar: number;
+  /** La Asignación Familiar como % de la RMV (la ley dice 10%). */
+  asignacion_familiar_pct: number;
+  /** El monto en soles: RMV × ese %. Lo calcula el servidor, no se edita. */
+  readonly asignacion_familiar: number;
   onp: number;
   essalud: number;
   aporte_afp: number;
@@ -32,7 +35,7 @@ export interface ValorLegal {
   comision_profuturo: number;
 }
 
-export type CamposValorLegal = Omit<ValorLegal, 'anio'>;
+export type CamposValorLegal = Omit<ValorLegal, 'anio' | 'asignacion_familiar'>;
 
 /** Solo los montos (todo menos el año y su nombre): los que se escriben como número. */
 export type MontoLegal = Exclude<keyof CamposValorLegal, 'nombre_anio'>;

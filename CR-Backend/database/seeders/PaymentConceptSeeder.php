@@ -25,10 +25,9 @@ use App\Support\ConceptosDePago;
  *   aplica_a_todos   si se le mete solo a cada planilla que se crea. Se usa
  *                    con cuentagotas: casi todo es caso por caso.
  *
- * Los seis de cálculo especial (pensión, EsSalud, Renta de 5ta) llevan su
- * valor de referencia, pero el monto real lo calcula el motor por empleado:
- * depende de su sistema de pensión, de su AFP concreta, de si cobra
- * asignación familiar y de lo que lleve retenido en el año.
+ * Los de ley (Asignación Familiar, pensión, EsSalud, Bonificación
+ * Extraordinaria) no llevan valor acá: su tasa o monto es la del año en
+ * Ajustes del sistema → Montos de ley, y el motor la aplica por empleado.
  */
 class PaymentConceptSeeder extends Seeder
 {
@@ -55,7 +54,7 @@ class PaymentConceptSeeder extends Seeder
             ],
             [
                 'nombre' => 'Asignación Familiar',
-                'tipo' => 'bonificacion', 'calculo' => 'fijo', 'valor' => 113.00,
+                'tipo' => 'bonificacion', 'calculo' => null, 'valor' => null,
                 'descripcion' => 'El 10% de la RMV para quien tiene hijos menores de 18, o hasta 24 si siguen estudiando. Lo calcula el sistema mirando "tiene hijos" en su ficha.',
             ],
             [
@@ -71,7 +70,7 @@ class PaymentConceptSeeder extends Seeder
             ],
             [
                 'nombre' => \App\Support\ConceptosDePago::BONIF_EXTRAORDINARIA,
-                'tipo' => 'bonificacion', 'calculo' => 'porcentaje', 'valor' => 9.00,
+                'tipo' => 'bonificacion', 'calculo' => null, 'valor' => null,
                 'etiqueta_boleta' => 'Bonificación Extraordinaria (Ley 30334, 9%)',
                 'descripcion' => 'El 9% de la gratificación: es el aporte a EsSalud que la ley ordena entregarle al trabajador en vez de retenerlo. Solo sale en los meses con gratificación.',
             ],
@@ -101,12 +100,12 @@ class PaymentConceptSeeder extends Seeder
             // ══ DESCUENTOS ═════════════════════════════════════════
             [
                 'nombre' => ConceptosDePago::ONP,
-                'tipo' => 'descuento', 'calculo' => 'porcentaje', 'valor' => 13.00,
+                'tipo' => 'descuento', 'calculo' => null, 'valor' => null,
                 'descripcion' => 'El aporte a la ONP. Solo para quien está en el Sistema Nacional; lo calcula el sistema sobre el sueldo más la asignación familiar.',
             ],
             [
                 'nombre' => ConceptosDePago::SPP_FONDO,
-                'tipo' => 'descuento', 'calculo' => 'porcentaje', 'valor' => 10.00,
+                'tipo' => 'descuento', 'calculo' => null, 'valor' => null,
                 'descripcion' => 'El aporte obligatorio a la AFP: el 10% que se va a su fondo de jubilación. Solo para quien está en una AFP.',
             ],
             [
@@ -115,12 +114,12 @@ class PaymentConceptSeeder extends Seeder
                 // AC y AD) usa el criterio estándar —comisión variable, prima
                 // fija— y es el que manda desde ahora.
                 'nombre' => ConceptosDePago::SPP_PRIMA_SEGURO,
-                'tipo' => 'descuento', 'calculo' => 'porcentaje', 'valor' => 1.37,
+                'tipo' => 'descuento', 'calculo' => null, 'valor' => null,
                 'descripcion' => 'La prima del seguro de invalidez y sobrevivencia, igual para todas las AFP. Lo calcula el sistema.',
             ],
             [
                 'nombre' => ConceptosDePago::SPP_COMISION,
-                'tipo' => 'descuento', 'calculo' => 'porcentaje', 'valor' => null,
+                'tipo' => 'descuento', 'calculo' => null, 'valor' => null,
                 'descripcion' => 'La comisión que cobra su AFP y que cambia según cuál sea (Habitat 1.47, Integra 1.55, Prima 1.60, Profuturo 1.69). No tiene un valor fijo acá: lo pone el sistema según su ficha.',
             ],
             [
@@ -174,8 +173,7 @@ class PaymentConceptSeeder extends Seeder
             // Informativas: las paga el empleador y NO se restan del neto.
             [
                 'nombre' => ConceptosDePago::ESSALUD,
-                'tipo' => 'aportacion', 'calculo' => 'porcentaje', 'valor' => 9.00,
-                'aplica_a_todos' => true,
+                'tipo' => 'aportacion', 'calculo' => null, 'valor' => null,
                 'descripcion' => 'El 9% que el colegio aporta por cada trabajador para su seguro de salud. No sale de su sueldo: se imprime para que sepa cuánto se paga por él.',
             ],
             [

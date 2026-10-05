@@ -169,13 +169,6 @@
           <label>Periodo:</label>
           <span style="font-weight: 600; color: var(--text); padding: 4px 8px; background: var(--surface-hover); border-radius: 4px;">{{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</span>
         </div>
-        <div class="form-group-inline">
-          <label>Sede:</label>
-          <select class="form-select-sm" [(ngModel)]="formulario.ciudad">
-            <option value="CATA">CATA</option>
-            <option value="Jerusalén">Jerusalén</option>
-          </select>
-        </div>
       </div>
 
       <!-- === SECCIÓN ROJA: Ingresos, Descuentos, Aportaciones (editable) === -->
@@ -217,7 +210,7 @@
           <div class="fin-col fin-col-descuentos">
             <!-- Pensión: la calcula el motor según su sistema y su AFP. A mano
                  se podría escribir un descuento que no le toca. -->
-            <div class="fin-fila"><span class="fin-concepto" title="Se calcula según su sistema de pensión y su AFP">ONP 13%</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.onp13" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+            <div class="fin-fila"><span class="fin-concepto" title="Se calcula según su sistema de pensión y su AFP">{{ etiquetaTasa('ONP', ley?.onp, 13) }}</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.onp13" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
             <div class="fin-fila"><span class="fin-concepto" title="Se calcula según su AFP">SPP: Fondo Pensiones</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.sppFondoPensiones" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
             <div class="fin-fila"><span class="fin-concepto" title="1.37%, igual para todas las AFP">SPP: Prima de Seguro</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.sppPrimaSeguro" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
             <div class="fin-fila"><span class="fin-concepto" title="Cambia según cuál sea su AFP">SPP: Comisión</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.sppComision" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
@@ -248,7 +241,7 @@
 
           <div class="fin-col fin-col-aportaciones">
             <!-- Lo paga el colegio sobre la base afecta: no se escribe a mano. -->
-            <div class="fin-fila"><span class="fin-concepto" title="El 9% que aporta el colegio sobre su remuneración afecta">ESSALUD 9%</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.essalud9" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+            <div class="fin-fila"><span class="fin-concepto" title="Lo que aporta el colegio sobre su remuneración afecta (nunca sobre menos del sueldo mínimo)">{{ etiquetaTasa('ESSALUD', ley?.essalud, 9) }}</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.essalud9" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
             <div class="fin-fila"><span class="fin-concepto">SCTR</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sctr" min="0" step="0.01"></div>
             <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraAportacion"
               appPista="Agregado desde Planillas: se edita ahí, no acá">

@@ -62,7 +62,8 @@ class ValorLegalController extends Controller
             'nombre_anio'         => 'sometimes|nullable|string|max:255',
             'uit'                 => "{$obligatorio}|numeric|min:1|max:100000",
             'rmv'                 => "{$obligatorio}|numeric|min:1|max:100000",
-            'asignacion_familiar' => "{$obligatorio}|numeric|min:0|max:10000",
+            // El % de la RMV; el monto en soles lo calcula el modelo.
+            'asignacion_familiar_pct' => $porcentaje,
             'onp'                 => $porcentaje,
             'essalud'             => $porcentaje,
             'aporte_afp'          => $porcentaje,

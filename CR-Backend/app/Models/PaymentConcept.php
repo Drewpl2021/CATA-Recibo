@@ -32,11 +32,17 @@ class PaymentConcept extends Model
      * el día que cambie uno habría dos verdades: la pantalla ofreciendo algo
      * que el servidor no acepta.
      */
-    protected $appends = ['calculo_especial'];
+    protected $appends = ['calculo_especial', 'de_ley'];
 
     public function getCalculoEspecialAttribute(): bool
     {
         return in_array($this->nombre, \App\Support\ConceptosDePago::CALCULO_ESPECIAL, true);
+    }
+
+    /** Su monto lo pone la ley del año (Ajustes del sistema), no el catálogo. */
+    public function getDeLeyAttribute(): bool
+    {
+        return in_array($this->nombre, \App\Support\ConceptosDePago::DE_LEY, true);
     }
 
     protected function casts(): array

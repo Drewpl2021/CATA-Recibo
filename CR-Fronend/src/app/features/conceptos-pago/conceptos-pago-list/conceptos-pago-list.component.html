@@ -59,7 +59,11 @@
     <div class="form-group">
       <label for="nombre">Nombre *</label>
       <input type="text" id="nombre" class="form-control" formControlName="nombre"
-        placeholder="Ej. Asignación Familiar" [class.is-invalid]="invalido('nombre')" />
+        placeholder="Ej. Bono de aniversario" [class.is-invalid]="invalido('nombre')"
+        [readonly]="nombreFijo" />
+      <small class="form-ayuda" *ngIf="nombreFijo">
+        El sistema lo reconoce por este nombre para calcularlo, así que no se cambia.
+      </small>
       <small class="form-error" *ngIf="invalido('nombre')">
         El nombre es obligatorio (máximo 150 caracteres).
       </small>
@@ -76,6 +80,12 @@
       </small>
     </div>
 
+    <p class="form-nota" *ngIf="conceptoEditando?.de_ley">
+      Su monto lo pone la ley de cada año: se cambia en <strong>Ajustes del sistema → Montos de ley</strong>
+      y el sistema lo calcula solo para cada trabajador.
+    </p>
+
+    <ng-container *ngIf="!conceptoEditando?.de_ley">
     <div class="form-group">
       <label class="check-item check-item--bloque">
         <input type="checkbox" formControlName="aplica_a_todos" />
@@ -109,6 +119,7 @@
         </small>
       </div>
     </div>
+    </ng-container>
 
     <div class="form-group">
       <label for="descripcion">Descripción</label>

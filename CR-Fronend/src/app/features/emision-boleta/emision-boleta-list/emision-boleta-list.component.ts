@@ -46,6 +46,7 @@ export interface FormularioBoleta {
   essalud9: number | null;
   sctr: number | null;
   adelanto: number | null;
+  /** Donde se firma: la misma que imprime el PDF (boleta.blade.php). */
   ciudad: string;
   fechaEmision: string;
   mes: number;
@@ -634,7 +635,12 @@ export class EmisionBoletaListComponent implements OnInit {
    * Antes esta pantalla tenía su propia copia de las tasas, y bastaba que
    * cambiaran en un lado para que la vista previa no cuadrara con la boleta.
    */
-  private ley: ValorLegal | null = null;
+  ley: ValorLegal | null = null;
+
+  /** "ONP 13%" / "ESSALUD 9%" con la tasa del año, como la boleta impresa. */
+  etiquetaTasa(nombre: string, tasa: number | undefined, porDefecto: number): string {
+    return `${nombre} ${Number(tasa ?? porDefecto)}%`;
+  }
   private leyPara: number | null = null;
   private ajustesService = inject(AjustesService);
 
@@ -1142,7 +1148,7 @@ export class EmisionBoletaListComponent implements OnInit {
       ir5taCategoria: null, descuentoAlimentacion: null, descuentoBazar: null,
       descuentoAutorizadoDiezmo: null, descuentoOtros: null, descuentoEscolaridad: null,
       essalud9: null, sctr: null, adelanto: null,
-      ciudad: 'CATA',
+      ciudad: 'Juliaca',
       fechaEmision: formatoDia(now),
       mes: this.mesGlobal,
       anio: this.anioGlobal

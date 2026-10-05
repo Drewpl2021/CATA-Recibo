@@ -124,4 +124,19 @@ final class ConceptosDePago
         self::ASIGNACION_FAMILIAR,
         self::REMUNERACION_BASICA,
     ];
+
+    /**
+     * Los que la ley fija con un monto o una tasa: su valor vive en Ajustes
+     * del sistema → Montos de ley (por año), nunca en el catálogo. Por eso
+     * el catálogo no les guarda cálculo ni valor, y no se aplican por grupo.
+     */
+    public const DE_LEY = [
+        self::ASIGNACION_FAMILIAR,
+        self::BONIF_EXTRAORDINARIA,
+        self::ONP,
+        self::SPP_FONDO,
+        self::SPP_PRIMA_SEGURO,
+        self::SPP_COMISION,
+        self::ESSALUD,
+    ];
 }

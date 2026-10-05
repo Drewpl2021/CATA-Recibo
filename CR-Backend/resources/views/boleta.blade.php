@@ -324,6 +324,9 @@
         return $fila ? (float) $fila['monto'] : 0.0;
     };
     $C = \App\Support\ConceptosDePago::class;
+    // Las tasas de ONP y EsSalud de la etiqueta son las del año de la boleta: "13" y no "13.00".
+    $ley  = \App\Models\ValorLegal::delAnio((int) $anio);
+    $tasa = fn (float $v) => rtrim(rtrim(number_format($v, 2, '.', ''), '0'), '.');
 
     $filasIngreso = [
         ['Remuneración Básica', (float) $planilla->sueldo_base],
@@ -337,7 +340,7 @@
         ['Compensación por Tiempo de Servicios', $montoDe('Compensación por Tiempo de Servicios')],
     ];
     $filasDescuento = [
-        ['ONP 13%', $pensionDe($C::ONP)],
+        ['ONP ' . $tasa($ley->onp) . '%', $pensionDe($C::ONP)],
         ['SPP: Fondo Pensiones', $pensionDe($C::SPP_FONDO)],
         ['SPP: Prima de Seguro', $pensionDe($C::SPP_PRIMA_SEGURO)],
         ['SPP: Comisión', $pensionDe($C::SPP_COMISION)],
@@ -349,7 +352,7 @@
         ['Descuento - Pago Escolaridad Mensual', $montoDe('Descuento - Pago de Escolaridad Mensual')],
     ];
     $filasAporte = [
-        ['ESSALUD 9%', (float) $essalud],
+        ['ESSALUD ' . $tasa($ley->essalud) . '%', (float) $essalud],
         ['SCTR', $montoDe('SCTR')],
     ];
     $filasAdelanto = [

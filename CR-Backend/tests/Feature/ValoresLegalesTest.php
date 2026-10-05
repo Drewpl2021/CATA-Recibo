@@ -154,7 +154,49 @@ class ValoresLegalesTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.uit', 5700)
             ->assertJsonPath('data.asignacion_familiar', 113)
+            ->assertJsonPath('data.asignacion_familiar_pct', 10)
             // El nombre no se copia: el de 2026 no es el de 2027.
             ->assertJsonPath('data.nombre_anio', null);
+    }
+
+    /** La asignación no se tipea: es el % de la RMV. Si sube el mínimo, sube sola. */
+    public function test_la_asignacion_familiar_sale_de_la_rmv_y_su_porcentaje(): void
+    {
+        $this->actingAs($this->crearUsuario('admin'), 'sanctum')
+            ->putJson('/api/legal-values/2026', array_merge(ValorLegal::find(2026)->only(ValorLegal::CAMPOS), ['rmv' => 1200]))
+            ->assertOk()
+            ->assertJsonPath('data.asignacion_familiar', 120);
+
+        $conHijos = $this->empleado(['tiene_hijos' => 1]);
+        $this->assertSame(120.0, (new MotorConValoresLegales())->calcularAsignacionFamiliar($conHijos, 2026));
+    }
+
+    /** La bonificación extraordinaria de julio es la tasa de EsSalud del año, no un 9 fijo. */
+    public function test_la_bonificacion_extraordinaria_usa_la_tasa_de_essalud_del_anio(): void
+    {
+        ValorLegal::find(2026)->update(['essalud' => 10]);
+
+        $g = (new MotorConValoresLegales())->calcularGratificacion($this->empleado(), 2000, 7, 2026);
+
+        $this->assertSame(200.0, $g['bonificacion_extraordinaria']);
+    }
+
+    /** Un concepto de ley no guarda monto en el catálogo ni se deja renombrar. */
+    public function test_un_concepto_de_ley_no_lleva_monto_en_el_catalogo(): void
+    {
+        $onp = \App\Models\PaymentConcept::firstOrCreate(['nombre' => \App\Support\ConceptosDePago::ONP], ['tipo' => 'descuento']);
+
+        $this->actingAs($this->crearUsuario('admin'), 'sanctum')
+            ->putJson("/api/payment-concepts/{$onp->id}", [
+                'nombre' => 'ONP renombrada', 'calculo' => 'porcentaje', 'valor' => 13, 'aplica_a_todos' => true,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.de_ley', true);
+
+        $onp->refresh();
+        $this->assertSame(\App\Support\ConceptosDePago::ONP, $onp->nombre);
+        $this->assertNull($onp->valor);
+        $this->assertNull($onp->calculo);
+        $this->assertFalse($onp->aplica_a_todos);
     }
 }

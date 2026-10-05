@@ -175,7 +175,6 @@ trait CalculaConceptosPlanilla
             ->sum('monto_calculado');
     }
 
-    private float $bonificacionExtraordinariaEssalud = 9.00;
 
     protected function calcularGratificacion($empleado, $sueldoBase, $mes, $anio): array
     {
@@ -227,7 +226,9 @@ trait CalculaConceptosPlanilla
         $montoBase               = round(($sueldoBase * $mesesTrabajados) / 6, 2);
         $asignacionProrrateada   = round(($asignacionFamiliar * $mesesTrabajados) / 6, 2);
         $subtotal                = $montoBase + $asignacionProrrateada;
-        $bonificacionExtraordinaria = round($subtotal * ($this->bonificacionExtraordinariaEssalud / 100), 2);
+        // Ley 30334: la bonificación es lo que el colegio habría aportado a
+        // EsSalud sobre la gratificación, así que usa la misma tasa del año.
+        $bonificacionExtraordinaria = round($subtotal * ($this->valoresLegales($anio)->essalud / 100), 2);
 
         return [
             'aplica'                    => true,

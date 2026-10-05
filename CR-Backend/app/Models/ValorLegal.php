@@ -18,7 +18,7 @@ class ValorLegal extends Model
     protected $keyType = 'int';
 
     public const CAMPOS = [
-        'uit', 'rmv', 'asignacion_familiar', 'onp', 'essalud', 'aporte_afp', 'prima_seguro_afp',
+        'uit', 'rmv', 'asignacion_familiar_pct', 'onp', 'essalud', 'aporte_afp', 'prima_seguro_afp',
         'comision_habitat', 'comision_integra', 'comision_prima', 'comision_profuturo',
     ];
 
@@ -29,7 +29,7 @@ class ValorLegal extends Model
         'anio'                => 'integer',
         'uit'                 => 'float',
         'rmv'                 => 'float',
-        'asignacion_familiar' => 'float',
+        'asignacion_familiar_pct' => 'float',
         'onp'                 => 'float',
         'essalud'             => 'float',
         'aporte_afp'          => 'float',
@@ -39,6 +39,17 @@ class ValorLegal extends Model
         'comision_prima'      => 'float',
         'comision_profuturo'  => 'float',
     ];
+
+    /**
+     * El monto de la Asignación Familiar no se guarda: la ley lo fija como un
+     * % de la RMV, así que sale de las dos y se manda calculado con cada año.
+     */
+    protected $appends = ['asignacion_familiar'];
+
+    public function getAsignacionFamiliarAttribute(): float
+    {
+        return round($this->rmv * $this->asignacion_familiar_pct / 100, 2);
+    }
 
     protected array $camposAuditables = ['nombre_anio', ...self::CAMPOS];
     protected string $entidadAuditada = 'montos de ley';

@@ -117,6 +117,8 @@ export interface PaymentConcept {
    * Viene de allá para no repetir la lista acá y que un día no coincidan.
    */
   calculo_especial?: boolean;
+  /** Su monto o tasa lo pone la ley del año (Ajustes del sistema → Montos de ley), no el catálogo. */
+  de_ley?: boolean;
 }
 
 export interface PaymentConceptPayload {

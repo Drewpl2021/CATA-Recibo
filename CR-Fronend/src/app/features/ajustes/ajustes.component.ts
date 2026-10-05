@@ -45,8 +45,8 @@ export class AjustesComponent implements OnInit {
       titulo: 'Generales',
       campos: [
         { clave: 'uit', etiqueta: 'UIT', unidad: 'S/', ayuda: 'No paga Renta de 5ta quien gana menos de 7 UIT al año.' },
-        { clave: 'rmv', etiqueta: 'Sueldo mínimo (RMV)', unidad: 'S/', ayuda: 'EsSalud nunca se calcula sobre menos que esto.' },
-        { clave: 'asignacion_familiar', etiqueta: 'Asignación familiar', unidad: 'S/', ayuda: '10% del sueldo mínimo (RMV).' },
+        { clave: 'rmv', etiqueta: 'Sueldo mínimo (RMV)', unidad: 'S/', ayuda: 'De aquí sale la asignación familiar, y EsSalud nunca se calcula sobre menos que esto.' },
+        { clave: 'asignacion_familiar_pct', etiqueta: 'Asignación familiar', unidad: '%' },
       ],
     },
     {
@@ -86,6 +86,18 @@ export class AjustesComponent implements OnInit {
   guardandoLegal = false;
   nuevoAnioLegal = this.anioActual + 1;
 
+  /**
+   * La ayuda de cada campo. La de la Asignación Familiar muestra cuánto
+   * sale en soles con lo que está escrito, para que se vea al tipear.
+   */
+  ayudaDe(c: CampoLegal): string | undefined {
+    if (c.clave === 'asignacion_familiar_pct' && this.edicionLegal) {
+      const monto = (Number(this.edicionLegal.rmv) * Number(this.edicionLegal.asignacion_familiar_pct)) / 100;
+      return `Del sueldo mínimo (RMV). Este año sale S/ ${monto.toFixed(2)} a quien tiene hijos.`;
+    }
+    return c.ayuda;
+  }
+
   get hayCambiosLegales(): boolean {
     const guardado = this.valoresLegales.find((v) => v.anio === this.anioLegal);
     if (!guardado || !this.edicionLegal) return false;
@@ -115,7 +127,8 @@ export class AjustesComponent implements OnInit {
       this.edicionLegal = null;
       return;
     }
-    const { anio: _, nombre_anio, ...montos } = fila;
+    // El monto de la asignación no se edita: sale de la RMV y su %.
+    const { anio: _, nombre_anio, asignacion_familiar: __, ...montos } = fila;
     // Los montos con dos decimales, como se escriben en la planilla: "1.60", "113.00".
     this.edicionLegal = {
       nombre_anio: nombre_anio ?? '',

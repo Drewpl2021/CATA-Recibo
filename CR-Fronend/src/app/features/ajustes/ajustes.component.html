@@ -93,9 +93,9 @@
               <span class="campo-unidad__unidad" aria-hidden="true">{{ c.unidad }}</span>
               <input type="number" class="form-control" [id]="'ley_' + c.clave" min="0" step="0.01"
                 inputmode="decimal" [(ngModel)]="edicionLegal[c.clave]" [disabled]="guardandoLegal"
-                [attr.aria-describedby]="c.ayuda ? 'ayuda_' + c.clave : null" />
+                [attr.aria-describedby]="ayudaDe(c) ? 'ayuda_' + c.clave : null" />
             </div>
-            <small class="form-ayuda" *ngIf="c.ayuda" [id]="'ayuda_' + c.clave">{{ c.ayuda }}</small>
+            <small class="form-ayuda" *ngIf="ayudaDe(c)" [id]="'ayuda_' + c.clave">{{ ayudaDe(c) }}</small>
           </div>
         </div>
       </div>

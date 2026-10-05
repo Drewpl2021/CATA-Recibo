@@ -81,6 +81,15 @@ class PaymentConceptController extends Controller
             'descripcion' => 'nullable|string|max:255',
             'aplica_a_todos' => 'nullable|boolean',
         ]);
+        // Un concepto de ley no lleva monto en el catálogo: sale de los
+        // montos de ley del año. Se puede cambiar su nombre o descripción.
+        if ($concept->de_ley) {
+            $datos = array_merge($datos, ['calculo' => null, 'valor' => null, 'aplica_a_todos' => false]);
+        }
+        // El motor los busca por nombre exacto: renombrados, dejarían de calcularse.
+        if ($concept->de_ley || $concept->calculo_especial) {
+            unset($datos['nombre']);
+        }
         $concept->update($datos);
         return response()->json(['success' => true, 'data' => $concept]);
     }
@@ -104,7 +113,7 @@ class PaymentConceptController extends Controller
         // Blindaje: los conceptos de cálculo especial (pensión/EsSalud/Renta 5ta) nunca
         // se aplican por un mecanismo genérico, ni siquiera a un grupo — siempre dependen
         // del sistema de pensiones/AFP/historial de CADA empleado individualmente.
-        if (in_array($concepto->nombre, self::CONCEPTOS_CON_CALCULO_ESPECIAL, true)) {
+        if (in_array($concepto->nombre, self::CONCEPTOS_CON_CALCULO_ESPECIAL, true) || $concepto->de_ley) {
             return response()->json([
                 'success' => false,
                 'data'    => ['message' => "\"{$concepto->nombre}\" se calcula automáticamente por empleado y no se puede aplicar por grupo."],

@@ -198,7 +198,7 @@ export class ConceptosPagoListComponent implements OnInit {
       id: 'grupo',
       titulo: 'Aplicar a un grupo de empleados',
       icono: 'people',
-      visible: (c) => !!c.calculo && c.valor != null,
+      visible: (c) => !c.de_ley && !!c.calculo && c.valor != null,
     },
   ];
 
@@ -223,12 +223,18 @@ export class ConceptosPagoListComponent implements OnInit {
     return !!c && c.invalid && c.touched;
   }
 
-  get esAutomatico(): boolean {
+  /** Los que el motor busca por nombre: renombrarlos los dejaría sin calcular. */
+  get nombreFijo(): boolean {
+    return !!this.conceptoEditando && (!!this.conceptoEditando.de_ley || !!this.conceptoEditando.calculo_especial);
+  }
+
+    get esAutomatico(): boolean {
     return !!this.form.get('aplica_a_todos')?.value;
   }
 
   /** "S/ 113.00" o "13%" según el cálculo; "—" si el concepto no lleva monto. */
   valorLegible(concepto: PaymentConcept): string {
+    if (concepto.de_ley) return 'Según ley';
     if (concepto.valor === null || concepto.valor === undefined) return '—';
     const n = Number(concepto.valor);
     return concepto.calculo === 'porcentaje' ? `${n}%` : `S/ ${n.toFixed(2)}`;
