@@ -120,6 +120,9 @@ describe('DataTableComponent — el esqueleto solo en la carga de verdad', () =>
   it('recargar con filas ya puestas: nada de esqueleto, solo se atenúa', () => {
     componente.datos = [{ nombre: 'Ana' }, { nombre: 'Karina' }];
     componente.paginacionServidor = true;
+    // Al poner las entradas a mano, Angular no llama a ngOnChanges: se hace
+    // aquí, como lo haría el padre en la app real.
+    componente.ngOnChanges({});
     fixture.detectChanges();
 
     componente.cargando = true;
