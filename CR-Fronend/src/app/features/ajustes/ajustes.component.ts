@@ -45,6 +45,7 @@ export class AjustesComponent implements OnInit {
       titulo: 'Generales',
       campos: [
         { clave: 'uit', etiqueta: 'UIT', unidad: 'S/', ayuda: 'No paga Renta de 5ta quien gana menos de 7 UIT al año.' },
+        { clave: 'rmv', etiqueta: 'Sueldo mínimo (RMV)', unidad: 'S/', ayuda: 'EsSalud nunca se calcula sobre menos que esto.' },
         { clave: 'asignacion_familiar', etiqueta: 'Asignación familiar', unidad: 'S/', ayuda: '10% del sueldo mínimo (RMV).' },
       ],
     },
@@ -57,7 +58,7 @@ export class AjustesComponent implements OnInit {
     },
     {
       titulo: 'AFP',
-      descripcion: 'Las comisiones son las de flujo. A quien está en comisión mixta no se le cobra en planilla.',
+      descripcion: 'Las comisiones son las de flujo: a quien está en comisión mixta no se le cobra en planilla. La prima de seguro no se le cobra a quien ya tiene 65 años.',
       campos: [
         { clave: 'aporte_afp', etiqueta: 'Aporte al fondo', unidad: '%' },
         { clave: 'prima_seguro_afp', etiqueta: 'Prima de seguro', unidad: '%' },

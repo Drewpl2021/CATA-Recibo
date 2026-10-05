@@ -737,7 +737,10 @@ export class EmisionBoletaListComponent implements OnInit {
     } else if (this.empleadoSeleccionado.sistema_pensiones === 'AFP') {
       this.formulario.onp13 = null;
       this.formulario.sppFondoPensiones = porciento(ley.aporte_afp);
-      this.formulario.sppPrimaSeguro = porciento(ley.prima_seguro_afp);
+      // Con 65 años cumplidos antes de este mes ya no paga la prima, igual que en el backend.
+      this.formulario.sppPrimaSeguro = this.tiene65AlEmpezarElMes(this.empleadoSeleccionado.fecha_nacimiento, Number(mes), Number(this.formulario.anio))
+        ? null
+        : porciento(ley.prima_seguro_afp);
 
       // "Mixta" no paga comisión en planilla, igual que en el backend.
       const comisiones: Record<string, number> = {
@@ -757,7 +760,17 @@ export class EmisionBoletaListComponent implements OnInit {
       this.formulario.sppComision = null;
     }
 
-    this.formulario.essalud9 = porciento(ley.essalud);
+    // EsSalud nunca sobre menos que el sueldo mínimo (RMV), igual que en el backend.
+    this.formulario.essalud9 = sueldo > 0
+      ? Number((Math.max(sueldo, ley.rmv) * (ley.essalud / 100)).toFixed(2))
+      : 0;
+  }
+
+  /** Si ya cumplió 65 años el día 1 de ese mes (desde ahí no paga la prima de la AFP). */
+  private tiene65AlEmpezarElMes(nacimiento: string | null | undefined, mes: number, anio: number): boolean {
+    if (!nacimiento) return false;
+    const [a, m, d] = String(nacimiento).slice(0, 10).split('-').map(Number);
+    return new Date(a + 65, m - 1, d) <= new Date(anio, mes - 1, 1);
   }
 
   cerrarModal(): void {

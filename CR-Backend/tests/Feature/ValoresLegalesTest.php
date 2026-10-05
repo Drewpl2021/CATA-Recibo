@@ -80,6 +80,50 @@ class ValoresLegalesTest extends TestCase
         $this->actingAs($rrhh, 'sanctum')->putJson('/api/legal-values/2025', ['uit' => 1])->assertForbidden();
     }
 
+    /**
+     * El caso real del PLAME de septiembre 2026: SONCO RAMOS, 69 años,
+     * Integra mixta, 582.80. Fondo 58.28, sin comisión (mixta) y sin prima.
+     */
+    public function test_con_65_anios_o_mas_no_paga_la_prima_del_seguro(): void
+    {
+        $motor = new MotorConValoresLegales();
+        $sonco = $this->empleado([
+            'sistema_pensiones' => 'AFP', 'afp' => 'Integra', 'tipo_comision_afp' => 'mixta',
+            'fecha_nacimiento' => '1957-06-09',
+        ]);
+
+        $pension = $motor->calcularDescuentoPension($sonco, 582.80, 2026, 9);
+
+        $this->assertSame(58.28, $pension['total']);
+        $this->assertNotContains(\App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, array_column($pension['detalle'], 'concepto'));
+    }
+
+    public function test_el_mes_en_que_cumple_65_todavia_paga_la_prima(): void
+    {
+        $motor = new MotorConValoresLegales();
+        $cumple = $this->empleado([
+            'sistema_pensiones' => 'AFP', 'afp' => 'Integra', 'tipo_comision_afp' => 'mixta',
+            'fecha_nacimiento' => '1961-09-15',   // cumple 65 el 15/09/2026
+        ]);
+
+        // Septiembre: fondo 100 + prima 13.70. Octubre, ya con 65: solo el fondo.
+        $this->assertSame(113.70, $motor->calcularDescuentoPension($cumple, 1000, 2026, 9)['total']);
+        $this->assertSame(100.0, $motor->calcularDescuentoPension($cumple, 1000, 2026, 10)['total']);
+    }
+
+    /** SONCO RAMOS otra vez: EsSalud 101.70 (9% de la RMV 1 130), no 52.45. */
+    public function test_essalud_nunca_se_calcula_sobre_menos_que_la_rmv(): void
+    {
+        $motor = new MotorConValoresLegales();
+
+        $this->assertSame(101.70, $motor->calcularEssalud(582.80, 2026));
+        $this->assertSame(270.00, $motor->calcularEssalud(3000, 2026));
+        // Medio mes trabajado: el piso es media RMV (565 × 9% = 50.85).
+        $this->assertSame(50.85, $motor->calcularEssalud(300, 2026, 0.5));
+        // Sin remuneración no hay aporte.
+        $this->assertSame(0.00, $motor->calcularEssalud(0, 2026));
+    }
+
     public function test_el_nombre_oficial_del_anio_se_edita_y_no_pasa_a_otros_anios(): void
     {
         $this->assertSame('Año de la recuperación y consolidación de la economía peruana', ValorLegal::nombreDelAnio(2025));

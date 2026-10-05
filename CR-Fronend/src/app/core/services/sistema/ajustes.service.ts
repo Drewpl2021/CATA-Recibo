@@ -19,6 +19,8 @@ export interface ValorLegal {
   /** La denominación oficial del año, que va arriba en la boleta. Vacía, no se imprime. */
   nombre_anio: string | null;
   uit: number;
+  /** Remuneración mínima vital: el piso sobre el que se calcula EsSalud. */
+  rmv: number;
   asignacion_familiar: number;
   onp: number;
   essalud: number;

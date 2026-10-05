@@ -57,10 +57,10 @@ class MiBoletaController extends Controller
         $asignacionFamiliar = $this->asignacionFamiliarDeLaPlanilla($planilla);
         $baseAfecta         = (float) $planilla->sueldo_base + $asignacionFamiliar + $this->otrosIngresosAfectosDeLaPlanilla($planilla);
 
-        $pension            = $this->calcularDescuentoPension($empleado, $baseAfecta, (int) $anio);
+        $pension            = $this->calcularDescuentoPension($empleado, $baseAfecta, (int) $anio, (int) $mes);
         // La gratificación es una línea de la planilla (misma regla que
         // BoletaController): sale sola entre los conceptos de ingreso.
-        $essalud            = $this->calcularEssalud($baseAfecta, (int) $anio);
+        $essalud            = $this->calcularEssalud($baseAfecta, (int) $anio, $this->proporcionDelMes($empleado, (int) $mes, (int) $anio));
         $renta5ta           = $this->generarYPersistirRenta5ta($planilla, $empleado);
 
         // Conceptos de esta planilla (PaymentConcept vía PayrollDetalle), separados por tipo.

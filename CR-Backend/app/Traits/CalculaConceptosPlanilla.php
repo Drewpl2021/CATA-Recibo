@@ -27,7 +27,29 @@ trait CalculaConceptosPlanilla
      */
     private const CONCEPTOS_CON_CALCULO_ESPECIAL = \App\Support\ConceptosDePago::CALCULO_ESPECIAL;
 
-    protected function calcularDescuentoPension($empleado, $sueldoBase, ?int $anio = null): array
+    /**
+     * Si ya no paga la prima del seguro de la AFP: el seguro de invalidez y
+     * sobrevivencia cubre hasta los 65 años, así que a quien ya los cumplió
+     * no se le cobra. Cuenta el mes ENTERO: quien cumple 65 a mitad de mes
+     * paga ese mes y deja de pagar desde el siguiente.
+     *
+     * Así lo hace el PLAME del colegio: SONCO RAMOS (69 años, Integra) sale
+     * con prima 0.00 mientras los demás afiliados pagan el 1.37%.
+     */
+    protected function exentoDePrimaAfp($empleado, ?int $mes = null, ?int $anio = null): bool
+    {
+        if (empty($empleado->fecha_nacimiento)) {
+            return false;
+        }
+
+        $inicioDelMes = $mes && $anio
+            ? \Carbon\Carbon::create($anio, $mes, 1)->startOfDay()
+            : now()->startOfMonth();
+
+        return \Carbon\Carbon::parse($empleado->fecha_nacimiento)->startOfDay()->addYears(65)->lte($inicioDelMes);
+    }
+
+    protected function calcularDescuentoPension($empleado, $sueldoBase, ?int $anio = null, ?int $mes = null): array
     {
         $sueldoBase = (float) $sueldoBase;
         $ley        = $this->valoresLegales($anio);
@@ -50,7 +72,9 @@ trait CalculaConceptosPlanilla
              * dos casos, así que el error no salta en ninguna suma — solo
              * queda mal el nombre en la boleta y en la declaración.
              */
-            $prima = round($sueldoBase * ($ley->prima_seguro_afp / 100), 2);
+            $prima = $this->exentoDePrimaAfp($empleado, $mes, $anio)
+                ? 0.0
+                : round($sueldoBase * ($ley->prima_seguro_afp / 100), 2);
 
             /*
              * Comisión "Mixta" (afiliado de antes del 2013): la AFP la cobra
@@ -65,8 +89,11 @@ trait CalculaConceptosPlanilla
 
             $detalle = [
                 ['concepto' => \App\Support\ConceptosDePago::SPP_FONDO, 'monto' => $aporte],
-                ['concepto' => \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, 'monto' => $prima],
             ];
+            // Con 65 años o más la prima no se cobra: la línea ni aparece.
+            if ($prima > 0) {
+                $detalle[] = ['concepto' => \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, 'monto' => $prima];
+            }
             if ($comision > 0) {
                 $detalle[] = ['concepto' => \App\Support\ConceptosDePago::SPP_COMISION, 'monto' => $comision];
             }
@@ -212,9 +239,32 @@ trait CalculaConceptosPlanilla
         ];
     }
 
-    protected function calcularEssalud($sueldoBase, ?int $anio = null): float
+    /**
+     * EsSalud: el % del año sobre la base, pero nunca sobre menos que la
+     * remuneración mínima (RMV). Así lo hace el PLAME del colegio: SONCO
+     * RAMOS gana 582.80 y su EsSalud es 101.70 (9% de 1 130), no 52.45.
+     *
+     * Para quien trabajó solo parte del mes (entró o cesó a mitad), el piso
+     * es la parte de la RMV que le toca: $proporcionDelMes, la misma con que
+     * se prorratea su sueldo. Sin remuneración no hay aporte.
+     */
+    protected function calcularEssalud($sueldoBase, ?int $anio = null, float $proporcionDelMes = 1.0): float
     {
-        return round((float) $sueldoBase * ($this->valoresLegales($anio)->essalud / 100), 2);
+        $sueldoBase = (float) $sueldoBase;
+        if ($sueldoBase <= 0) {
+            return 0.00;
+        }
+
+        $ley  = $this->valoresLegales($anio);
+        $base = max($sueldoBase, $ley->rmv * $proporcionDelMes);
+
+        return round($base * ($ley->essalud / 100), 2);
+    }
+
+    /** Qué parte del mes trabajó (1 = el mes entero), para el piso de EsSalud. */
+    protected function proporcionDelMes($empleado, int $mes, int $anio): float
+    {
+        return (float) $this->repartoDeDiasDelMes($empleado, $mes, $anio)['proporcion'];
     }
 
     /**
@@ -525,8 +575,16 @@ trait CalculaConceptosPlanilla
         if ($empleado->sistema_pensiones === 'AFP' && $empleado->afp) {
             $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_FONDO, $baseAfecta * ($ley->aporte_afp / 100));
 
-            // La prima del seguro: la misma para todas las AFP.
-            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, $baseAfecta * ($ley->prima_seguro_afp / 100));
+            // La prima del seguro: la misma para todas las AFP, salvo para
+            // quien ya tiene 65 años (ver exentoDePrimaAfp). A ese se le quita
+            // la línea si venía de antes, igual que la comisión en Mixta.
+            if ($this->exentoDePrimaAfp($empleado, (int) $planilla->mes, $anio)) {
+                \App\Models\PayrollDetalle::where('planilla_id', $planilla->id)
+                    ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO))
+                    ->delete();
+            } else {
+                $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::SPP_PRIMA_SEGURO, $baseAfecta * ($ley->prima_seguro_afp / 100));
+            }
 
             // Y la comisión, que sí depende de cuál sea su AFP. Va con la tasa
             // escrita al lado porque es el dato que cambia de persona a
@@ -556,7 +614,11 @@ trait CalculaConceptosPlanilla
         // que ya cobra su pensión o el extranjero con convenio. EsSalud sí se
         // le sigue aportando, que es cosa aparte.
 
-        $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::ESSALUD, $this->calcularEssalud($baseAfecta, $anio));
+        $this->crearDetalleAutomatico(
+            $planilla,
+            \App\Support\ConceptosDePago::ESSALUD,
+            $this->calcularEssalud($baseAfecta, $anio, $this->proporcionDelMes($empleado, (int) $planilla->mes, $anio))
+        );
 
         // Conceptos marcados como "fijo para todos" en el catálogo — EXCLUYENDO siempre
         // los de pensión/EsSalud/Renta 5ta, que arriba ya reciben su cálculo especial

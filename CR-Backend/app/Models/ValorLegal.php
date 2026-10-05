@@ -18,7 +18,7 @@ class ValorLegal extends Model
     protected $keyType = 'int';
 
     public const CAMPOS = [
-        'uit', 'asignacion_familiar', 'onp', 'essalud', 'aporte_afp', 'prima_seguro_afp',
+        'uit', 'rmv', 'asignacion_familiar', 'onp', 'essalud', 'aporte_afp', 'prima_seguro_afp',
         'comision_habitat', 'comision_integra', 'comision_prima', 'comision_profuturo',
     ];
 
@@ -28,6 +28,7 @@ class ValorLegal extends Model
     protected $casts = [
         'anio'                => 'integer',
         'uit'                 => 'float',
+        'rmv'                 => 'float',
         'asignacion_familiar' => 'float',
         'onp'                 => 'float',
         'essalud'             => 'float',
