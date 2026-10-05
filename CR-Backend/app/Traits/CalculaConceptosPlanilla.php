@@ -371,7 +371,9 @@ trait CalculaConceptosPlanilla
      *   Ingreso mensual (I)   sueldo + asignación familiar + Bonificación por
      *                         Cargo del mes (lo que cobra cada mes).
      *   Enero y febrero       lo que de verdad cobró: sale de sus planillas de
-     *                         esos meses. No se adivina; sin planilla, es 0.
+     *                         esos meses, o si no las tiene, de lo cargado del
+     *                         Excel (RentaQuintaPrevia, `renta5ta:cargar-previos`).
+     *                         No se adivina; sin ninguna de las dos, es 0.
      *   Meses mar-dic (J)     los que trabaja de marzo (o desde que entró) a
      *                         diciembre (o hasta su cese). Casi siempre 10.
      *   Vacaciones truncas    I / 12 × J, solo a quien no tiene vacaciones
@@ -408,6 +410,13 @@ trait CalculaConceptosPlanilla
             + $p->payrollDetalles->filter(fn ($d) => $d->paymentConcept?->tipo === 'bonificacion')->sum('monto_calculado'));
         $retenidoEneroFebrero = $eneroFebrero->sum(fn ($p) => $p->payrollDetalles
             ->filter(fn ($d) => $d->paymentConcept?->nombre === \App\Support\ConceptosDePago::RENTA_5TA)->sum('monto_calculado'));
+
+        // El mes que no tiene planilla en el sistema (2026: se empezó a usar a
+        // fin de año) se toma de lo cargado del Excel de RR.HH.
+        $previos = \App\Models\RentaQuintaPrevia::where('empleado_id', $empleado->id)->where('anio', $anio)
+            ->whereIn('mes', [1, 2])->whereNotIn('mes', $eneroFebrero->pluck('mes'))->get();
+        $cobradoEneroFebrero  += $previos->sum('remuneracion');
+        $retenidoEneroFebrero += $previos->sum('retencion');
 
         $conBonificacion = 1 + $ley->essalud / 100;
         $gratificaciones = 0.0;

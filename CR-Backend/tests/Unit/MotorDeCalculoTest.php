@@ -259,6 +259,27 @@ class MotorDeCalculoTest extends TestCase
     }
 
     /**
+     * El mismo APAZA SOSA, pero sin planillas de enero y febrero en el
+     * sistema: sus montos vienen de lo cargado del Excel. Da lo mismo.
+     */
+    public function test_sin_planillas_de_enero_y_febrero_usa_lo_cargado_del_excel(): void
+    {
+        $apaza = $this->crearEmpleado(['sueldo_base' => 4046.50]);
+        foreach ([1, 2] as $mes) {
+            \App\Models\RentaQuintaPrevia::create([
+                'empleado_id' => $apaza->id, 'anio' => 2026, 'mes' => $mes,
+                'remuneracion' => 3852.50, 'retencion' => 137.59,
+            ]);
+        }
+
+        $this->assertSame(120.41, $this->motor->calcularRenta5taCategoria($apaza, 4046.50, 0, 11, 2026));
+
+        // Si después sí se arma la planilla de enero, manda la planilla y no se suma dos veces.
+        $this->registrarRetencion($apaza, mes: 1, monto: 137.59, cobrado: 3852.50);
+        $this->assertSame(120.41, $this->motor->calcularRenta5taCategoria($apaza, 4046.50, 0, 11, 2026));
+    }
+
+    /**
      * CHAMBI CONDORI (fila 14): contratada, cobró 6 654.25 en enero sin
      * retención, y desde marzo 3 361 (sueldo 3 011 + bonificación por cargo
      * 350, que sale de la línea de su planilla del mes).
