@@ -306,6 +306,78 @@
     // son informativos — verificado contra la boleta física del colegio).
     $totalNeto = $totalIngresos - $totalDescuentos - $totalAdelantos;
 
+    /*
+     * Las filas de la boleta, SIEMPRE las mismas y en el mismo orden que la
+     * boleta física del colegio (postman/guia_boleta.jpeg): con un "-" cuando
+     * el monto es cero. Antes solo salían los conceptos que la planilla
+     * tenía, así que dos boletas no se parecían entre sí y la Renta de 5ta
+     * desaparecía cuando era cero.
+     *
+     * Cada fila es [lo que dice la boleta, el monto]. Un concepto que la
+     * planilla tenga y no esté en la lista fija (uno nuevo del catálogo) se
+     * agrega al final de su columna: nada se pierde de vista.
+     */
+    $lineas  = $conceptosIngreso->concat($conceptosDescuento)->concat($conceptosAportacion)->concat($conceptosAdelanto);
+    $montoDe = fn (string $nombre) => (float) $lineas->filter(fn ($d) => $d->paymentConcept?->nombre === $nombre)->sum('monto_calculado');
+    $pensionDe = function (string $nombre) use ($pension) {
+        $fila = collect($pension['detalle'])->firstWhere('concepto', $nombre);
+        return $fila ? (float) $fila['monto'] : 0.0;
+    };
+    $C = \App\Support\ConceptosDePago::class;
+
+    $filasIngreso = [
+        ['Remuneración Básica', (float) $planilla->sueldo_base],
+        ['Bonificación por Cargo', $montoDe($C::BONIFICACION_CARGO)],
+        ['Asignación Familiar', (float) $asignacionFamiliar],
+        ['Vacaciones Truncas', $montoDe($C::VACACIONES_TRUNCAS)],
+        ['Gratificaciones Fiestas Patrias - Ley 29351 y 30334', $montoDe($C::GRATIFICACION)],
+        ['Bonif. Extraord. Temporal - Ley 29351 y 30334', $montoDe($C::BONIF_EXTRAORDINARIA)],
+        ['Otros Conceptos - Subsidio de Maternidad', $montoDe($C::OTROS_INGRESOS)],
+        ['Bonificación', $montoDe('Bonificaciones')],
+        ['Compensación por Tiempo de Servicios', $montoDe('Compensación por Tiempo de Servicios')],
+    ];
+    $filasDescuento = [
+        ['ONP 13%', $pensionDe($C::ONP)],
+        ['SPP: Fondo Pensiones', $pensionDe($C::SPP_FONDO)],
+        ['SPP: Prima de Seguro', $pensionDe($C::SPP_PRIMA_SEGURO)],
+        ['SPP: Comisión', $pensionDe($C::SPP_COMISION)],
+        ['I.R. 5ta Categoría', (float) $renta5ta],
+        ['Descuento Serv. Alimentación', $montoDe('Descuento Serv. Alimentación')],
+        ['Descuento Serv. de Bazar', $montoDe('Descuento Serv. Bazar')],
+        ['Descuento Autorizado - Diezmo', $montoDe($C::DIEZMO)],
+        ['Descuento Otros Conceptos', $montoDe($C::OTROS_DESCUENTOS)],
+        ['Descuento - Pago Escolaridad Mensual', $montoDe('Descuento - Pago de Escolaridad Mensual')],
+    ];
+    $filasAporte = [
+        ['ESSALUD 9%', (float) $essalud],
+        ['SCTR', $montoDe('SCTR')],
+    ];
+    $filasAdelanto = [
+        ['Adelanto de Sueldo', $montoDe('Adelanto de Sueldo')],
+        ['Adelanto de Bonificación', $montoDe('Adelanto de Bonificaciones')],
+    ];
+
+    // Los conceptos de la planilla que no tienen fila fija: van al final de su columna.
+    $fijos = [
+        $C::BONIFICACION_CARGO, $C::VACACIONES_TRUNCAS, $C::GRATIFICACION, $C::BONIF_EXTRAORDINARIA,
+        $C::OTROS_INGRESOS, 'Bonificaciones', 'Compensación por Tiempo de Servicios',
+        'Descuento Serv. Alimentación', 'Descuento Serv. Bazar', $C::DIEZMO, $C::OTROS_DESCUENTOS,
+        'Descuento - Pago de Escolaridad Mensual', 'SCTR', 'Adelanto de Sueldo', 'Adelanto de Bonificaciones',
+    ];
+    $extras = fn ($coleccion) => $coleccion
+        ->reject(fn ($d) => in_array($d->paymentConcept?->nombre, $fijos, true))
+        ->groupBy(fn ($d) => $d->etiqueta)
+        ->map(fn ($grupo, $etiqueta) => [$etiqueta, (float) $grupo->sum('monto_calculado')])
+        ->values()->all();
+
+    $filasIngreso   = array_merge($filasIngreso, $extras($conceptosIngreso));
+    $filasDescuento = array_merge($filasDescuento, $extras($conceptosDescuento));
+    $filasAporte    = array_merge($filasAporte, $extras($conceptosAportacion));
+    $filasAdelanto  = array_merge($filasAdelanto, $extras($conceptosAdelanto));
+
+    // Como en la boleta física: el monto sin símbolo, y un guion cuando es cero.
+    $monto = fn (float $v) => abs($v) < 0.005 ? '-' : number_format($v, 2);
+
     // Datos institucionales fijos (no hay un módulo de "datos del colegio" en el sistema).
     $colegioRuc = '20156630733';
     $colegioDireccion = 'Jr. Moquegua N° 852';
@@ -334,13 +406,16 @@
      * preferible a partirla, porque una boleta es UN documento y se firma
      * una vez.
      */
-    $lineasDeConcepto = count($conceptosIngreso) + count($conceptosDescuento)
-        + count($conceptosAportacion) + count($conceptosAdelanto);
+    // Lo que manda la altura es la columna más larga de cada fila de bloques,
+    // no la suma: ahora todas las filas fijas salen siempre (9 y 10 arriba,
+    // 2 y 2 abajo), así que lo que varía son los conceptos extra.
+    $lineasDeConcepto = max(count($filasIngreso), count($filasDescuento))
+        + max(count($filasAporte), count($filasAdelanto));
 
     $densidad = match (true) {
-        $lineasDeConcepto <= 10 => 'holgada',
-        $lineasDeConcepto <= 18 => 'ajustada',
-        $lineasDeConcepto <= 28 => 'apretada',
+        $lineasDeConcepto <= 12 => 'holgada',
+        $lineasDeConcepto <= 16 => 'ajustada',
+        $lineasDeConcepto <= 22 => 'apretada',
         default                 => 'muy-apretada',
     };
 @endphp
@@ -436,23 +511,15 @@
         <div class="columna">
             <div class="seccion-titulo">Ingresos</div>
             <table>
+                @foreach ($filasIngreso as [$etiqueta, $valor])
                 <tr>
-                    <td class="label">Remuneración Básica</td>
-                    <td class="monto">S/ {{ number_format($planilla->sueldo_base, 2) }}</td>
-                </tr>
-                <tr>
-                    <td class="label">Asignación Familiar</td>
-                    <td class="monto">S/ {{ number_format($asignacionFamiliar, 2) }}</td>
-                </tr>
-                @foreach ($conceptosIngreso as $concepto)
-                <tr>
-                    <td class="label">{{ $concepto->etiqueta }}</td>
-                    <td class="monto">S/ {{ number_format($concepto->monto_calculado, 2) }}</td>
+                    <td class="label">{{ $etiqueta }}</td>
+                    <td class="monto">{{ $monto($valor) }}</td>
                 </tr>
                 @endforeach
                 <tr class="fila-subtotal">
                     <td class="label">Total Ingresos</td>
-                    <td class="monto">S/ {{ number_format($totalIngresos, 2) }}</td>
+                    <td class="monto">{{ number_format($totalIngresos, 2) }}</td>
                 </tr>
             </table>
         </div>
@@ -460,27 +527,15 @@
         <div class="columna">
             <div class="seccion-titulo">Descuentos</div>
             <table>
-                @foreach ($pension['detalle'] as $item)
+                @foreach ($filasDescuento as [$etiqueta, $valor])
                 <tr>
-                    <td class="label">{{ $item['concepto'] }}</td>
-                    <td class="monto">S/ {{ number_format($item['monto'], 2) }}</td>
+                    <td class="label">{{ $etiqueta }}</td>
+                    <td class="monto">{{ $monto($valor) }}</td>
                 </tr>
                 @endforeach
-                @foreach($conceptosDescuento as $concepto)
-                <tr>
-                    <td class="label">{{ $concepto->etiqueta }}</td>
-                    <td class="monto">S/ {{ number_format($concepto->monto_calculado, 2) }}</td>
-                </tr>
-                @endforeach
-                @if($renta5ta > 0)
-                <tr>
-                    <td class="label">I.R. 5ta Categoría</td>
-                    <td class="monto">S/ {{ number_format($renta5ta, 2) }}</td>
-                </tr>
-                @endif
                 <tr class="fila-subtotal">
                     <td class="label">Total Descuentos</td>
-                    <td class="monto">S/ {{ number_format($totalDescuentos, 2) }}</td>
+                    <td class="monto">{{ number_format($totalDescuentos, 2) }}</td>
                 </tr>
             </table>
             @if ($pension['total'] > 0)
@@ -497,40 +552,35 @@
         <div class="columna">
             <div class="seccion-titulo">Aportaciones del Empleador (Informativo)</div>
             <table>
+                @foreach ($filasAporte as [$etiqueta, $valor])
                 <tr>
-                    <td class="label">ESSALUD 9%</td>
-                    <td class="monto">S/ {{ number_format($essalud, 2) }}</td>
-                </tr>
-                @foreach ($conceptosAportacion as $concepto)
-                <tr>
-                    <td class="label">{{ $concepto->etiqueta }}</td>
-                    <td class="monto">S/ {{ number_format($concepto->monto_calculado, 2) }}</td>
+                    <td class="label">{{ $etiqueta }}</td>
+                    <td class="monto">{{ $monto($valor) }}</td>
                 </tr>
                 @endforeach
                 <tr class="fila-subtotal">
                     <td class="label">Total Aportes</td>
-                    <td class="monto">S/ {{ number_format($totalAportes, 2) }}</td>
+                    <td class="monto">{{ number_format($totalAportes, 2) }}</td>
                 </tr>
             </table>
             <p class="nota">Este monto es asumido íntegramente por el empleador y no afecta el sueldo neto del trabajador.</p>
         </div>
 
+        {{-- Siempre, como en la boleta física: "-" si no hubo adelanto. --}}
         <div class="columna">
-            @if ($conceptosAdelanto->count() > 0)
             <div class="seccion-titulo">Adelanto</div>
             <table>
-                @foreach ($conceptosAdelanto as $concepto)
+                @foreach ($filasAdelanto as [$etiqueta, $valor])
                 <tr>
-                    <td class="label">{{ $concepto->etiqueta }}</td>
-                    <td class="monto">S/ {{ number_format($concepto->monto_calculado, 2) }}</td>
+                    <td class="label">{{ $etiqueta }}</td>
+                    <td class="monto">{{ $monto($valor) }}</td>
                 </tr>
                 @endforeach
                 <tr class="fila-subtotal">
                     <td class="label">Total Adelanto</td>
-                    <td class="monto">S/ {{ number_format($totalAdelantos, 2) }}</td>
+                    <td class="monto">{{ number_format($totalAdelantos, 2) }}</td>
                 </tr>
             </table>
-            @endif
         </div>
     </div>
 

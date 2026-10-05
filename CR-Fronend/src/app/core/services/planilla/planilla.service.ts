@@ -96,6 +96,24 @@ export class PlanillaService extends EntityDataService<Planilla> {
   }
 
   /**
+   * GET /payrolls/renta-5ta — la Renta de 5ta de ese mes, SIN guardar nada.
+   * Con `sueldo`, la calcula con ese (lo que se está escribiendo en pantalla).
+   */
+  rentaQuinta(params: { empleado_id: string; mes: number; anio: number; sueldo?: number | null }): Observable<ApiResponse<{ monto: number }>> {
+    const query: Record<string, string> = {
+      empleado_id: params.empleado_id,
+      mes: String(params.mes),
+      anio: String(params.anio),
+    };
+    if (params.sueldo !== null && params.sueldo !== undefined) query['sueldo'] = String(params.sueldo);
+
+    return this.http.get<ApiResponse<{ monto: number }>>(
+      `${environment.apiUrl}/${END_POINTS_ACCIONES.rentaQuinta}`,
+      { params: query }
+    );
+  }
+
+  /**
    * GET /planilla/exportar — el reporte completo en Excel.
    *
    * Toma los mismos filtros que el listado a propósito: lo que se ve en

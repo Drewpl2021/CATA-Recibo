@@ -140,6 +140,9 @@ export const END_POINTS_ACCIONES = {
   /** POST payrolls/{id}/concepts — deja sus líneas como diga la pantalla */
   sincronizarConceptosPlanilla: (planillaId: string) => `payrolls/${planillaId}/concepts`,
 
+  /** GET payrolls/renta-5ta?empleado_id=&mes=&anio=&sueldo= — la Renta de 5ta del mes, sin guardar */
+  rentaQuinta: 'payrolls/renta-5ta',
+
   /** PUT payrolls/{id}/recalcular — vuelve a tomar el sueldo actual de la ficha */
   recalcularPlanilla: (planillaId: string) => `payrolls/${planillaId}/recalcular`,
 

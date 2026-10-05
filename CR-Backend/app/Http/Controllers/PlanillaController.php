@@ -511,12 +511,53 @@ class PlanillaController extends Controller
 
         $planilla->recalcularTotal();
 
+        // Un bono o un descuento nuevo cambia la Renta de 5ta del mes: se
+        // recalcula ahora, y no recién al emitir la boleta, para que lo que
+        // RR.HH. ve guardado sea lo que va a salir impreso.
+        if ($planilla->empleado) {
+            $this->generarYPersistirRenta5ta($planilla, $planilla->empleado);
+        }
+
         return response()->json([
             'success' => true,
             'data'    => [
                 'planilla' => $planilla->fresh()->load('payrollDetalles.paymentConcept'),
                 'resumen'  => ['puestos' => $puestos, 'quitados' => $quitados],
             ],
+        ]);
+    }
+
+    /**
+     * GET /payrolls/renta-5ta?empleado_id=&mes=&anio=&sueldo=
+     *
+     * La retención de Renta de 5ta de ese mes, SIN guardar nada: es la que
+     * enseña la vista previa de Emisión de Boleta. Antes la casilla decía
+     * "Automático en PDF" y no se sabía cuánto era hasta imprimir.
+     *
+     * Con `sueldo`, con ese (lo que RR.HH. está escribiendo en la pantalla);
+     * si no, el de su planilla del mes o, sin planilla, el de su ficha.
+     */
+    public function rentaQuinta(Request $request)
+    {
+        $datos = $request->validate([
+            'empleado_id' => 'required|uuid|exists:empleados,id',
+            'mes'         => 'required|integer|min:1|max:12',
+            'anio'        => 'required|integer|min:2000',
+            'sueldo'      => 'nullable|numeric|min:0',
+        ]);
+
+        $empleado = Empleado::findOrFail($datos['empleado_id']);
+        $mes      = (int) $datos['mes'];
+        $anio     = (int) $datos['anio'];
+
+        $sueldo = $datos['sueldo']
+            ?? Planilla::where('empleado_id', $empleado->id)->where('mes', $mes)->where('anio', $anio)->value('sueldo_base')
+            ?? $this->sueldoDelMes($empleado, $mes, $anio)
+            ?? 0;
+
+        return response()->json([
+            'success' => true,
+            'data'    => ['monto' => $this->calcularRenta5taCategoria($empleado, (float) $sueldo, 0.0, $mes, $anio)],
         ]);
     }
 

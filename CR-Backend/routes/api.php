@@ -189,6 +189,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // "exportar" entraría por show({id}) y devolvería un 404 buscando
         // una planilla con ese id.
         Route::get('payrolls/export',        [PlanillaController::class, 'exportar']);
+        // La Renta de 5ta del mes sin guardar nada, para la vista previa de la boleta.
+        Route::get('payrolls/renta-5ta',     [PlanillaController::class, 'rentaQuinta']);
         Route::apiResource('payrolls',         PlanillaController::class);
 
         // Las corridas: la planilla con nombre que agrupa a un grupo de gente

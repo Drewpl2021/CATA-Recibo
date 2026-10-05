@@ -686,6 +686,8 @@ export class EmisionBoletaListComponent implements OnInit {
           this.formulario.descuentoEscolaridad = null;
           this.formulario.adelanto = null;
           this.conceptosExtra = [];
+          // Sin planilla todavía: la Renta de 5ta se calcula con el sueldo de su ficha.
+          this.cargarRenta5ta();
         }
 
         // Recalcular montos dinámicos/previsionales
@@ -729,18 +731,19 @@ export class EmisionBoletaListComponent implements OnInit {
     // Gratificación de julio y diciembre
     this.formulario.gratificacionesFiestas = [7, 12].includes(Number(mes)) ? sueldo : 0.00;
 
-    // Aportes de Pensión (ONP / AFP)
+    // Aportes de Pensión (ONP / AFP). Lo que no le toca va en 0 y no en
+    // blanco: como en la boleta, se ve todo aunque sea cero.
     if (this.empleadoSeleccionado.sistema_pensiones === 'ONP') {
       this.formulario.onp13 = porciento(ley.onp);
-      this.formulario.sppFondoPensiones = null;
-      this.formulario.sppPrimaSeguro = null;
-      this.formulario.sppComision = null;
+      this.formulario.sppFondoPensiones = 0;
+      this.formulario.sppPrimaSeguro = 0;
+      this.formulario.sppComision = 0;
     } else if (this.empleadoSeleccionado.sistema_pensiones === 'AFP') {
-      this.formulario.onp13 = null;
+      this.formulario.onp13 = 0;
       this.formulario.sppFondoPensiones = porciento(ley.aporte_afp);
       // Con 65 años cumplidos antes de este mes ya no paga la prima, igual que en el backend.
       this.formulario.sppPrimaSeguro = this.tiene65AlEmpezarElMes(this.empleadoSeleccionado.fecha_nacimiento, Number(mes), Number(this.formulario.anio))
-        ? null
+        ? 0
         : porciento(ley.prima_seguro_afp);
 
       // "Mixta" no paga comisión en planilla, igual que en el backend.
@@ -755,10 +758,10 @@ export class EmisionBoletaListComponent implements OnInit {
         : comisiones[this.empleadoSeleccionado.afp ?? ''] ?? 0;
       this.formulario.sppComision = porciento(tasaComision);
     } else {
-      this.formulario.onp13 = null;
-      this.formulario.sppFondoPensiones = null;
-      this.formulario.sppPrimaSeguro = null;
-      this.formulario.sppComision = null;
+      this.formulario.onp13 = 0;
+      this.formulario.sppFondoPensiones = 0;
+      this.formulario.sppPrimaSeguro = 0;
+      this.formulario.sppComision = 0;
     }
 
     // EsSalud nunca sobre menos que el sueldo mínimo (RMV), igual que en el backend.
@@ -898,11 +901,55 @@ export class EmisionBoletaListComponent implements OnInit {
 
         // Lo que no tenga línea se queda en blanco, que es lo que significa.
         this._formularioOriginal = JSON.stringify(this.formulario);
+        // Después de las líneas guardadas, la Renta de 5ta al día: si fuera
+        // antes, la línea guardada (quizá vieja) la pisaría al llegar.
+        this.cargarRenta5ta();
       },
       error: () => {
         this.toastService.error('Aviso', 'No se pudieron cargar los conceptos ya guardados de esta planilla.');
       },
     });
+  }
+
+  // ── Renta de 5ta en la vista previa ──
+
+  calculandoRenta = false;
+  private esperaRenta: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * La Renta de 5ta de este trabajador en este mes, calculada por el backend
+   * con el mismo motor que la boleta (sin guardar nada). Antes la casilla
+   * decía "Automático en PDF" y el monto recién se veía al imprimir; tampoco
+   * entraba en el total de descuentos ni en el neto de la vista previa.
+   */
+  cargarRenta5ta(): void {
+    const empleado = this.empleadoSeleccionado;
+    if (!empleado) return;
+
+    this.calculandoRenta = true;
+    this.planillaService.rentaQuinta({
+      empleado_id: empleado.id,
+      mes: Number(this.formulario.mes),
+      anio: Number(this.formulario.anio),
+      sueldo: this.formulario.remuneracionBasica,
+    }).subscribe({
+      next: (res) => {
+        // Si mientras llegaba se cerró o se cambió de trabajador, ya no vale.
+        if (res.success && this.empleadoSeleccionado?.id === empleado.id) {
+          this.formulario.ir5taCategoria = Number(res.data.monto);
+        }
+        this.calculandoRenta = false;
+      },
+      error: () => {
+        this.calculandoRenta = false;
+      },
+    });
+  }
+
+  /** Al escribir el sueldo: se recalcula cuando deja de teclear, no en cada tecla. */
+  programarRenta5ta(): void {
+    if (this.esperaRenta) clearTimeout(this.esperaRenta);
+    this.esperaRenta = setTimeout(() => this.cargarRenta5ta(), 450);
   }
 
   /**
@@ -977,6 +1024,8 @@ export class EmisionBoletaListComponent implements OnInit {
           this.planillaActual = res.data;
           this._formularioOriginal = JSON.stringify(this.formulario);
           this.empleadosEditados.add(this.empleadoSeleccionado!.id);
+          // Al guardar, el backend rehízo la Renta de 5ta con los bonos nuevos.
+          this.cargarRenta5ta();
           this.toastService.success('Borrador Guardado', `Se guardó la planilla para ${this.empleadoSeleccionado?.nombre} ${this.empleadoSeleccionado?.apellido} en la base de datos.`);
         }
       },
