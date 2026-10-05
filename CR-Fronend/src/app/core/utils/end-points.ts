@@ -38,6 +38,8 @@ export const END_POINTS = {
     ajustes: 'settings',
     /** GET (RR.HH. y Admin); POST y PUT /{anio} (solo Admin): los montos de ley por año. */
     valoresLegales: 'legal-values',
+    /** GET ?anio= y POST (el Excel): enero y febrero de antes del sistema, para la 5ta. */
+    rentaQuintaPrevia: 'renta-5ta/previous',
   },
 
   personal: {

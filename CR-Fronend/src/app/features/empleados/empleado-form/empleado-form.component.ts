@@ -134,6 +134,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     // también puede ser el cese real si se marca Cesado.
     fecha_cese: [''],
     sueldo_base: [null as number | null, [Validators.required, Validators.min(0)]],
+    bonificacion_cargo: [null as number | null, [Validators.min(0)]],
     estado: ['activo'],
 
     // ── Planilla ──
@@ -248,7 +249,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       },
       {
         id: 'laborales', titulo: 'Laborales', icono: 'badge',
-        campos: ['area_id', 'cargo_id', 'sede_id', 'fecha_ingreso', 'tipo_contrato_id', 'fecha_cese', 'sueldo_base'],
+        campos: ['area_id', 'cargo_id', 'sede_id', 'fecha_ingreso', 'tipo_contrato_id', 'fecha_cese', 'sueldo_base', 'bonificacion_cargo'],
       },
       {
         id: 'planilla', titulo: 'Planilla', icono: 'money',
@@ -391,6 +392,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       tipo_contrato_id: e.tipo_contrato_id ?? '',
       fecha_cese: (e.fecha_cese ?? '').slice(0, 10),
       sueldo_base: e.sueldo_base ?? null,
+      bonificacion_cargo: Number(e.bonificacion_cargo) || null,
       estado: e.estado ?? 'activo',
       sistema_pensiones: e.sistema_pensiones ?? '',
       afp: e.afp ?? '',
@@ -519,6 +521,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
         ? oNull(v.fecha_cese)
         : null,
       sueldo_base: v.sueldo_base === null ? null : Number(v.sueldo_base),
+      bonificacion_cargo: v.bonificacion_cargo ? Number(v.bonificacion_cargo) : 0,
       estado: v.estado ?? 'activo',
       // Vacío es "no aporta a ninguna pensión", y así tiene que llegar al
       // backend: si se manda 'ONP' por defecto, al jubilado que vuelve a

@@ -680,7 +680,8 @@ export class EmisionBoletaListComponent implements OnInit {
           this.formulario.remuneracionBasica = empleado.sueldo_base ?? null;
           this.formulario.bonificacion = null;
           this.formulario.descuentoOtros = null;
-          this.formulario.bonificacionCargo = null;
+          // La de su ficha: cada planilla nueva la trae sola.
+          this.formulario.bonificacionCargo = Number(empleado.bonificacion_cargo) || null;
           this.formulario.vacacionesTruncas = null;
           this.formulario.bonifExtraordTemporal = null;
           this.formulario.otrosConceptosSubsidio = null;
@@ -729,10 +730,15 @@ export class EmisionBoletaListComponent implements OnInit {
 
     const sueldo = this.formulario.remuneracionBasica ?? 0;
     const mes = this.formulario.mes;
-    const porciento = (tasa: number) => Number((sueldo * (tasa / 100)).toFixed(2));
 
     // Asignación Familiar (10% de la RMV de ese año) si tiene hijos
     this.formulario.asignacionFamiliar = this.empleadoSeleccionado.tiene_hijos ? ley.asignacion_familiar : 0.00;
+
+    // La misma base que el backend: sueldo + asignación + bonificación por
+    // cargo + vacaciones truncas. Sobre esto van la pensión y EsSalud.
+    const base = sueldo + (this.formulario.asignacionFamiliar ?? 0)
+      + Number(this.formulario.bonificacionCargo ?? 0) + Number(this.formulario.vacacionesTruncas ?? 0);
+    const porciento = (tasa: number) => Number((base * (tasa / 100)).toFixed(2));
 
     // Gratificación de julio y diciembre
     this.formulario.gratificacionesFiestas = [7, 12].includes(Number(mes)) ? sueldo : 0.00;
@@ -771,8 +777,8 @@ export class EmisionBoletaListComponent implements OnInit {
     }
 
     // EsSalud nunca sobre menos que el sueldo mínimo (RMV), igual que en el backend.
-    this.formulario.essalud9 = sueldo > 0
-      ? Number((Math.max(sueldo, ley.rmv) * (ley.essalud / 100)).toFixed(2))
+    this.formulario.essalud9 = base > 0
+      ? Number((Math.max(base, ley.rmv) * (ley.essalud / 100)).toFixed(2))
       : 0;
   }
 
@@ -938,6 +944,7 @@ export class EmisionBoletaListComponent implements OnInit {
       mes: Number(this.formulario.mes),
       anio: Number(this.formulario.anio),
       sueldo: this.formulario.remuneracionBasica,
+      bonificacion_cargo: this.formulario.bonificacionCargo,
     }).subscribe({
       next: (res) => {
         // Si mientras llegaba se cerró o se cambió de trabajador, ya no vale.

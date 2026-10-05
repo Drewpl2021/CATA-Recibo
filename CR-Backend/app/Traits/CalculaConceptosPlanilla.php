@@ -327,7 +327,9 @@ trait CalculaConceptosPlanilla
         // Enero y febrero siguen con la proyección de SUNAT: todavía no se sabe
         // cuánto va a ganar en el año, así que se proyecta con lo de ese mes.
         if ($mes >= 3) {
-            return $this->renta5taComoElColegio($empleado, $sueldoBase, $mes, $anio);
+            // $bonificaciones, si viene, es la Bonificación por Cargo que RR.HH.
+            // está escribiendo en la vista previa; si no, la de la planilla o la ficha.
+            return $this->renta5taComoElColegio($empleado, $sueldoBase, $mes, $anio, $bonificaciones > 0 ? $bonificaciones : null);
         }
 
         $tramo = self::TRAMOS_RENTA_5TA[$mes] ?? self::TRAMOS_RENTA_5TA[1];
@@ -386,7 +388,7 @@ trait CalculaConceptosPlanilla
      *   Proyección − 7 UIT → tramos (8%, 14%, 17%...) = impuesto del año.
      *   Retención del mes = (impuesto − lo retenido en enero y febrero) ÷ J.
      */
-    protected function renta5taComoElColegio($empleado, float $sueldoBase, int $mes, int $anio): float
+    protected function renta5taComoElColegio($empleado, float $sueldoBase, int $mes, int $anio, ?float $bonificacionCargo = null): float
     {
         $ley = $this->valoresLegales($anio);
         [$desde, $hasta] = $this->mesesTrabajadosDelAnio($empleado, $anio);
@@ -396,9 +398,10 @@ trait CalculaConceptosPlanilla
 
         $planillaDelMes = \App\Models\Planilla::where('empleado_id', $empleado->id)
             ->where('anio', $anio)->where('mes', $mes)->first();
-        $bonificacionCargo = $planillaDelMes ? (float) $planillaDelMes->payrollDetalles()
+        // La que se pidió; si no, la de la planilla del mes; sin planilla, la de su ficha.
+        $bonificacionCargo ??= $planillaDelMes ? (float) $planillaDelMes->payrollDetalles()
             ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', \App\Support\ConceptosDePago::BONIFICACION_CARGO))
-            ->sum('monto_calculado') : 0.0;
+            ->sum('monto_calculado') : (float) ($empleado->bonificacion_cargo ?? 0);
 
         $ingresoMensual = $sueldoBase + $this->calcularAsignacionFamiliar($empleado, $anio) + $bonificacionCargo;
         $mesesMarzoDiciembre = $hasta - max(3, $desde) + 1;
@@ -407,7 +410,8 @@ trait CalculaConceptosPlanilla
         $eneroFebrero = \App\Models\Planilla::with('payrollDetalles.paymentConcept')
             ->where('empleado_id', $empleado->id)->where('anio', $anio)->whereIn('mes', [1, 2])->get();
         $cobradoEneroFebrero = $eneroFebrero->sum(fn ($p) => (float) $p->sueldo_base
-            + $p->payrollDetalles->filter(fn ($d) => $d->paymentConcept?->tipo === 'bonificacion')->sum('monto_calculado'));
+            + $p->payrollDetalles->filter(fn ($d) => $d->paymentConcept?->tipo === 'bonificacion'
+                && $d->paymentConcept->nombre !== \App\Support\ConceptosDePago::MOVILIDAD)->sum('monto_calculado'));
         $retenidoEneroFebrero = $eneroFebrero->sum(fn ($p) => $p->payrollDetalles
             ->filter(fn ($d) => $d->paymentConcept?->nombre === \App\Support\ConceptosDePago::RENTA_5TA)->sum('monto_calculado'));
 
@@ -487,6 +491,7 @@ trait CalculaConceptosPlanilla
                     \App\Support\ConceptosDePago::GRATIFICACION,
                     \App\Support\ConceptosDePago::BONIF_EXTRAORDINARIA,
                     \App\Support\ConceptosDePago::VACACIONES_TRUNCAS,
+                    \App\Support\ConceptosDePago::MOVILIDAD,
                 ]))
             ->sum('monto_calculado');
     }
@@ -655,6 +660,14 @@ trait CalculaConceptosPlanilla
         $sueldoBase         = (float) $planilla->sueldo_base;
         // Todos los montos de ley de esta planilla salen de SU año.
         $anio               = (int) $planilla->anio;
+
+        // La Bonificación por Cargo de su ficha, por los mismos días que el
+        // sueldo. Va primero: suma a la base de pensión, EsSalud y Diezmo.
+        // Con 0 en la ficha no se toca nada (pudo agregarse a mano ese mes).
+        $bonificacionCargo = $this->bonificacionCargoDelMes($empleado, (int) $planilla->mes, $anio);
+        if ($bonificacionCargo > 0) {
+            $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::BONIFICACION_CARGO, $bonificacionCargo);
+        }
         $ley                = $this->valoresLegales($anio);
         $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado, $anio);
         // + Bonificación por Cargo y Vacaciones Truncas si ya las tiene la
@@ -775,6 +788,11 @@ trait CalculaConceptosPlanilla
             // junto con los demás, y solo "No" lo saca de este bloque.
             if ($concepto->nombre === \App\Support\ConceptosDePago::DIEZMO) {
                 if (! $empleado->aplica_diezmo) {
+                    // Al recalcular, a quien se le quitó el Diezmo en su ficha
+                    // se le borra la línea que traía de antes.
+                    \App\Models\PayrollDetalle::where('planilla_id', $planilla->id)
+                        ->where('payment_concept_id', $concepto->id)
+                        ->delete();
                     continue;
                 }
 
@@ -976,6 +994,17 @@ trait CalculaConceptosPlanilla
      * Devuelve null cuando el trabajador todavía no había ingresado: eso no es
      * "cero soles", es que no hay planilla que armarle.
      */
+    /** La Bonificación por Cargo de la ficha, por los días del mes que le toca (como el sueldo). */
+    protected function bonificacionCargoDelMes($empleado, int $mes, int $anio): float
+    {
+        $monto = (float) ($empleado->bonificacion_cargo ?? 0);
+        if ($monto <= 0) {
+            return 0.0;
+        }
+
+        return round($monto * $this->repartoDeDiasDelMes($empleado, $mes, $anio)['proporcion'], 2);
+    }
+
     protected function sueldoDelMes($empleado, int $mes, int $anio): ?float
     {
         $reparto = $this->repartoDeDiasDelMes($empleado, $mes, $anio);

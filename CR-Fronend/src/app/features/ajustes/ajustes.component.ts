@@ -2,11 +2,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { AjustesService, AjustesSistema, CamposValorLegal, MontoLegal, ToastService, ValorLegal } from '../../core/services';
+import { AjustesService, AjustesSistema, CamposValorLegal, CargaRentaQuintaPrevia, MontoLegal, RentaQuintaPreviaResumen, ToastService, ValorLegal } from '../../core/services';
 import { mensajeErrorApi } from '../../core/utils';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { FormModalComponent } from '../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../shared/components/icon/icon.component';
+import { SelectorArchivoComponent } from '../../shared/components/selector-archivo/selector-archivo.component';
 
 /** Cómo se muestra cada monto de ley en la pantalla. */
 interface CampoLegal {
@@ -23,7 +24,7 @@ interface CampoLegal {
 @Component({
   selector: 'app-ajustes',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, FormModalComponent, IconComponent],
+  imports: [CommonModule, FormsModule, PageHeaderComponent, FormModalComponent, IconComponent, SelectorArchivoComponent],
   templateUrl: './ajustes.component.html',
 })
 export class AjustesComponent implements OnInit {
@@ -183,8 +184,47 @@ export class AjustesComponent implements OnInit {
     });
   }
 
+  // ────────── Renta de 5ta: enero y febrero de antes del sistema ──────────
+
+  /** El año en curso: es el único que lo necesita (el siguiente ya tendrá sus planillas). */
+  previaResumen: RentaQuintaPreviaResumen | null = null;
+  previaArchivo: File[] = [];
+  previaSubiendo = false;
+  previaResultado: CargaRentaQuintaPrevia | null = null;
+
+  private cargarPrevia(): void {
+    this.ajustesService.rentaQuintaPrevia(this.anioActual).subscribe({
+      next: (res) => (this.previaResumen = res.success ? res.data : null),
+      error: () => (this.previaResumen = null),
+    });
+  }
+
+  subirPrevia(): void {
+    const archivo = this.previaArchivo[0];
+    if (!archivo) return;
+
+    this.previaSubiendo = true;
+    this.previaResultado = null;
+    this.ajustesService.cargarRentaQuintaPrevia(this.anioActual, archivo).subscribe({
+      next: (res) => {
+        this.previaSubiendo = false;
+        if (res.success) {
+          this.previaResultado = res.data;
+          this.previaArchivo = [];
+          this.toastService.success('Enero y febrero cargados', `${res.data.con_datos} trabajadores con datos; se recalculó la 5ta de ${res.data.recalculadas} planillas.`);
+          this.cargarPrevia();
+        }
+      },
+      error: (err) => {
+        this.previaSubiendo = false;
+        this.toastService.error('No se cargó', mensajeErrorApi(err, 'Revisa que sea el Excel de cálculo de 5ta.'));
+      },
+    });
+  }
+
   ngOnInit(): void {
     this.cargarValoresLegales();
+    this.cargarPrevia();
 
     this.ajustesService.obtener().subscribe({
       next: (res) => {

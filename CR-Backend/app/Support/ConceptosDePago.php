@@ -64,6 +64,12 @@ final class ConceptosDePago
     public const GRATIFICACION        = 'Gratificaciones Fiestas Patrias - Ley 29351 y 30334';
     public const BONIF_EXTRAORDINARIA = 'Bonif. Extraord. Temporal - Ley 29351 y 30334';
 
+    /**
+     * Columna U del PLAME. No es remuneración: no paga pensión, EsSalud ni
+     * Renta de 5ta (la columna "Otros" del Excel de 5ta no la lleva).
+     */
+    public const MOVILIDAD = 'Planilla de Movilidad';
+
     /** El sueldo del mes: sale de la ficha del trabajador, nunca es una línea. */
     public const REMUNERACION_BASICA = 'Remuneración Básica';
 

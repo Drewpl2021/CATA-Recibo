@@ -544,6 +544,8 @@ class PlanillaController extends Controller
             'mes'         => 'required|integer|min:1|max:12',
             'anio'        => 'required|integer|min:2000',
             'sueldo'      => 'nullable|numeric|min:0',
+            // La Bonificación por Cargo que se está escribiendo en pantalla.
+            'bonificacion_cargo' => 'nullable|numeric|min:0',
         ]);
 
         $empleado = Empleado::findOrFail($datos['empleado_id']);
@@ -557,7 +559,7 @@ class PlanillaController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => ['monto' => $this->calcularRenta5taCategoria($empleado, (float) $sueldo, 0.0, $mes, $anio)],
+            'data'    => ['monto' => $this->calcularRenta5taCategoria($empleado, (float) $sueldo, (float) ($datos['bonificacion_cargo'] ?? 0), $mes, $anio)],
         ]);
     }
 

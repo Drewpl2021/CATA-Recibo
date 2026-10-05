@@ -35,6 +35,8 @@ export interface Empleado {
 
   // Datos de planilla
   sueldo_base?: number | null;
+  /** Monto fijo al mes (la "Bonificación por Función" del PLAME): cada planilla la trae sola. */
+  bonificacion_cargo?: number | string | null;
   forma_pago?: string | null;
   sistema_pensiones?: string;
   afp?: string | null;
@@ -77,6 +79,7 @@ export interface EmpleadoPayload {
   fecha_ingreso: string;
   fecha_nacimiento: string | null;
   sueldo_base: number | null;
+  bonificacion_cargo?: number | null;
   tipo_contrato_id: string | null;
   /**
    * Fin del primer contrato (solo si el tipo lleva plazo) o cese real si se

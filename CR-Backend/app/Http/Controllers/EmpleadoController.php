@@ -370,7 +370,7 @@ class EmpleadoController extends Controller
             'N°', 'DNI', 'Apellidos', 'Nombres', 'Fecha de nacimiento',
             'Teléfono', 'Dirección', 'Correo', 'Rol',
             'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Fecha de cese', 'Tipo de contrato',
-            'Sueldo base', 'Sistema de pensión', 'AFP', 'Tipo de comisión AFP', 'CUSPP',
+            'Sueldo base', 'Bonificación por cargo', 'Sistema de pensión', 'AFP', 'Tipo de comisión AFP', 'CUSPP',
             'Forma de pago', 'Banco', 'N° de cuenta', 'CCI',
             'Tiene hijos', 'Diezmo', 'Nivel de estudios', 'Especialidad', 'Institución donde estudió',
             'Contacto de emergencia', 'Teléfono del contacto',
@@ -403,6 +403,7 @@ class EmpleadoController extends Controller
                 // Número de verdad, no texto: así se puede sumar y filtrar sin
                 // convertir nada, y la importación lo vuelve a leer igual.
                 $e->sueldo_base !== null ? round((float) $e->sueldo_base, 2) : null,
+                round((float) $e->bonificacion_cargo, 2),
                 // Vacío no es un olvido: es "no aporta a ninguna pensión".
                 $e->sistema_pensiones ?: 'No aporta',
                 $e->afp ?? '',
@@ -515,6 +516,7 @@ class EmpleadoController extends Controller
             'tiene_hijos'        => 'nullable|boolean',
             'aplica_diezmo'      => 'nullable|boolean',
             'sueldo_base'        => 'nullable|numeric|min:0',
+            'bonificacion_cargo' => 'nullable|numeric|min:0',
             'tipo_contrato_id'   => 'nullable|uuid|exists:tipos_contrato,id',
             'forma_pago'         => 'nullable|in:banco,efectivo,otro,honorarios',
             'sede_id'            => 'nullable|uuid|exists:sedes,id',

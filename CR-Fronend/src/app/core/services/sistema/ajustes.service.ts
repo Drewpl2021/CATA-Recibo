@@ -35,6 +35,23 @@ export interface ValorLegal {
   comision_profuturo: number;
 }
 
+/** Lo cargado de enero y febrero de un año (antes de usar el sistema). */
+export interface RentaQuintaPreviaResumen {
+  anio: number;
+  trabajadores: number;
+  remuneracion: number;
+  retencion: number;
+  origen: string | null;
+}
+
+/** Lo que pasó al subir el Excel de 5ta. */
+export interface CargaRentaQuintaPrevia {
+  leidos: number;
+  con_datos: number;
+  recalculadas: number;
+  no_encontrados: string[];
+}
+
 export type CamposValorLegal = Omit<ValorLegal, 'anio' | 'asignacion_familiar'>;
 
 /** Solo los montos (todo menos el año y su nombre): los que se escriben como número. */
@@ -45,6 +62,7 @@ export class AjustesService {
   private http = inject(HttpClient);
   private url = `${environment.apiUrl}/${END_POINTS.admin.ajustes}`;
   private urlLey = `${environment.apiUrl}/${END_POINTS.admin.valoresLegales}`;
+  private urlRenta = `${environment.apiUrl}/${END_POINTS.admin.rentaQuintaPrevia}`;
 
   obtener(): Observable<ApiResponse<AjustesSistema>> {
     return this.http.get<ApiResponse<AjustesSistema>>(this.url);
@@ -71,5 +89,17 @@ export class AjustesService {
 
   actualizarAnio(anio: number, valores: CamposValorLegal): Observable<ApiResponse<ValorLegal>> {
     return this.http.put<ApiResponse<ValorLegal>>(`${this.urlLey}/${anio}`, valores);
+  }
+
+  rentaQuintaPrevia(anio: number): Observable<ApiResponse<RentaQuintaPreviaResumen>> {
+    return this.http.get<ApiResponse<RentaQuintaPreviaResumen>>(this.urlRenta, { params: { anio: String(anio) } });
+  }
+
+  /** Sube "Calculo 5ta.xlsx": guarda enero y febrero y recalcula la 5ta de las planillas. */
+  cargarRentaQuintaPrevia(anio: number, archivo: File): Observable<ApiResponse<CargaRentaQuintaPrevia>> {
+    const datos = new FormData();
+    datos.append('anio', String(anio));
+    datos.append('archivo', archivo);
+    return this.http.post<ApiResponse<CargaRentaQuintaPrevia>>(this.urlRenta, datos);
   }
 }

@@ -54,6 +54,7 @@ final class AltaDeEmpleado
             'tiene_hijos'        => 'nullable|boolean',
             'aplica_diezmo'      => 'nullable|boolean',
             'sueldo_base'        => 'required|numeric|min:0',
+            'bonificacion_cargo' => 'nullable|numeric|min:0',
             'tipo_contrato_id'   => 'required|uuid|exists:tipos_contrato,id',
             // Un tipo de contrato que exija fecha de fin (todos salvo el que
             // el catálogo marque `requiere_fecha_fin=false` — hoy, Plazo

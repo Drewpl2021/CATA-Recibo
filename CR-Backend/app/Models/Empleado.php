@@ -13,7 +13,7 @@ class Empleado extends Model
      * estado). El teléfono o la dirección no responden a ningún reclamo.
      */
     protected array $camposAuditables = [
-        'dni', 'nombre', 'apellido', 'sueldo_base', 'sistema_pensiones', 'afp', 'tipo_comision_afp', 'cuspp',
+        'dni', 'nombre', 'apellido', 'sueldo_base', 'bonificacion_cargo', 'sistema_pensiones', 'afp', 'tipo_comision_afp', 'cuspp',
         'entidad_financiera', 'numero_cuenta', 'cci', 'forma_pago', 'tiene_hijos', 'aplica_diezmo',
         'cargo_id', 'area_id', 'sede_id', 'estado', 'tipo_contrato_id',
     ];
@@ -49,6 +49,8 @@ class Empleado extends Model
     'tiene_hijos',
     'aplica_diezmo',
     'sueldo_base',
+    // Monto fijo al mes (la "Bonificación por Función" del PLAME): cada planilla la trae sola.
+    'bonificacion_cargo',
     'tipo_contrato_id',
     'forma_pago',
     'sede_id',

@@ -114,6 +114,59 @@
       </footer>
     </ng-container>
   </section>
+
+  <!-- Enero y febrero de antes del sistema: la 5ta de marzo a diciembre los necesita. -->
+  <section class="section-panel">
+    <header class="panel-header">
+      <div>
+        <h2>Renta de 5ta: enero y febrero de {{ anioActual }}</h2>
+        <p class="panel-header__descripcion">
+          La retención de marzo a diciembre suma lo que cada trabajador cobró en enero y febrero y
+          resta lo que ya se le retuvo. Esos meses no se hicieron en el sistema: se toman del Excel
+          de cálculo de 5ta de RR.HH. Si un mes sí tiene planilla, manda la planilla.
+        </p>
+      </div>
+    </header>
+
+    <div class="grupo-montos form-fields">
+      <p class="form-nota" *ngIf="previaResumen as r">
+        <ng-container *ngIf="r.trabajadores; else sinPrevia">
+          Cargado para <strong>{{ r.trabajadores }} trabajadores</strong>: cobrado
+          S/ {{ r.remuneracion | number: '1.2-2' }} y retenido S/ {{ r.retencion | number: '1.2-2' }}
+          <ng-container *ngIf="r.origen">(de «{{ r.origen }}»)</ng-container>.
+        </ng-container>
+        <ng-template #sinPrevia>Todavía no se cargó nada de enero y febrero de {{ anioActual }}.</ng-template>
+      </p>
+
+      <app-selector-archivo
+        [extensiones]="['xlsx', 'xls']"
+        [pesoMaximoMb]="10"
+        [(archivos)]="previaArchivo"
+        [ocupado]="previaSubiendo"
+        textoOcupado="Leyendo el Excel y recalculando…"
+        ayuda="El Excel «Calculo 5ta» con las columnas MODULAR (DNI), PATERNO, Enero, Febrero, IRQ DESCONTADO ENERO e IRQ DESCONTADO FEBRERO. Se puede volver a subir: reemplaza lo anterior."
+      ></app-selector-archivo>
+
+      <div class="resumen-masivo" *ngIf="previaResultado as r">
+        <div class="resumen-masivo__dato"><strong>{{ r.leidos }}</strong><span>Leídos</span></div>
+        <div class="resumen-masivo__dato"><strong>{{ r.con_datos }}</strong><span>Con enero o febrero</span></div>
+        <div class="resumen-masivo__dato"><strong>{{ r.recalculadas }}</strong><span>Planillas recalculadas</span></div>
+      </div>
+      <div class="detalle-masivo" *ngIf="previaResultado?.no_encontrados?.length">
+        <div class="detalle-masivo__fila" *ngFor="let n of previaResultado!.no_encontrados">
+          <span>{{ n }}</span>
+          <span class="detalle-masivo__motivo">No está registrado en el sistema</span>
+        </div>
+      </div>
+    </div>
+
+    <footer class="panel-pie">
+      <button type="button" class="btn-primary" [disabled]="!previaArchivo.length || previaSubiendo" (click)="subirPrevia()">
+        <app-icon icono="upload" [tamano]="16"></app-icon>
+        Cargar enero y febrero
+      </button>
+    </footer>
+  </section>
 </div>
 
 <!-- Un año nuevo nace con los montos del anterior: casi siempre solo sube la UIT. -->

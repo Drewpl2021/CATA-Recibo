@@ -269,6 +269,9 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::put('settings', [\App\Http\Controllers\ConfiguracionController::class, 'update']);
         Route::post('legal-values',       [\App\Http\Controllers\ValorLegalController::class, 'store']);
         Route::put('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'update'])->whereNumber('anio');
+        // Enero y febrero de antes del sistema, para la Renta de 5ta (Excel de RR.HH.).
+        Route::get('renta-5ta/previous',  [\App\Http\Controllers\RentaQuintaPreviaController::class, 'index']);
+        Route::post('renta-5ta/previous', [\App\Http\Controllers\RentaQuintaPreviaController::class, 'store']);
 
         Route::apiResource('roles', RolController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('module-groups', ModuloPadreController::class);

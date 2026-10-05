@@ -49,6 +49,8 @@ final class ColumnasDeEmpleado
         // área/cargo/sede: tiene que EXISTIR, no se inventa desde el Excel.
         'tipo_contrato'                => ['titulo' => 'Tipo de contrato', 'tipo' => 'catalogo', 'alias' => ['tipo de contrato', 'tipo contrato', 'contrato', 'modalidad']],
         'sueldo_base'                  => ['titulo' => 'Sueldo base', 'tipo' => 'monto', 'alias' => ['sueldo base', 'sueldo', 'remuneracion basica', 'haber basico', 'basico']],
+        // Monto fijo al mes, la "Bonificación por Función" del PLAME. Vacía = 0.
+        'bonificacion_cargo'           => ['titulo' => 'Bonificación por cargo', 'tipo' => 'monto', 'alias' => ['bonificacion por cargo', 'bonificacion por funcion', 'bonif por cargo', 'bonif por funcion', 'bonificacion cargo']],
         'sistema_pensiones'            => ['titulo' => 'Sistema de pensión', 'tipo' => 'opcion', 'alias' => ['sistema de pension', 'sistema pensionario', 'pension', 'regimen pensionario']],
         'afp'                          => ['titulo' => 'AFP', 'tipo' => 'opcion', 'alias' => ['afp']],
         // Flujo (la normal desde 2013) o Mixta (de antes: la AFP cobra su
