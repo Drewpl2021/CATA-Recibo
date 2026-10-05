@@ -294,8 +294,11 @@ trait CalculaConceptosPlanilla
     ];
 
     /**
-     * Calcula la retención de Renta de 5ta Categoría del mes indicado, siguiendo el
-     * procedimiento real de SUNAT (no un promedio simplificado ×12 fijo):
+     * Calcula la retención de Renta de 5ta Categoría del mes indicado.
+     *
+     * De MARZO a DICIEMBRE manda el Excel de RR.HH. ("Calculo 5ta.xlsx"): ver
+     * renta5taComoElColegio(). Lo que sigue describe enero y febrero, que van con
+     * el procedimiento de SUNAT (no un promedio simplificado ×12 fijo):
      *  - Proyecta el ingreso anual usando los meses que REALMENTE faltan para terminar
      *    el año (funciona igual para un empleado que ingresó a mitad de año, porque el
      *    "corte" siempre es respecto al año calendario, no a su fecha de ingreso).
@@ -319,6 +322,13 @@ trait CalculaConceptosPlanilla
         $anio           = (int) $anio;
         $sueldoBase     = (float) $sueldoBase;
         $bonificaciones = (float) $bonificaciones;
+
+        // De marzo a diciembre, como el Excel de RR.HH. (ver renta5taComoElColegio).
+        // Enero y febrero siguen con la proyección de SUNAT: todavía no se sabe
+        // cuánto va a ganar en el año, así que se proyecta con lo de ese mes.
+        if ($mes >= 3) {
+            return $this->renta5taComoElColegio($empleado, $sueldoBase, $mes, $anio);
+        }
 
         $tramo = self::TRAMOS_RENTA_5TA[$mes] ?? self::TRAMOS_RENTA_5TA[1];
 
@@ -351,6 +361,125 @@ trait CalculaConceptosPlanilla
         }
 
         return round(max(0, ($impuestoAnual - $retencionesAcumuladas) / $tramo['divisor']), 2);
+    }
+
+    /**
+     * La Renta de 5ta como la calcula RR.HH. en su Excel ("Calculo 5ta.xlsx",
+     * Hoja1), para las planillas de marzo a diciembre. Un solo cálculo del año
+     * y el mismo monto todos los meses:
+     *
+     *   Ingreso mensual (I)   sueldo + asignación familiar + Bonificación por
+     *                         Cargo del mes (lo que cobra cada mes).
+     *   Enero y febrero       lo que de verdad cobró: sale de sus planillas de
+     *                         esos meses. No se adivina; sin planilla, es 0.
+     *   Meses mar-dic (J)     los que trabaja de marzo (o desde que entró) a
+     *                         diciembre (o hasta su cese). Casi siempre 10.
+     *   Vacaciones truncas    I / 12 × J, solo a quien no tiene vacaciones
+     *                         (contratados): se le pagan al terminar.
+     *   Gratificaciones       I / 6 × meses del semestre, + la bonificación
+     *                         extraordinaria (la tasa de EsSalud). Contratado
+     *                         desde marzo: julio 4/6, diciembre 6/6.
+     *   Otros ingresos        bonos y demás ya cargados de marzo a este mes.
+     *
+     *   Proyección − 7 UIT → tramos (8%, 14%, 17%...) = impuesto del año.
+     *   Retención del mes = (impuesto − lo retenido en enero y febrero) ÷ J.
+     */
+    protected function renta5taComoElColegio($empleado, float $sueldoBase, int $mes, int $anio): float
+    {
+        $ley = $this->valoresLegales($anio);
+        [$desde, $hasta] = $this->mesesTrabajadosDelAnio($empleado, $anio);
+        if ($mes < $desde || $mes > $hasta) {
+            return 0.00;
+        }
+
+        $planillaDelMes = \App\Models\Planilla::where('empleado_id', $empleado->id)
+            ->where('anio', $anio)->where('mes', $mes)->first();
+        $bonificacionCargo = $planillaDelMes ? (float) $planillaDelMes->payrollDetalles()
+            ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', \App\Support\ConceptosDePago::BONIFICACION_CARGO))
+            ->sum('monto_calculado') : 0.0;
+
+        $ingresoMensual = $sueldoBase + $this->calcularAsignacionFamiliar($empleado, $anio) + $bonificacionCargo;
+        $mesesMarzoDiciembre = $hasta - max(3, $desde) + 1;
+
+        // Enero y febrero: lo cobrado de verdad y lo ya retenido, de sus planillas.
+        $eneroFebrero = \App\Models\Planilla::with('payrollDetalles.paymentConcept')
+            ->where('empleado_id', $empleado->id)->where('anio', $anio)->whereIn('mes', [1, 2])->get();
+        $cobradoEneroFebrero = $eneroFebrero->sum(fn ($p) => (float) $p->sueldo_base
+            + $p->payrollDetalles->filter(fn ($d) => $d->paymentConcept?->tipo === 'bonificacion')->sum('monto_calculado'));
+        $retenidoEneroFebrero = $eneroFebrero->sum(fn ($p) => $p->payrollDetalles
+            ->filter(fn ($d) => $d->paymentConcept?->nombre === \App\Support\ConceptosDePago::RENTA_5TA)->sum('monto_calculado'));
+
+        $conBonificacion = 1 + $ley->essalud / 100;
+        $gratificaciones = 0.0;
+        foreach ([7, 12] as $mesGratificacion) {
+            $semestre = $this->calcularGratificacion($empleado, $sueldoBase, $mesGratificacion, $anio);
+            $gratificaciones += $ingresoMensual / 6 * $semestre['meses_trabajados'] * $conBonificacion;
+        }
+
+        $vacacionesTruncas = $empleado->puedeTomarVacaciones() ? 0.0 : $ingresoMensual / 12 * $mesesMarzoDiciembre;
+
+        $proyeccion = $ingresoMensual * $mesesMarzoDiciembre
+            + $cobradoEneroFebrero
+            + $vacacionesTruncas
+            + $gratificaciones
+            + $this->otrosIngresosDelAnio($empleado->id, $anio, $mes);
+
+        $exento = $ley->uit * 7;
+        if ($proyeccion <= $exento) {
+            return 0.00;
+        }
+
+        $impuestoAnual = $this->aplicarTramosImpuestoRenta($proyeccion - $exento, $ley->uit);
+
+        return round(max(0, ($impuestoAnual - $retenidoEneroFebrero) / $mesesMarzoDiciembre), 2);
+    }
+
+    /**
+     * De qué mes a qué mes trabaja en ese año: desde enero (o el mes en que
+     * entró, si fue ese año) hasta diciembre (o el mes de su cese, si es ese
+     * año). Si entró después o cesó antes de ese año, el rango queda vacío.
+     *
+     * @return array{0:int,1:int}
+     */
+    protected function mesesTrabajadosDelAnio($empleado, int $anio): array
+    {
+        $ingreso = $empleado->fecha_ingreso ? \Carbon\Carbon::parse($empleado->fecha_ingreso) : null;
+        $cese    = $empleado->fecha_cese ? \Carbon\Carbon::parse($empleado->fecha_cese) : null;
+
+        $desde = match (true) {
+            $ingreso === null || $ingreso->year < $anio => 1,
+            $ingreso->year === $anio                    => $ingreso->month,
+            default                                     => 13,
+        };
+        $hasta = match (true) {
+            $cese === null || $cese->year > $anio => 12,
+            $cese->year === $anio                 => $cese->month,
+            default                               => 0,
+        };
+
+        return [$desde, $hasta];
+    }
+
+    /**
+     * Las columnas "Aguinaldos y escolaridad" y "Otros" del Excel: lo que cobró
+     * de marzo a este mes fuera de lo que ya entra por fórmula (sueldo,
+     * asignación, bonificación por cargo, gratificaciones, vacaciones truncas).
+     */
+    private function otrosIngresosDelAnio($empleadoId, int $anio, int $mesHasta): float
+    {
+        return (float) \App\Models\PayrollDetalle::whereHas('planilla', fn ($q) => $q
+                ->where('empleado_id', $empleadoId)->where('anio', $anio)
+                ->whereBetween('mes', [3, $mesHasta]))
+            ->whereHas('paymentConcept', fn ($q) => $q
+                ->where('tipo', 'bonificacion')
+                ->whereNotIn('nombre', [
+                    \App\Support\ConceptosDePago::ASIGNACION_FAMILIAR,
+                    \App\Support\ConceptosDePago::BONIFICACION_CARGO,
+                    \App\Support\ConceptosDePago::GRATIFICACION,
+                    \App\Support\ConceptosDePago::BONIF_EXTRAORDINARIA,
+                    \App\Support\ConceptosDePago::VACACIONES_TRUNCAS,
+                ]))
+            ->sum('monto_calculado');
     }
 
     /**
@@ -479,7 +608,7 @@ trait CalculaConceptosPlanilla
                     ['planilla_id' => $planilla->id, 'payment_concept_id' => $concepto->id],
                     [
                         'monto_calculado' => $renta5ta,
-                        'descripcion'     => 'Calculado automáticamente (Art. 40 Reglamento LIR)',
+                        'descripcion'     => null,
                     ]
                 );
             } else {

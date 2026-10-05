@@ -224,26 +224,68 @@ class MotorDeCalculoTest extends TestCase
         }
     }
 
-    public function test_diciembre_regulariza_con_el_impuesto_anual_completo(): void
-    {
-        // Sin retenciones previas, diciembre cobra todo el impuesto anual.
-        $renta = $this->motor->calcularRenta5taCategoria($this->empleado(), 5000, 0, 12, 2026);
+    // ── De marzo a diciembre: como el Excel de RR.HH. ("Calculo 5ta.xlsx") ──
 
-        $this->assertSame(2886.00, $renta);
+    /**
+     * GATICA QUISPE (fila 33): contratado desde marzo, 3 300.80 al mes.
+     * 33 008 + vac. truncas 2 750.67 + grat. julio 4/6 2 398.58 + diciembre
+     * 3 597.87 = 41 755.12 − 38 500 = 3 255.12 × 8% = 260.41 ÷ 10 = 26.04,
+     * el mismo monto en marzo, en octubre y en diciembre.
+     */
+    public function test_de_marzo_a_diciembre_es_el_mismo_monto_del_excel(): void
+    {
+        $gatica = $this->crearEmpleado([
+            'fecha_ingreso' => '2026-03-02', 'sueldo_base' => 3300.80,
+            'tipo_contrato_id' => $this->idTipoContrato('Contratado'),
+        ]);
+
+        foreach ([3, 10, 12] as $mes) {
+            $this->assertSame(26.04, $this->motor->calcularRenta5taCategoria($gatica, 3300.80, 0, $mes, 2026), "mes $mes");
+        }
     }
 
-    public function test_abril_descuenta_lo_ya_retenido_de_enero_a_marzo(): void
+    /**
+     * APAZA SOSA (fila 5): plazo indeterminado, 4 046.50. Enero y febrero
+     * cobró 3 852.50 y se le retuvo 137.59 cada mes: entran tal cual, de sus
+     * planillas. Sin vacaciones truncas (tiene vacaciones de verdad).
+     */
+    public function test_suma_lo_cobrado_en_enero_y_febrero_y_resta_lo_retenido(): void
     {
-        $e = $this->crearEmpleado(['sueldo_base' => 5000]);
-        $this->registrarRetencion($e, mes: 1, monto: 240.50);
+        $apaza = $this->crearEmpleado(['sueldo_base' => 4046.50]);
+        $this->registrarRetencion($apaza, mes: 1, monto: 137.59, cobrado: 3852.50);
+        $this->registrarRetencion($apaza, mes: 2, monto: 137.59, cobrado: 3852.50);
 
-        // Abril proyecta 9 meses: 45,000 + 10,900 = 55,900 − 38,500 = 17,400
-        // → impuesto 1,392. Menos los 240.50 ya retenidos, entre 9.
-        $conHistorial = $this->motor->calcularRenta5taCategoria($e, 5000, 0, 4, 2026);
-        $sinHistorial = $this->motor->calcularRenta5taCategoria($this->empleado(), 5000, 0, 4, 2026);
+        $this->assertSame(120.41, $this->motor->calcularRenta5taCategoria($apaza, 4046.50, 0, 4, 2026));
+    }
 
-        $this->assertSame(127.94, $conHistorial);
-        $this->assertSame(154.67, $sinHistorial);
+    /**
+     * CHAMBI CONDORI (fila 14): contratada, cobró 6 654.25 en enero sin
+     * retención, y desde marzo 3 361 (sueldo 3 011 + bonificación por cargo
+     * 350, que sale de la línea de su planilla del mes).
+     */
+    public function test_la_bonificacion_por_cargo_del_mes_entra_al_ingreso_mensual(): void
+    {
+        $chambi = $this->crearEmpleado([
+            'fecha_ingreso' => '2026-03-01', 'sueldo_base' => 3011,
+            'tipo_contrato_id' => $this->idTipoContrato('Contratado'),
+        ]);
+        $this->registrarRetencion($chambi, mes: 1, monto: 0, cobrado: 6654.25);
+        $octubre = Planilla::create(['empleado_id' => $chambi->id, 'mes' => 10, 'anio' => 2026, 'sueldo_base' => 3011, 'total' => 3011]);
+        $cargo = PaymentConcept::create(['nombre' => ConceptosDePago::BONIFICACION_CARGO, 'tipo' => 'bonificacion']);
+        PayrollDetalle::create(['planilla_id' => $octubre->id, 'payment_concept_id' => $cargo->id, 'monto_calculado' => 350]);
+
+        $this->assertSame(85.37, $this->motor->calcularRenta5taCategoria($chambi, 3011, 0, 10, 2026));
+    }
+
+    /** Quien entra en junio reparte entre los 7 meses que trabaja, no entre 10. */
+    public function test_quien_entra_a_mitad_de_anio_divide_entre_sus_meses(): void
+    {
+        $nuevo = $this->crearEmpleado(['fecha_ingreso' => '2026-06-01', 'sueldo_base' => 8000]);
+
+        $this->assertSame(0.00, $this->motor->calcularRenta5taCategoria($nuevo, 8000, 0, 5, 2026));
+        // 8 000 × 7 + grat. julio 1/6 (1 453.33) + diciembre (8 720) = 66 173.33
+        // − 38 500 = 27 673.33 → 2 200 + 173.33 × 14% = 2 224.27 ÷ 7 = 317.75.
+        $this->assertSame(317.75, $this->motor->calcularRenta5taCategoria($nuevo, 8000, 0, 9, 2026));
     }
 
     // ── Reparto de días (solo lunes a viernes, decisión del colegio) ─
@@ -304,16 +346,19 @@ class MotorDeCalculoTest extends TestCase
         $this->assertSame(31, $this->motor->repartoDeDiasDelMes($e, 10, 2026)['dias_del_mes']);
     }
 
-    private function registrarRetencion(Empleado $empleado, int $mes, float $monto): void
+    private function registrarRetencion(Empleado $empleado, int $mes, float $monto, float $cobrado = 5000): void
     {
-        $concepto = PaymentConcept::create([
-            'nombre' => ConceptosDePago::RENTA_5TA,
-            'tipo'   => 'descuento',
-        ]);
+        $concepto = PaymentConcept::firstOrCreate(
+            ['nombre' => ConceptosDePago::RENTA_5TA],
+            ['tipo' => 'descuento'],
+        );
         $planilla = Planilla::create([
             'empleado_id' => $empleado->id, 'mes' => $mes, 'anio' => 2026,
-            'sueldo_base' => 5000, 'total' => 5000,
+            'sueldo_base' => $cobrado, 'total' => $cobrado,
         ]);
+        if ($monto <= 0) {
+            return;
+        }
         PayrollDetalle::create([
             'planilla_id'        => $planilla->id,
             'payment_concept_id' => $concepto->id,
