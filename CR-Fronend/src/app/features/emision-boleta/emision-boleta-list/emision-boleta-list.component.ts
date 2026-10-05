@@ -1,7 +1,8 @@
 import { inject, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AjustesService, AreaService, AuthService, CargoService, PlanillaCorridaService, SedeService, TipoContratoService, ValorLegal } from '../../../core/services';
+import { AjustesService, AreaService, AuthService, CargoService, PaymentConceptService, PlanillaCorridaService, SedeService, TipoContratoService, ValorLegal } from '../../../core/services';
+import { PaymentConcept } from '../../../core/models';
 import { EmpleadoService } from '../../../core/services';
 import { Empleado } from '../../../core/models';
 import { BoletaService } from '../../../core/services';
@@ -213,7 +214,22 @@ export class EmisionBoletaListComponent implements OnInit {
    * de solo lectura (se editan desde donde se agregaron), para que RR.HH.
    * vea SIEMPRE todo lo que tiene la planilla, no solo los ~20 de siempre.
    */
-  conceptosExtra: { nombre: string; monto: number; tipo: string }[] = [];
+  conceptosExtra: { id: string; nombre: string; monto: number; tipo: string }[] = [];
+
+  /**
+   * El detalle escrito en las dos bolsas "Otros Conceptos" (por ejemplo
+   * «Cobro de corbata»): se muestra en su fila, como en la boleta impresa.
+   */
+  detalleOtrosIngresos = '';
+  detalleOtrosDescuentos = '';
+
+  // ── Agregar otro concepto desde la vista previa ──
+  private conceptoService = inject(PaymentConceptService);
+  /** Los que se pueden agregar a mano: todo el catálogo menos los de ley. */
+  catalogoParaAgregar: PaymentConcept[] = [];
+  mostrarAgregarConcepto = false;
+  guardandoConcepto = false;
+  nuevoConcepto: { id: string; monto: number | null; detalle: string } = { id: '', monto: null, detalle: '' };
   /** true: se abrió con la clave, sobre una boleta ya emitida. Sin botón de emitir. */
   modoCorrigiendo = false;
 
@@ -693,6 +709,9 @@ export class EmisionBoletaListComponent implements OnInit {
           this.formulario.descuentoEscolaridad = null;
           this.formulario.adelanto = null;
           this.conceptosExtra = [];
+    this.detalleOtrosIngresos = '';
+    this.detalleOtrosDescuentos = '';
+    this.mostrarAgregarConcepto = false;
           // Sin planilla todavía: la Renta de 5ta se calcula con el sueldo de su ficha.
           this.cargarRenta5ta();
         }
@@ -799,6 +818,9 @@ export class EmisionBoletaListComponent implements OnInit {
     this.planillaActual = null;
     this.modoCorrigiendo = false;
     this.conceptosExtra = [];
+    this.detalleOtrosIngresos = '';
+    this.detalleOtrosDescuentos = '';
+    this.mostrarAgregarConcepto = false;
     document.body.style.overflow = '';
   }
 
@@ -891,6 +913,9 @@ export class EmisionBoletaListComponent implements OnInit {
    */
   private cargarConceptosEnFormulario(planillaId: string): void {
     this.conceptosExtra = [];
+    this.detalleOtrosIngresos = '';
+    this.detalleOtrosDescuentos = '';
+    this.mostrarAgregarConcepto = false;
     this.detalleService.paginaDePlanilla(planillaId, 0, 200).subscribe({
       next: (res) => {
         if (!res.success) return;
@@ -900,11 +925,15 @@ export class EmisionBoletaListComponent implements OnInit {
           const campo = this.CAMPO_POR_CONCEPTO[nombre];
           if (campo) {
             (this.formulario[campo] as number | null) = Number(linea.monto_calculado);
+            if (nombre === 'Otros Conceptos (Ingresos)') this.detalleOtrosIngresos = linea.descripcion ?? '';
+            if (nombre === 'Otros Conceptos (Descuentos)') this.detalleOtrosDescuentos = linea.descripcion ?? '';
           } else if (linea.payment_concept) {
             // Un concepto que esta pantalla no tiene como campo fijo: se
-            // muestra aparte, no se pierde.
+            // muestra debajo de "Otros Conceptos", con su detalle, como sale
+            // en la boleta impresa.
             this.conceptosExtra.push({
-              nombre,
+              id: linea.id,
+              nombre: linea.descripcion ? `${nombre}: ${linea.descripcion}` : nombre,
               monto: Number(linea.monto_calculado),
               tipo: linea.payment_concept.tipo,
             });
@@ -920,6 +949,71 @@ export class EmisionBoletaListComponent implements OnInit {
       error: () => {
         this.toastService.error('Aviso', 'No se pudieron cargar los conceptos ya guardados de esta planilla.');
       },
+    });
+  }
+
+  // ── Agregar o quitar otro concepto desde la vista previa ──
+
+  /** El formulario para agregar: el catálogo se pide la primera vez. */
+  abrirAgregarConcepto(): void {
+    if (!this.planillaActual?.id) {
+      this.toastService.warning('Primero guarda', 'Presiona «Guardar Borrador» para crear su planilla del mes; después ya puedes agregarle conceptos.');
+      return;
+    }
+    this.nuevoConcepto = { id: '', monto: null, detalle: '' };
+    this.mostrarAgregarConcepto = true;
+    if (this.catalogoParaAgregar.length) return;
+    this.conceptoService.getAll().subscribe({
+      next: (res) => {
+        if (!res.success) return;
+        this.catalogoParaAgregar = res.data
+          .filter((c) => !c.de_ley && !c.calculo_especial && c.nombre !== 'Remuneración Básica')
+          .sort((a, b) => a.tipo.localeCompare(b.tipo) || a.nombre.localeCompare(b.nombre, 'es'));
+      },
+    });
+  }
+
+  /** Etiqueta del tipo, para el desplegable. */
+  tipoLegible(tipo: string): string {
+    return ({ bonificacion: 'Ingreso', descuento: 'Descuento', aportacion: 'Aporte', adelanto: 'Adelanto' } as Record<string, string>)[tipo] ?? tipo;
+  }
+
+  guardarNuevoConcepto(): void {
+    const planillaId = this.planillaActual?.id;
+    const monto = Number(this.nuevoConcepto.monto);
+    if (!planillaId || !this.nuevoConcepto.id || !(monto > 0)) {
+      this.toastService.warning('Falta un dato', 'Elige el concepto y escribe un monto mayor que cero.');
+      return;
+    }
+    this.guardandoConcepto = true;
+    this.detalleService.crear({
+      planilla_id: planillaId,
+      payment_concept_id: this.nuevoConcepto.id,
+      monto_calculado: monto,
+      descripcion: this.nuevoConcepto.detalle.trim() || null,
+    }).subscribe({
+      next: () => {
+        this.guardandoConcepto = false;
+        this.mostrarAgregarConcepto = false;
+        this.toastService.success('Concepto agregado', 'Ya está en su planilla del mes y saldrá en su boleta.');
+        this.cargarConceptosEnFormulario(planillaId);
+      },
+      error: (err) => {
+        this.guardandoConcepto = false;
+        this.toastService.error('No se agregó', err?.error?.message || 'Revisa el concepto y el monto.');
+      },
+    });
+  }
+
+  quitarConceptoExtra(c: { id: string; nombre: string }): void {
+    const planillaId = this.planillaActual?.id;
+    if (!planillaId) return;
+    this.detalleService.delete(c.id).subscribe({
+      next: () => {
+        this.toastService.success('Concepto quitado', `«${c.nombre}» ya no está en su planilla.`);
+        this.cargarConceptosEnFormulario(planillaId);
+      },
+      error: (err) => this.toastService.error('No se quitó', err?.error?.message || 'No se pudo quitar el concepto.'),
     });
   }
 

@@ -97,6 +97,18 @@ class PayrollDetalleController extends Controller
 
         $this->rechazarTruncasParaIndeterminado($datos['payment_concept_id'], $planilla);
 
+        // Una línea por concepto en el mes, como la deja la importación: dos
+        // "Corbatas" sueltas se pisarían la próxima vez que se importe.
+        $yaTiene = PayrollDetalle::with('paymentConcept')->where('planilla_id', $planilla->id)
+            ->where('payment_concept_id', $datos['payment_concept_id'])->first();
+        if ($yaTiene) {
+            return response()->json([
+                'success' => false,
+                'message' => "Ya tiene «{$yaTiene->paymentConcept?->nombre}» este mes (S/ " . number_format((float) $yaTiene->monto_calculado, 2)
+                    . '). Cambia ese monto desde su planilla, o quítalo y vuelve a agregarlo.',
+            ], 422);
+        }
+
         $nuevo = [
             'planilla_id'        => $datos['planilla_id'],
             'payment_concept_id' => $datos['payment_concept_id'],

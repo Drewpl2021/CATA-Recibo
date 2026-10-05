@@ -181,6 +181,9 @@
             border-top: 1px solid #1B4282;
         }
 
+        /* Un concepto agregado aparte: con sangría, bajo "Otros Conceptos". */
+        tr.otro-concepto td.label { padding-left: 14px; font-style: italic; }
+
         .fila-subtotal td {
             background: #E7EEF9;
             font-weight: bold;
@@ -327,6 +330,12 @@
     // Las tasas de ONP y EsSalud de la etiqueta son las del año de la boleta: "13" y no "13.00".
     $ley  = \App\Models\ValorLegal::delAnio((int) $anio);
     $tasa = fn (float $v) => rtrim(rtrim(number_format($v, 2, '.', ''), '0'), '.');
+    // "Otros Conceptos" lleva el detalle que se le escribió a la línea, como
+    // en la boleta física: "Descuento Otros Conceptos: Cobro de corbata".
+    $otros = function (string $nombre, string $etiqueta) use ($lineas) {
+        $detalle = $lineas->first(fn ($d) => $d->paymentConcept?->nombre === $nombre && $d->descripcion)?->descripcion;
+        return $detalle ? "{$etiqueta}: {$detalle}" : $etiqueta;
+    };
 
     $filasIngreso = [
         ['Remuneración Básica', (float) $planilla->sueldo_base],
@@ -335,7 +344,7 @@
         ['Vacaciones Truncas', $montoDe($C::VACACIONES_TRUNCAS)],
         ['Gratificaciones Fiestas Patrias - Ley 29351 y 30334', $montoDe($C::GRATIFICACION)],
         ['Bonif. Extraord. Temporal - Ley 29351 y 30334', $montoDe($C::BONIF_EXTRAORDINARIA)],
-        ['Otros Conceptos - Subsidio de Maternidad', $montoDe($C::OTROS_INGRESOS)],
+        [$otros($C::OTROS_INGRESOS, 'Otros Conceptos - Subsidio de Maternidad'), $montoDe($C::OTROS_INGRESOS)],
         ['Bonificación', $montoDe('Bonificaciones')],
         ['Compensación por Tiempo de Servicios', $montoDe('Compensación por Tiempo de Servicios')],
     ];
@@ -348,7 +357,7 @@
         ['Descuento Serv. Alimentación', $montoDe('Descuento Serv. Alimentación')],
         ['Descuento Serv. de Bazar', $montoDe('Descuento Serv. Bazar')],
         ['Descuento Autorizado - Diezmo', $montoDe($C::DIEZMO)],
-        ['Descuento Otros Conceptos', $montoDe($C::OTROS_DESCUENTOS)],
+        [$otros($C::OTROS_DESCUENTOS, 'Descuento Otros Conceptos'), $montoDe($C::OTROS_DESCUENTOS)],
         ['Descuento - Pago Escolaridad Mensual', $montoDe('Descuento - Pago de Escolaridad Mensual')],
     ];
     $filasAporte = [
@@ -367,14 +376,22 @@
         'Descuento Serv. Alimentación', 'Descuento Serv. Bazar', $C::DIEZMO, $C::OTROS_DESCUENTOS,
         'Descuento - Pago de Escolaridad Mensual', 'SCTR', 'Adelanto de Sueldo', 'Adelanto de Bonificaciones',
     ];
+    // Cada concepto agregado (a uno, a un grupo o por Excel) sale con su
+    // nombre, marcado como "otro concepto" (la tercera posición es la clase).
     $extras = fn ($coleccion) => $coleccion
         ->reject(fn ($d) => in_array($d->paymentConcept?->nombre, $fijos, true))
         ->groupBy(fn ($d) => $d->etiqueta)
-        ->map(fn ($grupo, $etiqueta) => [$etiqueta, (float) $grupo->sum('monto_calculado')])
+        ->map(fn ($grupo, $etiqueta) => [$etiqueta, (float) $grupo->sum('monto_calculado'), 'otro-concepto'])
         ->values()->all();
+    // En Ingresos y Descuentos van justo debajo de su fila "Otros Conceptos";
+    // en Aportes y Adelantos, que no la tienen, al final.
+    $debajoDe = function (array $filas, int $posicion, array $nuevas) {
+        array_splice($filas, $posicion + 1, 0, $nuevas);
+        return $filas;
+    };
 
-    $filasIngreso   = array_merge($filasIngreso, $extras($conceptosIngreso));
-    $filasDescuento = array_merge($filasDescuento, $extras($conceptosDescuento));
+    $filasIngreso   = $debajoDe($filasIngreso, 6, $extras($conceptosIngreso));
+    $filasDescuento = $debajoDe($filasDescuento, 8, $extras($conceptosDescuento));
     $filasAporte    = array_merge($filasAporte, $extras($conceptosAportacion));
     $filasAdelanto  = array_merge($filasAdelanto, $extras($conceptosAdelanto));
 
@@ -514,8 +531,9 @@
         <div class="columna">
             <div class="seccion-titulo">Ingresos</div>
             <table>
-                @foreach ($filasIngreso as [$etiqueta, $valor])
-                <tr>
+                @foreach ($filasIngreso as $fila)
+                @php [$etiqueta, $valor] = $fila; @endphp
+                <tr class="{{ $fila[2] ?? '' }}">
                     <td class="label">{{ $etiqueta }}</td>
                     <td class="monto">{{ $monto($valor) }}</td>
                 </tr>
@@ -530,8 +548,9 @@
         <div class="columna">
             <div class="seccion-titulo">Descuentos</div>
             <table>
-                @foreach ($filasDescuento as [$etiqueta, $valor])
-                <tr>
+                @foreach ($filasDescuento as $fila)
+                @php [$etiqueta, $valor] = $fila; @endphp
+                <tr class="{{ $fila[2] ?? '' }}">
                     <td class="label">{{ $etiqueta }}</td>
                     <td class="monto">{{ $monto($valor) }}</td>
                 </tr>
@@ -555,8 +574,9 @@
         <div class="columna">
             <div class="seccion-titulo">Aportaciones del Empleador (Informativo)</div>
             <table>
-                @foreach ($filasAporte as [$etiqueta, $valor])
-                <tr>
+                @foreach ($filasAporte as $fila)
+                @php [$etiqueta, $valor] = $fila; @endphp
+                <tr class="{{ $fila[2] ?? '' }}">
                     <td class="label">{{ $etiqueta }}</td>
                     <td class="monto">{{ $monto($valor) }}</td>
                 </tr>
@@ -573,8 +593,9 @@
         <div class="columna">
             <div class="seccion-titulo">Adelanto</div>
             <table>
-                @foreach ($filasAdelanto as [$etiqueta, $valor])
-                <tr>
+                @foreach ($filasAdelanto as $fila)
+                @php [$etiqueta, $valor] = $fila; @endphp
+                <tr class="{{ $fila[2] ?? '' }}">
                     <td class="label">{{ $etiqueta }}</td>
                     <td class="monto">{{ $monto($valor) }}</td>
                 </tr>

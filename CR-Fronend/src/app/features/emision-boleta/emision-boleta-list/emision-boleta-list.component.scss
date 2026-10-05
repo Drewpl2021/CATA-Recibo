@@ -293,10 +293,33 @@
   color: var(--text-muted);
 }
 
-.fin-fila--extra .fin-concepto::after {
-  content: ' (de Planillas)';
-  font-size: 10px;
-  opacity: 0.75;
+// Con sangría, como sale en la boleta: un concepto agregado aparte.
+.fin-fila--extra .fin-concepto {
+  padding-left: 12px;
+}
+
+.fin-quitar {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-left: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--danger-text);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fin-quitar:hover {
+  background: var(--danger-bg);
+}
+
+.agregar-concepto {
+  margin-top: 12px;
+  padding: 12px 0 4px;
+  border-top: 1px dashed var(--border);
 }
 
 .fin-fila--extra .fin-input {

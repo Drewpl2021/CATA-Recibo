@@ -57,6 +57,54 @@ class BoletaImpresaTest extends TestCase
         $this->assertMatchesRegularExpression('/class="monto">-<\/td>/', $html);
     }
 
+    public function test_los_otros_conceptos_salen_con_su_detalle_debajo_de_otros_conceptos(): void
+    {
+        Storage::fake('local');
+        Mail::fake();
+
+        $empleado = $this->crearEmpleado(['sueldo_base' => 2000]);
+        $this->actingAs($this->crearUsuario('admin'), 'sanctum')
+            ->postJson('/api/payroll-runs', ['nombre' => 'Planilla General', 'mes' => 3, 'anio' => (int) now()->year, 'generar' => true])
+            ->assertCreated();
+        $planilla = Planilla::where('empleado_id', $empleado->id)->firstOrFail();
+
+        $otros = \App\Models\PaymentConcept::firstOrCreate(['nombre' => \App\Support\ConceptosDePago::OTROS_DESCUENTOS], ['tipo' => 'descuento', 'etiqueta_boleta' => 'Otros Conceptos']);
+        $corbata = \App\Models\PaymentConcept::firstOrCreate(['nombre' => 'Descuento Corbatas y Polos'], ['tipo' => 'descuento']);
+        PayrollDetalle::create(['planilla_id' => $planilla->id, 'payment_concept_id' => $otros->id, 'monto_calculado' => 50, 'descripcion' => 'Préstamo']);
+        PayrollDetalle::create(['planilla_id' => $planilla->id, 'payment_concept_id' => $corbata->id, 'monto_calculado' => 9]);
+
+        $datos = null;
+        View::composer('boleta', function ($vista) use (&$datos) {
+            $datos ??= $vista->getData();
+        });
+        $this->actingAs($this->crearUsuario('admin'), 'sanctum')
+            ->get("/api/payslips/{$empleado->id}/3/" . now()->year)
+            ->assertOk();
+
+        $html = view('boleta', $datos)->render();
+        $this->assertStringContainsString('Descuento Otros Conceptos: Préstamo', $html);
+        // La corbata, justo después de "Otros Conceptos" y antes de la escolaridad.
+        $otrosEn = strpos($html, 'Descuento Otros Conceptos: Préstamo');
+        $corbataEn = strpos($html, 'Descuento Corbatas y Polos');
+        $escolaridadEn = strpos($html, 'Descuento - Pago Escolaridad Mensual');
+        $this->assertTrue($otrosEn < $corbataEn && $corbataEn < $escolaridadEn, 'La corbata tiene que ir debajo de Otros Conceptos');
+        $this->assertStringContainsString('class="otro-concepto"', $html);
+    }
+
+    public function test_no_se_agrega_dos_veces_el_mismo_concepto_en_el_mes(): void
+    {
+        $empleado = $this->crearEmpleado();
+        $planilla = Planilla::create(['empleado_id' => $empleado->id, 'mes' => 9, 'anio' => 2026, 'sueldo_base' => 2000, 'total' => 2000]);
+        $corbata = \App\Models\PaymentConcept::firstOrCreate(['nombre' => 'Descuento Corbatas y Polos'], ['tipo' => 'descuento']);
+        $admin = $this->crearUsuario('rrhh');
+        $linea = ['planilla_id' => $planilla->id, 'payment_concept_id' => $corbata->id, 'monto_calculado' => 9];
+
+        $this->actingAs($admin, 'sanctum')->postJson('/api/payroll-details', $linea)->assertCreated();
+        $this->actingAs($admin, 'sanctum')->postJson('/api/payroll-details', $linea)->assertStatus(422);
+
+        $this->assertSame(1, PayrollDetalle::where('planilla_id', $planilla->id)->count());
+    }
+
     public function test_la_vista_previa_calcula_la_renta_de_5ta_sin_guardar_nada(): void
     {
         $empleado = $this->crearEmpleado(['sueldo_base' => 2000]);

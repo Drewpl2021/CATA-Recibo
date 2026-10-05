@@ -189,18 +189,15 @@
             <div class="fin-fila"><span class="fin-concepto">Vacaciones Truncas</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.vacacionesTruncas" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Gratificaciones Fiestas Patrias</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.gratificacionesFiestas" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Bonif. Extraord. Temporal</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonifExtraordTemporal" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Otros Conceptos / Subsidio</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.otrosConceptosSubsidio" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Otros Conceptos{{ detalleOtrosIngresos ? ': ' + detalleOtrosIngresos : ' / Subsidio' }}</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.otrosConceptosSubsidio" min="0" step="0.01"></div>
+            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraIngreso" title="Otro concepto de su planilla del mes">
+              <span class="fin-concepto">{{ c.nombre }}</span>
+              <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
+              <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
+            </div>
             <div class="fin-fila"><span class="fin-concepto">Compensación por Tiempo de Serv.</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.compensacionTiempoServicios" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Bonificación</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonificacion" min="0" step="0.01"></div>
 
-            <!-- Conceptos agregados desde Planillas/Importar Conceptos, sin
-                 campo fijo acá: de solo lectura, se editan desde donde se
-                 agregaron. -->
-            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraIngreso"
-              appPista="Agregado desde Planillas: se edita ahí, no acá">
-              <span class="fin-concepto">{{ c.nombre }}</span>
-              <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
-            </div>
           </div>
 
           <div class="fin-col fin-col-descuentos">
@@ -214,24 +211,24 @@
             <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Alimentación</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoAlimentacion" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Bazar</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoBazar" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Descuento Autorizado - Diezmo</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoAutorizadoDiezmo" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Descuento Otros Conceptos</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoOtros" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Desc. Pago Escolaridad Mensual</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoEscolaridad" min="0" step="0.01"></div>
-
-            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraDescuento"
-              appPista="Agregado desde Planillas: se edita ahí, no acá">
+            <div class="fin-fila"><span class="fin-concepto">Descuento Otros Conceptos{{ detalleOtrosDescuentos ? ': ' + detalleOtrosDescuentos : '' }}</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoOtros" min="0" step="0.01"></div>
+            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraDescuento" title="Otro concepto de su planilla del mes">
               <span class="fin-concepto">{{ c.nombre }}</span>
               <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
+              <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
             </div>
+            <div class="fin-fila"><span class="fin-concepto">Desc. Pago Escolaridad Mensual</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoEscolaridad" min="0" step="0.01"></div>
+
 
             <!-- ADELANTO -->
             <div class="fin-fila adelanto-row">
               <span class="fin-concepto adelanto-label">ADELANTO</span>
               <input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.adelanto" min="0" step="0.01">
             </div>
-            <div class="fin-fila fin-fila--extra adelanto-row" *ngFor="let c of conceptosExtraAdelanto"
-              appPista="Agregado desde Planillas: se edita ahí, no acá">
+            <div class="fin-fila fin-fila--extra adelanto-row" *ngFor="let c of conceptosExtraAdelanto" title="Otro concepto de su planilla del mes">
               <span class="fin-concepto adelanto-label">{{ c.nombre }}</span>
               <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
+              <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
             </div>
           </div>
 
@@ -239,10 +236,10 @@
             <!-- Lo paga el colegio sobre la base afecta: no se escribe a mano. -->
             <div class="fin-fila"><span class="fin-concepto" title="Lo que aporta el colegio sobre su remuneración afecta (nunca sobre menos del sueldo mínimo)">{{ etiquetaTasa('ESSALUD', ley?.essalud, 9) }}</span><input type="number" class="fin-input" placeholder="Automático" [(ngModel)]="formulario.essalud9" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
             <div class="fin-fila"><span class="fin-concepto">SCTR</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sctr" min="0" step="0.01"></div>
-            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraAportacion"
-              appPista="Agregado desde Planillas: se edita ahí, no acá">
+            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraAportacion" title="Otro concepto de su planilla del mes">
               <span class="fin-concepto">{{ c.nombre }}</span>
               <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
+              <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
             </div>
           </div>
 
@@ -258,6 +255,45 @@
           <div class="fin-total fin-col-aportaciones">
             <span>TOTAL APORTES</span>
             <strong>S/ {{ totalAportaciones | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+
+        <!-- Otro concepto para esta persona este mes (corbata, préstamo, bono...):
+             se guarda en su planilla y sale en la boleta bajo "Otros Conceptos". -->
+        <div class="agregar-concepto">
+          <button type="button" class="btn-secondary" *ngIf="!mostrarAgregarConcepto" (click)="abrirAgregarConcepto()">
+            <app-icon icono="plus" [tamano]="15"></app-icon>
+            Agregar otro concepto
+          </button>
+
+          <div class="form-fields" *ngIf="mostrarAgregarConcepto">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="nuevoConcepto">Concepto</label>
+                <select id="nuevoConcepto" class="form-control" [(ngModel)]="nuevoConcepto.id">
+                  <option value="">— Elige el concepto —</option>
+                  <option *ngFor="let c of catalogoParaAgregar" [value]="c.id">{{ tipoLegible(c.tipo) }} · {{ c.nombre }}</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="nuevoMonto">Monto (S/)</label>
+                <input id="nuevoMonto" type="number" class="form-control" min="0" step="0.01" placeholder="0.00" [(ngModel)]="nuevoConcepto.monto">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="nuevoDetalle">Detalle (opcional, sale en la boleta)</label>
+              <input id="nuevoDetalle" type="text" class="form-control" maxlength="120" placeholder="Ej. Cobro de corbata" [(ngModel)]="nuevoConcepto.detalle">
+            </div>
+            <p class="form-ayuda">
+              Se guarda en su planilla de este mes y sale en la boleta debajo de «Otros Conceptos».
+              Si es para varios trabajadores, usa «Aplicar concepto» en la planilla o «Importar conceptos».
+            </p>
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+              <button type="button" class="btn-secondary" (click)="mostrarAgregarConcepto = false">Cancelar</button>
+              <button type="button" class="btn-primary" [disabled]="guardandoConcepto" (click)="guardarNuevoConcepto()">
+                {{ guardandoConcepto ? 'Agregando…' : 'Agregar a su planilla' }}
+              </button>
+            </div>
           </div>
         </div>
 
