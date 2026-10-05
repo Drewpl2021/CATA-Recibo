@@ -662,15 +662,24 @@ const cap15 = [
 const cap16 = [
   h1('16. Puesta en marcha (noviembre 2026)'),
   quienVe('Administrador y RR.HH.'),
-  p('Para empezar a usar el sistema con los datos reales, en la carpeta **«Para importar (noviembre)»** están los archivos listos. Súbelos en este orden:'),
+  h2('16.1 Instalar el sistema vacío (lo hace quien administra el servidor)'),
+  ...pasos([
+    'Subir el código de la rama al servidor y levantarlo. Al arrancar se crean solas las tablas, los **tipos de contrato**, los **montos de ley** 2024–2026 y el módulo de **Ajustes del sistema**.',
+    'Cargar el catálogo base: **php artisan semilla:importar**. Trae roles, menú, las 15 áreas, los cargos, las 4 sedes y los 28 conceptos de pago.',
+    'Crear la cuenta del Administrador: **php artisan db:seed --class=CuentasInicialesSeeder** (toma el correo y la clave del archivo .env).',
+    'Entrar como Administrador, aceptar los términos, poner su contraseña y crear el **periodo** «Año Escolar 2026» en Configuración → Periodos.',
+  ]),
+  h2('16.2 Cargar los datos'),
+  p('En la carpeta **«Para importar (noviembre)»** están los archivos listos. Súbelos en este orden:'),
   ...tabla(['#', 'Archivo', 'Dónde se sube', 'Qué hace'], [
-    ['1', '1 - Empleados (bonificación por cargo, diezmo, AFP).xlsx', 'Empleados → Importar empleados', 'Todas las celdas llenas, sacadas del PLAME de setiembre: bonificación por cargo (14 la tienen), diezmo (4 sin diezmo), sistema de pensión, AFP, comisión y CUSPP. Pasa a Lanza Umiña a AFP Integra.'],
+    ['1', '1 - Empleados (alta completa de los 94).xlsx', 'Empleados → Importar empleados', 'Da de alta a los 94 trabajadores del PLAME con 27 columnas llenas: datos personales, correo, área, cargo, sede, ingreso, contrato, sueldo, bonificación por cargo, pensión, banco, hijos, diezmo y estudios. A cada uno se le crea su cuenta con su DNI como contraseña.'],
     ['2', '2 - Calculo 5ta (enero y febrero, se sube en Ajustes).xlsx', 'Ajustes del sistema → Renta de 5ta', 'Carga lo cobrado y retenido en enero y febrero (21 trabajadores).'],
     ['3', '—', 'Planillas → Nueva planilla', 'Crea la planilla del mes con todo el personal activo.'],
     ['4', '3 - Conceptos del mes (escolaridad ya llena, lo demás por llenar).xlsx', 'Planillas → Importar conceptos', 'La escolaridad viene llena porque se repite cada mes. Llena comedor, copias, tardanzas, adelantos, movilidad, curso IA y corbatas con los montos del mes.'],
   ], [400, 3300, 2600, 3400]),
   p('El archivo «Referencia - Conceptos septiembre 2026 (copia del PLAME)» es solo para comparar: no se sube.'),
-  p('El archivo 1 viene **lleno en todas sus celdas** (94 trabajadores): a quienes están en ONP se les pone «No aplica» en AFP, comisión y CUSPP. El CUSPP de Lanza Umiña va como en el PLAME, con Ñ: 540581FLUZÑ0.'),
+  p('El archivo 1 viene **lleno en todas sus celdas**: a quienes están en ONP se les pone «No aplica» en AFP, comisión y CUSPP, y a quienes tienen contrato indeterminado «Indeterminado» en Fecha de cese. El CUSPP de Lanza Umiña va como en el PLAME, con Ñ: 540581FLUZÑ0. No lleva CCI, especialidad, institución ni contacto de emergencia porque RR.HH. no tiene esos datos: son opcionales y se completan después en la ficha.'),
+  p('Esta secuencia se probó en una base de datos vacía: 94 altas sin errores, 21 trabajadores con enero y febrero cargados, 94 planillas de octubre generadas e iguales al PLAME en 93 de 94 trabajadores (la diferencia es la Renta de 5ta de Lanza Umiña: el Excel de 5ta le suma una asignación familiar que el PLAME no le paga).'),
 ];
 
 // ── 17 ──────────────────────────────────────────────────────────────
