@@ -144,11 +144,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/emision-boleta/emision-boleta-list/emision-boleta-list.component').then(m => m.EmisionBoletaListComponent),
       },
       {
-        path: 'emision-boleta/descuentos/:id',
-        canActivate: [soloRrhhOAdmin],
-        loadComponent: () => import('./features/emision-boleta/emision-descuentos-form/emision-descuentos-form.component').then(m => m.EmisionDescuentosFormComponent),
-      },
-      {
         // Primer nivel: las planillas con nombre del mes.
         path: 'planillas',
         canActivate: [soloRrhhOAdmin],

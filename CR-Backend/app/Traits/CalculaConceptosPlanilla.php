@@ -399,7 +399,7 @@ trait CalculaConceptosPlanilla
     protected function renta5taComoElColegio($empleado, float $sueldoBase, int $mes, int $anio, ?float $bonificacionCargo = null): float
     {
         $ley = $this->valoresLegales($anio);
-        [$desde, $hasta] = $this->mesesTrabajadosDelAnio($empleado, $anio);
+        [$desde, $hasta] = $this->mesesTrabajadosDelAnio($empleado, $anio, $mes);
         if ($mes < $desde || $mes > $hasta) {
             return 0.00;
         }
@@ -462,10 +462,20 @@ trait CalculaConceptosPlanilla
      *
      * @return array{0:int,1:int}
      */
-    protected function mesesTrabajadosDelAnio($empleado, int $anio): array
+    protected function mesesTrabajadosDelAnio($empleado, int $anio, ?int $mes = null): array
     {
         $ingreso = $empleado->fecha_ingreso ? \Carbon\Carbon::parse($empleado->fecha_ingreso) : null;
         $cese    = $empleado->fecha_cese ? \Carbon\Carbon::parse($empleado->fecha_cese) : null;
+
+        // A quien sigue ACTIVO, una fecha de fin que ya pasó no lo saca del
+        // año: su contrato se renovó y la ficha no se actualizó (le pasaba a
+        // Limachi Mamani: fin 13/04 y cobrando en setiembre). Se le proyecta
+        // hasta diciembre, como hace el Excel. El que de verdad cesó está
+        // "inactivo", y a ese sí se le corta en su mes.
+        if ($cese && $empleado->estado !== 'inactivo' && $mes !== null
+            && $cese->lt(\Carbon\Carbon::create($anio, $mes, 1))) {
+            $cese = null;
+        }
 
         $desde = match (true) {
             $ingreso === null || $ingreso->year < $anio => 1,

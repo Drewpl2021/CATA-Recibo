@@ -106,14 +106,14 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     Route::patch('my-notifications/{id}/read',       [MisNotificacionesController::class, 'leida']);
     Route::post('my-notifications/mark-all',      [MisNotificacionesController::class, 'marcarTodas']);
     Route::patch('my-documents/{id}/viewed',  [MisDocumentosController::class, 'visto']);
-    Route::post('my-documents/{id}/sign',  [MisDocumentosController::class, 'firmar']);
+    Route::post('my-documents/{id}/sign',  [MisDocumentosController::class, 'firmar'])->middleware('throttle:clave');
     // El trabajador sube su propio CV; el empleado sale del token.
     Route::post('my-documents/resume', [MisDocumentosController::class, 'subirHojaDeVida']);
     Route::get('my-modules', [MisModulosController::class, 'index']);
-    Route::put('change-password', [AuthController::class, 'cambiarPassword']);
+    Route::put('change-password', [AuthController::class, 'cambiarPassword'])->middleware('throttle:clave');
     // Confirma la CLAVE de quien está en la sesión, sin cambiar nada. La usa
     // Emisión de Boletas para destrabar la edición de una boleta ya emitida.
-    Route::post('verify-password', [AuthController::class, 'verificarPassword']);
+    Route::post('verify-password', [AuthController::class, 'verificarPassword'])->middleware('throttle:clave');
 
     // Los términos de uso: el papel que antes se firmaba a mano. Los firma
     // cada trabajador desde su cuenta, así que van entre las rutas de
@@ -210,7 +210,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // show({id}) y devolvería un 404 buscando un documento con ese id.
         Route::post('documents/upload',        [DocumentoController::class, 'subir']);
         Route::apiResource('documents',       DocumentoController::class);
-        Route::post('documents/{id}/sign-as-employer', [DocumentoController::class, 'firmarComoEmpleador']);
+        Route::post('documents/{id}/sign-as-employer', [DocumentoController::class, 'firmarComoEmpleador'])->middleware('throttle:clave');
         Route::apiResource('areas',            AreaController::class);
         Route::apiResource('positions',           CargoController::class);
         Route::apiResource('contract-types',      TipoContratoController::class);

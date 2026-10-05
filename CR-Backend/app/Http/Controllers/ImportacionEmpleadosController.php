@@ -563,6 +563,14 @@ class ImportacionEmpleadosController extends Controller
             $problemas = $validador->errors()->all();
         }
 
+        $cambiaCorreo = isset($campos['email'])
+            && mb_strtolower($campos['email']) !== mb_strtolower((string) $existente->usuario?->email);
+        $loDaDeBaja = ($campos['estado'] ?? null) === 'inactivo' && $existente->estado !== 'inactivo';
+        if (($cambiaCorreo || $loDaDeBaja) && $existente->cuentaProtegidaPara(auth()->user())) {
+            $problemas[] = 'Tiene una cuenta de ' . strtoupper((string) $existente->usuario?->rol?->nombre)
+                . ': su correo y su baja solo los cambia el Administrador.';
+        }
+
         if (isset($campos['email'])) {
             $correo = mb_strtolower($campos['email']);
             if (! $existente->usuario) {

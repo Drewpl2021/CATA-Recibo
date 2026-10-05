@@ -58,6 +58,12 @@ class AppServiceProvider extends ServiceProvider
         // Consultar DNIs. Cada uno que no esté en la base propia se le paga a
         // Decolecta, así que se cuenta por usuario: 30 por minuto es más de
         // lo que da de alta RR.HH. en una mañana, y corta un bucle.
+        // Lo que se confirma con la contraseña de la cuenta (firmar, verificarla,
+        // cambiarla). Sin freno, una sesión abierta permitía probar claves sin
+        // parar. 10 por minuto sobra para quien firma sus boletas a mano.
+        RateLimiter::for('clave', fn (Request $peticion) => Limit::perMinute(10)
+            ->by($peticion->user()?->id ?: $peticion->ip()));
+
         RateLimiter::for('consulta_dni', fn (Request $peticion) => Limit::perMinute(30)
             ->by($peticion->user()?->id ?: $peticion->ip()));
     }

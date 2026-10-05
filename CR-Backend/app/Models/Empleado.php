@@ -74,6 +74,24 @@ class Empleado extends Model
      * tenga abiertas se cortan. Lo usan la baja desde Empleados y la
      * importación, cuando alguien pasa a cesado.
      */
+    /**
+     * Si $quien puede cambiarle el correo o darle de baja a la cuenta de
+     * este trabajador.
+     *
+     * RR.HH. lleva al personal, pero no puede tocar la cuenta de un
+     * Administrador ni la de otro RR.HH.: cambiarle el correo y pedir
+     * "olvidé mi contraseña" era entrar como Administrador, y darlo de baja
+     * era dejarlo fuera del sistema. Eso solo lo hace el Administrador.
+     */
+    public function cuentaProtegidaPara(?User $quien): bool
+    {
+        $rolDeLaCuenta = $this->usuario?->rol?->nombre;
+
+        return $rolDeLaCuenta !== null
+            && $rolDeLaCuenta !== 'empleado'
+            && $quien?->rol?->nombre !== 'admin';
+    }
+
     public function quitarAcceso(): void
     {
         User::where('empleado_id', $this->id)->each(function (User $user) {

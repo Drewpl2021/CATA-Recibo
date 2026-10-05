@@ -553,6 +553,17 @@ class EmpleadoController extends Controller
             $request->merge(['fecha_cese' => null]);
         }
 
+        $cambiaCorreo = $request->filled('email') && $usuario
+            && mb_strtolower($request->email) !== mb_strtolower((string) $usuario->email);
+        $loDaDeBaja   = $request->input('estado') === 'inactivo' && $empleado->estado !== 'inactivo';
+        if (($cambiaCorreo || $loDaDeBaja) && $empleado->cuentaProtegidaPara($request->user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta persona tiene una cuenta de ' . strtoupper((string) $usuario?->rol?->nombre)
+                    . ': su correo y su baja solo los cambia el Administrador.',
+            ], 403);
+        }
+
         $empleado->update($request->except(['email', 'rol_id']));
 
         // El contrato manda sobre la ficha: es el papel que firma la persona
@@ -620,9 +631,16 @@ class EmpleadoController extends Controller
         ]);
     }
 
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
         $empleado = Empleado::findOrFail($id);
+        if ($empleado->cuentaProtegidaPara($request->user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta persona tiene una cuenta de ' . strtoupper((string) $empleado->usuario?->rol?->nombre)
+                    . ': solo el Administrador puede darla de baja.',
+            ], 403);
+        }
         // Siempre hoy: una fecha de cese que ya tuviera era el fin programado
         // de su contrato (puede ser futura), no la baja real que se está
         // haciendo en este momento.
