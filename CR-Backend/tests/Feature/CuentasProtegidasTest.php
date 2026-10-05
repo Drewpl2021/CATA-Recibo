@@ -19,9 +19,9 @@ class MotorParaCuentas
 }
 
 /**
- * RR.HH. lleva al personal, pero no puede tocar la cuenta de un
- * Administrador: cambiarle el correo y pedir "olvidé mi contraseña" era
- * entrar como Administrador, y darlo de baja era dejarlo fuera.
+ * RR.HH. lleva a todo el personal y da de baja a cualquiera, pero no le
+ * cambia el correo a un Administrador: con eso y "olvidé mi contraseña"
+ * entraba como Administrador.
  */
 class CuentasProtegidasTest extends TestCase
 {
@@ -48,15 +48,17 @@ class CuentasProtegidasTest extends TestCase
         $this->assertSame('jefe@colegio.test', $jefe->usuario->fresh()->email);
     }
 
-    public function test_rrhh_no_da_de_baja_a_un_administrador(): void
+    /** El de TIC es Administrador y lo despiden: RR.HH. sí lo da de baja. */
+    public function test_rrhh_si_da_de_baja_a_un_administrador(): void
     {
         $jefe = $this->empleadoAdministrador();
 
         $this->actingAs($this->crearUsuario('rrhh'), 'sanctum')
             ->deleteJson("/api/employees/{$jefe->id}")
-            ->assertForbidden();
+            ->assertOk();
 
-        $this->assertSame('activo', $jefe->fresh()->estado);
+        $this->assertSame('inactivo', $jefe->fresh()->estado);
+        $this->assertNotSame('activo', $jefe->usuario->fresh()->estado_registro, 'Su cuenta queda sin acceso');
     }
 
     public function test_el_administrador_si_puede(): void

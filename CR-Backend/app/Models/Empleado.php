@@ -75,13 +75,13 @@ class Empleado extends Model
      * importación, cuando alguien pasa a cesado.
      */
     /**
-     * Si $quien puede cambiarle el correo o darle de baja a la cuenta de
-     * este trabajador.
+     * Si $quien NO puede cambiarle el correo a la cuenta de este trabajador.
      *
-     * RR.HH. lleva al personal, pero no puede tocar la cuenta de un
-     * Administrador ni la de otro RR.HH.: cambiarle el correo y pedir
-     * "olvidé mi contraseña" era entrar como Administrador, y darlo de baja
-     * era dejarlo fuera del sistema. Eso solo lo hace el Administrador.
+     * RR.HH. lleva a todo el personal y puede dar de baja a cualquiera
+     * (también al de TIC si es Administrador y se va). Lo que no puede es
+     * cambiarle el correo a una cuenta de Administrador o de otro RR.HH.:
+     * con el correo cambiado bastaba pedir "olvidé mi contraseña" para
+     * entrar como Administrador. Ese cambio solo lo hace el Administrador.
      */
     public function cuentaProtegidaPara(?User $quien): bool
     {
