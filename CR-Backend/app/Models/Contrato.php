@@ -18,6 +18,10 @@ class Contrato extends Model
         'fecha_fin',
         'estado',
         'motivo_fin',
+        // Lo cerró una baja, y cuál era su fin antes: para reabrirlo tal
+        // cual si la persona se reactiva (ver Empleado::reactivar).
+        'cerrado_por_baja',
+        'fin_antes_de_baja',
         'observaciones',
         'estado_registro',
     ];

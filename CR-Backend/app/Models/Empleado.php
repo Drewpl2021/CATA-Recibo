@@ -103,11 +103,19 @@ class Empleado extends Model
      */
     public function darDeBaja(): void
     {
-        $this->update(['estado' => 'inactivo', 'fecha_cese' => now()->toDateString()]);
-        $this->quitarAcceso();
+        $hoy = now()->toDateString();
 
-        $this->contratos()->where('estado', 'vigente')
-            ->update(['estado' => 'finalizado', 'fecha_fin' => $this->fecha_cese]);
+        // El contrato guarda cómo estaba (su fin previsto: el 31/12 de un
+        // contratado, ninguno de un indeterminado) para poder reabrirlo.
+        $this->contratos()->where('estado', 'vigente')->get()->each(fn (Contrato $c) => $c->update([
+            'fin_antes_de_baja' => $c->fecha_fin,
+            'cerrado_por_baja'  => true,
+            'estado'            => 'finalizado',
+            'fecha_fin'         => $hoy,
+        ]));
+
+        $this->update(['estado' => 'inactivo', 'fecha_cese' => $hoy]);
+        $this->quitarAcceso();
     }
 
     /**
@@ -116,8 +124,33 @@ class Empleado extends Model
      */
     public function reactivar(): void
     {
-        $this->update(['estado' => 'activo', 'fecha_cese' => null]);
+        $this->update(['estado' => 'activo', 'fecha_cese' => $this->reabrirContratoCerradoPorBaja()]);
         $this->devolverAcceso();
+    }
+
+    /**
+     * Deshace lo que la baja le hizo al contrato: lo vuelve a vigente con su
+     * fin de antes. Devuelve ese fin, que también es su fecha de cese
+     * prevista (null para un indeterminado).
+     *
+     * Sin esto, quien se reactivaba quedaba sin contrato vigente: la 5ta le
+     * sumaba vacaciones truncas y perdía su 31/12.
+     */
+    public function reabrirContratoCerradoPorBaja(): ?string
+    {
+        if ($this->contratos()->where('estado', 'vigente')->exists()) {
+            return null;
+        }
+
+        $contrato = $this->contratos()->where('cerrado_por_baja', true)->latest('updated_at')->first();
+        if (! $contrato) {
+            return null;
+        }
+
+        $fin = $contrato->fin_antes_de_baja ? substr((string) $contrato->fin_antes_de_baja, 0, 10) : null;
+        $contrato->update(['estado' => 'vigente', 'fecha_fin' => $fin, 'cerrado_por_baja' => false, 'fin_antes_de_baja' => null]);
+
+        return $fin;
     }
 
     /** Su cuenta vuelve a poder entrar. */

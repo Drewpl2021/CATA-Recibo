@@ -139,8 +139,22 @@ class ImportacionEmpleadosController extends Controller
                 // vigente se cierra en su fecha de cese.
                 if (($campos['estado'] ?? null) === 'inactivo') {
                     $empleado->quitarAcceso();
-                    $empleado->contratos()->where('estado', 'vigente')
-                        ->update(['estado' => 'finalizado', 'fecha_fin' => $empleado->fecha_cese]);
+                    // Recuerda cómo estaba, por si se reactiva (ver Empleado::reactivar).
+                    $empleado->contratos()->where('estado', 'vigente')->get()->each(fn ($c) => $c->update([
+                        'fin_antes_de_baja' => $c->fecha_fin,
+                        'cerrado_por_baja'  => true,
+                        'estado'            => 'finalizado',
+                        'fecha_fin'         => $empleado->fecha_cese,
+                    ]));
+                } elseif (($campos['estado'] ?? null) === 'activo') {
+                    // Vuelve: su cuenta entra otra vez y su contrato se reabre.
+                    $empleado->devolverAcceso();
+                    $fin = $empleado->reabrirContratoCerradoPorBaja();
+                    if (array_key_exists('fecha_cese', $campos)) {
+                        $empleado->contratos()->where('estado', 'vigente')->update(['fecha_fin' => $empleado->fecha_cese]);
+                    } elseif ($fin) {
+                        $empleado->update(['fecha_cese' => $fin]);
+                    }
                 } elseif (array_key_exists('fecha_cese', $campos)) {
                     // Sigue activo: la fecha que trajo es el fin programado
                     // de su contrato actual, no una baja real. Se refleja en

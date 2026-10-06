@@ -45,6 +45,29 @@ class CambiarEstadoEnGrupoTest extends TestCase
         $this->assertSame('activo', $cuenta->fresh()->estado_registro);
     }
 
+    public function test_dar_de_baja_y_reactivar_deja_el_contrato_como_estaba(): void
+    {
+        $rrhh = $this->crearUsuario('rrhh');
+        $indeterminado = $this->crearEmpleado();
+        $contratado = $this->crearEmpleado(['tipo_contrato_id' => $this->idTipoContrato('Contratado'), 'fecha_cese' => '2026-12-31']);
+        \App\Models\Contrato::create(['empleado_id' => $indeterminado->id, 'tipo_contrato_id' => $this->idTipoContrato('Plazo indeterminado'), 'fecha_inicio' => '2020-03-01', 'estado' => 'vigente']);
+        \App\Models\Contrato::create(['empleado_id' => $contratado->id, 'tipo_contrato_id' => $this->idTipoContrato('Contratado'), 'fecha_inicio' => '2026-03-01', 'fecha_fin' => '2026-12-31', 'estado' => 'vigente']);
+        $ids = [$indeterminado->id, $contratado->id];
+
+        $this->actingAs($rrhh, 'sanctum')->postJson('/api/employees/status', ['ids' => $ids, 'estado' => 'inactivo'])->assertOk();
+        $this->assertFalse($indeterminado->fresh()->contratoVigente()->exists());
+
+        $this->actingAs($rrhh, 'sanctum')->postJson('/api/employees/status', ['ids' => $ids, 'estado' => 'activo'])->assertOk();
+
+        // Con su contrato vigente otra vez: el indeterminado sigue teniendo
+        // vacaciones (la 5ta no le suma truncas) y el contratado, su 31/12.
+        $this->assertTrue($indeterminado->fresh()->puedeTomarVacaciones());
+        $this->assertNull($indeterminado->fresh()->contratoVigente()->first()->fecha_fin);
+        $this->assertSame('2026-12-31', substr((string) $contratado->fresh()->contratoVigente()->first()->fecha_fin, 0, 10));
+        $this->assertSame('2026-12-31', substr((string) $contratado->fresh()->fecha_cese, 0, 10));
+        $this->assertNull($indeterminado->fresh()->fecha_cese);
+    }
+
     public function test_reactivar_desde_la_ficha_tambien_devuelve_la_cuenta(): void
     {
         $e = $this->crearEmpleado(['estado' => 'inactivo', 'fecha_cese' => '2026-01-31']);

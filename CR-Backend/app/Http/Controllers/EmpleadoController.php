@@ -657,6 +657,12 @@ class EmpleadoController extends Controller
         // apagado la cuenta, y sin esto quedaba activo pero sin poder entrar.
         if ($seReactiva) {
             $empleado->devolverAcceso();
+            // Y su contrato, si lo cerró la baja. Si en el formulario se puso
+            // otra fecha de cese, manda esa.
+            $fin = $empleado->reabrirContratoCerradoPorBaja();
+            if ($fin && ! $request->filled('fecha_cese')) {
+                $empleado->update(['fecha_cese' => $fin]);
+            }
         }
 
         // El contrato manda sobre la ficha: es el papel que firma la persona
