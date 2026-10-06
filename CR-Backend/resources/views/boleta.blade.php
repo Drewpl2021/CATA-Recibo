@@ -58,8 +58,10 @@
         .valor { font-size: 8px; color: #2E3B42; margin-top: 1px; }
         .valor--grande { font-size: 11.5px; color: #1F2B33; }
 
-        /* La marca de agua: el escudo del colegio, apenas visible. */
-        .marca-agua { position: absolute; top: 40px; left: 250px; width: 190px; opacity: 0.06; }
+        /* La marca de agua: el logo "CATA" (public/marca-agua.png, recortado de
+           public/fondo_agua.jpeg y con el fondo transparente), apenas visible
+           y centrado sobre los datos personales, como el de la guía. */
+        .marca-agua { position: absolute; top: 58px; left: 190px; width: 370px; opacity: 0.08; }
 
         /* ── Paneles de conceptos ── */
         .paneles { margin-top: 6px; }
@@ -345,7 +347,7 @@
     </table>
 
     <div class="datos">
-        <img class="marca-agua" src="{{ public_path('logo.png') }}">
+        <img class="marca-agua" src="{{ public_path('marca-agua.png') }}">
         <table>
             <tr>
                 <td style="width: 34%;"><div class="rotulo">Apellidos</div><div class="valor valor--grande">{{ $empleado->apellido }}</div></td>
