@@ -7,7 +7,7 @@ import {
   ContratoService, EmpleadoService, TipoContratoService, ToastService, ConfirmService, DocumentoService,
 } from '../../../core/services';
 import { Contrato, ContratoPayload, Documento, Empleado, TipoContrato } from '../../../core/models';
-import { mensajeErrorApi } from '../../../core/utils';
+import { fechaLegible, mensajeErrorApi } from '../../../core/utils';
 import {
   ESTADO_CONTRATO_OPCIONES,
   MOTIVO_FIN_CONTRATO_OPCIONES,
@@ -85,6 +85,18 @@ export class ContratosListComponent implements OnInit {
   filtroEstado = '';
 
   estados = ESTADO_CONTRATO_OPCIONES;
+
+  /** Hoy, "aaaa-mm-dd" en hora local. */
+  private readonly hoy = (() => {
+    const d = new Date();
+    const dos = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
+  })();
+
+  /** Sigue como vigente pero su fecha de fin ya pasó. */
+  vencido(c: Contrato): boolean {
+    return c.estado === 'vigente' && !!c.fecha_fin && String(c.fecha_fin).slice(0, 10) < this.hoy;
+  }
   motivos = MOTIVO_FIN_CONTRATO_OPCIONES;
 
   columnas: ColumnaTabla<Contrato>[] = [
@@ -106,15 +118,20 @@ export class ContratosListComponent implements OnInit {
       header: 'Hasta',
       ancho: '12%',
       tipo: 'fecha',
-      formatear: (valor) => (valor ? '' : 'Sin fecha de fin'),
+      // Con fecha, la fecha (antes devolvía '' y la columna salía en
+      // blanco); sin ella, que se diga. Se corta el día para que la hora
+      // UTC no la corra un día atrás.
+      formatear: (valor) => (valor ? fechaLegible(String(valor).slice(0, 10)) : 'Sin fecha de fin'),
     },
     {
       campo: 'estado',
       header: 'Estado',
       ancho: '12%',
       tipo: 'badge',
-      formatear: (valor) => this.etiqueta(this.estados, valor),
-      badgeSeveridad: (valor) => SEVERIDAD_ESTADO[valor] ?? 'secondary',
+      // "Vigente" con la fecha de fin ya pasada no es vigente: nadie lo
+      // renovó ni dio de baja a la persona. Se dice "Vencido", en ámbar.
+      formatear: (valor, c) => (this.vencido(c) ? 'Vencido' : this.etiqueta(this.estados, valor)),
+      badgeSeveridad: (valor, c) => (this.vencido(c) ? 'warning' : SEVERIDAD_ESTADO[valor] ?? 'secondary'),
     },
     {
       campo: 'motivo_fin',

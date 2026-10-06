@@ -108,6 +108,14 @@ export class SeccionLaboralesComponent extends SeccionEmpleadoBase {
   fecha = fechaLegible;
 
   /** Con qué color se pinta cada estado en la lista. */
+  /** Sigue como vigente pero su fecha de fin ya pasó: nadie lo renovó. */
+  vencido(c: { estado: string; fecha_fin?: string | null }): boolean {
+    const d = new Date();
+    const dos = (n: number) => String(n).padStart(2, '0');
+    const hoy = `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
+    return c.estado === 'vigente' && !!c.fecha_fin && String(c.fecha_fin).slice(0, 10) < hoy;
+  }
+
   severidadEstado(estado: string): string {
     if (estado === 'vigente') return 'success';
     if (estado === 'renovado') return 'info';
