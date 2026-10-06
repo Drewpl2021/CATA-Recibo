@@ -128,10 +128,11 @@ export class MisBoletasComponent implements OnInit {
 
   acciones: AccionPersonalizada<BoletaRow>[] = [
     {
-      // Abrirla se puede siempre: firmar algo que no se ha podido leer no
-      // prueba nada. Bajársela, ya firmada. Al abrirla queda anotado que la
-      // revisó, que antes había que marcarlo a mano y nadie lo hacía.
-      id: 'ver', titulo: 'Abrir tu boleta en PDF', icono: 'receipt_long',
+      // Se ve y se descarga DESPUÉS de firmarla con la contraseña: así lo
+      // pidió el colegio. Antes de firmar solo está el botón de firmar (el
+      // neto ya se ve en la tabla). Al abrirla queda anotado que la revisó.
+      id: 'ver', titulo: 'Ver y descargar tu boleta', icono: 'receipt_long',
+      visible: (b) => !!b.firmado || b.enPapel,
     },
     {
       id: 'firmar', titulo: 'Firmar esta boleta', icono: 'signature', severidad: 'success',
@@ -325,9 +326,12 @@ export class MisBoletasComponent implements OnInit {
       next: (res) => {
         this.isSigning = false;
         if (res.success) {
-          this.toastService.success('Boleta firmada', `Tu boleta de ${this.boletaAFirmar!.mes} quedó firmada.`);
+          const firmada = this.boletaAFirmar!;
+          this.toastService.success('Boleta firmada', `Tu boleta de ${firmada.mes} quedó firmada. Ya puedes verla y descargarla.`);
           this.closeSignModal();
-          this.cargar();
+          // Recién firmada, se abre sola —con su botón de descargar—: es lo
+          // que la persona quiere ver.
+          this.verBoleta({ ...firmada, firmado: new Date().toISOString() });
           return;
         }
         this.signErrorMsg = res.message || 'No se pudo firmar la boleta.';

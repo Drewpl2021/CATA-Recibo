@@ -209,7 +209,7 @@ class BoletaController extends Controller
             'user_id'      => $user->id,
             'tipo'         => 'boleta_disponible',
             'titulo'       => "Tu boleta de {$periodo} ya está lista",
-            'mensaje'      => "Boleta {$numero_boleta}. Ábrela y fírmala para dejar constancia de que la recibiste.",
+            'mensaje'      => "Boleta {$numero_boleta}. Fírmala con tu contraseña y después podrás verla y descargarla.",
             'documento_id' => $documentoId,
         ]);
 

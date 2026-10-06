@@ -232,6 +232,10 @@ class DocumentoController extends Controller
             ], 403);
         }
 
+        if ($motivo = AccesoADocumento::porQueNoPuedeVer($documento, $usuario)) {
+            return response()->json(['success' => false, 'message' => $motivo], 403);
+        }
+
         if ($problema = $this->archivoQueFalta($documento)) {
             return $problema;
         }

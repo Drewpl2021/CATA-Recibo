@@ -35,13 +35,36 @@ final class AccesoADocumento
 
     public static function esSuyo(Documento $documento, ?User $usuario): bool
     {
-        return $usuario?->empleado_id !== null && $documento->empleado_id === $usuario->empleado_id;
+        return $usuario?->empleado_id !== null && (string) $documento->empleado_id === (string) $usuario->empleado_id;
     }
 
     /** ¿Puede siquiera abrirlo? Solo su dueño, RR.HH. y Administración. */
     public static function puedeVer(Documento $documento, ?User $usuario): bool
     {
         return self::esSuyo($documento, $usuario) || self::esRrhhOAdmin($usuario);
+    }
+
+    /**
+     * Por qué todavía no se puede ABRIR; null si sí se puede.
+     *
+     * La boleta se abre recién después de firmarla con la contraseña: así lo
+     * decidió el colegio. Al trabajador le llega el aviso, la firma, y
+     * entonces la ve y la descarga. Los demás documentos (un contrato) sí se
+     * leen antes de firmarlos.
+     */
+    public static function porQueNoPuedeVer(Documento $documento, ?User $usuario): ?string
+    {
+        if (self::esRrhhOAdmin($usuario)) {
+            return null;
+        }
+        if (! self::esSuyo($documento, $usuario)) {
+            return 'No tienes permiso para ver este documento.';
+        }
+        if ($documento->tipo === 'boleta' && ! in_array($documento->estado_firma, Documento::FIRMA_RESUELTA, true)) {
+            return 'Primero firma tu boleta con tu contraseña; después la puedes ver y descargar.';
+        }
+
+        return null;
     }
 
     /**
@@ -62,7 +85,7 @@ final class AccesoADocumento
         }
 
         return $documento->tipo === 'boleta'
-            ? 'Primero firma tu boleta; después la puedes descargar.'
+            ? 'Primero firma tu boleta con tu contraseña; después la puedes ver y descargar.'
             : 'Primero firma este documento; después lo puedes descargar.';
     }
 

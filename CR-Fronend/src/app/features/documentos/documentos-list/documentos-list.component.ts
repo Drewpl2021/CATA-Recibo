@@ -117,7 +117,9 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
    * ve y se descarga, pero no se firma.
    */
   acciones: AccionPersonalizada<Documento>[] = [
-    { id: 'ver', titulo: 'Ver este documento', icono: 'description', visible: (doc) => sePuedeVer(doc) },
+    // La boleta se ve después de firmarla; un contrato sí se lee antes.
+    { id: 'ver', titulo: 'Ver este documento', icono: 'description',
+      visible: (doc) => sePuedeVer(doc) && !(doc.tipo === 'boleta' && !firmaResuelta(doc)) },
     {
       id: 'descargar', titulo: 'Descargar este documento', icono: 'folder_open',
       // Lo que se firma se descarga después de firmarlo: leerlo, sí; llevárselo,

@@ -28,7 +28,7 @@
                 <p><strong>Periodo:</strong> {{ $mesNombre }} {{ $anio }}</p>
                 <p><strong>N° Boleta:</strong> {{ $numeroBoleta }}</p>
             </div>
-            <p>Puede acceder al sistema para revisar y firmar su boleta de pago.</p>
+            <p>Ingrese al sistema y firme su boleta con su contraseña; después podrá verla y descargarla.</p>
             <p>Si tiene alguna consulta, comuníquese con el área de Recursos Humanos.</p>
         </div>
         <div class="pie">

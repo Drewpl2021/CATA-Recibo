@@ -139,9 +139,12 @@ class MiBoletaController extends Controller
             Storage::disk('local')->put($rutaArchivo, $archivada->output());
         }
 
-        // Abrirla para leerla se permite siempre, y deja anotado que la
-        // revisó. Bajársela, después de firmarla: ese es el final del camino.
+        // Ni abrirla ni bajarla antes de firmarla: primero firma con su
+        // contraseña y después la ve (y queda anotado que la revisó).
         if ($request->boolean('ver')) {
+            if ($motivo = AccesoADocumento::porQueNoPuedeVer($documento, $request->user())) {
+                return response()->json(['success' => false, 'message' => $motivo], 403);
+            }
             AccesoADocumento::marcarVisto($documento, $request->user());
 
             return $suya->stream($archivo);
