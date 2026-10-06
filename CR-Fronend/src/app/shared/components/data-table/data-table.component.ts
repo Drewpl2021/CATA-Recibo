@@ -185,6 +185,16 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
   /** El usuario escribió en el buscador; sale ya con el retardo aplicado. */
   @Output() cambioBusqueda = new EventEmitter<string>();
 
+  /**
+   * La búsqueda que la pantalla tenía puesta al volver a ella (ver
+   * EstadoListadoService). Se pone UNA vez, antes de que se escriba nada:
+   * después manda lo que la persona va tecleando.
+   */
+  @Input() set busquedaInicial(valor: string | null | undefined) {
+    if (!this.yaSeEscribio && valor) this.busqueda = valor;
+  }
+  private yaSeEscribio = false;
+
   @Output() verFila = new EventEmitter<T>();
   @Output() editarFila = new EventEmitter<T>();
   @Output() eliminarFila = new EventEmitter<T>();
@@ -456,6 +466,7 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
   }
 
   onBuscar(): void {
+    this.yaSeEscribio = true;
     if (this.paginacionServidor) {
       this.tecleo$.next(this.busqueda.trim());
       return;

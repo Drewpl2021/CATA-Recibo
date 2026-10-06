@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -56,6 +57,8 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
   templateUrl: './corridas-list.component.html',
 })
 export class CorridasListComponent implements OnInit {
+  private estadoListados = inject(EstadoListadoService);
+
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private corridaService = inject(PlanillaCorridaService);
@@ -161,6 +164,8 @@ export class CorridasListComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    const recordado = this.estadoListados.leer<Record<string, unknown>>('planillas');
+    if (recordado) Object.assign(this, recordado);
     this.cargar();
     this.cargarCatalogos();
   }
@@ -268,6 +273,8 @@ export class CorridasListComponent implements OnInit {
   }
 
   cargar(): void {
+    // Para devolvérselo al volver (ver EstadoListadoService).
+    this.estadoListados.guardar('planillas', { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, filtroMes: this.filtroMes, filtroAnio: this.filtroAnio });
     this.cargando = true;
     this.corridaService
       .getPagina({

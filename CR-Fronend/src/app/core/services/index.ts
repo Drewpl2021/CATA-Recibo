@@ -25,6 +25,7 @@ export * from './planilla/boleta.service';
 
 // Sistema
 export * from './sistema/auth.service';
+export * from './sistema/estado-listado.service';
 export * from './sistema/toast.service';
 export * from './sistema/confirm.service';
 export * from './sistema/theme.service';

@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -70,6 +71,13 @@ import {
   templateUrl: './planillas-list.component.html',
 })
 export class PlanillasListComponent implements OnInit {
+  private estadoListados = inject(EstadoListadoService);
+
+  /** Cada planilla (y la vista sin agrupar) recuerda lo suyo. */
+  private get claveMemoria(): string {
+    return this.modoSinAgrupar ? 'planilla:sin-agrupar' : `planilla:${this.corridaId}`;
+  }
+
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private ruta = inject(ActivatedRoute);
@@ -239,6 +247,9 @@ export class PlanillasListComponent implements OnInit {
   ngOnInit(): void {
     this.corridaId = this.ruta.snapshot.paramMap.get('id') ?? '';
     this.modoSinAgrupar = this.ruta.snapshot.url.some((t) => t.path === 'sin-agrupar');
+
+    const recordado = this.estadoListados.leer<Record<string, unknown>>(this.claveMemoria);
+    if (recordado) Object.assign(this, recordado);
 
     if (this.modoSinAgrupar) {
       // El mes viene de la pantalla anterior para no perder de vista dónde
@@ -475,6 +486,8 @@ export class PlanillasListComponent implements OnInit {
   }
 
   cargar(): void {
+    // Para devolvérselo al volver (ver EstadoListadoService).
+    this.estadoListados.guardar(this.claveMemoria, { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, filtroEmpleado: this.filtroEmpleado });
     this.cargando = true;
     this.planillaService
       .listarPagina({

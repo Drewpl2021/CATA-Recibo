@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { ToastService } from './toast.service';
+import { EstadoListadoService } from './estado-listado.service';
 import { Observable, tap } from 'rxjs';
 import { AuthUser, CambiarPasswordPayload, RestablecerPasswordPayload, SesionData, TerminosDeUso } from '../../models';
 import { ApiResponse, END_POINTS } from '../../utils';
@@ -16,6 +17,7 @@ export class AuthService {
   private readonly RETORNO_KEY = 'auth_retorno';
 
   private toast = inject(ToastService);
+  private estadoListados = inject(EstadoListadoService);
 
   /**
    * Evita avisar dos veces de lo mismo: una pantalla puede lanzar varias
@@ -209,6 +211,8 @@ export class AuthService {
   private limpiarSesion(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    // Las búsquedas y filtros de las listas son de esta sesión.
+    this.estadoListados.olvidarTodo();
   }
 
   getToken(): string | null {

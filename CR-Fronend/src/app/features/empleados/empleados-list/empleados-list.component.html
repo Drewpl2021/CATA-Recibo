@@ -27,6 +27,7 @@
 <!-- Numerada y por fecha de registro: el 1 es siempre el último que se dio
      de alta, así que al volver de "Nuevo Empleado" se ve arriba del todo. -->
 <app-data-table
+  [busquedaInicial]="busqueda"
   entidad="este empleado"
   [columnas]="columnas"
   [datos]="empleados"

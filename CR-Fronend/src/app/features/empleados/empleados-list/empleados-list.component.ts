@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
@@ -30,6 +31,8 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
   templateUrl: './empleados-list.component.html',
 })
 export class EmpleadosListComponent implements OnInit {
+  private estadoListados = inject(EstadoListadoService);
+
   private router = inject(Router);
   private empleadoService = inject(EmpleadoService);
   private areaService = inject(AreaService);
@@ -200,6 +203,10 @@ export class EmpleadosListComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    const recordado = this.estadoListados.leer<Record<string, unknown>>('empleados');
+    if (recordado) Object.assign(this, recordado);
+    // Con filtros recordados, sus opciones hacen falta ya para mostrar los nombres.
+    if (Object.keys(this.filtros ?? {}).length) this.cargarCatalogos();
     this.cargar();
   }
 
@@ -217,6 +224,8 @@ export class EmpleadosListComponent implements OnInit {
   }
 
   cargar(): void {
+    // Para devolvérselo al volver (ver EstadoListadoService).
+    this.estadoListados.guardar('empleados', { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros });
     this.cargando = true;
     this.empleadoService
       .getPagina({

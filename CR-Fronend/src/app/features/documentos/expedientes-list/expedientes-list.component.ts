@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -45,6 +46,8 @@ interface ChipExpediente {
   templateUrl: './expedientes-list.component.html',
 })
 export class ExpedientesListComponent implements OnInit {
+  private estadoListados = inject(EstadoListadoService);
+
   private expedientes = inject(ExpedienteService);
   private toast = inject(ToastService);
   private router = inject(Router);
@@ -98,6 +101,8 @@ export class ExpedientesListComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const recordado = this.estadoListados.leer<Record<string, unknown>>('expedientes');
+    if (recordado) Object.assign(this, recordado);
     // Llega ya filtrada desde el panel de control ("boletas sin firmar").
     const filtro = this.route.snapshot.queryParamMap.get('filtro') as FiltroExpedientes | null;
     if (filtro && this.chips.some((c) => c.valor === filtro)) this.filtro = filtro;
@@ -105,6 +110,8 @@ export class ExpedientesListComponent implements OnInit {
   }
 
   cargar(): void {
+    // Para devolvérselo al volver (ver EstadoListadoService).
+    this.estadoListados.guardar('expedientes', { busqueda: this.busqueda, pagina: this.pagina, filtro: this.filtro });
     this.cargando = true;
     this.expedientes
       .paginar({

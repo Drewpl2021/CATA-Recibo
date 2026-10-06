@@ -1,4 +1,5 @@
 import { inject, Component, OnInit } from '@angular/core';
+import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AjustesService, AreaService, AuthService, CargoService, PaymentConceptService, PlanillaCorridaService, SedeService, TipoContratoService, ValorLegal } from '../../../core/services';
@@ -62,6 +63,8 @@ export interface FormularioBoleta {
   styleUrl: './emision-boleta-list.component.scss'
 })
 export class EmisionBoletaListComponent implements OnInit {
+  private estadoListados = inject(EstadoListadoService);
+
   empleados: Empleado[] = [];
   cargandoEmpleados = false;
 
@@ -428,6 +431,10 @@ export class EmisionBoletaListComponent implements OnInit {
       this.aniosDisponibles.push(i);
     }
     this.formulario = this.getFormularioVacio();
+    const recordado = this.estadoListados.leer<Record<string, unknown>>('emision-boletas');
+    if (recordado) Object.assign(this, recordado);
+    // Con filtros recordados, sus opciones hacen falta ya para mostrar los nombres.
+    if (Object.keys(this.filtros ?? {}).length) this.cargarCatalogos();
     this.cargarEmpleados();
 
     // Una fila basta: lo que interesa es el total que manda el backend.
@@ -438,6 +445,8 @@ export class EmisionBoletaListComponent implements OnInit {
   }
 
   cargarEmpleados(): void {
+    // Para devolvérselo al volver (ver EstadoListadoService).
+    this.estadoListados.guardar('emision-boletas', { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, mesGlobal: this.mesGlobal, anioGlobal: this.anioGlobal });
     this.cargandoEmpleados = true;
     this.empleadoService
       .getPagina({

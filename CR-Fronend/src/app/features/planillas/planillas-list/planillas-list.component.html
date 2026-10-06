@@ -109,6 +109,7 @@
      Las casillas de la izquierda solo salen dentro de una planilla abierta:
      son para marcar a quiénes aplicarles un concepto. -->
 <app-data-table
+  [busquedaInicial]="busqueda"
   #tablaPlanillas
   entidad="la planilla"
   [columnas]="columnas"
