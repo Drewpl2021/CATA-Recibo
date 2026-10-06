@@ -50,5 +50,15 @@ class BoletaSeVeDespuesDeFirmarTest extends TestCase
         $this->actingAs($trabajador, 'sanctum')->get("/api/my-payslips/{$mes}/{$anio}?ver=1")->assertOk();
         $this->actingAs($trabajador, 'sanctum')->get("/api/documents/{$boleta->id}/view")->assertOk();
         $this->actingAs($trabajador, 'sanctum')->get("/api/documents/{$boleta->id}/download")->assertOk();
+
+        // El trabajador recibe solo SU copia; RR.HH., el ejemplar con las dos.
+        $paginas = function ($respuesta) {
+            $base = $respuesta->baseResponse;
+            $pdf = $base instanceof \Symfony\Component\HttpFoundation\StreamedResponse ? $respuesta->streamedContent() : $base->getContent();
+            return preg_match_all('#/Type\s*/Page[^s]#', (string) $pdf);
+        };
+        $this->assertSame(1, $paginas($this->actingAs($trabajador, 'sanctum')->get("/api/documents/{$boleta->id}/download")));
+        $this->assertSame(1, $paginas($this->actingAs($trabajador, 'sanctum')->get("/api/documents/{$boleta->id}/view")));
+        $this->assertSame(2, $paginas($this->actingAs($this->crearUsuario('rrhh'), 'sanctum')->get("/api/documents/{$boleta->id}/download")));
     }
 }

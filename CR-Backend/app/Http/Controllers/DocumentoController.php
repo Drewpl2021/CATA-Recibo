@@ -236,6 +236,10 @@ class DocumentoController extends Controller
             return response()->json(['success' => false, 'message' => $motivo], 403);
         }
 
+        if ($copia = $this->copiaDelTrabajador($request, $documento, true)) {
+            return $copia;
+        }
+
         if ($problema = $this->archivoQueFalta($documento)) {
             return $problema;
         }
@@ -256,6 +260,10 @@ class DocumentoController extends Controller
             return response()->json(['success' => false, 'message' => $motivo], 403);
         }
 
+        if ($copia = $this->copiaDelTrabajador($request, $documento, false)) {
+            return $copia;
+        }
+
         if ($problema = $this->archivoQueFalta($documento)) {
             return $problema;
         }
@@ -267,6 +275,34 @@ class DocumentoController extends Controller
         }
 
         return Storage::disk('local')->download($documento->archivo, basename($documento->archivo));
+    }
+
+    /**
+     * Al trabajador, su boleta con UNA copia: la suya.
+     *
+     * El archivo guardado lleva las dos copias (la del trabajador y la del
+     * empleador), que es el ejemplar del colegio. Desde Mis Documentos el
+     * trabajador se bajaba ese, con la copia del empleador incluida; ahora
+     * recibe lo mismo que en Mis Boletas (MiBoletaController), con sus
+     * mismos controles: firmarla antes, y anotar que la vio o la descargó.
+     * RR.HH. y Administración siguen viendo el archivo completo. Las boletas
+     * de antes del sistema (subidas como PDF, sin planilla) van tal cual.
+     */
+    private function copiaDelTrabajador(Request $request, Documento $documento, bool $ver)
+    {
+        if ($documento->tipo !== 'boleta' || ! $documento->planilla_id
+            || AccesoADocumento::esRrhhOAdmin($request->user())) {
+            return null;
+        }
+
+        $planilla = Planilla::find($documento->planilla_id);
+        if (! $planilla) {
+            return null;
+        }
+
+        $request->merge(['ver' => $ver ? 1 : 0]);
+
+        return app(MiBoletaController::class)->descargar($request, (int) $planilla->mes, (int) $planilla->anio);
     }
 
     /** La respuesta de "todavía no hay archivo"; null si sí está. */
