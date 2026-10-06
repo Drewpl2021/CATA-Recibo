@@ -166,9 +166,11 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
    * ni un cargo —"las madres", "los que entraron este año"—: eso no se puede
    * describir con un filtro, hay que señalarlos a mano.
    *
-   * La selección es de la PÁGINA que se está viendo: marcar "todos" en una
-   * lista paginada por el servidor marcaría gente que no está en pantalla, y
-   * nadie firma un descuento que no vio.
+   * Lo marcado se recuerda al pasar de página y al buscar: RR.HH. busca a
+   * "gatica", lo marca, busca a "mamani", lo marca, y actúa sobre los dos.
+   * Antes se soltaba todo al cambiar de página y no había forma de juntar
+   * gente de páginas distintas. La casilla de la cabecera sigue marcando
+   * solo la página que se ve: nadie marca a quien no vio.
    */
   @Input() seleccionable = false;
 
@@ -306,8 +308,12 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     return anchos[posicion % anchos.length];
   }
 
-  /** Lo marcado ahora mismo, por el id de cada fila. */
-  private marcadas = new Set<unknown>();
+  /**
+   * Lo marcado ahora mismo, por el id de cada fila, con la fila entera: la
+   * de otra página ya no está en `datos`, y la pantalla igual necesita su
+   * nombre para decir a quién se le va a aplicar.
+   */
+  private marcadas = new Map<unknown, T>();
 
   private idDe(fila: T): unknown {
     return (fila as Record<string, unknown>)['id'];
@@ -322,7 +328,7 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     if (this.marcadas.has(id)) {
       this.marcadas.delete(id);
     } else {
-      this.marcadas.add(id);
+      this.marcadas.set(id, fila);
     }
     this.avisarSeleccion();
   }
@@ -338,7 +344,7 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     if (this.todasMarcadas) {
       pagina.forEach((f) => this.marcadas.delete(this.idDe(f)));
     } else {
-      pagina.forEach((f) => this.marcadas.add(this.idDe(f)));
+      pagina.forEach((f) => this.marcadas.set(this.idDe(f), f));
     }
     this.avisarSeleccion();
   }
@@ -350,7 +356,7 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
   }
 
   private avisarSeleccion(): void {
-    this.cambioSeleccion.emit(this.filaPagina.filter((f) => this.marcadas.has(this.idDe(f))));
+    this.cambioSeleccion.emit([...this.marcadas.values()]);
   }
 
   /**
@@ -374,10 +380,8 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     if (changes['pagina'] && this.paginacionServidor) {
       // La página la manda la pantalla; acá solo se refleja.
       this.establecerPaginaActual(this.pagina + 1);
-      // Lo marcado era de la página anterior: se suelta al cambiar, porque
-      // seguir contando filas que ya no se ven es la forma de aplicarle algo
-      // a alguien sin querer.
-      if (this.marcadas.size) this.limpiarSeleccion();
+      // Lo marcado se queda al cambiar de página o al buscar (ver
+      // `seleccionable`): la pantalla enseña a quiénes y se suelta con la X.
     } else if (changes['datos'] && !this.paginacionServidor) {
       this.establecerPaginaActual(1);
     }

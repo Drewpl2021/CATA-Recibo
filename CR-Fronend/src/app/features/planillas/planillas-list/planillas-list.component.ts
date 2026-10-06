@@ -593,10 +593,8 @@ export class PlanillasListComponent implements OnInit {
   /**
    * Los trabajadores marcados con la casilla de su fila.
    *
-   * OJO: la tabla emite solo los marcados de la PÁGINA que se está viendo.
-   * Con quince filas por página alcanza para lo normal —marcar a cuatro o
-   * cinco y aplicarles algo—, pero marcar en una página y pasar a otra no
-   * acumula.
+   * La tabla los recuerda al pasar de página y al buscar: se puede juntar
+   * gente de páginas distintas antes de aplicarles un concepto.
    */
   marcados: Planilla[] = [];
 
