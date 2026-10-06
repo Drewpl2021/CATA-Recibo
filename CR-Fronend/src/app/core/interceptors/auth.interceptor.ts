@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/sistema/auth.service';
+import { ProgresoService } from '../services/sistema/progreso.service';
 
 /** Rutas donde un 401 NO significa que la sesión caducó. */
 const RUTAS_SIN_SESION = ['/login', '/register'];
@@ -18,6 +19,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Con un proceso largo en curso, la petición lleva su id para que el
+  // servidor anote cuánto lleva (ver ProgresoService).
+  const progreso = inject(ProgresoService).idActivo;
+  if (progreso && !req.url.includes('/progress/')) {
+    headers['X-Progreso'] = progreso;
   }
 
   const method = req.method.toUpperCase();

@@ -2386,6 +2386,105 @@ body.con-modal {
   margin: 28px auto 12px;
 }
 
+/* ── Modal de avance de los procesos largos (ver ProgresoService) ──
+   Importar, generar planillas, emitir: dice qué hace, cuántos lleva y
+   cuánto falta. Sin botón de cerrar a propósito: el proceso sigue en el
+   servidor aunque se cierre. */
+.progreso {
+  max-width: 440px;
+  padding-top: 28px;
+}
+
+.progreso__icono {
+  margin: 0 auto 14px;
+}
+
+.progreso__icono app-icon {
+  animation: progreso-giro 1.4s linear infinite;
+  display: inline-flex;
+}
+
+.progreso__cuerpo {
+  padding: 0 28px 26px;
+}
+
+.progreso__etapa {
+  margin: 0 0 14px;
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 14px;
+}
+
+.progreso__barra {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--brand-100);
+  overflow: hidden;
+}
+
+.progreso__barra span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand-600);
+  transition: width 0.6s ease;
+}
+
+/* Aún sin saber cuántos son: un tramo que va y viene. */
+.progreso__barra--sin-dato span {
+  animation: progreso-vaiven 1.3s ease-in-out infinite alternate;
+}
+
+.progreso__cifras {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.progreso__cifras strong {
+  color: var(--text);
+}
+
+.progreso__tiempo {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.progreso__lleva {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.progreso__nota {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+@keyframes progreso-giro {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes progreso-vaiven {
+  from { transform: translateX(-40%); }
+  to { transform: translateX(220%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progreso__icono app-icon,
+  .progreso__barra--sin-dato span {
+    animation: none;
+  }
+}
+
 .modal-card h3 {
   text-align: center;
   margin: 0 24px 8px;

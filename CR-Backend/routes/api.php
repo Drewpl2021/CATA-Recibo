@@ -115,6 +115,9 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     // Emisión de Boletas para destrabar la edición de una boleta ya emitida.
     Route::post('verify-password', [AuthController::class, 'verificarPassword'])->middleware('throttle:clave');
 
+    // Cuánto lleva un proceso largo que pidió esta misma cuenta (ver App\Support\Progreso).
+    Route::get('progress/{id}', [\App\Http\Controllers\ProgresoController::class, 'ver'])->where('id', '[A-Za-z0-9-]{8,64}');
+
     // Los términos de uso: el papel que antes se firmaba a mano. Los firma
     // cada trabajador desde su cuenta, así que van entre las rutas de
     // cualquier autenticado y no en el grupo de RR.HH.

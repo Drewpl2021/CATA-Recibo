@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -70,6 +71,9 @@ interface ResultadoCv {
   templateUrl: './importar-empleados.component.html',
 })
 export class ImportarEmpleadosComponent {
+  /** El modal de avance de los procesos largos (ver ProgresoService). */
+  private progreso = inject(ProgresoService);
+
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private importacion = inject(ImportacionEmpleadosService);
@@ -265,7 +269,7 @@ export class ImportarEmpleadosComponent {
     if (this.pendientes.length || this.revisando) return;
 
     this.revisando = true;
-    this.importacion.previsualizar(this.payload()).subscribe({
+    this.progreso.seguir('Revisando el archivo', this.importacion.previsualizar(this.payload())).subscribe({
       next: (res) => {
         this.revisando = false;
         if (!res.success) return;
@@ -350,7 +354,7 @@ export class ImportarEmpleadosComponent {
         }
 
         this.aplicando = true;
-        this.importacion.aplicar(this.payload()).subscribe({
+        this.progreso.seguir('Importando trabajadores', this.importacion.aplicar(this.payload())).subscribe({
           next: (res) => {
             this.aplicando = false;
             if (!res.success) return;

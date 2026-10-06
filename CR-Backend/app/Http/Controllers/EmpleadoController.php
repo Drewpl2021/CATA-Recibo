@@ -381,7 +381,9 @@ class EmpleadoController extends Controller
         $zip->open($ruta, \ZipArchive::OVERWRITE);
 
         $faltan = [];
+        $progreso = \App\Support\Progreso::actual()->etapa('Juntando las boletas en el .zip', $documentos->count());
         foreach ($documentos as $documento) {
+            $progreso->avanzar();
             $persona = $personas[$documento->empleado_id];
             $nombre  = trim("{$persona->apellido} {$persona->nombre}");
 
@@ -764,7 +766,9 @@ class EmpleadoController extends Controller
 
         $empleados = Empleado::whereIn('id', $request->input('ids'))->orderBy('apellido')->orderBy('nombre')->get();
 
+        $progreso = \App\Support\Progreso::actual()->etapa($estado === 'activo' ? 'Activando a los trabajadores' : 'Dando de baja a los trabajadores', $empleados->count());
         foreach ($empleados as $empleado) {
+            $progreso->avanzar();
             $nombre = trim("{$empleado->nombre} {$empleado->apellido}");
 
             $motivo = match (true) {

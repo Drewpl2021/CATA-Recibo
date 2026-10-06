@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -31,6 +32,9 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
   templateUrl: './empleados-list.component.html',
 })
 export class EmpleadosListComponent implements OnInit {
+  /** El modal de avance de los procesos largos (ver ProgresoService). */
+  private progreso = inject(ProgresoService);
+
   private estadoListados = inject(EstadoListadoService);
 
   private router = inject(Router);
@@ -259,7 +263,7 @@ export class EmpleadosListComponent implements OnInit {
       if (!aceptado) return;
       this.cambiandoEstado = true;
 
-      this.empleadoService.cambiarEstado(empleados.map((e) => e.id), estado).subscribe({
+      this.progreso.seguir(estado === 'activo' ? 'Activando trabajadores' : 'Dando de baja', this.empleadoService.cambiarEstado(empleados.map((e) => e.id), estado)).subscribe({
         next: (res) => {
           this.cambiandoEstado = false;
           const { hechos, omitidos } = res.data.resumen;

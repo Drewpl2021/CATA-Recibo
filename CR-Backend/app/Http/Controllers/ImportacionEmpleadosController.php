@@ -118,7 +118,9 @@ class ImportacionEmpleadosController extends Controller
                 }
             }
 
+            $progreso = \App\Support\Progreso::actual()->etapa('Guardando los trabajadores', count($r['filas']));
             foreach ($r['filas'] as $fila) {
+                $progreso->avanzar();
                 if ($fila['modo'] === 'alta') {
                     AltaDeEmpleado::crear($fila['_datos']);
                     continue;
@@ -316,7 +318,9 @@ class ImportacionEmpleadosController extends Controller
         $bloqueadas   = [];
 
         // ── Fila por fila ────────────────────────────────────────
+        $progreso = \App\Support\Progreso::actual()->etapa('Revisando las filas del archivo', count($datos['filas']));
         foreach ($datos['filas'] as $fila) {
+            $progreso->avanzar();
             $numero = (int) $fila['numero'];
             $celdas = array_values($fila['celdas'] ?? []);
 

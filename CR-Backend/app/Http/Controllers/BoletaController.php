@@ -272,7 +272,9 @@ class BoletaController extends Controller
         $generadas = 0;
         $yaTenian  = 0;
 
+        $progreso = \App\Support\Progreso::actual()->etapa('Armando el PDF de cada boleta', $planillas->count());
         foreach ($planillas as $planilla) {
+            $progreso->avanzar();
             // Idempotente: la boleta que ya existe no se vuelve a generar.
             if (isset($yaEmitidas[$planilla->id])) {
                 $yaTenian++;

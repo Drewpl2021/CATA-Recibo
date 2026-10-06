@@ -93,7 +93,9 @@ trait GeneraPlanillasEnLote
         $omitidas  = 0;
         $detalle   = [];
 
+        $progreso = \App\Support\Progreso::actual()->etapa('Armando la planilla de cada trabajador', count($empleados));
         foreach ($empleados as $empleado) {
+            $progreso->avanzar();
             $nombreCompleto = trim($empleado->nombre . ' ' . $empleado->apellido);
             $base = ['empleado' => $nombreCompleto, 'empleado_id' => $empleado->id];
 

@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -117,6 +118,9 @@ interface ColumnaEditable {
   templateUrl: './importar-conceptos.component.html',
 })
 export class ImportarConceptosComponent implements OnInit {
+  /** El modal de avance de los procesos largos (ver ProgresoService). */
+  private progreso = inject(ProgresoService);
+
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -324,7 +328,7 @@ export class ImportarConceptosComponent implements OnInit {
     if (this.pendientes.length || this.revisando) return;
 
     this.revisando = true;
-    this.importacion.previsualizar(this.payload()).subscribe({
+    this.progreso.seguir('Revisando el archivo', this.importacion.previsualizar(this.payload())).subscribe({
       next: (res) => {
         this.revisando = false;
         if (!res.success) return;
@@ -408,7 +412,7 @@ export class ImportarConceptosComponent implements OnInit {
         if (!aceptado) return;
 
         this.aplicando = true;
-        this.importacion.aplicar(this.payload()).subscribe({
+        this.progreso.seguir('Importando conceptos', this.importacion.aplicar(this.payload())).subscribe({
           next: (res) => {
             this.aplicando = false;
             if (!res.success) return;

@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { ProgresoService } from '../../core/services/sistema/progreso.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -28,6 +29,9 @@ interface CampoLegal {
   templateUrl: './ajustes.component.html',
 })
 export class AjustesComponent implements OnInit {
+  /** El modal de avance de los procesos largos (ver ProgresoService). */
+  private progreso = inject(ProgresoService);
+
   private ajustesService = inject(AjustesService);
   private toastService = inject(ToastService);
 
@@ -205,7 +209,7 @@ export class AjustesComponent implements OnInit {
 
     this.previaSubiendo = true;
     this.previaResultado = null;
-    this.ajustesService.cargarRentaQuintaPrevia(this.anioActual, archivo).subscribe({
+    this.progreso.seguir('Cargando enero y febrero', this.ajustesService.cargarRentaQuintaPrevia(this.anioActual, archivo)).subscribe({
       next: (res) => {
         this.previaSubiendo = false;
         if (res.success) {

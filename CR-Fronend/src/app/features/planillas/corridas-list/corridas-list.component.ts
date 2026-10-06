@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -57,6 +58,9 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
   templateUrl: './corridas-list.component.html',
 })
 export class CorridasListComponent implements OnInit {
+  /** El modal de avance de los procesos largos (ver ProgresoService). */
+  private progreso = inject(ProgresoService);
+
   private estadoListados = inject(EstadoListadoService);
 
   private fb = inject(FormBuilder);
@@ -642,7 +646,7 @@ export class CorridasListComponent implements OnInit {
     this.guardando = true;
     this.resultadoMeses = null;
 
-    this.corridaService.crear(payload).subscribe({
+    this.progreso.seguir('Creando la planilla', this.corridaService.crear(payload)).subscribe({
       next: (res) => {
         this.guardando = false;
         if (!res.success) return;

@@ -145,7 +145,9 @@ class ImportacionConceptosController extends Controller
             }
 
             // 2. Las líneas de cada planilla, y su neto.
+            $progreso = \App\Support\Progreso::actual()->etapa('Guardando los conceptos de cada trabajador', count($r['trabajadores']));
             foreach ($r['trabajadores'] as $trabajador) {
+                $progreso->avanzar();
                 $planilla = $trabajador['_planilla'];
 
                 foreach ($trabajador['cambios'] as $cambio) {
@@ -406,7 +408,9 @@ class ImportacionConceptosController extends Controller
 
         // ── Fila por fila ────────────────────────────────────────
         $vistos = [];
+        $progreso = \App\Support\Progreso::actual()->etapa('Revisando las filas del archivo', count($datos['filas']));
         foreach ($datos['filas'] as $fila) {
+            $progreso->avanzar();
             $numero = (int) $fila['numero'];
             $celdas = array_values($fila['celdas'] ?? []);
 

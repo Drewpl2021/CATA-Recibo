@@ -1,0 +1,34 @@
+<div class="modal-overlay" *ngIf="estado$ | async as e">
+  <div class="modal-card progreso" role="dialog" aria-modal="true" [attr.aria-label]="e.titulo">
+    <div class="modal-icon-brand progreso__icono">
+      <app-icon icono="refresh" [tamano]="30"></app-icon>
+    </div>
+
+    <h3>{{ e.titulo }}</h3>
+
+    <div class="progreso__cuerpo" role="status" aria-live="polite">
+      <!-- Lo que está haciendo ahora; antes de la primera respuesta, que ya empezó. -->
+      <p class="progreso__etapa">{{ e.etapa || 'Empezando…' }}</p>
+
+      <div class="progreso__barra" [class.progreso__barra--sin-dato]="e.porcentaje === null"
+        role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="e.porcentaje">
+        <span [style.width.%]="e.porcentaje ?? 35"></span>
+      </div>
+
+      <div class="progreso__cifras">
+        <strong *ngIf="e.total > 0">{{ e.hechos }} de {{ e.total }}</strong>
+        <strong *ngIf="e.total === 0">&nbsp;</strong>
+        <span *ngIf="e.porcentaje !== null">{{ e.porcentaje }} %</span>
+      </div>
+
+      <p class="progreso__tiempo">
+        <ng-container *ngIf="e.restante !== null">Falta aprox. {{ tiempo(e.restante) }}.</ng-container>
+        <ng-container *ngIf="e.restante === null && e.total > 0 && e.hechos >= e.total">Terminando…</ng-container>
+        <ng-container *ngIf="e.restante === null && !(e.total > 0 && e.hechos >= e.total)">Calculando cuánto falta…</ng-container>
+        <span class="progreso__lleva">Lleva {{ tiempo(e.transcurrido) }}.</span>
+      </p>
+
+      <p class="progreso__nota">No cierres ni recargues esta página hasta que termine.</p>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -71,6 +72,9 @@ import {
   templateUrl: './planillas-list.component.html',
 })
 export class PlanillasListComponent implements OnInit {
+  /** El modal de avance de los procesos largos (ver ProgresoService). */
+  private progreso = inject(ProgresoService);
+
   private estadoListados = inject(EstadoListadoService);
 
   /** Cada planilla (y la vista sin agrupar) recuerda lo suyo. */
@@ -975,7 +979,7 @@ export class PlanillasListComponent implements OnInit {
     // Sin lista, el backend alcanza a todo el personal activo.
     const grupo = this.alcance === 'elegidos' ? { empleado_ids: this.empleadosElegidos } : {};
 
-    this.corridaService.generar(this.corridaId, grupo).subscribe({
+    this.progreso.seguir('Generando planillas', this.corridaService.generar(this.corridaId, grupo)).subscribe({
       next: (res) => {
         this.generando = false;
         if (!res.success) return;

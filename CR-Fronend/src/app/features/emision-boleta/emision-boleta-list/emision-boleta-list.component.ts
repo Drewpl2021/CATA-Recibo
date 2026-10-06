@@ -1,4 +1,5 @@
 import { inject, Component, OnInit } from '@angular/core';
+import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -63,6 +64,9 @@ export interface FormularioBoleta {
   styleUrl: './emision-boleta-list.component.scss'
 })
 export class EmisionBoletaListComponent implements OnInit {
+  /** El modal de avance de los procesos largos (ver ProgresoService). */
+  private progreso = inject(ProgresoService);
+
   private estadoListados = inject(EstadoListadoService);
 
   empleados: Empleado[] = [];
@@ -1226,8 +1230,9 @@ export class EmisionBoletaListComponent implements OnInit {
     this.descargandoZip = true;
     const periodo = `${this.nombreMes(this.mesGlobal * 1)} ${this.anioGlobal}`;
 
-    this.boletaService
-      .descargarEmitidasEnZip({ mes: this.mesGlobal, anio: this.anioGlobal, search: this.busqueda || undefined, ...this.filtros })
+    this.progreso
+      .seguir('Preparando el .zip de boletas', this.boletaService
+        .descargarEmitidasEnZip({ mes: this.mesGlobal, anio: this.anioGlobal, search: this.busqueda || undefined, ...this.filtros }))
       .subscribe({
         next: (blob) => {
           guardarArchivo(blob, `Boletas ${periodo}.zip`);
@@ -1268,7 +1273,7 @@ export class EmisionBoletaListComponent implements OnInit {
 
   confirmarEmisionMasiva(): void {
     this.generandoMasivo = true;
-    this.boletaService.generarMasivo(this.mesGlobal, this.anioGlobal).subscribe({
+    this.progreso.seguir('Emitiendo boletas', this.boletaService.generarMasivo(this.mesGlobal, this.anioGlobal)).subscribe({
       next: (res) => {
         this.toastService.resultadoMasivo({
           hechas: res.generadas ?? 0,

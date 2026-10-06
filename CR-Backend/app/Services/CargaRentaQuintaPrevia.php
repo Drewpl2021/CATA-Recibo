@@ -54,8 +54,10 @@ class CargaRentaQuintaPrevia
         $afectados = [];
         $numero = fn ($v) => round((float) $v, 2);
 
-        DB::transaction(function () use ($filas, $indice, $anio, $origen, $numero, &$leidos, &$faltan, &$afectados) {
+        $progreso = \App\Support\Progreso::actual()->etapa('Leyendo enero y febrero de cada trabajador', count($filas));
+        DB::transaction(function () use ($filas, $indice, $anio, $origen, $numero, $progreso, &$leidos, &$faltan, &$afectados) {
             foreach ($filas as $fila) {
+                $progreso->avanzar();
                 $dni = ltrim(trim((string) ($fila[$indice['dni']] ?? '')), '0');
                 if ($dni === '' || ! ctype_alnum($dni)) {
                     continue;
@@ -86,7 +88,9 @@ class CargaRentaQuintaPrevia
 
         // Su 5ta de marzo en adelante cambia: se recalcula la de las planillas que ya existan.
         $recalculadas = 0;
+        $progreso->etapa('Recalculando la 5ta de sus planillas', count($afectados));
         foreach ($afectados as $empleado) {
+            $progreso->avanzar();
             Planilla::where('empleado_id', $empleado->id)->where('anio', $anio)->where('mes', '>=', 3)->get()
                 ->each(function ($planilla) use ($empleado, &$recalculadas) {
                     $this->generarYPersistirRenta5ta($planilla, $empleado);
