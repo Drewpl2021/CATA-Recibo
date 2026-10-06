@@ -4030,7 +4030,8 @@ textarea.form-control {
   margin: 16px auto 0;
   padding: 10px 10px 10px 12px;
   border-radius: 14px;
-  background: var(--marca-bg-deep);
+  /* El mismo azul de la barra lateral: se lee como parte del sistema. */
+  background: var(--sidebar-bg);
   color: var(--marca-text);
   box-shadow: 0 12px 32px -8px rgba(10, 20, 45, 0.45), 0 0 0 1px var(--marca-border);
   animation: barra-seleccion-entra 0.22s ease-out;
@@ -4138,10 +4139,9 @@ textarea.form-control {
   outline-offset: 2px;
 }
 
-/* En oscuro el azul de marca casi es el fondo: la barra sube un tono y
-   marca su borde para no perderse sobre la tabla. */
+/* En oscuro la barra lateral es casi el fondo: se queda su mismo color
+   pero con el borde marcado, para no perderse sobre la tabla. */
 .dark-mode .barra-seleccion {
-  background: var(--surface-hover);
   box-shadow: 0 14px 36px -8px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
