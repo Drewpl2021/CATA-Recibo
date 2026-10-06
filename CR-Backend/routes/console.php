@@ -30,3 +30,7 @@ Schedule::command('sanctum:prune-expired --hours=48')->daily();
  * y el momento en que alguien abre el sistema.
  */
 Schedule::command('planillas:avisar-pendientes')->dailyAt('08:00');
+
+// A quien se le acabó el contrato y nadie lo renovó, se le da de baja en su
+// fecha de fin. De madrugada, antes de que nadie arme una planilla.
+Schedule::command('contratos:dar-de-baja-vencidos')->dailyAt('00:10');

@@ -354,6 +354,12 @@ export class EmpleadosListComponent implements OnInit {
           const saltados = res.data.detalle.filter((d) => !d.hecho).map((d) => `${d.nombre}: ${d.motivo}`);
           const hecho = estado === 'activo' ? 'activado(s)' : 'dado(s) de baja';
 
+          // Activado, pero con el contrato vencido: no dura si no se renueva.
+          const avisos = res.data.detalle.filter((d) => d.hecho && d.aviso).map((d) => `${d.nombre}: ${d.aviso}`);
+          if (avisos.length) {
+            this.toastService.warning('Renueva su contrato', avisos.join(' · '));
+          }
+
           if (hechos && !omitidos) {
             this.toastService.success(estado === 'activo' ? 'Trabajadores activados' : 'Trabajadores dados de baja', `${hechos} ${hecho}.`);
           } else if (hechos) {

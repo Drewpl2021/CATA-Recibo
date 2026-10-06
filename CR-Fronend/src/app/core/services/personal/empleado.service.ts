@@ -8,7 +8,7 @@ import { ApiResponse, END_POINTS, END_POINTS_ACCIONES, EntityDataService } from 
 /** Lo que contesta el cambio de estado en grupo. */
 export interface ResultadoCambioEstado {
   resumen: { hechos: number; omitidos: number };
-  detalle: { nombre: string; dni: string; hecho: boolean; motivo: string | null }[];
+  detalle: { nombre: string; dni: string; hecho: boolean; motivo: string | null; aviso?: string | null }[];
 }
 
 @Injectable({ providedIn: 'root' })

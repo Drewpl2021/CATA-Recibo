@@ -56,6 +56,35 @@ class ContratoVencidoTest extends TestCase
             ->assertOk()->assertJsonPath('data.totalElements', 1);
     }
 
+    public function test_cada_noche_se_da_de_baja_a_los_vencidos_en_su_fecha_de_fin(): void
+    {
+        $rrhh = $this->crearUsuario('rrhh');
+        $fin = now()->subDays(20)->toDateString();
+        $vencido = $this->contratadoHasta($fin);
+        $vigente = $this->contratadoHasta(now()->addMonth()->toDateString());
+        $cuenta = $this->crearUsuario('empleado');
+        $cuenta->forceFill(['empleado_id' => (string) $vencido->id])->save();
+
+        $this->artisan('contratos:dar-de-baja-vencidos')->assertSuccessful();
+
+        $vencido = $vencido->fresh();
+        $this->assertSame('inactivo', $vencido->estado);
+        $this->assertSame($fin, substr((string) $vencido->fecha_cese, 0, 10));
+        $this->assertSame('inactivo', $cuenta->fresh()->estado_registro);
+        $this->assertSame('activo', $vigente->fresh()->estado);
+        $this->assertTrue(\App\Models\Notificacion::where('user_id', $rrhh->id)->where('tipo', 'contratos_vencidos')->exists());
+
+        // Se renueva y se reactiva: vuelve a estar activo con su contrato nuevo.
+        $this->actingAs($rrhh, 'sanctum')->postJson('/api/contracts', [
+            'empleado_id' => $vencido->id, 'tipo_contrato_id' => $this->idTipoContrato('Contratado'),
+            'fecha_inicio' => now()->subDays(19)->toDateString(), 'fecha_fin' => now()->addYear()->toDateString(),
+        ])->assertCreated();
+        $this->actingAs($rrhh, 'sanctum')->postJson('/api/employees/status', ['ids' => [$vencido->id], 'estado' => 'activo'])->assertOk();
+        $this->artisan('contratos:dar-de-baja-vencidos')->assertSuccessful();
+        $this->assertSame('activo', $vencido->fresh()->estado);
+        $this->assertSame(now()->addYear()->toDateString(), substr((string) $vencido->fresh()->fecha_cese, 0, 10));
+    }
+
     public function test_renovar_desde_contratos_quita_el_vencido(): void
     {
         $rrhh = $this->crearUsuario('rrhh');

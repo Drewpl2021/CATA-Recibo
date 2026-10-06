@@ -141,8 +141,11 @@ class Empleado extends Model
      */
     public function reabrirContratoCerradoPorBaja(): ?string
     {
-        if ($this->contratos()->where('estado', 'vigente')->exists()) {
-            return null;
+        // Ya tiene uno vigente (se le renovó en Contratos antes de
+        // reactivarlo): manda ese, y su fin es su fecha de cese prevista.
+        $vigente = $this->contratos()->where('estado', 'vigente')->where('estado_registro', 'activo')->latest('fecha_inicio')->first();
+        if ($vigente) {
+            return $vigente->fecha_fin ? substr((string) $vigente->fecha_fin, 0, 10) : null;
         }
 
         $contrato = $this->contratos()->where('cerrado_por_baja', true)->latest('updated_at')->first();

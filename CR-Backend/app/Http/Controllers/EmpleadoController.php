@@ -816,7 +816,16 @@ class EmpleadoController extends Controller
 
             $estado === 'activo' ? $empleado->reactivar() : $empleado->darDeBaja($fechaBaja);
             $hechos++;
-            $detalle[] = ['nombre' => $nombre, 'dni' => $empleado->dni, 'hecho' => true, 'motivo' => null];
+
+            // Reactivado con el contrato ya vencido: esta noche la tarea de
+            // contratos vencidos lo vuelve a dar de baja si no se renueva.
+            $aviso = null;
+            if ($estado === 'activo' && $empleado->fresh()->contratoVencidoAntesDe($hoy)) {
+                $aviso = 'su contrato terminó el ' . \Carbon\Carbon::parse($empleado->fresh()->finDeContrato())->format('d/m/Y')
+                    . '. Renuévalo en Contratos; si no, esta noche vuelve a pasar a inactivo.';
+            }
+
+            $detalle[] = ['nombre' => $nombre, 'dni' => $empleado->dni, 'hecho' => true, 'motivo' => null, 'aviso' => $aviso];
         }
 
         return response()->json([

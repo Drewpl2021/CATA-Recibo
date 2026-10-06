@@ -449,6 +449,7 @@ export class LayoutComponent implements OnInit {
 
   /** El ícono del aviso: una boleta de papel, salvo el de RR.HH. que no tiene ninguna de por medio. */
   iconoAviso(aviso: Notificacion): string {
+    if (aviso.tipo === 'contratos_vencidos') return 'user_off';
     return aviso.tipo === 'planilla_pendiente' ? 'table_chart' : 'receipt';
   }
 
@@ -456,6 +457,7 @@ export class LayoutComponent implements OnInit {
   textoAccionAviso(aviso: Notificacion): string {
     if (this.documentoPendienteDe(aviso)) return 'Firmar';
     if (aviso.tipo === 'planilla_pendiente') return 'Ir a planillas';
+    if (aviso.tipo === 'contratos_vencidos') return 'Ver empleados';
     return 'Ver boletas';
   }
 
@@ -489,6 +491,13 @@ export class LayoutComponent implements OnInit {
 
     if (aviso.tipo === 'planilla_pendiente') {
       this.router.navigate(['/inicio/planillas']);
+      return;
+    }
+
+    // "Pasaron a inactivo por contrato vencido": a la lista, para renovar
+    // y reactivar a quien siga trabajando.
+    if (aviso.tipo === 'contratos_vencidos') {
+      this.router.navigate(['/inicio/empleados']);
       return;
     }
 
