@@ -63,6 +63,11 @@ Route::post('/register', fn () => response()->json([
 ], 403))->middleware('throttle:registro');
 Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:ingreso');
 
+// Lo que abre el QR de la boleta: si es auténtica. Pública y con la dirección
+// firmada por el servidor (ver VerificarBoletaController).
+Route::get('/verificar-boleta/{documento}', [\App\Http\Controllers\VerificarBoletaController::class, 'ver'])
+    ->name('boleta.verificar')->middleware('throttle:verificacion');
+
 // "Olvide mi contrasena": pedir el enlace y usarlo. Van con freno aparte
 // porque son las otras dos puertas abiertas a internet; el broker de Laravel
 // ademas no deja pedir dos enlaces seguidos (auth.passwords.users.throttle).

@@ -78,6 +78,19 @@ class Planilla extends Model
      * Se llama cada vez que la planilla o alguno de sus PayrollDetalle cambia,
      * para que el total nunca quede desincronizado de sus conceptos.
      */
+    /**
+     * "BOL-2026-0010": el número que lleva impreso su boleta. Va por periodo
+     * (enero la 1, febrero la 2…), contando sus planillas de ese año hasta
+     * este mes. El mismo cálculo que BoletaController::construirBoleta.
+     */
+    public function numeroDeBoleta(): string
+    {
+        $correlativo = self::where('empleado_id', $this->empleado_id)
+            ->where('anio', $this->anio)->where('mes', '<=', $this->mes)->count();
+
+        return 'BOL-' . $this->anio . '-' . str_pad((string) $correlativo, 4, '0', STR_PAD_LEFT);
+    }
+
     public function recalcularTotal(): float
     {
         $bonificacionesConcepto = (float) $this->payrollDetalles()

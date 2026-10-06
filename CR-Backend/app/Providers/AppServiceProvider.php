@@ -66,5 +66,8 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('consulta_dni', fn (Request $peticion) => Limit::perMinute(30)
             ->by($peticion->user()?->id ?: $peticion->ip()));
+
+        // El QR de la boleta: público. Sobra para quien lo escanea de verdad.
+        RateLimiter::for('verificacion', fn (Request $peticion) => Limit::perMinute(30)->by($peticion->ip()));
     }
 }

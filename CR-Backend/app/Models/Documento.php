@@ -57,6 +57,16 @@ class Documento extends Model
         'periodo_anio'          => 'integer',
     ];
 
+    /**
+     * La dirección que va dentro del QR de la boleta: firmada por el
+     * servidor, para que nadie arme la de otra cambiando el id. Ver
+     * VerificarBoletaController.
+     */
+    public function urlDeVerificacion(): string
+    {
+        return \Illuminate\Support\Facades\URL::signedRoute('boleta.verificar', ['documento' => $this->id]);
+    }
+
     protected static function boot()
     {
         parent::boot();

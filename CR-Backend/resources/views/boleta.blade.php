@@ -2,281 +2,108 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    {{--
+        La boleta, con el diseño de la boleta de pago del Minedu
+        (postman/plame/BOLETA DEGUIA.pdf): hoja vertical, datos personales en
+        cuadrícula de tres columnas, Ingresos y Descuentos lado a lado sobre
+        un panel gris azulado, el total líquido, el QR para verificarla, el
+        mensaje y la nota del medio ambiente. Con la cabecera, los datos y
+        las cuatro categorías (también Aportaciones y Adelantos) del colegio.
+
+        Lo dibuja dompdf: nada de flex ni de variables CSS, todo con tablas y
+        colores literales. Cada copia es UNA hoja.
+    --}}
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        @page {
-            size: A4 landscape;
-            margin: 5mm;
-        }
+        /* El margen de la hoja va en html: dompdf lo toma de ahí, y el "* { margin: 0 }" de arriba se comía el de @page. */
+        html { margin: 12mm 14mm 10mm 14mm; }
 
         body {
-            font-family: Arial, sans-serif;
-            font-size: 10px;
-            color: #222;
-            zoom: 0.68;
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8.5px;
+            color: #1F2B33;
         }
 
-        .boleta {
-            width: 96%;
-            margin: 0 auto;
-            padding: 15px;
-            border: 2px solid #1B4282;
-        }
+        .hoja + .hoja { page-break-before: always; }
+        .hoja { position: relative; }
 
-        .boleta + .boleta {
-            page-break-before: always;
-        }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        td { vertical-align: top; }
 
-        .encabezado {
-            display: table;
-            width: 100%;
-            border-bottom: 2px solid #1B4282;
-            padding-bottom: 8px;
-            margin-bottom: 10px;
-        }
+        /* ── Cabecera ── */
+        .cab td { vertical-align: bottom; }
+        .cab__logo img { width: 50px; height: 50px; }
+        .cab__inst { font-size: 7px; font-weight: bold; color: #1F2B33; line-height: 1.25; padding-left: 6px; vertical-align: middle; }
+        .cab__inst span { font-weight: normal; color: #4A5961; }
+        .cab__codigo-rotulo { font-size: 5.5px; color: #4A5961; text-transform: uppercase; margin-top: 4px; }
+        .cab__codigo { font-size: 10px; color: #1F2B33; }
+        .cab__titulo { text-align: center; font-size: 15px; font-weight: bold; color: #1F2B33; padding-bottom: 2px; }
+        .cab__copia { text-align: center; font-size: 6.5px; color: #6B7A82; letter-spacing: 0.5px; margin-top: 2px; }
+        .cab__lugar { text-align: right; font-size: 8.5px; color: #1F2B33; line-height: 1.3; }
+        .cab__lugar strong { font-size: 9.5px; }
+        .cab__periodo { text-align: right; font-size: 15px; font-weight: bold; color: #EC7A3A; padding-top: 3px; }
+        .cab__nombre-anio { text-align: center; font-size: 6.5px; font-style: italic; color: #4A5961; margin-bottom: 4px; }
 
-        .encabezado-logo {
-            display: table-cell;
-            width: 70px;
-            vertical-align: middle;
-        }
+        /* ── Barras de sección (gris azulado, como la guía) ── */
+        .barra { background: #D3E3E8; font-weight: bold; font-size: 8px; text-transform: uppercase; padding: 4px 4px; color: #1F2B33; }
+        .barra td { padding: 0; }
+        .barra .der { text-align: right; }
 
-        .encabezado-logo img {
-            width: 65px;
-            height: 65px;
-        }
+        /* ── Datos personales: cuadrícula de tres columnas con raya debajo ── */
+        .datos { position: relative; margin-top: 4px; }
+        .datos td { padding: 3px 3px 3px; border-bottom: 1.2px solid #BFD3DA; }
+        .datos tr:last-child td { border-bottom: none; }
+        .rotulo { font-size: 7px; font-weight: bold; text-transform: uppercase; color: #1F2B33; }
+        .valor { font-size: 8px; color: #2E3B42; margin-top: 1px; }
+        .valor--grande { font-size: 11.5px; color: #1F2B33; }
 
-        .encabezado-texto {
-            display: table-cell;
-            vertical-align: middle;
-            text-align: center;
-        }
+        /* La marca de agua: el escudo del colegio, apenas visible. */
+        .marca-agua { position: absolute; top: 40px; left: 250px; width: 190px; opacity: 0.06; }
 
-        /* Arriba de todo y discreta: es protocolo, no el título de la boleta. */
-        .encabezado-texto .nombre-anio {
-            font-size: 8px;
-            font-style: italic;
-            color: #45506A;
-            margin: 0 0 3px;
-        }
+        /* ── Paneles de conceptos ── */
+        .paneles { margin-top: 6px; }
+        .paneles > tbody > tr > td.panel { background: #EDF3F5; padding: 0; }
+        .paneles td.hueco { background: #FFFFFF; }
+        .panel__titulo { background: #D3E3E8; font-weight: bold; font-size: 7.5px; text-transform: uppercase; padding: 4px 5px; margin: 4px 4px 0; }
+        .conceptos { margin: 2px 0 0; }
+        .conceptos td { padding: 2.6px 6px; font-size: 7.4px; color: #2E3B42; }
+        .conceptos tr.encabezado td { font-size: 6.5px; font-weight: bold; color: #1F2B33; text-transform: uppercase; padding-top: 4px; padding-bottom: 4px; }
+        .conceptos td.monto { text-align: right; white-space: nowrap; width: 26%; }
+        .conceptos tr.cero td { color: #8A989F; }
+        .conceptos tr.otro-concepto td.concepto { padding-left: 12px; font-style: italic; }
+        .total-panel td { background: #FFFFFF; padding: 5px 6px; font-size: 7.5px; font-weight: bold; border-top: 2px solid #FFFFFF; }
+        .total-panel td.monto { text-align: right; font-weight: normal; font-size: 7.5px; }
+        .nota { font-size: 6px; color: #6B7A82; font-style: italic; padding: 2px 6px 5px; }
 
-        .encabezado-texto h1 {
-            font-size: 13px;
-            color: #0E2650;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        /* Densidad: si una boleta trae muchos conceptos, las filas se aprietan para que siga cabiendo en una hoja. */
+        .densidad-apretada .conceptos td, .densidad-muy-apretada .conceptos td { padding-top: 1.5px; padding-bottom: 1.5px; }
+        .densidad-muy-apretada .conceptos td { font-size: 6.3px; }
 
-        .encabezado-texto .ruc {
-            font-size: 9px;
-            color: #666;
-            margin-top: 1px;
-        }
+        /* ── Pie: QR a la izquierda, totales y mensajes a la derecha ── */
+        .pie { margin-top: 8px; }
+        .qr { text-align: center; }
+        .qr__marco { border: 1px solid #1F2B33; padding: 5px; display: inline-block; }
+        .qr__marco img { width: 112px; height: 112px; }
+        .qr__texto { font-size: 6.4px; color: #2E3B42; line-height: 1.35; margin: 5px auto 0; width: 150px; }
+        .totales td { padding: 0; }
+        .total-caja { background: #D3E3E8; padding: 5px 6px; font-size: 7.5px; font-weight: bold; text-transform: uppercase; }
+        .total-caja td { vertical-align: middle; }
+        .total-caja .cifra { text-align: right; font-size: 10px; font-weight: normal; text-transform: none; }
+        .mensaje-barra { background: #D3E3E8; font-weight: bold; font-size: 7.5px; text-transform: uppercase; padding: 4px 6px; margin-top: 5px; }
+        .mensaje { font-size: 7.6px; color: #2E3B42; padding: 5px 6px 2px; line-height: 1.45; }
+        .eco { margin-top: 10px; border-top: 1px solid #BFD3DA; border-bottom: 1px solid #BFD3DA; }
+        .eco td { vertical-align: middle; padding: 7px 4px; }
+        .eco img { width: 34px; height: 24px; }
+        .eco__texto { font-size: 7.6px; font-style: italic; color: #2E3B42; line-height: 1.4; }
 
-        .encabezado-texto h2 {
-            font-size: 11px;
-            color: #1B4282;
-            margin-top: 4px;
-            font-weight: bold;
-        }
-
-        .encabezado-texto p {
-            font-size: 10px;
-            color: #666;
-            margin-top: 2px;
-        }
-
-        .titulo-boleta {
-            text-align: center;
-            font-size: 12px;
-            font-weight: bold;
-            color: #0E2650;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .seccion { margin-bottom: 4px; }
-
-        /* ── Las cuatro categorías ───────────────────────────────────────
-           Ingresos, Descuentos, Aportaciones y Adelanto llevaban cada una un
-           color saturado distinto (azul, rojo, verde y dorado), y el
-           documento parecía un semáforo. Ahora comparten el azul
-           institucional y se distinguen por lo que de verdad las separa: su
-           título y el marco que encierra su tabla.
-
-           Los colores van literales y no con variables CSS porque esto lo
-           renderiza dompdf, que no las soporta. Son los mismos de
-           styles.scss: #1B4282 es --brand-700, #0E2650 --brand-900 y
-           #E7EEF9 --brand-100. */
-        .seccion-titulo {
-            background: #1B4282;
-            color: white;
-            padding: 4px 8px;
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-
-        /* El marco que encierra cada categoría: es lo que las separa a la
-           vista ahora que todas comparten color. */
-        .seccion table {
-            border: 1px solid #1B4282;
-            border-top: none;
-        }
-
-        table td {
-            padding: 3px 6px;
-            border: 1px solid #C9D2E3;
-            font-size: 10px;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-
-        table td.monto { text-align: right; }
-
-        /* La columna de etiquetas, en azul muy claro: en la ficha del
-           trabajador distingue de un vistazo el rótulo del dato. */
-        table td.label {
-            background: #E7EEF9;
-            font-weight: bold;
-            color: #14325F;
-        }
-
-        .fila-total td {
-            background: #0E2650;
-            color: white;
-            font-weight: bold;
-            font-size: 11px;
-        }
-
-        /* El "TOTAL NETO" salía azul oscuro sobre azul oscuro, ilegible, en
-           la fila más importante del documento.
-
-           La culpa es de la especificidad: `table td.label` vale (0,1,2) y
-           `.fila-total td` solo (0,1,1), así que la celda de la izquierda se
-           quedaba con el color de las etiquetas por más que la fila pidiera
-           blanco. Esta regla nombra las dos celdas y gana a ambas. No la
-           colapses con la de arriba: el selector tiene que seguir mencionando
-           `td.label` para poder ganarle. */
-        table tr.fila-total td,
-        table tr.fila-total td.label {
-            background: #0E2650;
-            color: #FFFFFF;
-        }
-
-        /* El total va sin título encima —lo decía dos veces: "Total Neto a
-           Pagar" y, debajo, "TOTAL NETO"—, así que la franja necesita su
-           propio borde superior: `.seccion table` lo quita porque en las
-           demás secciones hace de tapa el título. */
-        .seccion--total table {
-            border-top: 1px solid #1B4282;
-        }
-
-        /* Un concepto agregado aparte: con sangría, bajo "Otros Conceptos". */
-        tr.otro-concepto td.label { padding-left: 14px; font-style: italic; }
-
-        .fila-subtotal td {
-            background: #E7EEF9;
-            font-weight: bold;
-            color: #14325F;
-        }
-
-        /* ── Densidad: la boleta se aprieta segun cuantos conceptos lleve ──
-           Solo se tocan el relleno de las filas y el cuerpo de letra; los
-           títulos, los totales y la cabecera se quedan como están para que
-           la boleta siga leyéndose igual de bien. */
-        .densidad-ajustada table td      { padding: 2px 6px; font-size: 9.5px; }
-        .densidad-apretada table td      { padding: 1.5px 5px; font-size: 9px; line-height: 1.2; }
-        .densidad-muy-apretada table td  { padding: 1px 5px; font-size: 8.5px; line-height: 1.15; }
-
-        .densidad-apretada .seccion-titulo,
-        .densidad-muy-apretada .seccion-titulo { padding: 3px 8px; font-size: 9.5px; }
-
-        .densidad-muy-apretada .encabezado-logo img { width: 52px; height: 52px; }
-
-        /* Si aun así no cupiera, que al menos no se corte a mitad de una
-           sección ni deje las firmas huérfanas en una página sola. */
-        .seccion, .fila-columnas { page-break-inside: avoid; }
-
-        .nota {
-            font-size: 8px;
-            color: #888;
-            margin-top: 3px;
-            font-style: italic;
-        }
-
-        /* ── Layout de 2 columnas lado a lado (Ingresos | Descuentos, y Aportaciones | Adelanto) ── */
-        .fila-columnas {
-            display: table;
-            width: 100%;
-            table-layout: fixed;
-            margin-bottom: 4px;
-        }
-
-        .columna {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-            padding-right: 6px;
-        }
-
-        .columna:last-child {
-            padding-right: 0;
-            padding-left: 6px;
-        }
-
-        .firma-section {
-            margin-top: 6px;
-            display: table;
-            width: 100%;
-            page-break-inside: avoid;
-            page-break-before: avoid;
-        }
-
-        .fecha-lugar {
-            text-align: right;
-            font-size: 9px;
-            color: #555;
-            margin-top: 10px;
-            margin-bottom: 4px;
-        }
-
-        .firma-box {
-            display: table-cell;
-            width: 48%;
-            text-align: center;
-            padding-top: 10px;
-            border-top: 1px solid #0E2650;
-            font-size: 9px;
-            color: #555;
-        }
-
-        .copia-label {
-            text-align: center;
-            font-size: 9px;
-            color: #1B4282;
-            margin-bottom: 6px;
-            font-style: italic;
-            font-weight: bold;
-        }
-
-        .firma-digital {
-            margin-top: 8px;
-            padding: 6px 8px;
-            background: #E7EEF9;
-            border: 1px solid #1B4282;
-            font-size: 9px;
-            color: #14325F;
-        }
+        /* ── Firmas ── */
+        .firmas { margin-top: 34px; }
+        .firmas td { text-align: center; vertical-align: bottom; font-size: 7.6px; color: #2E3B42; }
+        .firmas .linea { border-top: 1px solid #1F2B33; padding-top: 3px; margin: 0 22px; }
+        .firmas img.firma { height: 38px; }
+        .firmas img.huella { height: 28px; margin-left: 6px; }
+        .firma-digital { margin-top: 6px; font-size: 6.3px; color: #2E3B42; background: #EDF3F5; padding: 4px 6px; }
     </style>
 </head>
 <body>
@@ -440,231 +267,276 @@
     };
 @endphp
 
+@php
+    /* ── Lo que el diseño nuevo añade a los cálculos de arriba ── */
+
+    // "S/ 4,200.84" como en la guía; un guion cuando es cero.
+    $soles = fn (float $v) => abs($v) < 0.005 ? '-' : 'S/ ' . number_format($v, 2);
+
+    // Afecto a cargas sociales: la base sobre la que se calculan AFP/ONP,
+    // EsSalud y el diezmo (sueldo + asignación + bonificación por cargo +
+    // vacaciones truncas). La gratificación no entra (Ley 29351/30334).
+    $afectoCargas = (float) $planilla->sueldo_base + (float) $asignacionFamiliar
+        + $montoDe($C::BONIFICACION_CARGO) + $montoDe($C::VACACIONES_TRUNCAS);
+
+    // El QR: la dirección firmada que abre la verificación de esta boleta.
+    $qr = (isset($documento) && $documento?->id)
+        ? \App\Support\CodigoQr::png($documento->urlDeVerificacion())
+        : null;
+
+    $fecha   = fn ($v) => $v ? \Carbon\Carbon::parse($v)->format('d/m/Y') : '---';
+    $termino = $empleado->fecha_cese ? $fecha($empleado->fecha_cese) : 'Indeterminado';
+    $sistema = rtrim(config('app.frontend_url'), '/');
+
+    // La nota del medio ambiente: tres árboles de línea, como en la guía.
+    $arboles = 'data:image/svg+xml;base64,' . base64_encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="68" height="48" viewBox="0 0 68 48" fill="none" stroke="#5B6970" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'
+        . '<path d="M14 44V30M14 36l-4-4M14 34l4-4"/><path d="M14 30c-7 0-10-5-8-10 0-6 5-10 8-10s8 4 8 10c2 5-1 10-8 10z"/>'
+        . '<path d="M34 44V26M34 33l-5-5M34 31l5-5"/><path d="M34 26c-8 0-12-6-9-12 0-7 6-12 9-12s9 5 9 12c3 6-1 12-9 12z"/>'
+        . '<path d="M54 44V30M54 36l-4-4M54 34l4-4"/><path d="M54 30c-7 0-10-5-8-10 0-6 5-10 8-10s8 4 8 10c2 5-1 10-8 10z"/>'
+        . '<path d="M4 44h60"/></svg>'
+    );
+@endphp
+
 @for ($copia = 1; $copia <= $copias; $copia++)
-<div class="boleta densidad-{{ $densidad }}">
-    <div class="copia-label" @if ($copias === 1) style="visibility: hidden;" @endif>
-        @if ($copia == 1)
-            -- COPIA TRABAJADOR --
-        @else
-            -- COPIA INSTITUCIÓN --
-        @endif
-    </div>
+<div class="hoja densidad-{{ $densidad }}">
 
-    <div class="encabezado">
-        <div class="encabezado-logo">
-            <img src="{{ public_path('logo.png') }}">
-        </div>
-        <div class="encabezado-texto">
-            {{-- La denominación oficial del año, como en todo documento del Estado. Se edita en Ajustes. --}}
-            @if (!empty($nombre_anio))
-                <p class="nombre-anio">"{{ $nombre_anio }}"</p>
-            @endif
-            <h1>Asociación Educativa Colegio Adventista Túpac Amaru</h1>
-            <p class="ruc">RUC: {{ $colegioRuc }} — {{ $colegioDireccion }}</p>
-            <h2>Boleta de Pago de Remuneraciones — {{ $mes_nombre }} {{ $anio }}</h2>
-            <p>Documento generado el {{ now()->format('d/m/Y') }} — N° Boleta: {{ $numero_boleta }}</p>
-            <p>Del {{ $cabecera['rango_inicio'] }} al {{ $cabecera['rango_fin'] }} (expresado en Soles)</p>
-        </div>
-    </div>
+    {{-- La denominación oficial del año. Se edita en Ajustes. --}}
+    @if (!empty($nombre_anio))
+        <p class="cab__nombre-anio">"{{ $nombre_anio }}"</p>
+    @endif
 
-    <div class="titulo-boleta">Boleta de Remuneraciones</div>
+    {{-- ── Cabecera: colegio y N° de boleta | título | lugar, RUC y mes ── --}}
+    <table class="cab">
+        <tr>
+            <td style="width: 37%;">
+                <table>
+                    <tr>
+                        <td class="cab__logo" style="width: 24%;"><img src="{{ public_path('logo.png') }}"></td>
+                        <td class="cab__inst" style="width: 76%;">ASOCIACIÓN EDUCATIVA<br>COLEGIO ADVENTISTA<br>TÚPAC AMARU</td>
+                    </tr>
+                </table>
+                <div class="cab__codigo-rotulo">N° de boleta</div>
+                <div class="cab__codigo">{{ $numero_boleta }}</div>
+            </td>
+            <td style="width: 28%;">
+                <div class="cab__titulo">BOLETA DE PAGO</div>
+                @if ($copias > 1)
+                    <div class="cab__copia">{{ $copia == 1 ? 'COPIA TRABAJADOR' : 'COPIA INSTITUCIÓN' }}</div>
+                @endif
+            </td>
+            <td style="width: 35%;">
+                <div class="cab__lugar">
+                    <strong>JULIACA</strong><br>
+                    {{ $colegioDireccion }}<br>
+                    RUC {{ $colegioRuc }}
+                </div>
+                <div class="cab__periodo">{{ mb_strtoupper($mes_nombre) }} - {{ $anio }}</div>
+            </td>
+        </tr>
+    </table>
 
-    <div class="seccion">
-        <div class="seccion-titulo">Datos del Trabajador</div>
+    {{-- ── Datos personales ── --}}
+    <table class="barra" style="margin-top: 5px;">
+        <tr>
+            <td>Datos personales</td>
+            <td class="der">Estado &nbsp;{{ mb_strtoupper($empleado->estado) }}</td>
+        </tr>
+    </table>
+
+    <div class="datos">
+        <img class="marca-agua" src="{{ public_path('logo.png') }}">
         <table>
             <tr>
-                <td class="label">Empleado</td>
-                <td>{{ $empleado->apellido }}, {{ $empleado->nombre }}</td>
-                <td class="label">DNI</td>
-                <td>{{ $empleado->dni }}</td>
-                <td class="label">Categoría</td>
-                <td>{{ $cabecera['categoria'] }}</td>
+                <td style="width: 34%;"><div class="rotulo">Apellidos</div><div class="valor valor--grande">{{ $empleado->apellido }}</div></td>
+                <td style="width: 34%;"><div class="rotulo">Nombres</div><div class="valor valor--grande">{{ $empleado->nombre }}</div></td>
+                <td style="width: 32%;"><div class="rotulo">D.N.I</div><div class="valor valor--grande">{{ $empleado->dni }}</div></td>
             </tr>
             <tr>
-                <td class="label">Cargo</td>
-                <td>{{ $empleado->cargo->nombre ?? 'Sin asignar' }}</td>
-                <td class="label">Área</td>
-                <td>{{ $empleado->area->nombre ?? 'Sin asignar' }}</td>
-                <td class="label">Sede</td>
-                <td>{{ $empleado->sede->nombre ?? 'Sin asignar' }}</td>
+                <td><div class="rotulo">Centro de trabajo</div><div class="valor">{{ $empleado->sede->nombre ?? '---' }}</div></td>
+                <td><div class="rotulo">Cargo</div><div class="valor">{{ $empleado->cargo->nombre ?? '---' }}</div></td>
+                <td><div class="rotulo">Área</div><div class="valor">{{ $empleado->area->nombre ?? '---' }}</div></td>
             </tr>
             <tr>
-                <td class="label">Fecha de Ingreso</td>
-                <td>{{ \Carbon\Carbon::parse($empleado->fecha_ingreso)->format('d/m/Y') }}</td>
-                <td class="label">Días Trabajados</td>
-                <td>{{ $cabecera['dias_trabajados'] }}</td>
-                {{-- Se llama por lo que es. "Días no trabajados" hacía pensar
-                     al docente que eran días sin pagar, y las vacaciones se
-                     pagan igual que un día de trabajo. --}}
-                <td class="label">Días de Vacaciones</td>
-                <td>{{ $cabecera['dias_vacaciones'] }}</td>
+                <td><div class="rotulo">Régimen laboral</div><div class="valor">{{ $cabecera['categoria'] }}</div></td>
+                <td><div class="rotulo">Vínculo laboral</div><div class="valor">INGRESO: {{ $fecha($empleado->fecha_ingreso) }} &nbsp;&nbsp; TÉRMINO: {{ $termino }}</div></td>
+                <td><div class="rotulo">Entidad bancaria</div><div class="valor">{{ $empleado->entidad_financiera ?: '---' }}</div></td>
             </tr>
             <tr>
-                <td class="label">Estado</td>
-                <td>{{ ucfirst($empleado->estado) }}</td>
-                <td class="label">Fecha de Cese</td>
-                <td>{{ $cabecera['fecha_cese'] ? \Carbon\Carbon::parse($cabecera['fecha_cese'])->format('d/m/Y') : '-' }}</td>
-                <td class="label">Sistema de Pensión</td>
-                <td>{{ $pension['tipo'] }}</td>
+                <td><div class="rotulo">N° de cuenta</div><div class="valor">{{ $empleado->numero_cuenta ?: '---' }}</div></td>
+                <td><div class="rotulo">CCI</div><div class="valor">{{ $empleado->cci ?: '---' }}</div></td>
+                <td><div class="rotulo">Régimen pensionario</div><div class="valor">{{ $pension['tipo'] }}</div></td>
             </tr>
             <tr>
-                <td class="label">CUSPP</td>
-                <td>{{ $empleado->cuspp ?? '-' }}</td>
-                <td class="label">Entidad Financiera</td>
-                <td>{{ $empleado->entidad_financiera ?? '-' }}</td>
-                <td class="label">N° de Cuenta</td>
-                <td>{{ $empleado->numero_cuenta ?? '-' }}</td>
+                <td><div class="rotulo">CUSPP</div><div class="valor">{{ $empleado->cuspp ?: '---' }}</div></td>
+                <td><div class="rotulo">Periodo de pago</div><div class="valor">Del {{ $cabecera['rango_inicio'] }} al {{ $cabecera['rango_fin'] }}</div></td>
+                <td><div class="rotulo">Fecha de cese</div><div class="valor">{{ $cabecera['fecha_cese'] ? $fecha($cabecera['fecha_cese']) : '---' }}</div></td>
             </tr>
-            {{-- Solo si lo tiene. Es opcional y la mayoría no lo registra:
-                 una fila fija con un guion sería ruido en un documento que
-                 se archiva firmado. --}}
-            @if ($empleado->cci)
             <tr>
-                <td class="label">CCI</td>
-                <td colspan="5">{{ $empleado->cci }}</td>
-            </tr>
-            @endif
-        </table>
-    </div>
-
-    <div class="fila-columnas">
-        <div class="columna">
-            <div class="seccion-titulo">Ingresos</div>
-            <table>
-                @foreach ($filasIngreso as $fila)
-                @php [$etiqueta, $valor] = $fila; @endphp
-                <tr class="{{ $fila[2] ?? '' }}">
-                    <td class="label">{{ $etiqueta }}</td>
-                    <td class="monto">{{ $monto($valor) }}</td>
-                </tr>
-                @endforeach
-                <tr class="fila-subtotal">
-                    <td class="label">Total Ingresos</td>
-                    <td class="monto">{{ number_format($totalIngresos, 2) }}</td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="columna">
-            <div class="seccion-titulo">Descuentos</div>
-            <table>
-                @foreach ($filasDescuento as $fila)
-                @php [$etiqueta, $valor] = $fila; @endphp
-                <tr class="{{ $fila[2] ?? '' }}">
-                    <td class="label">{{ $etiqueta }}</td>
-                    <td class="monto">{{ $monto($valor) }}</td>
-                </tr>
-                @endforeach
-                <tr class="fila-subtotal">
-                    <td class="label">Total Descuentos</td>
-                    <td class="monto">{{ number_format($totalDescuentos, 2) }}</td>
-                </tr>
-            </table>
-            @if ($pension['total'] > 0)
-            <p class="nota">El descuento por {{ $pension['tipo'] }} se calcula sobre la remuneración afecta (básica + asignación familiar + bonificación por cargo + vacaciones truncas) según las tasas de {{ $anio }}.</p>
-            @else
-            {{-- Sin sistema de pensiones no hay nada que explicar, y la nota
-                 quedaba como "El descuento por No aporta se calcula...". --}}
-            <p class="nota">No se aplica descuento de pensión: el trabajador no aporta a ningún sistema.</p>
-            @endif
-        </div>
-    </div>
-
-    <div class="fila-columnas">
-        <div class="columna">
-            <div class="seccion-titulo">Aportaciones del Empleador (Informativo)</div>
-            <table>
-                @foreach ($filasAporte as $fila)
-                @php [$etiqueta, $valor] = $fila; @endphp
-                <tr class="{{ $fila[2] ?? '' }}">
-                    <td class="label">{{ $etiqueta }}</td>
-                    <td class="monto">{{ $monto($valor) }}</td>
-                </tr>
-                @endforeach
-                <tr class="fila-subtotal">
-                    <td class="label">Total Aportes</td>
-                    <td class="monto">{{ number_format($totalAportes, 2) }}</td>
-                </tr>
-            </table>
-            <p class="nota">Este monto es asumido íntegramente por el empleador y no afecta el sueldo neto del trabajador.</p>
-        </div>
-
-        {{-- Siempre, como en la boleta física: "-" si no hubo adelanto. --}}
-        <div class="columna">
-            <div class="seccion-titulo">Adelanto</div>
-            <table>
-                @foreach ($filasAdelanto as $fila)
-                @php [$etiqueta, $valor] = $fila; @endphp
-                <tr class="{{ $fila[2] ?? '' }}">
-                    <td class="label">{{ $etiqueta }}</td>
-                    <td class="monto">{{ $monto($valor) }}</td>
-                </tr>
-                @endforeach
-                <tr class="fila-subtotal">
-                    <td class="label">Total Adelanto</td>
-                    <td class="monto">{{ number_format($totalAdelantos, 2) }}</td>
-                </tr>
-            </table>
-        </div>
-    </div>
-
-    <div class="seccion seccion--total">
-        <table>
-            <tr class="fila-total">
-                <td class="label">TOTAL NETO A PAGAR</td>
-                <td class="monto">S/ {{ number_format($totalNeto, 2) }}</td>
+                <td><div class="rotulo">Días laborados</div><div class="valor">{{ $cabecera['dias_trabajados'] }}</div></td>
+                <td><div class="rotulo">Días de vacaciones</div><div class="valor">{{ $cabecera['dias_vacaciones'] }}</div></td>
+                <td><div class="rotulo">Fecha de emisión</div><div class="valor">{{ now()->format('d/m/Y') }}</div></td>
             </tr>
         </table>
     </div>
 
-    <div class="fecha-lugar">
-        {{ $ciudadFirma }}, {{ now()->translatedFormat('d \d\e F \d\e Y') }}
-    </div>
+    {{-- ── Ingresos | Descuentos ── --}}
+    <table class="paneles">
+        <tr>
+            <td class="panel" style="width: 49.4%; height: 235px;">
+                <div class="panel__titulo">Ingresos</div>
+                <table class="conceptos">
+                    <tr class="encabezado"><td class="concepto">Concepto</td><td class="monto">Monto</td></tr>
+                    @foreach ($filasIngreso as $fila)
+                        <tr class="{{ trim(($fila[2] ?? '') . (abs($fila[1]) < 0.005 ? ' cero' : '')) }}">
+                            <td class="concepto">{{ $fila[0] }}</td><td class="monto">{{ $soles($fila[1]) }}</td>
+                        </tr>
+                    @endforeach
+                </table>
+            </td>
+            <td class="hueco" style="width: 1.2%;"></td>
+            <td class="panel" style="width: 49.4%; height: 235px;">
+                <div class="panel__titulo">Descuentos</div>
+                <table class="conceptos">
+                    <tr class="encabezado"><td class="concepto">Concepto</td><td class="monto">Monto</td></tr>
+                    @foreach ($filasDescuento as $fila)
+                        <tr class="{{ trim(($fila[2] ?? '') . (abs($fila[1]) < 0.005 ? ' cero' : '')) }}">
+                            <td class="concepto">{{ $fila[0] }}</td><td class="monto">{{ $soles($fila[1]) }}</td>
+                        </tr>
+                    @endforeach
+                </table>
+            </td>
+        </tr>
+        <tr class="total-panel">
+            <td style="background: #EDF3F5; padding: 3px 4px 4px;">
+                <table><tr><td>TOTAL INGRESOS</td><td class="monto">S/ {{ number_format($totalIngresos, 2) }}</td></tr></table>
+            </td>
+            <td class="hueco" style="width: 1.2%;"></td>
+            <td style="background: #EDF3F5; padding: 3px 4px 4px;">
+                <table><tr><td>TOTAL DESCUENTOS</td><td class="monto">S/ {{ number_format($totalDescuentos, 2) }}</td></tr></table>
+            </td>
+        </tr>
+    </table>
 
-    <div class="firma-section">
-        <div class="firma-box" style="margin-right:4%;">
-            @if (isset($documento) && $documento->estado_firma_empleador === 'firmado' && $documento->empleador?->identidadFirma?->firma_imagen)
-                <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($documento->empleador->identidadFirma->firma_imagen) }}" style="height:50px; margin-bottom:5px;"><br>
-            @endif
-            @if (isset($documento) && $documento->estado_firma_empleador === 'firmado' && $documento->empleador?->identidadFirma?->huella_imagen)
-                <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($documento->empleador->identidadFirma->huella_imagen) }}" style="height:35px; margin-left:10px;">
-            @endif
-            <div style="border-top:1px solid #0E2650; padding-top:5px; margin-top:5px;">
-                Firma Empleador<br>
-                Colegio Adventista Túpac Amaru
-            </div>
-        </div>
-        <div class="firma-box">
-            @if (isset($documento) && $documento->estado_firma === 'firmado' && $empleado->identidadFirma?->firma_imagen)
-                <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($empleado->identidadFirma->firma_imagen) }}" style="height:50px; margin-bottom:5px;"><br>
-            @endif
-            @if (isset($documento) && $documento->estado_firma === 'firmado' && $empleado->identidadFirma?->huella_imagen)
-                {{-- Igual que en un documento físico peruano, la huella va junto a la firma. --}}
-                <img src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($empleado->identidadFirma->huella_imagen) }}" style="height:35px; margin-left:10px;">
-            @endif
-            <div style="border-top:1px solid #0E2650; padding-top:5px; margin-top:5px;">
-                Firma del Trabajador<br>
-                {{ $empleado->apellido }}, {{ $empleado->nombre }}
-            </div>
-        </div>
-    </div>
+    {{-- ── Aportaciones del empleador | Adelantos ── --}}
+    <table class="paneles">
+        <tr>
+            <td class="panel" style="width: 49.4%; height: 56px;">
+                <div class="panel__titulo">Aportaciones del empleador</div>
+                <table class="conceptos">
+                    @foreach ($filasAporte as $fila)
+                        <tr class="{{ trim(($fila[2] ?? '') . (abs($fila[1]) < 0.005 ? ' cero' : '')) }}">
+                            <td class="concepto">{{ $fila[0] }}</td><td class="monto">{{ $soles($fila[1]) }}</td>
+                        </tr>
+                    @endforeach
+                </table>
+            </td>
+            <td class="hueco" style="width: 1.2%;"></td>
+            <td class="panel" style="width: 49.4%; height: 56px;">
+                <div class="panel__titulo">Adelantos</div>
+                <table class="conceptos">
+                    @foreach ($filasAdelanto as $fila)
+                        <tr class="{{ trim(($fila[2] ?? '') . (abs($fila[1]) < 0.005 ? ' cero' : '')) }}">
+                            <td class="concepto">{{ $fila[0] }}</td><td class="monto">{{ $soles($fila[1]) }}</td>
+                        </tr>
+                    @endforeach
+                </table>
+            </td>
+        </tr>
+        <tr class="total-panel">
+            <td style="background: #EDF3F5; padding: 3px 4px 4px;">
+                <table><tr><td>TOTAL APORTES</td><td class="monto">S/ {{ number_format($totalAportes, 2) }}</td></tr></table>
+            </td>
+            <td class="hueco" style="width: 1.2%;"></td>
+            <td style="background: #EDF3F5; padding: 3px 4px 4px;">
+                <table><tr><td>TOTAL ADELANTOS</td><td class="monto">S/ {{ number_format($totalAdelantos, 2) }}</td></tr></table>
+            </td>
+        </tr>
+    </table>
+
+    {{-- ── Pie: QR | total líquido, afecto, mensaje y nota del medio ambiente ── --}}
+    <table class="pie">
+        <tr>
+            <td style="width: 36%;" class="qr">
+                @if ($qr)
+                    <div class="qr__marco"><img src="{{ $qr }}"></div>
+                    <p class="qr__texto">La presentación de la boleta de pago electrónica puede ser verificada a través de la lectura del código QR.</p>
+                @endif
+            </td>
+            <td style="width: 64%;">
+                <table class="totales">
+                    <tr>
+                        <td style="width: 49%;">
+                            <table class="total-caja"><tr><td>Total líquido</td><td class="cifra">S/ {{ number_format($totalNeto, 2) }}</td></tr></table>
+                        </td>
+                        <td style="width: 2%;"></td>
+                        <td style="width: 49%;">
+                            <table class="total-caja"><tr><td>Afecto a cargas sociales</td><td class="cifra">S/ {{ number_format($afectoCargas, 2) }}</td></tr></table>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="mensaje-barra">Mensaje</div>
+                <p class="mensaje">
+                    Revise, firme y descargue sus boletas de pago en CATA-Recibo: {{ $sistema }}<br>
+                    @if ($pension['total'] > 0)
+                        El aporte a {{ $pension['tipo'] }} se calcula sobre la remuneración afecta, con las tasas de {{ $anio }}.
+                    @else
+                        No se aplica descuento de pensión: el trabajador no aporta a ningún sistema.
+                    @endif
+                    Las aportaciones del empleador las asume el colegio y no afectan su sueldo neto.
+                </p>
+
+                <table class="eco">
+                    <tr>
+                        <td style="width: 15%; text-align: center;"><img src="{{ $arboles }}"></td>
+                        <td class="eco__texto" style="width: 85%;">Antes de imprimir esta boleta de pago, piense en su responsabilidad social y compromiso con el medio ambiente.</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    {{-- ── Firmas: del empleador y del trabajador ── --}}
+    <table class="firmas">
+        <tr>
+            <td>
+                @if (isset($documento) && $documento->estado_firma_empleador === 'firmado' && $documento->empleador?->identidadFirma?->firma_imagen)
+                    <img class="firma" src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($documento->empleador->identidadFirma->firma_imagen) }}">
+                    @if ($documento->empleador?->identidadFirma?->huella_imagen)
+                        <img class="huella" src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($documento->empleador->identidadFirma->huella_imagen) }}">
+                    @endif
+                @endif
+                <div class="linea">Firma del empleador<br>Colegio Adventista Túpac Amaru</div>
+            </td>
+            <td>
+                @if (isset($documento) && $documento->estado_firma === 'firmado' && $empleado->identidadFirma?->firma_imagen)
+                    <img class="firma" src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($empleado->identidadFirma->firma_imagen) }}">
+                    {{-- Como en un documento físico peruano, la huella va junto a la firma. --}}
+                    @if ($empleado->identidadFirma?->huella_imagen)
+                        <img class="huella" src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($empleado->identidadFirma->huella_imagen) }}">
+                    @endif
+                @endif
+                <div class="linea">Firma del trabajador<br>{{ $empleado->apellido }}, {{ $empleado->nombre }}</div>
+            </td>
+        </tr>
+    </table>
 
     @if (isset($documento) && $documento->estado_firma_empleador === 'firmado')
-    <div class="firma-digital">
-        Firmado por el empleador: {{ $documento->firmado_por_empleador }}
-        el {{ \Carbon\Carbon::parse($documento->fecha_firma_empleador)->format('d/m/Y H:i') }} —
-        Código de verificación: {{ $documento->codigo_firma_empleador }}
-    </div>
+        <div class="firma-digital">
+            Firmado por el empleador: {{ $documento->firmado_por_empleador }}
+            el {{ \Carbon\Carbon::parse($documento->fecha_firma_empleador)->format('d/m/Y H:i') }} —
+            Código de verificación: {{ $documento->codigo_firma_empleador }}
+        </div>
     @endif
 
     @if (isset($documento) && $documento->estado_firma === 'firmado')
-    <div class="firma-digital">
-        Documento firmado digitalmente por {{ $documento->firmado_por }}
-        el {{ \Carbon\Carbon::parse($documento->fecha_firma)->format('d/m/Y H:i') }} —
-        Código de verificación: {{ $documento->codigo_firma }}
-    </div>
+        <div class="firma-digital">
+            Documento firmado digitalmente por {{ $documento->firmado_por }}
+            el {{ \Carbon\Carbon::parse($documento->fecha_firma)->format('d/m/Y H:i') }} —
+            Código de verificación: {{ $documento->codigo_firma }}
+        </div>
     @endif
-
 </div>
 @endfor
 

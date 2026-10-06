@@ -168,7 +168,7 @@ class BoletaController extends Controller
             'nombre_anio'        => \App\Models\ValorLegal::nombreDelAnio($anio),
         ];
 
-        $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'portrait');
 
         // Mientras no esté firmada, cada regeneración sobrescribe la copia en disco
         // para reflejar el último cálculo. Una vez firmada queda congelada como
