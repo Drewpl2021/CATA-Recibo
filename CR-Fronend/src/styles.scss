@@ -3915,6 +3915,20 @@ textarea.form-control {
   font-style: italic;
 }
 
+/* Subir / quitar la foto desde la ficha (RR.HH. y Admin). */
+.ficha-persona__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ficha-persona__acciones .btn-secondary {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 /* Pie del formulario con los botones de avance. */
 .form-pie {
   display: flex;

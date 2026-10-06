@@ -39,6 +39,24 @@ export class FotoPerfilService {
     );
   }
 
+  /** POST /employees/{id}/photo — RR.HH. o Admin le ponen la foto a un trabajador. */
+  subirDeEmpleado(empleadoId: string, foto: File): Observable<ApiResponse<{ foto: string | null }>> {
+    const formData = new FormData();
+    formData.append('foto', foto);
+
+    return this.http.post<ApiResponse<{ foto: string | null }>>(
+      `${this.apiUrl}/${END_POINTS_ACCIONES.fotoDeEmpleado(empleadoId)}`,
+      formData
+    );
+  }
+
+  /** DELETE /employees/{id}/photo — vuelve a sus iniciales. */
+  quitarDeEmpleado(empleadoId: string): Observable<ApiResponse<{ foto: string | null }>> {
+    return this.http.delete<ApiResponse<{ foto: string | null }>>(
+      `${this.apiUrl}/${END_POINTS_ACCIONES.fotoDeEmpleado(empleadoId)}`
+    );
+  }
+
   /** GET /users/{id}/photo — los bytes de la imagen. */
   ver(userId: number | string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${END_POINTS_ACCIONES.fotoDeUsuario(userId)}`, {

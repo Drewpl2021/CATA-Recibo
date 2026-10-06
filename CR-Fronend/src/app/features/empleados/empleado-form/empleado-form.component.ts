@@ -102,6 +102,16 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
   fotoUrl: string | null = null;
 
   /**
+   * La foto elegida aquí, pendiente de subir. Igual que el CV: no se sube al
+   * elegirla porque en un alta todavía no existe el trabajador; se sube al
+   * guardar, y mientras tanto se ve en el círculo.
+   */
+  fotoArchivo: File | null = null;
+
+  /** Se pidió quitar la foto que tenía. Se aplica al guardar. */
+  quitarFotoAlGuardar = false;
+
+  /**
    * El CV elegido en el paso 4, pendiente de subir.
    *
    * No se sube al elegirlo: en un alta todavía no existe el empleado al que
@@ -437,11 +447,10 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * La foto que el propio trabajador subió a su cuenta.
+   * La foto de su cuenta (la que subió él o la que le puso RR.HH.).
    *
-   * Acá solo se mira: la foto es suya y la cambia él desde Mi Perfil. Si no
-   * tiene, ni se le pregunta al servidor —el campo `foto` de su usuario ya
-   * lo dice— y se quedan sus iniciales.
+   * Si no tiene, ni se le pregunta al servidor —el campo `foto` de su
+   * usuario ya lo dice— y se quedan sus iniciales.
    */
   private cargarFoto(e: Empleado): void {
     this.usuarioVinculado = e.usuario ?? null;
@@ -457,6 +466,84 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       // Sin aviso si falla: la ficha se lee igual con las iniciales, y un
       // error acá no debería ensuciar la pantalla de edición.
       error: () => this.liberarFoto(),
+    });
+  }
+
+  /**
+   * RR.HH. elige la foto del trabajador. Se ve de inmediato y se sube al
+   * guardar, junto con el resto de la ficha.
+   */
+  alElegirFoto(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    // Limpio para que volver a elegir la MISMA foto dispare el evento otra vez.
+    input.value = '';
+    if (!archivo) return;
+
+    // El backend lo valida igual; acá se avisa antes de gastar la subida.
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type)) {
+      this.toastService.error('Ese archivo no es una foto', 'Elige una imagen JPG, PNG o WEBP.');
+      return;
+    }
+    if (archivo.size > 4 * 1024 * 1024) {
+      this.toastService.error('La foto pesa demasiado', 'El máximo son 4 MB. Prueba con una más pequeña.');
+      return;
+    }
+
+    this.liberarFoto();
+    this.fotoArchivo = archivo;
+    this.quitarFotoAlGuardar = false;
+    this.fotoUrl = URL.createObjectURL(archivo);
+  }
+
+  /** Vuelve a las iniciales. Si la foto ya estaba guardada, se borra al guardar. */
+  quitarFoto(): void {
+    this.liberarFoto();
+    this.quitarFotoAlGuardar = !!this.usuarioVinculado?.foto;
+    this.fotoArchivo = null;
+  }
+
+  /** Lo que dice debajo del nombre sobre la foto. */
+  get notaFoto(): string {
+    if (this.fotoArchivo) return 'La foto se guarda al guardar los cambios.';
+    if (this.quitarFotoAlGuardar && this.usuarioVinculado?.foto) return 'La foto se quita al guardar los cambios.';
+    if (this.fotoUrl) return '';
+    if (!this.esNuevo && !this.usuarioVinculado) return 'Todavía no tiene cuenta de acceso: no se le puede poner foto.';
+    return 'Sin foto. Puedes subirle una (JPG, PNG o WEBP, hasta 4 MB).';
+  }
+
+  /** Se le puede poner foto: hay cuenta (o se va a crear con el alta) y no es solo lectura. */
+  get puedeCambiarFoto(): boolean {
+    return !this.soloLectura && (this.esNuevo || !!this.usuarioVinculado);
+  }
+
+  /**
+   * Sube (o quita) la foto pendiente, y sigue. Como con el CV: si falla, el
+   * trabajador YA quedó guardado, y se avisa de eso sin dar todo por fallido.
+   */
+  private aplicarFotoSiHay(empleadoId: string | null, alTerminar: () => void): void {
+    if (!empleadoId || (!this.fotoArchivo && !this.quitarFotoAlGuardar)) {
+      alTerminar();
+      return;
+    }
+
+    const peticion = this.fotoArchivo
+      ? this.fotoPerfilService.subirDeEmpleado(empleadoId, this.fotoArchivo)
+      : this.fotoPerfilService.quitarDeEmpleado(empleadoId);
+
+    peticion.subscribe({
+      next: () => {
+        this.fotoArchivo = null;
+        this.quitarFotoAlGuardar = false;
+        alTerminar();
+      },
+      error: (err) => {
+        alTerminar();
+        this.toastService.error(
+          'La foto no se guardó',
+          mensajeErrorApi(err, 'El trabajador sí quedó guardado. Vuelve a ponerle la foto desde su ficha.')
+        );
+      },
     });
   }
 
@@ -580,14 +667,14 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
           const creado = (res.data as { empleado?: Empleado } & Empleado);
           const nuevoId = creado?.empleado?.id ?? creado?.id ?? null;
 
-          this.subirCvSiHay(nuevoId, () => {
+          this.subirCvSiHay(nuevoId, () => this.aplicarFotoSiHay(nuevoId, () => {
             this.guardando = false;
             this.toastService.success(
               'Empleado registrado',
               `Se creó la cuenta ${payload.email}. Su contraseña inicial es su DNI: ${payload.dni}.`
             );
             this.router.navigate(['/inicio/empleados']);
-          });
+          }));
         },
         error: (err) => {
           this.guardando = false;
@@ -606,11 +693,11 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
           return;
         }
 
-        this.subirCvSiHay(this.empleadoId, () => {
+        this.subirCvSiHay(this.empleadoId, () => this.aplicarFotoSiHay(this.empleadoId, () => {
           this.guardando = false;
           this.toastService.success('Empleado actualizado', 'Los cambios se guardaron correctamente.');
           this.router.navigate(['/inicio/empleados']);
-        });
+        }));
       },
       error: (err) => {
         this.guardando = false;

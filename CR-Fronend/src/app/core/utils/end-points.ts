@@ -106,6 +106,8 @@ export const END_POINTS_ACCIONES = {
 
   /** GET users/{id}/photo — los bytes de la imagen, desde el disco privado */
   fotoDeUsuario: (userId: number | string) => `users/${userId}/photo`,
+  /** POST/DELETE employees/{id}/photo — RR.HH. o Admin, desde la ficha */
+  fotoDeEmpleado: (empleadoId: string) => `employees/${empleadoId}/photo`,
 
   /** POST documents/{id}/sign-as-employer */
   firmarComoEmpleador: (documentoId: string) => `documents/${documentoId}/sign-as-employer`,

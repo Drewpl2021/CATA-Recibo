@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Empleado;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -14,9 +16,9 @@ use Illuminate\Support\Facades\Storage;
  * accesible por una URL pública. Por eso la imagen NO se sirve como archivo
  * estático sino por `ver()`, que comprueba antes quién la pide.
  *
- * Cada quien sube la suya. RR.HH. y Administración pueden VER la de
- * cualquiera —sale en su ficha—, pero cambiarla es cosa del dueño de la
- * cuenta: una foto de perfil es cómo se presenta cada persona.
+ * Cada quien sube la suya. RR.HH. y Administración pueden verla y también
+ * ponérsela o quitársela desde su ficha (Editar / Nuevo empleado): muchos
+ * no entran nunca a Mi Perfil y la foto la toma RR.HH. al contratarlos.
  */
 class FotoPerfilController extends Controller
 {
@@ -29,8 +31,53 @@ class FotoPerfilController extends Controller
             'foto' => 'required|image|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
 
-        $usuario = $request->user();
-        $archivo = $request->file('foto');
+        $ruta = $this->guardar($request->user(), $request->file('foto'));
+
+        return response()->json(['success' => true, 'data' => ['foto' => $ruta]]);
+    }
+
+    /** POST /employees/{id}/photo — RR.HH. o Admin, desde la ficha del trabajador. */
+    public function subirDeEmpleado(Request $request, string $id)
+    {
+        $request->validate([
+            'foto' => 'required|image|mimes:jpg,jpeg,png,webp|max:4096',
+        ]);
+
+        $ruta = $this->guardar($this->cuentaDelEmpleado($id), $request->file('foto'));
+
+        return response()->json(['success' => true, 'data' => ['foto' => $ruta]]);
+    }
+
+    /** DELETE /employees/{id}/photo — vuelve a sus iniciales. */
+    public function quitarDeEmpleado(string $id)
+    {
+        $usuario = $this->cuentaDelEmpleado($id);
+
+        $this->borrarArchivo($usuario->foto);
+        $usuario->update(['foto' => null]);
+
+        return response()->json(['success' => true, 'data' => ['foto' => null]]);
+    }
+
+    /** La cuenta del trabajador: la foto vive ahí. Sin cuenta no hay dónde ponerla. */
+    private function cuentaDelEmpleado(string $empleadoId): User
+    {
+        Empleado::findOrFail($empleadoId);
+        $usuario = User::where('empleado_id', $empleadoId)->first();
+
+        // Como error de formulario: así el mensaje le llega tal cual a RR.HH.
+        if (! $usuario) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'foto' => 'Este trabajador todavía no tiene cuenta de acceso: no hay dónde ponerle la foto.',
+            ]);
+        }
+
+        return $usuario;
+    }
+
+    /** Guarda la foto nueva de la cuenta y borra la anterior. Devuelve la ruta. */
+    private function guardar(User $usuario, UploadedFile $archivo): string
+    {
 
         // El nombre lo pone el servidor: el del usuario puede traer barras o
         // tildes, y la fecha evita que el navegador siga enseñando la vieja
@@ -50,7 +97,7 @@ class FotoPerfilController extends Controller
         Storage::disk('local')->put($ruta, file_get_contents($archivo->getRealPath()));
         $usuario->update(['foto' => $ruta]);
 
-        return response()->json(['success' => true, 'data' => ['foto' => $ruta]]);
+        return $ruta;
     }
 
     /** DELETE /my-photo — vuelve a las iniciales. */

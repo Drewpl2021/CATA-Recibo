@@ -180,6 +180,9 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
             ->middleware('throttle:consulta_dni');
 
         Route::post('employees/{id}/signature', [IdentidadFirmaController::class, 'subir']);
+        // La foto de perfil del trabajador, puesta por RR.HH. desde su ficha.
+        Route::post('employees/{id}/photo',   [FotoPerfilController::class, 'subirDeEmpleado']);
+        Route::delete('employees/{id}/photo', [FotoPerfilController::class, 'quitarDeEmpleado']);
         // La lista del personal en CSV. Va ANTES del apiResource, igual que
         // la de planilla: si no, "exportar" entraría por show({id}).
         Route::get('employees/export',       [EmpleadoController::class, 'exportar']);

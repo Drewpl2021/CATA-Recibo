@@ -32,24 +32,34 @@
   <span class="solo-lectores" *ngIf="cargando" role="status">Cargando los datos del trabajador…</span>
 
   <ng-container *ngIf="!cargando">
-    <!-- A quién se está mirando, con la foto que él mismo subió a su cuenta.
-         En un alta no va: todavía no hay trabajador ni cuenta de donde
-         traerla. Acá solo se ve: la foto la cambia él desde Mi Perfil. -->
-    <div class="ficha-persona" *ngIf="!esNuevo">
+    <!-- A quién se está mirando, con su foto. RR.HH. y Admin se la pueden
+         poner aquí (también en el alta); se sube al guardar, como el CV. -->
+    <div class="ficha-persona">
       <span class="avatar ficha-persona__foto">
         <img *ngIf="fotoUrl" class="avatar__foto" [src]="fotoUrl"
           [alt]="'Foto de ' + nombreCompleto" />
-        <ng-container *ngIf="!fotoUrl">{{ iniciales }}</ng-container>
+        <ng-container *ngIf="!fotoUrl && iniciales">{{ iniciales }}</ng-container>
+        <app-icon *ngIf="!fotoUrl && !iniciales" icono="person" [tamano]="34"></app-icon>
       </span>
 
       <div class="ficha-persona__datos">
-        <strong class="ficha-persona__nombre">{{ nombreCompleto }}</strong>
+        <strong class="ficha-persona__nombre">{{ nombreCompleto || 'Nuevo trabajador' }}</strong>
         <span class="ficha-persona__resumen" *ngIf="resumenPersona">{{ resumenPersona }}</span>
-        <small class="ficha-persona__nota" *ngIf="!fotoUrl">
-          {{ usuarioVinculado
-              ? 'Todavía no sube su foto desde Mi Perfil.'
-              : 'Todavía no tiene cuenta de acceso.' }}
-        </small>
+        <small class="ficha-persona__nota" *ngIf="notaFoto">{{ notaFoto }}</small>
+
+        <div class="ficha-persona__acciones" *ngIf="puedeCambiarFoto">
+          <!-- El input real se esconde; el botón es su label. -->
+          <input type="file" id="fotoEmpleado" class="perfil-foto__campo"
+            accept="image/jpeg,image/png,image/webp" (change)="alElegirFoto($event)" />
+          <label for="fotoEmpleado" class="btn-secondary">
+            <app-icon icono="camera" [tamano]="16"></app-icon>
+            {{ fotoUrl ? 'Cambiar foto' : 'Subir foto' }}
+          </label>
+          <button type="button" class="btn-secondary" *ngIf="fotoUrl" (click)="quitarFoto()">
+            <app-icon icono="trash" [tamano]="16"></app-icon>
+            Quitar foto
+          </button>
+        </div>
       </div>
     </div>
 
