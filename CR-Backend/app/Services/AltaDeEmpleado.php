@@ -45,6 +45,8 @@ final class AltaDeEmpleado
             // (052281JHPMM4). Antes se exigían 11 cifras, y con eso el sistema
             // rechazaba los CUSPP de su propio personal.
             'cuspp'              => 'nullable|regex:/^[A-Za-zÑñ0-9]{12}$/u|required_if:sistema_pensiones,AFP',
+            // Opcional: puede no saberse. No puede ser una fecha que no llegó.
+            'fecha_afiliacion'   => 'nullable|date|before_or_equal:today',
             'entidad_financiera' => 'nullable|string|max:100',
             'numero_cuenta'      => 'nullable|string|max:50',
             // Opcional, pero si viene tiene que ser un CCI de verdad: son 20

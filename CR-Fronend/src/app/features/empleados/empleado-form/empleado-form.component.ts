@@ -145,6 +145,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     // en el PLAME real (afiliados de antes del 2013).
     tipo_comision_afp: ['flujo'],
     cuspp: [''],
+    fecha_afiliacion: [''],
     forma_pago: [''],
     entidad_financiera: [''],
     numero_cuenta: [''],
@@ -253,7 +254,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       },
       {
         id: 'planilla', titulo: 'Planilla', icono: 'money',
-        campos: ['sistema_pensiones', 'afp', 'cuspp'],
+        campos: ['sistema_pensiones', 'afp', 'cuspp', 'fecha_afiliacion'],
       },
       {
         id: 'complementarios', titulo: 'Complementarios', icono: 'description',
@@ -398,6 +399,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       afp: e.afp ?? '',
       tipo_comision_afp: e.tipo_comision_afp ?? 'flujo',
       cuspp: e.cuspp ?? '',
+      fecha_afiliacion: (e.fecha_afiliacion ?? '').slice(0, 10),
       forma_pago: e.forma_pago ?? '',
       entidad_financiera: e.entidad_financiera ?? '',
       numero_cuenta: e.numero_cuenta ?? '',
@@ -530,6 +532,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       afp: oNull(v.afp),
       tipo_comision_afp: v.sistema_pensiones === 'AFP' ? (v.tipo_comision_afp || 'flujo') : null,
       cuspp: oNull(v.cuspp),
+      fecha_afiliacion: oNull(v.fecha_afiliacion),
       forma_pago: oNull(v.forma_pago),
       entidad_financiera: oNull(v.entidad_financiera),
       numero_cuenta: oNull(v.numero_cuenta),

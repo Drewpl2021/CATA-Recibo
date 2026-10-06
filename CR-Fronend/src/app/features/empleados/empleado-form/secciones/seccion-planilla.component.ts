@@ -35,6 +35,12 @@ export class SeccionPlanillaComponent extends SeccionEmpleadoBase {
    */
   pensionLimpiadaPorHonorarios = false;
 
+  /** Hoy en hora local (aaaa-mm-dd): la fecha de afiliación no puede ser futura. */
+  readonly hoy = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+
   get esAfp(): boolean {
     return this.form.get('sistema_pensiones')?.value === 'AFP';
   }

@@ -296,7 +296,7 @@ const cap6 = [
     'Presiona **Nuevo Empleado**.',
     '**Personales**: escribe el DNI y presiona **Buscar**: el sistema trae nombres y apellidos del padrón. Completa fecha de nacimiento, teléfono y dirección. (El DNI acepta 8 dígitos, o 9 para carné de extranjería.)',
     '**Laborales**: área, cargo (solo salen los del área elegida), sede, fecha de ingreso, tipo de contrato y, si el contrato tiene plazo, su **fecha de término**. Luego el **sueldo base** y la **bonificación por cargo** si la tiene.',
-    '**Planilla**: sistema de pensión (ONP, AFP o ninguno), AFP y tipo de comisión (flujo o mixta), CUSPP, banco, número de cuenta, CCI, forma de pago, si **tiene hijos** (asignación familiar) y si se le aplica el **diezmo**.',
+    '**Planilla**: sistema de pensión (ONP, AFP o ninguno), AFP y tipo de comisión (flujo o mixta), CUSPP, **fecha de afiliación** (opcional), banco, número de cuenta, CCI, forma de pago, si **tiene hijos** (asignación familiar) y si se le aplica el **diezmo**.',
     '**Complementarios**: estudios, especialidad, institución, contacto de emergencia.',
     '**Acceso**: el correo de su cuenta. **Toda cuenta nueva nace como Empleado**; si alguien debe ser RR.HH. o Administrador, se cambia después en Usuarios.',
     'Guarda. Su contraseña inicial es su **DNI**.',

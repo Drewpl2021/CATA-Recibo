@@ -13,7 +13,7 @@ class Empleado extends Model
      * estado). El teléfono o la dirección no responden a ningún reclamo.
      */
     protected array $camposAuditables = [
-        'dni', 'nombre', 'apellido', 'sueldo_base', 'bonificacion_cargo', 'sistema_pensiones', 'afp', 'tipo_comision_afp', 'cuspp',
+        'dni', 'nombre', 'apellido', 'sueldo_base', 'bonificacion_cargo', 'sistema_pensiones', 'afp', 'tipo_comision_afp', 'cuspp', 'fecha_afiliacion',
         'entidad_financiera', 'numero_cuenta', 'cci', 'forma_pago', 'tiene_hijos', 'aplica_diezmo',
         'cargo_id', 'area_id', 'sede_id', 'estado', 'tipo_contrato_id',
     ];
@@ -43,6 +43,8 @@ class Empleado extends Model
     'afp',
     'tipo_comision_afp',
     'cuspp',
+    // Desde cuándo está en su AFP u ONP. Opcional, no entra en cálculos.
+    'fecha_afiliacion',
     'entidad_financiera',
     'numero_cuenta',
     'cci',

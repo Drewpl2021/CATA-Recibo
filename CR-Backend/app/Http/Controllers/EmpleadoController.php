@@ -370,7 +370,7 @@ class EmpleadoController extends Controller
             'N°', 'DNI', 'Apellidos', 'Nombres', 'Fecha de nacimiento',
             'Teléfono', 'Dirección', 'Correo', 'Rol',
             'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Fecha de cese', 'Tipo de contrato',
-            'Sueldo base', 'Bonificación por cargo', 'Sistema de pensión', 'AFP', 'Tipo de comisión AFP', 'CUSPP',
+            'Sueldo base', 'Bonificación por cargo', 'Sistema de pensión', 'AFP', 'Tipo de comisión AFP', 'CUSPP', 'Fecha de afiliación',
             'Forma de pago', 'Banco', 'N° de cuenta', 'CCI',
             'Tiene hijos', 'Diezmo', 'Nivel de estudios', 'Especialidad', 'Institución donde estudió',
             'Contacto de emergencia', 'Teléfono del contacto',
@@ -411,6 +411,7 @@ class EmpleadoController extends Controller
                 $e->sistema_pensiones === 'AFP' ? ($e->afp ?? '') : 'No aplica',
                 $e->sistema_pensiones === 'AFP' ? ($e->tipo_comision_afp === 'mixta' ? 'Mixta' : 'Flujo') : 'No aplica',
                 $e->sistema_pensiones === 'AFP' ? (string) ($e->cuspp ?? '') : 'No aplica',
+                $fecha($e->fecha_afiliacion),
                 $e->forma_pago ?? '',
                 $e->entidad_financiera ?? '',
                 (string) ($e->numero_cuenta ?? ''),
@@ -512,6 +513,7 @@ class EmpleadoController extends Controller
             'tipo_comision_afp'  => 'nullable|in:flujo,mixta',
             // Mismo formato que el alta: 12 caracteres, con letras y números.
             'cuspp'              => 'nullable|regex:/^[A-Za-zÑñ0-9]{12}$/u|required_if:sistema_pensiones,AFP',
+            'fecha_afiliacion'   => 'nullable|date|before_or_equal:today',
             'entidad_financiera' => 'nullable|string|max:100',
             'numero_cuenta'      => 'nullable|string|max:50',
             'cci'                => 'nullable|regex:/^[0-9]{20}$/',
@@ -597,6 +599,9 @@ class EmpleadoController extends Controller
 
         if ($request->input('sistema_pensiones') !== 'AFP') {
             $request->merge(['afp' => null, 'cuspp' => null, 'tipo_comision_afp' => null]);
+        }
+        if (! in_array($request->input('sistema_pensiones'), ['AFP', 'ONP'], true)) {
+            $request->merge(['fecha_afiliacion' => null]);
         }
     }
 

@@ -61,6 +61,17 @@
       </div>
     </ng-container>
 
+    <!-- Opcional: desde cuándo está en su AFP u ONP. Puede quedar vacío. -->
+    <div class="form-group" *ngIf="!sinPension">
+      <label for="fecha_afiliacion">Fecha de afiliación</label>
+      <input type="date" id="fecha_afiliacion" class="form-control" formControlName="fecha_afiliacion"
+        [max]="hoy" [class.is-invalid]="invalido('fecha_afiliacion')" />
+      <small class="form-error" *ngIf="invalido('fecha_afiliacion')">No puede ser una fecha que todavía no llega.</small>
+      <small class="form-ayuda" *ngIf="!invalido('fecha_afiliacion')">
+        Desde cuándo está en su {{ esAfp ? 'AFP' : 'ONP' }}. Opcional: si no la sabes, déjala vacía.
+      </small>
+    </div>
+
     <div class="form-group">
       <label for="forma_pago">Forma de pago</label>
       <select id="forma_pago" class="form-control" formControlName="forma_pago"

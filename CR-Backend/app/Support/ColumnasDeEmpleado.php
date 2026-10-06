@@ -60,6 +60,8 @@ final class ColumnasDeEmpleado
         'tipo_comision_afp'            => ['titulo' => 'Tipo de comisión AFP', 'tipo' => 'opcion', 'alias' => ['tipo de comision afp', 'tipo comision afp', 'comision afp', 'tipo comision', 'regimen de comision']],
         // Texto y no dígitos: el CUSPP lleva letras (052281JHPMM4).
         'cuspp'                        => ['titulo' => 'CUSPP', 'tipo' => 'texto', 'alias' => ['cuspp']],
+        // Opcional: desde cuándo está en su AFP u ONP. Vacía = no se sabe.
+        'fecha_afiliacion'             => ['titulo' => 'Fecha de afiliación', 'tipo' => 'fecha', 'alias' => ['fecha de afiliacion', 'fecha afiliacion', 'afiliacion', 'fecha de afiliacion afp', 'fecha de afiliacion onp', 'fecha de afiliacion afp onp', 'fecha de inscripcion']],
         'forma_pago'                   => ['titulo' => 'Forma de pago', 'tipo' => 'opcion', 'alias' => ['forma de pago', 'pago']],
         'entidad_financiera'           => ['titulo' => 'Banco', 'tipo' => 'texto', 'alias' => ['banco', 'entidad financiera']],
         'numero_cuenta'                => ['titulo' => 'N° de cuenta', 'tipo' => 'texto', 'alias' => ['n de cuenta', 'no de cuenta', 'nro de cuenta', 'numero de cuenta', 'cuenta', 'n cuenta']],
