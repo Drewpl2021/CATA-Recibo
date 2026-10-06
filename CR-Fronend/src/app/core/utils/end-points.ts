@@ -156,6 +156,9 @@ export const END_POINTS_ACCIONES = {
   /** GET employees/payslips-zip?mes&anio&search&... — las boletas ya emitidas del mes, en .zip */
   boletasEnZip: 'employees/payslips-zip',
 
+  /** POST employees/status { ids, estado } — activar o dar de baja a varios de una vez */
+  estadoEmpleados: 'employees/status',
+
   /** GET employee-files?page&size&search&filtro — Documentos del personal, por trabajador */
   expedientes: 'employee-files',
   /** GET employee-files/{employeeId} — el expediente de un trabajador */

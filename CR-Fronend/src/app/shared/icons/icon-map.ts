@@ -22,6 +22,7 @@ export const ICON_MAP: Record<string, string> = {
   person: `<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M20 21a7.53 7.53 0 0 0-7.005-6.934L12 14q-.531.015-1 .038c-3.7.181-6.716 3.268-7 6.962"/><circle cx="12" cy="7" r="4"/></g>`,
   people: `<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.5 20.5c-.234-2.931-2.658-5.252-5.692-5.448L11.999 15q-.431.012-.811.03C8.18 15.172 5.73 17.597 5.5 20.5m9.75-11.25a3.25 3.25 0 1 1-6.5 0a3.25 3.25 0 0 1 6.5 0M5.502 8.5A3.25 3.25 0 0 1 9.5 3.752M18.496 8.5A3.25 3.25 0 0 0 14.5 3.752M22 18c-.18-2.263-2-4.5-4-5M2 18c.18-2.263 2-4.5 4-5"/>`,
   user_check: `<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M3 21c.284-3.694 3.3-6.78 7-6.962q.469-.023 1-.038l.995.066a7.5 7.5 0 0 1 3.005.849"/><circle cx="11" cy="7" r="4"/><path d="M14 19.333s.875 0 1.75 1.667c0 0 2.78-4.167 5.25-5"/></g>`,
+  user_off: `<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M3 21c.284-3.694 3.3-6.78 7-6.962q.469-.023 1-.038l.995.066a7.5 7.5 0 0 1 3.005.849"/><circle cx="11" cy="7" r="4"/><path d="M15.5 18.5h6"/></g>`,
   badge: `<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M2.001 8.5L2 13.997c-.001 3.3-.002 4.951 1.023 5.977S5.698 21 9 21h6c3.3 0 4.949 0 5.974-1.025S22 17.3 22 14.001l.001-5.501m-13.502-2c0-1.404 0-2.107.337-2.611a2 2 0 0 1 .551-.552C9.892 3 10.594 3 12 3c1.404 0 2.106 0 2.61.337a2 2 0 0 1 .553.552c.337.504.337 1.207.337 2.611"/><path d="M19.998 6.5h-16a2 2 0 0 0-2 2a4 4 0 0 0 4.001 4h11.999a4 4 0 0 0 4-4a2 2 0 0 0-2-2m-9.999 6v1c0 .465 0 .697.05.888a1.5 1.5 0 0 0 1.061 1.06c.191.052.424.052.889.052s.697 0 .888-.051a1.5 1.5 0 0 0 1.06-1.06c.052-.191.052-.424.052-.889v-1"/></g>`,
 
   // ── Boletas y documentos ──
@@ -142,7 +143,7 @@ const SOLO_INTERFAZ = new Set([
   'plus', 'close', 'check', 'edit', 'trash', 'save', 'eye', 'eye_off', 'refresh', 'rotate_ccw',
   'arrow_left', 'arrow_right', 'chevron_left', 'chevron_right', 'chevron_down',
   'file_down', 'file_up', 'excel', 'logout', 'menu', 'moon', 'sun', 'lightbulb', 'camera',
-  'info', 'alert_circle', 'circle_x',
+  'info', 'alert_circle', 'circle_x', 'user_off',
 ]);
 
 /** Las claves para el selector de ícono de módulos del admin, ordenadas. */

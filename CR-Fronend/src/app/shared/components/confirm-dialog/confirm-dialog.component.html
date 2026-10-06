@@ -9,11 +9,11 @@
       default, olvidarse de la variante sale seguro y no da miedo de más.
     -->
     <div class="modal-icon-danger" *ngIf="r.options.variante === 'danger'">
-      <app-icon icono="trash" [tamano]="32"></app-icon>
+      <app-icon [icono]="r.options.icono || 'trash'" [tamano]="32"></app-icon>
     </div>
 
     <div class="modal-icon-brand" *ngIf="r.options.variante !== 'danger'">
-      <app-icon icono="check_circle" [tamano]="32"></app-icon>
+      <app-icon [icono]="r.options.icono || 'check_circle'" [tamano]="32"></app-icon>
     </div>
     <h3>{{ r.options.titulo }}</h3>
     <p>{{ r.options.mensaje }}</p>

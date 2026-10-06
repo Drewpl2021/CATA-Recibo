@@ -634,7 +634,8 @@ class EmpleadoController extends Controller
         // fecha también sirve para el fin programado de un contrato vigente
         // —y el formulario manda "activo" en cada edición de alguien que ya
         // lo está.
-        if ($empleado->estado === 'inactivo' && $request->input('estado') === 'activo') {
+        $seReactiva = $empleado->estado === 'inactivo' && $request->input('estado') === 'activo';
+        if ($seReactiva) {
             $request->merge(['fecha_cese' => null]);
         }
 
@@ -649,6 +650,12 @@ class EmpleadoController extends Controller
         }
 
         $empleado->update($request->except(['email', 'rol_id']));
+
+        // Volver a activo es también volver a entrar: la baja le había
+        // apagado la cuenta, y sin esto quedaba activo pero sin poder entrar.
+        if ($seReactiva) {
+            $empleado->devolverAcceso();
+        }
 
         // El contrato manda sobre la ficha: es el papel que firma la persona
         // y el que miran las vacaciones, la boleta y los reportes. Si acá se
@@ -721,17 +728,67 @@ class EmpleadoController extends Controller
     public function destroy(Request $request, string $id)
     {
         $empleado = Empleado::findOrFail($id);
-        // Siempre hoy: una fecha de cese que ya tuviera era el fin programado
-        // de su contrato (puede ser futura), no la baja real que se está
-        // haciendo en este momento.
-        $empleado->update(['estado' => 'inactivo', 'fecha_cese' => now()->toDateString()]);
-        $empleado->quitarAcceso();
 
-        // Igual que la baja por Excel: el contrato vigente se cierra en la
-        // misma fecha de cese, no se queda "vigente" para siempre.
-        $empleado->contratos()->where('estado', 'vigente')
-            ->update(['estado' => 'finalizado', 'fecha_fin' => $empleado->fecha_cese]);
+        if ((string) $request->user()?->empleado_id === (string) $empleado->id) {
+            return response()->json(['success' => false, 'message' => 'No puedes darte de baja a ti mismo.'], 422);
+        }
+
+        $empleado->darDeBaja();
 
         return response()->json(['success' => true, 'data' => ['message' => 'Empleado desactivado correctamente.']]);
+    }
+
+    /**
+     * POST /employees/status — activar o desactivar a varios de una vez.
+     *
+     * Lo pidió RR.HH.: dar de baja a fin de año a todos los contratados (o
+     * volver a activar a los que regresan) era entrar a la ficha de cada
+     * uno. Ahora se marcan en la lista y se hace en un paso, igual que los
+     * conceptos de la planilla a un grupo.
+     *
+     * Devuelve qué pasó con cada uno: a quien ya estaba en ese estado, o a
+     * la propia cuenta de quien lo hace, se le salta y se dice por qué.
+     */
+    public function cambiarEstado(Request $request)
+    {
+        $request->validate([
+            'ids'    => 'required|array|min:1|max:500',
+            'ids.*'  => 'uuid',
+            'estado' => 'required|in:activo,inactivo',
+        ]);
+
+        $estado  = $request->input('estado');
+        $propio  = (string) $request->user()?->empleado_id;
+        $detalle = [];
+        $hechos  = 0;
+
+        $empleados = Empleado::whereIn('id', $request->input('ids'))->orderBy('apellido')->orderBy('nombre')->get();
+
+        foreach ($empleados as $empleado) {
+            $nombre = trim("{$empleado->nombre} {$empleado->apellido}");
+
+            $motivo = match (true) {
+                $empleado->estado === $estado => $estado === 'activo' ? 'Ya estaba activo.' : 'Ya estaba de baja.',
+                $estado === 'inactivo' && $propio === (string) $empleado->id => 'Es tu propia cuenta: no puedes darte de baja.',
+                default => null,
+            };
+
+            if ($motivo) {
+                $detalle[] = ['nombre' => $nombre, 'dni' => $empleado->dni, 'hecho' => false, 'motivo' => $motivo];
+                continue;
+            }
+
+            $estado === 'activo' ? $empleado->reactivar() : $empleado->darDeBaja();
+            $hechos++;
+            $detalle[] = ['nombre' => $nombre, 'dni' => $empleado->dni, 'hecho' => true, 'motivo' => null];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'resumen' => ['hechos' => $hechos, 'omitidos' => count($detalle) - $hechos],
+                'detalle' => $detalle,
+            ],
+        ]);
     }
 }

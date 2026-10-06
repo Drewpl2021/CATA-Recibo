@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -197,10 +197,93 @@ export class EmpleadosListComponent implements OnInit {
     },
   ];
 
-  /** Ver la ficha completa sin poder tocarla. */
+  /**
+   * Ver la ficha, y dar de baja o volver a activar. Antes la baja era un
+   * tachito de basura, y parecía que se borraba a la persona: no se borra
+   * nada, queda inactiva con sus planillas y boletas.
+   */
   accionesExtra: AccionPersonalizada<Empleado>[] = [
     { id: 'ver', titulo: 'Ver ficha completa', icono: 'person' },
+    { id: 'baja', titulo: 'Dar de baja', icono: 'user_off', severidad: 'danger', visible: (e) => e.estado !== 'inactivo' },
+    { id: 'activar', titulo: 'Volver a activar', icono: 'user_check', severidad: 'success', visible: (e) => e.estado === 'inactivo' },
   ];
+
+  /** Los marcados con la casilla, de la página que se está viendo. */
+  marcados: Empleado[] = [];
+  cambiandoEstado = false;
+  @ViewChild('tablaEmpleados') tablaEmpleados?: { limpiarSeleccion: () => void };
+
+  /** "Ana Prueba, Luis Mamani y 3 más". */
+  get resumenMarcados(): string {
+    const nombres = this.marcados.map((e) => `${e.nombre} ${e.apellido}`.trim());
+    return nombres.length > 3 ? `${nombres.slice(0, 3).join(', ')} y ${nombres.length - 3} más.` : nombres.join(', ') + '.';
+  }
+
+  soltarMarcados(): void {
+    this.marcados = [];
+    this.tablaEmpleados?.limpiarSeleccion();
+  }
+
+  cambiarEstadoMarcados(estado: 'activo' | 'inactivo'): void {
+    this.confirmarCambioDeEstado(this.marcados, estado);
+  }
+
+  /**
+   * Pregunta y aplica. Sirve para uno (el botón de su fila) o para varios
+   * (los marcados): el servidor hace lo mismo en los dos casos.
+   */
+  private confirmarCambioDeEstado(empleados: Empleado[], estado: 'activo' | 'inactivo'): void {
+    if (!empleados.length) return;
+    const quienes = empleados.length === 1
+      ? `${empleados[0].nombre} ${empleados[0].apellido}`.trim()
+      : `${empleados.length} trabajadores`;
+
+    const opciones = estado === 'inactivo'
+      ? {
+          titulo: `Dar de baja a ${quienes}`,
+          mensaje: 'Quedarán inactivos con fecha de cese de hoy, se cierra su contrato vigente y su cuenta deja de entrar al sistema. '
+            + 'No se borra nada: sus planillas y boletas se conservan, y se pueden volver a activar.',
+          aceptarTexto: 'Sí, dar de baja',
+          variante: 'danger' as const,
+          icono: 'user_off',
+        }
+      : {
+          titulo: `Volver a activar a ${quienes}`,
+          mensaje: 'Vuelven a estar activos y su cuenta vuelve a entrar al sistema con la misma contraseña de antes. '
+            + 'Revisa después su contrato y su fecha de ingreso, por si regresan con otro.',
+          aceptarTexto: 'Sí, activar',
+          icono: 'user_check',
+        };
+
+    this.confirmService.confirmar(opciones).then((aceptado) => {
+      if (!aceptado) return;
+      this.cambiandoEstado = true;
+
+      this.empleadoService.cambiarEstado(empleados.map((e) => e.id), estado).subscribe({
+        next: (res) => {
+          this.cambiandoEstado = false;
+          const { hechos, omitidos } = res.data.resumen;
+          const saltados = res.data.detalle.filter((d) => !d.hecho).map((d) => `${d.nombre}: ${d.motivo}`);
+          const hecho = estado === 'activo' ? 'activado(s)' : 'dado(s) de baja';
+
+          if (hechos && !omitidos) {
+            this.toastService.success(estado === 'activo' ? 'Trabajadores activados' : 'Trabajadores dados de baja', `${hechos} ${hecho}.`);
+          } else if (hechos) {
+            this.toastService.warning('Se hizo solo una parte', `${hechos} ${hecho}. No se tocó a: ${saltados.join(' · ')}`);
+          } else {
+            this.toastService.error('No se cambió a nadie', saltados.join(' · '));
+          }
+
+          this.soltarMarcados();
+          this.cargar();
+        },
+        error: (err) => {
+          this.cambiandoEstado = false;
+          this.toastService.error('No se pudo cambiar el estado', mensajeErrorApi(err, 'Inténtalo de nuevo.'));
+        },
+      });
+    });
+  }
 
   ngOnInit(): void {
     const recordado = this.estadoListados.leer<Record<string, unknown>>('empleados');
@@ -314,29 +397,7 @@ export class EmpleadosListComponent implements OnInit {
 
   alAccionar(evento: { accion: string; fila: Empleado }): void {
     if (evento.accion === 'ver') this.ver(evento.fila);
-  }
-
-  darDeBaja(empleado: Empleado): void {
-    const nombre = `${empleado.nombre} ${empleado.apellido}`.trim();
-
-    if (empleado.estado === 'inactivo') {
-      this.toastService.error('Ya está inactivo', `${nombre} ya estaba dado de baja.`);
-      return;
-    }
-
-    this.confirmService.confirmarEliminar(
-      `a ${nombre}. Quedará inactivo y su cuenta dejará de entrar al sistema, pero se conservan sus planillas y boletas`,
-      () => {
-        this.empleadoService.delete(empleado.id).subscribe({
-          next: () => {
-            this.toastService.success('Empleado dado de baja', `${nombre} quedó inactivo.`);
-            this.cargar();
-          },
-          error: (err) => {
-            this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo dar de baja al empleado.'));
-          },
-        });
-      }
-    );
+    if (evento.accion === 'baja') this.confirmarCambioDeEstado([evento.fila], 'inactivo');
+    if (evento.accion === 'activar') this.confirmarCambioDeEstado([evento.fila], 'activo');
   }
 }

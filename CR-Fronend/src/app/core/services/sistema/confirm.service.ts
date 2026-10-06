@@ -7,6 +7,8 @@ export interface ConfirmOptions {
   aceptarTexto?: string;
   cancelarTexto?: string;
   variante?: 'danger' | 'default';
+  /** Otro ícono en vez del de la variante: dar de baja no es borrar, no lleva tacho. */
+  icono?: string;
 }
 
 export interface ConfirmRequest {

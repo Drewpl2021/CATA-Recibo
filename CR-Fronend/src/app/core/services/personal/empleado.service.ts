@@ -5,6 +5,12 @@ import { environment } from '../../../../environments/environment';
 import { Empleado, EmpleadoPayload, MiPerfil } from '../../models';
 import { ApiResponse, END_POINTS, END_POINTS_ACCIONES, EntityDataService } from '../../utils';
 
+/** Lo que contesta el cambio de estado en grupo. */
+export interface ResultadoCambioEstado {
+  resumen: { hechos: number; omitidos: number };
+  detalle: { nombre: string; dni: string; hecho: boolean; motivo: string | null }[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class EmpleadoService extends EntityDataService<Empleado> {
   constructor(http: HttpClient) {
@@ -22,6 +28,17 @@ export class EmpleadoService extends EntityDataService<Empleado> {
 
   actualizar(id: string, payload: Partial<EmpleadoPayload>) {
     return this.update<Partial<EmpleadoPayload>>(id, payload);
+  }
+
+  /**
+   * POST /employees/status — activa o da de baja a los marcados. Dice qué
+   * pasó con cada uno: al que ya estaba así, o a uno mismo, se le salta.
+   */
+  cambiarEstado(ids: string[], estado: 'activo' | 'inactivo'): Observable<ApiResponse<ResultadoCambioEstado>> {
+    return this.http.post<ApiResponse<ResultadoCambioEstado>>(
+      `${environment.apiUrl}/${END_POINTS_ACCIONES.estadoEmpleados}`,
+      { ids, estado }
+    );
   }
 
   /**

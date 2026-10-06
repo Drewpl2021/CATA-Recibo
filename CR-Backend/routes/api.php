@@ -189,6 +189,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // Las boletas YA EMITIDAS del mes, todas en un .zip (mismos filtros
         // de Emisión de Boletas). También antes del apiResource.
         Route::get('employees/payslips-zip', [EmpleadoController::class, 'boletasEnZip']);
+        // Activar o dar de baja a varios marcados en la lista, de una vez.
+        Route::post('employees/status', [EmpleadoController::class, 'cambiarEstado']);
         Route::apiResource('employees',        EmpleadoController::class);
 
         // La planilla completa en CSV. Va ANTES del apiResource: si no,

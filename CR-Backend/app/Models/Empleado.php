@@ -94,6 +94,38 @@ class Empleado extends Model
             && $quien?->rol?->nombre !== 'admin';
     }
 
+    /**
+     * Darlo de baja hoy: inactivo, sin cuenta que entre, y su contrato
+     * vigente cerrado en la misma fecha. Se conservan planillas y boletas.
+     *
+     * La fecha es siempre hoy: una fecha de cese que ya tuviera era el fin
+     * programado de su contrato (puede ser futura), no la baja de ahora.
+     */
+    public function darDeBaja(): void
+    {
+        $this->update(['estado' => 'inactivo', 'fecha_cese' => now()->toDateString()]);
+        $this->quitarAcceso();
+
+        $this->contratos()->where('estado', 'vigente')
+            ->update(['estado' => 'finalizado', 'fecha_fin' => $this->fecha_cese]);
+    }
+
+    /**
+     * Volverlo a activo: sin la fecha de cese de cuando se fue, y con su
+     * cuenta otra vez habilitada (entra con la misma contraseña de antes).
+     */
+    public function reactivar(): void
+    {
+        $this->update(['estado' => 'activo', 'fecha_cese' => null]);
+        $this->devolverAcceso();
+    }
+
+    /** Su cuenta vuelve a poder entrar. */
+    public function devolverAcceso(): void
+    {
+        User::where('empleado_id', $this->id)->update(['estado_registro' => 'activo']);
+    }
+
     public function quitarAcceso(): void
     {
         User::where('empleado_id', $this->id)->each(function (User $user) {
