@@ -151,6 +151,9 @@ export const END_POINTS_ACCIONES = {
   /** GET employees/export?search= — la lista del personal en Excel */
   exportarEmpleados: 'employees/export',
 
+  /** GET employees/payslips-zip?mes&anio&search&... — las boletas ya emitidas del mes, en .zip */
+  boletasEnZip: 'employees/payslips-zip',
+
   /** GET employee-files?page&size&search&filtro — Documentos del personal, por trabajador */
   expedientes: 'employee-files',
   /** GET employee-files/{employeeId} — el expediente de un trabajador */

@@ -183,6 +183,9 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // La lista del personal en CSV. Va ANTES del apiResource, igual que
         // la de planilla: si no, "exportar" entraría por show({id}).
         Route::get('employees/export',       [EmpleadoController::class, 'exportar']);
+        // Las boletas YA EMITIDAS del mes, todas en un .zip (mismos filtros
+        // de Emisión de Boletas). También antes del apiResource.
+        Route::get('employees/payslips-zip', [EmpleadoController::class, 'boletasEnZip']);
         Route::apiResource('employees',        EmpleadoController::class);
 
         // La planilla completa en CSV. Va ANTES del apiResource: si no,

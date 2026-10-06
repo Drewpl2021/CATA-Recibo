@@ -22,7 +22,7 @@ import { FiltrosComponent } from '../../../shared/components/filtros/filtros.com
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { MESES_OPCIONES } from '../../../shared/constants';
-import { diasHabilesDelMes, formatoDia, mensajeErrorApi } from '../../../core/utils';
+import { diasHabilesDelMes, formatoDia, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 export interface FormularioBoleta {
@@ -1212,6 +1212,39 @@ export class EmisionBoletaListComponent implements OnInit {
         this.generandoPDF = false;
       }
     });
+  }
+
+  descargandoZip = false;
+
+  /**
+   * Baja en un .zip las boletas YA EMITIDAS del mes, con lo que haya en el
+   * buscador y los filtros: si arriba se eligió una sede, bajan solo esas.
+   * Las que todavía no se emiten no van (el servidor lo avisa si no hay
+   * ninguna).
+   */
+  descargarEmitidasEnZip(): void {
+    this.descargandoZip = true;
+    const periodo = `${this.nombreMes(this.mesGlobal * 1)} ${this.anioGlobal}`;
+
+    this.boletaService
+      .descargarEmitidasEnZip({ mes: this.mesGlobal, anio: this.anioGlobal, search: this.busqueda || undefined, ...this.filtros })
+      .subscribe({
+        next: (blob) => {
+          guardarArchivo(blob, `Boletas ${periodo}.zip`);
+          this.descargandoZip = false;
+          this.toastService.success('Boletas descargadas', `Las boletas emitidas de ${periodo}, en un .zip.`);
+        },
+        error: async (err) => {
+          this.descargandoZip = false;
+          // Pedido como archivo, el error también llega como archivo: hay
+          // que leerlo para sacar el mensaje.
+          let detalle = err;
+          if (err?.error instanceof Blob) {
+            try { detalle = { error: JSON.parse(await err.error.text()) }; } catch { /* queda el genérico */ }
+          }
+          this.toastService.error('No se descargó', mensajeErrorApi(detalle, 'No se pudieron juntar las boletas.'));
+        },
+      });
   }
 
   emitirTodasLasBoletas(): void {

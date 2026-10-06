@@ -36,6 +36,18 @@ export class BoletaService {
     });
   }
 
+  /**
+   * Las boletas YA EMITIDAS del mes en un .zip, con el buscador y los filtros
+   * de la pantalla. Las que no se emitieron no van.
+   */
+  descargarEmitidasEnZip(filtros: Record<string, string | number | boolean | undefined>): Observable<Blob> {
+    const params: Record<string, string> = {};
+    Object.entries(filtros).forEach(([clave, valor]) => {
+      if (valor !== undefined && valor !== null && valor !== '') params[clave] = String(valor);
+    });
+    return this.http.get(`${this.apiUrl}/${END_POINTS_ACCIONES.boletasEnZip}`, { params, responseType: 'blob' });
+  }
+
   /** POST /boletas/generar-masivo */
   /**
    * Emite las boletas que falten.

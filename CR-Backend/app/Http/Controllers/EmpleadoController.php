@@ -336,6 +336,89 @@ class EmpleadoController extends Controller
     }
 
     /**
+     * GET /employees/payslips-zip?mes=&anio= — las boletas ya emitidas del
+     * mes, todas juntas en un .zip.
+     *
+     * Para imprimirlas o firmarlas de una vez sin abrirlas una por una. Solo
+     * entran las que ya se emitieron: la que todavía no sale no tiene PDF,
+     * y armarla aquí sería emitirla sin que RR.HH. lo haya decidido.
+     *
+     * Usa el buscador y los filtros de Emisión de Boletas, así que baja lo
+     * que se ve en pantalla (por ejemplo, solo una sede o solo una planilla).
+     * Se mete el PDF guardado tal cual: el de una boleta firmada es el
+     * congelado, con su sello, y no se vuelve a generar.
+     */
+    public function boletasEnZip(Request $request)
+    {
+        $request->validate([
+            'mes'  => 'required|integer|min:1|max:12',
+            'anio' => 'required|integer|min:2000',
+        ]);
+        $mes  = (int) $request->input('mes');
+        $anio = (int) $request->input('anio');
+
+        $empleados = Empleado::query()->select('empleados.id', 'empleados.dni', 'empleados.nombre', 'empleados.apellido');
+        $this->aplicarBusqueda($request, $empleados, ['nombre', 'apellido', 'dni', 'cargo.nombre', 'area.nombre', 'usuario.email']);
+        $this->aplicarFiltrosDePersonal($request, $empleados);
+
+        $documentos = \App\Models\Documento::query()
+            ->where('tipo', 'boleta')
+            ->whereIn('empleado_id', $empleados->pluck('empleados.id'))
+            ->whereHas('planilla', fn (Builder $q) => $q->where('mes', $mes)->where('anio', $anio))
+            ->get();
+
+        if ($documentos->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay boletas emitidas de ' . \App\Support\Meses::NOMBRES[$mes] . " {$anio} con estos filtros. Emítelas primero y vuelve a descargarlas.",
+            ], 404);
+        }
+
+        $personas = Empleado::whereIn('id', $documentos->pluck('empleado_id'))->get(['id', 'dni', 'nombre', 'apellido'])->keyBy('id');
+        $disco    = \Illuminate\Support\Facades\Storage::disk('local');
+        $ruta     = tempnam(sys_get_temp_dir(), 'boletas');
+        $zip      = new \ZipArchive();
+        $zip->open($ruta, \ZipArchive::OVERWRITE);
+
+        $faltan = [];
+        foreach ($documentos as $documento) {
+            $persona = $personas[$documento->empleado_id];
+            $nombre  = trim("{$persona->apellido} {$persona->nombre}");
+
+            if (! $documento->archivo || ! $disco->exists($documento->archivo)) {
+                $faltan[] = "{$persona->dni}  {$nombre}";
+                continue;
+            }
+
+            // El mismo número que lleva impreso la boleta (ver BoletaController::construirBoleta).
+            $correlativo = \App\Models\Planilla::where('empleado_id', $persona->id)
+                ->where('anio', $anio)->where('mes', '<=', $mes)->count();
+            $numero = 'BOL-' . $anio . '-' . str_pad($correlativo, 4, '0', STR_PAD_LEFT);
+
+            // Con el apellido en el nombre del archivo: en la carpeta se
+            // encuentra a la persona sin abrir cada PDF.
+            $legible = \Illuminate\Support\Str::of($nombre)->ascii()->replaceMatches('/[^A-Za-z0-9 ]/', '')->squish()->replace(' ', '_');
+            $zip->addFromString("{$numero}_{$persona->dni}_{$legible}.pdf", $disco->get($documento->archivo));
+        }
+
+        if ($faltan) {
+            $zip->addFromString('NO_INCLUIDAS.txt', "Estas boletas figuran como emitidas pero su PDF no se encontró.
+"
+                . "Ábrelas una por una desde Emisión de Boletas para volver a generarlas:
+
+"
+                . implode("
+", $faltan) . "
+");
+        }
+        $zip->close();
+
+        $archivo = sprintf('Boletas_%s_%d.zip', \App\Support\Meses::NOMBRES[$mes], $anio);
+
+        return response()->download($ruta, $archivo, ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
+    }
+
+    /**
      * GET /empleados/exportar — la ficha de todo el personal, en CSV.
      *
      * Es la lista que RR.HH. mantenía aparte en su propio Excel: datos

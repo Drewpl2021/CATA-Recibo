@@ -6,6 +6,12 @@
   [cargandoCifras]="cargandoEmpleados"
 >
   <div headerActions style="display: flex; gap: 12px; align-items: center;">
+    <!-- Solo las ya emitidas, con lo que dejen el buscador y los filtros. -->
+    <button class="btn-secondary" (click)="descargarEmitidasEnZip()" [disabled]="descargandoZip"
+      title="Baja en un .zip las boletas ya emitidas de este mes (las que ves con los filtros puestos)">
+      <app-icon icono="download" [tamano]="16"></app-icon>
+      {{ descargandoZip ? 'Juntando boletas…' : 'Descargar emitidas (.zip)' }}
+    </button>
     <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo">
       <app-icon icono="receipt" [tamano]="16"></app-icon>
       {{ generandoMasivo ? 'Emitiendo...' : 'Emitir masivamente' }}
