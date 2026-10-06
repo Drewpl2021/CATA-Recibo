@@ -2264,6 +2264,20 @@ td.celda-numero {
   animation: fadeIn 0.2s ease-out;
 }
 
+/* Las capas que van ENCIMA de cualquier modal de pantalla (el más alto,
+   el de la boleta en Emisión, está en 10000):
+   - la confirmación ("¿Seguro que…?"), que a veces sale desde un modal;
+   - el avance de un proceso largo, que sale al guardar un modal (crear la
+     planilla) y quedaba tapado por él;
+   - los avisos, que tienen que verse aunque haya un modal abierto. */
+.modal-overlay--confirmar {
+  z-index: 10400;
+}
+
+.modal-overlay--progreso {
+  z-index: 10500;
+}
+
 /* Con un modal abierto, la página de debajo no se mueve: antes, la rueda
    se llevaba el fondo y al cerrar uno aparecía en otro sitio. La clase la
    pone y la quita app-form-modal, contando los que haya abiertos. */
@@ -2794,7 +2808,7 @@ textarea.form-control {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 9999;
+  z-index: 11000; /* sobre cualquier modal (ver .modal-overlay--progreso) */
   display: flex;
   align-items: flex-start;
   gap: 16px;

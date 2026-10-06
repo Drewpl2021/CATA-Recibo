@@ -1,4 +1,4 @@
-<div class="modal-overlay" *ngIf="request as r" (click)="cancelar()">
+<div class="modal-overlay modal-overlay--confirmar" *ngIf="request as r" (click)="cancelar()">
   <div class="modal-card" (click)="$event.stopPropagation()">
     <!--
       El tacho SOLO con variante:'danger', puesto a propósito. Antes era al

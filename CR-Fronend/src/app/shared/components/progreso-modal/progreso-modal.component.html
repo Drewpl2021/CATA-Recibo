@@ -1,4 +1,4 @@
-<div class="modal-overlay" *ngIf="estado$ | async as e">
+<div class="modal-overlay modal-overlay--progreso" *ngIf="estado$ | async as e">
   <div class="modal-card progreso" role="dialog" aria-modal="true" [attr.aria-label]="e.titulo">
     <div class="modal-icon-brand progreso__icono">
       <app-icon icono="refresh" [tamano]="30"></app-icon>
