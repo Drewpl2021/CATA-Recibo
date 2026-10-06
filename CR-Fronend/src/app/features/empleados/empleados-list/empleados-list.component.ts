@@ -203,8 +203,11 @@ export class EmpleadosListComponent implements OnInit {
       header: 'Estado',
       ancho: '10%',
       tipo: 'badge',
-      formatear: (valor) => (valor === 'inactivo' ? 'Inactivo' : 'Activo'),
-      badgeSeveridad: (valor) => (valor === 'inactivo' ? 'secondary' : 'success'),
+      // Activo pero con el contrato ya terminado: se dice en la misma fila,
+      // para no tener que entrar a la ficha a descubrirlo.
+      formatear: (valor, e) => valor === 'inactivo' ? 'Inactivo'
+        : this.contratoVencido(e) ? `Contrato vencido el ${this.fechaCorta(e.fecha_cese)}` : 'Activo',
+      badgeSeveridad: (valor, e) => valor === 'inactivo' ? 'secondary' : this.contratoVencido(e) ? 'warning' : 'success',
     },
   ];
 
@@ -222,7 +225,7 @@ export class EmpleadosListComponent implements OnInit {
   /** Los marcados con la casilla, de la página que se está viendo. */
   marcados: Empleado[] = [];
   cambiandoEstado = false;
-  @ViewChild('tablaEmpleados') tablaEmpleados?: { limpiarSeleccion: () => void };
+  @ViewChild('tablaEmpleados') tablaEmpleados?: { limpiarSeleccion: () => void; marcarFilas: (filas: Empleado[]) => void };
 
   /** "Ana Prueba, Luis Mamani y 3 más". */
   get resumenMarcados(): string {
@@ -278,6 +281,19 @@ export class EmpleadosListComponent implements OnInit {
   fechaBaja = '';
   usarFinDeContrato = true;
   readonly hoy = this.fechaLocal(new Date());
+
+  /** Sigue activo pero su contrato terminó antes de hoy. */
+  contratoVencido(e: Empleado): boolean {
+    return e.estado !== 'inactivo' && !!e.fecha_cese && e.fecha_cese.slice(0, 10) < this.hoy;
+  }
+
+  /** Se está viendo la lista de contratos vencidos (el filtro, o el aviso del panel). */
+  get viendoVencidos(): boolean {
+    return this.filtros?.['contrato_vencido'] === '1';
+  }
+
+  /** Llegó desde el aviso del panel: al cargar, se marca a todos para actuar. */
+  private marcarAlCargar = false;
 
   /** Los de la baja cuyo contrato ya terminó (su fin es hoy o antes). */
   get vencidosEnBaja(): Empleado[] {
@@ -367,6 +383,9 @@ export class EmpleadosListComponent implements OnInit {
       this.filtros = { contrato_vencido: '1' };
       this.busqueda = '';
       this.pagina = 0;
+      this.marcarAlCargar = true;
+      // Se quita de la dirección: al recargar la página no se vuelve a marcar.
+      this.router.navigate([], { relativeTo: this.ruta, queryParams: {}, replaceUrl: true });
     }
     // Con filtros recordados, sus opciones hacen falta ya para mostrar los nombres.
     if (Object.keys(this.filtros ?? {}).length) this.cargarCatalogos();
@@ -402,6 +421,11 @@ export class EmpleadosListComponent implements OnInit {
         if (res.success) {
           this.empleados = res.data.content;
           this.total = res.data.totalElements;
+          if (this.marcarAlCargar) {
+            this.marcarAlCargar = false;
+            // Después de que la tabla reciba las filas nuevas.
+            setTimeout(() => this.tablaEmpleados?.marcarFilas(this.empleados));
+          }
           this.activos = res.data.activos ?? 0;
           this.inactivos = res.data.inactivos ?? 0;
         }

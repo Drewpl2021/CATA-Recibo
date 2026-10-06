@@ -349,6 +349,15 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     this.avisarSeleccion();
   }
 
+  /**
+   * Marca esas filas desde la pantalla. La usa Empleados al llegar desde el
+   * aviso de "contrato vencido": la gente ya viene marcada para actuar.
+   */
+  marcarFilas(filas: T[]): void {
+    filas.forEach((f) => this.marcadas.set(this.idDe(f), f));
+    this.avisarSeleccion();
+  }
+
   /** Deja la selección en blanco. La pantalla la llama tras actuar. */
   limpiarSeleccion(): void {
     this.marcadas.clear();

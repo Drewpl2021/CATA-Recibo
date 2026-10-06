@@ -3415,6 +3415,16 @@ textarea.form-control {
 /* La misma caja, pero cuando lo que dice es un problema: el aviso de que no
    alcanzan los días de vacaciones, por ejemplo. Antes se pintaba solo el
    texto de rojo y quedaba una advertencia dentro de una caja azul. */
+/* Aviso de algo que hay que resolver pero que no es un error: los
+   contratos ya vencidos de gente que sigue activa. En ámbar, como su
+   etiqueta en la columna Estado. */
+.form-nota--aviso-contrato {
+  margin: 0 0 16px;
+  color: var(--warning-text);
+  background-color: var(--warning-bg);
+  border-left-color: var(--warning);
+}
+
 .form-nota--alerta {
   color: var(--danger-text);
   background-color: var(--danger-bg);

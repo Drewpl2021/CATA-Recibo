@@ -24,6 +24,14 @@
   </div>
 </app-page-header>
 
+<!-- La lista de contratos vencidos: qué hacer con ellos. -->
+<div class="form-nota form-nota--aviso-contrato" *ngIf="viendoVencidos && total > 0 && !cargando" role="status">
+  <strong>{{ total === 1 ? 'Este trabajador sigue activo' : 'Estos ' + total + ' trabajadores siguen activos' }}, pero su contrato ya terminó.</strong>
+  Si sigue trabajando, renueva su contrato en su ficha (botón <em>Editar</em>, nueva fecha de cese).
+  Si ya no trabaja, con la casilla marcada pulsa <em>Dar de baja</em> en la barra de abajo: se le pondrá su fecha de fin de contrato.
+  Mientras tanto, la planilla del mes no se le arma sola.
+</div>
+
 <!-- Numerada y por fecha de registro: el 1 es siempre el último que se dio
      de alta, así que al volver de "Nuevo Empleado" se ve arriba del todo. -->
 <app-data-table
