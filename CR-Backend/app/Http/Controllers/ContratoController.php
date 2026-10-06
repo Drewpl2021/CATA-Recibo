@@ -144,7 +144,13 @@ class ContratoController extends Controller
         // Sin contrato vigente no se toca nada: la ficha conserva lo último
         // que se supo de él, que es mejor que dejarla en blanco.
         if ($vigente) {
+            // Su fecha de cese prevista es el fin de este contrato: al renovar
+            // (contrato nuevo hasta el 31/12 del año siguiente) la ficha deja
+            // de decir que el contrato venció. Solo a quien sigue activo: el
+            // cese de alguien que ya se fue es su baja real y no se toca.
             Empleado::where('id', $empleadoId)->update(['tipo_contrato_id' => $vigente->tipo_contrato_id]);
+            Empleado::where('id', $empleadoId)->where('estado', 'activo')
+                ->update(['fecha_cese' => $vigente->fecha_fin ? substr((string) $vigente->fecha_fin, 0, 10) : null]);
         }
     }
 }

@@ -56,6 +56,22 @@ class ContratoVencidoTest extends TestCase
             ->assertOk()->assertJsonPath('data.totalElements', 1);
     }
 
+    public function test_renovar_desde_contratos_quita_el_vencido(): void
+    {
+        $rrhh = $this->crearUsuario('rrhh');
+        $e = $this->contratadoHasta(now()->subDays(5)->toDateString());
+        $this->assertTrue($e->fresh()->contratoVencidoAntesDe(now()->toDateString()));
+
+        $this->actingAs($rrhh, 'sanctum')->postJson('/api/contracts', [
+            'empleado_id' => $e->id, 'tipo_contrato_id' => $this->idTipoContrato('Contratado'),
+            'fecha_inicio' => now()->subDays(4)->toDateString(), 'fecha_fin' => now()->addYear()->toDateString(),
+        ])->assertCreated();
+
+        $e = $e->fresh();
+        $this->assertSame(now()->addYear()->toDateString(), substr((string) $e->fecha_cese, 0, 10));
+        $this->assertFalse($e->contratoVencidoAntesDe(now()->toDateString()));
+    }
+
     public function test_al_generar_no_se_le_arma_sola_pero_se_puede_incluir(): void
     {
         $rrhh = $this->crearUsuario('rrhh');
