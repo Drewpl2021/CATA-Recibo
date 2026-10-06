@@ -55,6 +55,43 @@
     (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogos()"></app-filtros>
 </app-data-table>
 
+<!-- Dar de baja: con su fecha. No siempre es hoy: a quien se le acabó el
+     contrato el 31/12 y se registra en enero, su cese es el 31/12. -->
+<app-form-modal
+  [(visible)]="bajaVisible"
+  [titulo]="tituloBaja"
+  textoGuardar="Dar de baja"
+  [guardando]="cambiandoEstado"
+  (guardar)="confirmarBaja()"
+  (cancelar)="bajaVisible = false"
+>
+  <div class="form-fields">
+    <div class="form-group">
+      <label for="fechaBaja">Fecha de cese</label>
+      <input type="date" id="fechaBaja" class="form-control" [(ngModel)]="fechaBaja" [max]="hoy" />
+      <small class="form-ayuda">El último día que trabajó. Puede ser una fecha pasada, nunca una que todavía no llega.</small>
+    </div>
+
+    <!-- Entre los marcados hay alguien cuyo contrato ya terminó. -->
+    <label class="check-item" *ngIf="vencidosEnBaja.length && bajaEmpleados.length > 1">
+      <input type="checkbox" [(ngModel)]="usarFinDeContrato" />
+      <span *ngIf="vencidosEnBaja.length === 1">
+        A {{ vencidosEnBaja[0].nombre }} {{ vencidosEnBaja[0].apellido }}, que ya se le acabó el contrato, darlo de baja
+        en su fecha de fin ({{ fechaCorta(vencidosEnBaja[0].fecha_cese) }}) y no en la de arriba.
+      </span>
+      <span *ngIf="vencidosEnBaja.length > 1">
+        A los {{ vencidosEnBaja.length }} que ya se les acabó el contrato, darlos de baja en la fecha de fin
+        de cada uno y no en la de arriba.
+      </span>
+    </label>
+
+    <p class="form-nota">
+      Quedarán inactivos desde esa fecha, se cierra su contrato y su cuenta deja de entrar al sistema.
+      No se borra nada: sus planillas y boletas se conservan, y se pueden volver a activar.
+    </p>
+  </div>
+</app-form-modal>
+
 <!-- Lo que se hace con los marcados. Flota pegada abajo mientras se baja por
      la lista, con su propio color: arriba en la página se confundía con
      "Importar" y "Descargar empleados" y se perdía. -->

@@ -34,10 +34,15 @@ export class EmpleadoService extends EntityDataService<Empleado> {
    * POST /employees/status — activa o da de baja a los marcados. Dice qué
    * pasó con cada uno: al que ya estaba así, o a uno mismo, se le salta.
    */
-  cambiarEstado(ids: string[], estado: 'activo' | 'inactivo'): Observable<ApiResponse<ResultadoCambioEstado>> {
+  cambiarEstado(
+    ids: string[],
+    estado: 'activo' | 'inactivo',
+    /** Solo para la baja: su fecha, y si a quien ya se le venció el contrato se le da de baja en su fin. */
+    baja: { fecha_cese?: string; usar_fin_de_contrato?: boolean } = {}
+  ): Observable<ApiResponse<ResultadoCambioEstado>> {
     return this.http.post<ApiResponse<ResultadoCambioEstado>>(
       `${environment.apiUrl}/${END_POINTS_ACCIONES.estadoEmpleados}`,
-      { ids, estado }
+      { ids, estado, ...baja }
     );
   }
 

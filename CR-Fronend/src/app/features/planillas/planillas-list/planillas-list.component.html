@@ -187,6 +187,19 @@
         </div>
       </div>
 
+
+    <!-- Se saltó a quienes tienen el contrato vencido: no se les paga un mes
+         de más por olvido. Si siguen trabajando, se incluyen con un clic. -->
+    <div class="form-nota form-nota--accion" *ngIf="vencidos(resultadoGeneracion).length">
+      <div>
+        <strong>{{ vencidos(resultadoGeneracion).length }} con el contrato ya vencido</strong> no se agregaron.
+        Si siguen trabajando, lo mejor es renovar su contrato en su ficha; si no, darlos de baja.
+      </div>
+      <button type="button" class="btn-secondary" (click)="incluirVencidos()" [disabled]="incluyendoVencidos">
+        {{ incluyendoVencidos ? 'Incluyendo…' : 'Incluirlos igual' }}
+      </button>
+    </div>
+
       <div class="detalle-masivo">
         <div class="detalle-masivo__fila" *ngFor="let d of resultadoGeneracion.detalle">
           <span>{{ d.empleado }}</span>

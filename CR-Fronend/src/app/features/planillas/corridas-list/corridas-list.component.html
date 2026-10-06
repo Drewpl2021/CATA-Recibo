@@ -270,7 +270,7 @@
           <!-- Vacía y omitidos no son lo mismo: sin gente porque así se pidió,
                o sin gente porque ya la tenían en otra planilla del mes. -->
           <span class="detalle-masivo__motivo" *ngIf="m.omitidas">
-            {{ m.omitidas }} sin agregar: ya tenían planilla de ese mes o les falta el sueldo
+            {{ m.omitidas }} sin agregar: ya tenían planilla de ese mes, les falta el sueldo o su contrato ya venció
           </span>
           <span class="detalle-masivo__motivo" *ngIf="!m.generadas && !m.omitidas">
             Creada vacía
@@ -282,6 +282,18 @@
           <span class="detalle-masivo__motivo">{{ o.motivo }}</span>
         </div>
       </div>
+
+    <!-- Se saltó a quienes tienen el contrato vencido: no se les paga un mes
+         de más por olvido. Si siguen trabajando, se incluyen con un clic. -->
+    <div class="form-nota form-nota--accion" *ngIf="vencidos(r).length">
+      <div>
+        <strong>{{ vencidos(r).length }} con el contrato ya vencido</strong> no se agregaron.
+        Si siguen trabajando, lo mejor es renovar su contrato en su ficha; si no, darlos de baja.
+      </div>
+      <button type="button" class="btn-secondary" (click)="incluirVencidos()" [disabled]="incluyendoVencidos">
+        {{ incluyendoVencidos ? 'Incluyendo…' : 'Incluirlos igual' }}
+      </button>
+    </div>
 
       <!-- Trabajador por trabajador. Solo llega cuando fue un mes solo. -->
       <div class="detalle-masivo" *ngIf="r.detalle?.length">

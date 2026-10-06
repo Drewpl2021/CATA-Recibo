@@ -123,6 +123,7 @@ class EmpleadoController extends Controller
             },
             'Forma de pago'     => $request->input('forma_pago'),
             'Sin sueldo puesto' => $request->boolean('sin_sueldo') ? 'Sí' : null,
+            'Contrato vencido'  => $request->boolean('contrato_vencido') ? 'Sí' : null,
             'Ingresó desde'     => $request->input('ingreso_desde'),
             'Ingresó hasta'     => $request->input('ingreso_hasta'),
             'Planilla del mes'  => match ($request->input('planilla')) {
@@ -233,6 +234,7 @@ class EmpleadoController extends Controller
             'sistema_pensiones' => 'nullable|in:AFP,ONP,ninguno',
             'forma_pago'        => 'nullable|in:banco,efectivo',
             'sin_sueldo'        => 'nullable|boolean',
+            'contrato_vencido'  => 'nullable|boolean',
             'ingreso_desde'     => 'nullable|date',
             'ingreso_hasta'     => 'nullable|date',
             'planilla'          => 'nullable|in:con,sin',
@@ -268,6 +270,12 @@ class EmpleadoController extends Controller
         // la persona se queda sin cobrar sin que nadie se dé cuenta.
         if ($request->boolean('sin_sueldo')) {
             $query->where(fn (Builder $q) => $q->whereNull('sueldo_base')->orWhere('sueldo_base', '<=', 0));
+        }
+
+        // Siguen activos pero su contrato ya terminó: hay que renovarlo o
+        // darlos de baja antes de la próxima planilla.
+        if ($request->boolean('contrato_vencido')) {
+            $query->conContratoVencido();
         }
 
         if ($request->filled('ingreso_desde')) {
@@ -763,9 +771,20 @@ class EmpleadoController extends Controller
             'ids'    => 'required|array|min:1|max:500',
             'ids.*'  => 'uuid',
             'estado' => 'required|in:activo,inactivo',
+            // La fecha de la baja: puede ser pasada (se acabó el contrato el
+            // 31/12 y se registra en enero), nunca futura.
+            'fecha_cese' => 'nullable|date|before_or_equal:today',
+            // A quien ya se le acabó el contrato, en su fecha de fin y no en
+            // la de arriba.
+            'usar_fin_de_contrato' => 'sometimes|boolean',
+        ], [
+            'fecha_cese.before_or_equal' => 'La fecha de baja no puede ser una fecha que todavía no llega.',
         ]);
 
         $estado  = $request->input('estado');
+        $hoy     = now()->toDateString();
+        $fecha   = $request->input('fecha_cese') ?: $hoy;
+        $usarFin = $request->boolean('usar_fin_de_contrato');
         $propio  = (string) $request->user()?->empleado_id;
         $detalle = [];
         $hechos  = 0;
@@ -777,9 +796,16 @@ class EmpleadoController extends Controller
             $progreso->avanzar();
             $nombre = trim("{$empleado->nombre} {$empleado->apellido}");
 
+            // Su fecha de baja: la de su fin de contrato si ya pasó y así se
+            // pidió; si no, la elegida.
+            $fin       = $empleado->finDeContrato();
+            $fechaBaja = ($usarFin && $fin && $fin <= $hoy) ? $fin : $fecha;
+            $ingreso   = $empleado->fecha_ingreso ? substr((string) $empleado->fecha_ingreso, 0, 10) : null;
+
             $motivo = match (true) {
                 $empleado->estado === $estado => $estado === 'activo' ? 'Ya estaba activo.' : 'Ya estaba de baja.',
                 $estado === 'inactivo' && $propio === (string) $empleado->id => 'Es tu propia cuenta: no puedes darte de baja.',
+                $estado === 'inactivo' && $ingreso && $fechaBaja < $ingreso => 'La fecha de baja es anterior a su ingreso (' . \Carbon\Carbon::parse($ingreso)->format('d/m/Y') . ').',
                 default => null,
             };
 
@@ -788,7 +814,7 @@ class EmpleadoController extends Controller
                 continue;
             }
 
-            $estado === 'activo' ? $empleado->reactivar() : $empleado->darDeBaja();
+            $estado === 'activo' ? $empleado->reactivar() : $empleado->darDeBaja($fechaBaja);
             $hechos++;
             $detalle[] = ['nombre' => $nombre, 'dni' => $empleado->dni, 'hecho' => true, 'motivo' => null];
         }

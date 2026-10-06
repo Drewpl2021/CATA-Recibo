@@ -92,6 +92,7 @@ export interface GeneracionMasivaPlanilla {
     estado: string;
     planilla_id?: string;
     motivo?: string;
+    contrato_vencido?: boolean;
   }>;
 }
 

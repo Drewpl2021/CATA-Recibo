@@ -1004,6 +1004,41 @@ export class PlanillasListComponent implements OnInit {
     });
   }
 
+
+  // ── Los de contrato vencido que se saltaron al generar ──
+  incluyendoVencidos = false;
+
+  vencidos(r: { detalle?: { contrato_vencido?: boolean; empleado_id: string }[] } | null): string[] {
+    return (r?.detalle ?? []).filter((d) => d.contrato_vencido).map((d) => d.empleado_id);
+  }
+
+  /** Les arma la planilla igual (siguen trabajando y el contrato no se actualizó). */
+  incluirVencidos(): void {
+    const ids = this.vencidos(this.resultadoGeneracion);
+    const corridaId = this.corridaId;
+    if (!ids.length || !corridaId) return;
+
+    this.incluyendoVencidos = true;
+    this.progreso.seguir('Generando planillas', this.corridaService.generar(corridaId, { empleado_ids: ids, incluir_contrato_vencido: true })).subscribe({
+      next: (res) => {
+        this.incluyendoVencidos = false;
+        if (!res.success) return;
+        // Las filas de esa gente pasan a "Generada" en el mismo resumen.
+        const nuevas = new Map(res.data.detalle.map((d) => [d.empleado_id, d]));
+        const r = this.resultadoGeneracion!;
+        r.detalle = r.detalle.map((d) => nuevas.get(d.empleado_id) ?? d);
+        r.resumen.generadas += res.data.resumen.generadas;
+        r.resumen.omitidas -= res.data.resumen.generadas;
+        this.toastService.success('Incluidos', `Se les armó la planilla a ${res.data.resumen.generadas} trabajador(es).`);
+        this.cargar();
+      },
+      error: (err) => {
+        this.incluyendoVencidos = false;
+        this.toastService.error('No se incluyeron', mensajeErrorApi(err, 'Inténtalo de nuevo.'));
+      },
+    });
+  }
+
   /*
    * Acá vivía la emisión masiva de boletas.
    *

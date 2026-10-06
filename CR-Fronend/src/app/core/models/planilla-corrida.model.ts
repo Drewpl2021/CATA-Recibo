@@ -59,6 +59,8 @@ export interface ResultadoGeneracion {
     estado: 'generada' | 'omitida';
     motivo?: string;
     planilla_id?: string;
+    /** Se le saltó porque su contrato ya terminó (ver "Incluirlos igual"). */
+    contrato_vencido?: boolean;
   }[];
   aviso?: string;
 }

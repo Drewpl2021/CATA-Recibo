@@ -2,6 +2,9 @@ import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { Router } from '@angular/router';
 
 import { forkJoin } from 'rxjs';
@@ -28,7 +31,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 @Component({
   selector: 'app-empleados-list',
   standalone: true,
-  imports: [IconComponent, CommonModule, PageHeaderComponent, DataTableComponent, FiltrosComponent],
+  imports: [IconComponent, CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent],
   templateUrl: './empleados-list.component.html',
 })
 export class EmpleadosListComponent implements OnInit {
@@ -102,6 +105,10 @@ export class EmpleadosListComponent implements OnInit {
     {
       clave: 'sin_sueldo', etiqueta: 'Sin sueldo puesto', tipo: 'si-no',
       ayuda: 'Sin sueldo no se le puede armar planilla: la generación lo salta.',
+    },
+    {
+      clave: 'contrato_vencido', etiqueta: 'Contrato vencido', tipo: 'si-no',
+      ayuda: 'Siguen activos pero su contrato ya terminó: renuévalo en su ficha o dalos de baja.',
     },
     {
       clave: 'ingreso_desde', claveHasta: 'ingreso_hasta',
@@ -238,32 +245,93 @@ export class EmpleadosListComponent implements OnInit {
    */
   private confirmarCambioDeEstado(empleados: Empleado[], estado: 'activo' | 'inactivo'): void {
     if (!empleados.length) return;
+    // La baja pide su fecha: no siempre es hoy (ver abrirBaja).
+    if (estado === 'inactivo') {
+      this.abrirBaja(empleados);
+      return;
+    }
     const quienes = empleados.length === 1
       ? `${empleados[0].nombre} ${empleados[0].apellido}`.trim()
       : `${empleados.length} trabajadores`;
 
-    const opciones = estado === 'inactivo'
-      ? {
-          titulo: `Dar de baja a ${quienes}`,
-          mensaje: 'Quedarán inactivos con fecha de cese de hoy, se cierra su contrato vigente y su cuenta deja de entrar al sistema. '
-            + 'No se borra nada: sus planillas y boletas se conservan, y se pueden volver a activar.',
-          aceptarTexto: 'Sí, dar de baja',
-          variante: 'danger' as const,
-          icono: 'user_off',
-        }
-      : {
-          titulo: `Volver a activar a ${quienes}`,
-          mensaje: 'Vuelven a estar activos y su cuenta vuelve a entrar al sistema con la misma contraseña de antes. '
-            + 'Revisa después su contrato y su fecha de ingreso, por si regresan con otro.',
-          aceptarTexto: 'Sí, activar',
-          icono: 'user_check',
-        };
+    const opciones = {
+      titulo: `Volver a activar a ${quienes}`,
+      mensaje: 'Vuelven a estar activos, con el mismo contrato que tenían antes de la baja, y su cuenta vuelve a entrar '
+        + 'al sistema con la misma contraseña de antes.',
+      aceptarTexto: 'Sí, activar',
+      icono: 'user_check',
+    };
 
     this.confirmService.confirmar(opciones).then((aceptado) => {
-      if (!aceptado) return;
+      if (aceptado) this.aplicarCambioDeEstado(empleados, 'activo');
+    });
+  }
+
+  // ── Dar de baja: con su fecha ──
+  /**
+   * La baja no siempre es hoy: a quien se le acabó el contrato el 31/12 y
+   * se registra el 5 de enero, su cese es el 31/12. Con la fecha de hoy, la
+   * planilla de enero le pagaba esos 5 días.
+   */
+  bajaVisible = false;
+  bajaEmpleados: Empleado[] = [];
+  fechaBaja = '';
+  usarFinDeContrato = true;
+  readonly hoy = this.fechaLocal(new Date());
+
+  /** Los de la baja cuyo contrato ya terminó (su fin es hoy o antes). */
+  get vencidosEnBaja(): Empleado[] {
+    return this.bajaEmpleados.filter((e) => !!e.fecha_cese && e.fecha_cese.slice(0, 10) <= this.hoy);
+  }
+
+  get tituloBaja(): string {
+    const e = this.bajaEmpleados;
+    return e.length === 1 ? `Dar de baja a ${e[0].nombre} ${e[0].apellido}`.trim() : `Dar de baja a ${e.length} trabajadores`;
+  }
+
+  /** "31/12/2026", para decir cuándo se le acabó el contrato. */
+  fechaCorta(fecha: string | null | undefined): string {
+    if (!fecha) return '';
+    const [a, m, d] = fecha.slice(0, 10).split('-');
+    return `${d}/${m}/${a}`;
+  }
+
+  private abrirBaja(empleados: Empleado[]): void {
+    this.bajaEmpleados = empleados;
+    this.usarFinDeContrato = true;
+    // Uno solo con el contrato ya vencido: su fin de contrato es la fecha natural.
+    const unoVencido = empleados.length === 1 && this.vencidosEnBaja.length === 1;
+    this.fechaBaja = unoVencido ? empleados[0].fecha_cese!.slice(0, 10) : this.hoy;
+    this.bajaVisible = true;
+  }
+
+  confirmarBaja(): void {
+    if (!this.fechaBaja || this.fechaBaja > this.hoy) {
+      this.toastService.error('Revisa la fecha', 'La fecha de baja no puede ser una fecha que todavía no llega.');
+      return;
+    }
+    this.bajaVisible = false;
+    this.aplicarCambioDeEstado(this.bajaEmpleados, 'inactivo', {
+      fecha_cese: this.fechaBaja,
+      usar_fin_de_contrato: this.usarFinDeContrato,
+    });
+  }
+
+  private fechaLocal(d: Date): string {
+    const dos = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
+  }
+
+  /** Aplica el cambio (uno o varios) y dice qué pasó con cada uno. */
+  private aplicarCambioDeEstado(
+    empleados: Empleado[],
+    estado: 'activo' | 'inactivo',
+    baja: { fecha_cese?: string; usar_fin_de_contrato?: boolean } = {}
+  ): void {
+    {
       this.cambiandoEstado = true;
 
-      this.progreso.seguir(estado === 'activo' ? 'Activando trabajadores' : 'Dando de baja', this.empleadoService.cambiarEstado(empleados.map((e) => e.id), estado)).subscribe({
+      this.progreso.seguir(estado === 'activo' ? 'Activando trabajadores' : 'Dando de baja', this.empleadoService.cambiarEstado(empleados.map((e) => e.id), estado, baja)).subscribe({
         next: (res) => {
           this.cambiandoEstado = false;
           const { hechos, omitidos } = res.data.resumen;
@@ -286,12 +354,20 @@ export class EmpleadosListComponent implements OnInit {
           this.toastService.error('No se pudo cambiar el estado', mensajeErrorApi(err, 'Inténtalo de nuevo.'));
         },
       });
-    });
+    }
   }
+
+  private ruta = inject(ActivatedRoute);
 
   ngOnInit(): void {
     const recordado = this.estadoListados.leer<Record<string, unknown>>('empleados');
     if (recordado) Object.assign(this, recordado);
+    // Desde el Panel de Control ("trabajadores con el contrato ya vencido").
+    if (this.ruta.snapshot.queryParamMap.get('filtro') === 'contrato_vencido') {
+      this.filtros = { contrato_vencido: '1' };
+      this.busqueda = '';
+      this.pagina = 0;
+    }
     // Con filtros recordados, sus opciones hacen falta ya para mostrar los nombres.
     if (Object.keys(this.filtros ?? {}).length) this.cargarCatalogos();
     this.cargar();

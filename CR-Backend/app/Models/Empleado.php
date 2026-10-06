@@ -101,9 +101,12 @@ class Empleado extends Model
      * La fecha es siempre hoy: una fecha de cese que ya tuviera era el fin
      * programado de su contrato (puede ser futura), no la baja de ahora.
      */
-    public function darDeBaja(): void
+    public function darDeBaja(?string $fecha = null): void
     {
-        $hoy = now()->toDateString();
+        // La fecha real de la baja: a quien se le acabó el contrato el 31/12
+        // y se le da de baja el 5 de enero, su cese es el 31/12. Sin fecha,
+        // hoy.
+        $hoy = $fecha ?: now()->toDateString();
 
         // El contrato guarda cómo estaba (su fin previsto: el 31/12 de un
         // contratado, ninguno de un indeterminado) para poder reabrirlo.
@@ -151,6 +154,43 @@ class Empleado extends Model
         $contrato->update(['estado' => 'vigente', 'fecha_fin' => $fin, 'cerrado_por_baja' => false, 'fin_antes_de_baja' => null]);
 
         return $fin;
+    }
+
+    /**
+     * Cuándo termina su contrato actual: el fin del contrato vigente o, si
+     * no hay, su fecha de cese prevista. null para un indeterminado.
+     */
+    public function finDeContrato(): ?string
+    {
+        $fin = $this->contratoVigente()->value('fecha_fin') ?? $this->fecha_cese;
+
+        return $fin ? substr((string) $fin, 0, 10) : null;
+    }
+
+    /**
+     * Sigue activo pero su contrato ya terminó antes de `$fecha`.
+     *
+     * Es el olvido que hace pagar un mes de más: nadie lo renovó ni lo dio
+     * de baja, y la planilla de enero lo seguía incluyendo.
+     */
+    public function contratoVencidoAntesDe(string $fecha): bool
+    {
+        $fin = $this->finDeContrato();
+
+        return $this->estado === 'activo' && $fin !== null && $fin < $fecha;
+    }
+
+    /** Los activos con el contrato ya vencido a esa fecha (para filtros y avisos). */
+    public function scopeConContratoVencido($query, ?string $fecha = null)
+    {
+        $fecha ??= now()->toDateString();
+
+        return $query->where('empleados.estado', 'activo')->where(function ($q) use ($fecha) {
+            $q->whereHas('contratos', fn ($c) => $c->where('estado', 'vigente')->where('estado_registro', 'activo')
+                    ->whereNotNull('fecha_fin')->whereDate('fecha_fin', '<', $fecha))
+              ->orWhere(fn ($s) => $s->whereDoesntHave('contratos', fn ($c) => $c->where('estado', 'vigente')->where('estado_registro', 'activo'))
+                    ->whereNotNull('empleados.fecha_cese')->whereDate('empleados.fecha_cese', '<', $fecha));
+        });
     }
 
     /** Su cuenta vuelve a poder entrar. */

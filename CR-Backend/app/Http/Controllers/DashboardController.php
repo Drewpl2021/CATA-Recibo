@@ -762,7 +762,13 @@ class DashboardController extends Controller
             ->whereBetween('fecha_fin', [$hoy->toDateString(), $hoy->copy()->addDays(30)->toDateString()])
             ->count();
 
+        // Ya vencieron y la persona sigue activa: o se renueva, o se da de
+        // baja. Si no, la planilla del mes siguiente le paga de más.
+        $contratosVencidos = $this->empleadosActivos($sede)->conContratoVencido()->count();
+
         return [
+            ['clave' => 'contratos_vencidos', 'cuantos' => $contratosVencidos,
+             'texto' => 'trabajadores con el contrato ya vencido: renuévalo o dalos de baja', 'ruta' => '/inicio/empleados?filtro=contrato_vencido'],
             ['clave' => 'vacaciones', 'cuantos' => $vacacionesPorAprobar,
              'texto' => 'solicitudes de vacaciones esperando respuesta', 'ruta' => '/inicio/vacaciones'],
             ['clave' => 'sin_boleta', 'cuantos' => $sinBoleta,

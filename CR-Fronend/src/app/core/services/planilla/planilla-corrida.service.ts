@@ -29,7 +29,11 @@ export class PlanillaCorridaService extends EntityDataService<PlanillaCorrida> {
   /** Le arma la planilla a más gente dentro de una corrida que ya existe. */
   generar(
     corridaId: string,
-    grupo: { empleado_ids?: string[]; area_id?: string | null; cargo_id?: string | null; sede_id?: string | null }
+    grupo: {
+      empleado_ids?: string[]; area_id?: string | null; cargo_id?: string | null; sede_id?: string | null;
+      /** Armarle la planilla también a quien tiene el contrato vencido. */
+      incluir_contrato_vencido?: boolean;
+    }
   ): Observable<ApiResponse<ResultadoGeneracion>> {
     return this.http.post<ApiResponse<ResultadoGeneracion>>(
       `${environment.apiUrl}/${END_POINTS.planilla.corridas}/${corridaId}/generate`,

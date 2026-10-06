@@ -47,6 +47,8 @@ trait GeneraPlanillasEnLote
             'area_id'  => 'sometimes|uuid|exists:areas,id',
             'cargo_id' => 'sometimes|uuid|exists:cargos,id',
             'sede_id'  => 'sometimes|uuid|exists:sedes,id',
+            // Incluir también a quien tiene el contrato vencido (ver generarLote).
+            'incluir_contrato_vencido' => 'sometimes|boolean',
         ];
     }
 
@@ -93,6 +95,13 @@ trait GeneraPlanillasEnLote
         $omitidas  = 0;
         $detalle   = [];
 
+        // Con el contrato ya vencido al empezar el mes no se le arma sola: es
+        // el olvido que paga un mes de más. Se avisa, y la pantalla ofrece
+        // "Incluirlos igual" (que vuelve con incluir_contrato_vencido).
+        $inicioDelMes      = Carbon::create($anio, $mes, 1)->toDateString();
+        $incluirVencidos   = request()?->boolean('incluir_contrato_vencido') ?? false;
+        $revisarVencidos   = ! $incluirVencidos && ! AniosAnteriores::esAnterior($anio);
+
         $progreso = \App\Support\Progreso::actual()->etapa('Armando la planilla de cada trabajador', count($empleados));
         foreach ($empleados as $empleado) {
             $progreso->avanzar();
@@ -109,6 +118,17 @@ trait GeneraPlanillasEnLote
                     'motivo' => $empleado->fecha_cese
                         ? 'Ya había cesado (el ' . Carbon::parse($empleado->fecha_cese)->format('d/m/Y') . ')'
                         : 'Ya no trabaja en el colegio',
+                ];
+                continue;
+            }
+
+            if ($revisarVencidos && $empleado->contratoVencidoAntesDe($inicioDelMes)) {
+                $omitidas++;
+                $detalle[] = $base + [
+                    'estado'           => 'omitida',
+                    'contrato_vencido' => true,
+                    'motivo'           => 'Su contrato terminó el ' . Carbon::parse($empleado->finDeContrato())->format('d/m/Y')
+                        . ': renuévalo en su ficha o dalo de baja. Si sigue trabajando, inclúyelo igual.',
                 ];
                 continue;
             }
