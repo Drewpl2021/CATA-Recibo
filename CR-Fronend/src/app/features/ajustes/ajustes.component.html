@@ -41,6 +41,40 @@
     </ng-template>
   </section>
 
+  <!-- Cómo se calcula la 5ta: SUNAT, o la hoja de RR.HH. solo para comparar. -->
+  <section class="section-panel" *ngIf="ajustes">
+    <div class="ajuste-fila">
+      <div>
+        <h2 class="ajuste-fila__titulo" id="titulo-metodo-5ta">Renta de 5ta como la hoja de RR.HH.</h2>
+        <p class="ajuste-fila__descripcion">
+          Apagado (lo normal): la 5ta se calcula con el procedimiento de SUNAT. Encendido: como la hoja
+          «Calculo 5ta» de RR.HH., solo para comparar con planillas antiguas.
+        </p>
+      </div>
+
+      <label class="interruptor">
+        <input type="checkbox" role="switch" aria-labelledby="titulo-metodo-5ta"
+          [checked]="ajustes.renta5ta_como_hoja_rrhh" [disabled]="guardando"
+          (change)="cambiarMetodo5ta($any($event.target).checked)" />
+        <span>{{ ajustes.renta5ta_como_hoja_rrhh ? 'Activado' : 'Desactivado' }}</span>
+      </label>
+    </div>
+
+    <ul class="ajuste-detalle" *ngIf="!ajustes.renta5ta_como_hoja_rrhh; else comoHoja">
+      <li>Cada mes rehace la cuenta del año con lo cobrado y lo retenido de verdad, y divide entre 12, 9, 8, 5 o 4 según el mes.</li>
+      <li>Diciembre regulariza: se retiene lo que falte del impuesto del año.</li>
+      <li>Un ingreso extraordinario (un bono) se retiene entero en su mes.</li>
+      <li>Usa la UIT de cada año, de «Montos de ley por año». La hoja de cada trabajador está en Boletas y Finanzas → Renta de 5ta.</li>
+    </ul>
+    <ng-template #comoHoja>
+      <ul class="ajuste-detalle">
+        <li>Se proyecta el año una sola vez y se reparte en partes iguales de marzo a diciembre, como el Excel de RR.HH.</li>
+        <li>No se ajusta solo si cambia el sueldo o hay un bono: al final del año puede sobrar o faltar retención.</li>
+        <li>Úsalo solo para comparar con planillas hechas con ese Excel, y vuelve a apagarlo.</li>
+      </ul>
+    </ng-template>
+  </section>
+
   <!-- Montos de ley: cada planilla se calcula con los de SU año. -->
   <section class="section-panel" *ngIf="valoresLegales.length">
     <header class="panel-header">

@@ -198,6 +198,17 @@ export const routes: Routes = [
         canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/contratos/contratos-list/contratos-list.component').then(m => m.ContratosListComponent),
       },
+      // Renta de 5ta: la lista del año y la hoja de retención de cada trabajador.
+      {
+        path: 'renta-5ta',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/renta5ta/renta5ta-list/renta5ta-list.component').then(m => m.Renta5taListComponent),
+      },
+      {
+        path: 'renta-5ta/:id',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/renta5ta/renta5ta-detalle/renta5ta-detalle.component').then(m => m.Renta5taDetalleComponent),
+      },
       // ── Sistema de permisos y menús (solo Admin) ──
       {
         path: 'usuarios',

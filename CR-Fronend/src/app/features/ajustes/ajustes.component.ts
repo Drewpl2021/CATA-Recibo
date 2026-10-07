@@ -242,6 +242,32 @@ export class AjustesComponent implements OnInit {
     });
   }
 
+  /** Volver (o no) al método de la hoja de RR.HH. para la 5ta. */
+  cambiarMetodo5ta(comoHoja: boolean): void {
+    if (!this.ajustes) return;
+
+    const antes = this.ajustes.renta5ta_como_hoja_rrhh;
+    this.ajustes = { ...this.ajustes, renta5ta_como_hoja_rrhh: comoHoja };
+    this.guardando = true;
+
+    this.ajustesService.guardar({ renta5ta_como_hoja_rrhh: comoHoja }).subscribe({
+      next: (res) => {
+        this.guardando = false;
+        if (res.success) {
+          this.ajustes = res.data;
+          this.toastService.success('Ajuste guardado', comoHoja
+            ? 'La 5ta se calcula como la hoja de RR.HH. Las planillas que ya existen cambian al recalcularlas.'
+            : 'La 5ta se calcula con el procedimiento de SUNAT. Recalcula en Renta de 5ta para aplicarlo a las planillas abiertas.');
+        }
+      },
+      error: (err) => {
+        this.guardando = false;
+        this.ajustes = { ...this.ajustes!, renta5ta_como_hoja_rrhh: antes };
+        this.toastService.error('No se guardó', mensajeErrorApi(err, 'No se pudo guardar el ajuste.'));
+      },
+    });
+  }
+
   cambiarAniosAnteriores(activo: boolean): void {
     if (!this.ajustes) return;
 

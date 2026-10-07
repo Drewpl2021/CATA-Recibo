@@ -37,6 +37,7 @@ export * from './sistema/modulo-padre.service';
 export * from './sistema/notificacion.service';
 export * from './sistema/dashboard.service';
 export * from './planilla/planilla-corrida.service';
+export * from './planilla/renta5ta.service';
 export * from './sistema/auditoria.service';
 export * from './sistema/ajustes.service';
 export * from './planilla/importacion-conceptos.service';

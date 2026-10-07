@@ -54,6 +54,18 @@ class MotorRenta5ta
     private const NO_AFECTOS = [ConceptosDePago::MOVILIDAD];
 
     /**
+     * Lo ya calculado de cada trabajador y mes (sueldo del mes, proporción,
+     * estimados). La hoja del año pide lo mismo muchas veces, y la lista de
+     * todo el personal la arma para cada uno: sin esto tardaba segundos.
+     */
+    private array $memoria = [];
+
+    private function recordar(string $clave, callable $calculo): mixed
+    {
+        return array_key_exists($clave, $this->memoria) ? $this->memoria[$clave] : ($this->memoria[$clave] = $calculo());
+    }
+
+    /**
      * Lo que de verdad pasó cada mes del año: de su planilla o del historial.
      *
      * @return array<int, array{fuente:string, remuneracion:float, ordinaria:float, gratificacion:float, extraordinaria:float, retencion:float, sueldo:?float}>
@@ -149,7 +161,8 @@ class MotorRenta5ta
         // en parte (entró a mitad), el de su ficha.
         $asignacion = $this->calcularAsignacionFamiliar($empleado, $anio);
         $sueldoDeEsteMes = $sueldoMes ?? ($real['sueldo'] ?? null);
-        $mesCompleto = ! $empleado->exists || $this->proporcionDelMes($empleado, $mes, $anio) >= 1;
+        $mesCompleto = ! $empleado->exists
+            || $this->recordar("prop-{$empleado->id}-{$anio}-{$mes}", fn () => $this->proporcionDelMes($empleado, $mes, $anio)) >= 1;
         $sueldoMensual = ($sueldoDeEsteMes !== null && $mesCompleto) ? $sueldoDeEsteMes : (float) $empleado->sueldo_base;
         $mensual = $sueldoMensual + $asignacion + (float) ($bonifCargo ?? $empleado->bonificacion_cargo ?? 0);
 
@@ -167,9 +180,9 @@ class MotorRenta5ta
                 $delMes += $bonifCargo - $this->lineaDe($empleado, $mes, $anio, ConceptosDePago::BONIFICACION_CARGO);
             }
         } else {
-            $delMes = ($sueldoMes ?? (float) ($this->sueldoDelMes($empleado, $mes, $anio) ?? 0))
+            $delMes = ($sueldoMes ?? $this->sueldoFicha($empleado, $mes, $anio))
                 + $asignacion
-                + ($bonifCargo ?? $this->bonificacionCargoDelMes($empleado, $mes, $anio));
+                + ($bonifCargo ?? $this->bonifFicha($empleado, $mes, $anio));
         }
 
         $mesesQueFaltan = $hasta - $mes + 1;
@@ -201,7 +214,7 @@ class MotorRenta5ta
                 $anteriores += $reales[$k]['remuneracion'];
             } else {
                 $sinDato[] = $k;
-                $anteriores += $this->estimadoDelMes($empleado, $k, $anio, $asignacion);
+                $anteriores += $this->recordar("est-{$empleado->id}-{$anio}-{$k}", fn () => $this->estimadoDelMes($empleado, $k, $anio, $asignacion));
             }
         }
 
@@ -279,9 +292,18 @@ class MotorRenta5ta
                 'retenido'         => round($retenidoReal, 2),
                 'por_retener'      => round(max(0, $impuestoAnual - $retenidoReal), 2),
                 'meses_con_dato'   => array_keys($reales),
-                'meses_sin_dato'   => array_values(array_unique(array_merge(...array_map(fn ($f) => $f['meses_sin_dato'], $meses)))),
+                // Solo los meses que ya pasaron: los que vienen todavía no tienen por qué tener dato.
+                'meses_sin_dato'   => $this->mesesPasadosSinDato($meses, $reales, $anio),
             ],
         ];
+    }
+
+    /** Los meses ya pasados (antes del mes en curso) que trabajó y no tienen planilla ni historial. */
+    private function mesesPasadosSinDato(array $meses, array $reales, int $anio): array
+    {
+        $hasta = $anio < (int) now()->year ? 12 : ($anio > (int) now()->year ? 0 : (int) now()->month - 1);
+
+        return array_values(array_filter(range(1, 12), fn ($m) => $m <= $hasta && $meses[$m]['trabaja'] && ! isset($reales[$m])));
     }
 
     /**
@@ -291,8 +313,7 @@ class MotorRenta5ta
      */
     private function estimadoDelMes(Empleado $empleado, int $mes, int $anio, float $asignacion): float
     {
-        $ordinario = (float) ($this->sueldoDelMes($empleado, $mes, $anio) ?? 0) + $asignacion
-            + $this->bonificacionCargoDelMes($empleado, $mes, $anio);
+        $ordinario = $this->sueldoFicha($empleado, $mes, $anio) + $asignacion + $this->bonifFicha($empleado, $mes, $anio);
 
         if (in_array($mes, [7, 12], true)) {
             $mensual = (float) $empleado->sueldo_base + $asignacion + (float) ($empleado->bonificacion_cargo ?? 0);
@@ -301,6 +322,17 @@ class MotorRenta5ta
         }
 
         return $ordinario;
+    }
+
+    /** El sueldo de ese mes según su ficha (prorrateado si entró o cesó a mitad). */
+    private function sueldoFicha(Empleado $empleado, int $mes, int $anio): float
+    {
+        return $this->recordar("sueldo-{$empleado->id}-{$anio}-{$mes}", fn () => (float) ($this->sueldoDelMes($empleado, $mes, $anio) ?? 0));
+    }
+
+    private function bonifFicha(Empleado $empleado, int $mes, int $anio): float
+    {
+        return $this->recordar("bonif-{$empleado->id}-{$anio}-{$mes}", fn () => $this->bonificacionCargoDelMes($empleado, $mes, $anio));
     }
 
     /** Lo que tiene una línea de su planilla del mes (0 si no hay planilla o línea). */

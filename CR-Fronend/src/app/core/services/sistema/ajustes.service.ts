@@ -8,6 +8,8 @@ import { environment } from '../../../../environments/environment';
 export interface AjustesSistema {
   /** Si RR.HH. puede armar planillas y boletas de años anteriores, de registro. */
   permitir_anios_anteriores: boolean;
+  /** true: la 5ta como la hoja de RR.HH. (solo para comparar). false: SUNAT. */
+  renta5ta_como_hoja_rrhh: boolean;
 }
 
 /**

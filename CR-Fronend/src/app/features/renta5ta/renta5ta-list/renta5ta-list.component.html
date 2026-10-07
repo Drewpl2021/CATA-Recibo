@@ -1,0 +1,121 @@
+<app-page-header
+  icono="wallet"
+  titulo="Renta de 5ta"
+  subtitulo="Cuánto le toca retener a cada trabajador en el año, con el procedimiento de SUNAT."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <div headerActions style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <button class="btn-secondary" (click)="abrirHistorial()">
+      <app-icon icono="upload" [tamano]="16"></app-icon>
+      Cargar historial
+    </button>
+    <button class="btn-primary" (click)="recalcular()" [disabled]="recalculando">
+      <app-icon icono="refresh" [tamano]="16"></app-icon>
+      {{ recalculando ? 'Recalculando…' : 'Recalcular 5ta' }}
+    </button>
+    <button class="btn-exportar" (click)="exportar()" [disabled]="exportando">
+      <app-icon icono="excel" [tamano]="16"></app-icon>
+      {{ exportando ? 'Generando…' : 'Descargar hojas de retención' }}
+    </button>
+  </div>
+</app-page-header>
+
+<section class="panel-filtros">
+  <header class="panel-filtros__cabecera">
+    <div>
+      <h2 class="panel-filtros__titulo">Renta de 5ta de</h2>
+      <p class="panel-filtros__periodo">{{ anio }}</p>
+    </div>
+    <div class="panel-filtros__cifras" *ngIf="datos">
+      <div class="cifra" title="La UIT del año, de Ajustes → Montos de ley">
+        <strong>{{ datos.uit | number: '1.0-0' }}</strong>
+        <span>UIT {{ anio }}</span>
+      </div>
+      <div class="cifra">
+        <strong>{{ datos.resumen.impuesto_anual | number: '1.2-2' }}</strong>
+        <span>Impuesto del año</span>
+      </div>
+      <div class="cifra cifra--destacada">
+        <strong>{{ datos.resumen.retenido | number: '1.2-2' }}</strong>
+        <span>Ya retenido</span>
+      </div>
+    </div>
+  </header>
+  <div class="panel-filtros__campos">
+    <div class="campo-filtro campo-filtro--corto">
+      <label for="anio5ta">Año</label>
+      <select id="anio5ta" class="form-control" [(ngModel)]="anio" (ngModelChange)="cargar()">
+        <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<!-- Sin los meses pagados antes del sistema, la cuenta se apoya en estimados. -->
+<div class="form-nota form-nota--aviso-contrato" *ngIf="datos && datos.resumen.sin_historial > 0" role="status">
+  <strong>{{ datos.resumen.sin_historial }} trabajador(es) tienen meses sin dato.</strong>
+  Son meses de {{ anio }} que se pagaron antes del sistema: mientras no se carguen, se estiman con su ficha
+  y la retención puede no ser exacta. Cárgalos con <em>Cargar historial</em> (lo que cobró y lo que se le
+  retuvo cada mes, de sus boletas o de la PLAME).
+</div>
+
+<app-data-table
+  entidad="este trabajador"
+  [columnas]="columnas"
+  [datos]="datos?.filas ?? []"
+  [cargando]="cargando"
+  [camposBusqueda]="['dni', 'nombre', 'cargo']"
+  [acciones]="[]"
+  [accionesPersonalizadas]="acciones"
+  [filasPorPagina]="15"
+  mensajeVacio="No hay trabajadores en este año."
+  (accionPersonalizada)="alAccionar($event)"
+></app-data-table>
+
+<p class="form-ayuda" style="margin-top: 12px;" *ngIf="datos">
+  «Retención del mes» es la de {{ nombreDelMes }}: la de su planilla si ya existe, o la que le tocaría.
+  En la hoja de cada uno (el ojo) está cuánto le falta retener y el cálculo mes por mes.
+</p>
+
+<!-- Cargar el historial de los meses pagados antes del sistema. -->
+<app-form-modal
+  [(visible)]="modalHistorial"
+  [titulo]="'Historial de 5ta de ' + anio"
+  textoGuardar="Cargar historial"
+  [guardando]="subiendo"
+  (guardar)="subirHistorial()"
+  (cancelar)="modalHistorial = false"
+  ancho="560px"
+>
+  <div class="form-fields">
+    <p class="form-nota">
+      Lo que cobró y lo que se le retuvo de 5ta a cada trabajador en los meses que se pagaron
+      <strong>antes del sistema</strong>. Con eso la 5ta de los meses siguientes resta lo ya retenido de verdad.
+    </p>
+    <button type="button" class="btn-secondary" (click)="descargarModelo()" style="align-self: flex-start;">
+      <app-icon icono="download" [tamano]="16"></app-icon>
+      Descargar el modelo de {{ anio }}
+    </button>
+    <app-selector-archivo
+      [extensiones]="['xlsx', 'xls']"
+      [pesoMaximoMb]="10"
+      [(archivos)]="archivo"
+      [ocupado]="subiendo"
+      textoOcupado="Leyendo el historial y recalculando…"
+      ayuda="El modelo trae a todo el personal con una columna de remuneración y otra de retención por mes. Los meses que ya están en el sistema dicen «En el sistema» y no hace falta llenarlos."
+    ></app-selector-archivo>
+
+    <div class="resumen-masivo" *ngIf="resultado as r">
+      <div class="resumen-masivo__dato"><strong>{{ r.meses_guardados }}</strong><span>Meses cargados</span></div>
+      <div class="resumen-masivo__dato"><strong>{{ r.trabajadores }}</strong><span>Trabajadores</span></div>
+      <div class="resumen-masivo__dato"><strong>{{ r.recalculadas }}</strong><span>Planillas recalculadas</span></div>
+    </div>
+    <p class="form-ayuda" *ngIf="resultado?.meses_en_sistema">
+      {{ resultado!.meses_en_sistema }} mes(es) ya tienen planilla en el sistema: esos salen de ahí y no se tocaron.
+    </p>
+    <p class="form-nota form-nota--alerta" *ngIf="resultado?.no_encontrados?.length">
+      No se encontró a estos DNI: {{ resultado!.no_encontrados.join(', ') }}.
+    </p>
+  </div>
+</app-form-modal>

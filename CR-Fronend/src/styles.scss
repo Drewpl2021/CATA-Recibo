@@ -3425,6 +3425,102 @@ textarea.form-control {
   border-left-color: var(--warning);
 }
 
+/* ── La hoja de retención de 5ta (Renta de 5ta → un trabajador) ──
+   Un mes por columna, como la hoja «RETENCION» de la PLAME. Es ancha: el
+   marco tiene su propio desplazamiento horizontal y la primera columna se
+   queda fija para no perder qué fila se está leyendo. */
+.hoja-5ta {
+  padding: 0;
+  overflow: hidden;
+}
+
+.hoja-5ta__marco {
+  overflow-x: auto;
+}
+
+.hoja-5ta__tabla {
+  width: 100%;
+  min-width: 1180px;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hoja-5ta__tabla th {
+  background: var(--table-head-bg);
+  color: var(--table-head-text);
+  font-weight: 600;
+  padding: 10px 8px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.hoja-5ta__tabla td {
+  padding: 7px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.hoja-5ta__tabla .hoja-5ta__concepto {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  text-align: left;
+  min-width: 220px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
+.hoja-5ta__tabla th.hoja-5ta__concepto {
+  background: var(--table-head-bg);
+  color: var(--table-head-text);
+}
+
+.hoja-5ta__ayuda {
+  color: var(--text-muted);
+  vertical-align: -2px;
+  margin-left: 2px;
+}
+
+/* Las filas que importan: renta, impuesto y la retención que corresponde. */
+.hoja-5ta__fila--destacada td {
+  font-weight: 700;
+  background: var(--surface-alt);
+}
+
+.hoja-5ta__fila--destacada td.hoja-5ta__concepto {
+  color: var(--text);
+  background: var(--surface-alt);
+}
+
+/* El mes en curso. */
+.hoja-5ta__tabla .hoja-5ta__mes--actual {
+  background: var(--brand-100);
+}
+
+.hoja-5ta__tabla th.hoja-5ta__mes--actual {
+  background: var(--marca-bg-deep);
+}
+
+/* Lo retenido de verdad no es lo que correspondía. */
+.hoja-5ta__tabla .hoja-5ta__celda--difiere {
+  color: var(--danger-text);
+  font-weight: 700;
+}
+
+.hoja-5ta__fuente td,
+.hoja-5ta__acciones td {
+  text-align: center;
+}
+
+.hoja-5ta__acciones .btn-secondary {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
 .form-nota--alerta {
   color: var(--danger-text);
   background-color: var(--danger-bg);

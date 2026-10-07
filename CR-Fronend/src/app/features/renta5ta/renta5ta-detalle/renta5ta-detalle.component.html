@@ -1,0 +1,105 @@
+<app-page-header
+  icono="wallet"
+  [titulo]="hoja?.empleado ? 'Renta de 5ta · ' + hoja!.empleado!.nombre : 'Renta de 5ta'"
+  [subtitulo]="hoja?.empleado ? 'DNI ' + hoja!.empleado!.dni + (hoja!.empleado!.cargo ? ' · ' + hoja!.empleado!.cargo : '') + ' · Hoja de retención de ' + anio : 'Hoja de retención'"
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+>
+  <button headerActions class="btn-secondary" type="button" (click)="volver()">
+    <app-icon icono="arrow_left" [tamano]="16"></app-icon>
+    Volver a la lista
+  </button>
+</app-page-header>
+
+<p class="form-ayuda" *ngIf="cargando && !hoja">Calculando su hoja de retención…</p>
+
+<ng-container *ngIf="hoja">
+  <div class="form-nota form-nota--aviso-contrato" *ngIf="hoja.resumen.meses_sin_dato.length" role="status">
+    <strong>Faltan datos de {{ hoja.resumen.meses_sin_dato.length }} mes(es):</strong>&nbsp;<span *ngFor="let n of hoja.resumen.meses_sin_dato; let ultimo = last">{{ nombreMes(n) }}{{ ultimo ? '' : ', ' }}</span>.
+    Se pagaron antes del sistema y se están estimando con su ficha. Escríbelos con el botón
+    <em>Escribir</em> de cada mes (lo que cobró y lo que se le retuvo, de su boleta o de la PLAME).
+  </div>
+
+  <!-- La hoja: un mes por columna, como la hoja «RETENCION» de la PLAME. -->
+  <div class="section-panel hoja-5ta">
+    <div class="hoja-5ta__marco">
+      <table class="hoja-5ta__tabla">
+        <thead>
+          <tr>
+            <th class="hoja-5ta__concepto">Detalle</th>
+            <th *ngFor="let n of meses" [class.hoja-5ta__mes--actual]="n === mesActual && anio === (hoja.anio)">
+              {{ nombreMes(n).slice(0, 3) }}
+            </th>
+            <th>Año</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="hoja-5ta__fuente">
+            <td class="hoja-5ta__concepto">Dato de</td>
+            <td *ngFor="let n of meses" [class.hoja-5ta__mes--actual]="n === mesActual">
+              <span class="status-badge" *ngIf="mesDe(n)?.trabaja"
+                [ngClass]="'status-badge-' + (mesDe(n)!.fuente === 'planilla' ? 'success' : mesDe(n)!.fuente === 'historial' ? 'info' : 'warning')">
+                {{ fuentes[mesDe(n)!.fuente] }}
+              </span>
+            </td>
+            <td></td>
+          </tr>
+          <tr *ngFor="let fila of filas" [class.hoja-5ta__fila--destacada]="fila.destacada">
+            <td class="hoja-5ta__concepto" [title]="fila.ayuda ?? ''">
+              {{ fila.etiqueta }}
+              <app-icon *ngIf="fila.ayuda" icono="info" [tamano]="13" class="hoja-5ta__ayuda"></app-icon>
+            </td>
+            <td *ngFor="let n of meses" [class.hoja-5ta__mes--actual]="n === mesActual"
+              [class.hoja-5ta__celda--difiere]="fila.etiqueta === 'Retención real' && difiere(n)">
+              {{ celda(fila, n) }}
+            </td>
+            <td>{{ totalDe(fila) }}</td>
+          </tr>
+          <tr class="hoja-5ta__acciones">
+            <td class="hoja-5ta__concepto">Antes del sistema</td>
+            <td *ngFor="let n of meses">
+              <button type="button" class="btn-secondary" *ngIf="sePuedeEscribir(n)" (click)="editarMes(n)"
+                [title]="'Escribir lo que cobró y se le retuvo en ' + nombreMes(n)">
+                {{ mesDe(n)?.fuente === 'historial' ? 'Cambiar' : 'Escribir' }}
+              </button>
+            </td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="form-ayuda" style="margin-top: 12px;">
+    Procedimiento de SUNAT (Art. 40 del Reglamento de la Ley del Impuesto a la Renta), con la UIT de {{ anio }}
+    (S/ {{ hoja.uit | number: '1.2-2' }}). En rojo, los meses en que lo retenido no es lo que correspondía.
+  </p>
+</ng-container>
+
+<!-- Un mes pagado antes del sistema. -->
+<app-form-modal
+  [(visible)]="modalMes"
+  [titulo]="nombreMes(editando.mes) + ' ' + anio + ' (antes del sistema)'"
+  textoGuardar="Guardar mes"
+  [guardando]="guardando"
+  (guardar)="guardarMes()"
+  (cancelar)="modalMes = false"
+>
+  <div class="form-fields">
+    <div class="form-group">
+      <label for="remMes">Lo que cobró ese mes (S/)</label>
+      <input id="remMes" type="number" class="form-control" min="0" step="0.01" [(ngModel)]="editando.remuneracion" />
+      <small class="form-ayuda">Todo lo que paga 5ta: sueldo, asignación familiar, bonificaciones, gratificación con su 9%… Sin la movilidad.</small>
+    </div>
+    <div class="form-group">
+      <label for="retMes">Lo que se le retuvo de 5ta ese mes (S/)</label>
+      <input id="retMes" type="number" class="form-control" min="0" step="0.01" [(ngModel)]="editando.retencion" />
+      <small class="form-ayuda">Como salió en su boleta o en la PLAME. 0 si no se le retuvo nada.</small>
+    </div>
+    <button type="button" class="btn-secondary" *ngIf="mesDe(editando.mes)?.fuente === 'historial'" (click)="guardarMes(true)"
+      [disabled]="guardando" style="align-self: flex-start;">
+      <app-icon icono="trash" [tamano]="16"></app-icon>
+      Borrar este mes del historial
+    </button>
+  </div>
+</app-form-modal>
