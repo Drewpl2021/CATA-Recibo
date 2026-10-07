@@ -159,12 +159,11 @@
     // Las tasas de ONP y EsSalud de la etiqueta son las del año de la boleta: "13" y no "13.00".
     $ley  = \App\Models\ValorLegal::delAnio((int) $anio);
     $tasa = fn (float $v) => rtrim(rtrim(number_format($v, 2, '.', ''), '0'), '.');
-    // "Otros Conceptos" lleva el detalle que se le escribió a la línea, como
-    // en la boleta física: "Descuento Otros Conceptos: Cobro de corbata".
-    $otros = function (string $nombre, string $etiqueta) use ($lineas) {
-        $detalle = $lineas->first(fn ($d) => $d->paymentConcept?->nombre === $nombre && $d->descripcion)?->descripcion;
-        return $detalle ? "{$etiqueta}: {$detalle}" : $etiqueta;
-    };
+    // El DETALLE de una línea ("corbatas y polos", "curso IA") no se imprime:
+    // es una nota interna para RR.HH. y Administración. Pedido de RR.HH.:
+    // los cobros sueltos van todos a "Otros Conceptos", ellos le avisan al
+    // personal de qué es cada uno, y la boleta (que es lo que ve SUNAFIL)
+    // queda con una sola línea. El detalle se ve en la planilla del sistema.
 
     $filasIngreso = [
         ['Remuneración Básica', (float) $planilla->sueldo_base],
@@ -173,7 +172,7 @@
         ['Vacaciones Truncas', $montoDe($C::VACACIONES_TRUNCAS)],
         ['Gratificaciones Fiestas Patrias - Ley 29351 y 30334', $montoDe($C::GRATIFICACION)],
         ['Bonif. Extraord. Temporal - Ley 29351 y 30334', $montoDe($C::BONIF_EXTRAORDINARIA)],
-        [$otros($C::OTROS_INGRESOS, 'Otros Conceptos - Subsidio de Maternidad'), $montoDe($C::OTROS_INGRESOS)],
+        ['Otros Conceptos', $montoDe($C::OTROS_INGRESOS)],
         ['Bonificación', $montoDe('Bonificaciones')],
         ['Compensación por Tiempo de Servicios', $montoDe('Compensación por Tiempo de Servicios')],
     ];
@@ -186,7 +185,7 @@
         ['Descuento Serv. Alimentación', $montoDe('Descuento Serv. Alimentación')],
         ['Descuento Serv. de Bazar', $montoDe('Descuento Serv. Bazar')],
         ['Descuento Autorizado - Diezmo', $montoDe($C::DIEZMO)],
-        [$otros($C::OTROS_DESCUENTOS, 'Descuento Otros Conceptos'), $montoDe($C::OTROS_DESCUENTOS)],
+        ['Descuento Otros Conceptos', $montoDe($C::OTROS_DESCUENTOS)],
         ['Descuento - Pago Escolaridad Mensual', $montoDe('Descuento - Pago de Escolaridad Mensual')],
     ];
     $filasAporte = [
@@ -207,9 +206,10 @@
     ];
     // Cada concepto agregado (a uno, a un grupo o por Excel) sale con su
     // nombre, marcado como "otro concepto" (la tercera posición es la clase).
+    // Solo el nombre: su detalle tampoco se imprime (ver arriba).
     $extras = fn ($coleccion) => $coleccion
         ->reject(fn ($d) => in_array($d->paymentConcept?->nombre, $fijos, true))
-        ->groupBy(fn ($d) => $d->etiqueta)
+        ->groupBy(fn ($d) => $d->paymentConcept?->etiqueta_boleta ?: ($d->paymentConcept?->nombre ?? ''))
         ->map(fn ($grupo, $etiqueta) => [$etiqueta, (float) $grupo->sum('monto_calculado'), 'otro-concepto'])
         ->values()->all();
     // En Ingresos y Descuentos van justo debajo de su fila "Otros Conceptos";

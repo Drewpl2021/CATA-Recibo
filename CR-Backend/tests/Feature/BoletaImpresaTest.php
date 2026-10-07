@@ -21,7 +21,7 @@ class BoletaImpresaTest extends TestCase
     private const FILAS_DEL_MODELO = [
         'Remuneración Básica', 'Bonificación por Cargo', 'Asignación Familiar', 'Vacaciones Truncas',
         'Gratificaciones Fiestas Patrias - Ley 29351 y 30334', 'Bonif. Extraord. Temporal - Ley 29351 y 30334',
-        'Otros Conceptos - Subsidio de Maternidad', 'Bonificación', 'Compensación por Tiempo de Servicios',
+        'Otros Conceptos', 'Bonificación', 'Compensación por Tiempo de Servicios',
         'ONP 13%', 'SPP: Fondo Pensiones', 'SPP: Prima de Seguro', 'SPP: Comisión', 'I.R. 5ta Categoría',
         'Descuento Serv. Alimentación', 'Descuento Serv. de Bazar', 'Descuento Autorizado - Diezmo',
         'Descuento Otros Conceptos', 'Descuento - Pago Escolaridad Mensual',
@@ -57,7 +57,7 @@ class BoletaImpresaTest extends TestCase
         $this->assertMatchesRegularExpression('/class="monto">-<\/td>/', $html);
     }
 
-    public function test_los_otros_conceptos_salen_con_su_detalle_debajo_de_otros_conceptos(): void
+    public function test_el_detalle_de_otros_conceptos_no_se_imprime_y_los_extras_van_debajo(): void
     {
         Storage::fake('local');
         Mail::fake();
@@ -82,9 +82,13 @@ class BoletaImpresaTest extends TestCase
             ->assertOk();
 
         $html = view('boleta', $datos)->render();
-        $this->assertStringContainsString('Descuento Otros Conceptos: Préstamo', $html);
+        // El detalle es interno (RR.HH. y Admin lo ven en la planilla): en la
+        // boleta sale solo "Descuento Otros Conceptos", con su monto.
+        $this->assertStringNotContainsString('Préstamo', $html);
+        $this->assertStringContainsString('S/ 50.00', $html);
+        $this->assertSame('Préstamo', PayrollDetalle::where('planilla_id', $planilla->id)->where('payment_concept_id', $otros->id)->value('descripcion'));
         // La corbata, justo después de "Otros Conceptos" y antes de la escolaridad.
-        $otrosEn = strpos($html, 'Descuento Otros Conceptos: Préstamo');
+        $otrosEn = strpos($html, 'Descuento Otros Conceptos');
         $corbataEn = strpos($html, 'Descuento Corbatas y Polos');
         $escolaridadEn = strpos($html, 'Descuento - Pago Escolaridad Mensual');
         $this->assertTrue($otrosEn < $corbataEn && $corbataEn < $escolaridadEn, 'La corbata tiene que ir debajo de Otros Conceptos');

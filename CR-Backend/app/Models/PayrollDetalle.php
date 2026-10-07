@@ -49,9 +49,9 @@ class PayrollDetalle extends Model
     }
 
     /**
-     * Lo que se imprime en la boleta: el nombre del concepto, y si esta aplicación
-     * puntual trae una descripción (ej. concepto genérico "Otros Conceptos" +
-     * descripcion "Subsidio de Maternidad"), se le pega detrás con ": ".
+     * El nombre del concepto con su detalle detrás ("Otros Conceptos: Corbatas
+     * y polos"), para las pantallas internas de RR.HH. La BOLETA no lo usa:
+     * ahí el detalle no se imprime (ver resources/views/boleta.blade.php).
      */
     protected $appends = ['como_se_calculo'];
 

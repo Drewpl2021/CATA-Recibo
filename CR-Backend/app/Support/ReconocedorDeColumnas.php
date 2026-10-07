@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
  *
  *   1. Sin título                     → se ignora.
  *   2. "DNI", "Nro. documento"...     → identifica al trabajador.
- *   3. "Detalle", "Glosa"...          → texto para la boleta del concepto de al lado.
+ *   3. "Detalle", "Glosa"...          → nota interna del concepto de al lado (no se imprime).
  *   4. Un nombre ya confirmado antes  → reconocida (la tabla concepto_alias).
  *   5. Igual al nombre del catálogo   → reconocida.
  *   6. "Nombre", "Cargo", "Total"...  → de referencia, no se importa.
@@ -180,7 +180,7 @@ final class ReconocedorDeColumnas
             for ($j = $i - 1; $j >= 0; $j--) {
                 if (in_array($columnas[$j]['accion'], ['usar', 'crear', 'elegir'], true)) {
                     $columnas[$i]['de_columna'] = $j;
-                    $columnas[$i]['motivo'] = "Detalle para la boleta de «{$columnas[$j]['titulo']}».";
+                    $columnas[$i]['motivo'] = "Detalle interno de «{$columnas[$j]['titulo']}» (no sale en la boleta).";
                     break;
                 }
             }

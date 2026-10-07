@@ -200,7 +200,7 @@
             <div class="fin-fila"><span class="fin-concepto">Vacaciones Truncas</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.vacacionesTruncas" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Gratificaciones Fiestas Patrias</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.gratificacionesFiestas" min="0" step="0.01"></div>
             <div class="fin-fila"><span class="fin-concepto">Bonif. Extraord. Temporal</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonifExtraordTemporal" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Otros Conceptos{{ detalleOtrosIngresos ? ': ' + detalleOtrosIngresos : ' / Subsidio' }}</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.otrosConceptosSubsidio" min="0" step="0.01"></div>
+            <div class="fin-fila"><span class="fin-concepto">Otros Conceptos{{ detalleOtrosIngresos ? ': ' + detalleOtrosIngresos : '' }}</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.otrosConceptosSubsidio" min="0" step="0.01"></div>
             <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraIngreso" title="Otro concepto de su planilla del mes">
               <span class="fin-concepto">{{ c.nombre }}</span>
               <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
@@ -292,7 +292,7 @@
               </div>
             </div>
             <div class="form-group">
-              <label for="nuevoDetalle">Detalle (opcional, sale en la boleta)</label>
+              <label for="nuevoDetalle">Detalle (opcional, nota interna: no sale en la boleta)</label>
               <input id="nuevoDetalle" type="text" class="form-control" maxlength="120" placeholder="Ej. Cobro de corbata" [(ngModel)]="nuevoConcepto.detalle">
             </div>
             <p class="form-ayuda">
