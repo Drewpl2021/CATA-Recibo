@@ -525,7 +525,7 @@ class DashboardController extends Controller
 
         $planillasDelMes = $this->planillasDelMes($mes, $anio, $sede);
 
-        $nomina = (float) (clone $planillasDelMes)->sum('total');
+        $nomina = Planilla::sumaDeNetos($planillasDelMes);
         $cuantasPlanillas = (clone $planillasDelMes)->count();
 
         // Boletas emitidas: documentos de tipo boleta atados a una planilla
@@ -562,10 +562,10 @@ class DashboardController extends Controller
             ->where('planilla.mes', $mes)
             ->where('planilla.anio', $anio)
             ->groupBy('areas.id', 'areas.nombre')
-            ->orderByDesc(DB::raw('SUM(planilla.total)'))
+            ->orderByDesc(DB::raw('SUM(' . Planilla::NETO_EXACTO_SQL . ')'))
             ->get([
                 DB::raw('COALESCE(areas.nombre, "Sin área") as etiqueta'),
-                DB::raw('SUM(planilla.total) as valor'),
+                DB::raw('SUM(' . Planilla::NETO_EXACTO_SQL . ') as valor'),
             ]);
 
         return $filas->map(fn ($f) => [
@@ -618,7 +618,7 @@ class DashboardController extends Controller
     {
         $porMes = Planilla::where('anio', $anio)
             ->groupBy('mes')
-            ->pluck(DB::raw('SUM(total)'), 'mes');
+            ->pluck(DB::raw('SUM(' . Planilla::NETO_EXACTO_SQL . ')'), 'mes');
 
         $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
         $salida = [];

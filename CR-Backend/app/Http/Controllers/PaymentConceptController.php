@@ -288,7 +288,7 @@ class PaymentConceptController extends Controller
                     'id'            => $corrida->id,
                     'nombre'        => $corrida->nombre,
                     'personas'      => (int) $corrida->planillas()->count(),
-                    'masa_salarial' => (float) $corrida->planillas()->sum('total'),
+                    'masa_salarial' => \App\Models\Planilla::sumaDeNetos($corrida->planillas()),
                 ] : null,
                 'resumen'  => ['aplicadas' => $aplicadas, 'omitidas' => $omitidas],
                 'detalle'  => $detalle,

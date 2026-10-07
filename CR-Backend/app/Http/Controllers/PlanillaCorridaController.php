@@ -115,12 +115,12 @@ class PlanillaCorridaController extends Controller
         return [
             'total'         => $ids->count(),
             'personas'      => Planilla::whereIn('corrida_id', $ids)->count(),
-            'masaSalarial'  => (float) Planilla::whereIn('corrida_id', $ids)->sum('total'),
+            'masaSalarial'  => Planilla::sumaDeNetos(Planilla::whereIn('corrida_id', $ids)),
             // El grupo "Sin agrupar" de la pantalla: las planillas que no
             // pertenecen a ninguna corrida. Son las de siempre, que se
             // quedaron como estaban al aparecer las corridas.
             'sinAgrupar'    => (int) $sueltas->count(),
-            'sinAgruparMasa' => (float) (clone $sueltas)->sum('total'),
+            'sinAgruparMasa' => Planilla::sumaDeNetos($sueltas),
         ];
     }
 
@@ -619,7 +619,7 @@ class PlanillaCorridaController extends Controller
     {
         return $corrida->toArray() + [
             'personas'      => (int) $corrida->planillas()->count(),
-            'masa_salarial' => (float) $corrida->planillas()->sum('total'),
+            'masa_salarial' => Planilla::sumaDeNetos($corrida->planillas()),
         ];
     }
 }

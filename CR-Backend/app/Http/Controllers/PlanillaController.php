@@ -42,7 +42,7 @@ class PlanillaController extends Controller
             // no de las diez que se están viendo. reorder() quita el ORDER BY,
             // que en una consulta de suma no pinta nada y molesta a MySQL.
             fn (Builder $filtrada) => [
-                'masaSalarial' => (float) $filtrada->reorder()->sum('total'),
+                'masaSalarial' => Planilla::sumaDeNetos($filtrada->reorder()),
             ]
         );
     }
@@ -198,7 +198,7 @@ class PlanillaController extends Controller
         // cuánto se retuvo de ONP, cuánto de AFP, cuánto de EsSalud. Con esas
         // columnas en blanco había que sumarlas a mano en Excel, que es justo
         // el trabajo que este reporte viene a quitar.
-        $sumasConcepto = [];
+        $exactosConcepto = [];
         $filas = [];
 
         foreach ($planillas as $i => $planilla) {
@@ -210,6 +210,7 @@ class PlanillaController extends Controller
                 $nombre = $linea->paymentConcept->nombre ?? null;
                 if ($nombre !== null) {
                     $montos[$nombre] = round((float) ($montos[$nombre] ?? 0) + (float) $linea->monto_calculado, 2);
+                    $exactosConcepto[$nombre] = ($exactosConcepto[$nombre] ?? 0) + (float) $linea->monto_calculado;
                 }
             }
 
@@ -247,13 +248,13 @@ class PlanillaController extends Controller
                 }
 
                 $fila[] = $montos[$nombre];
-                $sumasConcepto[$nombre] = round(($sumasConcepto[$nombre] ?? 0) + $montos[$nombre], 2);
             }
 
             $fila[] = round((float) $planilla->total, 2);
 
             $sumas['base'] += (float) $planilla->sueldo_base;
-            $sumas['neto'] += (float) $planilla->total;
+            // Como el Excel: el neto con todos sus decimales; se redondea al final.
+            $sumas['neto'] += (float) ($planilla->total_exacto ?? $planilla->total);
 
             $filas[] = $fila;
         }
@@ -264,7 +265,7 @@ class PlanillaController extends Controller
             $totales = array_merge(
                 ['', '', 'TOTALES', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
                  round($sumas['base'], 2)],
-                array_map(fn ($nombre) => round($sumasConcepto[$nombre] ?? 0, 2), $conceptos),
+                array_map(fn ($nombre) => round($exactosConcepto[$nombre] ?? 0, 2), $conceptos),
                 [round($sumas['neto'], 2)]
             );
 

@@ -32,6 +32,8 @@ class Planilla extends Model
         // en la base con lo que tuvieran —ninguna planilla ya pagada cambia
         // de cifra—, pero ya nada las escribe ni las cuenta en el neto.
         'total',
+        // El mismo neto con sus 6 decimales: para sumar varios como el Excel.
+        'total_exacto',
         'estado_registro',
     ];
 
@@ -78,6 +80,22 @@ class Planilla extends Model
      * Se llama cada vez que la planilla o alguno de sus PayrollDetalle cambia,
      * para que el total nunca quede desincronizado de sus conceptos.
      */
+    /**
+     * La expresión SQL del neto exacto de una planilla (el redondeado si es
+     * una planilla vieja que todavía no lo tiene). Para SUM(...).
+     */
+    public const NETO_EXACTO_SQL = 'COALESCE(planilla.total_exacto, planilla.total)';
+
+    /**
+     * El total de varias planillas como lo saca el Excel: suma los netos con
+     * todos sus decimales y redondea al final. Sumando los netos ya
+     * redondeados daba 2 céntimos más que el PLAME (178,790.93 y no .91).
+     */
+    public static function sumaDeNetos($consulta): float
+    {
+        return round((float) (clone $consulta)->sum(\Illuminate\Support\Facades\DB::raw(self::NETO_EXACTO_SQL)), 2);
+    }
+
     /**
      * Las planillas que NO se pueden borrar: las que tienen una boleta ya
      * firmada (por el trabajador o en papel). Esa boleta es un documento que
@@ -153,12 +171,16 @@ class Planilla extends Model
          */
         // Las líneas traen sus decimales completos (como el PLAME): el neto se
         // redondea recién aquí, al final, igual que el Excel.
-        $total = round((float) $this->sueldo_base
+        $exacto = (float) $this->sueldo_base
             + $bonificacionesConcepto
             - $descuentosConcepto
-            - $adelantosConcepto, 2);
+            - $adelantosConcepto;
+        $total = round($exacto, 2);
 
-        $this->update(['total' => $total]);
+        // El exacto, para los totales de varias planillas: se suman sin
+        // redondear y se redondea al final, como el Excel (ver
+        // Planilla::sumaDeNetos y la migración de `total_exacto`).
+        $this->update(['total' => $total, 'total_exacto' => round($exacto, 6)]);
 
         return $total;
     }
