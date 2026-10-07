@@ -616,9 +616,15 @@ class DashboardController extends Controller
      */
     private function tendenciaNomina(int $anio): array
     {
+        // El alias "total" es obligatorio: sin él, pluck() no tiene cómo
+        // adivinar qué propiedad leer de la fila. Sin "AS", stripTableForPluck()
+        // -interno de Laravel- parte el SQL crudo por los puntos y se queda con
+        // el ÚLTIMO pedazo; con dos puntos en el COALESCE (planilla.total_exacto,
+        // planilla.total) eso daba la propiedad "total))", que no existe en
+        // ninguna fila — el 500 que tumbaba el Panel de Control.
         $porMes = Planilla::where('anio', $anio)
             ->groupBy('mes')
-            ->pluck(DB::raw('SUM(' . Planilla::NETO_EXACTO_SQL . ')'), 'mes');
+            ->pluck(DB::raw('SUM(' . Planilla::NETO_EXACTO_SQL . ') as total'), 'mes');
 
         $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
         $salida = [];
