@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
 use App\Support\AniosAnteriores;
+use App\Support\Renta5ta\MetodoRenta5ta;
 use Illuminate\Http\Request;
 
 /**
@@ -19,11 +20,15 @@ class ConfiguracionController extends Controller
 
     public function update(Request $request)
     {
+        // Se cambian de a uno: la pantalla manda solo el que se tocó.
         $datos = $request->validate([
-            AniosAnteriores::AJUSTE => 'required|boolean',
+            AniosAnteriores::AJUSTE => 'sometimes|boolean',
+            MetodoRenta5ta::AJUSTE  => 'sometimes|boolean',
         ]);
 
-        Configuracion::poner(AniosAnteriores::AJUSTE, (bool) $datos[AniosAnteriores::AJUSTE]);
+        foreach ($datos as $clave => $valor) {
+            Configuracion::poner($clave, (bool) $valor);
+        }
 
         return response()->json(['success' => true, 'data' => $this->ajustes()]);
     }
@@ -32,6 +37,7 @@ class ConfiguracionController extends Controller
     {
         return [
             AniosAnteriores::AJUSTE => AniosAnteriores::permitidos(),
+            MetodoRenta5ta::AJUSTE  => MetodoRenta5ta::comoHojaDeRrhh(),
         ];
     }
 }

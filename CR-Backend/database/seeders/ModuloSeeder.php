@@ -49,6 +49,8 @@ class ModuloSeeder extends Seeder
             ['padre' => $idBoletas, 'nombre' => 'Boletas',    'ruta' => '/boletas',    'icono' => 'receipt_long',   'orden' => 3, 'roles' => [$admin, $rrhh]],
             ['padre' => $idBoletas, 'nombre' => 'Documentos', 'ruta' => '/documentos', 'icono' => 'folder',        'orden' => 4, 'roles' => [$admin, $rrhh]],
             ['padre' => $idBoletas, 'nombre' => 'Contratos',  'ruta' => '/contratos',  'icono' => 'clipboard_check',   'orden' => 5, 'roles' => [$admin, $rrhh]],
+            // La Renta de 5ta de cada trabajador, con el procedimiento de SUNAT.
+            ['padre' => $idBoletas, 'nombre' => 'Renta de 5ta', 'ruta' => '/renta-5ta', 'icono' => 'wallet', 'orden' => 7, 'roles' => [$admin, $rrhh]],
             // Las solicitudes de todo el personal, para aprobar o rechazar.
             // El trabajador tiene la suya en Mi Espacio.
             ['padre' => $idBoletas, 'nombre' => 'Vacaciones', 'ruta' => '/vacaciones', 'icono' => 'beach', 'orden' => 6, 'roles' => [$admin, $rrhh]],

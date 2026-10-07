@@ -24,6 +24,7 @@ class Configuracion extends Model
     /** Lo que se lee en la auditoría en vez de la clave técnica. */
     public const NOMBRES = [
         'permitir_anios_anteriores' => 'el ajuste «Planillas de años anteriores»',
+        'renta5ta_como_hoja_rrhh'   => 'el ajuste «Renta de 5ta como la hoja de RR.HH.»',
     ];
 
     public function nombreAuditado(): string

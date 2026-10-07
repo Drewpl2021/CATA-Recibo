@@ -272,6 +272,17 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // Los ajustes del sistema: RR.HH. los lee, solo Admin los cambia.
         Route::get('settings', [\App\Http\Controllers\ConfiguracionController::class, 'index']);
         // Los montos de ley por año (UIT, asignación familiar, % de pensión).
+        // Renta de 5ta: la hoja de retención de cada trabajador (método SUNAT),
+        // su historial de los meses antes del sistema, recalcular y exportar.
+        // Las rutas fijas van antes de {empleado}.
+        Route::get('income-tax',                  [\App\Http\Controllers\Renta5taController::class, 'index']);
+        Route::get('income-tax/history/template', [\App\Http\Controllers\Renta5taController::class, 'modeloHistorial']);
+        Route::post('income-tax/history',         [\App\Http\Controllers\Renta5taController::class, 'cargarHistorial']);
+        Route::post('income-tax/recalculate',     [\App\Http\Controllers\Renta5taController::class, 'recalcular']);
+        Route::get('income-tax/export',           [\App\Http\Controllers\Renta5taController::class, 'exportar']);
+        Route::get('income-tax/{empleado}',       [\App\Http\Controllers\Renta5taController::class, 'show'])->whereUuid('empleado');
+        Route::put('income-tax/{empleado}/history', [\App\Http\Controllers\Renta5taController::class, 'guardarHistorial'])->whereUuid('empleado');
+
         Route::get('legal-values',        [\App\Http\Controllers\ValorLegalController::class, 'index']);
         Route::get('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'show'])->whereNumber('anio');
     });
