@@ -171,12 +171,28 @@ final class ModelosDeImportacion
             'aportacion'   => LibroExcel::TITULO_APORTACION,
         ];
 
+        // Las bolsas "Otros Conceptos" llevan al lado su columna «Detalle»: los
+        // cobros e ingresos sueltos (corbatas y polos, un curso…) van todos
+        // ahí, y el detalle dice de qué es cada uno. Es una nota interna para
+        // RR.HH. y Administración: no sale en la boleta.
+        $conDetalle = [ConceptosDePago::OTROS_INGRESOS, ConceptosDePago::OTROS_DESCUENTOS];
+        $columnasDeMonto = [];
+
         foreach ($conceptos as $concepto) {
             $c = count($titulos);
             $titulos[] = $concepto['nombre'];
             $estiloTitulos[$c] = $colorDeTipo[$concepto['tipo']] ?? LibroExcel::TITULO;
             $estiloColumnas[$c] = LibroExcel::MONTO;
             $anchos[$c] = min(30, max(14, mb_strlen($concepto['nombre']) * 0.8));
+            $columnasDeMonto[] = $c;
+
+            if (in_array($concepto['nombre'], $conDetalle, true)) {
+                $d = count($titulos);
+                $titulos[] = 'Detalle';
+                $estiloTitulos[$d] = LibroExcel::TITULO_OPCIONAL;
+                $estiloColumnas[$d] = LibroExcel::TEXTO;
+                $anchos[$d] = 36;
+            }
         }
 
         $filas = [$titulos];
@@ -185,10 +201,15 @@ final class ModelosDeImportacion
         }
 
         $validaciones = [];
-        if (count($titulos) > 3) {
+        if ($columnasDeMonto) {
             $hastaFila = max(self::FILAS_CON_AYUDA, $trabajadores->count()) + 1;
+            // Solo las columnas de montos: las de «Detalle» son texto.
+            $rangos = implode(' ', array_map(
+                fn ($c) => LibroExcel::columna($c) . '2:' . LibroExcel::columna($c) . $hastaFila,
+                $columnasDeMonto
+            ));
             $validaciones[] = LibroExcel::montoEntre(
-                'D2:' . LibroExcel::columna(count($titulos) - 1) . $hastaFila,
+                $rangos,
                 0,
                 999999.99,
                 'Monto',
@@ -226,7 +247,8 @@ final class ModelosDeImportacion
             'Las columnas' => [
                 'Hay una columna por cada concepto que se puede importar, con el color de su tipo: ' . implode(', ', $colores) . '.',
                 'Puedes borrar las columnas que no uses. También puedes agregar columnas con los títulos que ustedes usan (por ejemplo «Movilidad»): el sistema te propone a qué concepto corresponden.',
-                'Para que la boleta diga de qué es un monto, agrega al lado una columna «Detalle» con el nombre de esa columna, por ejemplo «Detalle movilidad».',
+                'Los cobros e ingresos sueltos (corbatas y polos, un curso, un reintegro…) no llevan columna propia: súmalos en «Otros Conceptos (Descuentos)» u «Otros Conceptos (Ingresos)».',
+                'En la columna «Detalle» que está al lado de cada «Otros Conceptos» escribe de qué es, por ejemplo «Corbatas y polos (S/ 9.00) y Curso IA (S/ 60.00)». Es una nota interna para RR.HH. y Administración: no sale en la boleta.',
                 'No agregues columnas de ' . implode(', ', ConceptosDePago::NO_EDITABLES) . ': esos montos los calcula el sistema.',
             ],
             'Al subirlo' => [
