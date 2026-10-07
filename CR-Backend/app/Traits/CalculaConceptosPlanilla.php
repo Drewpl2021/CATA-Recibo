@@ -331,6 +331,15 @@ trait CalculaConceptosPlanilla
         $sueldoBase     = (float) $sueldoBase;
         $bonificaciones = (float) $bonificaciones;
 
+        // Por defecto, el procedimiento de SUNAT (Art. 40) con lo cobrado y lo
+        // retenido de verdad cada mes: ver MotorRenta5ta. Lo de abajo es el
+        // método de la hoja de RR.HH., que queda solo para comparar (Ajustes).
+        if (! \App\Support\Renta5ta\MetodoRenta5ta::comoHojaDeRrhh()) {
+            return (new \App\Support\Renta5ta\MotorRenta5ta())->retencionDelMes(
+                $empleado, $mes, $anio, $sueldoBase, $bonificaciones > 0 ? $bonificaciones : null
+            )['retencion'];
+        }
+
         // De marzo a diciembre, como el Excel de RR.HH. (ver renta5taComoElColegio).
         // Enero y febrero siguen con la proyección de SUNAT: todavía no se sabe
         // cuánto va a ganar en el año, así que se proyecta con lo de ese mes.

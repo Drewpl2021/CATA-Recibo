@@ -33,6 +33,10 @@ class MotorDeCalculoTest extends TestCase
     {
         parent::setUp();
         $this->motor = new MotorExpuesto();
+        // Estas pruebas son del método de la hoja de RR.HH. ("Calculo 5ta"),
+        // que quedó como opción en Ajustes. El de SUNAT, el que va por
+        // defecto, se prueba en Tests\Feature\Renta5taSunatTest.
+        \App\Models\Configuracion::poner(\App\Support\Renta5ta\MetodoRenta5ta::AJUSTE, true);
     }
 
     private function empleado(array $atributos = []): Empleado
