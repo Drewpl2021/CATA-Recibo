@@ -444,6 +444,9 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
   private establecerPaginaActual(pagina: number): void {
     this.paginaActual = pagina;
     this.paginaEscrita = pagina;
+    // Al buscar o pasar de página no llega ningún @Input nuevo: sin esto la
+    // tabla seguía pintando las filas de antes (la página 2 repetía la 1).
+    this.actualizarFilasEnPantalla();
   }
 
   get filaFiltradas(): T[] {
