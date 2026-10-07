@@ -4,7 +4,7 @@ import { EstadoListadoService } from '../../../core/services/sistema/estado-list
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, map, of, switchMap } from 'rxjs';
 
 import {
   PlanillaCorridaService,
@@ -47,6 +47,16 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
  * existiera— no se pierden: salen en una fila aparte, "Sin agrupar", desde
  * donde se pueden mover a la que les toque.
  */
+/** Qué pasó al pasar a los "Sin agrupar" de un mes a su planilla. */
+interface ResultadoAgrupar {
+  movidas: number;
+  saltadas: number;
+  mes: number;
+  anio: number;
+  destino: string;
+  varias: boolean;
+}
+
 @Component({
   selector: 'app-corridas-list',
   standalone: true,
@@ -774,18 +784,87 @@ export class CorridasListComponent implements OnInit {
 
   eliminar(corrida: PlanillaCorrida): void {
     const cuantos = corrida.personas ?? 0;
-    const aviso = cuantos > 0
-      ? `la planilla "${corrida.nombre}". Sus ${cuantos} trabajador(es) NO se borran: pasan a "Sin agrupar"`
-      : `la planilla "${corrida.nombre}"`;
 
-    this.confirmService.confirmarEliminar(aviso, () => {
+    // Se borra de verdad, con la planilla de cada trabajador y sus boletas
+    // sin firmar. Antes la gente quedaba "Sin agrupar" y al crear otra
+    // planilla del mes el sistema decía que ya la tenían.
+    this.confirmService.confirmar({
+      titulo: `Eliminar la planilla "${corrida.nombre}"`,
+      mensaje: cuantos > 0
+        ? `Se borra con la planilla de sus ${cuantos} trabajador(es), sus conceptos y sus boletas sin firmar. `
+          + 'Después puedes volver a crearla desde cero. Si alguna boleta ya está firmada, no se elimina.'
+        : 'No tiene trabajadores: solo se borra la planilla.',
+      aceptarTexto: 'Sí, eliminar',
+      variante: 'danger',
+    }).then((aceptado) => {
+      if (!aceptado) return;
       this.corridaService.delete(corrida.id).subscribe({
         next: (res) => {
-          this.toastService.success('Planilla eliminada', res.data?.message ?? 'Se eliminó la agrupación.');
+          this.toastService.success('Planilla eliminada', res.data?.message ?? 'Se eliminó la planilla.');
           this.cargar();
         },
-        error: (err) => this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo eliminar la planilla.')),
+        error: (err) => this.toastService.error('No se eliminó', mensajeErrorApi(err, 'No se pudo eliminar la planilla.')),
       });
+    });
+  }
+
+  // ── Pasar a los "Sin agrupar" a su planilla del mes, de un clic ──
+  pasandoSinAgrupar = false;
+
+  /**
+   * Mete a cada trabajador "Sin agrupar" en la planilla ABIERTA de su mes.
+   * Si en un mes no hay ninguna abierta, o hay varias y no se sabe cuál, a
+   * esos se les deja como están y se dice: para eso está "Verlos uno por uno".
+   */
+  pasarSinAgrupar(): void {
+    this.pasandoSinAgrupar = true;
+    const filtroPeriodo = { mes: this.filtroMes || undefined, anio: this.filtroAnio || undefined };
+
+    this.planillaService.getAll({ sin_corrida: 1, ...filtroPeriodo }).pipe(
+      switchMap((res) => {
+        const porMes = new Map<string, { mes: number; anio: number; ids: string[] }>();
+        for (const p of res.data ?? []) {
+          const clave = `${p.anio}-${p.mes}`;
+          if (!porMes.has(clave)) porMes.set(clave, { mes: Number(p.mes), anio: Number(p.anio), ids: [] });
+          porMes.get(clave)!.ids.push(String(p.id));
+        }
+        if (!porMes.size) return of([] as ResultadoAgrupar[]);
+
+        return forkJoin([...porMes.values()].map((g) =>
+          this.corridaService.getAll({ mes: g.mes, anio: g.anio }).pipe(
+            switchMap((c) => {
+              const abiertas = (c.data ?? []).filter((x) => x.estado !== 'cerrada');
+              if (abiertas.length !== 1) {
+                return of<ResultadoAgrupar>({ movidas: 0, saltadas: g.ids.length, mes: g.mes, anio: g.anio, destino: '', varias: abiertas.length > 1 });
+              }
+              return this.corridaService.mover(abiertas[0].id, g.ids).pipe(
+                map((r): ResultadoAgrupar => ({ movidas: r.data.movidas, saltadas: 0, mes: g.mes, anio: g.anio, destino: abiertas[0].nombre, varias: false }))
+              );
+            })
+          )
+        ));
+      })
+    ).subscribe({
+      next: (resultados) => {
+        this.pasandoSinAgrupar = false;
+        const movidas = resultados.reduce((s, r) => s + r.movidas, 0);
+        const saltados = resultados.filter((r) => r.saltadas);
+        if (movidas) {
+          const destinos = [...new Set(resultados.filter((r) => r.movidas).map((r) => `«${r.destino}»`))].join(', ');
+          this.toastService.success('Agrupados', `${movidas} trabajador(es) pasaron a ${destinos}.`);
+        }
+        if (saltados.length) {
+          this.toastService.warning('Algunos quedaron sin agrupar', saltados.map((r) =>
+            `${nombreMes(r.mes)} ${r.anio}: ` + (r.varias
+              ? 'hay varias planillas abiertas de ese mes, elige con «Verlos uno por uno»'
+              : 'no hay ninguna planilla abierta de ese mes; créala primero')).join(' · '));
+        }
+        this.cargar();
+      },
+      error: (err) => {
+        this.pasandoSinAgrupar = false;
+        this.toastService.error('No se agruparon', mensajeErrorApi(err, 'Inténtalo de nuevo.'));
+      },
     });
   }
 

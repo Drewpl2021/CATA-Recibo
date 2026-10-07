@@ -79,6 +79,42 @@ class Planilla extends Model
      * para que el total nunca quede desincronizado de sus conceptos.
      */
     /**
+     * Las planillas que NO se pueden borrar: las que tienen una boleta ya
+     * firmada (por el trabajador o en papel). Esa boleta es un documento que
+     * la persona aceptó; borrarla dejaría un pago firmado sin respaldo.
+     */
+    public function scopeConBoletaFirmada($query)
+    {
+        return $query->whereHas('documentoBoleta', fn ($d) => $d->whereIn('estado_firma', Documento::FIRMA_RESUELTA));
+    }
+
+    /**
+     * Borra la planilla DE VERDAD: sus líneas, su boleta sin firmar (el PDF
+     * y sus avisos) y la planilla misma.
+     *
+     * Antes "eliminar" solo la ocultaba (o, al borrar la planilla agrupada,
+     * la dejaba "Sin agrupar"), y al volver a generar el mes el sistema creía
+     * que la persona ya tenía planilla y la saltaba. Quien la llama revisa
+     * antes que no tenga una boleta firmada (scopeConBoletaFirmada).
+     */
+    public function eliminarDeVerdad(): void
+    {
+        \Illuminate\Support\Facades\DB::transaction(function () {
+            foreach (Documento::where('planilla_id', $this->id)->get() as $documento) {
+                if ($documento->archivo && \Illuminate\Support\Facades\Storage::disk('local')->exists($documento->archivo)) {
+                    \Illuminate\Support\Facades\Storage::disk('local')->delete($documento->archivo);
+                }
+                // "Tu boleta ya está lista" de una boleta que ya no existe.
+                Notificacion::where('documento_id', $documento->id)->delete();
+                $documento->delete();
+            }
+
+            PayrollDetalle::where('planilla_id', $this->id)->delete();
+            $this->delete();
+        });
+    }
+
+    /**
      * "BOL-2026-0010": el número que lleva impreso su boleta. Va por periodo
      * (enero la 1, febrero la 2…), contando sus planillas de ese año hasta
      * este mes. El mismo cálculo que BoletaController::construirBoleta.

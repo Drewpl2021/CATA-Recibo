@@ -428,14 +428,36 @@ class PlanillaCorridaController extends Controller
             ], 409);
         }
 
-        $devueltas = Planilla::where('corrida_id', $corrida->id)->count();
-        $corrida->delete();
+        // Eliminar la planilla la borra con todo lo de adentro: la planilla de
+        // cada trabajador y sus boletas sin firmar. Antes la gente quedaba
+        // "Sin agrupar" con su planilla del mes, y al crear otra el sistema
+        // decía que ya la tenían. Con una boleta ya firmada no se borra nada.
+        $firmadas = Planilla::where('corrida_id', $corrida->id)->conBoletaFirmada()->with('empleado:id,nombre,apellido')->get();
+        if ($firmadas->isNotEmpty()) {
+            $quienes = $firmadas->take(5)->map(fn ($p) => trim("{$p->empleado?->nombre} {$p->empleado?->apellido}"))->implode(', ')
+                . ($firmadas->count() > 5 ? ' y ' . ($firmadas->count() - 5) . ' más' : '');
+
+            return response()->json([
+                'success' => false,
+                'message' => "No se puede eliminar: {$firmadas->count()} boleta(s) de esta planilla ya están firmadas ({$quienes}). "
+                    . 'Una boleta firmada es un pago que el trabajador aceptó y no se borra.',
+            ], 409);
+        }
+
+        $planillas = Planilla::where('corrida_id', $corrida->id)->get();
+        $boletas   = \App\Models\Documento::whereIn('planilla_id', $planillas->pluck('id'))->where('tipo', 'boleta')->count();
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($planillas, $corrida) {
+            $planillas->each(fn (Planilla $p) => $p->eliminarDeVerdad());
+            $corrida->delete();
+        });
 
         return response()->json([
             'success' => true,
             'data'    => [
-                'message' => $devueltas > 0
-                    ? "Planilla eliminada. Sus {$devueltas} trabajador(es) pasaron a \"Sin agrupar\"; no se borró ningún pago."
+                'message' => $planillas->count() > 0
+                    ? "Planilla eliminada, con la planilla de sus {$planillas->count()} trabajador(es)"
+                        . ($boletas ? " y {$boletas} boleta(s) sin firmar" : '') . '. Ya puedes volver a crearla.'
                     : 'Planilla eliminada.',
             ],
         ]);

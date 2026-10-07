@@ -72,11 +72,16 @@
 <div class="form-nota form-nota--accion" *ngIf="!cargando && sinAgrupar > 0">
   <div>
     <strong>{{ sinAgrupar }} trabajador(es) sin agrupar.</strong>
-    Tienen su planilla del mes pero no están en ninguna de las de arriba
-    —son las de antes de que existieran—. Suman
+    Tienen su planilla del mes pero no están en ninguna de las de arriba. Suman
     <strong>S/ {{ sinAgruparMasa | number: '1.2-2' }}</strong>.
   </div>
-  <button class="btn-secondary" (click)="abrirSinAgrupar()">Verlos y agruparlos</button>
+  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <!-- De un clic: cada uno a la planilla abierta de su mes. -->
+    <button class="btn-primary" (click)="pasarSinAgrupar()" [disabled]="pasandoSinAgrupar">
+      {{ pasandoSinAgrupar ? 'Agrupando…' : 'Pasarlos a su planilla del mes' }}
+    </button>
+    <button class="btn-secondary" (click)="abrirSinAgrupar()">Verlos uno por uno</button>
+  </div>
 </div>
 
 <app-data-table

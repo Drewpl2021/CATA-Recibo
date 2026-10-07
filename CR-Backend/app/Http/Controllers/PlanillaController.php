@@ -667,7 +667,19 @@ class PlanillaController extends Controller
     public function destroy(string $id)
     {
         $planilla = Planilla::findOrFail($id);
-        $planilla->update(['estado_registro' => 'inactivo']);
-        return response()->json(['success' => true, 'data' => ['message' => 'Planilla eliminada correctamente.']]);
+
+        // Con la boleta firmada no se borra: es un pago que el trabajador aceptó.
+        if (Planilla::whereKey($planilla->id)->conBoletaFirmada()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede eliminar: su boleta ya está firmada. Una boleta firmada es un pago que el trabajador aceptó.',
+            ], 409);
+        }
+
+        // Se borra de verdad (antes solo se ocultaba, y al volver a generar el
+        // mes se le saltaba como si ya tuviera planilla).
+        $planilla->eliminarDeVerdad();
+
+        return response()->json(['success' => true, 'data' => ['message' => 'Planilla eliminada. Ya se le puede volver a generar.']]);
     }
 }

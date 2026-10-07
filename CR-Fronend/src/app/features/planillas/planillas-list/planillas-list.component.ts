@@ -856,20 +856,24 @@ export class PlanillasListComponent implements OnInit {
   }
 
   eliminar(planilla: Planilla): void {
-    this.confirmService.confirmarEliminar(
-      `la planilla de ${this.nombreEmpleado(planilla)} de ${nombreMes(planilla.mes)} ${planilla.anio}`,
-      () => {
-        this.planillaService.delete(planilla.id!).subscribe({
-          next: () => {
-            this.toastService.success('Eliminada', 'La planilla fue dada de baja.');
-            this.cargar();
-          },
-          error: (err) => {
-            this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo eliminar la planilla.'));
-          },
-        });
-      }
-    );
+    this.confirmService.confirmar({
+      titulo: `Eliminar la planilla de ${this.nombreEmpleado(planilla)}`,
+      mensaje: `Se borra su planilla de ${nombreMes(planilla.mes)} ${planilla.anio}, con sus conceptos y su boleta si no está firmada. `
+        + 'Después se le puede volver a generar. Si su boleta ya está firmada, no se elimina.',
+      aceptarTexto: 'Sí, eliminar',
+      variante: 'danger',
+    }).then((aceptado) => {
+      if (!aceptado) return;
+      this.planillaService.delete(planilla.id!).subscribe({
+        next: () => {
+          this.toastService.success('Eliminada', 'Se borró su planilla del mes. Ya se le puede volver a generar.');
+          this.cargar();
+        },
+        error: (err) => {
+          this.toastService.error('No se eliminó', mensajeErrorApi(err, 'No se pudo eliminar la planilla.'));
+        },
+      });
+    });
   }
 
   // ────────── Generación masiva de planillas ──────────

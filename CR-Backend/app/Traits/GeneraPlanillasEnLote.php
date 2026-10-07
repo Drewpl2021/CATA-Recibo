@@ -140,11 +140,26 @@ trait GeneraPlanillasEnLote
                 ->where('anio', $anio)
                 ->first();
 
+            // Tiene planilla de ese mes pero "Sin agrupar" (de antes de las
+            // planillas agrupadas, o porque se la sacó de una): se pasa a esta,
+            // con lo que ya tenía. Antes se la saltaba y quedaba suelta.
+            if ($yaExiste && $corrida && $yaExiste->corrida_id === null) {
+                $yaExiste->update(['corrida_id' => $corrida->id]);
+                $generadas++;
+                $detalle[] = $base + [
+                    'estado'      => 'generada',
+                    'motivo'      => 'Estaba sin agrupar: se pasó a esta planilla con lo que ya tenía.',
+                    'planilla_id' => $yaExiste->id,
+                ];
+                continue;
+            }
+
             if ($yaExiste) {
                 $omitidas++;
+                $otra = $yaExiste->corrida_id ? PlanillaCorrida::whereKey($yaExiste->corrida_id)->value('nombre') : null;
                 $detalle[] = $base + [
                     'estado' => 'omitida',
-                    'motivo' => 'Ya existe planilla para este mes',
+                    'motivo' => $otra ? "Ya está en la planilla «{$otra}» de este mes" : 'Ya existe planilla para este mes',
                     'planilla_id' => $yaExiste->id,
                 ];
                 continue;
