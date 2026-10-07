@@ -711,6 +711,13 @@ trait CalculaConceptosPlanilla
                 \App\Support\ConceptosDePago::ASIGNACION_FAMILIAR,
                 $asignacionFamiliar
             );
+        } else {
+            // Ya no le corresponde (se le quitó "Tiene hijos" en la ficha): la
+            // línea que traía se borra. Antes se quedaba, y el neto seguía
+            // pagándole los 113 aunque la pensión ya no los contaba.
+            \App\Models\PayrollDetalle::where('planilla_id', $planilla->id)
+                ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', \App\Support\ConceptosDePago::ASIGNACION_FAMILIAR))
+                ->delete();
         }
 
         /*

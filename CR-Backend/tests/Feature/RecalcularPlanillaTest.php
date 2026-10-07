@@ -191,6 +191,29 @@ class RecalcularPlanillaTest extends TestCase
         $this->assertEqualsWithDelta(29.48, (float) $linea->monto_calculado, 0.01);
     }
 
+    public function test_al_quitarle_los_hijos_y_recalcular_se_borra_la_asignacion_familiar(): void
+    {
+        // Lanza y Sánchez: RR.HH. confirmó que no les corresponde. Se les
+        // quitó "Tiene hijos" y al recalcular la línea de 113 seguía ahí,
+        // pagándose en el neto aunque la pensión ya no la contaba.
+        [$empleado, $planilla] = $this->planillaDeSeptiembre(800);
+        $empleado->update(['sistema_pensiones' => 'ONP', 'tiene_hijos' => 1]);
+        $this->generarConceptosDePrueba($planilla, $empleado);
+        $asignacion = fn () => $planilla->payrollDetalles()
+            ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', ConceptosDePago::ASIGNACION_FAMILIAR))->count();
+        $this->assertSame(1, $asignacion());
+
+        $empleado->update(['tiene_hijos' => 0]);
+        $this->actingAs($this->crearUsuario('rrhh'), 'sanctum')
+            ->putJson("/api/payrolls/{$planilla->id}/recalcular")
+            ->assertOk();
+
+        $this->assertSame(0, $asignacion());
+        // Neto = sueldo − ONP 13% sobre el sueldo solo (sin los 113).
+        $sueldo = (float) $planilla->fresh()->sueldo_base;
+        $this->assertEqualsWithDelta(round($sueldo - $sueldo * 0.13, 2), (float) $planilla->fresh()->total, 0.02);
+    }
+
     public function test_bonificacion_por_cargo_suma_a_la_base_de_onp_essalud_y_diezmo(): void
     {
         // Confirmado contra el PLAME real (hoja PLANILLA, columnas O+P+Q+R):
