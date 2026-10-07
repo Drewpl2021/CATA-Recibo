@@ -4,18 +4,30 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../utils';
 
-/** Un trabajador en la lista del módulo. */
+/** De dónde sale el dato de un mes. */
+export type FuenteMes5ta = 'planilla' | 'historial' | 'proyectado' | 'no_trabaja';
+
+/** Un trabajador en la lista del módulo: su año y el mes elegido. */
 export interface FilaRenta5ta {
   id: string;
   dni: string;
   nombre: string;
   cargo: string | null;
   estado: string;
-  renta_bruta: number;
   impuesto_anual: number;
   retenido: number;
   por_retener: number;
-  retencion_del_mes: number;
+  trabaja_mes: boolean;
+  fuente_mes: FuenteMes5ta;
+  remuneracion_mes: number;
+  /** Lo que le correspondía retener ese mes según SUNAT. */
+  corresponde_mes: number;
+  /** Lo que se le retuvo de verdad (planilla o historial); null si no hay dato. */
+  retenido_mes: number | null;
+  /** Retenido − corresponde: negativo es que se le retuvo de menos. */
+  diferencia_mes: number | null;
+  paga_5ta: boolean;
+  meses_con_diferencia: number[];
   meses_sin_dato: number[];
 }
 
@@ -24,13 +36,22 @@ export interface ListaRenta5ta {
   mes: number;
   uit: number;
   filas: FilaRenta5ta[];
-  resumen: { trabajadores: number; con_retencion: number; impuesto_anual: number; retenido: number; sin_historial: number };
+  resumen: {
+    trabajadores: number;
+    pagan_5ta: number;
+    con_diferencias: number;
+    sin_historial: number;
+    impuesto_anual: number;
+    retenido: number;
+    corresponde_mes: number;
+    retenido_mes: number | null;
+  };
 }
 
 /** Un mes de la hoja de retención, con todo el cálculo (ver MotorRenta5ta en el servidor). */
 export interface MesRenta5ta {
   mes: number;
-  fuente: 'planilla' | 'historial' | 'proyectado' | 'no_trabaja';
+  fuente: FuenteMes5ta;
   trabaja: boolean;
   remuneracion_mes: number;
   remuneracion_mensual: number;
@@ -79,8 +100,11 @@ export class Renta5taService {
   private http = inject(HttpClient);
   private readonly url = `${environment.apiUrl}/income-tax`;
 
-  lista(anio: number): Observable<ApiResponse<ListaRenta5ta>> {
-    return this.http.get<ApiResponse<ListaRenta5ta>>(this.url, { params: { anio: String(anio) } });
+  /** Sin mes, el servidor toma el mes en curso (o diciembre en un año pasado). */
+  lista(anio: number, mes?: number | null): Observable<ApiResponse<ListaRenta5ta>> {
+    const params: Record<string, string> = { anio: String(anio) };
+    if (mes) params['mes'] = String(mes);
+    return this.http.get<ApiResponse<ListaRenta5ta>>(this.url, { params });
   }
 
   hoja(empleadoId: string, anio: number): Observable<ApiResponse<HojaRenta5ta>> {

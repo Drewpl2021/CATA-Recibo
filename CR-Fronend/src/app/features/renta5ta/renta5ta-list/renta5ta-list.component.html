@@ -25,27 +25,37 @@
   <header class="panel-filtros__cabecera">
     <div>
       <h2 class="panel-filtros__titulo">Renta de 5ta de</h2>
-      <p class="panel-filtros__periodo">{{ anio }}</p>
+      <p class="panel-filtros__periodo">{{ nombreDelMes }} {{ anio }}</p>
     </div>
     <div class="panel-filtros__cifras" *ngIf="datos">
-      <div class="cifra" title="La UIT del año, de Ajustes → Montos de ley">
+      <div class="cifra" title="La UIT del año, de Ajustes → Montos de ley por año">
         <strong>{{ datos.uit | number: '1.0-0' }}</strong>
         <span>UIT {{ anio }}</span>
       </div>
-      <div class="cifra">
+      <div class="cifra" title="El impuesto de todo el año, sumado de todo el personal">
         <strong>{{ datos.resumen.impuesto_anual | number: '1.2-2' }}</strong>
         <span>Impuesto del año</span>
       </div>
-      <div class="cifra cifra--destacada">
-        <strong>{{ datos.resumen.retenido | number: '1.2-2' }}</strong>
-        <span>Ya retenido</span>
+      <div class="cifra" [title]="'Lo que correspondía retener en ' + nombreDelMes + ' a todo el personal'">
+        <strong>{{ datos.resumen.corresponde_mes | number: '1.2-2' }}</strong>
+        <span>Corresponde en {{ nombreDelMes }}</span>
+      </div>
+      <div class="cifra cifra--destacada" [title]="'Lo que se retuvo de verdad en ' + nombreDelMes + ' (planillas e historial)'">
+        <strong>{{ datos.resumen.retenido_mes === null ? '—' : (datos.resumen.retenido_mes | number: '1.2-2') }}</strong>
+        <span>Retenido en {{ nombreDelMes }}</span>
       </div>
     </div>
   </header>
-  <div class="panel-filtros__campos">
+  <div class="panel-filtros__campos panel-filtros__campos--compacto">
+    <div class="campo-filtro">
+      <label for="mes5ta">Mes</label>
+      <select id="mes5ta" class="form-control" [(ngModel)]="mes" (ngModelChange)="cargar()" [disabled]="cargando">
+        <option *ngFor="let m of meses" [ngValue]="m.value">{{ m.label }}</option>
+      </select>
+    </div>
     <div class="campo-filtro campo-filtro--corto">
       <label for="anio5ta">Año</label>
-      <select id="anio5ta" class="form-control" [(ngModel)]="anio" (ngModelChange)="cargar()">
+      <select id="anio5ta" class="form-control" [(ngModel)]="anio" (ngModelChange)="cambiarAnio()" [disabled]="cargando">
         <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
       </select>
     </div>
@@ -54,29 +64,89 @@
 
 <!-- Sin los meses pagados antes del sistema, la cuenta se apoya en estimados. -->
 <div class="form-nota form-nota--aviso-contrato" *ngIf="datos && datos.resumen.sin_historial > 0" role="status">
-  <strong>{{ datos.resumen.sin_historial }} trabajador(es) tienen meses sin dato.</strong>
-  Son meses de {{ anio }} que se pagaron antes del sistema: mientras no se carguen, se estiman con su ficha
+  <strong>A {{ datos.resumen.sin_historial }} trabajador(es) les faltan meses.</strong>
+  Son meses de {{ anio }} que ya pasaron y se pagaron antes del sistema: mientras no se carguen, se estiman con su ficha
   y la retención puede no ser exacta. Cárgalos con <em>Cargar historial</em> (lo que cobró y lo que se le
-  retuvo cada mes, de sus boletas o de la PLAME).
+  retuvo cada mes, de sus boletas o de la PLAME), o uno por uno en la hoja de cada trabajador.
 </div>
 
 <app-data-table
   entidad="este trabajador"
   [columnas]="columnas"
-  [datos]="datos?.filas ?? []"
+  [datos]="filasVisibles"
   [cargando]="cargando"
   [camposBusqueda]="['dni', 'nombre', 'cargo']"
+  placeholderBusqueda="Buscar por DNI, nombre o cargo…"
   [acciones]="[]"
   [accionesPersonalizadas]="acciones"
   [filasPorPagina]="15"
-  mensajeVacio="No hay trabajadores en este año."
+  [mensajeVacio]="mensajeVacio"
   (accionPersonalizada)="alAccionar($event)"
-></app-data-table>
+>
+  <div tableActions class="chips-filtro" role="group" aria-label="Filtrar la lista">
+    <button type="button" *ngFor="let f of filtros" class="chip-filtro"
+      [class.chip-filtro--activo]="filtro === f.id" [attr.aria-pressed]="filtro === f.id"
+      [title]="f.ayuda" (click)="filtrar(f.id)">
+      <app-icon [icono]="f.icono" [tamano]="17"></app-icon>
+      {{ f.etiqueta }}
+      <span class="chip-filtro__cuenta">{{ cuentaDe(f.id) }}</span>
+    </button>
+  </div>
 
-<p class="form-ayuda" style="margin-top: 12px;" *ngIf="datos">
-  «Retención del mes» es la de {{ nombreDelMes }}: la de su planilla si ya existe, o la que le tocaría.
-  En la hoja de cada uno (el ojo) está cuánto le falta retener y el cálculo mes por mes.
-</p>
+  <ng-template appCelda="nombre" let-f>
+    <strong>{{ f.nombre }}</strong>
+    <div class="form-ayuda">
+      DNI {{ f.dni }}<ng-container *ngIf="f.cargo"> · {{ f.cargo }}</ng-container>
+      <span class="status-badge status-badge-secondary renta-fila__cesado" *ngIf="f.estado !== 'activo'">Cesado</span>
+    </div>
+  </ng-template>
+
+  <ng-template appCelda="impuesto_anual" let-f>
+    <ng-container *ngIf="f.paga_5ta; else noPaga">
+      <strong class="celda-monto">S/ {{ f.impuesto_anual | number: '1.2-2' }}</strong>
+      <div class="form-ayuda celda-monto">Retenido {{ f.retenido | number: '1.2-2' }}</div>
+      <div class="form-ayuda celda-monto" *ngIf="f.por_retener > 0.005">Falta {{ f.por_retener | number: '1.2-2' }}</div>
+    </ng-container>
+    <ng-template #noPaga>
+      <span class="form-ayuda">No llega a 7 UIT</span>
+    </ng-template>
+  </ng-template>
+
+  <ng-template appCelda="corresponde_mes" let-f>
+    <ng-container *ngIf="f.trabaja_mes; else noTrabajo">
+      <span class="celda-monto">S/ {{ f.corresponde_mes | number: '1.2-2' }}</span>
+      <div class="form-ayuda" [class.texto-aviso]="f.fuente_mes === 'proyectado'">{{ textoFuente(f) }}</div>
+    </ng-container>
+    <ng-template #noTrabajo><span class="form-ayuda">No trabajó este mes</span></ng-template>
+  </ng-template>
+
+  <ng-template appCelda="retenido_mes" let-f>
+    <ng-container *ngIf="f.retenido_mes !== null; else sinDato">
+      <span class="celda-monto">S/ {{ f.retenido_mes | number: '1.2-2' }}</span>
+      <div class="renta-fila__diferencia" *ngIf="f.diferencia_mes !== null && (f.diferencia_mes > 0.01 || f.diferencia_mes < -0.01); else cuadra"
+        [class.renta-fila__diferencia--menos]="f.diferencia_mes < 0">
+        {{ (f.diferencia_mes < 0 ? -f.diferencia_mes : f.diferencia_mes) | number: '1.2-2' }}
+        {{ f.diferencia_mes < 0 ? 'de menos' : 'de más' }}
+      </div>
+      <ng-template #cuadra><div class="renta-fila__diferencia renta-fila__diferencia--cuadra">Cuadra</div></ng-template>
+    </ng-container>
+    <ng-template #sinDato>
+      <span class="form-ayuda">{{ f.trabaja_mes ? 'Sin dato todavía' : '—' }}</span>
+    </ng-template>
+  </ng-template>
+</app-data-table>
+
+<!-- Qué es cada columna: el público es RR.HH., no contadores. -->
+<details class="section-panel renta-ayuda" *ngIf="datos">
+  <summary>¿Cómo se lee esta lista?</summary>
+  <ul class="ajuste-detalle">
+    <li><strong>Impuesto de {{ anio }}:</strong> lo que el trabajador paga de 5ta en todo el año, con el procedimiento de SUNAT. Debajo, cuánto ya se le retuvo y cuánto falta. Si gana menos de 7 UIT al año (S/ {{ datos.uit * 7 | number: '1.0-0' }}), no paga.</li>
+    <li><strong>Le corresponde en {{ nombreDelMes }}:</strong> lo que había que retenerle ese mes. Debajo dice de dónde sale: de su planilla del sistema, del historial cargado, o estimado con su ficha si no hay dato.</li>
+    <li><strong>Se le retuvo en {{ nombreDelMes }}:</strong> lo que de verdad se le descontó, según su planilla o el historial. Si no cuadra con lo que correspondía, se dice cuánto de más o de menos.</li>
+    <li><strong>Situación:</strong> «Difiere» si algún mes del año se le retuvo distinto de lo que correspondía; «Faltan» si hay meses ya pasados sin dato; «Al día» si todo cuadra.</li>
+    <li>El ojo abre su <strong>hoja de retención</strong>: los 12 meses con todo el cálculo, y ahí se pueden escribir los meses que faltan.</li>
+  </ul>
+</details>
 
 <!-- Cargar el historial de los meses pagados antes del sistema. -->
 <app-form-modal

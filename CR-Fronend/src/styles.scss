@@ -3425,6 +3425,48 @@ textarea.form-control {
   border-left-color: var(--warning);
 }
 
+/* ── La lista de Renta de 5ta ──
+   Debajo de lo retenido en el mes, si cuadró con lo que correspondía. En
+   rojo cuando se le retuvo de menos (es lo que SUNAT reclama), en ámbar si
+   fue de más y en verde si cuadra. */
+.renta-fila__diferencia {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--warning-text);
+  white-space: nowrap;
+}
+
+.renta-fila__diferencia--menos {
+  color: var(--danger-text);
+}
+
+.renta-fila__diferencia--cuadra {
+  color: var(--success-text);
+}
+
+.renta-fila__cesado {
+  margin-left: 6px;
+  font-size: 10.5px;
+  padding: 1px 7px;
+  vertical-align: 1px;
+}
+
+/* «¿Cómo se lee esta lista?»: cerrado de entrada, para quien lo necesite. */
+.renta-ayuda {
+  margin-top: 16px;
+  padding: 14px 20px;
+}
+
+.renta-ayuda summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.renta-ayuda .ajuste-detalle {
+  margin-top: 10px;
+}
+
 /* ── La hoja de retención de 5ta (Renta de 5ta → un trabajador) ──
    Un mes por columna, como la hoja «RETENCION» de la PLAME. Es ancha: el
    marco tiene su propio desplazamiento horizontal y la primera columna se

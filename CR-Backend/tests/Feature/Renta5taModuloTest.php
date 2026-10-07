@@ -39,6 +39,41 @@ class Renta5taModuloTest extends TestCase
             ->assertJsonPath('data.meses.0.retencion', 240.5);
     }
 
+    public function test_la_lista_de_un_mes_trae_lo_que_correspondia_y_lo_retenido(): void
+    {
+        $e = $this->trabajador();
+        $bajo = $this->crearEmpleado(['sueldo_base' => 1500, 'fecha_ingreso' => '2020-03-01', 'tiene_hijos' => 0, 'bonificacion_cargo' => 0]);
+        $rrhh = $this->crearUsuario('rrhh');
+
+        // En enero le correspondían 240.50 y se le retuvo 100.
+        $this->actingAs($rrhh, 'sanctum')->putJson("/api/income-tax/{$e->id}/history", [
+            'anio' => 2026, 'mes' => 1, 'remuneracion' => 5000, 'retencion' => 100,
+        ])->assertOk();
+
+        $lista = $this->actingAs($rrhh, 'sanctum')->getJson('/api/income-tax?anio=2026&mes=1')->assertOk();
+        $this->assertSame(1, $lista->json('data.mes'));
+
+        $fila = collect($lista->json('data.filas'))->firstWhere('id', $e->id);
+        $this->assertEqualsWithDelta(240.5, $fila['corresponde_mes'], 0.001);
+        $this->assertEqualsWithDelta(100, $fila['retenido_mes'], 0.001);
+        $this->assertEqualsWithDelta(-140.5, $fila['diferencia_mes'], 0.001);
+        $this->assertSame('historial', $fila['fuente_mes']);
+        $this->assertSame([1], $fila['meses_con_diferencia']);
+        $this->assertTrue($fila['paga_5ta']);
+
+        // Quien gana menos de 7 UIT al año no paga 5ta.
+        $this->assertFalse(collect($lista->json('data.filas'))->firstWhere('id', $bajo->id)['paga_5ta']);
+        $this->assertSame(1, $lista->json('data.resumen.pagan_5ta'));
+        $this->assertSame(1, $lista->json('data.resumen.con_diferencias'));
+
+        // Un mes sin planilla ni historial: se calcula lo que le toca, pero no hay retenido.
+        $fila = collect($this->actingAs($rrhh, 'sanctum')->getJson('/api/income-tax?anio=2026&mes=3')->json('data.filas'))->firstWhere('id', $e->id);
+        $this->assertNull($fila['retenido_mes']);
+        $this->assertNull($fila['diferencia_mes']);
+
+        $this->actingAs($rrhh, 'sanctum')->getJson('/api/income-tax?anio=2026&mes=13')->assertStatus(422);
+    }
+
     public function test_guardar_un_mes_del_historial_recalcula_las_planillas_siguientes(): void
     {
         $e = $this->trabajador();

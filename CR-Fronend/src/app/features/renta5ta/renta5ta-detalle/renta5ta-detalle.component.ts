@@ -43,7 +43,8 @@ export class Renta5taDetalleComponent implements OnInit {
 
   empleadoId = '';
   anio = new Date().getFullYear();
-  readonly mesActual = new Date().getMonth() + 1;
+  /** El mes que se miraba en la lista (o el actual): su columna va resaltada. */
+  mesResaltado = new Date().getMonth() + 1;
   hoja: HojaRenta5ta | null = null;
   cargando = false;
 
@@ -85,6 +86,9 @@ export class Renta5taDetalleComponent implements OnInit {
     this.empleadoId = this.ruta.snapshot.paramMap.get('id') ?? '';
     const anio = Number(this.ruta.snapshot.queryParamMap.get('anio'));
     if (anio) this.anio = anio;
+    const mes = Number(this.ruta.snapshot.queryParamMap.get('mes'));
+    if (mes >= 1 && mes <= 12) this.mesResaltado = mes;
+    else if (this.anio !== new Date().getFullYear()) this.mesResaltado = 0;
     this.cargar();
   }
 
@@ -103,7 +107,7 @@ export class Renta5taDetalleComponent implements OnInit {
   }
 
   volver(): void {
-    this.router.navigate(['/inicio/renta-5ta']);
+    this.router.navigate(['/inicio/renta-5ta'], { queryParams: { anio: this.anio, mes: this.mesResaltado || null } });
   }
 
   mesDe(n: number): MesRenta5ta | undefined {

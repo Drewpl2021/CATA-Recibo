@@ -18,7 +18,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
  * El módulo «Renta de 5ta»: cuánto le toca retener a cada trabajador en el
  * año, con el procedimiento de SUNAT, y de dónde sale cada número.
  *
- *   GET  /income-tax?anio=                       la lista del personal
+ *   GET  /income-tax?anio=&mes=                  la lista del personal, con el detalle de ese mes
  *   GET  /income-tax/{empleado}?anio=            su hoja de retención, mes por mes
  *   PUT  /income-tax/{empleado}/history          un mes pagado antes del sistema
  *   GET  /income-tax/history/template?anio=      el Excel para cargar el historial
@@ -46,44 +46,76 @@ class Renta5taController extends Controller
         return (int) ($request->validate(['anio' => 'nullable|integer|min:2000|max:2100'])['anio'] ?? now()->year);
     }
 
+    /**
+     * La lista del personal para un año y un mes: el impuesto del año de cada
+     * uno y, de ese mes, cuánto le correspondía retener y cuánto se le
+     * retuvo de verdad. Trae también en qué meses lo retenido no fue lo que
+     * correspondía y cuáles no tienen dato, para los filtros de la pantalla.
+     */
     public function index(Request $request)
     {
         $anio = $this->anio($request);
+        $hoy = now();
+        $mesPorDefecto = $anio === (int) $hoy->year ? (int) $hoy->month : ($anio < (int) $hoy->year ? 12 : 1);
+        $mes = (int) ($request->validate(['mes' => 'nullable|integer|min:1|max:12'])['mes'] ?? $mesPorDefecto);
         $motor = new MotorRenta5ta();
-        $mesActual = $anio === (int) now()->year ? (int) now()->month : 12;
 
-        $filas = $this->personalDelAnio($anio)->map(function (Empleado $e) use ($motor, $anio, $mesActual) {
+        $filas = $this->personalDelAnio($anio)->map(function (Empleado $e) use ($motor, $anio, $mes) {
             $hoja = $motor->hoja($e, $anio);
-            $delMes = $hoja['meses'][$mesActual - 1];
+            $delMes = $hoja['meses'][$mes - 1];
+            $real = $delMes['trabaja'] ? $delMes['retencion_real'] : null;
 
             return [
-                'id'                => $e->id,
-                'dni'               => $e->dni,
-                'nombre'            => trim("{$e->apellido} {$e->nombre}"),
-                'cargo'             => $e->cargo?->nombre,
-                'estado'            => $e->estado,
-                'renta_bruta'       => $delMes['renta_bruta'],
-                'impuesto_anual'    => $hoja['resumen']['impuesto_anual'],
-                'retenido'          => $hoja['resumen']['retenido'],
-                'por_retener'       => $hoja['resumen']['por_retener'],
-                'retencion_del_mes' => $delMes['retencion_real'] ?? $delMes['retencion'],
-                'meses_sin_dato'    => $hoja['resumen']['meses_sin_dato'],
+                'id'                    => $e->id,
+                'dni'                   => $e->dni,
+                'nombre'                => trim("{$e->apellido} {$e->nombre}"),
+                'cargo'                 => $e->cargo?->nombre,
+                'estado'                => $e->estado,
+                'impuesto_anual'        => $hoja['resumen']['impuesto_anual'],
+                'retenido'              => $hoja['resumen']['retenido'],
+                'por_retener'           => $hoja['resumen']['por_retener'],
+                // El mes elegido.
+                'trabaja_mes'           => $delMes['trabaja'],
+                'fuente_mes'            => $delMes['fuente'],
+                'remuneracion_mes'      => $delMes['trabaja'] ? $delMes['remuneracion_mes'] : 0,
+                'corresponde_mes'       => $delMes['trabaja'] ? $delMes['retencion'] : 0,
+                'retenido_mes'          => $real,
+                'diferencia_mes'        => $real === null ? null : round($real - $delMes['retencion'], 2),
+                // Para los filtros.
+                'paga_5ta'              => $hoja['resumen']['impuesto_anual'] > 0 || $hoja['resumen']['retenido'] > 0,
+                'meses_con_diferencia'  => $this->mesesConDiferencia($hoja['meses']),
+                'meses_sin_dato'        => $hoja['resumen']['meses_sin_dato'],
             ];
         })->values();
 
+        $delMes = $filas->filter(fn ($f) => $f['trabaja_mes']);
+
         return response()->json(['success' => true, 'data' => [
             'anio'      => $anio,
-            'mes'       => $mesActual,
+            'mes'       => $mes,
             'uit'       => (float) \App\Models\ValorLegal::delAnio($anio)->uit,
             'filas'     => $filas,
             'resumen'   => [
-                'trabajadores'   => $filas->count(),
-                'con_retencion'  => $filas->filter(fn ($f) => $f['impuesto_anual'] > 0)->count(),
-                'impuesto_anual' => round($filas->sum('impuesto_anual'), 2),
-                'retenido'       => round($filas->sum('retenido'), 2),
-                'sin_historial'  => $filas->filter(fn ($f) => count($f['meses_sin_dato']) > 0)->count(),
+                'trabajadores'     => $filas->count(),
+                'pagan_5ta'        => $filas->where('paga_5ta', true)->count(),
+                'con_diferencias'  => $filas->filter(fn ($f) => count($f['meses_con_diferencia']) > 0)->count(),
+                'sin_historial'    => $filas->filter(fn ($f) => count($f['meses_sin_dato']) > 0)->count(),
+                'impuesto_anual'   => round($filas->sum('impuesto_anual'), 2),
+                'retenido'         => round($filas->sum('retenido'), 2),
+                // Del mes elegido: lo que correspondía a todos y lo retenido de verdad.
+                'corresponde_mes'  => round($delMes->sum('corresponde_mes'), 2),
+                'retenido_mes'     => $delMes->contains(fn ($f) => $f['retenido_mes'] !== null)
+                    ? round($delMes->sum(fn ($f) => $f['retenido_mes'] ?? 0), 2) : null,
             ],
         ]]);
+    }
+
+    /** Los meses con dato (planilla o historial) en que lo retenido no fue lo que correspondía. */
+    private function mesesConDiferencia(array $meses): array
+    {
+        return array_values(array_map(fn ($m) => $m['mes'], array_filter($meses, fn ($m) => $m['trabaja']
+            && $m['retencion_real'] !== null
+            && abs($m['retencion_real'] - $m['retencion']) > 0.01)));
     }
 
     public function show(Request $request, string $empleado)

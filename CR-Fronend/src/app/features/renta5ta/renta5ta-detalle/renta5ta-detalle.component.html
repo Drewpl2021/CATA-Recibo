@@ -27,7 +27,7 @@
         <thead>
           <tr>
             <th class="hoja-5ta__concepto">Detalle</th>
-            <th *ngFor="let n of meses" [class.hoja-5ta__mes--actual]="n === mesActual && anio === (hoja.anio)">
+            <th *ngFor="let n of meses" [class.hoja-5ta__mes--actual]="n === mesResaltado">
               {{ nombreMes(n).slice(0, 3) }}
             </th>
             <th>Año</th>
@@ -36,7 +36,7 @@
         <tbody>
           <tr class="hoja-5ta__fuente">
             <td class="hoja-5ta__concepto">Dato de</td>
-            <td *ngFor="let n of meses" [class.hoja-5ta__mes--actual]="n === mesActual">
+            <td *ngFor="let n of meses" [class.hoja-5ta__mes--actual]="n === mesResaltado">
               <span class="status-badge" *ngIf="mesDe(n)?.trabaja"
                 [ngClass]="'status-badge-' + (mesDe(n)!.fuente === 'planilla' ? 'success' : mesDe(n)!.fuente === 'historial' ? 'info' : 'warning')">
                 {{ fuentes[mesDe(n)!.fuente] }}
@@ -49,7 +49,7 @@
               {{ fila.etiqueta }}
               <app-icon *ngIf="fila.ayuda" icono="info" [tamano]="13" class="hoja-5ta__ayuda"></app-icon>
             </td>
-            <td *ngFor="let n of meses" [class.hoja-5ta__mes--actual]="n === mesActual"
+            <td *ngFor="let n of meses" [class.hoja-5ta__mes--actual]="n === mesResaltado"
               [class.hoja-5ta__celda--difiere]="fila.etiqueta === 'Retención real' && difiere(n)">
               {{ celda(fila, n) }}
             </td>
