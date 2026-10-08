@@ -14,9 +14,10 @@
       <app-icon icono="refresh" [tamano]="16"></app-icon>
       {{ recalculando ? 'Recalculando…' : 'Recalcular 5ta' }}
     </button>
-    <button class="btn-exportar" (click)="exportar()" [disabled]="exportando">
+    <button class="btn-exportar" (click)="exportar()" [disabled]="exportando || cargando"
+      title="La lista como se ve (con los filtros y la búsqueda) y la hoja de retención de cada uno">
       <app-icon icono="excel" [tamano]="16"></app-icon>
-      {{ exportando ? 'Generando…' : 'Descargar hojas de retención' }}
+      {{ exportando ? 'Generando…' : 'Descargar Excel' }}
     </button>
   </div>
 </app-page-header>
@@ -83,15 +84,10 @@
   [mensajeVacio]="mensajeVacio"
   (accionPersonalizada)="alAccionar($event)"
 >
-  <div tableActions class="chips-filtro" role="group" aria-label="Filtrar la lista">
-    <button type="button" *ngFor="let f of filtros" class="chip-filtro"
-      [class.chip-filtro--activo]="filtro === f.id" [attr.aria-pressed]="filtro === f.id"
-      [title]="f.ayuda" (click)="filtrar(f.id)">
-      <app-icon [icono]="f.icono" [tamano]="17"></app-icon>
-      {{ f.etiqueta }}
-      <span class="chip-filtro__cuenta">{{ cuentaDe(f.id) }}</span>
-    </button>
-  </div>
+  <!-- El embudo, como en Planillas: situación, dato del mes, sede, área,
+       cargo y estado. El Excel baja con estos mismos filtros. -->
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
+    (cambio)="aplicarFiltro()"></app-filtros>
 
   <ng-template appCelda="nombre" let-f>
     <strong>{{ f.nombre }}</strong>
@@ -144,6 +140,7 @@
     <li><strong>Le corresponde en {{ nombreDelMes }}:</strong> lo que había que retenerle ese mes. Debajo dice de dónde sale: de su planilla del sistema, del historial cargado, o estimado con su ficha si no hay dato.</li>
     <li><strong>Se le retuvo en {{ nombreDelMes }}:</strong> lo que de verdad se le descontó, según su planilla o el historial. Si no cuadra con lo que correspondía, se dice cuánto de más o de menos.</li>
     <li><strong>Situación:</strong> «Difiere» si algún mes del año se le retuvo distinto de lo que correspondía; «Faltan» si hay meses ya pasados sin dato; «Al día» si todo cuadra.</li>
+    <li>El <strong>embudo «Filtros»</strong> muestra solo a quienes pagan 5ta, a quienes tienen diferencias o les falta historial, o los de una sede, área o cargo. <strong>Descargar Excel</strong> baja exactamente lo que se está viendo: la lista y la hoja de retención de cada uno.</li>
     <li>El ojo abre su <strong>hoja de retención</strong>: los 12 meses con todo el cálculo, y ahí se pueden escribir los meses que faltan.</li>
   </ul>
 </details>

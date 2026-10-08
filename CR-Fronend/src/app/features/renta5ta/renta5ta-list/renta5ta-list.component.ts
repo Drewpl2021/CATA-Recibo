@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,8 +15,8 @@ import { FormModalComponent } from '../../../shared/components/form-modal/form-m
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { SelectorArchivoComponent } from '../../../shared/components/selector-archivo/selector-archivo.component';
-
-type FiltroRenta5ta = 'todos' | 'pagan' | 'diferencias' | 'sin_historial';
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 
 /**
  * Renta de 5ta: cuánto le toca retener a cada trabajador en el año, con el
@@ -32,7 +32,7 @@ type FiltroRenta5ta = 'todos' | 'pagan' | 'diferencias' | 'sin_historial';
 @Component({
   selector: 'app-renta5ta-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorArchivoComponent],
+  imports: [CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FiltrosComponent, FormModalComponent, SelectorArchivoComponent],
   templateUrl: './renta5ta-list.component.html',
 })
 export class Renta5taListComponent implements OnInit {
@@ -53,21 +53,45 @@ export class Renta5taListComponent implements OnInit {
   cargando = false;
 
   /**
-   * Los cuatro filtros de la lista. Se aplican aquí, sobre lo que ya llegó:
-   * el cálculo de todo el personal se hace una vez por año y mes.
+   * Los filtros del embudo, como en Planillas. Se aplican aquí, al instante,
+   * sobre lo que ya llegó (calcular a todo el personal tarda un par de
+   * segundos y se hace una vez por año y mes). El Excel lleva estos mismos
+   * filtros y el servidor los aplica igual (Renta5taController::filtrar).
    */
-  readonly filtros: { id: FiltroRenta5ta; etiqueta: string; icono: string; ayuda: string }[] = [
-    { id: 'todos', etiqueta: 'Todos', icono: 'people', ayuda: 'Todo el personal del año' },
-    { id: 'pagan', etiqueta: 'Pagan 5ta', icono: 'wallet', ayuda: 'Ganan más de 7 UIT al año, o ya se les retuvo algo' },
-    { id: 'diferencias', etiqueta: 'Con diferencias', icono: 'warning', ayuda: 'Algún mes se les retuvo distinto de lo que correspondía' },
-    { id: 'sin_historial', etiqueta: 'Les falta historial', icono: 'clock', ayuda: 'Meses ya pasados sin planilla ni historial: se están estimando' },
+  filtros: ValoresFiltro = {};
+  camposFiltro: CampoFiltro[] = [
+    {
+      clave: 'situacion', etiqueta: 'Situación', tipo: 'opciones', vacio: 'Todas', opciones: [],
+      ayuda: '«Con diferencias»: algún mes se le retuvo distinto de lo que correspondía.',
+    },
+    {
+      clave: 'dato_mes', etiqueta: 'Dato del mes', tipo: 'opciones', vacio: 'Todos',
+      opciones: [
+        { valor: 'planilla', etiqueta: 'De su planilla' },
+        { valor: 'historial', etiqueta: 'Del historial' },
+        { valor: 'proyectado', etiqueta: 'Estimado (sin dato)' },
+        { valor: 'no_trabaja', etiqueta: 'No trabajó ese mes' },
+      ],
+    },
+    { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
+    { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
+    { clave: 'cargo_id', etiqueta: 'Cargo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+    {
+      clave: 'estado', etiqueta: 'Estado del trabajador', tipo: 'opciones', vacio: 'Todos',
+      opciones: [
+        { valor: 'activo', etiqueta: 'Activos' },
+        { valor: 'inactivo', etiqueta: 'Cesados' },
+      ],
+    },
   ];
-  filtro: FiltroRenta5ta = 'todos';
   /**
    * Las filas que ve la tabla. Es una propiedad y no un getter a propósito:
    * un arreglo nuevo en cada ciclo haría que la tabla volviera a la página 1.
    */
   filasVisibles: FilaRenta5ta[] = [];
+
+  /** La tabla: de ella sale lo escrito en el buscador, para que el Excel lo lleve. */
+  @ViewChild(DataTableComponent) private tabla?: DataTableComponent<FilaRenta5ta>;
 
   get cifras(): CifraCabecera[] {
     const r = this.datos?.resumen;
@@ -80,12 +104,6 @@ export class Renta5taListComponent implements OnInit {
 
   get nombreDelMes(): string {
     return this.datos ? nombreMes(this.datos.mes) : '';
-  }
-
-  cuentaDe(filtro: FiltroRenta5ta): number {
-    const r = this.datos?.resumen;
-    if (!r) return 0;
-    return { todos: r.trabajadores, pagan: r.pagan_5ta, diferencias: r.con_diferencias, sin_historial: r.sin_historial }[filtro];
   }
 
   columnas: ColumnaTabla<FilaRenta5ta>[] = [];
@@ -160,6 +178,7 @@ export class Renta5taListComponent implements OnInit {
         this.datos = res.data;
         this.mes = res.data.mes;
         this.armarColumnas();
+        this.ponerOpcionesDeFiltro();
         this.aplicarFiltro();
       },
       error: (err) => {
@@ -169,28 +188,67 @@ export class Renta5taListComponent implements OnInit {
     });
   }
 
-  filtrar(filtro: FiltroRenta5ta): void {
-    this.filtro = filtro;
-    this.aplicarFiltro();
+  /**
+   * Las opciones que dependen de lo que llegó: la situación con su cuenta
+   * («Pagan 5ta (24)») y las sedes, áreas y cargos que de verdad hay en la
+   * lista, sin pedir los catálogos aparte.
+   */
+  private ponerOpcionesDeFiltro(): void {
+    const filas = this.datos?.filas ?? [];
+    const cuenta = (pasa: (f: FilaRenta5ta) => boolean) => filas.filter(pasa).length;
+    const situacion = this.camposFiltro.find((c) => c.clave === 'situacion')!;
+    situacion.opciones = [
+      { valor: 'pagan', etiqueta: `Pagan 5ta (${cuenta((f) => f.paga_5ta)})` },
+      { valor: 'no_pagan', etiqueta: `No pagan 5ta (${cuenta((f) => !f.paga_5ta)})` },
+      { valor: 'diferencias', etiqueta: `Con diferencias (${cuenta((f) => f.meses_con_diferencia.length > 0)})` },
+      { valor: 'sin_historial', etiqueta: `Les falta historial (${cuenta((f) => f.meses_sin_dato.length > 0)})` },
+      { valor: 'al_dia', etiqueta: `Al día (${cuenta((f) => f.situacion === 'al_dia')})` },
+    ];
+
+    const poner = (clave: string, id: (f: FilaRenta5ta) => string | null, nombre: (f: FilaRenta5ta) => string | null) => {
+      const unicos = new Map<string, string>();
+      filas.forEach((f) => { const v = id(f); if (v) unicos.set(v, nombre(f) ?? v); });
+      this.camposFiltro.find((c) => c.clave === clave)!.opciones = [...unicos]
+        .map(([valor, etiqueta]) => ({ valor, etiqueta }))
+        .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es'));
+    };
+    poner('sede_id', (f) => f.sede_id, (f) => f.sede);
+    poner('area_id', (f) => f.area_id, (f) => f.area);
+    poner('cargo_id', (f) => f.cargo_id, (f) => f.cargo);
+    // Un arreglo nuevo para que el embudo se entere de las opciones nuevas.
+    this.camposFiltro = [...this.camposFiltro];
   }
 
-  private aplicarFiltro(): void {
-    const filas = this.datos?.filas ?? [];
-    this.filasVisibles = {
-      todos: () => filas,
-      pagan: () => filas.filter((f) => f.paga_5ta),
-      diferencias: () => filas.filter((f) => f.meses_con_diferencia.length > 0),
-      sin_historial: () => filas.filter((f) => f.meses_sin_dato.length > 0),
-    }[this.filtro]();
+  /** Los mismos filtros que aplica el servidor al Excel (Renta5taController::filtrar). */
+  aplicarFiltro(): void {
+    const v = this.filtros;
+    this.filasVisibles = (this.datos?.filas ?? []).filter((f) => {
+      const situacion = {
+        '': true,
+        pagan: f.paga_5ta,
+        no_pagan: !f.paga_5ta,
+        diferencias: f.meses_con_diferencia.length > 0,
+        sin_historial: f.meses_sin_dato.length > 0,
+        al_dia: f.situacion === 'al_dia',
+      }[v['situacion'] ?? ''] ?? true;
+
+      return situacion
+        && (!v['dato_mes'] || f.fuente_mes === v['dato_mes'])
+        && (!v['sede_id'] || f.sede_id === v['sede_id'])
+        && (!v['area_id'] || f.area_id === v['area_id'])
+        && (!v['cargo_id'] || f.cargo_id === v['cargo_id'])
+        && (!v['estado'] || f.estado === v['estado']);
+    });
+  }
+
+  get hayFiltros(): boolean {
+    return Object.values(this.filtros).some((v) => !!v);
   }
 
   get mensajeVacio(): string {
-    return {
-      todos: 'No hay trabajadores en este año.',
-      pagan: 'Nadie paga 5ta en este año.',
-      diferencias: 'A nadie se le retuvo distinto de lo que correspondía.',
-      sin_historial: 'Todos tienen sus meses completos: no falta historial.',
-    }[this.filtro];
+    return this.hayFiltros
+      ? 'Nadie cumple estos filtros. Quita alguno con su «×» o con «Limpiar todo».'
+      : 'No hay trabajadores en este año.';
   }
 
   alAccionar(e: { accion: string; fila: FilaRenta5ta }): void {
@@ -264,16 +322,28 @@ export class Renta5taListComponent implements OnInit {
     });
   }
 
+  /**
+   * Baja lo que se está viendo: el mes elegido, los filtros del embudo y lo
+   * escrito en el buscador. El servidor los vuelve a aplicar igual.
+   */
   exportar(): void {
+    const busqueda = this.tabla?.busqueda.trim() ?? '';
+    const filtros: Record<string, string> = { ...this.filtros };
+    if (busqueda) filtros['search'] = busqueda;
+    Object.keys(filtros).forEach((k) => { if (!filtros[k]) delete filtros[k]; });
+    const cuantos = this.tabla?.filaFiltradas.length ?? this.filasVisibles.length;
+
     this.exportando = true;
-    this.progreso.seguir('Armando el Excel de la 5ta', this.servicio.exportar(this.anio)).subscribe({
+    this.progreso.seguir('Armando el Excel de la 5ta', this.servicio.exportar(this.anio, this.mes, filtros)).subscribe({
       next: (blob) => {
         this.exportando = false;
-        guardarArchivo(blob, `Renta de 5ta ${this.anio}.xlsx`);
+        const filtrado = Object.keys(filtros).length ? ' (filtrado)' : '';
+        guardarArchivo(blob, `Renta de 5ta - ${this.nombreDelMes} ${this.anio}${filtrado}.xlsx`);
+        this.toast.success('Excel descargado', `${cuantos} trabajador(es): la lista y la hoja de retención de cada uno.`);
       },
-      error: () => {
+      error: (err) => {
         this.exportando = false;
-        this.toast.error('No se descargó', 'No se pudo armar el Excel.');
+        this.toast.error('No se descargó', mensajeErrorApi(err, 'No se pudo armar el Excel.'));
       },
     });
   }

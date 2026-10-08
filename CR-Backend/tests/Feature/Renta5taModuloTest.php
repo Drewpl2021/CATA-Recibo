@@ -74,6 +74,38 @@ class Renta5taModuloTest extends TestCase
         $this->actingAs($rrhh, 'sanctum')->getJson('/api/income-tax?anio=2026&mes=13')->assertStatus(422);
     }
 
+    public function test_el_excel_baja_con_los_filtros_y_la_busqueda_de_la_pantalla(): void
+    {
+        $alto = $this->trabajador();
+        $this->crearEmpleado(['sueldo_base' => 1500, 'fecha_ingreso' => '2020-03-01', 'tiene_hijos' => 0, 'bonificacion_cargo' => 0]);
+        $rrhh = $this->crearUsuario('rrhh');
+
+        $lista = function (string $query) use ($rrhh) {
+            $r = $this->actingAs($rrhh, 'sanctum')->get('/api/income-tax/export?anio=2026&mes=1' . $query)->assertOk();
+            $hoja = \PhpOffice\PhpSpreadsheet\IOFactory::load($r->baseResponse->getFile()->getPathname())->getSheetByName('Lista');
+
+            return [$hoja, $r->headers->get('content-disposition')];
+        };
+
+        // Solo los que pagan 5ta: el de 5,000.
+        [$hoja, $nombre] = $lista('&situacion=pagan');
+        $this->assertSame('Renta de 5ta · Enero 2026', $hoja->getCell('A1')->getValue());
+        $this->assertStringContainsString('Situación: Pagan 5ta', $hoja->getCell('A2')->getValue());
+        $this->assertSame($alto->dni, (string) $hoja->getCell('B5')->getValue());
+        $this->assertSame('TOTAL', $hoja->getCell('C6')->getValue());
+        $this->assertEqualsWithDelta(240.5, $hoja->getCell('L5')->getValue(), 0.001);
+        $this->assertStringContainsString('(filtrado)', $nombre);
+
+        // Sin filtros, los dos; con una búsqueda que no calza, ninguno.
+        [$hoja] = $lista('');
+        $this->assertSame('Todo el personal · 2 de 2 trabajador(es)', $hoja->getCell('A2')->getValue());
+        $this->assertSame('TOTAL', $hoja->getCell('C7')->getValue());
+        [$hoja] = $lista('&search=nadie-se-llama-asi');
+        $this->assertSame('TOTAL', $hoja->getCell('C5')->getValue());
+
+        $this->actingAs($rrhh, 'sanctum')->getJson('/api/income-tax/export?anio=2026&situacion=otra')->assertStatus(422);
+    }
+
     public function test_guardar_un_mes_del_historial_recalcula_las_planillas_siguientes(): void
     {
         $e = $this->trabajador();

@@ -12,7 +12,12 @@ export interface FilaRenta5ta {
   id: string;
   dni: string;
   nombre: string;
+  cargo_id: string | null;
   cargo: string | null;
+  area_id: string | null;
+  area: string | null;
+  sede_id: string | null;
+  sede: string | null;
   estado: string;
   impuesto_anual: number;
   retenido: number;
@@ -29,6 +34,8 @@ export interface FilaRenta5ta {
   paga_5ta: boolean;
   meses_con_diferencia: number[];
   meses_sin_dato: number[];
+  /** Lo primero que hay que mirar de él (la columna Situación). */
+  situacion: 'diferencias' | 'sin_historial' | 'no_paga' | 'al_dia';
 }
 
 export interface ListaRenta5ta {
@@ -131,7 +138,13 @@ export class Renta5taService {
     return this.http.post<ApiResponse<{ recalculadas: number; saltadas: number; trabajadores: number }>>(`${this.url}/recalculate`, { anio });
   }
 
-  exportar(anio: number): Observable<Blob> {
-    return this.http.get(`${this.url}/export`, { params: { anio: String(anio) }, responseType: 'blob' });
+  /**
+   * El Excel de la pantalla: la lista con los mismos filtros (y la búsqueda)
+   * más la hoja de retención de cada uno de esos trabajadores.
+   */
+  exportar(anio: number, mes: number | null, filtros: Record<string, string> = {}): Observable<Blob> {
+    const params: Record<string, string> = { anio: String(anio), ...filtros };
+    if (mes) params['mes'] = String(mes);
+    return this.http.get(`${this.url}/export`, { params, responseType: 'blob' });
   }
 }

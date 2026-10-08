@@ -24,7 +24,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
  *   GET  /income-tax/history/template?anio=      el Excel para cargar el historial
  *   POST /income-tax/history                     subir ese Excel
  *   POST /income-tax/recalculate                 rehacer la 5ta de las planillas abiertas
- *   GET  /income-tax/export?anio=                todas las hojas en un Excel
+ *   GET  /income-tax/export?anio=&mes=&filtros   la lista filtrada y la hoja de cada uno, en Excel
  */
 class Renta5taController extends Controller
 {
@@ -34,7 +34,7 @@ class Renta5taController extends Controller
     /** El personal del año: los activos y quien tenga planilla o historial ese año. */
     private function personalDelAnio(int $anio)
     {
-        return Empleado::with('cargo:id,nombre', 'area:id,nombre')
+        return Empleado::with('cargo:id,nombre', 'area:id,nombre', 'sede:id,nombre')
             ->where(fn ($q) => $q->where('estado', 'activo')
                 ->orWhereIn('id', Planilla::where('anio', $anio)->select('empleado_id'))
                 ->orWhereIn('id', RentaQuintaPrevia::where('anio', $anio)->select('empleado_id')))
@@ -51,42 +51,15 @@ class Renta5taController extends Controller
      * uno y, de ese mes, cuánto le correspondía retener y cuánto se le
      * retuvo de verdad. Trae también en qué meses lo retenido no fue lo que
      * correspondía y cuáles no tienen dato, para los filtros de la pantalla.
+     *
+     * Llega entera: la pantalla filtra sobre lo que ya tiene, al instante. El
+     * Excel (exportar) aplica esos mismos filtros aquí, con filtrar().
      */
     public function index(Request $request)
     {
         $anio = $this->anio($request);
-        $hoy = now();
-        $mesPorDefecto = $anio === (int) $hoy->year ? (int) $hoy->month : ($anio < (int) $hoy->year ? 12 : 1);
-        $mes = (int) ($request->validate(['mes' => 'nullable|integer|min:1|max:12'])['mes'] ?? $mesPorDefecto);
-        $motor = new MotorRenta5ta();
-
-        $filas = $this->personalDelAnio($anio)->map(function (Empleado $e) use ($motor, $anio, $mes) {
-            $hoja = $motor->hoja($e, $anio);
-            $delMes = $hoja['meses'][$mes - 1];
-            $real = $delMes['trabaja'] ? $delMes['retencion_real'] : null;
-
-            return [
-                'id'                    => $e->id,
-                'dni'                   => $e->dni,
-                'nombre'                => trim("{$e->apellido} {$e->nombre}"),
-                'cargo'                 => $e->cargo?->nombre,
-                'estado'                => $e->estado,
-                'impuesto_anual'        => $hoja['resumen']['impuesto_anual'],
-                'retenido'              => $hoja['resumen']['retenido'],
-                'por_retener'           => $hoja['resumen']['por_retener'],
-                // El mes elegido.
-                'trabaja_mes'           => $delMes['trabaja'],
-                'fuente_mes'            => $delMes['fuente'],
-                'remuneracion_mes'      => $delMes['trabaja'] ? $delMes['remuneracion_mes'] : 0,
-                'corresponde_mes'       => $delMes['trabaja'] ? $delMes['retencion'] : 0,
-                'retenido_mes'          => $real,
-                'diferencia_mes'        => $real === null ? null : round($real - $delMes['retencion'], 2),
-                // Para los filtros.
-                'paga_5ta'              => $hoja['resumen']['impuesto_anual'] > 0 || $hoja['resumen']['retenido'] > 0,
-                'meses_con_diferencia'  => $this->mesesConDiferencia($hoja['meses']),
-                'meses_sin_dato'        => $hoja['resumen']['meses_sin_dato'],
-            ];
-        })->values();
+        $mes = $this->mes($request, $anio);
+        ['filas' => $filas] = $this->calcularLista($anio, $mes);
 
         $delMes = $filas->filter(fn ($f) => $f['trabaja_mes']);
 
@@ -108,6 +81,106 @@ class Renta5taController extends Controller
                     ? round($delMes->sum(fn ($f) => $f['retenido_mes'] ?? 0), 2) : null,
             ],
         ]]);
+    }
+
+    /** El mes pedido; sin él, el mes en curso (o diciembre en un año que ya pasó). */
+    private function mes(Request $request, int $anio): int
+    {
+        $hoy = now();
+        $porDefecto = $anio === (int) $hoy->year ? (int) $hoy->month : ($anio < (int) $hoy->year ? 12 : 1);
+
+        return (int) ($request->validate(['mes' => 'nullable|integer|min:1|max:12'])['mes'] ?? $porDefecto);
+    }
+
+    /**
+     * Una fila por trabajador del año, con lo del mes elegido, y su hoja
+     * completa (el Excel la necesita y así no se calcula dos veces).
+     *
+     * @return array{filas: \Illuminate\Support\Collection, hojas: array<string, array>, empleados: array<string, Empleado>}
+     */
+    private function calcularLista(int $anio, int $mes, ?Progreso $progreso = null): array
+    {
+        $motor = new MotorRenta5ta();
+        $hojas = [];
+        $empleados = [];
+
+        $filas = $this->personalDelAnio($anio)->map(function (Empleado $e) use ($motor, $anio, $mes, $progreso, &$hojas, &$empleados) {
+            $progreso?->avanzar();
+            $hoja = $motor->hoja($e, $anio);
+            $hojas[$e->id] = $hoja;
+            $empleados[$e->id] = $e;
+            $delMes = $hoja['meses'][$mes - 1];
+            $real = $delMes['trabaja'] ? $delMes['retencion_real'] : null;
+            $diferencias = $this->mesesConDiferencia($hoja['meses']);
+            $paga = $hoja['resumen']['impuesto_anual'] > 0 || $hoja['resumen']['retenido'] > 0;
+
+            return [
+                'id'                    => $e->id,
+                'dni'                   => $e->dni,
+                'nombre'                => trim("{$e->apellido} {$e->nombre}"),
+                'cargo_id'              => $e->cargo_id,
+                'cargo'                 => $e->cargo?->nombre,
+                'area_id'               => $e->area_id,
+                'area'                  => $e->area?->nombre,
+                'sede_id'               => $e->sede_id,
+                'sede'                  => $e->sede?->nombre,
+                'estado'                => $e->estado,
+                'impuesto_anual'        => $hoja['resumen']['impuesto_anual'],
+                'retenido'              => $hoja['resumen']['retenido'],
+                'por_retener'           => $hoja['resumen']['por_retener'],
+                // El mes elegido.
+                'trabaja_mes'           => $delMes['trabaja'],
+                'fuente_mes'            => $delMes['fuente'],
+                'remuneracion_mes'      => $delMes['trabaja'] ? $delMes['remuneracion_mes'] : 0,
+                'corresponde_mes'       => $delMes['trabaja'] ? $delMes['retencion'] : 0,
+                'retenido_mes'          => $real,
+                'diferencia_mes'        => $real === null ? null : round($real - $delMes['retencion'], 2),
+                // Para los filtros.
+                'paga_5ta'              => $paga,
+                'meses_con_diferencia'  => $diferencias,
+                'meses_sin_dato'        => $hoja['resumen']['meses_sin_dato'],
+                'situacion'             => match (true) {
+                    count($diferencias) > 0                       => 'diferencias',
+                    count($hoja['resumen']['meses_sin_dato']) > 0 => 'sin_historial',
+                    ! $paga                                       => 'no_paga',
+                    default                                       => 'al_dia',
+                },
+            ];
+        })->values();
+
+        return ['filas' => $filas, 'hojas' => $hojas, 'empleados' => $empleados];
+    }
+
+    /** Lo que cada filtro de la pantalla deja pasar. Mismas claves que el embudo. */
+    private const FILTROS_SITUACION = ['pagan', 'no_pagan', 'diferencias', 'sin_historial', 'al_dia'];
+
+    /**
+     * Los filtros del embudo y el buscador, igual que los aplica la pantalla
+     * (renta5ta-list.component.ts → aplicarFiltro): lo que se ve es lo que baja.
+     */
+    private function filtrar(\Illuminate\Support\Collection $filas, array $f): \Illuminate\Support\Collection
+    {
+        $busqueda = mb_strtolower(trim((string) ($f['search'] ?? '')));
+
+        return $filas->filter(function ($fila) use ($f, $busqueda) {
+            $ok = match ($f['situacion'] ?? null) {
+                'pagan'         => $fila['paga_5ta'],
+                'no_pagan'      => ! $fila['paga_5ta'],
+                'diferencias'   => count($fila['meses_con_diferencia']) > 0,
+                'sin_historial' => count($fila['meses_sin_dato']) > 0,
+                'al_dia'        => $fila['situacion'] === 'al_dia',
+                default         => true,
+            };
+
+            return $ok
+                && (empty($f['dato_mes']) || $fila['fuente_mes'] === $f['dato_mes'])
+                && (empty($f['sede_id']) || (string) $fila['sede_id'] === (string) $f['sede_id'])
+                && (empty($f['area_id']) || (string) $fila['area_id'] === (string) $f['area_id'])
+                && (empty($f['cargo_id']) || (string) $fila['cargo_id'] === (string) $f['cargo_id'])
+                && (empty($f['estado']) || $fila['estado'] === $f['estado'])
+                && ($busqueda === '' || collect([$fila['dni'], $fila['nombre'], $fila['cargo']])
+                    ->contains(fn ($v) => str_contains(mb_strtolower((string) $v), $busqueda)));
+        })->values();
     }
 
     /** Los meses con dato (planilla o historial) en que lo retenido no fue lo que correspondía. */
@@ -341,63 +414,136 @@ class Renta5taController extends Controller
      * GET /income-tax/export — el resumen y la hoja de retención de cada
      * trabajador, una debajo de otra, como la hoja «RETENCION» de la PLAME.
      */
+    /**
+     * El Excel de la pantalla: lo que se está viendo, con los mismos filtros
+     * y la misma búsqueda.
+     *
+     *   Hoja «Lista»:     una fila por trabajador, como la tabla, con totales.
+     *   Hoja «Retención»: la hoja de retención de cada uno de esos, mes por mes.
+     */
     public function exportar(Request $request)
     {
         $anio = $this->anio($request);
-        $motor = new MotorRenta5ta();
-        $personal = $this->personalDelAnio($anio);
+        $mes = $this->mes($request, $anio);
+        $f = $request->validate([
+            'situacion' => 'nullable|in:' . implode(',', self::FILTROS_SITUACION),
+            'dato_mes'  => 'nullable|in:planilla,historial,proyectado,no_trabaja',
+            'sede_id'   => 'nullable|string|max:64',
+            'area_id'   => 'nullable|string|max:64',
+            'cargo_id'  => 'nullable|string|max:64',
+            'estado'    => 'nullable|in:activo,inactivo',
+            'search'    => 'nullable|string|max:100',
+        ]);
 
-        $resumen = [['N°', 'DNI', 'Apellidos y Nombres', 'Impuesto del año', 'Retenido', 'Por retener', 'Meses sin dato']];
-        $hojas = [];
-        $estiloHojas = [];
-        $progreso = Progreso::actual()->etapa('Armando la hoja de cada trabajador', $personal->count());
+        $progreso = Progreso::actual()->etapa('Calculando la 5ta de cada trabajador', $this->personalDelAnio($anio)->count());
+        ['filas' => $todas, 'hojas' => $hojas, 'empleados' => $empleados] = $this->calcularLista($anio, $mes, $progreso);
+        $filas = $this->filtrar($todas, $f);
+        $nombreMes = Meses::nombre($mes);
 
-        foreach ($personal->values() as $i => $e) {
-            $progreso->avanzar();
-            $h = $motor->hoja($e, $anio);
-            $resumen[] = [$i + 1, (string) $e->dni, trim("{$e->apellido}, {$e->nombre}", ', '),
-                $h['resumen']['impuesto_anual'], $h['resumen']['retenido'], $h['resumen']['por_retener'],
-                implode(', ', array_map(fn ($m) => self::ABREV[$m], $h['resumen']['meses_sin_dato']))];
+        // ── La lista ──
+        $situaciones = ['diferencias' => 'Difiere', 'sin_historial' => 'Faltan meses', 'no_paga' => 'No paga 5ta', 'al_dia' => 'Al día'];
+        $fuentes = ['planilla' => 'Su planilla', 'historial' => 'Historial', 'proyectado' => 'Estimado', 'no_trabaja' => 'No trabajó'];
+        $meses = fn (array $m) => implode(', ', array_map(fn ($x) => self::ABREV[$x], $m));
 
-            $estiloHojas[count($hojas)] = LibroExcel::SUBTITULO;
-            $hojas[] = ['Trabajador: ' . trim("{$e->apellido} {$e->nombre}") . " · DNI {$e->dni}"];
-            $estiloHojas[count($hojas)] = array_fill(0, 14, LibroExcel::TITULO);
-            $hojas[] = array_merge(['Detalle'], array_values(self::ABREV), ['']);
+        $lista = [
+            ["Renta de 5ta · {$nombreMes} {$anio}"],
+            [$this->describirFiltros($f, $todas) . ' · ' . $filas->count() . ' de ' . $todas->count() . ' trabajador(es)'],
+            [''],
+            ['N°', 'DNI', 'Apellidos y nombres', 'Cargo', 'Área', 'Sede', 'Estado',
+                "Impuesto {$anio}", 'Retenido en el año', 'Por retener',
+                "Remuneración {$nombreMes}", "Le corresponde en {$nombreMes}", "Se le retuvo en {$nombreMes}", 'Diferencia', "Dato de {$nombreMes}",
+                'Situación', 'Meses con diferencia', 'Meses sin dato'],
+        ];
+        foreach ($filas as $n => $x) {
+            $lista[] = [$n + 1, (string) $x['dni'], $x['nombre'], $x['cargo'], $x['area'], $x['sede'],
+                $x['estado'] === 'activo' ? 'Activo' : 'Cesado',
+                $x['impuesto_anual'], $x['retenido'], $x['por_retener'],
+                $x['trabaja_mes'] ? $x['remuneracion_mes'] : null,
+                $x['trabaja_mes'] ? $x['corresponde_mes'] : null,
+                $x['retenido_mes'], $x['diferencia_mes'], $fuentes[$x['fuente_mes']] ?? $x['fuente_mes'],
+                $situaciones[$x['situacion']], $meses($x['meses_con_diferencia']), $meses($x['meses_sin_dato'])];
+        }
+        $lista[] = array_merge(['', '', 'TOTAL', '', '', '', ''], [
+            round($filas->sum('impuesto_anual'), 2), round($filas->sum('retenido'), 2), round($filas->sum('por_retener'), 2),
+            round($filas->sum(fn ($x) => $x['trabaja_mes'] ? $x['remuneracion_mes'] : 0), 2),
+            round($filas->sum(fn ($x) => $x['trabaja_mes'] ? $x['corresponde_mes'] : 0), 2),
+            round($filas->sum(fn ($x) => $x['retenido_mes'] ?? 0), 2),
+            round($filas->sum(fn ($x) => $x['diferencia_mes'] ?? 0), 2),
+            '', '', '', '',
+        ]);
+
+        $columnasMonto = [7, 8, 9, 10, 11, 12, 13];
+        $estiloTotal = array_fill(0, 18, LibroExcel::TOTAL_TEXTO);
+        foreach ($columnasMonto as $c) {
+            $estiloTotal[$c] = LibroExcel::TOTAL_MONTO;
+        }
+
+        // ── La hoja de cada uno ──
+        $retencion = [];
+        $estiloRetencion = [];
+        foreach ($filas as $x) {
+            $e = $empleados[$x['id']];
+            $h = $hojas[$x['id']];
+            $estiloRetencion[count($retencion)] = LibroExcel::SUBTITULO;
+            $retencion[] = ['Trabajador: ' . trim("{$e->apellido} {$e->nombre}") . " · DNI {$e->dni}"];
+            $estiloRetencion[count($retencion)] = array_fill(0, 14, LibroExcel::TITULO);
+            $retencion[] = array_merge(['Detalle'], array_values(self::ABREV));
             $filasHoja = [
-                'Dato de'                        => fn ($f) => ['planilla' => 'Sistema', 'historial' => 'Historial', 'proyectado' => 'Proyectado', 'no_trabaja' => '—'][$f['fuente']] ?? $f['fuente'],
-                'Remuneración del mes'           => fn ($f) => $f['remuneracion_mes'],
-                'Nº meses que faltan'            => fn ($f) => $f['meses_que_faltan'],
-                'Remuneración proyectada'        => fn ($f) => $f['remuneracion_proyectada'],
-                'Gratificaciones (con 9%)'       => fn ($f) => $f['gratificaciones'],
-                'Remuneraciones anteriores'      => fn ($f) => $f['remuneraciones_anteriores'],
-                'Renta bruta anual'              => fn ($f) => $f['renta_bruta'],
-                '(−) 7 UIT'                      => fn ($f) => $f['deduccion'],
-                'Renta neta'                     => fn ($f) => $f['renta_neta'],
-                'Impuesto del año'               => fn ($f) => $f['impuesto_anual'],
-                '(−) Retenido antes'             => fn ($f) => $f['retenido_antes'],
-                'Divisor'                        => fn ($f) => $f['divisor'],
-                'Retención del mes'              => fn ($f) => $f['retencion_ordinaria'],
-                'Retención adicional (extraord.)' => fn ($f) => $f['retencion_adicional'],
-                'Total retención calculada'      => fn ($f) => $f['retencion'],
-                'Retención real (planilla/historial)' => fn ($f) => $f['retencion_real'],
+                'Dato de'                        => fn ($m) => ['planilla' => 'Sistema', 'historial' => 'Historial', 'proyectado' => 'Estimado', 'no_trabaja' => '—'][$m['fuente']] ?? $m['fuente'],
+                'Remuneración del mes'           => fn ($m) => $m['remuneracion_mes'],
+                'Nº meses que faltan'            => fn ($m) => $m['meses_que_faltan'],
+                'Remuneración proyectada'        => fn ($m) => $m['remuneracion_proyectada'],
+                'Gratificaciones (con 9%)'       => fn ($m) => $m['gratificaciones'],
+                'Remuneraciones anteriores'      => fn ($m) => $m['remuneraciones_anteriores'],
+                'Renta bruta anual'              => fn ($m) => $m['renta_bruta'],
+                '(−) 7 UIT'                      => fn ($m) => $m['deduccion'],
+                'Renta neta'                     => fn ($m) => $m['renta_neta'],
+                'Impuesto del año'               => fn ($m) => $m['impuesto_anual'],
+                '(−) Retenido antes'             => fn ($m) => $m['retenido_antes'],
+                'Divisor'                        => fn ($m) => $m['divisor'],
+                'Retención del mes'              => fn ($m) => $m['retencion_ordinaria'],
+                'Retención adicional (extraord.)' => fn ($m) => $m['retencion_adicional'],
+                'Total retención calculada'      => fn ($m) => $m['retencion'],
+                'Retención real (planilla/historial)' => fn ($m) => $m['retencion_real'],
             ];
             foreach ($filasHoja as $etiqueta => $valor) {
-                $hojas[] = array_merge([$etiqueta], array_map(fn ($f) => $f['trabaja'] ? $valor($f) : null, $h['meses']));
+                $retencion[] = array_merge([$etiqueta], array_map(fn ($m) => $m['trabaja'] ? $valor($m) : null, $h['meses']));
             }
-            $hojas[] = [''];
+            $retencion[] = [''];
         }
 
         $libro = new LibroExcel();
-        $libro->hoja('Resumen', $resumen, [
-            'anchos' => [6, 12, 36, 16, 14, 14, 24], 'estiloColumnas' => [1 => LibroExcel::TEXTO, 3 => LibroExcel::MONTO, 4 => LibroExcel::MONTO, 5 => LibroExcel::MONTO],
-            'estiloFilas' => [0 => array_fill(0, 7, LibroExcel::TITULO)], 'congelarPrimeraFila' => true,
+        $libro->hoja('Lista', $lista, [
+            'anchos' => [6, 12, 36, 26, 22, 18, 10, 14, 14, 14, 16, 16, 16, 12, 14, 14, 20, 20],
+            'estiloColumnas' => [1 => LibroExcel::TEXTO] + array_fill_keys($columnasMonto, LibroExcel::MONTO),
+            'estiloFilas' => [0 => LibroExcel::ENCABEZADO, 1 => LibroExcel::PARRAFO, 3 => array_fill(0, 18, LibroExcel::TITULO),
+                count($lista) - 1 => $estiloTotal],
         ]);
-        $libro->hoja('Retención', $hojas, [
+        $libro->hoja('Retención', $retencion ?: [['Ningún trabajador con estos filtros.']], [
             'anchos' => array_merge([34], array_fill(1, 12, 12)),
             'estiloColumnas' => array_fill(1, 12, LibroExcel::MONTO),
-            'estiloFilas' => $estiloHojas,
+            'estiloFilas' => $estiloRetencion,
         ]);
 
-        return $libro->descargar("Renta de 5ta {$anio}.xlsx");
+        $filtrado = array_filter($f) ? ' (filtrado)' : '';
+
+        return $libro->descargar("Renta de 5ta - {$nombreMes} {$anio}{$filtrado}.xlsx");
+    }
+
+    /** «Filtros: Situación: Pagan 5ta, Sede: CATA Central» — para que el Excel diga qué es. */
+    private function describirFiltros(array $f, \Illuminate\Support\Collection $todas): string
+    {
+        $nombreDe = fn (string $campo, string $id) => optional($todas->first(fn ($x) => (string) $x["{$campo}_id"] === $id))[$campo] ?? $id;
+        $partes = array_filter([
+            ! empty($f['situacion']) ? 'Situación: ' . ['pagan' => 'Pagan 5ta', 'no_pagan' => 'No pagan 5ta', 'diferencias' => 'Con diferencias', 'sin_historial' => 'Les falta historial', 'al_dia' => 'Al día'][$f['situacion']] : null,
+            ! empty($f['dato_mes']) ? 'Dato del mes: ' . ['planilla' => 'Su planilla', 'historial' => 'Historial', 'proyectado' => 'Estimado', 'no_trabaja' => 'No trabajó'][$f['dato_mes']] : null,
+            ! empty($f['sede_id']) ? 'Sede: ' . $nombreDe('sede', (string) $f['sede_id']) : null,
+            ! empty($f['area_id']) ? 'Área: ' . $nombreDe('area', (string) $f['area_id']) : null,
+            ! empty($f['cargo_id']) ? 'Cargo: ' . $nombreDe('cargo', (string) $f['cargo_id']) : null,
+            ! empty($f['estado']) ? 'Estado: ' . ($f['estado'] === 'activo' ? 'Activos' : 'Cesados') : null,
+            ! empty($f['search']) ? "Búsqueda: «{$f['search']}»" : null,
+        ]);
+
+        return $partes ? 'Filtros: ' . implode(', ', $partes) : 'Todo el personal';
     }
 }
