@@ -625,6 +625,15 @@ trait CalculaConceptosPlanilla
      */
     protected function generarYPersistirRenta5ta($planilla, $empleado): float
     {
+        // Planilla cerrada o boleta firmada: se queda la 5ta que ya tenía.
+        // Sin esto, solo con abrir la boleta (BoletaController, MiBoleta) o
+        // cargar el historial se le reescribía la línea a un pago ya hecho.
+        if ($planilla instanceof \App\Models\Planilla && $planilla->exists && $planilla->motivoParaNoTocar() !== null) {
+            return round((float) $planilla->payrollDetalles()
+                ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', \App\Support\ConceptosDePago::RENTA_5TA))
+                ->sum('monto_calculado'), 2);
+        }
+
         /*
          * Cero, y no la columna `bonificaciones` de la planilla.
          *
@@ -684,6 +693,12 @@ trait CalculaConceptosPlanilla
      */
     protected function generarConceptosAutomaticos($planilla, $empleado): void
     {
+        // Lo mismo: a una planilla cerrada o con la boleta firmada no se le
+        // vuelven a generar los conceptos.
+        if ($planilla instanceof \App\Models\Planilla && $planilla->exists && $planilla->motivoParaNoTocar() !== null) {
+            return;
+        }
+
         $sueldoBase         = (float) $planilla->sueldo_base;
         // Todos los montos de ley de esta planilla salen de SU año.
         $anio               = (int) $planilla->anio;

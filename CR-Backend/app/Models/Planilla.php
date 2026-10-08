@@ -101,6 +101,41 @@ class Planilla extends Model
      * firmada (por el trabajador o en papel). Esa boleta es un documento que
      * la persona aceptó; borrarla dejaría un pago firmado sin respaldo.
      */
+    /** Su boleta ya la firmó el trabajador (o se firmó en papel). */
+    public function boletaFirmada(): bool
+    {
+        $documento = $this->documentoBoleta;
+
+        return $documento !== null && in_array($documento->estado_firma, Documento::FIRMA_RESUELTA, true);
+    }
+
+    /**
+     * Por qué ya no se le pueden cambiar los conceptos, o null si se puede.
+     *
+     * Dos casos, y en los dos el pago ya está hecho:
+     *   - la planilla agrupada está cerrada (ya se pagó);
+     *   - su boleta está firmada: es lo que el trabajador aceptó, y su PDF
+     *     queda congelado. Cambiar las líneas dejaría la planilla diciendo una
+     *     cosa y la boleta firmada otra.
+     *
+     * Con la boleta emitida pero SIN firmar sí se puede: al cambiar algo se
+     * rehace su PDF (BoletaAlDia), así nunca quedan distintas.
+     */
+    public function motivoParaNoTocar(): ?string
+    {
+        if ($this->corrida?->estaCerrada()) {
+            return "La planilla «{$this->corrida->nombre}» está cerrada: ya se pagó y no se le cambian los conceptos.";
+        }
+
+        if ($this->boletaFirmada()) {
+            return $this->documentoBoleta->estado_firma === 'en_papel'
+                ? 'Su boleta ya está firmada en papel: es un pago que el trabajador aceptó y no se le cambian los conceptos.'
+                : 'Su boleta ya está firmada: es un pago que el trabajador aceptó y no se le cambian los conceptos.';
+        }
+
+        return null;
+    }
+
     public function scopeConBoletaFirmada($query)
     {
         return $query->whereHas('documentoBoleta', fn ($d) => $d->whereIn('estado_firma', Documento::FIRMA_RESUELTA));

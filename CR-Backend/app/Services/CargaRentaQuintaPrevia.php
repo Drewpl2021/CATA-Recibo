@@ -93,7 +93,11 @@ class CargaRentaQuintaPrevia
             $progreso->avanzar();
             Planilla::where('empleado_id', $empleado->id)->where('anio', $anio)->where('mes', '>=', 3)->get()
                 ->each(function ($planilla) use ($empleado, &$recalculadas) {
+                    if ($planilla->motivoParaNoTocar() !== null) {
+                        return;
+                    }
                     $this->generarYPersistirRenta5ta($planilla, $empleado);
+                    \App\Support\BoletaAlDia::rehacer($planilla);
                     $recalculadas++;
                 });
         }

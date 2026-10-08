@@ -5,6 +5,7 @@ use App\Models\PaymentConcept;
 use App\Models\Planilla;
 use App\Support\ConceptosDePago;
 use Illuminate\Database\Eloquent\Builder;
+use App\Support\BoletaAlDia;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use App\Traits\ListadoPaginado;
@@ -94,6 +95,9 @@ class PayrollDetalleController extends Controller
         ]);
 
         $planilla = Planilla::findOrFail($datos['planilla_id']);
+        if ($bloqueo = $this->bloqueo($planilla)) {
+            return $bloqueo;
+        }
 
         $this->rechazarTruncasParaIndeterminado($datos['payment_concept_id'], $planilla);
 
@@ -129,7 +133,11 @@ class PayrollDetalleController extends Controller
         $planilla->recalcularTotal();
         $this->anotar('agregó', $detalle, $planilla, null);
 
-        return response()->json(['success' => true, 'data' => $detalle->load('paymentConcept')], 201);
+        return response()->json([
+            'success'        => true,
+            'data'           => $detalle->load('paymentConcept'),
+            'boleta_rehecha' => BoletaAlDia::rehacer($planilla),
+        ], 201);
     }
 
     public function show(string $id)
@@ -156,6 +164,9 @@ class PayrollDetalleController extends Controller
         ]);
 
         $planilla = $detalle->planilla;
+        if ($bloqueo = $this->bloqueo($planilla)) {
+            return $bloqueo;
+        }
         $cambios  = [];
 
         if (isset($datos['calculo'])) {
@@ -196,7 +207,11 @@ class PayrollDetalleController extends Controller
             $this->anotar('cambió', $detalle, $planilla, $diferencias);
         }
 
-        return response()->json(['success' => true, 'data' => $detalle->load('paymentConcept')]);
+        return response()->json([
+            'success'        => true,
+            'data'           => $detalle->load('paymentConcept'),
+            'boleta_rehecha' => $diferencias ? BoletaAlDia::rehacer($planilla) : false,
+        ]);
     }
 
     /**
@@ -225,6 +240,14 @@ class PayrollDetalleController extends Controller
         }
     }
 
+    /** La respuesta de «no se puede», si la planilla ya no admite cambios. */
+    private function bloqueo(Planilla $planilla): ?\Illuminate\Http\JsonResponse
+    {
+        $motivo = $planilla->motivoParaNoTocar();
+
+        return $motivo === null ? null : response()->json(['success' => false, 'message' => $motivo], 409);
+    }
+
     /**
      * Los soles que van a la boleta.
      *
@@ -249,12 +272,19 @@ class PayrollDetalleController extends Controller
     {
         $detalle  = PayrollDetalle::findOrFail($id);
         $planilla = $detalle->planilla;
+        if ($bloqueo = $this->bloqueo($planilla)) {
+            return $bloqueo;
+        }
 
         $this->anotar('quitó', $detalle, $planilla, null);
         $detalle->delete();
         $planilla->recalcularTotal();
 
-        return response()->json(['success' => true, 'data' => ['message' => 'Detalle eliminado.']]);
+        return response()->json([
+            'success'        => true,
+            'data'           => ['message' => 'Detalle eliminado.'],
+            'boleta_rehecha' => BoletaAlDia::rehacer($planilla),
+        ]);
     }
 
     /**

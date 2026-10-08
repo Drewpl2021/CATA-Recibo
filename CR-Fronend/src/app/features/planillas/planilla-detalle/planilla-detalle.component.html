@@ -9,15 +9,15 @@
       {{ textoVolver }}
     </button>
 
-    <button class="btn-secondary" type="button" [disabled]="recalculando || corridaCerrada" (click)="recalcular()"
-      [appPista]="corridaCerrada
-        ? 'Esta planilla está cerrada: ábrela primero si hay que recalcularla.'
+    <button class="btn-secondary" type="button" [disabled]="recalculando || corridaCerrada || !!bloqueo" (click)="recalcular()"
+      [appPista]="bloqueo
+        ? bloqueo
         : 'Vuelve a tomar el sueldo actual de la ficha, por si se corrigió después de generar la planilla.'">
       <app-icon icono="refresh" [tamano]="16"></app-icon>
       {{ recalculando ? 'Recalculando…' : 'Recalcular sueldo' }}
     </button>
 
-    <button class="btn-primary" (click)="nuevo()">
+    <button class="btn-primary" (click)="nuevo()" [disabled]="!!bloqueo" [appPista]="bloqueo || ''">
       <app-icon icono="plus" [tamano]="16"></app-icon>
       Agregar concepto
     </button>
@@ -49,6 +49,20 @@
   (EsSalud y similares). No se descuentan del sueldo del trabajador.
 </p>
 
+<!-- Antes de tocar nada: si ya no se puede, o si tocarlo rehace su boleta. -->
+<div class="form-nota form-nota--alerta aviso-candado" *ngIf="bloqueo" role="status">
+  <app-icon icono="lock" [tamano]="16"></app-icon>
+  <span><strong>No se pueden cambiar sus conceptos.</strong> {{ bloqueo }}</span>
+</div>
+<div class="form-nota aviso-candado" *ngIf="boletaEmitidaSinFirmar" role="status">
+  <app-icon icono="receipt" [tamano]="16"></app-icon>
+  <span>
+    <strong>Su boleta ya fue emitida y todavía no la firma.</strong>
+    Si agregas, cambias o quitas un concepto, su boleta se vuelve a generar sola con los montos nuevos.
+    Una vez firmada, ya no se podrá.
+  </span>
+</div>
+
 <app-data-table
   entidad="este concepto"
   [columnas]="columnas"
@@ -60,7 +74,7 @@
   [filasPorPagina]="TAMANO_PAGINA"
   (cambioPagina)="irAPagina($event)"
   [mostrarBuscador]="false"
-  [acciones]="['editar', 'eliminar']"
+  [acciones]="bloqueo ? [] : ['editar', 'eliminar']"
   mensajeVacio="Esta planilla todavía no tiene conceptos."
   (editarFila)="editar($event)"
   (eliminarFila)="eliminar($event)"

@@ -449,6 +449,10 @@ class PlanillaController extends Controller
     {
         $planilla = Planilla::findOrFail($id);
 
+        if ($motivo = $planilla->motivoParaNoTocar()) {
+            return response()->json(['success' => false, 'message' => $motivo], 409);
+        }
+
         $datos = $request->validate([
             'conceptos'          => 'present|array',
             'conceptos.*.nombre' => 'required|string|max:150',
@@ -519,11 +523,14 @@ class PlanillaController extends Controller
             $this->generarYPersistirRenta5ta($planilla, $planilla->empleado);
         }
 
+        $rehecha = \App\Support\BoletaAlDia::rehacer($planilla);
+
         return response()->json([
             'success' => true,
             'data'    => [
-                'planilla' => $planilla->fresh()->load('payrollDetalles.paymentConcept'),
-                'resumen'  => ['puestos' => $puestos, 'quitados' => $quitados],
+                'planilla'       => $planilla->fresh()->load('payrollDetalles.paymentConcept'),
+                'resumen'        => ['puestos' => $puestos, 'quitados' => $quitados],
+                'boleta_rehecha' => $rehecha,
             ],
         ]);
     }
@@ -566,9 +573,13 @@ class PlanillaController extends Controller
 
     public function show(string $id)
     {
-        // 'corrida': la pantalla lo necesita para saber si puede ofrecer
-        // "Recalcular sueldo" — una corrida cerrada ya se pagó.
-        $planilla = Planilla::with('empleado', 'corrida')->findOrFail($id);
+        // 'corrida' y la boleta: la pantalla los necesita para saber si puede
+        // ofrecer cambiar conceptos o recalcular. `bloqueo` dice por qué no
+        // (planilla cerrada o boleta firmada), con el mismo texto que el
+        // rechazo, para avisarlo antes en vez de esperar al error.
+        $planilla = Planilla::with('empleado', 'corrida', 'documentoBoleta:id,planilla_id,tipo,estado_firma')->findOrFail($id);
+        $planilla->setAttribute('bloqueo', $planilla->motivoParaNoTocar());
+
         return response()->json(['success' => true, 'data' => $planilla]);
     }
 
@@ -625,6 +636,13 @@ class PlanillaController extends Controller
             ], 422);
         }
 
+        if ($planilla->boletaFirmada()) {
+            return response()->json([
+                'success' => false,
+                'message' => $planilla->motivoParaNoTocar(),
+            ], 422);
+        }
+
         $empleado = $planilla->empleado;
         if (! $empleado) {
             return response()->json([
@@ -660,8 +678,9 @@ class PlanillaController extends Controller
         }
 
         return response()->json([
-            'success' => true,
-            'data'    => $planilla->fresh()->load('payrollDetalles.paymentConcept', 'empleado'),
+            'success'        => true,
+            'data'           => $planilla->fresh()->load('payrollDetalles.paymentConcept', 'empleado'),
+            'boleta_rehecha' => \App\Support\BoletaAlDia::rehacer($planilla),
         ]);
     }
 

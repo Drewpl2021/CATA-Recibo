@@ -3425,6 +3425,20 @@ textarea.form-control {
   border-left-color: var(--warning);
 }
 
+/* El aviso de arriba del detalle de una planilla: ya no se puede tocar
+   (candado) o tocarla rehace su boleta. El ícono al lado del texto. */
+.aviso-candado {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.aviso-candado app-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
 /* ── La lista de Renta de 5ta ──
    Debajo de lo retenido en el mes, si cuadró con lo que correspondía. En
    rojo cuando se le retuvo de menos (es lo que SUNAT reclama), en ámbar si

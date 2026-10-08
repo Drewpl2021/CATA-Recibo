@@ -177,7 +177,8 @@ class BoletaController extends Controller
         // después de marcar el Documento como firmado, para capturar en el archivo
         // congelado el sello de firma+huella y el texto de verificación (si no,
         // quedaría archivada para siempre la versión de antes de firmar).
-        if ($documento->estado_firma !== 'firmado' || $forzarGuardado) {
+        // «En papel» también es firmada: solo se escribe la primera vez.
+        if ($nuevo || ! in_array($documento->estado_firma, Documento::FIRMA_RESUELTA, true) || $forzarGuardado) {
             Storage::disk('local')->put($rutaArchivo, $pdf->output());
         }
 

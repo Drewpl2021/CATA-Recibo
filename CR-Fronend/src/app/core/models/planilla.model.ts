@@ -32,6 +32,11 @@ export interface Planilla {
    * lo que decide si "Editar" se puede abrir o ya es tarde para tocarla.
    */
   documento_boleta?: { id: string; estado_firma?: string } | null;
+  /**
+   * Por qué ya no se le pueden cambiar los conceptos (planilla cerrada o
+   * boleta firmada), o null si se puede. Solo lo trae GET /payrolls/{id}.
+   */
+  bloqueo?: string | null;
 }
 
 export interface PlanillaPayload {

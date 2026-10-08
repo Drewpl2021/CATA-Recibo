@@ -233,6 +233,13 @@ class PaymentConceptController extends Controller
                 continue;
             }
 
+            // Cerrada o con la boleta firmada: ese pago ya está hecho.
+            if ($motivo = $planilla->motivoParaNoTocar()) {
+                $omitidas++;
+                $detalle[] = ['empleado' => $nombreCompleto, 'estado' => 'omitida', 'motivo' => $motivo];
+                continue;
+            }
+
             $monto = $calculo === 'porcentaje'
                 ? (float) $planilla->sueldo_base * ((float) $valor / 100)
                 : (float) $valor;
@@ -250,9 +257,11 @@ class PaymentConceptController extends Controller
                 ]
             );
             $planilla->recalcularTotal();
+            $rehecha = \App\Support\BoletaAlDia::rehacer($planilla);
 
             $aplicadas++;
-            $detalle[] = ['empleado' => $nombreCompleto, 'estado' => 'aplicada', 'monto' => $monto];
+            $detalle[] = ['empleado' => $nombreCompleto, 'estado' => 'aplicada', 'monto' => $monto]
+                + ($rehecha ? ['motivo' => 'Su boleta ya emitida se volvió a generar con este concepto'] : []);
         }
 
         // Una sola línea en la auditoría por toda la operación, no una por

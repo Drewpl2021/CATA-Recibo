@@ -19,7 +19,8 @@ import { ColumnaTabla } from '../../../shared/components/data-table/data-table.m
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
+
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 /** Los tipos que restan del sueldo, para saber cómo pintar cada línea. */
 const TIPOS_QUE_RESTAN = ['descuento', 'adelanto'];
@@ -261,6 +262,27 @@ export class PlanillaDetalleComponent implements OnInit {
   }
 
   /**
+   * Por qué ya no se le pueden cambiar los conceptos: la planilla está
+   * cerrada o su boleta está firmada. Lo dice el servidor, que es quien
+   * además lo rechaza; aquí solo se avisa antes y se apagan los botones.
+   */
+  get bloqueo(): string | null {
+    return this.planilla?.bloqueo ?? null;
+  }
+
+  /** Su boleta ya salió pero no está firmada: un cambio la vuelve a generar. */
+  get boletaEmitidaSinFirmar(): boolean {
+    return !!this.planilla?.documento_boleta && !this.bloqueo;
+  }
+
+  /** El final del aviso de éxito: si su boleta se rehízo, se dice. */
+  private trasGuardar(res: unknown): string {
+    return (res as { boleta_rehecha?: boolean } | null)?.boleta_rehecha
+      ? 'El total se recalculó y su boleta ya emitida se volvió a generar con este cambio.'
+      : 'El total de la planilla se recalculó.';
+  }
+
+  /**
    * Vuelve a tomar el sueldo ACTUAL de la ficha del trabajador y regenera
    * los conceptos que calcula el sistema (pensión, EsSalud, Asignación
    * Familiar, Renta de 5ta). Hace falta porque generar la planilla es una
@@ -287,7 +309,9 @@ export class PlanillaDetalleComponent implements OnInit {
         next: (res) => {
           this.recalculando = false;
           if (res.success) {
-            this.toastService.success('Sueldo recalculado', 'La planilla quedó al día con la ficha del trabajador.');
+            this.toastService.success('Sueldo recalculado', (res as { boleta_rehecha?: boolean }).boleta_rehecha
+              ? 'La planilla quedó al día con la ficha, y su boleta ya emitida se volvió a generar.'
+              : 'La planilla quedó al día con la ficha del trabajador.');
             this.cargar();
           }
         },
@@ -419,11 +443,11 @@ export class PlanillaDetalleComponent implements OnInit {
         } as PayrollDetallePayload);
 
     peticion.subscribe({
-      next: () => {
+      next: (res) => {
         this.guardando = false;
         this.toastService.success(
           this.detalleEditando ? 'Concepto actualizado' : 'Concepto agregado',
-          'El total de la planilla se recalculó.'
+          this.trasGuardar(res)
         );
         this.cerrarModal();
         this.cargar();
@@ -441,8 +465,8 @@ export class PlanillaDetalleComponent implements OnInit {
       `"${nombre}" de esta planilla. El total se recalculará`,
       () => {
         this.detalleService.delete(detalle.id).subscribe({
-          next: () => {
-            this.toastService.success('Concepto quitado', 'El total de la planilla se recalculó.');
+          next: (res) => {
+            this.toastService.success('Concepto quitado', this.trasGuardar(res));
             this.cargar();
           },
           error: (err) => {

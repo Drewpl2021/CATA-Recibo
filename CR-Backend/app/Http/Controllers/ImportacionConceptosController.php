@@ -197,6 +197,13 @@ class ImportacionConceptosController extends Controller
             }
         });
 
+        // Fuera de la transacción: si alguno ya tenía la boleta emitida (sin
+        // firmar), su PDF se rehace con los montos nuevos.
+        $boletasRehechas = 0;
+        foreach ($r['trabajadores'] as $trabajador) {
+            $boletasRehechas += \App\Support\BoletaAlDia::rehacer($trabajador['_planilla']) ? 1 : 0;
+        }
+
         $resumen = $this->paraPantalla($r)['resumen'];
         $lineas  = $resumen['lineas_nuevas'] + $resumen['lineas_cambiadas'] + $resumen['lineas_quitadas'];
 
@@ -217,8 +224,9 @@ class ImportacionConceptosController extends Controller
         return response()->json([
             'success' => true,
             'data'    => [
-                'resumen' => ['conceptos_creados' => $creados] + $resumen,
-                'mensaje' => "Listo: {$lineas} cambios en {$resumen['trabajadores']} planillas de {$r['periodo']}.",
+                'resumen' => ['conceptos_creados' => $creados, 'boletas_rehechas' => $boletasRehechas] + $resumen,
+                'mensaje' => "Listo: {$lineas} cambios en {$resumen['trabajadores']} planillas de {$r['periodo']}."
+                    . ($boletasRehechas ? " Se volvieron a generar {$boletasRehechas} boleta(s) ya emitida(s)." : ''),
             ],
         ]);
     }
@@ -450,8 +458,9 @@ class ImportacionConceptosController extends Controller
             }
 
             $planilla = $suyas->first();
-            if ($planilla->corrida?->estaCerrada()) {
-                $r['errores'][] = $this->aviso($numero, $dni['texto'], null, "Su planilla «{$planilla->corrida->nombre}» está cerrada: ya se pagó y no se modifica.");
+            // Cerrada o con la boleta firmada: ese pago ya está hecho.
+            if ($motivo = $planilla->motivoParaNoTocar()) {
+                $r['errores'][] = $this->aviso($numero, $dni['texto'], null, $motivo);
                 continue;
             }
 
