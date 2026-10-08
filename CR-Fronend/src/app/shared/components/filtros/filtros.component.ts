@@ -170,6 +170,14 @@ export class FiltrosComponent {
     return this.chips.slice(0, this.CHIPS_A_LA_VISTA);
   }
 
+  /**
+   * Los chips se arman de nuevo en cada vuelta (es un getter): sin esto el
+   * *ngFor los destruía y volvía a crear en cada clic, y parpadeaban.
+   */
+  porClave(_i: number, chip: { clave: string }): string {
+    return chip.clave;
+  }
+
   get chipsDeMas(): number {
     return Math.max(0, this.chips.length - this.CHIPS_A_LA_VISTA);
   }

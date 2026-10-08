@@ -2,7 +2,7 @@
 
   <!-- Lo que está puesto, a la vista y quitable de un clic. Un embudo con un
        puntito no explica por qué la tabla tiene ocho filas. -->
-  <button type="button" class="filtros__chip" *ngFor="let c of chipsVisibles"
+  <button type="button" class="filtros__chip" *ngFor="let c of chipsVisibles; trackBy: porClave"
     (click)="quitar(c.clave)" [title]="'Quitar «' + c.texto + '»'">
     {{ c.texto }}
     <app-icon icono="close" [tamano]="12"></app-icon>
