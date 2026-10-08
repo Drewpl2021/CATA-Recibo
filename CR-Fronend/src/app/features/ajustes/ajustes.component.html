@@ -9,7 +9,7 @@
 <div class="ajustes-layout" *ngIf="!cargando">
   <!-- El índice: elegir sección y, de paso, ver cómo está cada una. -->
   <nav class="ajustes-indice" aria-label="Secciones de ajustes">
-    <button type="button" *ngFor="let s of secciones" class="ajustes-indice__item"
+    <button type="button" *ngFor="let s of secciones; trackBy: porId" class="ajustes-indice__item"
       [class.ajustes-indice__item--activo]="seccion === s.id" [attr.aria-current]="seccion === s.id ? 'page' : null"
       (click)="elegirSeccion(s.id)">
       <span class="ajustes-indice__icono"><app-icon [icono]="s.icono" [tamano]="18"></app-icon></span>

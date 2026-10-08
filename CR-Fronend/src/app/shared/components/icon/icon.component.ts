@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, OnChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { getIconPath, resolverIconoModulo } from '../../icons/icon-map';
@@ -50,7 +50,7 @@ import { getIconPath, resolverIconoModulo } from '../../icons/icon-map';
     }
   `],
 })
-export class IconComponent {
+export class IconComponent implements OnChanges {
   private sanitizer = inject(DomSanitizer);
 
   /** Clave del catálogo (p. ej. "domain"). Respaldo si se pasa nombreModulo. */
@@ -62,7 +62,21 @@ export class IconComponent {
   @Input() tamano = 20;
   @Input() grosor = 2;
 
-  get svg(): SafeHtml {
+  /**
+   * El dibujo, armado una vez por cada cambio de `icono` o `nombreModulo`.
+   *
+   * Antes era un getter: cada vuelta de detección de cambios devolvía un
+   * SafeHtml NUEVO, Angular lo veía distinto y volvía a escribir el
+   * innerHTML de TODOS los íconos de la pantalla. Se notaba como un
+   * parpadeo al hacer clic (en el índice de Ajustes, en el menú).
+   */
+  svg: SafeHtml = this.armar();
+
+  ngOnChanges(): void {
+    this.svg = this.armar();
+  }
+
+  private armar(): SafeHtml {
     const clave = this.nombreModulo
       ? resolverIconoModulo(this.nombreModulo, this.icono)
       : this.icono;

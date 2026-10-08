@@ -3,6 +3,7 @@ import { ProgresoService } from '../../core/services/sistema/progreso.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 
 import { AjustesService, AjustesSistema, CamposValorLegal, CargaRentaQuintaPrevia, MontoLegal, RentaQuintaPreviaResumen, ToastService, ValorLegal } from '../../core/services';
 import { mensajeErrorApi } from '../../core/utils';
@@ -47,6 +48,7 @@ export class AjustesComponent implements OnInit {
   private toastService = inject(ToastService);
   private ruta = inject(ActivatedRoute);
   private router = inject(Router);
+  private location = inject(Location);
 
   seccion: SeccionAjustes = 'montos';
 
@@ -81,7 +83,14 @@ export class AjustesComponent implements OnInit {
 
   elegirSeccion(id: SeccionAjustes): void {
     this.seccion = id;
-    this.router.navigate([], { relativeTo: this.ruta, queryParams: { seccion: id }, replaceUrl: true });
+    // Solo se anota en la dirección (para volver o compartirla): navegar de
+    // verdad repintaba el menú lateral y hacía parpadear la pantalla.
+    this.location.replaceState(this.router.createUrlTree([], { relativeTo: this.ruta, queryParams: { seccion: id } }).toString());
+  }
+
+  /** Para que el índice no se vuelva a construir en cada clic. */
+  porId(_i: number, s: { id: SeccionAjustes }): SeccionAjustes {
+    return s.id;
   }
 
   ajustes: AjustesSistema | null = null;
