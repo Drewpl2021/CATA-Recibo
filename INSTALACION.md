@@ -306,7 +306,24 @@ junto al original no protege de un disco roto.
 | *"Ports are not available … 8081"* | Ese puerto está ocupado por otro programa. Mira quién con `netstat -ano \| findstr :8081`, o cambia `PUERTO_HTTP` **y** `APP_URL` a otro número |
 | *"Se queda esperando a la base"* | Cambiaste `DB_PASSWORD` después del primer arranque. O la cambias dentro de MySQL, o empiezas de cero con `docker compose down -v` (⚠️ **borra los datos**) |
 | La pantalla carga pero da error 500 | `docker compose logs app`. El detalle no se enseña en el navegador a propósito, pero queda en el registro |
+| Se olvidó la contraseña del admin (o de RR.HH.) | Ver abajo: no se puede "ver", se genera una nueva |
 | Los correos no llegan | Con `MAIL_MAILER=log` es lo esperado. Para enviarlos de verdad: `MAIL_MAILER=smtp`, `MAIL_SCHEME=smtp` (puerto 587) o `smtps` (465), y los datos del buzón del colegio |
+
+### Se olvidó una contraseña
+
+Las contraseñas se guardan **cifradas**: nadie puede verlas, ni el
+administrador ni quien entra a la base. Lo que se hace es ponerle una nueva:
+
+```bash
+docker compose exec app php artisan usuario:nueva-contrasena admin@colegio.com
+```
+
+Imprime una contraseña nueva **una sola vez**, cierra las sesiones abiertas de
+esa cuenta y obliga a cambiarla al entrar. Si el correo no existe, enseña las
+cuentas de administrador y RR.HH. que hay, para ver cuál era.
+
+Para un trabajador no hace falta: el administrador o RR.HH. se la restablecen
+desde *Usuarios*.
 
 ---
 
