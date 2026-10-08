@@ -44,6 +44,13 @@ class VerificarBoletaController extends Controller
             'firmada'  => in_array($doc->estado_firma, Documento::FIRMA_RESUELTA, true),
             'fechaFirma' => $doc->fecha_firma?->format('d/m/Y H:i'),
             'emitida'  => $doc->created_at?->format('d/m/Y'),
+            // La firma digital del colegio, si la tiene (el DNI, tapado como el suyo).
+            'firmasColegio' => $doc->firma_colegio === null ? [] : collect($doc->firmas_colegio ?? [])->map(fn ($f) => [
+                'nombre' => $f['nombre'] ?? '—',
+                'dni'    => isset($f['dni']) ? str_repeat('•', 4) . substr((string) $f['dni'], -4) : null,
+                'fecha'  => isset($f['fecha']) ? \Carbon\Carbon::parse($f['fecha'])->format('d/m/Y H:i') : null,
+            ])->all(),
+            'firmaColegio' => $doc->firma_colegio,
         ]);
     }
 }

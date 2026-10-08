@@ -77,17 +77,24 @@
 <!-- Firmar la boleta con la contraseña de la cuenta -->
 <app-form-modal
   [visible]="showSignModal"
-  titulo="Firmar boleta"
-  textoGuardar="Firmar boleta"
+  [titulo]="boletaAFirmar?.firmadaPorElColegio ? 'Dar conformidad' : 'Firmar boleta'"
+  [textoGuardar]="boletaAFirmar?.firmadaPorElColegio ? 'Dar conformidad' : 'Firmar boleta'"
   [guardando]="isSigning"
   (guardar)="confirmarFirma()"
   (cancelar)="closeSignModal()"
 >
   <div class="form-fields">
-    <p class="form-nota">
-      Para firmar tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong>,
-      escribe la contraseña con la que entras al sistema.
+    <p class="form-nota" *ngIf="boletaAFirmar?.firmadaPorElColegio; else notaFirma">
+      Tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong> ya viene firmada
+      digitalmente por el colegio. Para confirmar que la recibiste, escribe la contraseña con la que entras
+      al sistema. Queda registrado con la fecha y la hora; tu boleta no cambia.
     </p>
+    <ng-template #notaFirma>
+      <p class="form-nota">
+        Para firmar tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong>,
+        escribe la contraseña con la que entras al sistema.
+      </p>
+    </ng-template>
     <div class="form-group">
       <label for="passwordFirma">Contraseña</label>
       <input id="passwordFirma" type="password" class="form-control" [(ngModel)]="signPassword"

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { GeneracionMasivaBoletas, Planilla } from '../../models';
+import { FirmaDelColegio, GeneracionMasivaBoletas, Planilla } from '../../models';
 import { ApiResponse, END_POINTS, END_POINTS_ACCIONES } from '../../utils';
 import { environment } from '../../../../environments/environment';
 
@@ -48,6 +48,46 @@ export class BoletaService {
     return this.http.get(`${this.apiUrl}/${END_POINTS_ACCIONES.boletasEnZip}`, { params, responseType: 'blob' });
   }
 
+  // ── Firma digital del colegio (ReFirma) ──
+
+  /** Cómo va la firma del mes: por firmar, a medias, entregadas, con conformidad. */
+  resumenFirmaDigital(mes: number, anio: number): Observable<ApiResponse<ResumenFirmaDigital>> {
+    return this.http.get<ApiResponse<ResumenFirmaDigital>>(`${this.apiUrl}/payslips/signed/summary`, {
+      params: { mes: String(mes), anio: String(anio) },
+    });
+  }
+
+  /** Revisa UN PDF firmado: dice qué pasaría al guardarlo, sin guardar nada. */
+  revisarFirmada(archivo: File, mes: number, anio: number): Observable<ApiResponse<RevisionBoletaFirmada>> {
+    return this.http.post<ApiResponse<RevisionBoletaFirmada>>(`${this.apiUrl}/payslips/signed/check`, this.formFirmada(archivo, mes, anio));
+  }
+
+  /** Lo vuelve a revisar y lo guarda; si queda completa, se le entrega al trabajador. */
+  guardarFirmada(archivo: File, mes: number, anio: number): Observable<ApiResponse<RevisionBoletaFirmada>> {
+    return this.http.post<ApiResponse<RevisionBoletaFirmada>>(`${this.apiUrl}/payslips/signed`, this.formFirmada(archivo, mes, anio));
+  }
+
+  /** Anula una boleta con firma digital para corregirla y volver a emitirla. */
+  anular(documentoId: string): Observable<ApiResponse<unknown> & { message?: string }> {
+    return this.http.post<ApiResponse<unknown> & { message?: string }>(`${this.apiUrl}/payslips/${documentoId}/void`, {});
+  }
+
+  /** La constancia de entrega del mes, en Excel. */
+  constanciaDeEntrega(mes: number, anio: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/payslips/delivery-record`, {
+      params: { mes: String(mes), anio: String(anio) },
+      responseType: 'blob',
+    });
+  }
+
+  private formFirmada(archivo: File, mes: number, anio: number): FormData {
+    const datos = new FormData();
+    datos.append('archivo', archivo, archivo.name);
+    datos.append('mes', String(mes));
+    datos.append('anio', String(anio));
+    return datos;
+  }
+
   /** POST /boletas/generar-masivo */
   /**
    * Emite las boletas que falten.
@@ -62,4 +102,32 @@ export class BoletaService {
       corridaId ? { corrida_id: corridaId } : { mes, anio }
     );
   }
+}
+
+export interface ResumenFirmaDigital {
+  activa: boolean;
+  requeridas: number;
+  emitidas: number;
+  por_firmar: number;
+  a_medias: number;
+  entregadas: number;
+  conformidad: number;
+  sin_firma_digital: number;
+}
+
+/** Lo que el servidor dice de un PDF firmado que se sube. */
+export interface RevisionBoletaFirmada {
+  archivo: string;
+  /** 'ok' o el motivo del rechazo (no_reconocido, cambiada, sin_firma, ...). */
+  estado: string;
+  mensaje: string | null;
+  trabajador: string | null;
+  dni: string | null;
+  numero: string | null;
+  documento_id: string | null;
+  firmas: (FirmaDelColegio & { valida?: boolean })[];
+  firmas_validas: number;
+  firmas_requeridas: number;
+  /** Cómo quedaría: completa (se entrega) o parcial (falta otra firma). */
+  resultado: 'completa' | 'parcial' | null;
 }

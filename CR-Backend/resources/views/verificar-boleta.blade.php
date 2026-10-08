@@ -86,7 +86,19 @@
             <div class="fila"><dt>DNI</dt><dd>{{ $dni }}</dd></div>
             <div class="fila neto"><dt>Total líquido</dt><dd>S/ {{ number_format($neto, 2) }}</dd></div>
             <div class="fila"><dt>Emitida el</dt><dd>{{ $emitida }}</dd></div>
-            <div class="fila"><dt>Firma del trabajador</dt><dd>{{ $firmada ? ($fechaFirma ? 'Firmada el ' . $fechaFirma : 'Firmada') : 'Pendiente' }}</dd></div>
+            @if (($firmaColegio ?? null) !== null)
+                {{-- La firma digital del colegio (ReFirma): quién y cuándo, del certificado. --}}
+                <div class="fila"><dt>Firma digital del colegio</dt><dd>
+                    @forelse ($firmasColegio as $f)
+                        {{ $f['nombre'] }}@if ($f['dni']) (DNI {{ $f['dni'] }})@endif @if ($f['fecha']) el {{ $f['fecha'] }}@endif<br>
+                    @empty
+                        Pendiente
+                    @endforelse
+                </dd></div>
+                <div class="fila"><dt>Conformidad del trabajador</dt><dd>{{ $firmada ? ($fechaFirma ? 'Dada el ' . $fechaFirma : 'Dada') : 'Pendiente' }}</dd></div>
+            @else
+                <div class="fila"><dt>Firma del trabajador</dt><dd>{{ $firmada ? ($fechaFirma ? 'Firmada el ' . $fechaFirma : 'Firmada') : 'Pendiente' }}</dd></div>
+            @endif
         </dl>
         <p class="pie">Compara estos datos con la boleta impresa. Si alguno no coincide, la boleta fue alterada.</p>
     @else

@@ -10,6 +10,12 @@ export interface AjustesSistema {
   permitir_anios_anteriores: boolean;
   /** true: la 5ta como la hoja de RR.HH. (solo para comparar). false: SUNAT. */
   renta5ta_como_hoja_rrhh: boolean;
+  /** Boletas con firma digital del colegio (ReFirma): se entregan al subirlas firmadas. */
+  boleta_firma_digital: boolean;
+  /** Cuántas firmas del colegio necesita cada boleta: 1 o 2. */
+  boleta_firmas_requeridas: 1 | 2;
+  /** Solo lectura: cuántas boletas esperan todavía la firma del colegio. */
+  readonly boletas_esperando_firma_colegio?: number;
 }
 
 /**

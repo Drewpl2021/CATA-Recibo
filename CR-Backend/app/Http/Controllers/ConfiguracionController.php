@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
 use App\Support\AniosAnteriores;
+use App\Support\FirmaDigitalDeBoletas;
 use App\Support\Renta5ta\MetodoRenta5ta;
 use Illuminate\Http\Request;
 
@@ -24,10 +25,14 @@ class ConfiguracionController extends Controller
         $datos = $request->validate([
             AniosAnteriores::AJUSTE => 'sometimes|boolean',
             MetodoRenta5ta::AJUSTE  => 'sometimes|boolean',
+            FirmaDigitalDeBoletas::AJUSTE => 'sometimes|boolean',
+            FirmaDigitalDeBoletas::AJUSTE_FIRMAS => 'sometimes|integer|in:1,2',
         ]);
 
         foreach ($datos as $clave => $valor) {
-            Configuracion::poner($clave, (bool) $valor);
+            $clave === FirmaDigitalDeBoletas::AJUSTE_FIRMAS
+                ? Configuracion::ponerNumero($clave, (int) $valor)
+                : Configuracion::poner($clave, (bool) $valor);
         }
 
         return response()->json(['success' => true, 'data' => $this->ajustes()]);
@@ -38,6 +43,12 @@ class ConfiguracionController extends Controller
         return [
             AniosAnteriores::AJUSTE => AniosAnteriores::permitidos(),
             MetodoRenta5ta::AJUSTE  => MetodoRenta5ta::comoHojaDeRrhh(),
+            FirmaDigitalDeBoletas::AJUSTE => FirmaDigitalDeBoletas::activa(),
+            FirmaDigitalDeBoletas::AJUSTE_FIRMAS => FirmaDigitalDeBoletas::requeridas(),
+            // Cuántas boletas esperan todavía la firma del colegio: al apagar
+            // el ajuste, esas siguen su camino (la pantalla lo avisa).
+            'boletas_esperando_firma_colegio' => \App\Models\Documento::where('tipo', 'boleta')
+                ->whereIn('firma_colegio', \App\Models\Documento::FIRMA_COLEGIO_EN_CURSO)->count(),
         ];
     }
 }

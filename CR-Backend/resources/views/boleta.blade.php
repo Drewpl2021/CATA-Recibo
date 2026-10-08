@@ -106,6 +106,17 @@
         .firmas img.firma { height: 38px; }
         .firmas img.huella { height: 28px; margin-left: 6px; }
         .firma-digital { margin-top: 6px; font-size: 6.3px; color: #2E3B42; background: #EDF3F5; padding: 4px 6px; }
+
+        /* ── Firma digital del colegio (ReFirma) ──
+           Casillas vacías del mismo tamaño, abajo de la hoja: ahí cae el sello
+           visible que pone ReFirma. Se deja aire de sobra para que el sello no
+           tape nada aunque cambie un poco de tamaño. */
+        .firmas-digitales { margin-top: 26px; }
+        .firmas-digitales td { width: 50%; padding: 0 10px; vertical-align: top; }
+        .casilla-firma { border: 1px dashed #8FA9B3; height: 78px; position: relative; }
+        .casilla-firma__guia { position: absolute; top: 30px; left: 0; right: 0; text-align: center; font-size: 6.4px; color: #A8B9BF; }
+        .casilla-firma__pie { text-align: center; font-size: 7.4px; color: #2E3B42; margin-top: 3px; line-height: 1.35; }
+        .nota-firma-digital { margin-top: 10px; font-size: 6.6px; color: #2E3B42; background: #EDF3F5; padding: 5px 7px; line-height: 1.45; }
     </style>
 </head>
 <body>
@@ -480,7 +491,7 @@
 
                 <div class="mensaje-barra">Mensaje</div>
                 <p class="mensaje">
-                    Revise, firme y descargue sus boletas de pago en CATA-Recibo: {{ $sistema }}<br>
+                    {{ !empty($firmaDigital) ? 'Revise, dé su conformidad y descargue' : 'Revise, firme y descargue' }} sus boletas de pago en CATA-Recibo: {{ $sistema }}<br>
                     @if ($pension['total'] > 0)
                         El aporte a {{ $pension['tipo'] }} se calcula sobre la remuneración afecta, con las tasas de {{ $anio }}.
                     @else
@@ -499,6 +510,32 @@
         </tr>
     </table>
 
+    @if (!empty($firmaDigital))
+    {{-- ── Firma digital del colegio: una o dos casillas para el sello de ReFirma.
+         El trabajador no firma sobre el PDF (lo invalidaría): su conformidad
+         queda registrada en el sistema. ── --}}
+    @php $casillas = max(1, min(2, (int) ($firmasRequeridas ?? 1))); @endphp
+    <table class="firmas-digitales">
+        <tr>
+            {{-- Con una sola firma, la casilla va al centro: un hueco a cada lado. --}}
+            @if ($casillas === 1)<td style="width: 25%;"></td>@endif
+            @for ($i = 1; $i <= $casillas; $i++)
+                <td>
+                    <div class="casilla-firma"><div class="casilla-firma__guia">Firma digital</div></div>
+                    <div class="casilla-firma__pie">
+                        Firma digital del empleador{{ $casillas > 1 ? ' (' . $i . ' de ' . $casillas . ')' : '' }}<br>
+                        Colegio Adventista Túpac Amaru
+                    </div>
+                </td>
+            @endfor
+            @if ($casillas === 1)<td style="width: 25%;"></td>@endif
+        </tr>
+    </table>
+    <div class="nota-firma-digital">
+        Documento firmado digitalmente por el empleador conforme a la Ley N° 27269, Ley de Firmas y Certificados Digitales,
+        y al D. Leg. N° 1310. La recepción y conformidad del trabajador quedan registradas en el sistema CATA-Recibo.
+    </div>
+    @else
     {{-- ── Firmas: del empleador y del trabajador ── --}}
     <table class="firmas">
         <tr>
@@ -538,6 +575,7 @@
             el {{ \Carbon\Carbon::parse($documento->fecha_firma)->format('d/m/Y H:i') }} —
             Código de verificación: {{ $documento->codigo_firma }}
         </div>
+    @endif
     @endif
 </div>
 @endfor

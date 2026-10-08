@@ -242,6 +242,38 @@ export class AjustesComponent implements OnInit {
     });
   }
 
+  /**
+   * Firma digital del colegio en las boletas. Se guarda de a un campo, como
+   * los demás ajustes; si el servidor lo rechaza, vuelve a como estaba.
+   */
+  cambiarFirmaDigital(cambio: Partial<Pick<AjustesSistema, 'boleta_firma_digital' | 'boleta_firmas_requeridas'>>): void {
+    if (!this.ajustes) return;
+
+    const antes = { ...this.ajustes };
+    this.ajustes = { ...this.ajustes, ...cambio };
+    this.guardando = true;
+
+    this.ajustesService.guardar(cambio).subscribe({
+      next: (res) => {
+        this.guardando = false;
+        if (!res.success) return;
+        this.ajustes = res.data;
+        if (cambio.boleta_firma_digital !== undefined) {
+          this.toastService.success('Ajuste guardado', cambio.boleta_firma_digital
+            ? 'Desde ahora las boletas que se emitan esperan la firma digital del colegio antes de llegarle al trabajador.'
+            : 'Las boletas nuevas se entregan al emitirlas, como antes. Las que esperaban la firma siguen su camino.');
+        } else {
+          this.toastService.success('Ajuste guardado', `Cada boleta necesita ${cambio.boleta_firmas_requeridas} firma(s) del colegio.`);
+        }
+      },
+      error: (err) => {
+        this.guardando = false;
+        this.ajustes = antes;
+        this.toastService.error('No se guardó', mensajeErrorApi(err, 'No se pudo guardar el ajuste.'));
+      },
+    });
+  }
+
   /** Volver (o no) al método de la hoja de RR.HH. para la 5ta. */
   cambiarMetodo5ta(comoHoja: boolean): void {
     if (!this.ajustes) return;

@@ -135,6 +135,7 @@ class EmpleadoController extends Controller
                 'con'         => 'Con boleta en ' . ($delMes ?? 'el mes elegido'),
                 'sin'         => 'Sin boleta en ' . ($delMes ?? 'el mes elegido'),
                 'sin_firmar'  => 'Con boleta sin firmar en ' . ($delMes ?? 'el mes elegido'),
+                'por_firmar_colegio' => 'Con boleta por firmar por el colegio en ' . ($delMes ?? 'el mes elegido'),
                 default       => null,
             },
             'Búsqueda'          => $request->input('search'),
@@ -238,7 +239,7 @@ class EmpleadoController extends Controller
             'ingreso_desde'     => 'nullable|date',
             'ingreso_hasta'     => 'nullable|date',
             'planilla'          => 'nullable|in:con,sin',
-            'boleta'            => 'nullable|in:con,sin,sin_firmar',
+            'boleta'            => 'nullable|in:con,sin,sin_firmar,por_firmar_colegio',
             // El id de una planilla agrupada (corrida) o "sin_agrupar" para
             // las que no están en ninguna.
             'corrida_id'        => ['nullable', 'string', function ($atributo, $valor, $falla) {
@@ -339,6 +340,11 @@ class EmpleadoController extends Controller
                     'empleados.id',
                     (clone $boletas)->whereNotIn('estado_firma', \App\Models\Documento::FIRMA_RESUELTA)->select('empleado_id')
                 ),
+                // Las que esperan la firma digital del colegio.
+                'por_firmar_colegio' => $query->whereIn(
+                    'empleados.id',
+                    (clone $boletas)->whereIn('firma_colegio', \App\Models\Documento::FIRMA_COLEGIO_EN_CURSO)->select('empleado_id')
+                ),
             };
         }
     }
@@ -369,16 +375,23 @@ class EmpleadoController extends Controller
         $this->aplicarBusqueda($request, $empleados, ['nombre', 'apellido', 'dni', 'cargo.nombre', 'area.nombre', 'usuario.email']);
         $this->aplicarFiltrosDePersonal($request, $empleados);
 
+        // «Para firmar»: solo las que esperan la firma digital del colegio,
+        // así no se vuelve a firmar lo que ya está listo.
+        $paraFirmar = $request->boolean('para_firmar');
+
         $documentos = \App\Models\Documento::query()
             ->where('tipo', 'boleta')
             ->whereIn('empleado_id', $empleados->pluck('empleados.id'))
             ->whereHas('planilla', fn (Builder $q) => $q->where('mes', $mes)->where('anio', $anio))
+            ->when($paraFirmar, fn ($q) => $q->whereIn('firma_colegio', \App\Models\Documento::FIRMA_COLEGIO_EN_CURSO))
             ->get();
 
         if ($documentos->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => 'No hay boletas emitidas de ' . \App\Support\Meses::NOMBRES[$mes] . " {$anio} con estos filtros. Emítelas primero y vuelve a descargarlas.",
+                'message' => $paraFirmar
+                    ? 'No hay boletas de ' . \App\Support\Meses::NOMBRES[$mes] . " {$anio} esperando la firma del colegio con estos filtros."
+                    : 'No hay boletas emitidas de ' . \App\Support\Meses::NOMBRES[$mes] . " {$anio} con estos filtros. Emítelas primero y vuelve a descargarlas.",
             ], 404);
         }
 
@@ -423,7 +436,7 @@ class EmpleadoController extends Controller
         }
         $zip->close();
 
-        $archivo = sprintf('Boletas_%s_%d.zip', \App\Support\Meses::NOMBRES[$mes], $anio);
+        $archivo = sprintf($paraFirmar ? 'Boletas_para_firmar_%s_%d.zip' : 'Boletas_%s_%d.zip', \App\Support\Meses::NOMBRES[$mes], $anio);
 
         return response()->download($ruta, $archivo, ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
     }

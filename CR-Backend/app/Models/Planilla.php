@@ -127,6 +127,11 @@ class Planilla extends Model
             return "La planilla «{$this->corrida->nombre}» está cerrada: ya se pagó y no se le cambian los conceptos.";
         }
 
+        if ($this->documentoBoleta?->tieneFirmaDelColegio()) {
+            return 'Su boleta ya tiene la firma digital del colegio: no se le cambian los conceptos. '
+                . 'Si hay un error, anula la boleta en Emisión de boletas y vuelve a emitirla.';
+        }
+
         if ($this->boletaFirmada()) {
             return $this->documentoBoleta->estado_firma === 'en_papel'
                 ? 'Su boleta ya está firmada en papel: es un pago que el trabajador aceptó y no se le cambian los conceptos.'

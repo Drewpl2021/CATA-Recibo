@@ -42,6 +42,9 @@ export interface Documento {
   // Firma del empleador (RRHH) — ver DocumentoController@firmarComoEmpleador
   empleador_id?: string | null;
   estado_firma_empleador?: 'pendiente' | 'firmado';
+  /** Firma digital del colegio (ReFirma): null si la boleta no va por ese camino. */
+  firma_colegio?: 'pendiente' | 'parcial' | 'completa' | null;
+  firmas_colegio?: { nombre: string | null; dni: string | null; fecha: string | null }[] | null;
   firmado_por_empleador?: string | null;
   codigo_firma_empleador?: string | null;
   fecha_firma_empleador?: string | null;

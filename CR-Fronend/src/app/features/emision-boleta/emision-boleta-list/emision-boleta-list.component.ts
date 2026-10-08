@@ -25,6 +25,8 @@ import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/f
 import { MESES_OPCIONES } from '../../../shared/constants';
 import { diasHabilesDelMes, formatoDia, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { SubirFirmadasComponent } from '../subir-firmadas/subir-firmadas.component';
+import { ResumenFirmaDigital } from '../../../core/services/planilla/boleta.service';
 
 export interface FormularioBoleta {
   remuneracionBasica: number | null;
@@ -59,7 +61,7 @@ export interface FormularioBoleta {
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent],
+  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, SubirFirmadasComponent],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })
@@ -94,6 +96,8 @@ export class EmisionBoletaListComponent implements OnInit {
    * boleta primero desde Documentos, no se pisa por acá.
    */
   empleadosConBoletaEmitida = new Set<string>();
+  /** La boleta del mes de cada trabajador (con su firma digital, si va por ahí). */
+  boletaDeEmpleado = new Map<string, NonNullable<Planilla['documento_boleta']>>();
 
   /**
    * De los trabajadores QUE SE ESTÁN VIENDO, en qué planilla está su
@@ -150,9 +154,11 @@ export class EmisionBoletaListComponent implements OnInit {
       // creer que el sistema ya le había hecho una.
       // Si la boleta de este mes ya se emitió. Decir "Armada" repetía lo que
       // ya dice la columna Planilla: sin planilla no hay boleta que emitir.
+      // Con firma digital del colegio dice además en qué va: por firmar,
+      // a medias, entregada, recibida.
       campo: 'id', header: 'Estado', tipo: 'badge', ancho: '15%',
-      formatear: (_v, e) => (this.empleadosConBoletaEmitida.has(e.id) ? 'Emitida' : 'No emitida'),
-      badgeSeveridad: (_v, e) => (this.empleadosConBoletaEmitida.has(e.id) ? 'success' : 'warning'),
+      formatear: (_v, e) => this.estadoBoleta(e).texto,
+      badgeSeveridad: (_v, e) => this.estadoBoleta(e).tono,
     },
   ];
 
@@ -194,9 +200,130 @@ export class EmisionBoletaListComponent implements OnInit {
       // clave de quien lo abre.
       id: 'desbloquear', titulo: 'Ya se emitió su boleta de este mes. Pon tu clave para poder corregirla.',
       icono: 'lock', etiqueta: 'Bloqueado', severidad: 'warning',
-      visible: (e) => this.empleadosConBoletaEmitida.has(e.id),
+      // Con la firma digital del colegio ya puesta no hay corrección posible:
+      // el PDF está sellado. Ahí el camino es Anular.
+      visible: (e) => this.empleadosConBoletaEmitida.has(e.id) && !this.tieneFirmaDelColegio(e),
+    },
+    {
+      id: 'anular', titulo: 'Anular esta boleta para corregirla y volver a emitirla (el trabajador todavía no la abrió)',
+      icono: 'trash', etiqueta: 'Anular', severidad: 'danger',
+      visible: (e) => {
+        const b = this.boletaDeEmpleado.get(e.id);
+        return !!b?.firma_colegio && b.estado_firma === 'pendiente';
+      },
     },
   ];
+
+  /** En qué va su boleta del mes. */
+  estadoBoleta(e: Empleado): { texto: string; tono: 'success' | 'info' | 'warning' | 'secondary' } {
+    const b = this.boletaDeEmpleado.get(e.id);
+    if (!b) return { texto: 'No emitida', tono: 'warning' };
+    if (b.firma_colegio === 'pendiente') return { texto: 'Por firmar (colegio)', tono: 'info' };
+    if (b.firma_colegio === 'parcial') return { texto: `Firmada ${(b.firmas_colegio ?? []).length} de ${this.resumenFirma?.requeridas ?? 2}`, tono: 'info' };
+    if (b.estado_firma === 'firmado') return { texto: b.firma_colegio ? 'Recibida' : 'Firmada', tono: 'success' };
+    if (b.firma_colegio === 'completa') return { texto: b.estado_firma === 'visto' ? 'Entregada · abierta' : 'Entregada', tono: 'success' };
+    return { texto: 'Emitida', tono: 'success' };
+  }
+
+  tieneFirmaDelColegio(e: Empleado): boolean {
+    const f = this.boletaDeEmpleado.get(e.id)?.firma_colegio;
+    return f === 'parcial' || f === 'completa';
+  }
+
+  alAccionar(evento: { accion: string; fila: Empleado }): void {
+    if (evento.accion === 'anular') {
+      this.anularBoleta(evento.fila);
+      return;
+    }
+    this.abrirModal(evento.fila);
+  }
+
+  // ── Firma digital del colegio (ReFirma) ──
+
+  resumenFirma: ResumenFirmaDigital | null = null;
+  modalSubirFirmadas = false;
+  descargandoParaFirmar = false;
+  descargandoConstancia = false;
+
+  /** El panel de pasos se ve con el ajuste encendido, o si quedó algo a medio camino. */
+  get mostrarFlujoFirma(): boolean {
+    const r = this.resumenFirma;
+    return !!r && (r.activa || r.por_firmar > 0 || r.a_medias > 0);
+  }
+
+  cargarResumenFirma(): void {
+    this.boletaService.resumenFirmaDigital(Number(this.mesGlobal), Number(this.anioGlobal)).subscribe({
+      next: (res) => { if (res.success) this.resumenFirma = res.data; },
+      // Si falla, el panel no sale: lo demás de la pantalla sigue igual.
+      error: () => (this.resumenFirma = null),
+    });
+  }
+
+  descargarParaFirmar(): void {
+    this.descargandoParaFirmar = true;
+    const periodo = `${this.nombreMes(this.mesGlobal * 1)} ${this.anioGlobal}`;
+
+    this.progreso
+      .seguir('Preparando las boletas para firmar', this.boletaService
+        .descargarEmitidasEnZip({ mes: this.mesGlobal, anio: this.anioGlobal, para_firmar: true, search: this.busqueda || undefined, ...this.filtros }))
+      .subscribe({
+        next: (blob) => {
+          guardarArchivo(blob, `Boletas para firmar ${periodo}.zip`);
+          this.descargandoParaFirmar = false;
+          this.toastService.success('Listas para firmar',
+            'Descomprime el .zip, fírmalas en ReFirma y súbelas con «Subir boletas firmadas».');
+        },
+        error: async (err) => {
+          this.descargandoParaFirmar = false;
+          let detalle = err;
+          if (err?.error instanceof Blob) {
+            try { detalle = { error: JSON.parse(await err.error.text()) }; } catch { /* queda el genérico */ }
+          }
+          this.toastService.error('No se descargó', mensajeErrorApi(detalle, 'No se pudieron juntar las boletas.'));
+        },
+      });
+  }
+
+  descargarConstancia(): void {
+    this.descargandoConstancia = true;
+    const periodo = `${this.nombreMes(this.mesGlobal * 1)} ${this.anioGlobal}`;
+    this.boletaService.constanciaDeEntrega(Number(this.mesGlobal), Number(this.anioGlobal)).subscribe({
+      next: (blob) => {
+        guardarArchivo(blob, `Constancia de entrega - ${periodo}.xlsx`);
+        this.descargandoConstancia = false;
+      },
+      error: () => {
+        this.descargandoConstancia = false;
+        this.toastService.error('No se descargó', 'No se pudo armar la constancia de entrega.');
+      },
+    });
+  }
+
+  /** Se guardaron firmadas: la tabla y el panel cambian. */
+  alGuardarFirmadas(): void {
+    this.cargarEmpleados();
+  }
+
+  anularBoleta(e: Empleado): void {
+    const boleta = this.boletaDeEmpleado.get(e.id);
+    if (!boleta) return;
+    this.confirmService.confirmar({
+      titulo: 'Anular la boleta',
+      mensaje: `Se borra la boleta de ${e.apellido} ${e.nombre} de ${this.nombreMes(this.mesGlobal * 1)}, con sus firmas. `
+        + 'Después corriges su planilla, la vuelves a emitir y se firma de nuevo. El trabajador todavía no la abrió.',
+      aceptarTexto: 'Sí, anular',
+      variante: 'danger',
+    }).then((ok) => {
+      if (!ok) return;
+      this.boletaService.anular(boleta.id).subscribe({
+        next: (res) => {
+          this.toastService.success('Boleta anulada', res.message ?? 'Ya puedes corregirla y volver a emitirla.');
+          this.cargarEmpleados();
+        },
+        error: (err) => this.toastService.error('No se anuló', mensajeErrorApi(err, 'Inténtalo de nuevo.')),
+      });
+    });
+  }
 
   // ── Desbloquear una boleta ya emitida ──
   private authService = inject(AuthService);
@@ -318,6 +445,7 @@ export class EmisionBoletaListComponent implements OnInit {
       opciones: [
         { valor: 'sin', etiqueta: 'Le falta' },
         { valor: 'sin_firmar', etiqueta: 'Emitida, sin firmar' },
+        { valor: 'por_firmar_colegio', etiqueta: 'Por firmar (colegio)' },
         { valor: 'con', etiqueta: 'Ya emitida' },
       ],
     },
@@ -537,6 +665,9 @@ export class EmisionBoletaListComponent implements OnInit {
             this.empleadosConBoletaEmitida = new Set(
               res.data.content.filter((p) => p.documento_boleta).map((p) => p.empleado_id)
             );
+            this.boletaDeEmpleado = new Map(
+              res.data.content.filter((p) => p.documento_boleta).map((p) => [p.empleado_id, p.documento_boleta!] as const)
+            );
             // El backend ya manda cada planilla con su grupo: no hace
             // falta otra consulta para saber de cuál viene.
             this.planillaDeEmpleado = new Map(
@@ -549,10 +680,13 @@ export class EmisionBoletaListComponent implements OnInit {
           // Si falla, las filas salen como "sin armar": se sigue pudiendo editar.
           this.empleadosEditados.clear();
           this.empleadosConBoletaEmitida.clear();
+          this.boletaDeEmpleado.clear();
           this.planillaDeEmpleado.clear();
           this.cargandoEmpleados = false;
         },
       });
+
+    this.cargarResumenFirma();
 
     this.conteoListo = false;
     this.planillaService

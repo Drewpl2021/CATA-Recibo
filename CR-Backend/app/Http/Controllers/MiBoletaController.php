@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Support\AccesoADocumento;
 use App\Support\Meses;
+use App\Support\AniosAnteriores;
+use App\Support\FirmaDigitalDeBoletas;
 
 class MiBoletaController extends Controller
 {
@@ -44,6 +46,14 @@ class MiBoletaController extends Controller
         $meses = Meses::NOMBRES;
 
         $archivo = "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf";
+
+        // Con firma digital del colegio la boleta no se arma aquí: es el PDF
+        // que firmó el colegio, y solo cuando ya está completo.
+        $suDocumento = Documento::where('planilla_id', $planilla->id)->where('tipo', 'boleta')->first();
+        if ($suDocumento?->firma_colegio !== null
+            || (! $suDocumento && FirmaDigitalDeBoletas::activa() && ! AniosAnteriores::esAnterior((int) $anio))) {
+            return $this->laFirmadaPorElColegio($request, $suDocumento, $archivo, $meses[(int) $mes] . " {$anio}");
+        }
 
         $correlativo = Planilla::where('empleado_id', $empleado_id)
             ->whereYear('created_at', $anio)
@@ -160,5 +170,41 @@ class MiBoletaController extends Controller
         $documento->registrarDescarga();
 
         return $suya->download($archivo);
+    }
+
+    /** El PDF firmado digitalmente por el colegio, tal cual, o por qué todavía no. */
+    private function laFirmadaPorElColegio(Request $request, ?Documento $documento, string $archivo, string $periodo)
+    {
+        if (! $documento) {
+            return response()->json(['success' => false, 'message' => "Tu boleta de {$periodo} todavía no se emite."], 403);
+        }
+        if ($documento->esperaFirmaDelColegio()) {
+            return response()->json([
+                'success' => false,
+                'message' => "Tu boleta de {$periodo} todavía está en firma del colegio. Te avisaremos cuando esté lista.",
+            ], 403);
+        }
+        if (! Storage::disk('local')->exists($documento->archivo)) {
+            return response()->json(['success' => false, 'message' => 'El archivo de tu boleta no está disponible. Avísale a RR.HH.'], 404);
+        }
+
+        if ($request->boolean('ver')) {
+            if ($motivo = AccesoADocumento::porQueNoPuedeVer($documento, $request->user())) {
+                return response()->json(['success' => false, 'message' => $motivo], 403);
+            }
+            AccesoADocumento::marcarVisto($documento, $request->user());
+
+            return response(Storage::disk('local')->get($documento->archivo), 200, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => "inline; filename=\"{$archivo}\"",
+            ]);
+        }
+
+        if ($motivo = AccesoADocumento::porQueNoPuedeDescargar($documento, $request->user())) {
+            return response()->json(['success' => false, 'message' => $motivo], 403);
+        }
+        $documento->registrarDescarga();
+
+        return Storage::disk('local')->download($documento->archivo, $archivo);
     }
 }

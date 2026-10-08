@@ -12,6 +12,11 @@
       <app-icon icono="download" [tamano]="16"></app-icon>
       {{ descargandoZip ? 'Juntando boletas…' : 'Descargar emitidas (.zip)' }}
     </button>
+    <button class="btn-secondary" (click)="descargarConstancia()" [disabled]="descargandoConstancia"
+      title="Excel con cada boleta del mes: cuándo se entregó, cuándo la abrió y cuándo dio su conformidad">
+      <app-icon icono="excel" [tamano]="16"></app-icon>
+      {{ descargandoConstancia ? 'Armando…' : 'Constancia de entrega' }}
+    </button>
     <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo">
       <app-icon icono="receipt" [tamano]="16"></app-icon>
       {{ generandoMasivo ? 'Emitiendo...' : 'Emitir masivamente' }}
@@ -61,6 +66,57 @@
   </div>
 </section>
 
+<!-- Firma digital del colegio: los pasos del mes, con cuántas van en cada uno. -->
+<section class="flujo-firma" *ngIf="mostrarFlujoFirma && resumenFirma as r" aria-label="Firma digital del colegio">
+  <header class="flujo-firma__cabecera">
+    <div>
+      <h2 class="flujo-firma__titulo">
+        <app-icon icono="signature" [tamano]="18"></app-icon>
+        Firma digital del colegio
+      </h2>
+      <p class="form-ayuda">
+        Cada boleta se entrega al trabajador recién cuando tiene {{ r.requeridas === 2 ? 'las 2 firmas' : 'la firma' }} del colegio, hechas en ReFirma con el DNIe.
+        <ng-container *ngIf="!r.activa"> El ajuste está apagado: terminan su camino las que quedaron pendientes.</ng-container>
+      </p>
+    </div>
+  </header>
+
+  <ol class="flujo-firma__pasos">
+    <li class="flujo-firma__paso" [class.flujo-firma__paso--hecho]="r.emitidas > 0">
+      <span class="flujo-firma__numero">1</span>
+      <strong>Emitir</strong>
+      <span class="flujo-firma__cifra">{{ r.emitidas }}</span>
+      <span class="form-ayuda">boleta(s) emitida(s) del mes</span>
+    </li>
+    <li class="flujo-firma__paso" [class.flujo-firma__paso--pendiente]="r.por_firmar + r.a_medias > 0">
+      <span class="flujo-firma__numero">2</span>
+      <strong>Bajar y firmar</strong>
+      <span class="flujo-firma__cifra">{{ r.por_firmar + r.a_medias }}</span>
+      <span class="form-ayuda">esperan la firma<ng-container *ngIf="r.a_medias"> ({{ r.a_medias }} a medias)</ng-container></span>
+      <button class="btn-secondary flujo-firma__boton" type="button" (click)="descargarParaFirmar()"
+        [disabled]="descargandoParaFirmar || r.por_firmar + r.a_medias === 0">
+        <app-icon icono="download" [tamano]="15"></app-icon>
+        {{ descargandoParaFirmar ? 'Juntando…' : 'Descargar para firmar' }}
+      </button>
+    </li>
+    <li class="flujo-firma__paso" [class.flujo-firma__paso--pendiente]="r.por_firmar + r.a_medias > 0">
+      <span class="flujo-firma__numero">3</span>
+      <strong>Subir firmadas</strong>
+      <span class="form-ayuda">Los PDF que devolvió ReFirma. Se revisan antes de guardar.</span>
+      <button class="btn-primary flujo-firma__boton" type="button" (click)="modalSubirFirmadas = true">
+        <app-icon icono="upload" [tamano]="15"></app-icon>
+        Subir boletas firmadas
+      </button>
+    </li>
+    <li class="flujo-firma__paso" [class.flujo-firma__paso--hecho]="r.entregadas > 0">
+      <span class="flujo-firma__numero">4</span>
+      <strong>Entregadas</strong>
+      <span class="flujo-firma__cifra">{{ r.entregadas }}</span>
+      <span class="form-ayuda">{{ r.conformidad }} con la conformidad del trabajador</span>
+    </li>
+  </ol>
+</section>
+
 <!-- El mes está sin empezar: nadie tiene planilla todavía. -->
 <div class="form-nota form-nota--accion" *ngIf="conteoListo && !cargandoEmpleados && totalDelColegio > 0 && planillasDelMes === 0">
   <div>
@@ -88,7 +144,7 @@
   [camposBusqueda]="['nombre', 'apellido', 'dni']"
   [acciones]="[]"
   [accionesPersonalizadas]="accionesFila"
-  (accionPersonalizada)="abrirModal($event.fila)"
+  (accionPersonalizada)="alAccionar($event)"
   [mensajeVacio]="mensajeTabla"
 >
 
@@ -369,3 +425,12 @@
     </div>
   </div>
 </app-form-modal>
+
+<!-- Subir las boletas firmadas por el colegio en ReFirma. -->
+<app-subir-firmadas
+  [(visible)]="modalSubirFirmadas"
+  [mes]="mesGlobal * 1"
+  [anio]="anioGlobal * 1"
+  [requeridas]="resumenFirma?.requeridas ?? 1"
+  (guardadas)="alGuardarFirmadas()"
+></app-subir-firmadas>

@@ -41,6 +41,91 @@
     </ng-template>
   </section>
 
+  <!-- Firma digital del colegio en las boletas (ReFirma de RENIEC). -->
+  <section class="section-panel" *ngIf="ajustes">
+    <div class="ajuste-fila">
+      <div>
+        <h2 class="ajuste-fila__titulo" id="titulo-firma-digital">Boletas con firma digital del colegio</h2>
+        <p class="ajuste-fila__descripcion">
+          La boleta se firma con el DNIe en ReFirma de RENIEC (Ley 27269 y D. Leg. 1310) y recién entonces le llega
+          al trabajador. Quién firma no se configura: el sistema lo lee de la firma, así que si cambia la persona no hay que tocar nada.
+        </p>
+      </div>
+
+      <label class="interruptor">
+        <input type="checkbox" role="switch" aria-labelledby="titulo-firma-digital"
+          [checked]="ajustes.boleta_firma_digital" [disabled]="guardando"
+          (change)="cambiarFirmaDigital({ boleta_firma_digital: $any($event.target).checked })" />
+        <span>{{ ajustes.boleta_firma_digital ? 'Activado' : 'Desactivado' }}</span>
+      </label>
+    </div>
+
+    <ng-container *ngIf="ajustes.boleta_firma_digital; else firmaApagada">
+      <div class="ajuste-firmas">
+        <span class="ajuste-firmas__etiqueta" id="titulo-firmas">¿Cuántas personas firman cada boleta?</span>
+        <div class="chips-filtro" role="radiogroup" aria-labelledby="titulo-firmas">
+          <button type="button" class="chip-filtro" role="radio" *ngFor="let n of [1, 2]"
+            [class.chip-filtro--activo]="ajustes.boleta_firmas_requeridas === n" [attr.aria-checked]="ajustes.boleta_firmas_requeridas === n"
+            [disabled]="guardando" (click)="cambiarFirmaDigital({ boleta_firmas_requeridas: $any(n) })">
+            {{ n === 1 ? 'Una persona' : 'Dos personas' }}
+          </button>
+        </div>
+      </div>
+
+      <ol class="ajuste-detalle ajuste-detalle--pasos">
+        <li><strong>Emitir</strong> las boletas del mes como siempre (al trabajador todavía no le llega nada).</li>
+        <li>En Emisión de boletas, <strong>Descargar para firmar</strong>: un .zip con las que faltan firmar.</li>
+        <li>Quien firma las abre en <strong>ReFirma</strong> y las firma con su DNIe{{ ajustes.boleta_firmas_requeridas === 2 ? '; luego la segunda persona firma esos mismos archivos' : '' }}.</li>
+        <li><strong>Subir boletas firmadas</strong>: el sistema revisa cada una y, al guardar, se la entrega al trabajador.</li>
+        <li>El trabajador la abre y da su conformidad con su contraseña. Queda en la <strong>Constancia de entrega</strong>, sin tocar el PDF.</li>
+      </ol>
+    </ng-container>
+    <ng-template #firmaApagada>
+      <ul class="ajuste-detalle">
+        <li>Las boletas se entregan al trabajador al emitirlas, como hasta ahora.</li>
+        <li *ngIf="ajustes.boletas_esperando_firma_colegio">
+          Hay {{ ajustes.boletas_esperando_firma_colegio }} boleta(s) que esperan la firma del colegio: siguen su camino
+          (se suben firmadas desde Emisión de boletas).
+        </li>
+      </ul>
+    </ng-template>
+
+    <!-- La computadora de quien firma: una vez, y se puede volver a mirar. -->
+    <details class="guia-refirma">
+      <summary>
+        <app-icon icono="signature" [tamano]="16"></app-icon>
+        Cómo preparar la computadora de quien firma (una sola vez)
+      </summary>
+      <ol class="guia-refirma__pasos">
+        <li>
+          <strong>DNI electrónico con certificados activos y su PIN.</strong>
+          El PIN (6 a 8 dígitos) se configura en RENIEC al recoger el DNIe. Sin él no se puede firmar.
+        </li>
+        <li>
+          <strong>Un lector de tarjetas (smartcard) USB.</strong>
+          Cuesta entre S/ 30 y S/ 80. Conéctalo e instala su controlador (viene con el lector) como administrador.
+        </li>
+        <li><strong>Java 8 o superior</strong>, desde java.com.</li>
+        <li>
+          <strong>ReFirma PDF de RENIEC</strong>, gratuito. Búscalo como «ReFirma PDF RENIEC» en la página oficial de RENIEC
+          (gob.pe) e instálalo.
+        </li>
+        <li>
+          <strong>Una prueba:</strong> baja una boleta con «Descargar para firmar», ábrela en ReFirma, elige el certificado del
+          DNIe, pon el PIN y fírmala con <strong>firma visible</strong>, ubicando el sello en la casilla
+          «Firma digital del empleador» de abajo de la boleta. Esa posición se deja guardada para las siguientes.
+        </li>
+        <li>
+          <strong>Súbela</strong> con «Subir boletas firmadas»: si el sistema muestra el nombre y DNI de quien firmó, todo está listo.
+        </li>
+      </ol>
+      <p class="form-ayuda">
+        Importante: después de firmar, el PDF no se abre ni se guarda con otro programa. Cualquier cambio, aunque sea
+        mínimo, invalida la firma y el sistema lo rechaza.
+      </p>
+    </details>
+  </section>
+
   <!-- Cómo se calcula la 5ta: SUNAT, o la hoja de RR.HH. solo para comparar. -->
   <section class="section-panel" *ngIf="ajustes">
     <div class="ajuste-fila">

@@ -16,6 +16,12 @@ class Documento extends Model
      */
     public const FIRMA_RESUELTA = ['firmado', 'en_papel'];
 
+    /**
+     * La firma digital del colegio (ver App\Support\FirmaDigitalDeBoletas):
+     * mientras esté en uno de estos, la boleta todavía no es del trabajador.
+     */
+    public const FIRMA_COLEGIO_EN_CURSO = ['pendiente', 'parcial'];
+
     protected $fillable = [
         'empleado_id',
         'contrato_id',
@@ -40,6 +46,11 @@ class Documento extends Model
         'codigo_firma_empleador',
         'fecha_firma_empleador',
         'estado_firma_empleador',
+        'firma_colegio',
+        'firmas_colegio',
+        'archivo_sin_firma',
+        'firma_colegio_completa_en',
+        'firma_colegio_subida_por',
     ];
 
     /**
@@ -55,7 +66,30 @@ class Documento extends Model
         'fecha_descarga'        => 'datetime',
         'periodo_mes'           => 'integer',
         'periodo_anio'          => 'integer',
+        'firmas_colegio'        => 'array',
+        'firma_colegio_completa_en' => 'datetime',
     ];
+
+    /** Todavía le falta la firma digital del colegio: no se le entrega aún. */
+    public function esperaFirmaDelColegio(): bool
+    {
+        return in_array($this->firma_colegio, self::FIRMA_COLEGIO_EN_CURSO, true);
+    }
+
+    /**
+     * Ya tiene al menos una firma digital del colegio: el PDF está sellado y
+     * no se vuelve a generar ni a tocar.
+     */
+    public function tieneFirmaDelColegio(): bool
+    {
+        return in_array($this->firma_colegio, ['parcial', 'completa'], true);
+    }
+
+    /** Las que el trabajador puede ver: las de siempre, o las ya firmadas por el colegio. */
+    public function scopeVisiblesParaElTrabajador($query)
+    {
+        return $query->where(fn ($q) => $q->whereNull('documentos.firma_colegio')->orWhere('documentos.firma_colegio', 'completa'));
+    }
 
     /**
      * La dirección que va dentro del QR de la boleta: firmada por el

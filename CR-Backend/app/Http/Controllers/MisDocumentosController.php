@@ -57,6 +57,8 @@ class MisDocumentosController extends Controller
         // datos de contacto de la fila sin una consulta por boleta.
         $query = Documento::whereRaw($empleado_id ? '1 = 1' : '1 = 0')
             ->where('documentos.empleado_id', $empleado_id)
+            // La que espera la firma digital del colegio todavía no es suya.
+            ->visiblesParaElTrabajador()
             ->with(['planilla', 'empleado:id,nombre,apellido,telefono,sede_id', 'empleado.sede:id,nombre', 'empleado.usuario:id,empleado_id,email'])
             ->leftJoin('planilla', 'documentos.planilla_id', '=', 'planilla.id')
             ->select('documentos.*')
@@ -174,6 +176,13 @@ class MisDocumentosController extends Controller
             ], 422);
         }
 
+        if ($documento->esperaFirmaDelColegio()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tu boleta todavía está en firma del colegio. Te avisaremos cuando esté lista.',
+            ], 422);
+        }
+
         if ($documento->estado_firma === 'firmado') {
             return response()->json([
                 'success' => false,
@@ -202,7 +211,11 @@ class MisDocumentosController extends Controller
         // así el archivo congelado en disco sí incluye el sello de firma+huella y
         // el texto de verificación (si no se regenerara aquí, quedaría archivada
         // para siempre la versión de ANTES de firmar).
-        if ($documento->tipo === 'boleta' && $documento->planilla_id) {
+        //
+        // Con la firma digital del colegio NO: el PDF ya está sellado y
+        // tocarlo invalidaría esas firmas. Su conformidad queda en el
+        // documento (fecha, código) y sale en la Constancia de entrega.
+        if ($documento->tipo === 'boleta' && $documento->planilla_id && $documento->firma_colegio === null) {
             $planilla = Planilla::find($documento->planilla_id);
             if ($planilla) {
                 app(BoletaController::class)->construirBoleta(

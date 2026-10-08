@@ -31,7 +31,13 @@ export interface Planilla {
    * índice cuando se pregunta con `?empleado_ids=` (Emisión de Boletas): es
    * lo que decide si "Editar" se puede abrir o ya es tarde para tocarla.
    */
-  documento_boleta?: { id: string; estado_firma?: string } | null;
+  documento_boleta?: {
+    id: string;
+    estado_firma?: string;
+    /** Firma digital del colegio: null si no va por ese camino. */
+    firma_colegio?: EstadoFirmaColegio | null;
+    firmas_colegio?: FirmaDelColegio[] | null;
+  } | null;
   /**
    * Por qué ya no se le pueden cambiar los conceptos (planilla cerrada o
    * boleta firmada), o null si se puede. Solo lo trae GET /payrolls/{id}.
@@ -137,4 +143,15 @@ export interface AplicacionConceptoGrupo {
     monto?: number;
     motivo?: string;
   }>;
+}
+
+/** La firma digital del colegio de una boleta (ReFirma). */
+export type EstadoFirmaColegio = 'pendiente' | 'parcial' | 'completa';
+
+/** Una firma leída del certificado del PDF. */
+export interface FirmaDelColegio {
+  nombre: string | null;
+  dni: string | null;
+  fecha: string | null;
+  emisor?: string | null;
 }

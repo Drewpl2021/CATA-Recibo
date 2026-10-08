@@ -268,6 +268,13 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::put('vacations/{id}',    [VacacionController::class, 'update']);
 
         Route::post('payslips/generate-bulk', [BoletaController::class, 'generarMasivo']);
+        // Firma digital del colegio (ReFirma): subir las firmadas, de a una;
+        // anular para volver a emitir; y la constancia de entrega del mes.
+        Route::get('payslips/signed/summary',    [\App\Http\Controllers\BoletasFirmadasController::class, 'resumen']);
+        Route::post('payslips/signed/check',     [\App\Http\Controllers\BoletasFirmadasController::class, 'revisar']);
+        Route::post('payslips/signed',           [\App\Http\Controllers\BoletasFirmadasController::class, 'guardar']);
+        Route::post('payslips/{documento}/void', [\App\Http\Controllers\BoletasFirmadasController::class, 'anular'])->whereUuid('documento');
+        Route::get('payslips/delivery-record',   [\App\Http\Controllers\BoletasFirmadasController::class, 'constancia']);
 
         // Ajustes del sistema: RR.HH. y Admin los leen y los cambian (cada
         // cambio queda en la Auditoría, que sí es solo de Admin).

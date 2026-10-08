@@ -60,6 +60,9 @@ final class AccesoADocumento
         if (! self::esSuyo($documento, $usuario)) {
             return 'No tienes permiso para ver este documento.';
         }
+        if ($documento->esperaFirmaDelColegio()) {
+            return 'Tu boleta todavía está en firma del colegio. Te avisaremos cuando esté lista.';
+        }
         if ($documento->tipo === 'boleta' && ! in_array($documento->estado_firma, Documento::FIRMA_RESUELTA, true)) {
             return 'Primero firma tu boleta con tu contraseña; después la puedes ver y descargar.';
         }
@@ -79,6 +82,9 @@ final class AccesoADocumento
         }
         if (! self::esSuyo($documento, $usuario)) {
             return 'No tienes permiso para descargar este documento.';
+        }
+        if ($documento->esperaFirmaDelColegio()) {
+            return 'Tu boleta todavía está en firma del colegio. Te avisaremos cuando esté lista.';
         }
         if (! ExpedienteDigital::seFirma($documento->tipo) || in_array($documento->estado_firma, Documento::FIRMA_RESUELTA, true)) {
             return null;

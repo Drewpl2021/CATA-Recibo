@@ -10,6 +10,7 @@ use App\Traits\CalculaConceptosPlanilla;
 use App\Mail\BoletaGenerada;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Support\AniosAnteriores;
+use App\Support\FirmaDigitalDeBoletas;
 use App\Support\ConceptosDePago;
 use App\Support\Meses;
 use Illuminate\Http\Request;
@@ -46,6 +47,13 @@ class BoletaController extends Controller
 
         AniosAnteriores::exigir((int) $anio);
 
+        // Ya firmada digitalmente por el colegio: es ESE archivo, no uno
+        // nuevo armado ahora (que no tendría las firmas).
+        $firmada = Documento::where('planilla_id', $planilla->id)->where('tipo', 'boleta')->first();
+        if ($firmada?->tieneFirmaDelColegio() && Storage::disk('local')->exists($firmada->archivo)) {
+            return Storage::disk('local')->download($firmada->archivo, "boleta_{$empleado->dni}_{$mes}_{$anio}.pdf");
+        }
+
         ['pdf' => $pdf, 'archivo' => $archivo, 'numero_boleta' => $numero_boleta, 'documento' => $documento, 'nuevo' => $nuevo]
             = $this->construirBoleta($empleado, $planilla, (int) $mes, (int) $anio);
 
@@ -56,7 +64,8 @@ class BoletaController extends Controller
         // lista" — el trabajador ya la tenía, y de paso ya pudo haberla
         // firmado.
         // La de un año anterior tampoco: es de registro, ya la tenía en papel.
-        if ($nuevo && ! AniosAnteriores::esAnterior((int) $anio)) {
+        // Con firma digital del colegio tampoco: se le avisa al subirla firmada.
+        if ($nuevo && $documento?->firma_colegio === null && ! AniosAnteriores::esAnterior((int) $anio)) {
             $this->avisarBoletaLista($empleado, (int) $mes, (int) $anio, $numero_boleta, $documento?->id);
         }
 
@@ -145,6 +154,8 @@ class BoletaController extends Controller
                 // La de un año anterior se arma para dejarla de registro: el
                 // trabajador ya la firmó a mano en su momento.
                 'estado_firma' => AniosAnteriores::esAnterior($anio) ? 'en_papel' : 'pendiente',
+                // Con el ajuste encendido, espera la firma digital del colegio.
+                'firma_colegio' => FirmaDigitalDeBoletas::activa() && ! AniosAnteriores::esAnterior($anio) ? 'pendiente' : null,
             ]);
         }
 
@@ -166,6 +177,11 @@ class BoletaController extends Controller
             'documento'          => $documento,
             'cabecera'           => $cabecera,
             'nombre_anio'        => \App\Models\ValorLegal::nombreDelAnio($anio),
+            // Con firma digital: una sola copia (el colegio y el trabajador
+            // tienen el MISMO archivo) y las casillas para el sello de ReFirma.
+            'firmaDigital'       => $documento->firma_colegio !== null,
+            'firmasRequeridas'   => FirmaDigitalDeBoletas::requeridas(),
+            'copias'             => $documento->firma_colegio !== null ? 1 : 2,
         ];
 
         $pdf = Pdf::loadView('boleta', $data)->setPaper('a4', 'portrait');
@@ -178,7 +194,9 @@ class BoletaController extends Controller
         // congelado el sello de firma+huella y el texto de verificación (si no,
         // quedaría archivada para siempre la versión de antes de firmar).
         // «En papel» también es firmada: solo se escribe la primera vez.
-        if ($nuevo || ! in_array($documento->estado_firma, Documento::FIRMA_RESUELTA, true) || $forzarGuardado) {
+        // Y con la firma digital del colegio, nunca: el archivo firmado es ese.
+        if (! $documento->tieneFirmaDelColegio()
+            && ($nuevo || ! in_array($documento->estado_firma, Documento::FIRMA_RESUELTA, true) || $forzarGuardado)) {
             Storage::disk('local')->put($rutaArchivo, $pdf->output());
         }
 
@@ -196,7 +214,7 @@ class BoletaController extends Controller
      * queue() y no send(): con send() los 127 correos de una emisión masiva
      * salían uno detrás de otro dentro de la misma petición. Ver BoletaGenerada.
      */
-    private function avisarBoletaLista(Empleado $empleado, int $mes, int $anio, string $numero_boleta, ?string $documentoId = null): void
+    public function avisarBoletaLista(Empleado $empleado, int $mes, int $anio, string $numero_boleta, ?string $documentoId = null): void
     {
         $user = User::where('empleado_id', $empleado->id)->first();
 
@@ -290,7 +308,8 @@ class BoletaController extends Controller
                 = $this->construirBoleta($empleado, $planilla, $mes, $anio);
             // Las de registro no se avisan: serían cientos de correos de golpe
             // por boletas que ya se firmaron en papel.
-            if (! $deRegistro) {
+            // Ni las que esperan la firma digital del colegio: se avisan al subirlas.
+            if (! $deRegistro && $documento?->firma_colegio === null) {
                 $this->avisarBoletaLista($empleado, $mes, $anio, $numero_boleta, $documento?->id);
             }
             $generadas++;

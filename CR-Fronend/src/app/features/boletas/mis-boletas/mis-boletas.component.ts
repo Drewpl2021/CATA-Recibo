@@ -41,6 +41,11 @@ export interface BoletaRow {
   firmado: string | null;
   /** Boleta de un año anterior armada para registro: ya se firmó a mano. */
   enPapel: boolean;
+  /**
+   * Viene firmada digitalmente por el colegio (ReFirma): él no la firma, da
+   * su conformidad, y eso no toca el PDF.
+   */
+  firmadaPorElColegio: boolean;
   correo: string;
   celular: string;
 }
@@ -136,7 +141,14 @@ export class MisBoletasComponent implements OnInit {
     },
     {
       id: 'firmar', titulo: 'Firmar esta boleta', icono: 'signature', severidad: 'success',
-      visible: (b) => !b.firmado && !b.enPapel,
+      visible: (b) => !b.firmado && !b.enPapel && !b.firmadaPorElColegio,
+    },
+    {
+      // Firmada digitalmente por el colegio: lo que él hace es dar su
+      // conformidad (con la misma contraseña). Su boleta no cambia.
+      id: 'firmar', titulo: 'Dar tu conformidad: confirma que recibiste esta boleta', icono: 'check_circle',
+      etiqueta: 'Dar conformidad', severidad: 'success',
+      visible: (b) => !b.firmado && !b.enPapel && b.firmadaPorElColegio,
     },
   ];
 
@@ -224,6 +236,7 @@ export class MisBoletasComponent implements OnInit {
       // hubiera una firma vieja sin fecha guardada.
       firmado: d.estado_firma === 'firmado' ? (d.fecha_firma ?? d.created_at ?? null) : null,
       enPapel: d.estado_firma === 'en_papel',
+      firmadaPorElColegio: d.firma_colegio === 'completa',
       // El correo del aviso va congelado en el documento; si esa boleta es
       // de antes de que se anotara, se cae al de la cuenta.
       correo: d.aviso_correo ?? d.empleado?.usuario?.email ?? '—',

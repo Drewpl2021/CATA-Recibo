@@ -59,6 +59,7 @@ export class AuditoriaListComponent implements OnInit {
     { valor: 'linea', etiqueta: 'Líneas de una planilla' },
     { valor: 'configuración', etiqueta: 'Ajustes del sistema' },
     { valor: 'montos de ley', etiqueta: 'Montos de ley' },
+    { valor: 'boleta', etiqueta: 'Boletas (firma digital)' },
   ];
 
   /** El embudo: sobre qué, qué se hizo y entre qué fechas. El backend entiende estas claves. */
@@ -70,7 +71,7 @@ export class AuditoriaListComponent implements OnInit {
     },
     {
       clave: 'accion', etiqueta: 'Acción', tipo: 'opciones', vacio: 'Todas',
-      opciones: ['creó', 'cambió', 'borró', 'aplicó', 'agregó', 'quitó'].map((a) => ({ valor: a, etiqueta: this.etiquetaAccion(a) })),
+      opciones: ['creó', 'cambió', 'borró', 'aplicó', 'agregó', 'quitó', 'firmó'].map((a) => ({ valor: a, etiqueta: this.etiquetaAccion(a) })),
     },
     { clave: 'desde', claveHasta: 'hasta', etiqueta: 'Cuándo', tipo: 'fecha', ancho: 'doble' },
   ];
@@ -209,7 +210,7 @@ export class AuditoriaListComponent implements OnInit {
   etiquetaAccion(accion: string): string {
     const etiquetas: Record<string, string> = {
       'creó': 'Alta', 'cambió': 'Cambio', 'borró': 'Baja', 'aplicó': 'Aplicó',
-      'agregó': 'Agregó', 'quitó': 'Quitó',
+      'agregó': 'Agregó', 'quitó': 'Quitó', 'firmó': 'Firma digital',
     };
     return etiquetas[accion] ?? accion;
   }
