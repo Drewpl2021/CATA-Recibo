@@ -3,7 +3,7 @@
   [titulo]="nombreEmpleado ? 'Planilla de ' + nombreEmpleado : 'Detalle de planilla'"
   [subtitulo]="tituloPeriodo ? 'Conceptos de ' + tituloPeriodo + '. Son las líneas que salen en su boleta.' : ''"
 >
-  <div headerActions style="display: flex; gap: 12px;">
+  <div headerActions class="acciones-cabecera">
     <button class="btn-secondary" type="button" (click)="volver()">
       <app-icon icono="arrow_left" [tamano]="16"></app-icon>
       {{ textoVolver }}

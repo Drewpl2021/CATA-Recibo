@@ -104,8 +104,8 @@ export class MisBoletasComponent implements OnInit {
   get cifras(): CifraCabecera[] {
     return [
       { icono: 'receipt_long', valor: this.total, etiqueta: 'Boletas del año', tono: 'brand' },
-      { icono: 'signature', valor: this.firmados, etiqueta: 'Firmadas', tono: 'success' },
-      { icono: 'clock', valor: this.pendientes, etiqueta: 'Por firmar', tono: 'warning' },
+      { icono: 'signature', valor: this.firmados, etiqueta: 'Con conformidad', tono: 'success' },
+      { icono: 'clock', valor: this.pendientes, etiqueta: 'Sin conformidad', tono: 'warning' },
     ];
   }
 

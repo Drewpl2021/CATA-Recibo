@@ -2,13 +2,15 @@
   <!-- Sidebar -->
   <aside class="sidebar" [class.sidebar-open]="sidebarVisible" [class.sidebar-hidden]="!sidebarVisible">
     <div class="sidebar-header">
-      <a class="brand-logo" routerLink="/inicio/dashboard"
-        appPista="Ir al Panel de Control" pistaLado="abajo" aria-label="Ir al Panel de Control" style="cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 12px; color: inherit;">
-        <img src="logo-colegio.png" alt="Logo Colegio Adventista Túpac Amaru" style="height: 46px; width: 46px; object-fit: contain; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); background: transparent; flex-shrink: 0;">
-        <div style="display: flex; flex-direction: column; line-height: 1.2;">
-          <span style="font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap;">Colegio Adventista</span>
-          <span style="font-size: 13px; font-weight: 600; color: var(--accent); white-space: nowrap;">"Túpac Amaru"</span>
-        </div>
+      <!-- El escudo y la marca CATA (la misma imagen de la marca de agua,
+           en blanco sobre el azul de la barra). -->
+      <a class="marca-lateral" routerLink="/inicio/dashboard"
+        appPista="Ir al Panel de Control" pistaLado="abajo" aria-label="CATA, Colegio Adventista Túpac Amaru: ir al Panel de Control">
+        <img class="marca-lateral__escudo" src="logo-colegio.png" alt="" />
+        <span class="marca-lateral__textos">
+          <img class="marca-lateral__cata" src="logo-cata.png" alt="CATA" />
+          <span class="marca-lateral__nombre">Túpac Amaru</span>
+        </span>
       </a>
     </div>
 
@@ -85,6 +87,11 @@
           [attr.aria-expanded]="sidebarVisible">
           <app-icon icono="menu" [tamano]="26"></app-icon>
         </button>
+
+        <!-- En el celular las migas no caben: en su lugar va la marca, en sus colores. -->
+        <a class="marca-movil" routerLink="/inicio/dashboard" aria-label="CATA: ir al Panel de Control">
+          <img src="logo-cata.png" alt="CATA" />
+        </a>
 
         <!-- Dónde estás. Los nombres son los mismos del menú lateral. -->
         <nav class="migas" aria-label="Dónde estás">

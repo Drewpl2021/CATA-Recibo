@@ -348,6 +348,83 @@ body {
   color: var(--accent);
 }
 
+/* La marca de la barra lateral: el escudo y, a su lado, el logo CATA en
+   blanco (la imagen es azul; el filtro la vuelve blanca sobre el azul de la
+   barra) con el nombre completo del colegio en dorado. */
+.marca-lateral {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: opacity 0.2s ease;
+}
+
+.marca-lateral:hover {
+  opacity: 0.88;
+}
+
+.marca-lateral:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.marca-lateral__escudo {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+}
+
+.marca-lateral__textos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.marca-lateral__cata {
+  display: block;
+  height: 24px;
+  width: auto;
+  align-self: flex-start;
+  filter: brightness(0) invert(1);
+}
+
+.marca-lateral__nombre {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--accent);
+}
+
+/* Solo en el celular, en la barra de arriba (ver la regla de 560px). */
+.marca-movil {
+  display: none;
+}
+
+.marca-movil {
+  min-width: 0;
+}
+
+/* Chica a propósito: a su derecha van la luna, el foquito, la campana y el
+   avatar, y en 360px no entra todo con una marca más alta. */
+.marca-movil img {
+  display: block;
+  height: 20px;
+  width: auto;
+  max-width: 100%;
+}
+
+/* En oscuro la barra de arriba es oscura: la marca, en blanco. */
+.dark-mode .marca-movil img {
+  filter: brightness(0) invert(1);
+}
+
 .nav-menu {
   padding: 24px 16px;
   flex: 1;
@@ -535,6 +612,13 @@ a.migas__paso:hover {
   .migas__flecha--grupo {
     display: none;
   }
+}
+
+/* En el celular, la marca en lugar de las migas: la pantalla ya dice su
+   nombre en su cabecera, y las migas recortadas («> > Empl…») no decían nada. */
+@media (max-width: 560px) {
+  .top-header .migas { display: none; }
+  .marca-movil { display: block; }
 }
 
 /* En el celular, solo dónde estás. */
@@ -6169,8 +6253,43 @@ textarea.form-control {
     gap: 12px;
   }
 
-  .page-header__actions { width: 100%; }
-  .page-header__actions > * { flex: 1 1 auto; justify-content: center; }
+  /* Los botones de la cabecera, parejos en dos columnas y a lo ancho; si
+     son impares, el último ocupa la fila entera. Las pantallas los meten
+     sueltos o dentro de un <div> en fila: ese <div> se «aplana» (contents)
+     para que sus botones entren en la misma cuadrícula. */
+  .page-header__actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .page-header__actions > div { display: contents; }
+
+  .page-header__actions button,
+  .page-header__actions a,
+  .page-header__actions label {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .page-header__actions > :last-child:nth-child(odd),
+  .page-header__actions > div > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  /* Las cifras del panel azul del mes, en dos columnas que llenan el ancho
+     (sueltas dejaban un hueco a la derecha). */
+  .panel-filtros__cifras {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .panel-filtros__cifras .cifra { min-width: 0; }
+
+  .panel-filtros__cifras > .cifra:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
   /* Las cifras de la cabecera, repartidas en vez de apretadas. */
   .cifras-cabecera { width: 100%; justify-content: space-between; }
@@ -6284,9 +6403,29 @@ textarea.form-control {
     text-align: right;
   }
 
+  /* Cada dato: su nombre en una columna fija a la izquierda y el valor a
+     continuación, alineado a la izquierda. Pegado a la derecha, un texto
+     largo («Qué pasó», el trabajador con su DNI y cargo) quedaba en una
+     tira angosta y se leía mal. Lo que no es la primera pieza del valor va
+     también a la segunda columna, uno debajo del otro. */
+  .data-table td[data-titulo] {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: baseline;
+    text-align: left;
+  }
+
+  .data-table td[data-titulo] > * {
+    grid-column: 2;
+    justify-self: start;
+  }
+
   /* El nombre de la columna, que en la tabla estaba arriba del todo. */
   .data-table td[data-titulo]::before {
     content: attr(data-titulo);
+    grid-column: 1;
+    grid-row: 1;
     flex: 0 0 auto;
     font-size: 11.5px;
     font-weight: 600;
