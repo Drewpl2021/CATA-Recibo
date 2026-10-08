@@ -79,15 +79,28 @@ class BoletasFirmadasController extends Controller
         ];
     }
 
-    /** Las boletas del mes que esperan la firma del colegio y no tienen la de este certificado. */
+    /**
+     * Los ids de las boletas del mes que esperan la firma del colegio y no
+     * tienen la de este certificado, en orden (el orden es el que siguen las
+     * tandas de «Firmar aquí»).
+     *
+     * Solo trae el id y quién firmó: con mil trabajadores son mil filas
+     * livianas. Quién firmó se mira aquí y no en SQL porque va en un JSON, y
+     * la búsqueda dentro de un JSON no es igual en MySQL que en SQLite (el
+     * de las pruebas).
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
     private function esperanMiFirma(CertificadoFirma $certificado, int $mes, int $anio)
     {
-        return Documento::with('planilla', 'empleado')
+        return Documento::query()
             ->where('tipo', 'boleta')
             ->whereIn('firma_colegio', Documento::FIRMA_COLEGIO_EN_CURSO)
             ->whereHas('planilla', fn ($q) => $q->where('mes', $mes)->where('anio', $anio))
-            ->get()
+            ->orderBy('id')
+            ->get(['id', 'firmas_colegio'])
             ->reject(fn (Documento $d) => $this->yaLaFirmo($d, $certificado->dni, $certificado->nombre))
+            ->pluck('id')
             ->values();
     }
 
@@ -107,17 +120,32 @@ class BoletasFirmadasController extends Controller
      * que revisa las subidas, y si con ella se completan las firmas que pide
      * el colegio, se le entrega al trabajador. Si una falla, las demás
      * siguen, y la respuesta dice cuál y por qué.
+     *
+     * Va POR TANDAS (25 por pedido, hasta 50): la pantalla pide una tanda,
+     * y con «siguiente» pide la que sigue, hasta que no quede ninguna. Así no
+     * importa si son 94 o mil: ningún pedido se pasa del tiempo del servidor,
+     * y la barra avanza de verdad. No va a la cola a propósito: la cola
+     * guarda su trabajo en la base, y la clave del certificado no se guarda
+     * en ninguna parte; así solo viaja en cada pedido.
+     *
+     * «desde» es el id de la última boleta de la tanda anterior: se sigue
+     * después de ella, así una que falló no se vuelve a intentar en la misma
+     * pasada (y la pasada termina).
      */
     public function firmarAqui(Request $request)
     {
         $datos = $request->validate([
-            'mes'   => 'required|integer|min:1|max:12',
-            'anio'  => 'required|integer|min:2000',
-            'clave' => 'required|string|max:200',
+            'mes'    => 'required|integer|min:1|max:12',
+            'anio'   => 'required|integer|min:2000',
+            'clave'  => 'required|string|max:200',
+            'desde'  => 'nullable|string|max:40',
+            'limite' => 'nullable|integer|min:1|max:50',
         ], ['clave.required' => 'Escribe la clave de tu certificado.']);
         $mes = (int) $datos['mes'];
         $anio = (int) $datos['anio'];
         $periodo = Meses::nombre($mes) . " {$anio}";
+        $desde = $datos['desde'] ?? null;
+        $limite = (int) ($datos['limite'] ?? 25);
 
         $certificado = CertificadoFirma::activoDe($request->user());
         if (! $certificado) {
@@ -127,19 +155,32 @@ class BoletasFirmadasController extends Controller
             return response()->json(['success' => false, 'message' => 'Tu certificado venció el ' . $certificado->valido_hasta->format('d/m/Y') . ': renuévalo y ponlo de nuevo en Ajustes.'], 422);
         }
 
+        // Contra adivinar la clave: 5 intentos fallidos y 15 minutos de espera.
+        // Las tandas buenas no cuentan; solo la clave equivocada.
+        $intentos = 'clave-certificado:' . $request->user()->id;
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($intentos, 5)) {
+            $minutos = (int) ceil(\Illuminate\Support\Facades\RateLimiter::availableIn($intentos) / 60);
+            return response()->json(['success' => false, 'message' => "Pusiste mal la clave varias veces. Espera {$minutos} minuto(s) y vuelve a intentarlo."], 429);
+        }
         try {
             $llaves = CertificadoDigital::abrir($certificado->archivo(), $datos['clave']);
         } catch (\RuntimeException $e) {
+            if (str_contains($e->getMessage(), 'clave')) {
+                \Illuminate\Support\Facades\RateLimiter::hit($intentos, 15 * 60);
+            }
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
+        \Illuminate\Support\Facades\RateLimiter::clear($intentos);
 
-        $documentos = $this->esperanMiFirma($certificado, $mes, $anio);
-        if ($documentos->isEmpty()) {
+        $pendientes = $this->esperanMiFirma($certificado, $mes, $anio);
+        if ($pendientes->isEmpty() && $desde === null) {
             return response()->json(['success' => false, 'message' => "No hay boletas de {$periodo} esperando tu firma."], 422);
         }
+        $porHacer = $desde === null ? $pendientes : $pendientes->filter(fn ($id) => strcmp($id, $desde) > 0)->values();
+        $lote = $porHacer->take($limite)->values();
+        $documentos = Documento::with('planilla', 'empleado')->whereIn('id', $lote)->orderBy('id')->get();
 
         $requeridas = FirmaDigitalDeBoletas::requeridas();
-        $progreso = \App\Support\Progreso::actual()->etapa('Firmando las boletas', $documentos->count());
         $quien = mb_substr((string) $request->user()->name, 0, 100);
         $cuenta = ['firmadas' => 0, 'entregadas' => 0, 'a_medias' => 0];
         $errores = [];
@@ -203,7 +244,6 @@ class BoletasFirmadasController extends Controller
                     'mensaje'    => $e instanceof \RuntimeException ? $e->getMessage() : 'No se pudo firmar: vuelve a intentarlo.',
                 ];
             }
-            $progreso->avanzar();
         }
 
         if ($cuenta['firmadas'] > 0) {
@@ -219,7 +259,14 @@ class BoletasFirmadasController extends Controller
             );
         }
 
-        return response()->json(['success' => true, 'data' => $cuenta + ['errores' => $errores]]);
+        return response()->json(['success' => true, 'data' => $cuenta + [
+            'errores'    => $errores,
+            // Para la barra: cuántas faltaban al empezar esta tanda y cuántas vio.
+            'total'      => $porHacer->count(),
+            'procesadas' => $lote->count(),
+            // La tanda que sigue empieza después de esta; null si ya no hay.
+            'siguiente'  => $porHacer->count() > $lote->count() ? $lote->last() : null,
+        ]]);
     }
 
     public function revisar(Request $request)

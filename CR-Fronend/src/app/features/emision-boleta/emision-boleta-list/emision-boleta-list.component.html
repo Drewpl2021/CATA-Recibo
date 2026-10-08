@@ -509,7 +509,7 @@
 <!-- «Firmar aquí»: confirma cuántas y como quién, y pide la clave del certificado (no se guarda). -->
 <app-form-modal [(visible)]="modalFirmarAqui" titulo="Firmar aquí" ancho="520px" [ocultarBotonesPorDefecto]="true"
   (cancelar)="cerrarFirmarAqui()">
-  <ng-container *ngIf="!resultadoFirmarAqui && resumenFirma?.mi_certificado as c">
+  <ng-container *ngIf="!resultadoFirmarAqui && !firmandoAqui && resumenFirma?.mi_certificado as c">
     <p class="firmar-aqui__resumen">
       Vas a firmar <strong>{{ c.por_firmar }} boleta{{ c.por_firmar === 1 ? '' : 's' }} de {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</strong>
       como <strong>{{ c.nombre }}</strong><ng-container *ngIf="c.dni"> (DNI {{ c.dni }})</ng-container>.
@@ -528,14 +528,26 @@
     </div>
   </ng-container>
 
-  <!-- Si alguna no se pudo, se dice cuál y por qué; si todo salió bien, el modal ya se cerró. -->
+  <!-- Firmando, por tandas: cuántas lleva. -->
+  <div class="progreso" *ngIf="firmandoAqui && avanceFirma as a" role="status">
+    <p class="progreso__etapa">
+      {{ a.total ? 'Firmando las boletas con tu certificado…' : 'Abriendo tu certificado…' }}
+    </p>
+    <div class="progreso__barra"><span [style.width.%]="porcentajeFirma"></span></div>
+    <div class="progreso__cifras"><span>{{ a.hechas }} de {{ a.total || '…' }}</span><span>{{ porcentajeFirma }}%</span></div>
+  </div>
+
+  <!-- Si alguna no se pudo o se detuvo, se dice; si todo salió bien, el modal ya se cerró. -->
   <ng-container *ngIf="resultadoFirmarAqui as res">
     <p class="firmar-aqui__resumen">
       Se firmaron <strong>{{ res.firmadas }}</strong>:
       {{ res.entregadas }} ya le llegaron al trabajador<ng-container *ngIf="res.a_medias">, {{ res.a_medias }} esperan la otra firma</ng-container>.
     </p>
-    <p class="form-nota">{{ res.errores.length }} no se pudieron firmar. Revisa el motivo y vuelve a intentarlo:</p>
-    <ul class="firmar-aqui__errores">
+    <p class="form-nota" *ngIf="res.detenida && res.quedan > 0">
+      Se detuvo antes de terminar: quedan {{ res.quedan }} por firmar. Lo firmado ya quedó firmado; para seguir, vuelve a «Firmar aquí».
+    </p>
+    <p class="form-nota" *ngIf="res.errores.length">{{ res.errores.length }} no se pudieron firmar. Revisa el motivo y vuelve a intentarlo:</p>
+    <ul class="firmar-aqui__errores" *ngIf="res.errores.length">
       <li *ngFor="let e of res.errores">
         <strong>{{ e.trabajador }}</strong><ng-container *ngIf="e.numero"> ({{ e.numero }})</ng-container>: {{ e.mensaje }}
       </li>
@@ -543,8 +555,12 @@
   </ng-container>
 
   <div modalFooter class="asistente-pie">
+    <button *ngIf="firmandoAqui" type="button" class="btn-secondary" (click)="detenerFirmarAqui()"
+      appPista="Termina la tanda que está firmando y se detiene. Lo ya firmado queda firmado y entregado.">
+      Detener
+    </button>
     <ng-container *ngIf="!resultadoFirmarAqui">
-      <button type="button" class="btn-secondary" (click)="cerrarFirmarAqui()" [disabled]="firmandoAqui">Cancelar</button>
+      <button *ngIf="!firmandoAqui" type="button" class="btn-secondary" (click)="cerrarFirmarAqui()">Cancelar</button>
       <button type="button" class="btn-primary" (click)="firmarAqui()" [disabled]="firmandoAqui || !claveFirmarAqui"
         [appPista]="claveFirmarAqui ? 'Firma ahora las ' + (resumenFirma?.mi_certificado?.por_firmar ?? 0) + ' boleta(s) con tu certificado.' : 'Escribe la clave de tu certificado.'">
         <app-icon icono="signature" [tamano]="15"></app-icon>

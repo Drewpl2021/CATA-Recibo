@@ -250,6 +250,61 @@ class FirmarDesdeElSistemaTest extends TestCase
     }
 
     /**
+     * Por tandas: cada pedido firma unas pocas y dice desde dónde sigue. Una
+     * que falla no se reintenta en la misma pasada, así la pasada termina.
+     */
+    public function test_firma_por_tandas_y_una_que_falla_no_la_deja_dando_vueltas(): void
+    {
+        $this->emitirTodas();
+        $this->ponerCertificado($this->admin, FirmadorPdfDePrueba::pfx('Isidoro', 'Rodriguez Mamani', '01234567', self::CLAVE))->assertOk();
+
+        // La primera en el orden de las tandas se queda sin su PDF: esa falla.
+        $orden = Documento::where('tipo', 'boleta')->orderBy('id')->pluck('id')->all();
+        Storage::disk('local')->delete(Documento::find($orden[0])->archivo);
+
+        $tanda = fn (?string $desde) => $this->actingAs($this->admin, 'sanctum')->postJson('/api/payslips/signed/sign-here', [
+            'mes' => $this->mes, 'anio' => $this->anio, 'clave' => self::CLAVE, 'limite' => 1, 'desde' => $desde,
+        ])->assertOk();
+
+        $primera = $tanda(null)
+            ->assertJsonPath('data.total', 2)
+            ->assertJsonPath('data.procesadas', 1)
+            ->assertJsonPath('data.firmadas', 0)
+            ->assertJsonPath('data.siguiente', $orden[0])
+            ->assertJsonPath('data.errores.0.mensaje', 'No se encontró su PDF: vuelve a emitirla.');
+
+        $tanda($primera->json('data.siguiente'))
+            ->assertJsonPath('data.total', 1)
+            ->assertJsonPath('data.firmadas', 1)
+            ->assertJsonPath('data.siguiente', null);
+
+        $this->assertSame('completa', Documento::find($orden[1])->firma_colegio);
+        $this->assertSame('pendiente', Documento::find($orden[0])->firma_colegio);
+
+        // La que falló sigue esperando: otra pasada la vuelve a intentar.
+        $this->actingAs($this->admin, 'sanctum')
+            ->getJson("/api/payslips/signed/summary?mes={$this->mes}&anio={$this->anio}")
+            ->assertJsonPath('data.mi_certificado.por_firmar', 1);
+    }
+
+    /** La clave no se puede adivinar a fuerza de intentos: 5 errores y 15 minutos de espera. */
+    public function test_frena_a_quien_prueba_claves(): void
+    {
+        $this->emitirTodas();
+        $this->ponerCertificado($this->admin, FirmadorPdfDePrueba::pfx('Isidoro', 'Rodriguez Mamani', '01234567', self::CLAVE))->assertOk();
+
+        foreach (range(1, 5) as $intento) {
+            $this->firmarAqui($this->admin, "intento-{$intento}")->assertStatus(422);
+        }
+        // Ni con la buena: hay que esperar.
+        $this->firmarAqui($this->admin)->assertStatus(429)->assertJsonPath('message', fn ($m) => str_contains($m, 'Espera'));
+        $this->assertSame('pendiente', $this->boleta(0)->firma_colegio);
+
+        $this->travel(16)->minutes();
+        $this->firmarAqui($this->admin)->assertOk()->assertJsonPath('data.firmadas', 2);
+    }
+
+    /**
      * Un PDF que ya pasó por otro firmador puede venir con la tabla de
      * referencias comprimida (xref stream, con predictor PNG): también se
      * firma encima, y lo de antes sigue intacto.

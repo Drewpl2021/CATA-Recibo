@@ -84,11 +84,12 @@ export class BoletaService {
 
   /** Revisa UN PDF firmado: dice qué pasaría al guardarlo, sin guardar nada. */
   /**
-   * «Firmar aquí»: firma de una vez las boletas del mes que esperan la firma
-   * de quien lo pide, con su certificado. La clave no se guarda.
+   * «Firmar aquí»: firma UNA TANDA de las boletas del mes que esperan la
+   * firma de quien lo pide, con su certificado. La pantalla pide la que
+   * sigue con «siguiente» hasta que no quede ninguna. La clave no se guarda.
    */
-  firmarAqui(mes: number, anio: number, clave: string): Observable<ApiResponse<ResultadoFirmarAqui>> {
-    return this.http.post<ApiResponse<ResultadoFirmarAqui>>(`${this.apiUrl}/payslips/signed/sign-here`, { mes, anio, clave });
+  firmarAqui(mes: number, anio: number, clave: string, desde: string | null = null, limite = 25): Observable<ApiResponse<ResultadoFirmarAqui>> {
+    return this.http.post<ApiResponse<ResultadoFirmarAqui>>(`${this.apiUrl}/payslips/signed/sign-here`, { mes, anio, clave, desde, limite });
   }
 
   // ── Mi certificado para firmar (Ajustes → Boletas) ──
@@ -192,6 +193,12 @@ export interface ResultadoFirmarAqui {
   /** Esperan la firma de otra persona. */
   a_medias: number;
   errores: { trabajador: string; numero: string | null; mensaje: string }[];
+  /** Cuántas faltaban al empezar esta tanda. */
+  total: number;
+  /** Cuántas miró esta tanda (firmadas o con error). */
+  procesadas: number;
+  /** Desde dónde sigue la próxima tanda; null si ya no queda ninguna. */
+  siguiente: string | null;
 }
 
 /** Lo que el servidor dice de un PDF firmado que se sube. */
