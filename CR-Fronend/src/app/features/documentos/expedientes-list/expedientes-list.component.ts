@@ -39,10 +39,12 @@ interface ChipExpediente {
  * Los chips son lo que RR.HH. suele ir a buscar: a quién le falta la hoja de
  * vida, quién no firma y qué contrato está por vencer.
  */
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 @Component({
   selector: 'app-expedientes-list',
   standalone: true,
-  imports: [CommonModule, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, IconComponent],
+  imports: [FiltrosComponent, CommonModule, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, IconComponent],
   templateUrl: './expedientes-list.component.html',
 })
 export class ExpedientesListComponent implements OnInit {
@@ -62,6 +64,9 @@ export class ExpedientesListComponent implements OnInit {
   total = 0;
 
   filtro: FiltroExpedientes = '';
+  /** El embudo: la misma pregunta de siempre, «¿a quién le falta qué?». */
+  filtros: ValoresFiltro = {};
+  camposFiltro: CampoFiltro[] = [];
   resumen: ResumenExpedientes = { ...SIN_RESUMEN };
 
   readonly chips: ChipExpediente[] = [
@@ -106,6 +111,8 @@ export class ExpedientesListComponent implements OnInit {
     // Llega ya filtrada desde el panel de control ("boletas sin firmar").
     const filtro = this.route.snapshot.queryParamMap.get('filtro') as FiltroExpedientes | null;
     if (filtro && this.chips.some((c) => c.valor === filtro)) this.filtro = filtro;
+    this.filtros = this.filtro ? { filtro: this.filtro } : {};
+    this.armarFiltros();
     this.cargar();
   }
 
@@ -125,6 +132,7 @@ export class ExpedientesListComponent implements OnInit {
           this.filas = res.data.content;
           this.total = res.data.totalElements;
           this.resumen = res.data.resumen ?? { ...SIN_RESUMEN };
+          this.armarFiltros();
           this.cargando = false;
         },
         error: (err) => {
@@ -134,7 +142,16 @@ export class ExpedientesListComponent implements OnInit {
       });
   }
 
-  filtrar(valor: FiltroExpedientes): void {
+  /** Las opciones del embudo, cada una con cuántos son (cambia al recargar). */
+  private armarFiltros(): void {
+    this.camposFiltro = [{
+      clave: 'filtro', etiqueta: 'Mostrar', tipo: 'opciones', vacio: `Todo el personal (${this.resumen.trabajadores})`,
+      opciones: this.chips.filter((c) => c.valor).map((c) => ({ valor: c.valor, etiqueta: `${c.etiqueta} (${c.cuenta(this.resumen)})` })),
+    }];
+  }
+
+  alFiltrar(): void {
+    const valor = (this.filtros['filtro'] ?? '') as FiltroExpedientes;
     if (this.filtro === valor) return;
     this.filtro = valor;
     this.pagina = 0;

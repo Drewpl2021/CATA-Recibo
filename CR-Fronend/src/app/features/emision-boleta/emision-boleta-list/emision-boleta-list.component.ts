@@ -282,23 +282,9 @@ export class EmisionBoletaListComponent implements OnInit {
    */
   filtros: ValoresFiltro = { planilla: 'con' };
 
-  /** Cuál de los tres chips está marcado. '' es "todos". */
+  /** «Planilla del mes» del embudo: 'con', 'sin' o '' (todos). */
   get vista(): string {
     return this.filtros['planilla'] ?? '';
-  }
-
-  verSolo(valor: 'con' | 'sin' | ''): void {
-    const filtros = { ...this.filtros };
-
-    if (valor) {
-      filtros['planilla'] = valor;
-    } else {
-      delete filtros['planilla'];
-    }
-
-    this.filtros = filtros;
-    this.pagina = 0;
-    this.cargarEmpleados();
   }
 
   /** A cuántos les falta la planilla del mes. */
@@ -319,6 +305,14 @@ export class EmisionBoletaListComponent implements OnInit {
   }
 
   camposFiltro: CampoFiltro[] = [
+    {
+      // Arranca en «Con planilla»: la boleta sale de la planilla.
+      clave: 'planilla', etiqueta: 'Planilla del mes', tipo: 'opciones', vacio: 'Todos',
+      opciones: [
+        { valor: 'con', etiqueta: 'Con planilla' },
+        { valor: 'sin', etiqueta: 'Les falta la planilla' },
+      ],
+    },
     {
       clave: 'boleta', etiqueta: 'Boleta del mes', tipo: 'opciones', vacio: 'No importa',
       opciones: [

@@ -56,6 +56,24 @@ class ContratoVencidoTest extends TestCase
             ->assertOk()->assertJsonPath('data.totalElements', 1);
     }
 
+    public function test_la_lista_de_contratos_se_filtra_por_tipo_de_contrato(): void
+    {
+        $rrhh = $this->crearUsuario('rrhh');
+        $this->contratadoHasta(now()->addMonth()->toDateString());
+        $nombrado = $this->crearEmpleado();
+        Contrato::create(['empleado_id' => $nombrado->id, 'tipo_contrato_id' => $this->idTipoContrato('Plazo indeterminado'),
+            'fecha_inicio' => '2020-03-01', 'estado' => 'vigente']);
+
+        $this->actingAs($rrhh, 'sanctum')
+            ->getJson('/api/contracts?page=0&size=10&tipo_contrato_id=' . $this->idTipoContrato('Plazo indeterminado'))
+            ->assertOk()
+            ->assertJsonPath('data.totalElements', 1)
+            ->assertJsonPath('data.content.0.empleado_id', (string) $nombrado->id);
+
+        $this->actingAs($rrhh, 'sanctum')->getJson('/api/contracts?page=0&size=10')
+            ->assertOk()->assertJsonPath('data.totalElements', 2);
+    }
+
     public function test_cada_noche_se_da_de_baja_a_los_vencidos_en_su_fecha_de_fin(): void
     {
         $rrhh = $this->crearUsuario('rrhh');

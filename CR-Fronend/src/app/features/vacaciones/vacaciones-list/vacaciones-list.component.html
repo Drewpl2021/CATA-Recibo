@@ -28,13 +28,8 @@
   (eliminarFila)="eliminar($event)"
   (accionPersonalizada)="alAccionar($event)"
 >
-  <div tableActions class="chips-filtro">
-    <button type="button" *ngFor="let c of chipsEstado" class="chip-filtro"
-      [class.chip-filtro--activo]="filtroEstado === c.value" (click)="filtrarPorEstado(c.value)">
-      <app-icon [icono]="c.icono" [tamano]="17"></app-icon>
-      {{ c.label }}
-    </button>
-  </div>
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
+    (cambio)="alFiltrar()"></app-filtros>
 </app-data-table>
 
 <p class="form-nota" style="margin-top: 16px;">

@@ -27,14 +27,8 @@
   (accionPersonalizada)="abrir($event.fila)"
   [mensajeVacio]="mensajeVacio"
 >
-  <div tableActions class="chips-filtro">
-    <button type="button" *ngFor="let c of chips" class="chip-filtro"
-      [class.chip-filtro--activo]="filtro === c.valor" (click)="filtrar(c.valor)">
-      <app-icon [icono]="c.icono" [tamano]="15"></app-icon>
-      {{ c.etiqueta }}
-      <span class="chip-filtro__cuenta">{{ c.cuenta(resumen) }}</span>
-    </button>
-  </div>
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
+    (cambio)="alFiltrar()"></app-filtros>
 
   <ng-template appCelda="apellido" let-f>
     <strong>{{ f.apellido }}, {{ f.nombre }}</strong>

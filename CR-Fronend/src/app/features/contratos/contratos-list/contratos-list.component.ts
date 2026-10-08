@@ -36,10 +36,12 @@ const SEVERIDAD_ESTADO: Record<string, 'success' | 'secondary' | 'info'> = {
  * Eliminar es baja lógica: el contrato deja de listarse pero no se pierde,
  * porque es el respaldo del vínculo laboral.
  */
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 @Component({
   selector: 'app-contratos-list',
   standalone: true,
-  imports: [IconComponent, 
+  imports: [FiltrosComponent, IconComponent, 
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent,
   ],
@@ -81,8 +83,22 @@ export class ContratosListComponent implements OnInit {
   contratoEditando: Contrato | null = null;
 
   /** Filtros de la barra superior (los resuelve el backend). */
-  filtroEmpleado = '';
-  filtroEstado = '';
+  /** El embudo de la tabla. El backend entiende estas mismas claves. */
+  filtros: ValoresFiltro = {};
+  camposFiltro: CampoFiltro[] = [
+    // Trabajador y tipo de contrato se llenan cuando llegan sus listas.
+    { clave: 'empleado_id', etiqueta: 'Trabajador', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+    {
+      clave: 'estado', etiqueta: 'Estado', tipo: 'opciones', vacio: 'Todos',
+      opciones: ESTADO_CONTRATO_OPCIONES.map((e) => ({ valor: e.value, etiqueta: e.label })),
+    },
+    { clave: 'tipo_contrato_id', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+  ];
+
+  private ponerOpciones(clave: string, opciones: { valor: string; etiqueta: string }[]): void {
+    const ordenadas = [...opciones].sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es'));
+    this.camposFiltro = this.camposFiltro.map((c) => (c.clave === clave ? { ...c, opciones: ordenadas } : c));
+  }
 
   estados = ESTADO_CONTRATO_OPCIONES;
 
@@ -278,7 +294,11 @@ export class ContratosListComponent implements OnInit {
     this.cargar();
     this.cargarEmpleados();
     this.tipoContratoService.getAll().subscribe({
-      next: (res) => { if (res.success) this.tiposContrato = res.data; },
+      next: (res) => {
+        if (!res.success) return;
+        this.tiposContrato = res.data;
+        this.ponerOpciones('tipo_contrato_id', res.data.map((t) => ({ valor: t.id, etiqueta: t.nombre })));
+      },
       error: () => this.toastService.error('Aviso', 'No se pudieron cargar los tipos de contrato.'),
     });
   }
@@ -342,7 +362,9 @@ export class ContratosListComponent implements OnInit {
   private cargarEmpleados(): void {
     this.empleadoService.paraSelector().subscribe({
       next: (res) => {
-        if (res.success) this.empleados = res.data;
+        if (!res.success) return;
+        this.empleados = res.data;
+        this.ponerOpciones('empleado_id', res.data.map((e) => ({ valor: e.id, etiqueta: `${e.apellido} ${e.nombre}`.trim() })));
       },
       error: () => {
         this.toastService.error('Aviso', 'No se pudo cargar la lista de empleados.');
@@ -357,8 +379,7 @@ export class ContratosListComponent implements OnInit {
         page: this.pagina,
         size: this.TAMANO_PAGINA,
         search: this.busqueda || undefined,
-        empleado_id: this.filtroEmpleado || undefined,
-        estado: this.filtroEstado || undefined,
+        ...this.filtros,
       })
       .subscribe({
         next: (res) => {

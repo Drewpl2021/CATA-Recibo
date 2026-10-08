@@ -6,18 +6,6 @@
   [cargandoCifras]="cargando"
 ></app-page-header>
 
-<section class="panel-filtros">
-  <div class="panel-filtros__campos panel-filtros__campos--compacto">
-    <div class="campo-filtro">
-      <label for="filtroEntidad">Sobre</label>
-      <select id="filtroEntidad" class="form-control" [ngModel]="filtroEntidad"
-        [ngModelOptions]="{ standalone: true }" (ngModelChange)="filtroEntidad = $event; alFiltrar()">
-        <option *ngFor="let e of entidades" [value]="e.valor">{{ e.etiqueta }}</option>
-      </select>
-    </div>
-  </div>
-</section>
-
 <app-data-table
   entidad="el registro"
   [columnas]="columnas"
@@ -33,8 +21,11 @@
   [acciones]="acciones"
   [accionesPersonalizadas]="accionesAuditoria"
   (accionPersonalizada)="alAccionar($event)"
-  mensajeVacio="Todavía no hay nada anotado. Aparece aquí en cuanto alguien cambie un sueldo, una cuenta, un concepto o una planilla."
-></app-data-table>
+  [mensajeVacio]="mensajeVacio"
+>
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
+    (cambio)="alFiltrar()"></app-filtros>
+</app-data-table>
 
 <!-- El detalle de un registro: la columna "Antes → después" de la tabla
      amontona los cambios en una sola línea con punto y coma, que para un

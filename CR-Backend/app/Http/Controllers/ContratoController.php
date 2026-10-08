@@ -14,7 +14,7 @@ class ContratoController extends Controller
     use ListadoPaginado;
 
     /**
-     * GET /contratos?empleado_id=&estado=&incluir_inactivos=&page=&size=&search=
+     * GET /contratos?empleado_id=&estado=&tipo_contrato_id=&incluir_inactivos=&page=&size=&search=
      */
     public function index(Request $request)
     {
@@ -26,6 +26,10 @@ class ContratoController extends Controller
 
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
+        }
+
+        if ($request->filled('tipo_contrato_id')) {
+            $query->where('tipo_contrato_id', $request->tipo_contrato_id);
         }
 
         if (!$request->has('incluir_inactivos')) {

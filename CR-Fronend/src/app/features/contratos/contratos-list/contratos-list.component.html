@@ -24,28 +24,13 @@
   [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'empleado.dni', 'tipo_contrato.nombre']"
   [acciones]="['editar', 'eliminar']"
   [accionesPersonalizadas]="accionesExtra"
-  mensajeVacio="No hay contratos que coincidan con el filtro."
+  mensajeVacio="No hay contratos con estos filtros. Quita alguno con su «×»."
   (editarFila)="editar($event)"
   (eliminarFila)="eliminar($event)"
   (accionPersonalizada)="alAccionar($event)"
 >
-  <div tableActions class="filtros-linea">
-    <div class="filtros-linea__campo">
-      <label for="filtroEmpleado">Empleado</label>
-      <select id="filtroEmpleado" class="form-control" [(ngModel)]="filtroEmpleado" (ngModelChange)="alFiltrar()">
-        <option value="">Todos</option>
-        <option *ngFor="let e of empleados" [value]="e.id">{{ e.nombre }} {{ e.apellido }}</option>
-      </select>
-    </div>
-
-    <div class="filtros-linea__campo">
-      <label for="filtroEstado">Estado</label>
-      <select id="filtroEstado" class="form-control" [(ngModel)]="filtroEstado" (ngModelChange)="alFiltrar()">
-        <option value="">Todos</option>
-        <option *ngFor="let e of estados" [value]="e.value">{{ e.label }}</option>
-      </select>
-    </div>
-  </div>
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
+    (cambio)="alFiltrar()"></app-filtros>
 </app-data-table>
 
 <app-form-modal

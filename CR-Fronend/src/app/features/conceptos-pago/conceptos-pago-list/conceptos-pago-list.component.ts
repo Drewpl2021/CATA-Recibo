@@ -64,10 +64,12 @@ const SEVERIDAD_POR_TIPO: Record<string, 'success' | 'danger' | 'info' | 'warnin
  * Los conceptos de cálculo especial (pensión, EsSalud, Renta 5ta) los
  * calcula el backend por empleado y no se manejan desde acá.
  */
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 @Component({
   selector: 'app-conceptos-pago-list',
   standalone: true,
-  imports: [
+  imports: [FiltrosComponent, 
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
     IconComponent,
@@ -123,12 +125,21 @@ export class ConceptosPagoListComponent implements OnInit {
     return cifras;
   }
 
-  /** Los tipos con su ícono, para los chips de filtro. */
-  tiposChip = TIPO_CONCEPTO_OPCIONES.map((t) => ({
-    value: t.value as TipoConcepto,
-    label: TIPO_CONCEPTO_CORTO[t.value],
-    icono: TIPO_CONCEPTO_ICONO[t.value],
-  }));
+  /** El embudo de la tabla: por ahora, el tipo de concepto. */
+  filtros: ValoresFiltro = {};
+  camposFiltro: CampoFiltro[] = [
+    {
+      clave: 'tipo', etiqueta: 'Tipo de concepto', tipo: 'opciones', vacio: 'Todos',
+      opciones: TIPO_CONCEPTO_OPCIONES.map((t) => ({
+        valor: t.value,
+        etiqueta: TIPO_CONCEPTO_PLURAL[t.value].charAt(0).toUpperCase() + TIPO_CONCEPTO_PLURAL[t.value].slice(1),
+      })),
+    },
+  ];
+
+  alFiltrar(): void {
+    this.filtrarPorTipo((this.filtros['tipo'] ?? '') as TipoConcepto | '');
+  }
   guardando = false;
   modalVisible = false;
   conceptoEditando: PaymentConcept | null = null;
@@ -263,7 +274,7 @@ export class ConceptosPagoListComponent implements OnInit {
 
   get mensajeVacio(): string {
     if (this.busqueda) return `No hay ningún concepto que diga "${this.busqueda}".`;
-    if (this.filtroTipo) return 'No hay conceptos de este tipo. Prueba con otro o toca "Todos".';
+    if (this.filtroTipo) return 'No hay conceptos de este tipo. Prueba con otro o quita el filtro con su «×».';
     return 'Todavía no hay conceptos en el catálogo.';
   }
 

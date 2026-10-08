@@ -29,10 +29,12 @@ interface CambioLegible {
  * "¿quién me puso este descuento?", "¿quién reabrió la planilla ya
  * pagada?"— con un nombre, una fecha y el valor de antes y de después.
  */
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 @Component({
   selector: 'app-auditoria-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent],
+  imports: [FiltrosComponent, CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent],
   templateUrl: './auditoria-list.component.html',
 })
 export class AuditoriaListComponent implements OnInit {
@@ -47,8 +49,6 @@ export class AuditoriaListComponent implements OnInit {
   busqueda = '';
   total = 0;
 
-  /** Sobre qué: el trabajador, su cuenta, el catálogo o una planilla. */
-  filtroEntidad = '';
 
   readonly entidades = [
     { valor: '', etiqueta: 'Todo' },
@@ -57,6 +57,22 @@ export class AuditoriaListComponent implements OnInit {
     { valor: 'concepto', etiqueta: 'Conceptos de pago' },
     { valor: 'planilla', etiqueta: 'Planillas' },
     { valor: 'linea', etiqueta: 'Líneas de una planilla' },
+    { valor: 'configuración', etiqueta: 'Ajustes del sistema' },
+    { valor: 'montos de ley', etiqueta: 'Montos de ley' },
+  ];
+
+  /** El embudo: sobre qué, qué se hizo y entre qué fechas. El backend entiende estas claves. */
+  filtros: ValoresFiltro = {};
+  readonly camposFiltro: CampoFiltro[] = [
+    {
+      clave: 'entidad', etiqueta: 'Sobre', tipo: 'opciones', vacio: 'Todo',
+      opciones: this.entidades.filter((e) => e.valor).map((e) => ({ valor: e.valor, etiqueta: e.etiqueta })),
+    },
+    {
+      clave: 'accion', etiqueta: 'Acción', tipo: 'opciones', vacio: 'Todas',
+      opciones: ['creó', 'cambió', 'borró', 'aplicó', 'agregó', 'quitó'].map((a) => ({ valor: a, etiqueta: this.etiquetaAccion(a) })),
+    },
+    { clave: 'desde', claveHasta: 'hasta', etiqueta: 'Cuándo', tipo: 'fecha', ancho: 'doble' },
   ];
 
   get cifras(): CifraCabecera[] {
@@ -151,6 +167,12 @@ export class AuditoriaListComponent implements OnInit {
     this.cargar();
   }
 
+  get mensajeVacio(): string {
+    return Object.values(this.filtros).some((v) => !!v)
+      ? 'Nada anotado con estos filtros. Quita alguno con su «×».'
+      : 'Todavía no hay nada anotado. Aparece aquí en cuanto alguien cambie un sueldo, una cuenta, un concepto o una planilla.';
+  }
+
   alFiltrar(): void {
     this.pagina = 0;
     this.cargar();
@@ -167,7 +189,7 @@ export class AuditoriaListComponent implements OnInit {
         page: this.pagina,
         size: this.TAMANO_PAGINA,
         search: this.busqueda || undefined,
-        entidad: this.filtroEntidad || undefined,
+        ...this.filtros,
       })
       .subscribe({
         next: (res) => {

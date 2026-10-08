@@ -18,11 +18,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 /** Un chip del filtro por estado. */
-interface ChipEstado {
-  value: '' | 'pendiente' | 'aprobado' | 'rechazado';
-  label: string;
-  icono: string;
-}
+type EstadoSolicitud = '' | 'pendiente' | 'aprobado' | 'rechazado';
 
 /**
  * Vacaciones de todo el personal — la bandeja de RR.HH.
@@ -35,10 +31,12 @@ interface ChipEstado {
  * RR.HH. también puede registrar la solicitud de alguien que la trajo en
  * papel, eligiendo al empleado.
  */
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 @Component({
   selector: 'app-vacaciones-list',
   standalone: true,
-  imports: [
+  imports: [FiltrosComponent, 
     CommonModule, ReactiveFormsModule, FormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, IconComponent,
   ],
@@ -58,7 +56,10 @@ export class VacacionesListComponent implements OnInit {
   readonly TAMANO_PAGINA = 10;
   pagina = 0;
   busqueda = '';
-  filtroEstado: ChipEstado['value'] = '';
+  /** El estado elegido en el embudo, para el mensaje de la tabla vacía. */
+  get filtroEstado(): EstadoSolicitud {
+    return (this.filtros['estado'] ?? '') as EstadoSolicitud;
+  }
 
   total = 0;
   pendientes = 0;
@@ -76,11 +77,27 @@ export class VacacionesListComponent implements OnInit {
   rechazando: Vacacion | null = null;
   motivoRechazo = '';
 
-  chipsEstado: ChipEstado[] = [
-    { value: '', label: 'Todas', icono: 'layers' },
-    { value: 'pendiente', label: 'Pendientes', icono: 'clock' },
-    { value: 'aprobado', label: 'Aprobadas', icono: 'check_circle' },
-    { value: 'rechazado', label: 'Rechazadas', icono: 'remove_circle' },
+  /** El embudo de la tabla. El backend entiende estas mismas claves. */
+  filtros: ValoresFiltro = {};
+  camposFiltro: CampoFiltro[] = [
+    {
+      clave: 'estado', etiqueta: 'Estado', tipo: 'opciones', vacio: 'Todas',
+      opciones: [
+        { valor: 'pendiente', etiqueta: 'Pendientes' },
+        { valor: 'aprobado', etiqueta: 'Aprobadas' },
+        { valor: 'rechazado', etiqueta: 'Rechazadas' },
+      ],
+    },
+    // Las opciones llegan con la lista de trabajadores (cargarEmpleados).
+    { clave: 'empleado_id', etiqueta: 'Trabajador', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+    {
+      clave: 'anio', etiqueta: 'Año', tipo: 'opciones', vacio: 'Todos',
+      ayuda: 'El año en que empiezan las vacaciones.',
+      opciones: [0, 1, 2].map((n) => {
+        const anio = String(new Date().getFullYear() - n);
+        return { valor: anio, etiqueta: anio };
+      }),
+    },
   ];
 
   get cifras(): CifraCabecera[] {
@@ -217,8 +234,7 @@ export class VacacionesListComponent implements OnInit {
     this.cargar();
   }
 
-  filtrarPorEstado(estado: ChipEstado['value']): void {
-    this.filtroEstado = estado;
+  alFiltrar(): void {
     this.pagina = 0;
     this.cargar();
   }
@@ -237,7 +253,7 @@ export class VacacionesListComponent implements OnInit {
         page: this.pagina,
         size: this.TAMANO_PAGINA,
         search: this.busqueda || undefined,
-        estado: this.filtroEstado || undefined,
+        ...this.filtros,
       })
       .subscribe({
         next: (res) => {
@@ -260,7 +276,16 @@ export class VacacionesListComponent implements OnInit {
   /** Para el desplegable del formulario: la lista completa, sin paginar. */
   private cargarEmpleados(): void {
     this.empleadoService.paraSelector().subscribe({
-      next: (res) => { if (res.success) this.empleados = res.data; },
+      next: (res) => {
+        if (!res.success) return;
+        this.empleados = res.data;
+        this.camposFiltro = this.camposFiltro.map((c) => c.clave !== 'empleado_id' ? c : {
+          ...c,
+          opciones: this.empleados
+            .map((e) => ({ valor: e.id, etiqueta: `${e.apellido} ${e.nombre}`.trim() }))
+            .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, 'es')),
+        });
+      },
       error: (err) => {
         this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo cargar la lista de empleados.'));
       },
