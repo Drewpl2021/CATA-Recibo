@@ -98,13 +98,21 @@
             {{ soloLectura ? 'Cerrar' : 'Cancelar' }}
           </button>
 
-          <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo"
+          <!-- Al editar, el principal es Guardar: Siguiente pasa a secundario. -->
+          <button type="button" [class]="esNuevo || soloLectura ? 'btn-primary' : 'btn-secondary'" *ngIf="!wizard.esUltimo"
             (click)="wizard.siguiente()">
             Siguiente
           </button>
 
-          <button type="submit" class="btn-primary" *ngIf="wizard.esUltimo && !soloLectura"
-            [disabled]="guardando">
+          <!-- Al dar de alta, se registra en el último paso. Al editar, se
+               guarda desde cualquier paso, apenas hay un cambio. -->
+          <button type="submit" class="btn-primary" *ngIf="!soloLectura && (esNuevo ? wizard.esUltimo : true)"
+            [disabled]="guardando || (!esNuevo && !hayCambios)"
+            [appPista]="esNuevo
+              ? 'Registra al trabajador y le crea su cuenta: su contraseña inicial es su DNI.'
+              : (hayCambios
+                  ? 'Guarda los cambios de su ficha ahora, sin recorrer los demás pasos. Si falta algún dato, te lleva al paso que lo tiene.'
+                  : 'Todavía no cambiaste nada en su ficha.')">
             {{ guardando ? 'Guardando…' : (esNuevo ? 'Registrar empleado' : 'Guardar cambios') }}
           </button>
         </div>

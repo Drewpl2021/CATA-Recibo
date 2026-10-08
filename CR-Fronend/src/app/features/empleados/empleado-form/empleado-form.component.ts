@@ -22,6 +22,7 @@ import { Area, Cargo, Documento, Empleado, EmpleadoPayload, Rol, Sede,
 import { mensajeErrorApi } from '../../../core/utils';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { WizardComponent } from '../../../shared/components/wizard/wizard.component';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { PasoWizard } from '../../../shared/components/wizard/wizard.models';
 
 import { SeccionPersonalesComponent } from './secciones/seccion-personales.component';
@@ -52,7 +53,7 @@ function noFutura(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-empleado-form',
   standalone: true,
-  imports: [IconComponent, 
+  imports: [IconComponent, PistaDirective,
     CommonModule, ReactiveFormsModule,
     PageHeaderComponent, WizardComponent,
     SeccionPersonalesComponent, SeccionLaboralesComponent, SeccionPlanillaComponent,
@@ -185,6 +186,16 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
 
   get soloLectura(): boolean {
     return this.modo === 'ver';
+  }
+
+  /**
+   * Al editar, ¿se tocó algo? Un dato de la ficha, la foto o la hoja de
+   * vida. Con eso se habilita «Guardar cambios» en cualquier paso: cambiar
+   * solo la foto no obliga a recorrer los cinco pasos hasta el último.
+   * (`dirty` lo marca solo lo que hace la persona, no la carga de datos.)
+   */
+  get hayCambios(): boolean {
+    return this.form.dirty || !!this.fotoArchivo || this.quitarFotoAlGuardar || !!this.cvArchivo;
   }
 
   get titulo(): string {
