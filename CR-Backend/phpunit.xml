@@ -19,6 +19,8 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!-- Solo para las pruebas: con ella se cifran los certificados de firma. -->
+        <env name="APP_KEY" value="base64:q0BKsxJQb2t8pK3Xx2m1nVb7mY0FZz6l9wVq1o2T4dE="/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

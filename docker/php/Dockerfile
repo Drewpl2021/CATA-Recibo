@@ -61,6 +61,19 @@ COPY --from=mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /u
 # opcache    — sin esto PHP recompila el código en cada petición.
 RUN install-php-extensions pdo_mysql gd zip mbstring fileinfo opcache
 
+# El proveedor «legacy» de OpenSSL, para los certificados digitales .pfx con
+# que el colegio firma las boletas desde el sistema. Muchos de los que venden
+# en Perú (los mismos de la facturación de SUNAT) vienen cifrados con
+# algoritmos viejos (RC2, 3DES) que OpenSSL 3 ya no abre por defecto: sin
+# esto, un certificado bueno con su clave correcta daba «unsupported».
+# Se activa también el «default» porque, al nombrar un proveedor, OpenSSL
+# deja de cargar el de siempre por su cuenta.
+RUN sed -i \
+        -e 's/^default = default_sect$/default = default_sect\nlegacy = legacy_sect/' \
+        -e '/^\[default_sect\]/{n;s/^# activate = 1/activate = 1/}' \
+        /etc/ssl/openssl.cnf \
+    && printf '\n[legacy_sect]\nactivate = 1\n' >> /etc/ssl/openssl.cnf
+
 WORKDIR /var/www/html
 
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/cata.ini

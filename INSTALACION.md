@@ -99,6 +99,12 @@ docker compose run --rm --no-deps app php artisan key:generate --show
 La primera vez construye la imagen, así que tarda unos minutos. Copia lo que
 imprime (empieza con `base64:`) y pégalo en `APP_KEY=` dentro del `.env`.
 
+> **Si pasas el sistema a otra máquina, copia la misma `APP_KEY`; no generes
+> una nueva.** Con ella se firman los QR de verificación de las boletas y se
+> cifran los certificados digitales de «Firmar aquí». Con otra llave, los QR ya
+> impresos dejan de validar y cada persona tiene que volver a poner su
+> certificado en Ajustes → Boletas.
+
 ---
 
 ## 5. Levantar

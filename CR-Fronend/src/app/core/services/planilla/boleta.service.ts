@@ -83,6 +83,33 @@ export class BoletaService {
   }
 
   /** Revisa UN PDF firmado: dice qué pasaría al guardarlo, sin guardar nada. */
+  /**
+   * «Firmar aquí»: firma de una vez las boletas del mes que esperan la firma
+   * de quien lo pide, con su certificado. La clave no se guarda.
+   */
+  firmarAqui(mes: number, anio: number, clave: string): Observable<ApiResponse<ResultadoFirmarAqui>> {
+    return this.http.post<ApiResponse<ResultadoFirmarAqui>>(`${this.apiUrl}/payslips/signed/sign-here`, { mes, anio, clave });
+  }
+
+  // ── Mi certificado para firmar (Ajustes → Boletas) ──
+
+  miCertificado(): Observable<ApiResponse<CertificadoDeFirma | null>> {
+    return this.http.get<ApiResponse<CertificadoDeFirma | null>>(`${this.apiUrl}/my-signing-certificate`);
+  }
+
+  /** Con confirmar=false solo lo revisa y dice de quién es; con true lo guarda. */
+  ponerCertificado(archivo: File, clave: string, confirmar: boolean): Observable<ApiResponse<CertificadoDeFirma>> {
+    const datos = new FormData();
+    datos.append('archivo', archivo);
+    datos.append('clave', clave);
+    datos.append('confirmar', confirmar ? '1' : '0');
+    return this.http.post<ApiResponse<CertificadoDeFirma>>(`${this.apiUrl}/my-signing-certificate`, datos);
+  }
+
+  quitarCertificado(): Observable<ApiResponse<unknown> & { message?: string }> {
+    return this.http.delete<ApiResponse<unknown> & { message?: string }>(`${this.apiUrl}/my-signing-certificate`);
+  }
+
   revisarFirmada(archivo: File, mes: number, anio: number): Observable<ApiResponse<RevisionBoletaFirmada>> {
     return this.http.post<ApiResponse<RevisionBoletaFirmada>>(`${this.apiUrl}/payslips/signed/check`, this.formFirmada(archivo, mes, anio));
   }
@@ -138,6 +165,33 @@ export interface ResumenFirmaDigital {
   entregadas: number;
   conformidad: number;
   sin_firma_digital: number;
+  /** El certificado de quien mira, para «Firmar aquí»; null si no puso uno. */
+  mi_certificado: (CertificadoDeFirma & { por_firmar: number }) | null;
+}
+
+/** El certificado digital (.pfx) de una persona para firmar desde el sistema. */
+export interface CertificadoDeFirma {
+  nombre: string;
+  dni: string | null;
+  organizacion: string | null;
+  ruc: string | null;
+  emisor: string | null;
+  valido_desde: string | null;
+  valido_hasta: string | null;
+  dias_para_vencer: number | null;
+  vencido: boolean;
+  /** Solo al revisar o guardar: si ya quedó guardado. */
+  guardado?: boolean;
+}
+
+/** Cómo terminó «Firmar aquí». */
+export interface ResultadoFirmarAqui {
+  firmadas: number;
+  /** Con esta firma quedaron completas: ya le llegaron al trabajador. */
+  entregadas: number;
+  /** Esperan la firma de otra persona. */
+  a_medias: number;
+  errores: { trabajador: string; numero: string | null; mensaje: string }[];
 }
 
 /** Lo que el servidor dice de un PDF firmado que se sube. */

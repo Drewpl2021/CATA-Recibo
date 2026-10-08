@@ -268,6 +268,15 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::get('payslips/signed/summary',    [\App\Http\Controllers\BoletasFirmadasController::class, 'resumen']);
         Route::post('payslips/signed/check',     [\App\Http\Controllers\BoletasFirmadasController::class, 'revisar']);
         Route::post('payslips/signed',           [\App\Http\Controllers\BoletasFirmadasController::class, 'guardar']);
+        // «Firmar aquí», con el certificado de quien lo pide. Pocos intentos
+        // por minuto: lleva la clave del certificado.
+        Route::post('payslips/signed/sign-here', [\App\Http\Controllers\BoletasFirmadasController::class, 'firmarAqui'])
+            ->middleware('throttle:10,1');
+        // Mi certificado digital para firmar desde el sistema (cada uno el suyo).
+        Route::get('my-signing-certificate',    [\App\Http\Controllers\CertificadoDeFirmaController::class, 'mostrar']);
+        Route::post('my-signing-certificate',   [\App\Http\Controllers\CertificadoDeFirmaController::class, 'guardar'])
+            ->middleware('throttle:10,1');
+        Route::delete('my-signing-certificate', [\App\Http\Controllers\CertificadoDeFirmaController::class, 'quitar']);
         Route::post('payslips/{documento}/void', [\App\Http\Controllers\BoletasFirmadasController::class, 'anular'])->whereUuid('documento');
         Route::get('payslips/delivery-record',   [\App\Http\Controllers\BoletasFirmadasController::class, 'constancia']);
 

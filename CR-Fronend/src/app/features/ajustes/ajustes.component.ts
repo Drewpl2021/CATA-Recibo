@@ -5,7 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Location } from '@angular/common';
 
-import { AjustesService, AjustesSistema, CamposValorLegal, CargaRentaQuintaPrevia, MontoLegal, RentaQuintaPreviaResumen, ToastService, ValorLegal } from '../../core/services';
+import { AjustesService, AjustesSistema, BoletaService, CamposValorLegal, CargaRentaQuintaPrevia, CertificadoDeFirma, MontoLegal, RentaQuintaPreviaResumen, ToastService, ValorLegal } from '../../core/services';
+import { ConfirmService } from '../../core/services/sistema/confirm.service';
 import { mensajeErrorApi } from '../../core/utils';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { FormModalComponent } from '../../shared/components/form-modal/form-modal.component';
@@ -47,6 +48,8 @@ export class AjustesComponent implements OnInit {
 
   private ajustesService = inject(AjustesService);
   private toastService = inject(ToastService);
+  private boletaService = inject(BoletaService);
+  private confirmService = inject(ConfirmService);
   private ruta = inject(ActivatedRoute);
   private router = inject(Router);
   private location = inject(Location);
@@ -65,8 +68,10 @@ export class AjustesComponent implements OnInit {
       },
       {
         id: 'boletas', nombre: 'Boletas', icono: 'receipt',
-        estado: !a ? '…' : `Firma digital del colegio (${a.boleta_firmas_requeridas === 2 ? '2 firmas' : '1 firma'})`,
-        aviso: false,
+        estado: !a ? '…'
+          : this.miCertificado && this.estadoCertificado(this.miCertificado).tono !== 'success' ? `Tu certificado: ${this.estadoCertificado(this.miCertificado).texto.toLowerCase()}`
+          : `Firma digital del colegio (${a.boleta_firmas_requeridas === 2 ? '2 firmas' : '1 firma'})`,
+        aviso: !!this.miCertificado && this.estadoCertificado(this.miCertificado).tono !== 'success',
       },
       {
         id: 'renta5ta', nombre: 'Renta de 5ta', icono: 'wallet',
@@ -285,12 +290,130 @@ export class AjustesComponent implements OnInit {
     });
   }
 
+  // ── Mi certificado para «Firmar aquí» ──
+
+  miCertificado: CertificadoDeFirma | null = null;
+  cargandoCertificado = true;
+  quitandoCertificado = false;
+  modalCertificado = false;
+  pasoCertificado: 'elegir' | 'revisar' = 'elegir';
+  certificadoArchivo: File[] = [];
+  certificadoClave = '';
+  certificadoLeido: CertificadoDeFirma | null = null;
+  certificadoConfirmado = false;
+  revisandoCertificado = false;
+  guardandoCertificado = false;
+
+  /** Vigente, por vencer (30 días o menos) o vencido. */
+  estadoCertificado(c: CertificadoDeFirma): { texto: string; tono: 'success' | 'warning' | 'danger' } {
+    if (c.vencido) return { texto: 'Vencido', tono: 'danger' };
+    const dias = c.dias_para_vencer ?? 999;
+    if (dias <= 30) return { texto: dias === 0 ? 'Vence hoy' : `Vence en ${dias} día${dias === 1 ? '' : 's'}`, tono: 'warning' };
+    return { texto: 'Vigente', tono: 'success' };
+  }
+
+  private cargarCertificado(): void {
+    this.boletaService.miCertificado().subscribe({
+      next: (res) => {
+        this.miCertificado = res.data ?? null;
+        this.cargandoCertificado = false;
+      },
+      error: () => (this.cargandoCertificado = false),
+    });
+  }
+
+  abrirPonerCertificado(): void {
+    this.pasoCertificado = 'elegir';
+    this.certificadoArchivo = [];
+    this.certificadoClave = '';
+    this.certificadoLeido = null;
+    this.certificadoConfirmado = false;
+    this.modalCertificado = true;
+  }
+
+  /** Al cerrar se olvida la clave: no se queda ni en la memoria de la pantalla. */
+  cerrarPonerCertificado(): void {
+    this.modalCertificado = false;
+    this.certificadoClave = '';
+    this.certificadoArchivo = [];
+    this.certificadoLeido = null;
+  }
+
+  volverAElegirCertificado(): void {
+    this.pasoCertificado = 'elegir';
+    this.certificadoConfirmado = false;
+  }
+
+  revisarCertificado(): void {
+    const archivo = this.certificadoArchivo[0];
+    if (!archivo || !this.certificadoClave || this.revisandoCertificado) return;
+
+    this.revisandoCertificado = true;
+    this.boletaService.ponerCertificado(archivo, this.certificadoClave, false).subscribe({
+      next: (res) => {
+        this.revisandoCertificado = false;
+        this.certificadoLeido = res.data;
+        this.certificadoConfirmado = false;
+        this.pasoCertificado = 'revisar';
+      },
+      error: (err) => {
+        this.revisandoCertificado = false;
+        this.toastService.error('No se pudo usar', mensajeErrorApi(err, 'No se pudo abrir el certificado.'));
+      },
+    });
+  }
+
+  guardarCertificado(): void {
+    const archivo = this.certificadoArchivo[0];
+    if (!archivo || !this.certificadoConfirmado || this.guardandoCertificado) return;
+
+    this.guardandoCertificado = true;
+    this.boletaService.ponerCertificado(archivo, this.certificadoClave, true).subscribe({
+      next: (res) => {
+        this.guardandoCertificado = false;
+        this.miCertificado = res.data;
+        this.cerrarPonerCertificado();
+        this.toastService.success('Certificado guardado', 'Ya puedes firmar las boletas con «Firmar aquí» en Emisión de boletas → Firma digital.');
+      },
+      error: (err) => {
+        this.guardandoCertificado = false;
+        this.toastService.error('No se guardó', mensajeErrorApi(err, 'No se pudo guardar el certificado.'));
+      },
+    });
+  }
+
+  quitarCertificado(): void {
+    this.confirmService
+      .confirmar({
+        titulo: 'Quitar tu certificado',
+        mensaje: 'Se borra del sistema y ya no podrás usar «Firmar aquí» hasta poner otro. Las boletas que ya firmaste siguen siendo válidas.',
+        aceptarTexto: 'Sí, quitarlo',
+        variante: 'danger',
+      })
+      .then((aceptado) => {
+        if (!aceptado) return;
+        this.quitandoCertificado = true;
+        this.boletaService.quitarCertificado().subscribe({
+          next: (res) => {
+            this.quitandoCertificado = false;
+            this.miCertificado = null;
+            this.toastService.success('Certificado quitado', res.message ?? 'Ya no está en el sistema.');
+          },
+          error: (err) => {
+            this.quitandoCertificado = false;
+            this.toastService.error('No se quitó', mensajeErrorApi(err, 'No se pudo quitar el certificado.'));
+          },
+        });
+      });
+  }
+
   ngOnInit(): void {
     const pedida = this.ruta.snapshot.queryParamMap.get('seccion') as SeccionAjustes | null;
     if (pedida && ['montos', 'boletas', 'renta5ta', 'planillas'].includes(pedida)) this.seccion = pedida;
 
     this.cargarValoresLegales();
     this.cargarPrevia();
+    this.cargarCertificado();
 
     this.ajustesService.obtener().subscribe({
       next: (res) => {

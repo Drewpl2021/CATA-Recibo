@@ -406,8 +406,8 @@
 >
   <p class="form-ayuda pasos-firma__intro">
     Cada boleta le llega al trabajador recién cuando tiene
-    {{ (resumenFirma?.requeridas ?? 1) === 2 ? 'las 2 firmas' : 'la firma' }} del colegio, hecha en ReFirma con el DNIe.
-    Él da su conformidad con su contraseña.
+    {{ (resumenFirma?.requeridas ?? 1) === 2 ? 'las 2 firmas' : 'la firma' }} digital del colegio. Él da su conformidad
+    con su contraseña.
   </p>
 
   <ol class="pasos-firma" *ngIf="resumenFirma as r">
@@ -423,46 +423,66 @@
       </button>
     </li>
 
-    <li class="pasos-firma__paso" [class.pasos-firma__paso--pendiente]="porFirmar > 0">
+    <!-- Firmar: aquí con el certificado de quien mira, o con el .zip y ReFirma. Se pueden mezclar. -->
+    <li class="pasos-firma__paso pasos-firma__paso--formas" [class.pasos-firma__paso--pendiente]="porFirmar > 0">
       <span class="pasos-firma__numero">2</span>
       <div class="pasos-firma__texto">
-        <strong>Descargarlas para firmar</strong>
-        <span>{{ porFirmar }} esperan la firma<ng-container *ngIf="r.a_medias"> ({{ r.a_medias }} con una firma de dos)</ng-container>. Baja solo esas, en un .zip.</span>
-      </div>
-      <button class="btn-secondary" type="button" (click)="descargarParaFirmar()" [disabled]="descargandoParaFirmar || porFirmar === 0"
-        [appPista]="porFirmar ? 'Baja en un .zip solo las ' + porFirmar + ' boleta(s) que esperan la firma, para abrirlas en ReFirma.' : 'Este mes no hay boletas esperando la firma.'">
-        <app-icon icono="download" [tamano]="15"></app-icon>
-        {{ descargandoParaFirmar ? 'Juntando…' : 'Descargar .zip' }}
-      </button>
-    </li>
-
-    <li class="pasos-firma__paso" [class.pasos-firma__paso--pendiente]="porFirmar > 0">
-      <span class="pasos-firma__numero">3</span>
-      <div class="pasos-firma__texto">
-        <strong>Firmarlas en ReFirma</strong>
+        <strong>Firmarlas</strong>
         <span>
-          Quien firma por el colegio las abre en ReFirma y las firma con su DNIe{{ r.requeridas === 2 ? '; luego la segunda persona, sobre los mismos archivos' : '' }}.
+          {{ porFirmar }} esperan la firma<ng-container *ngIf="r.a_medias"> ({{ r.a_medias }} con una firma de dos)</ng-container>.
+          {{ r.requeridas === 2 ? 'Cada persona firma de la forma que prefiera.' : 'De una de estas dos formas:' }}
         </span>
-      </div>
-      <a class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }" (click)="modalFirma = false"
-        appPista="Abre en Ajustes la guía para preparar la computadora de quien firma: DNIe, lector de tarjetas y ReFirma.">Ver la guía</a>
-    </li>
 
-    <li class="pasos-firma__paso" [class.pasos-firma__paso--pendiente]="porFirmar > 0">
-      <span class="pasos-firma__numero">4</span>
-      <div class="pasos-firma__texto">
-        <strong>Subir las firmadas</strong>
-        <span>El sistema revisa cada PDF antes de guardar y, al guardar, se la entrega al trabajador.</span>
+        <div class="formas-firma">
+          <div class="forma-firma">
+            <div class="forma-firma__texto">
+              <strong>Aquí, con tu certificado</strong>
+              <span *ngIf="r.mi_certificado as c">
+                Como {{ c.nombre }}.
+                {{ c.vencido ? 'Tu certificado venció: renuévalo en Ajustes.' : c.por_firmar + ' esperan tu firma.' }}
+              </span>
+              <span *ngIf="!r.mi_certificado">Pon tu certificado (.pfx) en Ajustes y firma todas con un botón.</span>
+            </div>
+            <div class="forma-firma__botones">
+              <button *ngIf="r.mi_certificado" class="btn-primary" type="button" (click)="abrirFirmarAqui()" [disabled]="!puedeFirmarAqui"
+                [appPista]="pistaFirmarAqui">
+                <app-icon icono="signature" [tamano]="15"></app-icon>
+                Firmar aquí
+              </button>
+              <a *ngIf="!r.mi_certificado" class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }"
+                (click)="modalFirma = false"
+                appPista="Abre Ajustes → Boletas para poner tu certificado digital (.pfx o .p12). Después firmas desde aquí.">
+                Poner mi certificado
+              </a>
+            </div>
+          </div>
+
+          <div class="forma-firma">
+            <div class="forma-firma__texto">
+              <strong>Con el DNIe en ReFirma</strong>
+              <span>Baja el .zip, fírmalas en ReFirma{{ r.requeridas === 2 ? ' (la segunda persona, sobre los mismos archivos)' : '' }} y súbelas firmadas.</span>
+            </div>
+            <div class="forma-firma__botones">
+              <button class="btn-secondary" type="button" (click)="descargarParaFirmar()" [disabled]="descargandoParaFirmar || porFirmar === 0"
+                [appPista]="porFirmar ? 'Baja en un .zip solo las ' + porFirmar + ' boleta(s) que esperan la firma, para abrirlas en ReFirma.' : 'Este mes no hay boletas esperando la firma.'">
+                <app-icon icono="download" [tamano]="15"></app-icon>
+                {{ descargandoParaFirmar ? 'Juntando…' : 'Descargar .zip' }}
+              </button>
+              <button class="btn-secondary" type="button" (click)="abrirSubirFirmadas()"
+                appPista="Elige los PDF que devolvió ReFirma. Se revisa cada uno antes de guardar, y al guardar se le entrega al trabajador.">
+                <app-icon icono="upload" [tamano]="15"></app-icon>
+                Subir firmadas
+              </button>
+              <a class="forma-firma__guia" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }" (click)="modalFirma = false"
+                appPista="Abre en Ajustes la guía para preparar la computadora de quien firma: DNIe, lector de tarjetas y ReFirma.">Ver la guía</a>
+            </div>
+          </div>
+        </div>
       </div>
-      <button class="btn-primary" type="button" (click)="abrirSubirFirmadas()"
-        appPista="Elige los PDF que devolvió ReFirma. Se revisa cada uno antes de guardar, y al guardar se le entrega al trabajador.">
-        <app-icon icono="upload" [tamano]="15"></app-icon>
-        Subir firmadas
-      </button>
     </li>
 
     <li class="pasos-firma__paso" [class.pasos-firma__paso--hecho]="r.entregadas > 0 && porFirmar === 0">
-      <span class="pasos-firma__numero">5</span>
+      <span class="pasos-firma__numero">3</span>
       <div class="pasos-firma__texto">
         <strong>Entregadas</strong>
         <span>{{ r.entregadas }} entregada(s), {{ r.conformidad }} con la conformidad del trabajador.</span>
@@ -483,5 +503,54 @@
       {{ descargandoZip ? 'Juntando…' : 'Descargar todas (.zip)' }}
     </button>
     <button class="btn-primary" type="button" (click)="modalFirma = false">Cerrar</button>
+  </div>
+</app-form-modal>
+
+<!-- «Firmar aquí»: confirma cuántas y como quién, y pide la clave del certificado (no se guarda). -->
+<app-form-modal [(visible)]="modalFirmarAqui" titulo="Firmar aquí" ancho="520px" [ocultarBotonesPorDefecto]="true"
+  (cancelar)="cerrarFirmarAqui()">
+  <ng-container *ngIf="!resultadoFirmarAqui && resumenFirma?.mi_certificado as c">
+    <p class="firmar-aqui__resumen">
+      Vas a firmar <strong>{{ c.por_firmar }} boleta{{ c.por_firmar === 1 ? '' : 's' }} de {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</strong>
+      como <strong>{{ c.nombre }}</strong><ng-container *ngIf="c.dni"> (DNI {{ c.dni }})</ng-container>.
+    </p>
+    <p class="form-ayuda">
+      {{ (resumenFirma?.requeridas ?? 1) === 2
+        ? 'Las que ya tienen la otra firma le llegan al trabajador al momento; las demás esperan la segunda.'
+        : 'Cada una le llega al trabajador apenas queda firmada.' }}
+      La firma va dentro del PDF, igual que con ReFirma.
+    </p>
+    <div class="form-group">
+      <label for="clave_firmar_aqui">Clave de tu certificado</label>
+      <input type="password" id="clave_firmar_aqui" class="form-control" autocomplete="off" [(ngModel)]="claveFirmarAqui"
+        [disabled]="firmandoAqui" (keydown.enter)="firmarAqui()" aria-describedby="ayuda_clave_firmar" />
+      <small class="form-ayuda" id="ayuda_clave_firmar">La misma que pusiste al subir tu certificado. No se guarda.</small>
+    </div>
+  </ng-container>
+
+  <!-- Si alguna no se pudo, se dice cuál y por qué; si todo salió bien, el modal ya se cerró. -->
+  <ng-container *ngIf="resultadoFirmarAqui as res">
+    <p class="firmar-aqui__resumen">
+      Se firmaron <strong>{{ res.firmadas }}</strong>:
+      {{ res.entregadas }} ya le llegaron al trabajador<ng-container *ngIf="res.a_medias">, {{ res.a_medias }} esperan la otra firma</ng-container>.
+    </p>
+    <p class="form-nota">{{ res.errores.length }} no se pudieron firmar. Revisa el motivo y vuelve a intentarlo:</p>
+    <ul class="firmar-aqui__errores">
+      <li *ngFor="let e of res.errores">
+        <strong>{{ e.trabajador }}</strong><ng-container *ngIf="e.numero"> ({{ e.numero }})</ng-container>: {{ e.mensaje }}
+      </li>
+    </ul>
+  </ng-container>
+
+  <div modalFooter class="asistente-pie">
+    <ng-container *ngIf="!resultadoFirmarAqui">
+      <button type="button" class="btn-secondary" (click)="cerrarFirmarAqui()" [disabled]="firmandoAqui">Cancelar</button>
+      <button type="button" class="btn-primary" (click)="firmarAqui()" [disabled]="firmandoAqui || !claveFirmarAqui"
+        [appPista]="claveFirmarAqui ? 'Firma ahora las ' + (resumenFirma?.mi_certificado?.por_firmar ?? 0) + ' boleta(s) con tu certificado.' : 'Escribe la clave de tu certificado.'">
+        <app-icon icono="signature" [tamano]="15"></app-icon>
+        {{ firmandoAqui ? 'Firmando…' : 'Firmar ' + (resumenFirma?.mi_certificado?.por_firmar ?? 0) }}
+      </button>
+    </ng-container>
+    <button *ngIf="resultadoFirmarAqui" type="button" class="btn-primary" (click)="cerrarFirmarAqui()">Cerrar</button>
   </div>
 </app-form-modal>

@@ -143,7 +143,7 @@ final class FirmaDigitalPdf
     }
 
     /** Nombre, DNI y quién emitió el certificado. */
-    private static function datosDelFirmante(string $pem): array
+    public static function datosDelFirmante(string $pem): array
     {
         $info = openssl_x509_parse($pem) ?: [];
         $sujeto = $info['subject'] ?? [];

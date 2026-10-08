@@ -103,8 +103,9 @@
         <div>
           <h2>Boletas</h2>
           <p class="form-ayuda">
-            Toda boleta se firma digitalmente por el colegio con el DNIe en ReFirma (Ley 27269, D. Leg. 1310) y recién
-            entonces le llega al trabajador, que da su conformidad con su contraseña.
+            Toda boleta se firma digitalmente por el colegio (Ley 27269, D. Leg. 1310) y recién entonces le llega al
+            trabajador, que da su conformidad con su contraseña. Se firma con tu certificado desde el sistema, o con el
+            DNIe en ReFirma bajando el .zip.
           </p>
         </div>
       </header>
@@ -130,13 +131,70 @@
           </div>
         </div>
 
+        <!-- Su certificado (.pfx) para «Firmar aquí»: es de quien mira, no del colegio entero. -->
+        <div class="ajuste-bloque">
+          <h3 class="ajuste-bloque__pregunta" id="p-certificado">Tu certificado para firmar desde el sistema</h3>
+          <p class="form-ayuda">
+            Con tu certificado digital en archivo (.pfx o .p12) firmas todas las boletas del mes con un botón y su clave,
+            sin bajar el .zip ni abrir ReFirma. Cada persona pone el suyo y solo ella lo usa.
+          </p>
+
+          <p class="form-ayuda" *ngIf="cargandoCertificado">Revisando tu certificado…</p>
+
+          <div class="certificado-firma" *ngIf="!cargandoCertificado && miCertificado as c"
+            [class.certificado-firma--aviso]="estadoCertificado(c).tono !== 'success'">
+            <div class="certificado-firma__cabeza">
+              <span class="certificado-firma__icono"><app-icon icono="signature" [tamano]="20"></app-icon></span>
+              <div class="certificado-firma__quien">
+                <strong>{{ c.nombre }}</strong>
+                <span>Firmas como esta persona en cada boleta.</span>
+              </div>
+              <span class="status-badge" [ngClass]="'status-badge-' + estadoCertificado(c).tono">{{ estadoCertificado(c).texto }}</span>
+            </div>
+            <dl class="certificado-firma__datos">
+              <div><dt>DNI</dt><dd>{{ c.dni || 'No lo trae' }}</dd></div>
+              <div *ngIf="c.organizacion"><dt>Organización</dt><dd>{{ c.organizacion }}<ng-container *ngIf="c.ruc"> (RUC {{ c.ruc }})</ng-container></dd></div>
+              <div><dt>Emitido por</dt><dd>{{ c.emisor || 'Sin nombre' }}</dd></div>
+              <div><dt>Vale hasta</dt><dd>{{ c.valido_hasta | date: 'dd/MM/yyyy' }}</dd></div>
+            </dl>
+            <p class="form-nota" *ngIf="estadoCertificado(c).tono !== 'success'">
+              {{ c.vencido ? 'Ya no sirve para firmar: renuévalo con la entidad que lo emitió y ponlo aquí de nuevo.'
+                : 'Renuévalo antes de que venza para no quedarte sin firmar un mes. Mientras tanto, sigue sirviendo.' }}
+            </p>
+            <div class="certificado-firma__acciones">
+              <button type="button" class="btn-secondary" (click)="abrirPonerCertificado()"
+                appPista="Pon otro certificado en lugar de este, por ejemplo cuando lo renuevas. Las boletas ya firmadas siguen valiendo.">
+                <app-icon icono="upload" [tamano]="16"></app-icon>
+                Reemplazar
+              </button>
+              <button type="button" class="btn-secondary" (click)="quitarCertificado()" [disabled]="quitandoCertificado"
+                appPista="Borra tu certificado del sistema. Ya no podrás usar «Firmar aquí» hasta poner otro; lo ya firmado sigue valiendo.">
+                <app-icon icono="trash" [tamano]="16"></app-icon>
+                {{ quitandoCertificado ? 'Quitando…' : 'Quitar' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="certificado-firma certificado-firma--vacio" *ngIf="!cargandoCertificado && !miCertificado">
+            <p>Todavía no pusiste tu certificado. Mientras tanto se firma con el .zip y ReFirma.</p>
+            <button type="button" class="btn-primary" (click)="abrirPonerCertificado()"
+              appPista="Sube tu certificado (.pfx o .p12) y su clave. Primero te muestra de quién es; recién al confirmarlo se guarda.">
+              <app-icon icono="upload" [tamano]="16"></app-icon>
+              Poner mi certificado
+            </button>
+          </div>
+        </div>
+
         <div class="ajuste-bloque">
           <h3 class="ajuste-bloque__pregunta">Así se trabaja cada mes</h3>
           <ol class="pasos-mes">
             <li><strong>Emitir</strong> las boletas del mes, como siempre.</li>
-            <li><strong>Descargar para firmar</strong> en Emisión de boletas.</li>
-            <li><strong>Firmar</strong> en ReFirma con el DNIe{{ ajustes!.boleta_firmas_requeridas === 2 ? ' (las dos personas)' : '' }}.</li>
-            <li><strong>Subir boletas firmadas</strong>: al guardar le llegan al trabajador.</li>
+            <li>
+              <strong>Firmar</strong>{{ ajustes!.boleta_firmas_requeridas === 2 ? ' (las dos personas)' : '' }}, en Emisión → Firma digital:
+              con <strong>«Firmar aquí»</strong> si pusiste tu certificado, o bajando el <strong>.zip</strong>, firmándolo
+              en ReFirma con el DNIe y <strong>subiendo las firmadas</strong>.
+            </li>
+            <li>Cuando cada boleta tiene sus firmas, <strong>le llega al trabajador</strong>.</li>
           </ol>
           <a class="btn-secondary pasos-mes__ir" routerLink="/inicio/emision-boleta"
             appPista="Abre Emisión de boletas, donde se emiten, se bajan para firmar y se suben firmadas.">
@@ -339,5 +397,70 @@
         Se crea con los montos del año anterior. Después cambias los que hayan subido, casi siempre la UIT.
       </small>
     </div>
+  </div>
+</app-form-modal>
+
+<!-- Poner (o reemplazar) mi certificado: primero se revisa, después se guarda. -->
+<app-form-modal [(visible)]="modalCertificado" titulo="Tu certificado para firmar" ancho="560px" [ocultarBotonesPorDefecto]="true"
+  (cancelar)="cerrarPonerCertificado()">
+  <ng-container *ngIf="pasoCertificado === 'elegir'">
+    <div class="form-fields">
+      <div class="form-group">
+        <label>Archivo del certificado</label>
+        <app-selector-archivo
+          [extensiones]="['pfx', 'p12']"
+          [pesoMaximoMb]="0.2"
+          [(archivos)]="certificadoArchivo"
+          [ocupado]="revisandoCertificado"
+          textoOcupado="Abriendo el certificado…"
+          texto="Arrastra aquí tu .pfx o .p12, o haz clic para elegirlo"
+          ayuda="El archivo que te dio la entidad de certificación (Camerfirma, Llama.pe u otra acreditada por INDECOPI)."
+        ></app-selector-archivo>
+      </div>
+      <div class="form-group">
+        <label for="clave_certificado">Clave del certificado</label>
+        <input type="password" id="clave_certificado" class="form-control" autocomplete="off" [(ngModel)]="certificadoClave"
+          [disabled]="revisandoCertificado" (keydown.enter)="revisarCertificado()" aria-describedby="ayuda_clave_certificado" />
+        <small class="form-ayuda" id="ayuda_clave_certificado">
+          La que te dio la entidad junto con el archivo. Solo se usa para abrirlo y comprobarlo: el sistema no la guarda
+          y te la pedirá cada vez que firmes.
+        </small>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="pasoCertificado === 'revisar' && certificadoLeido as c">
+    <p class="form-ayuda">Esto es lo que dice el certificado. Revisa que sea tuyo antes de guardarlo.</p>
+    <dl class="certificado-firma__datos certificado-firma__datos--revision">
+      <div><dt>A nombre de</dt><dd><strong>{{ c.nombre }}</strong></dd></div>
+      <div><dt>DNI</dt><dd>{{ c.dni || 'No lo trae' }}</dd></div>
+      <div *ngIf="c.organizacion"><dt>Organización</dt><dd>{{ c.organizacion }}<ng-container *ngIf="c.ruc"> (RUC {{ c.ruc }})</ng-container></dd></div>
+      <div><dt>Emitido por</dt><dd>{{ c.emisor || 'Sin nombre' }}</dd></div>
+      <div><dt>Vale</dt><dd>del {{ c.valido_desde | date: 'dd/MM/yyyy' }} al {{ c.valido_hasta | date: 'dd/MM/yyyy' }}</dd></div>
+    </dl>
+    <p class="form-nota">
+      Comprueba que «Emitido por» sea una entidad acreditada ante INDECOPI: solo así la firma tiene validez legal.
+    </p>
+    <label class="check-item">
+      <input type="checkbox" [(ngModel)]="certificadoConfirmado" />
+      <span>Este certificado es mío y lo usaré para firmar las boletas del colegio.</span>
+    </label>
+  </ng-container>
+
+  <div modalFooter class="asistente-pie">
+    <button type="button" class="btn-secondary" (click)="pasoCertificado === 'revisar' ? volverAElegirCertificado() : cerrarPonerCertificado()"
+      [disabled]="revisandoCertificado || guardandoCertificado">
+      {{ pasoCertificado === 'revisar' ? 'Atrás' : 'Cancelar' }}
+    </button>
+    <button *ngIf="pasoCertificado === 'elegir'" type="button" class="btn-primary" (click)="revisarCertificado()"
+      [disabled]="revisandoCertificado || !certificadoArchivo.length || !certificadoClave"
+      [appPista]="!certificadoArchivo.length ? 'Primero elige el archivo .pfx o .p12.' : !certificadoClave ? 'Escribe la clave del certificado.' : 'Abre el certificado con su clave y te muestra de quién es. Todavía no guarda nada.'">
+      {{ revisandoCertificado ? 'Revisando…' : 'Revisar certificado' }}
+    </button>
+    <button *ngIf="pasoCertificado === 'revisar'" type="button" class="btn-primary" (click)="guardarCertificado()"
+      [disabled]="guardandoCertificado || !certificadoConfirmado"
+      [appPista]="certificadoConfirmado ? 'Guarda tu certificado cifrado. Desde ahora puedes usar «Firmar aquí» en Emisión de boletas.' : 'Marca que el certificado es tuyo para poder guardarlo.'">
+      {{ guardandoCertificado ? 'Guardando…' : 'Guardar certificado' }}
+    </button>
   </div>
 </app-form-modal>

@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Auditoria;
+use App\Models\CertificadoFirma;
 use App\Models\Documento;
 use App\Models\Empleado;
 use App\Models\Notificacion;
 use App\Models\Planilla;
 use App\Support\FirmaDigitalDeBoletas;
+use App\Support\CertificadoDigital;
 use App\Support\FirmaDigitalPdf;
+use App\Support\FirmadorPdf;
 use App\Support\LibroExcel;
 use App\Support\Meses;
 use Illuminate\Http\Request;
@@ -23,6 +26,8 @@ use Illuminate\Support\Facades\Storage;
  *   GET  /payslips/signed/summary   cómo va la firma del mes
  *   POST /payslips/signed/check     revisa UN archivo y dice qué pasaría (no guarda)
  *   POST /payslips/signed           lo vuelve a revisar y lo guarda
+ *   POST /payslips/signed/sign-here «Firmar aquí»: firma las del mes con el
+ *                                   certificado de quien lo pide (sin .zip)
  *   POST /payslips/{documento}/void anula una boleta para volver a emitirla
  *   GET  /payslips/delivery-record  la constancia de entrega del mes, en Excel
  *
@@ -54,7 +59,167 @@ class BoletasFirmadasController extends Controller
             'entregadas'  => $digitales->where('firma_colegio', 'completa')->count(),
             'conformidad' => $digitales->where('firma_colegio', 'completa')->where('estado_firma', 'firmado')->count(),
             'sin_firma_digital' => $boletas->whereNull('firma_colegio')->count(),
+            'mi_certificado' => $this->miCertificado($request, (int) $datos['mes'], (int) $datos['anio']),
         ]]);
+    }
+
+    /**
+     * Para «Firmar aquí»: el certificado de quien mira, y cuántas boletas del
+     * mes le faltan SU firma (las que ya firmó no cuentan).
+     */
+    private function miCertificado(Request $request, int $mes, int $anio): ?array
+    {
+        $certificado = CertificadoFirma::activoDe($request->user());
+        if (! $certificado) {
+            return null;
+        }
+
+        return $certificado->resumen() + [
+            'por_firmar' => $this->esperanMiFirma($certificado, $mes, $anio)->count(),
+        ];
+    }
+
+    /** Las boletas del mes que esperan la firma del colegio y no tienen la de este certificado. */
+    private function esperanMiFirma(CertificadoFirma $certificado, int $mes, int $anio)
+    {
+        return Documento::with('planilla', 'empleado')
+            ->where('tipo', 'boleta')
+            ->whereIn('firma_colegio', Documento::FIRMA_COLEGIO_EN_CURSO)
+            ->whereHas('planilla', fn ($q) => $q->where('mes', $mes)->where('anio', $anio))
+            ->get()
+            ->reject(fn (Documento $d) => $this->yaLaFirmo($d, $certificado->dni, $certificado->nombre))
+            ->values();
+    }
+
+    private function yaLaFirmo(Documento $documento, ?string $dni, string $nombre): bool
+    {
+        return collect($documento->firmas_colegio ?? [])
+            ->contains(fn ($f) => $dni ? ($f['dni'] ?? null) === $dni : ($f['nombre'] ?? null) === $nombre);
+    }
+
+    /**
+     * POST /payslips/signed/sign-here — «Firmar aquí»: firma de una vez las
+     * boletas del mes que esperan la firma de esta persona, con SU
+     * certificado y la clave que escribe ahora (no se guarda).
+     *
+     * Cada boleta queda igual que si se hubiera firmado en ReFirma y subido:
+     * la firma va al final del PDF emitido, se comprueba con el mismo lector
+     * que revisa las subidas, y si con ella se completan las firmas que pide
+     * el colegio, se le entrega al trabajador. Si una falla, las demás
+     * siguen, y la respuesta dice cuál y por qué.
+     */
+    public function firmarAqui(Request $request)
+    {
+        $datos = $request->validate([
+            'mes'   => 'required|integer|min:1|max:12',
+            'anio'  => 'required|integer|min:2000',
+            'clave' => 'required|string|max:200',
+        ], ['clave.required' => 'Escribe la clave de tu certificado.']);
+        $mes = (int) $datos['mes'];
+        $anio = (int) $datos['anio'];
+        $periodo = Meses::nombre($mes) . " {$anio}";
+
+        $certificado = CertificadoFirma::activoDe($request->user());
+        if (! $certificado) {
+            return response()->json(['success' => false, 'message' => 'Todavía no pusiste tu certificado digital: hazlo en Ajustes del sistema → Boletas.'], 422);
+        }
+        if ($certificado->vencido()) {
+            return response()->json(['success' => false, 'message' => 'Tu certificado venció el ' . $certificado->valido_hasta->format('d/m/Y') . ': renuévalo y ponlo de nuevo en Ajustes.'], 422);
+        }
+
+        try {
+            $llaves = CertificadoDigital::abrir($certificado->archivo(), $datos['clave']);
+        } catch (\RuntimeException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        $documentos = $this->esperanMiFirma($certificado, $mes, $anio);
+        if ($documentos->isEmpty()) {
+            return response()->json(['success' => false, 'message' => "No hay boletas de {$periodo} esperando tu firma."], 422);
+        }
+
+        $requeridas = FirmaDigitalDeBoletas::requeridas();
+        $progreso = \App\Support\Progreso::actual()->etapa('Firmando las boletas', $documentos->count());
+        $quien = mb_substr((string) $request->user()->name, 0, 100);
+        $cuenta = ['firmadas' => 0, 'entregadas' => 0, 'a_medias' => 0];
+        $errores = [];
+
+        foreach ($documentos as $documento) {
+            $trabajador = trim("{$documento->empleado?->apellido} {$documento->empleado?->nombre}");
+            try {
+                $estado = DB::transaction(function () use ($documento, $llaves, $certificado, $requeridas, $quien) {
+                    // Otra pestaña pudo firmarla mientras tanto: se vuelve a mirar, con candado.
+                    $actual = Documento::with('planilla', 'empleado')->lockForUpdate()->findOrFail($documento->id);
+                    if (! in_array($actual->firma_colegio, Documento::FIRMA_COLEGIO_EN_CURSO, true)
+                        || $this->yaLaFirmo($actual, $certificado->dni, $certificado->nombre)) {
+                        return null;
+                    }
+
+                    $pdf = Storage::disk('local')->get($actual->archivo);
+                    if ($pdf === null) {
+                        throw new \RuntimeException('No se encontró su PDF: vuelve a emitirla.');
+                    }
+                    $firmado = FirmadorPdf::firmar($pdf, $llaves['certificado'], $llaves['llave'], $llaves['cadena'], [
+                        'nombre' => $llaves['nombre'],
+                        'motivo' => 'Boleta de pago ' . $actual->planilla?->numeroDeBoleta(),
+                        'lugar'  => 'Juliaca, Perú',
+                    ]);
+
+                    // La misma revisión que a una subida: si no cuadra, no se guarda.
+                    $firmas = FirmaDigitalPdf::firmas($firmado);
+                    $ultima = end($firmas);
+                    if (! $firmas || collect($firmas)->contains(fn ($f) => ! $f['valida']) || ! $ultima['cubre_hasta_el_final']) {
+                        throw new \RuntimeException('La firma no salió bien: no se guardó.');
+                    }
+                    $distintas = collect($firmas)->unique(fn ($f) => $f['dni'] ?? $f['nombre'])->values();
+                    $estado = $distintas->count() >= $requeridas ? 'completa' : 'parcial';
+
+                    $this->guardarFirmada(
+                        $actual,
+                        $firmado,
+                        $distintas->map(fn ($f) => ['nombre' => $f['nombre'], 'dni' => $f['dni'], 'fecha' => $f['fecha'], 'emisor' => $f['emisor']])->all(),
+                        $estado,
+                        $quien
+                    );
+
+                    return $estado;
+                });
+
+                if ($estado !== null) {
+                    $cuenta['firmadas']++;
+                    $cuenta[$estado === 'completa' ? 'entregadas' : 'a_medias']++;
+                    if ($estado === 'completa') {
+                        app(BoletaController::class)->avisarBoletaLista(
+                            $documento->empleado, (int) $documento->planilla->mes, (int) $documento->planilla->anio,
+                            $documento->planilla->numeroDeBoleta(), $documento->id
+                        );
+                    }
+                }
+            } catch (\Throwable $e) {
+                report($e);
+                $errores[] = [
+                    'trabajador' => $trabajador,
+                    'numero'     => $documento->planilla?->numeroDeBoleta(),
+                    'mensaje'    => $e instanceof \RuntimeException ? $e->getMessage() : 'No se pudo firmar: vuelve a intentarlo.',
+                ];
+            }
+            $progreso->avanzar();
+        }
+
+        if ($cuenta['firmadas'] > 0) {
+            Auditoria::registrar(
+                'firmó',
+                'boleta',
+                null,
+                "Firmó desde el sistema {$cuenta['firmadas']} boleta(s) de {$periodo} con su certificado ({$certificado->nombre})"
+                    . ($cuenta['entregadas'] ? ": {$cuenta['entregadas']} ya se entregaron" : '')
+                    . ($cuenta['a_medias'] ? ", {$cuenta['a_medias']} esperan la otra firma" : '')
+                    . ($errores ? ', ' . count($errores) . ' no se pudieron firmar' : '') . '.',
+                ['certificado' => $certificado->id, 'firmadas' => $cuenta['firmadas'], 'errores' => count($errores)]
+            );
+        }
+
+        return response()->json(['success' => true, 'data' => $cuenta + ['errores' => $errores]]);
     }
 
     public function revisar(Request $request)
@@ -75,22 +240,10 @@ class BoletasFirmadasController extends Controller
 
         $planilla = $documento->planilla;
         $empleado = $documento->empleado;
-        $ruta = "documentos/{$empleado->id}/boletas/boleta_{$empleado->dni}_{$planilla->mes}_{$planilla->anio}_firmada.pdf";
 
-        DB::transaction(function () use ($documento, $ruta, $contenido, $firmas, $resultado, $request) {
-            Storage::disk('local')->put($ruta, $contenido);
-
-            $documento->forceFill([
-                // El que emitió el sistema se guarda: contra él se compara la
-                // próxima subida (la segunda firma, por ejemplo).
-                'archivo_sin_firma'        => $documento->archivo_sin_firma ?? $documento->archivo,
-                'archivo'                  => $ruta,
-                'firmas_colegio'           => $firmas,
-                'firma_colegio'            => $resultado['resultado'],
-                'firma_colegio_subida_por' => mb_substr((string) $request->user()?->name, 0, 100),
-                'firma_colegio_completa_en' => $resultado['resultado'] === 'completa' ? now() : null,
-            ])->save();
-        });
+        DB::transaction(fn () => $this->guardarFirmada(
+            $documento, $contenido, $firmas, $resultado['resultado'], mb_substr((string) $request->user()?->name, 0, 100)
+        ));
 
         // Completa: recién ahora es del trabajador. Se le avisa como siempre.
         if ($resultado['resultado'] === 'completa') {
@@ -220,6 +373,30 @@ class BoletasFirmadasController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Guarda la boleta firmada y su estado: lo mismo venga de una subida
+     * (ReFirma) o de «Firmar aquí». Va dentro de la transacción de quien llama.
+     */
+    private function guardarFirmada(Documento $documento, string $contenido, array $firmas, string $estado, string $quien): void
+    {
+        $planilla = $documento->planilla;
+        $empleado = $documento->empleado;
+        $ruta = "documentos/{$empleado->id}/boletas/boleta_{$empleado->dni}_{$planilla->mes}_{$planilla->anio}_firmada.pdf";
+
+        Storage::disk('local')->put($ruta, $contenido);
+
+        $documento->forceFill([
+            // El que emitió el sistema se guarda: contra él se compara la
+            // próxima subida (la segunda firma, por ejemplo).
+            'archivo_sin_firma'        => $documento->archivo_sin_firma ?? $documento->archivo,
+            'archivo'                  => $ruta,
+            'firmas_colegio'           => $firmas,
+            'firma_colegio'            => $estado,
+            'firma_colegio_subida_por' => $quien,
+            'firma_colegio_completa_en' => $estado === 'completa' ? now() : null,
+        ])->save();
+    }
 
     /**
      * Revisa un archivo de punta a punta. Nunca guarda: lo usan la revisión

@@ -31,6 +31,61 @@ final class FirmadorPdfDePrueba
         return [$pem, $llave];
     }
 
+    /**
+     * Un certificado en archivo (.pfx) como el que vende una entidad: emitido
+     * por una «entidad de prueba» (no hecho en casa), con su clave.
+     *
+     * @param  string  $uso   'firma' (lo normal), 'cifrado' (no sirve para firmar)
+     *                        o 'casero' (firmado por sí mismo)
+     * @param  int     $dias  vigencia; negativo = ya vencido
+     */
+    public static function pfx(string $nombre, string $apellido, string $dni, string $clave, string $uso = 'firma', int $dias = 730): string
+    {
+        $config = tempnam(sys_get_temp_dir(), 'opensslcnf');
+        file_put_contents($config, "[req]
+distinguished_name = dn
+[dn]
+"
+            . "[firma]
+keyUsage = critical, digitalSignature, nonRepudiation
+"
+            . "[cifrado]
+keyUsage = critical, keyEncipherment
+"
+            . "[entidad]
+basicConstraints = critical, CA:true
+keyUsage = critical, keyCertSign, cRLSign
+");
+        $opciones = fn (string $seccion) => ['digest_alg' => 'sha256', 'config' => $config, 'x509_extensions' => $seccion];
+
+        $llave = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        $csr = openssl_csr_new([
+            'commonName'   => "{$apellido} {$nombre} FIR {$dni} hard",
+            'givenName'    => $nombre,
+            'surname'      => $apellido,
+            'serialNumber' => "PNOPE-{$dni}",
+            'organizationName' => 'COLEGIO ADVENTISTA TUPAC AMARU',
+            'countryName'  => 'PE',
+        ], $llave, $opciones('firma'));
+
+        $extras = [];
+        if ($uso === 'casero') {
+            $cert = openssl_csr_sign($csr, null, $llave, $dias, $opciones('firma'));
+        } else {
+            $llaveEntidad = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+            $csrEntidad = openssl_csr_new(['commonName' => 'ENTIDAD DE CERTIFICACION DE PRUEBA', 'organizationName' => 'ENTIDAD DE PRUEBA S.A.C.', 'countryName' => 'PE'], $llaveEntidad, $opciones('entidad'));
+            $entidad = openssl_csr_sign($csrEntidad, null, $llaveEntidad, 3650, $opciones('entidad'));
+            $cert = openssl_csr_sign($csr, $entidad, $llaveEntidad, $dias, $opciones($uso), random_int(1000, 999999));
+            openssl_x509_export($entidad, $pemEntidad);
+            $extras = [$pemEntidad];
+        }
+        @unlink($config);
+
+        openssl_pkcs12_export($cert, $pfx, $llave, $clave, ['extracerts' => $extras]);
+
+        return $pfx;
+    }
+
     /** El PDF con una firma más al final. */
     public static function firmar(string $pdf, string $certificado, $llave, string $fecha = '20261108103000'): string
     {

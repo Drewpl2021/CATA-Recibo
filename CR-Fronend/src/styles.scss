@@ -3565,6 +3565,78 @@ textarea.form-control {
   text-decoration: none;
 }
 
+/* El paso «Firmarlas» con sus dos formas (aquí, o .zip y ReFirma): el número
+   arriba y no centrado, porque el paso es alto. */
+.pasos-firma__paso--formas {
+  align-items: start;
+}
+
+.formas-firma {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.forma-firma {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.forma-firma__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.pasos-firma__texto .forma-firma__texto strong {
+  font-size: 13.5px;
+}
+
+.forma-firma__botones {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Con --heading y no un azul fijo: en oscuro el azul institucional no se lee. */
+.forma-firma__guia {
+  font-size: 13px;
+  color: var(--heading);
+}
+
+/* «Firmar aquí»: cuántas y como quién; y, si alguna falló, cuál y por qué. */
+.firmar-aqui__resumen {
+  margin: 0 0 8px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+/* El texto de ayuda antes de la clave, despegado del campo. */
+.firmar-aqui__resumen + .form-ayuda {
+  margin: 0 0 14px;
+}
+
+.firmar-aqui__errores {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
 @media (max-width: 560px) {
   .pasos-firma__paso { grid-template-columns: 28px minmax(0, 1fr); }
   .pasos-firma__paso > :last-child:not(.pasos-firma__texto) { grid-column: 2; justify-self: start; }
@@ -3903,6 +3975,112 @@ textarea.form-control {
   font-size: 13.5px;
   line-height: 1.5;
   color: var(--text-soft);
+}
+
+/* Mi certificado para «Firmar aquí» (Ajustes → Boletas): de quién es, hasta
+   cuándo vale y qué hacer con él. En amarillo cuando vence pronto o venció. */
+.certificado-firma {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.certificado-firma--aviso {
+  border-color: var(--warning-solid);
+  background: var(--warning-bg);
+}
+
+.certificado-firma--vacio {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  border-style: dashed;
+}
+
+.certificado-firma--vacio p {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.certificado-firma__cabeza {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.certificado-firma__icono {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--brand-100);
+  color: var(--brand-700);
+}
+
+.certificado-firma__quien {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.certificado-firma__quien strong {
+  color: var(--heading);
+  font-size: 15px;
+}
+
+.certificado-firma__quien span {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.certificado-firma__datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  margin: 0;
+}
+
+.certificado-firma__datos dt {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.certificado-firma__datos dd {
+  margin: 2px 0 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* En el modal de revisión, uno debajo de otro: se lee de arriba abajo. */
+.certificado-firma__datos--revision {
+  grid-template-columns: 1fr;
+  padding: 14px 16px;
+  margin: 12px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.certificado-firma__acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.certificado-firma > .form-nota {
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .certificado-firma__datos { grid-template-columns: 1fr; }
 }
 
 /* El paso a paso del mes, con su atajo a la pantalla donde se hace. */

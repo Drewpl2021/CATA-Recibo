@@ -27,7 +27,7 @@ import { MESES_OPCIONES } from '../../../shared/constants';
 import { diasHabilesDelMes, formatoDia, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { SubirFirmadasComponent } from '../subir-firmadas/subir-firmadas.component';
-import { ResumenFirmaDigital } from '../../../core/services/planilla/boleta.service';
+import { ResultadoFirmarAqui, ResumenFirmaDigital } from '../../../core/services/planilla/boleta.service';
 
 export interface FormularioBoleta {
   remuneracionBasica: number | null;
@@ -246,6 +246,76 @@ export class EmisionBoletaListComponent implements OnInit {
   emitirDesdeFirma(): void {
     this.modalFirma = false;
     this.emitirTodasLasBoletas();
+  }
+
+  // ── «Firmar aquí», con el certificado de quien mira ──
+
+  modalFirmarAqui = false;
+  claveFirmarAqui = '';
+  firmandoAqui = false;
+  /** Solo si alguna falló: el detalle se queda en el modal. */
+  resultadoFirmarAqui: ResultadoFirmarAqui | null = null;
+
+  get puedeFirmarAqui(): boolean {
+    const c = this.resumenFirma?.mi_certificado;
+    return !!c && !c.vencido && c.por_firmar > 0;
+  }
+
+  get pistaFirmarAqui(): string {
+    const c = this.resumenFirma?.mi_certificado;
+    if (!c) return 'Primero pon tu certificado en Ajustes → Boletas.';
+    if (c.vencido) return 'Tu certificado venció: renuévalo con la entidad y ponlo de nuevo en Ajustes → Boletas.';
+    if (!c.por_firmar) return 'No hay boletas de este mes esperando tu firma.';
+    return `Firma de una vez las ${c.por_firmar} boleta(s) que esperan tu firma, con tu certificado. Te pide su clave.`;
+  }
+
+  abrirFirmarAqui(): void {
+    if (!this.puedeFirmarAqui) return;
+    this.modalFirma = false;
+    this.claveFirmarAqui = '';
+    this.resultadoFirmarAqui = null;
+    this.modalFirmarAqui = true;
+  }
+
+  /** Al cerrar se olvida la clave. */
+  cerrarFirmarAqui(): void {
+    this.modalFirmarAqui = false;
+    this.claveFirmarAqui = '';
+    this.resultadoFirmarAqui = null;
+  }
+
+  firmarAqui(): void {
+    if (!this.claveFirmarAqui || this.firmandoAqui) return;
+    const periodo = `${this.nombreMes(this.mesGlobal * 1)} ${this.anioGlobal}`;
+
+    this.firmandoAqui = true;
+    this.progreso
+      .seguir('Firmando las boletas', this.boletaService.firmarAqui(Number(this.mesGlobal), Number(this.anioGlobal), this.claveFirmarAqui))
+      .subscribe({
+        next: (res) => {
+          this.firmandoAqui = false;
+          this.claveFirmarAqui = '';
+          const r = res.data;
+          this.cargarEmpleados();
+          this.cargarResumenFirma();
+
+          if (r.errores.length) {
+            this.resultadoFirmarAqui = r;
+            return;
+          }
+          this.modalFirmarAqui = false;
+          this.toastService.success(
+            `${r.firmadas} boleta${r.firmadas === 1 ? '' : 's'} firmada${r.firmadas === 1 ? '' : 's'}`,
+            r.a_medias
+              ? `De ${periodo}: ${r.entregadas} ya le llegaron al trabajador y ${r.a_medias} esperan la otra firma.`
+              : `De ${periodo}: ya le llegaron a cada trabajador.`
+          );
+        },
+        error: (err) => {
+          this.firmandoAqui = false;
+          this.toastService.error('No se firmó', mensajeErrorApi(err, 'No se pudieron firmar las boletas.'));
+        },
+      });
   }
   descargandoParaFirmar = false;
   descargandoConstancia = false;
