@@ -29,10 +29,11 @@ import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/f
  * mano en la hoja de cada uno): sin ellos se estiman con la ficha, y la
  * pantalla lo avisa.
  */
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 @Component({
   selector: 'app-renta5ta-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FiltrosComponent, FormModalComponent, SelectorArchivoComponent],
+  imports: [PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FiltrosComponent, FormModalComponent, SelectorArchivoComponent],
   templateUrl: './renta5ta-list.component.html',
 })
 export class Renta5taListComponent implements OnInit {

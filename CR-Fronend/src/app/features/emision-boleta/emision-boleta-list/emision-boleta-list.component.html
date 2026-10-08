@@ -5,13 +5,17 @@
 >
   <div headerActions class="acciones-cabecera">
     <!-- La firma digital del mes, en su modal: el globito dice cuántas esperan. -->
-    <button class="btn-secondary boton-con-cuenta" type="button" (click)="modalFirma = true"
+    <button class="btn-secondary boton-con-cuenta" type="button" (click)="modalFirma = true" pistaLado="abajo"
+      [appPista]="porFirmar
+        ? 'Abre los pasos de la firma digital del mes. ' + porFirmar + ' boleta(s) esperan la firma del colegio en ReFirma.'
+        : 'Abre los pasos de la firma digital del mes: bajar las boletas, firmarlas en ReFirma, subirlas firmadas y la constancia de entrega.'"
       [attr.aria-label]="porFirmar ? 'Firma digital: ' + porFirmar + ' boleta(s) por firmar' : 'Firma digital'">
       <app-icon icono="signature" [tamano]="16"></app-icon>
       Firma digital
       <span class="boton-con-cuenta__cuenta" *ngIf="porFirmar">{{ porFirmar }}</span>
     </button>
-    <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo">
+    <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo" pistaLado="abajo"
+      [appPista]="'Emite de una vez la boleta de todos los que tienen planilla en ' + nombreMes(mesGlobal * 1) + ' ' + anioGlobal + ' (las ya emitidas no se repiten). Quedan esperando la firma digital del colegio: al trabajador todavía no le llega nada.'">
       <app-icon icono="receipt" [tamano]="16"></app-icon>
       {{ generandoMasivo ? 'Emitiendo...' : 'Emitir masivamente' }}
     </button>
@@ -40,7 +44,7 @@
       </div>
       <!-- Lo que hay que hacer: se pulsa y abre la firma digital. -->
       <button type="button" class="cifra cifra--accion" [class.cifra--destacada]="porFirmar > 0" (click)="modalFirma = true"
-        title="Abrir la firma digital del mes">
+        appPista="Boletas emitidas que todavía esperan la firma digital del colegio. Pulsa para ver los pasos.">
         <strong>{{ porFirmar }}</strong>
         <span>Por firmar</span>
       </button>
@@ -75,7 +79,8 @@
     No hay ninguna boleta armada para {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}.
     Puedes armarlas todas de una vez y después corregir las que hagan falta.
   </div>
-  <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo">
+  <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo"
+    appPista="Emite la boleta de todos los que ya tienen planilla este mes. Después puedes corregir la de cada uno.">
     Generar la planilla del mes
   </button>
 </div>
@@ -257,7 +262,8 @@
         <!-- Otro concepto para esta persona este mes (corbata, préstamo, bono...):
              se guarda en su planilla y sale en la boleta bajo "Otros Conceptos". -->
         <div class="agregar-concepto">
-          <button type="button" class="btn-secondary" *ngIf="!mostrarAgregarConcepto" (click)="abrirAgregarConcepto()">
+          <button type="button" class="btn-secondary" *ngIf="!mostrarAgregarConcepto" (click)="abrirAgregarConcepto()"
+            appPista="Agrega a su boleta un concepto del catálogo que todavía no tiene: un bono, un descuento o un adelanto.">
             <app-icon icono="plus" [tamano]="15"></app-icon>
             Agregar otro concepto
           </button>
@@ -286,7 +292,8 @@
             </p>
             <div style="display: flex; gap: 8px; justify-content: flex-end;">
               <button type="button" class="btn-secondary" (click)="mostrarAgregarConcepto = false">Cancelar</button>
-              <button type="button" class="btn-primary" [disabled]="guardandoConcepto" (click)="guardarNuevoConcepto()">
+              <button type="button" class="btn-primary" [disabled]="guardandoConcepto" (click)="guardarNuevoConcepto()"
+              appPista="Lo agrega a su planilla de este mes y recalcula su neto a pagar.">
                 {{ guardandoConcepto ? 'Agregando…' : 'Agregar a su planilla' }}
               </button>
             </div>
@@ -305,21 +312,21 @@
       <div class="seccion-firmas">
         <div class="seccion-titulo amarillo">
           <app-icon icono="shield" [tamano]="15"></app-icon>
-          Confirmación y Firmas
+          Firma y entrega
         </div>
+        <!-- Como el PDF de verdad: solo la firma digital del colegio. El
+             trabajador no firma sobre la boleta: da su conformidad aparte. -->
         <div class="firmas-content">
           <div class="firma-bloque">
             <div class="firma-linea"></div>
-            <p class="firma-titulo">Firma del Empleador</p>
-            <p class="firma-subtitulo">Presidente del Consejo Directivo</p>
-          </div>
-          <div class="firma-bloque">
-            <div class="firma-linea"></div>
-            <p class="firma-titulo">Firma del Trabajador</p>
-            <p class="firma-subtitulo">{{ empleadoSeleccionado?.nombre }} {{ empleadoSeleccionado?.apellido }}</p>
+            <p class="firma-titulo">Firma digital del empleador</p>
+            <p class="firma-subtitulo">Colegio Adventista Túpac Amaru · en ReFirma, con el DNIe</p>
           </div>
         </div>
-        <p class="firma-nota">{{ formulario.ciudad }}, {{ formulario.fechaEmision }}</p>
+        <p class="firma-nota">
+          {{ formulario.ciudad }}, {{ formulario.fechaEmision }}. Al recibirla, {{ empleadoSeleccionado?.nombre }}
+          da su conformidad con su contraseña.
+        </p>
       </div>
 
     </div><!-- fin modal-body -->
@@ -332,18 +339,21 @@
            refrescar el PDF archivado. Nada de "Emitir": esa boleta ya se
            avisó una vez, y no toca avisar dos. -->
       <ng-container *ngIf="modoCorrigiendo; else botonesDeEmision">
-        <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF">
+        <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF"
+          appPista="Guarda la corrección y vuelve a generar su boleta con los montos nuevos. Sigue esperando la firma digital del colegio.">
           <app-icon icono="save" [tamano]="16"></app-icon>
           {{ generandoPDF ? 'Guardando...' : 'Guardar cambios y actualizar PDF' }}
         </button>
       </ng-container>
 
       <ng-template #botonesDeEmision>
-        <button class="btn-borrador" (click)="guardarBorrador()">
+        <button class="btn-borrador" (click)="guardarBorrador()"
+          appPista="Guarda los conceptos en su planilla sin emitir la boleta: la puedes seguir corrigiendo.">
           <app-icon icono="save" [tamano]="16"></app-icon>
           Guardar Borrador
         </button>
-        <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF">
+        <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF"
+          appPista="Emite su boleta con estos conceptos. Queda esperando la firma digital del colegio; al trabajador le llega cuando se suba firmada.">
           <app-icon icono="check" [tamano]="16"></app-icon>
           {{ generandoPDF ? 'Generando PDF...' : 'Emitir Boleta Oficial' }}
         </button>
@@ -407,7 +417,8 @@
         <strong>Emitir las boletas</strong>
         <span>{{ r.emitidas }} emitida(s) de {{ planillasDelMes }} con planilla.</span>
       </div>
-      <button class="btn-secondary" type="button" *ngIf="r.emitidas < planillasDelMes" (click)="emitirDesdeFirma()" [disabled]="generandoMasivo">
+      <button class="btn-secondary" type="button" *ngIf="r.emitidas < planillasDelMes" (click)="emitirDesdeFirma()" [disabled]="generandoMasivo"
+        [appPista]="'Emite las ' + (planillasDelMes - r.emitidas) + ' boleta(s) que faltan del mes.'">
         Emitir
       </button>
     </li>
@@ -418,7 +429,8 @@
         <strong>Descargarlas para firmar</strong>
         <span>{{ porFirmar }} esperan la firma<ng-container *ngIf="r.a_medias"> ({{ r.a_medias }} con una firma de dos)</ng-container>. Baja solo esas, en un .zip.</span>
       </div>
-      <button class="btn-secondary" type="button" (click)="descargarParaFirmar()" [disabled]="descargandoParaFirmar || porFirmar === 0">
+      <button class="btn-secondary" type="button" (click)="descargarParaFirmar()" [disabled]="descargandoParaFirmar || porFirmar === 0"
+        [appPista]="porFirmar ? 'Baja en un .zip solo las ' + porFirmar + ' boleta(s) que esperan la firma, para abrirlas en ReFirma.' : 'Este mes no hay boletas esperando la firma.'">
         <app-icon icono="download" [tamano]="15"></app-icon>
         {{ descargandoParaFirmar ? 'Juntando…' : 'Descargar .zip' }}
       </button>
@@ -432,7 +444,8 @@
           Quien firma por el colegio las abre en ReFirma y las firma con su DNIe{{ r.requeridas === 2 ? '; luego la segunda persona, sobre los mismos archivos' : '' }}.
         </span>
       </div>
-      <a class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }" (click)="modalFirma = false">Ver la guía</a>
+      <a class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }" (click)="modalFirma = false"
+        appPista="Abre en Ajustes la guía para preparar la computadora de quien firma: DNIe, lector de tarjetas y ReFirma.">Ver la guía</a>
     </li>
 
     <li class="pasos-firma__paso" [class.pasos-firma__paso--pendiente]="porFirmar > 0">
@@ -441,7 +454,8 @@
         <strong>Subir las firmadas</strong>
         <span>El sistema revisa cada PDF antes de guardar y, al guardar, se la entrega al trabajador.</span>
       </div>
-      <button class="btn-primary" type="button" (click)="abrirSubirFirmadas()">
+      <button class="btn-primary" type="button" (click)="abrirSubirFirmadas()"
+        appPista="Elige los PDF que devolvió ReFirma. Se revisa cada uno antes de guardar, y al guardar se le entrega al trabajador.">
         <app-icon icono="upload" [tamano]="15"></app-icon>
         Subir firmadas
       </button>
@@ -453,7 +467,8 @@
         <strong>Entregadas</strong>
         <span>{{ r.entregadas }} entregada(s), {{ r.conformidad }} con la conformidad del trabajador.</span>
       </div>
-      <button class="btn-secondary" type="button" (click)="descargarConstancia()" [disabled]="descargandoConstancia">
+      <button class="btn-secondary" type="button" (click)="descargarConstancia()" [disabled]="descargandoConstancia"
+        appPista="Excel del mes con cada boleta: quién la firmó por el colegio, cuándo se entregó, cuándo la abrió el trabajador y cuándo dio su conformidad.">
         <app-icon icono="excel" [tamano]="15"></app-icon>
         {{ descargandoConstancia ? 'Armando…' : 'Constancia' }}
       </button>
@@ -463,7 +478,7 @@
   <div modalFooter class="asistente-pie asistente-pie--extremos">
     <!-- Todas las emitidas del mes, con los filtros de la tabla: firmadas o no. -->
     <button class="btn-secondary" type="button" (click)="descargarEmitidasEnZip()" [disabled]="descargandoZip"
-      title="Baja en un .zip todas las boletas emitidas del mes (las que ves con los filtros puestos)">
+      appPista="Baja en un .zip todas las boletas emitidas del mes, firmadas o no (las que ves con los filtros de la tabla).">
       <app-icon icono="download" [tamano]="15"></app-icon>
       {{ descargandoZip ? 'Juntando…' : 'Descargar todas (.zip)' }}
     </button>

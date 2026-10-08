@@ -6,11 +6,13 @@
   [cargandoCifras]="cargando"
 >
   <div headerActions style="display: flex; gap: 12px; flex-wrap: wrap;">
-    <button class="btn-secondary" (click)="abrirHistorial()">
+    <button class="btn-secondary" (click)="abrirHistorial()" pistaLado="abajo"
+      appPista="Carga con un Excel lo que cobró y lo que se le retuvo a cada uno en los meses pagados antes del sistema.">
       <app-icon icono="upload" [tamano]="16"></app-icon>
       Cargar historial
     </button>
-    <button class="btn-primary" (click)="recalcular()" [disabled]="recalculando">
+    <button class="btn-primary" (click)="recalcular()" [disabled]="recalculando" pistaLado="abajo"
+      [appPista]="'Vuelve a calcular la 5ta de las planillas abiertas de ' + anio + ' con el procedimiento de SUNAT. No toca las cerradas ni las de boleta firmada.'">
       <app-icon icono="refresh" [tamano]="16"></app-icon>
       {{ recalculando ? 'Recalculando…' : 'Recalcular 5ta' }}
     </button>
@@ -160,7 +162,8 @@
       Lo que cobró y lo que se le retuvo de 5ta a cada trabajador en los meses que se pagaron
       <strong>antes del sistema</strong>. Con eso la 5ta de los meses siguientes resta lo ya retenido de verdad.
     </p>
-    <button type="button" class="btn-secondary" (click)="descargarModelo()" style="align-self: flex-start;">
+    <button type="button" class="btn-secondary" (click)="descargarModelo()" style="align-self: flex-start;"
+      appPista="Baja el Excel con todo el personal y una columna por mes para llenar el historial.">
       <app-icon icono="download" [tamano]="16"></app-icon>
       Descargar el modelo de {{ anio }}
     </button>

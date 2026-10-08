@@ -83,20 +83,22 @@
     <ng-container [ngSwitch]="paso">
       <ng-container *ngSwitchCase="'elegir'">
         <button class="btn-secondary" type="button" (click)="cerrar()">Cancelar</button>
-        <button class="btn-primary" type="button" [disabled]="!archivos.length" (click)="revisar()">
+        <button class="btn-primary" type="button" [disabled]="!archivos.length" (click)="revisar()"
+          [appPista]="archivos.length ? 'Revisa cada archivo (de quién es, si es la boleta que se emitió y quién la firmó) sin guardar nada todavía.' : 'Primero elige los PDF firmados.'">
           <app-icon icono="search" [tamano]="16"></app-icon>
           Revisar {{ archivos.length || '' }} archivo(s)
         </button>
       </ng-container>
       <ng-container *ngSwitchCase="'revision'">
-        <button class="btn-secondary" type="button" (click)="volverAElegir()">Elegir otros</button>
-        <button class="btn-primary" type="button" [disabled]="!listas.length" (click)="guardar()">
+        <button class="btn-secondary" type="button" (click)="volverAElegir()" appPista="Vuelve a elegir los archivos. No se guarda nada.">Elegir otros</button>
+        <button class="btn-primary" type="button" [disabled]="!listas.length" (click)="guardar()"
+          [appPista]="listas.length ? 'Guarda las boletas que están bien y se las entrega a cada trabajador. Las que tienen problema no se guardan.' : 'Ninguna boleta está lista para guardar.'">
           <app-icon icono="upload" [tamano]="16"></app-icon>
           Guardar {{ listas.length }} boleta(s)
         </button>
       </ng-container>
       <ng-container *ngSwitchCase="'listo'">
-        <button class="btn-secondary" type="button" (click)="volverAElegir()">Subir más</button>
+        <button class="btn-secondary" type="button" (click)="volverAElegir()" appPista="Sube otro grupo de boletas firmadas.">Subir más</button>
         <button class="btn-primary" type="button" (click)="cerrar()">Cerrar</button>
       </ng-container>
       <span *ngSwitchDefault class="form-ayuda">Espera un momento, no cierres esta ventana…</span>

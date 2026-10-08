@@ -29,10 +29,11 @@ interface FilaHoja {
  * cobró y lo que se le retuvo): al guardar se recalculan las planillas de
  * los meses siguientes.
  */
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 @Component({
   selector: 'app-renta5ta-detalle',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent, PageHeaderComponent, FormModalComponent],
+  imports: [PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, FormModalComponent],
   templateUrl: './renta5ta-detalle.component.html',
 })
 export class Renta5taDetalleComponent implements OnInit {

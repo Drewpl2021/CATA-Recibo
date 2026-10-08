@@ -34,10 +34,11 @@ type SeccionAjustes = 'montos' | 'boletas' | 'renta5ta' | 'planillas';
  * antes de elegirla. La sección va en la dirección (?seccion=boletas) para
  * poder mandar a alguien directo ahí.
  */
+import { PistaDirective } from '../../shared/directives/pista.directive';
 @Component({
   selector: 'app-ajustes',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, PageHeaderComponent, FormModalComponent, IconComponent, SelectorArchivoComponent],
+  imports: [PistaDirective, CommonModule, FormsModule, RouterLink, PageHeaderComponent, FormModalComponent, IconComponent, SelectorArchivoComponent],
   templateUrl: './ajustes.component.html',
 })
 export class AjustesComponent implements OnInit {

@@ -40,7 +40,8 @@
             [disabled]="guardandoLegal">
             <option *ngFor="let v of valoresLegales" [ngValue]="v.anio">{{ v.anio }}</option>
           </select>
-          <button type="button" class="btn-secondary" (click)="abrirAgregarAnio()" [disabled]="guardandoLegal">
+          <button type="button" class="btn-secondary" (click)="abrirAgregarAnio()" [disabled]="guardandoLegal"
+            appPista="Crea un año nuevo con los montos del anterior. Después cambias los que hayan subido, casi siempre la UIT.">
             <app-icon icono="plus" [tamano]="16"></app-icon>
             Agregar año
           </button>
@@ -83,7 +84,8 @@
         </div>
 
         <footer class="panel-pie">
-          <button type="button" class="btn-primary" (click)="guardarValoresLegales()" [disabled]="guardandoLegal || !hayCambiosLegales">
+          <button type="button" class="btn-primary" (click)="guardarValoresLegales()" [disabled]="guardandoLegal || !hayCambiosLegales"
+            [appPista]="hayCambiosLegales ? 'Guarda los montos de ' + anioLegal + '. Solo cambian las planillas que se generen o recalculen desde ahora.' : 'No hay cambios que guardar en ' + anioLegal + '.'">
             {{ guardandoLegal ? 'Guardando…' : 'Guardar ' + anioLegal }}
           </button>
           <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="hayCambiosLegales && !guardandoLegal">
@@ -136,7 +138,8 @@
             <li><strong>Firmar</strong> en ReFirma con el DNIe{{ ajustes!.boleta_firmas_requeridas === 2 ? ' (las dos personas)' : '' }}.</li>
             <li><strong>Subir boletas firmadas</strong>: al guardar le llegan al trabajador.</li>
           </ol>
-          <a class="btn-secondary pasos-mes__ir" routerLink="/inicio/emision-boleta">
+          <a class="btn-secondary pasos-mes__ir" routerLink="/inicio/emision-boleta"
+            appPista="Abre Emisión de boletas, donde se emiten, se bajan para firmar y se suben firmadas.">
             <app-icon icono="receipt" [tamano]="16"></app-icon>
             Ir a Emisión de boletas
           </a>
@@ -220,7 +223,8 @@
           Para que la retención cuadre, la 5ta necesita lo cobrado y lo retenido en los meses que no se hicieron en el
           sistema. Se cargan en el módulo Renta de 5ta, con su modelo de Excel o mes por mes en la hoja de cada trabajador.
         </p>
-        <a class="btn-secondary pasos-mes__ir" routerLink="/inicio/renta-5ta">
+        <a class="btn-secondary pasos-mes__ir" routerLink="/inicio/renta-5ta"
+          appPista="Abre el módulo Renta de 5ta para cargar el historial de los meses antes del sistema.">
           <app-icon icono="wallet" [tamano]="16"></app-icon>
           Ir a Renta de 5ta
         </a>
@@ -262,7 +266,8 @@
               </div>
             </div>
 
-            <button type="button" class="btn-primary previa-5ta__boton" [disabled]="!previaArchivo.length || previaSubiendo" (click)="subirPrevia()">
+            <button type="button" class="btn-primary previa-5ta__boton" [disabled]="!previaArchivo.length || previaSubiendo" (click)="subirPrevia()"
+              [appPista]="previaArchivo.length ? 'Lee el Excel «Calculo 5ta» y recalcula la 5ta de marzo en adelante.' : 'Primero elige el Excel.'">
               <app-icon icono="upload" [tamano]="16"></app-icon>
               Cargar enero y febrero
             </button>

@@ -5,7 +5,8 @@
   [cifras]="cifras"
   [cargandoCifras]="cargando"
 >
-  <button headerActions class="btn-secondary" type="button" (click)="volver()">
+  <button headerActions class="btn-secondary" type="button" (click)="volver()" pistaLado="abajo"
+    appPista="Vuelve a la lista de Renta de 5ta, en el mismo año y mes.">
     <app-icon icono="arrow_left" [tamano]="16"></app-icon>
     Volver a la lista
   </button>
@@ -97,7 +98,8 @@
       <small class="form-ayuda">Como salió en su boleta o en la PLAME. 0 si no se le retuvo nada.</small>
     </div>
     <button type="button" class="btn-secondary" *ngIf="mesDe(editando.mes)?.fuente === 'historial'" (click)="guardarMes(true)"
-      [disabled]="guardando" style="align-self: flex-start;">
+      [disabled]="guardando" style="align-self: flex-start;"
+      appPista="Quita este mes del historial: vuelve a estimarse con su ficha y se recalculan las planillas de los meses siguientes.">
       <app-icon icono="trash" [tamano]="16"></app-icon>
       Borrar este mes del historial
     </button>

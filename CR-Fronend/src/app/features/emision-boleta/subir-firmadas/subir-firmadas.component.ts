@@ -33,10 +33,11 @@ interface Fila {
  * Se mandan de a uno (y tres a la vez): así no importa si son 50 o 300, no
  * se choca con el límite de subida, y la barra avanza de verdad.
  */
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 @Component({
   selector: 'app-subir-firmadas',
   standalone: true,
-  imports: [CommonModule, FormModalComponent, IconComponent, SelectorArchivoComponent],
+  imports: [PistaDirective, CommonModule, FormModalComponent, IconComponent, SelectorArchivoComponent],
   templateUrl: './subir-firmadas.component.html',
 })
 export class SubirFirmadasComponent {
