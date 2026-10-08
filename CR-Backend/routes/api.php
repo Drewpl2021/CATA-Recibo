@@ -269,8 +269,13 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
 
         Route::post('payslips/generate-bulk', [BoletaController::class, 'generarMasivo']);
 
-        // Los ajustes del sistema: RR.HH. los lee, solo Admin los cambia.
+        // Ajustes del sistema: RR.HH. y Admin los leen y los cambian (cada
+        // cambio queda en la Auditoría, que sí es solo de Admin).
         Route::get('settings', [\App\Http\Controllers\ConfiguracionController::class, 'index']);
+        Route::put('settings', [\App\Http\Controllers\ConfiguracionController::class, 'update']);
+        // Enero y febrero de antes del sistema, para la Renta de 5ta (Excel de RR.HH.).
+        Route::get('renta-5ta/previous',  [\App\Http\Controllers\RentaQuintaPreviaController::class, 'index']);
+        Route::post('renta-5ta/previous', [\App\Http\Controllers\RentaQuintaPreviaController::class, 'store']);
         // Los montos de ley por año (UIT, asignación familiar, % de pensión).
         // Renta de 5ta: la hoja de retención de cada trabajador (método SUNAT),
         // su historial de los meses antes del sistema, recalcular y exportar.
@@ -285,6 +290,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
 
         Route::get('legal-values',        [\App\Http\Controllers\ValorLegalController::class, 'index']);
         Route::get('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'show'])->whereNumber('anio');
+        Route::post('legal-values',       [\App\Http\Controllers\ValorLegalController::class, 'store']);
+        Route::put('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'update'])->whereNumber('anio');
     });
 
     // ── Solo Administrador: gestión de roles y del sistema de permisos ──
@@ -293,12 +300,6 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // justamente donde se ve lo que hizo RR.HH.—.
         Route::get('audit-log', [AuditoriaController::class, 'index']);
 
-        Route::put('settings', [\App\Http\Controllers\ConfiguracionController::class, 'update']);
-        Route::post('legal-values',       [\App\Http\Controllers\ValorLegalController::class, 'store']);
-        Route::put('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'update'])->whereNumber('anio');
-        // Enero y febrero de antes del sistema, para la Renta de 5ta (Excel de RR.HH.).
-        Route::get('renta-5ta/previous',  [\App\Http\Controllers\RentaQuintaPreviaController::class, 'index']);
-        Route::post('renta-5ta/previous', [\App\Http\Controllers\RentaQuintaPreviaController::class, 'store']);
 
         Route::apiResource('roles', RolController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('module-groups', ModuloPadreController::class);

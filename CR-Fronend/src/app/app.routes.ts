@@ -237,9 +237,9 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auditoria/auditoria-list/auditoria-list.component').then(m => m.AuditoriaListComponent),
       },
       {
-        // Lo que se enciende y apaga sin tocar código. Solo Admin.
+        // Lo que se enciende y apaga sin tocar código. RR.HH. y Admin.
         path: 'ajustes',
-        canActivate: [soloAdmin],
+        canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/ajustes/ajustes.component').then(m => m.AjustesComponent),
       },
       { path: '**', redirectTo: 'dashboard' }

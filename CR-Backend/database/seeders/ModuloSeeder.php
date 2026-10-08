@@ -70,7 +70,7 @@ class ModuloSeeder extends Seeder
             // Quién cambió qué. Solo Admin: es donde se ve lo que hizo RR.HH.
             ['padre' => $idConfig, 'nombre' => 'Auditoría',      'ruta' => '/auditoria',      'icono' => 'clock',       'orden' => 11, 'roles' => [$admin]],
             // Lo que se enciende y apaga sin tocar código (ej. planillas de años anteriores).
-            ['padre' => $idConfig, 'nombre' => 'Ajustes del sistema', 'ruta' => '/ajustes', 'icono' => 'settings', 'orden' => 12, 'roles' => [$admin]],
+            ['padre' => $idConfig, 'nombre' => 'Ajustes del sistema', 'ruta' => '/ajustes', 'icono' => 'settings', 'orden' => 12, 'roles' => [$admin, $rrhh]],
 
             // Mi Espacio — admin, rrhh y empleado
             ['padre' => $idEspacio, 'nombre' => 'Mis Boletas',    'ruta' => '/mis-boletas',    'icono' => 'receipt_long',  'orden' => 1, 'roles' => [$admin, $rrhh, $empleado]],

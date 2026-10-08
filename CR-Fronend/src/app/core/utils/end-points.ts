@@ -28,17 +28,17 @@ export const END_POINTS = {
     roles: 'roles',
   },
 
-  /** Solo Admin. */
+  /** Administración: el menú y la auditoría son solo de Admin; los ajustes, también de RR.HH. */
   admin: {
     modulos: 'modules',
     modulosPadre: 'module-groups',
     /** Quién cambió qué. Solo lectura. */
     auditoria: 'audit-log',
-    /** GET (RR.HH. y Admin) y PUT (solo Admin): los ajustes del sistema. */
+    /** Los ajustes del sistema (GET y PUT): RR.HH. y Admin. */
     ajustes: 'settings',
-    /** GET (RR.HH. y Admin); POST y PUT /{anio} (solo Admin): los montos de ley por año. */
+    /** Los montos de ley por año (GET, POST y PUT /{anio}): RR.HH. y Admin. */
     valoresLegales: 'legal-values',
-    /** GET ?anio= y POST (el Excel): enero y febrero de antes del sistema, para la 5ta. */
+    /** GET ?anio= y POST (el Excel): enero y febrero de antes del sistema, para la 5ta. RR.HH. y Admin. */
     rentaQuintaPrevia: 'renta-5ta/previous',
   },
 

@@ -72,12 +72,17 @@ class ValoresLegalesTest extends TestCase
         $this->assertSame(125.0, $pension['total']);
     }
 
-    public function test_rrhh_los_lee_pero_no_los_cambia(): void
+    public function test_rrhh_los_lee_y_los_cambia_y_un_trabajador_no(): void
     {
         $rrhh = $this->crearUsuario('rrhh');
 
         $this->actingAs($rrhh, 'sanctum')->getJson('/api/legal-values')->assertOk()->assertJsonCount(3, 'data');
-        $this->actingAs($rrhh, 'sanctum')->putJson('/api/legal-values/2025', ['uit' => 1])->assertForbidden();
+        // Como la pantalla: se manda el año entero, con la UIT cambiada.
+        $anio = $this->actingAs($rrhh, 'sanctum')->getJson('/api/legal-values/2025')->assertOk()->json('data');
+        $this->actingAs($rrhh, 'sanctum')->putJson('/api/legal-values/2025', ['uit' => 5400] + $anio)->assertOk();
+        $this->assertEquals(5400, \App\Models\ValorLegal::where('anio', 2025)->value('uit'));
+
+        $this->actingAs($this->crearUsuario('empleado'), 'sanctum')->putJson('/api/legal-values/2025', ['uit' => 1])->assertForbidden();
     }
 
     /**

@@ -84,8 +84,10 @@ class BonificacionCargoYRentaPreviaTest extends TestCase
         $this->assertSame(2, RentaQuintaPrevia::where('empleado_id', $apaza->id)->count());
         $this->assertSame(275.18, round((float) RentaQuintaPrevia::sum('retencion'), 2));
 
-        // RR.HH. no lo carga.
+        // RR.HH. también lo ve; un trabajador no.
         $this->actingAs($this->crearUsuario('rrhh'), 'sanctum')
+            ->getJson('/api/renta-5ta/previous?anio=2026')->assertOk();
+        $this->actingAs($this->crearUsuario('empleado'), 'sanctum')
             ->getJson('/api/renta-5ta/previous?anio=2026')->assertForbidden();
     }
 }

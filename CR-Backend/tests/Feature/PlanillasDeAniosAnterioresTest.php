@@ -113,17 +113,23 @@ class PlanillasDeAniosAnterioresTest extends TestCase
         $this->generarMes('2026-10')->assertCreated();
     }
 
-    public function test_solo_el_administrador_cambia_el_ajuste(): void
+    public function test_rrhh_y_el_administrador_cambian_el_ajuste_y_un_trabajador_no(): void
     {
-        $this->actingAs($this->crearUsuario('rrhh'), 'sanctum')
+        $this->actingAs($this->crearUsuario('empleado'), 'sanctum')
             ->putJson('/api/settings', [AniosAnteriores::AJUSTE => false])
             ->assertForbidden();
 
-        $this->actingAs($this->crearUsuario('admin'), 'sanctum')
+        $this->actingAs($this->crearUsuario('rrhh'), 'sanctum')
             ->putJson('/api/settings', [AniosAnteriores::AJUSTE => false])
             ->assertOk()
             ->assertJsonPath('data.' . AniosAnteriores::AJUSTE, false);
-
         $this->assertFalse(AniosAnteriores::permitidos());
+
+        $this->actingAs($this->crearUsuario('admin'), 'sanctum')
+            ->putJson('/api/settings', [AniosAnteriores::AJUSTE => true])
+            ->assertOk()
+            ->assertJsonPath('data.' . AniosAnteriores::AJUSTE, true);
+
+        $this->assertTrue(AniosAnteriores::permitidos());
     }
 }
