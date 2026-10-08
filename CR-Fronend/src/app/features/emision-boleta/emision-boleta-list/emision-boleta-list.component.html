@@ -1,21 +1,15 @@
 <app-page-header
   icono="receipt"
   titulo="Emisión de Boletas"
-  subtitulo="Arma la boleta de cada trabajador del mes: revisa sus conceptos y emítela."
-  [cifras]="cifras"
-  [cargandoCifras]="cargandoEmpleados"
+  subtitulo="Arma la boleta de cada trabajador del mes, revisa sus conceptos y emítela. El colegio la firma digitalmente y recién entonces le llega."
 >
-  <div headerActions style="display: flex; gap: 12px; align-items: center;">
-    <!-- Solo las ya emitidas, con lo que dejen el buscador y los filtros. -->
-    <button class="btn-secondary" (click)="descargarEmitidasEnZip()" [disabled]="descargandoZip"
-      title="Baja en un .zip las boletas ya emitidas de este mes (las que ves con los filtros puestos)">
-      <app-icon icono="download" [tamano]="16"></app-icon>
-      {{ descargandoZip ? 'Juntando boletas…' : 'Descargar emitidas (.zip)' }}
-    </button>
-    <button class="btn-secondary" (click)="descargarConstancia()" [disabled]="descargandoConstancia"
-      title="Excel con cada boleta del mes: cuándo se entregó, cuándo la abrió y cuándo dio su conformidad">
-      <app-icon icono="excel" [tamano]="16"></app-icon>
-      {{ descargandoConstancia ? 'Armando…' : 'Constancia de entrega' }}
+  <div headerActions class="acciones-cabecera">
+    <!-- La firma digital del mes, en su modal: el globito dice cuántas esperan. -->
+    <button class="btn-secondary boton-con-cuenta" type="button" (click)="modalFirma = true"
+      [attr.aria-label]="porFirmar ? 'Firma digital: ' + porFirmar + ' boleta(s) por firmar' : 'Firma digital'">
+      <app-icon icono="signature" [tamano]="16"></app-icon>
+      Firma digital
+      <span class="boton-con-cuenta__cuenta" *ngIf="porFirmar">{{ porFirmar }}</span>
     </button>
     <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo">
       <app-icon icono="receipt" [tamano]="16"></app-icon>
@@ -32,24 +26,32 @@
     </div>
 
     <div class="panel-filtros__cifras">
-      <div class="cifra" *ngIf="true" title="Días de lunes a viernes del mes: los que se le pagan a quien trabaja el mes entero">
+      <div class="cifra" title="Días de lunes a viernes del mes: los que se le pagan a quien trabaja el mes entero">
         <strong>{{ diasDelMes }}</strong>
         <span>Días a pagar</span>
       </div>
-      <div class="cifra">
-        <strong>{{ totalEmpleados }}</strong>
-        <!-- Con un filtro puesto ya no son "los trabajadores" sino los que
-             quedaron en la lista, y la cifra lo dice. -->
-        <span>{{ hayFiltros ? 'En la lista' : 'Trabajadores' }}</span>
-      </div>
-      <div class="cifra cifra--destacada">
-        <strong>{{ planillasDelMes }}</strong>
+      <div class="cifra" [title]="sinPlanilla ? 'A ' + sinPlanilla + ' trabajador(es) les falta la planilla del mes' : 'Todos tienen su planilla del mes'">
+        <strong>{{ planillasDelMes }}<small *ngIf="sinPlanilla" class="cifra__resto"> de {{ totalDelColegio }}</small></strong>
         <span>Con planilla</span>
+      </div>
+      <div class="cifra">
+        <strong>{{ resumenFirma?.emitidas ?? 0 }}</strong>
+        <span>Emitidas</span>
+      </div>
+      <!-- Lo que hay que hacer: se pulsa y abre la firma digital. -->
+      <button type="button" class="cifra cifra--accion" [class.cifra--destacada]="porFirmar > 0" (click)="modalFirma = true"
+        title="Abrir la firma digital del mes">
+        <strong>{{ porFirmar }}</strong>
+        <span>Por firmar</span>
+      </button>
+      <div class="cifra">
+        <strong>{{ resumenFirma?.entregadas ?? 0 }}</strong>
+        <span>Entregadas</span>
       </div>
     </div>
   </header>
 
-  <div class="panel-filtros__campos">
+  <div class="panel-filtros__campos panel-filtros__campos--compacto">
     <div class="campo-filtro">
       <label for="mesGlobal">Mes</label>
       <select id="mesGlobal" class="form-control" [(ngModel)]="mesGlobal" (ngModelChange)="onGlobalPeriodChange()">
@@ -64,57 +66,6 @@
       </select>
     </div>
   </div>
-</section>
-
-<!-- Firma digital del colegio: los pasos del mes, con cuántas van en cada uno. -->
-<section class="flujo-firma" *ngIf="mostrarFlujoFirma && resumenFirma as r" aria-label="Firma digital del colegio">
-  <header class="flujo-firma__cabecera">
-    <div>
-      <h2 class="flujo-firma__titulo">
-        <app-icon icono="signature" [tamano]="18"></app-icon>
-        Firma digital del colegio
-      </h2>
-      <p class="form-ayuda">
-        Cada boleta se entrega al trabajador recién cuando tiene {{ r.requeridas === 2 ? 'las 2 firmas' : 'la firma' }} del colegio, hechas en ReFirma con el DNIe.
-        <ng-container *ngIf="!r.activa"> El ajuste está apagado: terminan su camino las que quedaron pendientes.</ng-container>
-      </p>
-    </div>
-  </header>
-
-  <ol class="flujo-firma__pasos">
-    <li class="flujo-firma__paso" [class.flujo-firma__paso--hecho]="r.emitidas > 0">
-      <span class="flujo-firma__numero">1</span>
-      <strong>Emitir</strong>
-      <span class="flujo-firma__cifra">{{ r.emitidas }}</span>
-      <span class="form-ayuda">boleta(s) emitida(s) del mes</span>
-    </li>
-    <li class="flujo-firma__paso" [class.flujo-firma__paso--pendiente]="r.por_firmar + r.a_medias > 0">
-      <span class="flujo-firma__numero">2</span>
-      <strong>Bajar y firmar</strong>
-      <span class="flujo-firma__cifra">{{ r.por_firmar + r.a_medias }}</span>
-      <span class="form-ayuda">esperan la firma<ng-container *ngIf="r.a_medias"> ({{ r.a_medias }} a medias)</ng-container></span>
-      <button class="btn-secondary flujo-firma__boton" type="button" (click)="descargarParaFirmar()"
-        [disabled]="descargandoParaFirmar || r.por_firmar + r.a_medias === 0">
-        <app-icon icono="download" [tamano]="15"></app-icon>
-        {{ descargandoParaFirmar ? 'Juntando…' : 'Descargar para firmar' }}
-      </button>
-    </li>
-    <li class="flujo-firma__paso" [class.flujo-firma__paso--pendiente]="r.por_firmar + r.a_medias > 0">
-      <span class="flujo-firma__numero">3</span>
-      <strong>Subir firmadas</strong>
-      <span class="form-ayuda">Los PDF que devolvió ReFirma. Se revisan antes de guardar.</span>
-      <button class="btn-primary flujo-firma__boton" type="button" (click)="modalSubirFirmadas = true">
-        <app-icon icono="upload" [tamano]="15"></app-icon>
-        Subir boletas firmadas
-      </button>
-    </li>
-    <li class="flujo-firma__paso" [class.flujo-firma__paso--hecho]="r.entregadas > 0">
-      <span class="flujo-firma__numero">4</span>
-      <strong>Entregadas</strong>
-      <span class="flujo-firma__cifra">{{ r.entregadas }}</span>
-      <span class="form-ayuda">{{ r.conformidad }} con la conformidad del trabajador</span>
-    </li>
-  </ol>
 </section>
 
 <!-- El mes está sin empezar: nadie tiene planilla todavía. -->
@@ -434,3 +385,88 @@
   [requeridas]="resumenFirma?.requeridas ?? 1"
   (guardadas)="alGuardarFirmadas()"
 ></app-subir-firmadas>
+
+<!-- La firma digital del mes, paso a paso, con lo que hay en cada uno. -->
+<app-form-modal
+  [(visible)]="modalFirma"
+  [titulo]="'Firma digital · ' + nombreMes(mesGlobal * 1) + ' ' + anioGlobal"
+  ancho="680px"
+  [ocultarBotonesPorDefecto]="true"
+  (cancelar)="modalFirma = false"
+>
+  <p class="form-ayuda pasos-firma__intro">
+    Cada boleta le llega al trabajador recién cuando tiene
+    {{ (resumenFirma?.requeridas ?? 1) === 2 ? 'las 2 firmas' : 'la firma' }} del colegio, hecha en ReFirma con el DNIe.
+    Él da su conformidad con su contraseña.
+  </p>
+
+  <ol class="pasos-firma" *ngIf="resumenFirma as r">
+    <li class="pasos-firma__paso" [class.pasos-firma__paso--hecho]="r.emitidas > 0 && r.emitidas >= planillasDelMes">
+      <span class="pasos-firma__numero">1</span>
+      <div class="pasos-firma__texto">
+        <strong>Emitir las boletas</strong>
+        <span>{{ r.emitidas }} emitida(s) de {{ planillasDelMes }} con planilla.</span>
+      </div>
+      <button class="btn-secondary" type="button" *ngIf="r.emitidas < planillasDelMes" (click)="emitirDesdeFirma()" [disabled]="generandoMasivo">
+        Emitir
+      </button>
+    </li>
+
+    <li class="pasos-firma__paso" [class.pasos-firma__paso--pendiente]="porFirmar > 0">
+      <span class="pasos-firma__numero">2</span>
+      <div class="pasos-firma__texto">
+        <strong>Descargarlas para firmar</strong>
+        <span>{{ porFirmar }} esperan la firma<ng-container *ngIf="r.a_medias"> ({{ r.a_medias }} con una firma de dos)</ng-container>. Baja solo esas, en un .zip.</span>
+      </div>
+      <button class="btn-secondary" type="button" (click)="descargarParaFirmar()" [disabled]="descargandoParaFirmar || porFirmar === 0">
+        <app-icon icono="download" [tamano]="15"></app-icon>
+        {{ descargandoParaFirmar ? 'Juntando…' : 'Descargar .zip' }}
+      </button>
+    </li>
+
+    <li class="pasos-firma__paso" [class.pasos-firma__paso--pendiente]="porFirmar > 0">
+      <span class="pasos-firma__numero">3</span>
+      <div class="pasos-firma__texto">
+        <strong>Firmarlas en ReFirma</strong>
+        <span>
+          Quien firma por el colegio las abre en ReFirma y las firma con su DNIe{{ r.requeridas === 2 ? '; luego la segunda persona, sobre los mismos archivos' : '' }}.
+        </span>
+      </div>
+      <a class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }" (click)="modalFirma = false">Ver la guía</a>
+    </li>
+
+    <li class="pasos-firma__paso" [class.pasos-firma__paso--pendiente]="porFirmar > 0">
+      <span class="pasos-firma__numero">4</span>
+      <div class="pasos-firma__texto">
+        <strong>Subir las firmadas</strong>
+        <span>El sistema revisa cada PDF antes de guardar y, al guardar, se la entrega al trabajador.</span>
+      </div>
+      <button class="btn-primary" type="button" (click)="abrirSubirFirmadas()">
+        <app-icon icono="upload" [tamano]="15"></app-icon>
+        Subir firmadas
+      </button>
+    </li>
+
+    <li class="pasos-firma__paso" [class.pasos-firma__paso--hecho]="r.entregadas > 0 && porFirmar === 0">
+      <span class="pasos-firma__numero">5</span>
+      <div class="pasos-firma__texto">
+        <strong>Entregadas</strong>
+        <span>{{ r.entregadas }} entregada(s), {{ r.conformidad }} con la conformidad del trabajador.</span>
+      </div>
+      <button class="btn-secondary" type="button" (click)="descargarConstancia()" [disabled]="descargandoConstancia">
+        <app-icon icono="excel" [tamano]="15"></app-icon>
+        {{ descargandoConstancia ? 'Armando…' : 'Constancia' }}
+      </button>
+    </li>
+  </ol>
+
+  <div modalFooter class="asistente-pie asistente-pie--extremos">
+    <!-- Todas las emitidas del mes, con los filtros de la tabla: firmadas o no. -->
+    <button class="btn-secondary" type="button" (click)="descargarEmitidasEnZip()" [disabled]="descargandoZip"
+      title="Baja en un .zip todas las boletas emitidas del mes (las que ves con los filtros puestos)">
+      <app-icon icono="download" [tamano]="15"></app-icon>
+      {{ descargandoZip ? 'Juntando…' : 'Descargar todas (.zip)' }}
+    </button>
+    <button class="btn-primary" type="button" (click)="modalFirma = false">Cerrar</button>
+  </div>
+</app-form-modal>

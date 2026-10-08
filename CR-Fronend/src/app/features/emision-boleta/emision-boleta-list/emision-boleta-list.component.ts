@@ -16,7 +16,8 @@ import { ConfirmService } from '../../../core/services';
 import { Observable, of, map, switchMap, forkJoin } from 'rxjs';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { AlCuerpoDirective } from '../../../shared/directives/al-cuerpo.directive';
-import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { RouterLink } from '@angular/router';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
@@ -61,7 +62,7 @@ export interface FormularioBoleta {
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, SubirFirmadasComponent],
+  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, SubirFirmadasComponent, RouterLink],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })
@@ -166,21 +167,6 @@ export class EmisionBoletaListComponent implements OnInit {
    * Las cifras de arriba: cuánta gente hay y cuántas boletas van armadas de
    * ese mes. Las dos salen del backend contando TODO, no la página.
    */
-  get cifras(): CifraCabecera[] {
-    return [
-      {
-        icono: 'people',
-        valor: this.totalEmpleados,
-        // Con un filtro puesto ya no son "los trabajadores" sino los que
-        // quedaron en la lista, y conviene que la cifra lo diga.
-        etiqueta: this.hayFiltros ? 'En la lista' : 'Trabajadores',
-        tono: 'brand',
-      },
-      { icono: 'receipt', valor: this.planillasDelMes, etiqueta: 'Con planilla', tono: 'success' },
-      { icono: 'clock', valor: this.sinPlanilla, etiqueta: 'Les falta', tono: 'warning' },
-    ];
-  }
-
   get hayFiltros(): boolean {
     // La vista de arriba (con/sin planilla) no cuenta como filtro: si
     // contara, la cifra diría siempre "En la lista".
@@ -242,14 +228,27 @@ export class EmisionBoletaListComponent implements OnInit {
 
   resumenFirma: ResumenFirmaDigital | null = null;
   modalSubirFirmadas = false;
+  /** El modal con los pasos de la firma digital del mes. */
+  modalFirma = false;
+
+  /** Cuántas esperan la firma del colegio (sin firmar y a medias). */
+  get porFirmar(): number {
+    const r = this.resumenFirma;
+    return r ? r.por_firmar + r.a_medias : 0;
+  }
+
+  /** Del modal de pasos al de subir: uno cierra y el otro abre. */
+  abrirSubirFirmadas(): void {
+    this.modalFirma = false;
+    this.modalSubirFirmadas = true;
+  }
+
+  emitirDesdeFirma(): void {
+    this.modalFirma = false;
+    this.emitirTodasLasBoletas();
+  }
   descargandoParaFirmar = false;
   descargandoConstancia = false;
-
-  /** El panel de pasos se ve con el ajuste encendido, o si quedó algo a medio camino. */
-  get mostrarFlujoFirma(): boolean {
-    const r = this.resumenFirma;
-    return !!r && (r.activa || r.por_firmar > 0 || r.a_medias > 0);
-  }
 
   cargarResumenFirma(): void {
     this.boletaService.resumenFirmaDigital(Number(this.mesGlobal), Number(this.anioGlobal)).subscribe({
