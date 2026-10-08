@@ -45,7 +45,7 @@ class RecalculoRenta5ta
 
             if ($planilla->documentoBoleta) {
                 app(BoletaController::class)->construirBoleta(
-                    $empleado->load('area', 'cargo', 'sede', 'identidadFirma'),
+                    $empleado->load('area', 'cargo', 'sede'),
                     $planilla->fresh(),
                     (int) $planilla->mes,
                     (int) $planilla->anio

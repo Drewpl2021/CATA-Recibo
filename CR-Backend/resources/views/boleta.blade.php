@@ -103,8 +103,6 @@
         .firmas { margin-top: 34px; }
         .firmas td { text-align: center; vertical-align: bottom; font-size: 7.6px; color: #2E3B42; }
         .firmas .linea { border-top: 1px solid #1F2B33; padding-top: 3px; margin: 0 22px; }
-        .firmas img.firma { height: 38px; }
-        .firmas img.huella { height: 28px; margin-left: 6px; }
         .firma-digital { margin-top: 6px; font-size: 6.3px; color: #2E3B42; background: #EDF3F5; padding: 4px 6px; }
 
         /* ── Firma digital del colegio (ReFirma) ──
@@ -540,38 +538,17 @@
     <table class="firmas">
         <tr>
             <td>
-                @if (isset($documento) && $documento->estado_firma_empleador === 'firmado' && $documento->empleador?->identidadFirma?->firma_imagen)
-                    <img class="firma" src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($documento->empleador->identidadFirma->firma_imagen) }}">
-                    @if ($documento->empleador?->identidadFirma?->huella_imagen)
-                        <img class="huella" src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($documento->empleador->identidadFirma->huella_imagen) }}">
-                    @endif
-                @endif
                 <div class="linea">Firma del empleador<br>Colegio Adventista Túpac Amaru</div>
             </td>
             <td>
-                @if (isset($documento) && $documento->estado_firma === 'firmado' && $empleado->identidadFirma?->firma_imagen)
-                    <img class="firma" src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($empleado->identidadFirma->firma_imagen) }}">
-                    {{-- Como en un documento físico peruano, la huella va junto a la firma. --}}
-                    @if ($empleado->identidadFirma?->huella_imagen)
-                        <img class="huella" src="{{ \Illuminate\Support\Facades\Storage::disk('local')->path($empleado->identidadFirma->huella_imagen) }}">
-                    @endif
-                @endif
                 <div class="linea">Firma del trabajador<br>{{ $empleado->apellido }}, {{ $empleado->nombre }}</div>
             </td>
         </tr>
     </table>
 
-    @if (isset($documento) && $documento->estado_firma_empleador === 'firmado')
-        <div class="firma-digital">
-            Firmado por el empleador: {{ $documento->firmado_por_empleador }}
-            el {{ \Carbon\Carbon::parse($documento->fecha_firma_empleador)->format('d/m/Y H:i') }} —
-            Código de verificación: {{ $documento->codigo_firma_empleador }}
-        </div>
-    @endif
-
     @if (isset($documento) && $documento->estado_firma === 'firmado')
         <div class="firma-digital">
-            Documento firmado digitalmente por {{ $documento->firmado_por }}
+            Conformidad del trabajador: {{ $documento->firmado_por }}
             el {{ \Carbon\Carbon::parse($documento->fecha_firma)->format('d/m/Y H:i') }} —
             Código de verificación: {{ $documento->codigo_firma }}
         </div>

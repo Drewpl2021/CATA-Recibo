@@ -29,7 +29,7 @@ final class BoletaAlDia
         }
 
         app(BoletaController::class)->construirBoleta(
-            $planilla->empleado->load('area', 'cargo', 'sede', 'identidadFirma'),
+            $planilla->empleado->load('area', 'cargo', 'sede'),
             $planilla,
             (int) $planilla->mes,
             (int) $planilla->anio

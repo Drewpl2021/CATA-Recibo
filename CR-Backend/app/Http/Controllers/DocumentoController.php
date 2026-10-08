@@ -95,7 +95,7 @@ class DocumentoController extends Controller
         //  2. Un documento recién registrado llevaba código y fecha de firma
         //     sin que nadie hubiera firmado nada. Esos dos datos los genera el
         //     acto de firmar (MisDocumentosController::firmar para el
-        //     trabajador, firmarComoEmpleador para el colegio), y de hecho los
+        //     trabajador; la firma del colegio es la digital de ReFirma), y de hecho los
         //     sobrescribían — el de aquí no servía para nada.
         //
         // `firmado_por` sí se admite: en un documento que se registra a mano
@@ -316,97 +316,5 @@ class DocumentoController extends Controller
             'success' => false,
             'message' => 'El archivo de este documento aún no está disponible. Vuelve a generarlo.',
         ], 404);
-    }
-
-    /**
-     * El lado "Firma Empleador" de un Documento — lo firma un RRHH/admin en
-     * representación de la institución, con el mismo respaldo de contraseña
-     * (y bloqueo a los 3 intentos) que usa el empleado para su propio lado.
-     * RRHH también es un Empleado en este sistema, así que su firma/huella
-     * salen de la misma tabla identidades_firma.
-     */
-    public function firmarComoEmpleador(Request $request, string $id)
-    {
-        $request->validate([
-            'password' => 'required|string',
-        ]);
-
-        $user        = $request->user();
-        $empleado_id = $user->empleado_id;
-        if (!$empleado_id) {
-            return response()->json([
-                'success' => false,
-                'data'    => ['message' => 'Tu usuario no tiene empleado vinculado.'],
-            ], 403);
-        }
-
-        $intentosKey = 'intentos_firma_empleador_' . $user->id;
-        $intentos    = Cache::get($intentosKey, 0);
-
-        if (!Hash::check($request->password, $user->password)) {
-            $intentos++;
-            Cache::put($intentosKey, $intentos, now()->addMinutes(15));
-
-            if ($intentos >= 3) {
-                $user->tokens()->delete();
-                Cache::forget($intentosKey);
-
-                return response()->json([
-                    'success' => false,
-                    'data'    => ['message' => 'Se superó el límite de 3 intentos. Su sesión ha sido cerrada.'],
-                ], 403);
-            }
-
-            $intentosRestantes = 3 - $intentos;
-            return response()->json([
-                'success' => false,
-                'data'    => ['message' => "Contraseña incorrecta. Le quedan {$intentosRestantes} intento(s)."],
-            ], 401);
-        }
-
-        Cache::forget($intentosKey);
-
-        $documento = Documento::findOrFail($id);
-
-        if ($documento->estado_firma_empleador === 'firmado') {
-            return response()->json([
-                'success' => false,
-                'data'    => ['message' => 'El lado del empleador ya está firmado.'],
-            ], 422);
-        }
-
-        $empleadoFirmante = Empleado::findOrFail($empleado_id);
-
-        $documento->update([
-            'empleador_id'           => $empleadoFirmante->id,
-            'estado_firma_empleador' => 'firmado',
-            'fecha_firma_empleador'  => now(),
-            'firmado_por_empleador'  => $empleadoFirmante->nombre . ' ' . $empleadoFirmante->apellido,
-            'codigo_firma_empleador' => strtoupper(Str::random(8)) . '-' . time(),
-        ]);
-
-        // Si es una boleta, se vuelve a armar el PDF ahora que ya quedó firmada por
-        // el empleador — mismo mecanismo que usa MisDocumentosController::firmar()
-        // para el lado del trabajador, así el archivo congelado en disco incluye
-        // también este sello.
-        if ($documento->tipo === 'boleta' && $documento->planilla_id) {
-            $planilla = Planilla::find($documento->planilla_id);
-            $empleadoTitular = Empleado::with('area', 'cargo', 'identidadFirma')->find($documento->empleado_id);
-            if ($planilla && $empleadoTitular) {
-                app(BoletaController::class)->construirBoleta(
-                    $empleadoTitular,
-                    $planilla,
-                    (int) $planilla->mes,
-                    (int) $planilla->anio,
-                    forzarGuardado: true
-                );
-            }
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Documento firmado como empleador correctamente.',
-            'data'    => $documento,
-        ]);
     }
 }

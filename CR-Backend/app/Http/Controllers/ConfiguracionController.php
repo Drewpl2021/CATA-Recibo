@@ -25,7 +25,6 @@ class ConfiguracionController extends Controller
         $datos = $request->validate([
             AniosAnteriores::AJUSTE => 'sometimes|boolean',
             MetodoRenta5ta::AJUSTE  => 'sometimes|boolean',
-            FirmaDigitalDeBoletas::AJUSTE => 'sometimes|boolean',
             FirmaDigitalDeBoletas::AJUSTE_FIRMAS => 'sometimes|integer|in:1,2',
         ]);
 
@@ -43,7 +42,6 @@ class ConfiguracionController extends Controller
         return [
             AniosAnteriores::AJUSTE => AniosAnteriores::permitidos(),
             MetodoRenta5ta::AJUSTE  => MetodoRenta5ta::comoHojaDeRrhh(),
-            FirmaDigitalDeBoletas::AJUSTE => FirmaDigitalDeBoletas::activa(),
             FirmaDigitalDeBoletas::AJUSTE_FIRMAS => FirmaDigitalDeBoletas::requeridas(),
             // Cuántas boletas esperan todavía la firma del colegio: al apagar
             // el ajuste, esas siguen su camino (la pantalla lo avisa).

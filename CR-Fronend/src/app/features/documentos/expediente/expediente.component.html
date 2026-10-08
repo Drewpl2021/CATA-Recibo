@@ -54,7 +54,7 @@
     </div>
     <div class="resumen-masivo__dato">
       <strong>{{ boletasFirmadas }} de {{ boletasDelSistema }}</strong>
-      <span>Boletas firmadas</span>
+      <span>Boletas con conformidad</span>
     </div>
     <div class="resumen-masivo__dato">
       <strong>{{ documentosSubidos }}</strong>
@@ -73,10 +73,6 @@
     <a class="chip-filtro" href="#expediente-contratos">
       <app-icon icono="badge" [tamano]="15"></app-icon>
       Contratos
-    </a>
-    <a class="chip-filtro" href="#expediente-firma">
-      <app-icon icono="signature" [tamano]="15"></app-icon>
-      Su firma
     </a>
     <a class="chip-filtro" href="#expediente-boletas">
       <app-icon icono="receipt" [tamano]="15"></app-icon>
@@ -176,35 +172,6 @@
           <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: d, titulo: '', puedeQuitar: true }"></ng-container>
         </ng-container>
       </div>
-    </div>
-  </section>
-
-  <!-- ══ Su firma ══════════════════════════════════════════════ -->
-  <section class="expediente-bloque" id="expediente-firma">
-    <header class="expediente-bloque__cabecera">
-      <span class="expediente-bloque__icono expediente-bloque__icono--firma"><app-icon icono="signature" [tamano]="19"></app-icon></span>
-      <div class="expediente-bloque__titulos">
-        <h2 class="seccion-form__titulo">Su firma</h2>
-        <span class="form-ayuda">
-          La que se estampa en sus boletas cuando las firma. Puede dibujarla él desde Mis Documentos, o tú desde aquí.
-        </span>
-      </div>
-      <button type="button" class="btn-secondary" (click)="abrirFirma()" [disabled]="cargandoFirma">
-        {{ firmaUrl ? 'Cambiar la firma' : 'Dibujar su firma' }}
-      </button>
-    </header>
-
-    <div class="section-panel expediente-bloque__panel">
-      <div class="firma-caja">
-        <img *ngIf="firmaUrl" class="firma-caja__trazo" [src]="firmaUrl" [alt]="'Firma de ' + nombreCompleto" />
-        <span class="firma-caja__vacio" *ngIf="!firmaUrl">{{ cargandoFirma ? '' : 'Sin firma todavía' }}</span>
-        <span class="firma-caja__linea" aria-hidden="true"></span>
-        <span class="firma-caja__pie">{{ nombreCompleto }}<ng-container *ngIf="e.empleado.dni">, DNI {{ e.empleado.dni }}</ng-container></span>
-      </div>
-
-      <p class="expediente-vacio" *ngIf="!firmaUrl && !cargandoFirma">
-        Sin firma registrada, sus boletas firmadas salen sin el trazo.
-      </p>
     </div>
   </section>
 
@@ -337,27 +304,3 @@
 
 <app-visor-documento [(documento)]="docAbierto" [persona]="nombreCompleto"></app-visor-documento>
 
-<!-- Dibujar la firma del trabajador -->
-<app-form-modal
-  [(visible)]="modalFirma"
-  titulo="Dibujar su firma"
-  textoGuardar="Guardar la firma"
-  ancho="620px"
-  [guardando]="guardandoFirma"
-  (guardar)="guardarFirma()"
-  (cancelar)="cerrarFirma()"
->
-  <div class="form-fields">
-    <p class="form-nota">
-      Que firme el propio trabajador, en tu pantalla o en su celular. Queda guardada a su nombre y se
-      estampa en cada boleta que él firme.
-      {{ firmaUrl ? 'La que dibuje ahora reemplaza a la de arriba.' : '' }}
-    </p>
-    <div class="firma-actual" *ngIf="firmaUrl">
-      <span class="form-ayuda">Su firma actual</span>
-      <img class="firma-actual__trazo" [src]="firmaUrl" alt="Su firma actual" />
-    </div>
-
-    <app-lienzo-firma [pie]="nombreCompleto" (hayTrazoChange)="hayTrazo = $event"></app-lienzo-firma>
-  </div>
-</app-form-modal>

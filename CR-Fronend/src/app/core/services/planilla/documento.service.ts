@@ -63,12 +63,4 @@ export class DocumentoService extends EntityDataService<Documento> {
       responseType: 'blob',
     });
   }
-
-  /** POST /documentos/{id}/firmar-empleador — RRHH firma el lado del empleador. */
-  firmarComoEmpleador(documentoId: string, password: string): Observable<ApiResponse<Documento>> {
-    return this.http.post<ApiResponse<Documento>>(
-      `${environment.apiUrl}/${END_POINTS_ACCIONES.firmarComoEmpleador(documentoId)}`,
-      { password }
-    );
-  }
 }

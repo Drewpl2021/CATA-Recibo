@@ -62,10 +62,8 @@ export class AjustesComponent implements OnInit {
       },
       {
         id: 'boletas', nombre: 'Boletas', icono: 'receipt',
-        estado: !a ? '…' : a.boleta_firma_digital
-          ? `Con firma digital del colegio (${a.boleta_firmas_requeridas === 2 ? '2 firmas' : '1 firma'})`
-          : 'Se entregan al emitirlas',
-        aviso: !!a && !a.boleta_firma_digital && (a.boletas_esperando_firma_colegio ?? 0) > 0,
+        estado: !a ? '…' : `Firma digital del colegio (${a.boleta_firmas_requeridas === 2 ? '2 firmas' : '1 firma'})`,
+        aviso: false,
       },
       {
         id: 'renta5ta', nombre: 'Renta de 5ta', icono: 'wallet',
@@ -300,7 +298,7 @@ export class AjustesComponent implements OnInit {
    * Firma digital del colegio en las boletas. Se guarda de a un campo, como
    * los demás ajustes; si el servidor lo rechaza, vuelve a como estaba.
    */
-  cambiarFirmaDigital(cambio: Partial<Pick<AjustesSistema, 'boleta_firma_digital' | 'boleta_firmas_requeridas'>>): void {
+  cambiarFirmaDigital(cambio: Partial<Pick<AjustesSistema, 'boleta_firmas_requeridas'>>): void {
     if (!this.ajustes) return;
 
     const antes = { ...this.ajustes };
@@ -312,13 +310,7 @@ export class AjustesComponent implements OnInit {
         this.guardando = false;
         if (!res.success) return;
         this.ajustes = res.data;
-        if (cambio.boleta_firma_digital !== undefined) {
-          this.toastService.success('Ajuste guardado', cambio.boleta_firma_digital
-            ? 'Desde ahora las boletas que se emitan esperan la firma digital del colegio antes de llegarle al trabajador.'
-            : 'Las boletas nuevas se entregan al emitirlas, como antes. Las que esperaban la firma siguen su camino.');
-        } else {
-          this.toastService.success('Ajuste guardado', `Cada boleta necesita ${cambio.boleta_firmas_requeridas} firma(s) del colegio.`);
-        }
+        this.toastService.success('Ajuste guardado', `Cada boleta necesita ${cambio.boleta_firmas_requeridas} firma(s) del colegio.`);
       },
       error: (err) => {
         this.guardando = false;

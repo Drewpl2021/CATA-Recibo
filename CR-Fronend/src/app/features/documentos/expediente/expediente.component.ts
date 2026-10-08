@@ -1,9 +1,9 @@
-import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { ConfirmService, DocumentoService, ExpedienteService, IdentidadFirmaService, ToastService } from '../../../core/services';
+import { ConfirmService, DocumentoService, ExpedienteService, ToastService } from '../../../core/services';
 import { Contrato, ContratoDelExpediente, Documento, Expediente } from '../../../core/models';
 import {
   TIPOS_DOCUMENTO_SUBIBLES,
@@ -26,7 +26,6 @@ import { ESTADO_CONTRATO_OPCIONES, nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
-import { LienzoFirmaComponent } from '../../../shared/components/lienzo-firma/lienzo-firma.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectorArchivoComponent } from '../../../shared/components/selector-archivo/selector-archivo.component';
@@ -51,18 +50,17 @@ import { VisorDocumentoComponent } from '../../../shared/components/visor-docume
   imports: [
     CommonModule, FormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, IconComponent,
-    SelectorArchivoComponent, VisorDocumentoComponent, LienzoFirmaComponent,
+    SelectorArchivoComponent, VisorDocumentoComponent,
   ],
   templateUrl: './expediente.component.html',
 })
-export class ExpedienteComponent implements OnInit, OnDestroy {
+export class ExpedienteComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private expedientes = inject(ExpedienteService);
   private documentoService = inject(DocumentoService);
   private toast = inject(ToastService);
   private confirm = inject(ConfirmService);
-  private identidadFirmaService = inject(IdentidadFirmaService);
 
   empleadoId = '';
   expediente: Expediente | null = null;
@@ -78,13 +76,6 @@ export class ExpedienteComponent implements OnInit, OnDestroy {
   archivos: File[] = [];
   subiendo = false;
 
-  // ── Su firma ──
-  firmaUrl: string | null = null;
-  cargandoFirma = true;
-  modalFirma = false;
-  guardandoFirma = false;
-  hayTrazo = false;
-  @ViewChild(LienzoFirmaComponent) private lienzo?: LienzoFirmaComponent;
   readonly tiposSubibles = TIPOS_DOCUMENTO_SUBIBLES;
 
   /** Sus papeles, menos la hoja de vida vigente, que va en su propia fila. */
@@ -148,7 +139,6 @@ export class ExpedienteComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.empleadoId = this.route.snapshot.paramMap.get('empleadoId') ?? '';
     this.cargar();
-    this.cargarFirma();
   }
 
   cargar(): void {
@@ -347,71 +337,6 @@ export class ExpedienteComponent implements OnInit, OnDestroy {
           this.toast.error('No se pudo subir', mensajeErrorApi(err, 'Revisa el archivo e intenta de nuevo.'));
         },
       });
-  }
-
-  // ── Su firma ──
-
-  private cargarFirma(): void {
-    this.cargandoFirma = true;
-    this.identidadFirmaService.verDeEmpleado(this.empleadoId).subscribe({
-      next: (blob) => {
-        this.olvidarFirma();
-        this.firmaUrl = URL.createObjectURL(blob);
-        this.cargandoFirma = false;
-      },
-      // 404 es lo normal: todavía no tiene firma registrada.
-      error: () => {
-        this.olvidarFirma();
-        this.cargandoFirma = false;
-      },
-    });
-  }
-
-  abrirFirma(): void {
-    // El lienzo no se destruye al cerrar el modal: se limpia a mano para no
-    // reabrirlo con el dibujo anterior.
-    this.lienzo?.borrar();
-    this.hayTrazo = false;
-    this.modalFirma = true;
-  }
-
-  cerrarFirma(): void {
-    this.modalFirma = false;
-  }
-
-  async guardarFirma(): Promise<void> {
-    const png = await this.lienzo?.exportarPng();
-    if (!png) {
-      this.toast.warning('Falta la firma', 'Dibújala en el recuadro antes de guardar.');
-      return;
-    }
-
-    this.guardandoFirma = true;
-    this.identidadFirmaService
-      .subirParaEmpleado(this.empleadoId, new File([png], 'firma.png', { type: 'image/png' }))
-      .subscribe({
-        next: () => {
-          this.guardandoFirma = false;
-          this.modalFirma = false;
-          this.cargarFirma();
-          this.toast.success('Firma guardada', `Queda a nombre de ${this.nombreCompleto}.`);
-        },
-        error: (err) => {
-          this.guardandoFirma = false;
-          this.toast.error('No se pudo guardar', mensajeErrorApi(err, 'Intenta de nuevo en un momento.'));
-        },
-      });
-  }
-
-  private olvidarFirma(): void {
-    if (this.firmaUrl) {
-      URL.revokeObjectURL(this.firmaUrl);
-      this.firmaUrl = null;
-    }
-  }
-
-  ngOnDestroy(): void {
-    this.olvidarFirma();
   }
 
   // ── Navegación ──

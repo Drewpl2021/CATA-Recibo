@@ -1,19 +1,10 @@
 <app-page-header
   icono="folder_shared"
   titulo="Mis Documentos"
-  subtitulo="Tus boletas y tus documentos. Acá los revisas, los firmas y subes los tuyos: tu hoja de vida, tu foto, la copia de tu DNI o un certificado."
+  subtitulo="Tus boletas y tus documentos. Acá los revisas, das tu conformidad y subes los tuyos: tu hoja de vida, tu foto, la copia de tu DNI o un certificado."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
 >
-  <button headerActions type="button" class="firma-chip" [class.firma-chip--vacia]="!firmaUrl"
-    (click)="abrirFirma()" [disabled]="cargandoFirma"
-    [appPista]="firmaUrl ? 'Se estampa en cada boleta que firmes' : 'Hazla una vez y queda guardada'"
-    pistaLado="abajo">
-    <img *ngIf="firmaUrl" class="firma-chip__trazo" [src]="firmaUrl" alt="" />
-    <app-icon *ngIf="!firmaUrl" icono="shield" [tamano]="17"></app-icon>
-    <span>{{ firmaUrl ? 'Cambiar' : 'Registrar mi firma' }}</span>
-  </button>
-
   <button headerActions type="button" class="btn-primary" (click)="abrirSubirCv()">
     <app-icon icono="upload" [tamano]="16"></app-icon>
     Subir un documento
@@ -40,19 +31,19 @@
   mensajeVacio="Todavía no tienes documentos."
 ></app-data-table>
 
-<!-- Firmar con la contraseña de la cuenta -->
+<!-- La conformidad, con la contraseña de la cuenta -->
 <app-form-modal
   [(visible)]="modalFirmar"
-  titulo="Firmar documento"
-  textoGuardar="Firmar"
+  titulo="Dar conformidad"
+  textoGuardar="Dar conformidad"
   [guardando]="firmando"
   (guardar)="confirmarFirma()"
   (cancelar)="cerrarFirmar()"
 >
   <div class="form-fields">
     <p class="form-nota">
-      Vas a firmar <strong>{{ nombreDe(docAFirmar) }}</strong>. Escribe la contraseña con la que
-      entras al sistema: vale igual que tu firma en papel.
+      Vas a dar tu conformidad a <strong>{{ nombreDe(docAFirmar) }}</strong>: confirmas que lo recibiste.
+      Escribe la contraseña con la que entras al sistema. Queda registrado con la fecha y la hora, y el documento no cambia.
     </p>
     <div class="form-group">
       <label for="password_firma">Contraseña</label>
@@ -112,27 +103,3 @@
   (documentoChange)="alCerrarVisor($event)"
   [puedeDescargar]="docAbierto ? puedeDescargar(docAbierto) : true"
 ></app-visor-documento>
-
-<!-- Dibujar la firma -->
-<app-form-modal
-  [(visible)]="modalFirma"
-  titulo="Dibuja tu firma"
-  textoGuardar="Guardar mi firma"
-  ancho="620px"
-  [guardando]="guardandoFirma"
-  (guardar)="guardarFirma()"
-  (cancelar)="cerrarFirma()"
->
-  <div class="form-fields">
-    <p class="form-nota">
-      Firma como lo haces en papel: el recuadro es el mismo que sale impreso en tu boleta.
-      {{ firmaUrl ? 'La que dibujes ahora reemplaza a la de arriba.' : '' }}
-    </p>
-    <div class="firma-actual" *ngIf="firmaUrl">
-      <span class="form-ayuda">Tu firma actual</span>
-      <img class="firma-actual__trazo" [src]="firmaUrl" alt="Tu firma actual" />
-    </div>
-
-    <app-lienzo-firma [pie]="miNombre" (hayTrazoChange)="hayTrazo = $event"></app-lienzo-firma>
-  </div>
-</app-form-modal>

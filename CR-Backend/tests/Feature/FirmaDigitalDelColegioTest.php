@@ -35,7 +35,6 @@ class FirmaDigitalDelColegioTest extends TestCase
         parent::setUp();
         Storage::fake('local');
         Mail::fake();
-        Configuracion::poner(FirmaDigitalDeBoletas::AJUSTE, true);
 
         $this->mes = (int) now()->month;
         $this->anio = (int) now()->year;
@@ -131,6 +130,9 @@ class FirmaDigitalDelColegioTest extends TestCase
             ->postJson("/api/my-documents/{$boleta->id}/sign", ['password' => 'ClaveSegura#2026'])->assertOk();
         $this->assertSame('firmado', $boleta->fresh()->estado_firma);
         $this->assertSame($firmada, Storage::disk('local')->get($boleta->fresh()->archivo));
+        // Con su rastro: desde dónde y a qué PDF exacto dio la conformidad.
+        $this->assertSame(hash('sha256', $firmada), $boleta->fresh()->conformidad_sha256);
+        $this->assertNotEmpty($boleta->fresh()->conformidad_ip);
 
         // Lo que se baja, él o RR.HH., es exactamente el firmado.
         $suya = $this->actingAs($this->trabajador, 'sanctum')->get("/api/my-payslips/{$this->mes}/{$this->anio}")->assertOk();
@@ -142,7 +144,8 @@ class FirmaDigitalDelColegioTest extends TestCase
         $excel = $this->actingAs($this->rrhh, 'sanctum')->get("/api/payslips/delivery-record?mes={$this->mes}&anio={$this->anio}")->assertOk();
         $hoja = \PhpOffice\PhpSpreadsheet\IOFactory::load($excel->baseResponse->getFile()->getPathname())->getActiveSheet();
         $this->assertSame('ISIDORO RODRIGUEZ', $hoja->getCell('E5')->getValue());
-        $this->assertSame('Recibida, con conformidad', $hoja->getCell('L5')->getValue());
+        $this->assertSame(hash('sha256', $firmada), $hoja->getCell('L5')->getValue());
+        $this->assertSame('Recibida, con conformidad', $hoja->getCell('N5')->getValue());
     }
 
     public function test_con_dos_firmas_requeridas_la_primera_deja_la_boleta_a_medias(): void
@@ -216,14 +219,19 @@ class FirmaDigitalDelColegioTest extends TestCase
         $this->actingAs($this->rrhh, 'sanctum')->postJson("/api/payslips/{$nueva->id}/void")->assertStatus(422);
     }
 
-    public function test_con_el_ajuste_apagado_todo_sigue_como_antes(): void
+    public function test_la_de_un_anio_anterior_sigue_siendo_de_registro_en_papel(): void
     {
-        Configuracion::poner(FirmaDigitalDeBoletas::AJUSTE, false);
-        $boleta = $this->emitir();
+        Configuracion::poner(\App\Support\AniosAnteriores::AJUSTE, true);
+        $anterior = Planilla::create([
+            'empleado_id' => $this->empleado->id, 'mes' => 12, 'anio' => $this->anio - 1, 'sueldo_base' => 2000, 'total' => 2000,
+        ]);
 
+        $this->actingAs($this->rrhh, 'sanctum')->get("/api/payslips/{$this->empleado->id}/12/" . ($this->anio - 1))->assertOk();
+        $boleta = Documento::where('planilla_id', $anterior->id)->where('tipo', 'boleta')->firstOrFail();
+
+        // No espera firma digital: ya se firmó en papel en su momento.
         $this->assertNull($boleta->firma_colegio);
-        $this->assertSame(2, $this->paginas(Storage::disk('local')->get($boleta->archivo)));
-        $this->assertSame(1, Notificacion::count());
-        $this->subir(Storage::disk('local')->get($boleta->archivo), 'payslips/signed/check')->assertJsonPath('data.estado', 'no_aplica');
+        $this->assertSame('en_papel', $boleta->estado_firma);
+        $this->assertSame(0, Notificacion::count());
     }
 }

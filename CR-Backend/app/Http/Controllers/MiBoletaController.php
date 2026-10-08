@@ -30,7 +30,7 @@ class MiBoletaController extends Controller
             ], 403);
         }
 
-        $empleado = Empleado::with('area', 'cargo', 'identidadFirma')->findOrFail($empleado_id);
+        $empleado = Empleado::with('area', 'cargo')->findOrFail($empleado_id);
         $planilla = Planilla::where('empleado_id', $empleado_id)
             ->where('mes', $mes)
             ->where('anio', $anio)
@@ -96,7 +96,7 @@ class MiBoletaController extends Controller
         // el disco "public", porque una boleta trae sueldo, DNI y cuenta bancaria.
         $rutaArchivo = "documentos/{$empleado_id}/boletas/{$archivo}";
 
-        $documento = Documento::with('empleador.identidadFirma')
+        $documento = Documento::query()
             ->where('empleado_id', $empleado_id)
             ->where('planilla_id', $planilla->id)
             ->where('tipo', 'boleta')

@@ -1,14 +1,6 @@
 import { Area, Cargo, Sede, TipoContrato } from './configuracion.model';
 import { Usuario } from './usuario.model';
 
-export interface IdentidadFirma {
-  id: string;
-  empleado_id?: string;
-  firma_imagen: string | null;
-  huella_imagen: string | null;
-  registrado_por?: number | null;
-}
-
 export interface Empleado {
   id: string;
   dni: string;
@@ -52,9 +44,6 @@ export interface Empleado {
   tiene_hijos?: boolean;
   /** El Diezmo (10% del sueldo) se le aplica a todos por defecto; en false queda excluido. */
   aplica_diezmo?: boolean;
-
-  /** Relación identidades_firma (backend: identidadFirma()) — disco privado. */
-  identidad_firma?: IdentidadFirma | null;
 
   // Datos académicos / de contacto
   nivel_estudios?: string | null;

@@ -6,7 +6,6 @@ use App\Models\Area;
 use App\Models\Cargo;
 use App\Models\Documento;
 use App\Models\Empleado;
-use App\Models\IdentidadFirma;
 use App\Models\Periodo;
 use App\Models\Planilla;
 use App\Models\Sede;
@@ -91,8 +90,6 @@ class PrimerosPasosController extends Controller
             ->where('tipo', ExpedienteDigital::HOJA_DE_VIDA)
             ->exists();
 
-        $tieneFirma = $empleadoId && IdentidadFirma::where('empleado_id', $empleadoId)->exists();
-
         // Distinto de "no le falta ninguna": a quien todavía no le han
         // emitido ninguna boleta no se le puede dar por hecho el paso, o
         // creería que ya firmó algo.
@@ -117,15 +114,10 @@ class PrimerosPasosController extends Controller
                 'person', '/inicio/mis-boletas', $usuario->foto !== null
             ),
             $this->paso(
-                'firma', 'Registra tu firma',
-                'Se dibuja una sola vez y queda guardada. Sin ella no puedes firmar tus boletas.',
-                'signature', '/inicio/mis-boletas', (bool) $tieneFirma
-            ),
-            $this->paso(
-                'boletas', $porFirmar > 0 ? "Firma tus boletas ({$porFirmar} pendiente(s))" : 'Firma tus boletas',
+                'boletas', $porFirmar > 0 ? "Da tu conformidad a tus boletas ({$porFirmar} pendiente(s))" : 'Da tu conformidad a tus boletas',
                 $tieneBoletas
-                    ? 'Firmar es tu constancia de que la recibiste. Se firma desde Mis Boletas, con tu contraseña.'
-                    : 'Todavía no tienes ninguna. Cuando el colegio emita la del mes te llega acá, y la firmas con tu contraseña.',
+                    ? 'Tu conformidad es la constancia de que la recibiste. Se da desde Mis Boletas, con tu contraseña.'
+                    : 'Todavía no tienes ninguna. Cuando el colegio la firme y te la entregue, te llega acá y das tu conformidad con tu contraseña.',
                 'receipt_long', '/inicio/mis-boletas', $tieneBoletas && $porFirmar === 0
             ),
             $this->paso(

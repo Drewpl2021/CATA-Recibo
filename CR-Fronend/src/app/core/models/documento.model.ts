@@ -39,7 +39,7 @@ export interface Documento {
   fecha_descarga?: string | null;
   descargas?: number;
 
-  // Firma del empleador (RRHH) — ver DocumentoController@firmarComoEmpleador
+  // La antigua firma interna del empleador (ya no se usa: la del colegio es la digital de ReFirma).
   empleador_id?: string | null;
   estado_firma_empleador?: 'pendiente' | 'firmado';
   /** Firma digital del colegio (ReFirma): null si la boleta no va por ese camino. */

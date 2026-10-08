@@ -32,7 +32,7 @@ class BoletaController extends Controller
 
     public function generar(Request $request, $empleado_id, $mes, $anio)
     {
-        $empleado = Empleado::with('area', 'cargo', 'identidadFirma')->findOrFail($empleado_id);
+        $empleado = Empleado::with('area', 'cargo')->findOrFail($empleado_id);
         $planilla = Planilla::where('empleado_id', $empleado_id)
             ->where('mes', $mes)
             ->where('anio', $anio)
@@ -134,7 +134,7 @@ class BoletaController extends Controller
         // el disco "public", porque una boleta trae sueldo, DNI y cuenta bancaria.
         $rutaArchivo = "documentos/{$empleado_id}/boletas/{$archivo}";
 
-        $documento = Documento::with('empleador.identidadFirma')
+        $documento = Documento::query()
             ->where('empleado_id', $empleado_id)
             ->where('planilla_id', $planilla->id)
             ->where('tipo', 'boleta')
@@ -280,7 +280,7 @@ class BoletaController extends Controller
         // planilla de ese mes, es que entonces trabajaban.
         $planillas = ($corrida ? $corrida->planillas() : Planilla::where('mes', $mes)->where('anio', $anio))
             ->when(! $deRegistro, fn ($q) => $q->whereHas('empleado', fn ($e) => $e->where('estado', 'activo')))
-            ->with('empleado.area', 'empleado.cargo', 'empleado.identidadFirma')
+            ->with('empleado.area', 'empleado.cargo')
             ->get();
 
         $yaEmitidas = Documento::where('tipo', 'boleta')

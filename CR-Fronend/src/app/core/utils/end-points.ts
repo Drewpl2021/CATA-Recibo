@@ -69,9 +69,6 @@ export const END_POINTS = {
     misBoletas: 'my-payslips',
     misDocumentos: 'my-documents',
     misModulos: 'my-modules',
-    miIdentidadFirma: 'my-signature',
-    /** GET — los bytes de la firma que uno mismo registró */
-    miFirmaImagen: 'my-signature-image',
   },
 } as const;
 
@@ -109,9 +106,6 @@ export const END_POINTS_ACCIONES = {
   /** POST/DELETE employees/{id}/photo — RR.HH. o Admin, desde la ficha */
   fotoDeEmpleado: (empleadoId: string) => `employees/${empleadoId}/photo`,
 
-  /** POST documents/{id}/sign-as-employer */
-  firmarComoEmpleador: (documentoId: string) => `documents/${documentoId}/sign-as-employer`,
-
   /** PATCH my-documents/{id}/viewed */
   marcarDocumentoVisto: (documentoId: string) => `my-documents/${documentoId}/viewed`,
 
@@ -121,10 +115,6 @@ export const END_POINTS_ACCIONES = {
   /** POST my-documents/resume — el trabajador sube su propio CV */
   subirMiHojaDeVida: 'my-documents/resume',
 
-  /** POST employees/{id}/signature */
-  identidadFirmaEmpleado: (empleadoId: string) => `employees/${empleadoId}/signature`,
-  /** GET employees/{id}/signature-image — los bytes de su firma (RR.HH. y Administración) */
-  firmaImagenDeEmpleado: (empleadoId: string) => `employees/${empleadoId}/signature-image`,
 
   /** GET vacations/balance?empleado_id=&anio= */
   saldoVacaciones: 'vacations/balance',

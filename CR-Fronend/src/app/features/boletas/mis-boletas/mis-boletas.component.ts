@@ -128,7 +128,7 @@ export class MisBoletasComponent implements OnInit {
       campo: 'descargado', header: 'Descargado', tipo: 'hito', ancho: '18%',
       hitoDetalle: (b) => (b.descargas > 1 ? `${b.descargas} descargas` : null),
     },
-    { campo: 'firmado', header: 'Firmado', tipo: 'hito', ancho: '17%' },
+    { campo: 'firmado', header: 'Conformidad', tipo: 'hito', ancho: '17%' },
   ];
 
   acciones: AccionPersonalizada<BoletaRow>[] = [
@@ -140,15 +140,11 @@ export class MisBoletasComponent implements OnInit {
       visible: (b) => !!b.firmado || b.enPapel,
     },
     {
-      id: 'firmar', titulo: 'Firmar esta boleta', icono: 'signature', severidad: 'success',
-      visible: (b) => !b.firmado && !b.enPapel && !b.firmadaPorElColegio,
-    },
-    {
-      // Firmada digitalmente por el colegio: lo que él hace es dar su
-      // conformidad (con la misma contraseña). Su boleta no cambia.
+      // Él no firma la boleta (la firma digitalmente el colegio): da su
+      // conformidad con su contraseña, y su boleta no cambia.
       id: 'firmar', titulo: 'Dar tu conformidad: confirma que recibiste esta boleta', icono: 'check_circle',
       etiqueta: 'Dar conformidad', severidad: 'success',
-      visible: (b) => !b.firmado && !b.enPapel && b.firmadaPorElColegio,
+      visible: (b) => !b.firmado && !b.enPapel,
     },
   ];
 
@@ -328,7 +324,7 @@ export class MisBoletasComponent implements OnInit {
   confirmarFirma(): void {
     if (!this.boletaAFirmar) return;
     if (!this.signPassword) {
-      this.signErrorMsg = 'Ingresa tu contraseña para firmar.';
+      this.signErrorMsg = 'Ingresa tu contraseña para dar tu conformidad.';
       return;
     }
 
@@ -340,14 +336,14 @@ export class MisBoletasComponent implements OnInit {
         this.isSigning = false;
         if (res.success) {
           const firmada = this.boletaAFirmar!;
-          this.toastService.success('Boleta firmada', `Tu boleta de ${firmada.mes} quedó firmada. Ya puedes verla y descargarla.`);
+          this.toastService.success('Conformidad registrada', `Diste tu conformidad a tu boleta de ${firmada.mes}. Ya puedes verla y descargarla.`);
           this.closeSignModal();
           // Recién firmada, se abre sola —con su botón de descargar—: es lo
           // que la persona quiere ver.
           this.verBoleta({ ...firmada, firmado: new Date().toISOString() });
           return;
         }
-        this.signErrorMsg = res.message || 'No se pudo firmar la boleta.';
+        this.signErrorMsg = res.message || 'No se pudo registrar tu conformidad.';
       },
       error: (err) => {
         this.isSigning = false;

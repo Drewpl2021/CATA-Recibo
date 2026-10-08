@@ -25,7 +25,6 @@ class Configuracion extends Model
     public const NOMBRES = [
         'permitir_anios_anteriores' => 'el ajuste «Planillas de años anteriores»',
         'renta5ta_como_hoja_rrhh'   => 'el ajuste «Renta de 5ta como la hoja de RR.HH.»',
-        'boleta_firma_digital'      => 'el ajuste «Boletas con firma digital del colegio»',
         'boleta_firmas_requeridas'  => 'el ajuste «Firmas del colegio por boleta»',
     ];
 

@@ -11,7 +11,6 @@ export * from './configuracion/rol.service';
 export * from './personal/empleado.service';
 export * from './personal/contrato.service';
 export * from './personal/usuario.service';
-export * from './personal/identidad-firma.service';
 export * from './personal/foto-perfil.service';
 export * from './sistema/primeros-pasos.service';
 export * from './personal/consulta-dni.service';

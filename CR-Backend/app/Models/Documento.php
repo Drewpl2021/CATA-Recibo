@@ -51,6 +51,9 @@ class Documento extends Model
         'archivo_sin_firma',
         'firma_colegio_completa_en',
         'firma_colegio_subida_por',
+        'conformidad_ip',
+        'conformidad_dispositivo',
+        'conformidad_sha256',
     ];
 
     /**

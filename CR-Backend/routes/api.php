@@ -32,7 +32,6 @@ use App\Http\Controllers\ModuloPadreController;
 use App\Http\Controllers\ModuloController;
 use App\Http\Controllers\ContratoController;
 use App\Http\Controllers\TipoContratoController;
-use App\Http\Controllers\IdentidadFirmaController;
 
 // Preflight CORS
 Route::options('{any}', function () {
@@ -128,14 +127,6 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     // cualquier autenticado y no en el grupo de RR.HH.
     Route::get('terms',          [TerminosController::class, 'mostrar']);
     Route::post('terms/accept', [TerminosController::class, 'aceptar']);
-    // El propio empleado registra/actualiza su firma y/o huella (RRHH tiene su
-    // propio endpoint equivalente para hacerlo por cualquier empleado, más abajo).
-    Route::post('my-signature', [IdentidadFirmaController::class, 'subirMia']);
-    // La imagen guardada, para poder enseñársela a quien la dibujó. Va por su
-    // propia ruta porque está en el disco privado; el permiso se revisa dentro.
-    Route::get('my-signature-image',             [IdentidadFirmaController::class, 'ver']);
-    Route::get('employees/{id}/signature-image', [IdentidadFirmaController::class, 'ver']);
-
     // La foto de perfil. Cada quien sube y quita LA SUYA; la imagen se sirve
     // por su propia ruta porque vive en el disco privado y hay que comprobar
     // antes quién la pide. "users/{id}/foto" no choca con el apiResource de
@@ -187,7 +178,6 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::get('dni-lookup/{dni}', ConsultaDniController::class)
             ->middleware('throttle:consulta_dni');
 
-        Route::post('employees/{id}/signature', [IdentidadFirmaController::class, 'subir']);
         // La foto de perfil del trabajador, puesta por RR.HH. desde su ficha.
         Route::post('employees/{id}/photo',   [FotoPerfilController::class, 'subirDeEmpleado']);
         Route::delete('employees/{id}/photo', [FotoPerfilController::class, 'quitarDeEmpleado']);
@@ -226,7 +216,6 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // show({id}) y devolvería un 404 buscando un documento con ese id.
         Route::post('documents/upload',        [DocumentoController::class, 'subir']);
         Route::apiResource('documents',       DocumentoController::class);
-        Route::post('documents/{id}/sign-as-employer', [DocumentoController::class, 'firmarComoEmpleador'])->middleware('throttle:clave');
         Route::apiResource('areas',            AreaController::class);
         Route::apiResource('positions',           CargoController::class);
         Route::apiResource('contract-types',      TipoContratoController::class);

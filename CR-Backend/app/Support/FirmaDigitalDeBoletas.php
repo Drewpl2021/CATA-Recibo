@@ -7,7 +7,7 @@ use App\Models\Configuracion;
 /**
  * Boletas con firma digital del colegio (ReFirma de RENIEC).
  *
- * Con esto encendido, la boleta no le llega al trabajador al emitirla: RR.HH.
+ * La boleta no le llega al trabajador al emitirla: RR.HH.
  * baja las emitidas, quien firma por el colegio las firma con su DNIe en
  * ReFirma, y al subirlas al sistema (BoletasFirmadasController) recién se le
  * avisa y la puede ver. Es UN solo PDF para el colegio y para el trabajador:
@@ -19,14 +19,17 @@ use App\Models\Configuracion;
  */
 final class FirmaDigitalDeBoletas
 {
-    public const AJUSTE = 'boleta_firma_digital';
-
     /** Cuántas firmas del colegio necesita cada boleta: 1 o 2. */
     public const AJUSTE_FIRMAS = 'boleta_firmas_requeridas';
 
+    /**
+     * Siempre: el colegio decidió que toda boleta nueva va con firma digital.
+     * Solo las de años anteriores (de registro, ya firmadas en papel) no;
+     * eso lo decide quien la emite (AniosAnteriores).
+     */
     public static function activa(): bool
     {
-        return Configuracion::activo(self::AJUSTE, false);
+        return true;
     }
 
     public static function requeridas(): int

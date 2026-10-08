@@ -100,48 +100,14 @@
       <header class="ajustes-panel__cabecera">
         <div>
           <h2>Boletas</h2>
-          <p class="form-ayuda">Cómo le llega la boleta a cada trabajador.</p>
+          <p class="form-ayuda">
+            Toda boleta se firma digitalmente por el colegio con el DNIe en ReFirma (Ley 27269, D. Leg. 1310) y recién
+            entonces le llega al trabajador, que da su conformidad con su contraseña.
+          </p>
         </div>
       </header>
 
-      <div class="ajuste-bloque" *ngIf="ajustes">
-        <h3 class="ajuste-bloque__pregunta" id="p-entrega">¿Cómo se entregan las boletas?</h3>
-        <div class="opciones-ajuste" role="radiogroup" aria-labelledby="p-entrega">
-          <div class="opcion-ajuste" role="radio" tabindex="0" [attr.aria-checked]="!ajustes.boleta_firma_digital"
-            [class.opcion-ajuste--elegida]="!ajustes.boleta_firma_digital" [class.opcion-ajuste--ocupada]="guardando"
-            (click)="ajustes.boleta_firma_digital && cambiarFirmaDigital({ boleta_firma_digital: false })"
-            (keydown.enter)="ajustes.boleta_firma_digital && cambiarFirmaDigital({ boleta_firma_digital: false })">
-            <span class="opcion-ajuste__cabeza">
-              <strong>Al emitirlas</strong>
-              <span class="status-badge status-badge-success" *ngIf="!ajustes.boleta_firma_digital">Así está ahora</span>
-            </span>
-            <ul class="opcion-ajuste__lista">
-              <li>Al emitir, al trabajador le llega el aviso y la firma con su contraseña.</li>
-              <li>La firma del colegio no lleva certificado digital.</li>
-            </ul>
-          </div>
-
-          <div class="opcion-ajuste" role="radio" tabindex="0" [attr.aria-checked]="ajustes.boleta_firma_digital"
-            [class.opcion-ajuste--elegida]="ajustes.boleta_firma_digital" [class.opcion-ajuste--ocupada]="guardando"
-            (click)="!ajustes.boleta_firma_digital && cambiarFirmaDigital({ boleta_firma_digital: true })"
-            (keydown.enter)="!ajustes.boleta_firma_digital && cambiarFirmaDigital({ boleta_firma_digital: true })">
-            <span class="opcion-ajuste__cabeza">
-              <strong>Con firma digital del colegio</strong>
-              <span class="status-badge status-badge-success" *ngIf="ajustes.boleta_firma_digital">Así está ahora</span>
-            </span>
-            <ul class="opcion-ajuste__lista">
-              <li>Quien firma por el colegio las firma con su DNIe en ReFirma (Ley 27269, D. Leg. 1310).</li>
-              <li>Le llegan al trabajador recién al subirlas firmadas; él da su conformidad.</li>
-            </ul>
-          </div>
-        </div>
-        <p class="form-nota form-nota--aviso-contrato" *ngIf="!ajustes.boleta_firma_digital && ajustes.boletas_esperando_firma_colegio">
-          Hay {{ ajustes.boletas_esperando_firma_colegio }} boleta(s) que esperan la firma del colegio: siguen su camino.
-          Se suben firmadas desde Emisión de boletas.
-        </p>
-      </div>
-
-      <ng-container *ngIf="ajustes?.boleta_firma_digital">
+      <ng-container *ngIf="ajustes">
         <div class="ajuste-bloque">
           <h3 class="ajuste-bloque__pregunta" id="p-firmas">¿Cuántas personas firman cada boleta?</h3>
           <p class="form-ayuda">Quién firma no se configura: el sistema lo lee de cada firma. Si cambia la persona, no hay que tocar nada.</p>

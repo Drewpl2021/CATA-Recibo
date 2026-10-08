@@ -1,7 +1,7 @@
-import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuthService, DocumentoService, IdentidadFirmaService, MisDocumentosService, ToastService } from '../../../core/services';
+import { AuthService, DocumentoService, MisDocumentosService, ToastService } from '../../../core/services';
 import { Documento } from '../../../core/models';
 import {
   documentoSeFirma,
@@ -20,7 +20,6 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
-import { LienzoFirmaComponent } from '../../../shared/components/lienzo-firma/lienzo-firma.component';
 import { SelectorArchivoComponent } from '../../../shared/components/selector-archivo/selector-archivo.component';
 import { VisorDocumentoComponent } from '../../../shared/components/visor-documento/visor-documento.component';
 import { TIPO_DOCUMENTO_PROPIO } from '../../../shared/constants';
@@ -42,15 +41,14 @@ import { TIPO_DOCUMENTO_PROPIO } from '../../../shared/constants';
   imports: [
     CommonModule, FormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorArchivoComponent, VisorDocumentoComponent,
-    LienzoFirmaComponent, IconComponent, PistaDirective,
+    IconComponent, PistaDirective,
   ],
   templateUrl: './documentos-list.component.html',
 })
-export class DocumentosListComponent implements OnInit, OnDestroy {
+export class DocumentosListComponent implements OnInit {
   private misDocumentosService = inject(MisDocumentosService);
   private documentoService = inject(DocumentoService);
   private toastService = inject(ToastService);
-  private identidadFirmaService = inject(IdentidadFirmaService);
   private authService = inject(AuthService);
 
   /** El nombre que va debajo de la línea, como en la boleta. */
@@ -78,14 +76,6 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
   cv: File[] = [];
   subiendoCv = false;
 
-  // ── Mi firma ──
-  /** La imagen registrada, como URL de memoria; null si todavía no tiene. */
-  firmaUrl: string | null = null;
-  cargandoFirma = true;
-  modalFirma = false;
-  guardandoFirma = false;
-  hayTrazo = false;
-  @ViewChild(LienzoFirmaComponent) private lienzo?: LienzoFirmaComponent;
 
   /** El documento abierto en el visor. */
   docAbierto: Documento | null = null;
@@ -96,8 +86,8 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
   get cifras(): CifraCabecera[] {
     return [
       { icono: 'folder_shared', valor: this.total, etiqueta: 'Documentos', tono: 'brand' },
-      { icono: 'signature', valor: this.firmados, etiqueta: 'Firmados', tono: 'success' },
-      { icono: 'clock', valor: this.pendientes, etiqueta: 'Por firmar', tono: 'warning' },
+      { icono: 'signature', valor: this.firmados, etiqueta: 'Con conformidad', tono: 'success' },
+      { icono: 'clock', valor: this.pendientes, etiqueta: 'Por confirmar', tono: 'warning' },
     ];
   }
 
@@ -127,77 +117,13 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
       visible: (doc) => this.puedeDescargar(doc),
     },
     {
-      id: 'firmar', titulo: 'Firmar este documento', icono: 'signature', severidad: 'success',
+      id: 'firmar', titulo: 'Dar tu conformidad: confirmas que lo recibiste', icono: 'check_circle', severidad: 'success',
       visible: (doc) => documentoSeFirma(doc) && !firmaResuelta(doc),
     },
   ];
 
   ngOnInit(): void {
     this.cargar();
-    this.cargarFirma();
-  }
-
-  ngOnDestroy(): void {
-    this.olvidarFirma();
-  }
-
-  // ═══ Mi firma ════════════════════════════════════════════════
-
-  private cargarFirma(): void {
-    this.cargandoFirma = true;
-    this.identidadFirmaService.verMia().subscribe({
-      next: (blob) => {
-        this.olvidarFirma();
-        this.firmaUrl = URL.createObjectURL(blob);
-        this.cargandoFirma = false;
-      },
-      // 404 es lo normal la primera vez: todavía no dibujó ninguna.
-      error: () => {
-        this.olvidarFirma();
-        this.cargandoFirma = false;
-      },
-    });
-  }
-
-  abrirFirma(): void {
-    // El lienzo no se destruye al cerrar el modal: se limpia a mano para no
-    // reabrirlo con el dibujo anterior.
-    this.lienzo?.borrar();
-    this.hayTrazo = false;
-    this.modalFirma = true;
-  }
-
-  cerrarFirma(): void {
-    this.modalFirma = false;
-  }
-
-  async guardarFirma(): Promise<void> {
-    const png = await this.lienzo?.exportarPng();
-    if (!png) {
-      this.toastService.warning('Falta tu firma', 'Dibújala en el recuadro antes de guardar.');
-      return;
-    }
-
-    this.guardandoFirma = true;
-    this.identidadFirmaService.subirMia(new File([png], 'firma.png', { type: 'image/png' })).subscribe({
-      next: () => {
-        this.guardandoFirma = false;
-        this.modalFirma = false;
-        this.cargarFirma();
-        this.toastService.success('Firma guardada', 'Desde ahora sale en las boletas que firmes.');
-      },
-      error: (err) => {
-        this.guardandoFirma = false;
-        this.toastService.error('No se pudo guardar', mensajeErrorApi(err, 'Intenta de nuevo en un momento.'));
-      },
-    });
-  }
-
-  private olvidarFirma(): void {
-    if (this.firmaUrl) {
-      URL.revokeObjectURL(this.firmaUrl);
-      this.firmaUrl = null;
-    }
   }
 
   irAPagina(pagina: number): void {
@@ -275,7 +201,7 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
   confirmarFirma(): void {
     if (!this.docAFirmar) return;
     if (!this.passwordFirma) {
-      this.toastService.warning('Falta la contraseña', 'Escribe tu contraseña para firmar.');
+      this.toastService.warning('Falta la contraseña', 'Escribe tu contraseña para dar tu conformidad.');
       return;
     }
 
@@ -284,14 +210,14 @@ export class DocumentosListComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.firmando = false;
         if (res.success) {
-          this.toastService.success('Firma registrada', `${nombreDocumento(this.docAFirmar)} quedó firmado.`);
+          this.toastService.success('Conformidad registrada', `Diste tu conformidad a ${nombreDocumento(this.docAFirmar)}.`);
           this.cerrarFirmar();
           this.cargar();
         }
       },
       error: (err) => {
         this.firmando = false;
-        this.toastService.error('No se pudo firmar', mensajeErrorApi(err, 'Revisa tu contraseña e inténtalo de nuevo.'));
+        this.toastService.error('No se registró', mensajeErrorApi(err, 'Revisa tu contraseña e inténtalo de nuevo.'));
       },
     });
   }

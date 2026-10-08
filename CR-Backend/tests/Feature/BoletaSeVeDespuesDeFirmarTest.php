@@ -6,12 +6,15 @@ use App\Models\Documento;
 use App\Models\Planilla;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\FirmadorPdfDePrueba;
 use Tests\TestCase;
 
 /**
- * Decisión del colegio: al trabajador le llega el aviso de su boleta, la
- * firma con su contraseña, y recién entonces la ve y la descarga.
+ * Decisión del colegio: el colegio firma la boleta digitalmente (ReFirma),
+ * al trabajador le llega el aviso, da su conformidad con su contraseña, y
+ * recién entonces la ve y la descarga.
  */
 class BoletaSeVeDespuesDeFirmarTest extends TestCase
 {
@@ -36,12 +39,23 @@ class BoletaSeVeDespuesDeFirmarTest extends TestCase
             ->assertOk();
         $boleta = Documento::where('empleado_id', $empleado->id)->where('tipo', 'boleta')->firstOrFail();
 
-        // Antes de firmar: ni verla ni bajarla, por ninguno de los dos caminos.
+        // Mientras el colegio no la firma, no es suya todavía.
+        $this->actingAs($trabajador, 'sanctum')->getJson("/api/documents/{$boleta->id}/view")->assertForbidden();
+
+        // El colegio la firma en ReFirma y RR.HH. la sube.
+        [$cert, $llave] = FirmadorPdfDePrueba::certificado('ISIDORO', 'RODRIGUEZ', '40112233');
+        $firmada = FirmadorPdfDePrueba::firmar(Storage::disk('local')->get($boleta->archivo), $cert, $llave);
+        $this->actingAs($this->crearUsuario('rrhh'), 'sanctum')->post('/api/payslips/signed', [
+            'archivo' => UploadedFile::fake()->createWithContent("{$empleado->dni}_firmada.pdf", $firmada),
+            'mes' => $mes, 'anio' => $anio,
+        ], ['Accept' => 'application/json'])->assertOk()->assertJsonPath('data.resultado', 'completa');
+
+        // Antes de dar su conformidad: ni verla ni bajarla, por ninguno de los dos caminos.
         $this->actingAs($trabajador, 'sanctum')->getJson("/api/my-payslips/{$mes}/{$anio}?ver=1")->assertForbidden();
         $this->actingAs($trabajador, 'sanctum')->getJson("/api/documents/{$boleta->id}/view")->assertForbidden();
         $this->actingAs($trabajador, 'sanctum')->getJson("/api/documents/{$boleta->id}/download")->assertForbidden();
 
-        // La firma con su contraseña.
+        // Da su conformidad con su contraseña.
         $this->actingAs($trabajador, 'sanctum')
             ->postJson("/api/my-documents/{$boleta->id}/sign", ['password' => 'ClaveSegura#2026'])
             ->assertOk();
@@ -51,7 +65,7 @@ class BoletaSeVeDespuesDeFirmarTest extends TestCase
         $this->actingAs($trabajador, 'sanctum')->get("/api/documents/{$boleta->id}/view")->assertOk();
         $this->actingAs($trabajador, 'sanctum')->get("/api/documents/{$boleta->id}/download")->assertOk();
 
-        // El trabajador recibe solo SU copia; RR.HH., el ejemplar con las dos.
+        // Es UN solo PDF, el firmado por el colegio: el mismo para él y para RR.HH.
         $paginas = function ($respuesta) {
             $base = $respuesta->baseResponse;
             $pdf = $base instanceof \Symfony\Component\HttpFoundation\StreamedResponse ? $respuesta->streamedContent() : $base->getContent();
@@ -59,6 +73,7 @@ class BoletaSeVeDespuesDeFirmarTest extends TestCase
         };
         $this->assertSame(1, $paginas($this->actingAs($trabajador, 'sanctum')->get("/api/documents/{$boleta->id}/download")));
         $this->assertSame(1, $paginas($this->actingAs($trabajador, 'sanctum')->get("/api/documents/{$boleta->id}/view")));
-        $this->assertSame(2, $paginas($this->actingAs($this->crearUsuario('rrhh'), 'sanctum')->get("/api/documents/{$boleta->id}/download")));
+        $this->assertSame(1, $paginas($this->actingAs($this->crearUsuario('rrhh'), 'sanctum')->get("/api/documents/{$boleta->id}/download")));
+        $this->assertSame($firmada, Storage::disk('local')->get($boleta->fresh()->archivo));
     }
 }

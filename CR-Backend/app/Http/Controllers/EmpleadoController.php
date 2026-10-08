@@ -44,7 +44,7 @@ class EmpleadoController extends Controller
 
         $query = $paraSelector
             ? Empleado::query()->select('id', 'nombre', 'apellido', 'dni', 'estado', 'area_id', 'cargo_id', 'sede_id')
-            : Empleado::with('area', 'cargo', 'sede', 'usuario', 'identidadFirma');
+            : Empleado::with('area', 'cargo', 'sede', 'usuario');
 
         /*
          * El listado va por fecha de registro, lo último arriba.
@@ -594,7 +594,7 @@ class EmpleadoController extends Controller
 
     public function show(string $id)
     {
-        $empleado = Empleado::with('area', 'cargo', 'sede', 'usuario', 'identidadFirma')->findOrFail($id);
+        $empleado = Empleado::with('area', 'cargo', 'sede', 'usuario')->findOrFail($id);
         return response()->json(['success' => true, 'data' => $empleado]);
     }
 

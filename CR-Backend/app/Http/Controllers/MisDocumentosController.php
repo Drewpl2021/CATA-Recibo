@@ -6,6 +6,7 @@ use App\Support\ExpedienteDigital;
 use App\Traits\ListadoPaginado;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
@@ -200,11 +201,20 @@ class MisDocumentosController extends Controller
         $empleado = $user->empleado;
         $nombre_completo = $empleado->nombre . ' ' . $empleado->apellido;
 
+        // La conformidad, con su rastro: desde dónde y sobre QUÉ archivo. El
+        // código del PDF (SHA-256) prueba que la dio a esa boleta exacta: si
+        // alguien la cambiara después, ya no coincidiría.
+        $archivo = $documento->archivo && Storage::disk('local')->exists($documento->archivo)
+            ? Storage::disk('local')->get($documento->archivo) : null;
+
         $documento->update([
             'estado_firma' => 'firmado',
             'fecha_firma'  => now(),
             'firmado_por'  => $nombre_completo,
             'codigo_firma' => strtoupper(Str::random(8)) . '-' . time(),
+            'conformidad_ip'          => mb_substr((string) $request->ip(), 0, 45),
+            'conformidad_dispositivo' => mb_substr((string) $request->userAgent(), 0, 255),
+            'conformidad_sha256'      => $archivo !== null ? hash('sha256', $archivo) : null,
         ]);
 
         // Si es una boleta, se vuelve a armar el PDF ahora que ya quedó firmada —
@@ -219,7 +229,7 @@ class MisDocumentosController extends Controller
             $planilla = Planilla::find($documento->planilla_id);
             if ($planilla) {
                 app(BoletaController::class)->construirBoleta(
-                    $empleado->load('area', 'cargo', 'identidadFirma'),
+                    $empleado->load('area', 'cargo'),
                     $planilla,
                     (int) $planilla->mes,
                     (int) $planilla->anio,

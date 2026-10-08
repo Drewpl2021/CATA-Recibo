@@ -172,7 +172,8 @@ class BoletasFirmadasController extends Controller
             ['Colegio Adventista Túpac Amaru · ' . $documentos->count() . ' boleta(s) · generada el ' . now()->format('d/m/Y H:i')],
             [''],
             ['N°', 'DNI', 'Trabajador', 'N° de boleta', 'Firma digital del colegio', 'Firmada por el colegio el',
-                'Entregada el', 'Abierta por el trabajador', 'Conformidad del trabajador', 'Código de conformidad', 'Descargas', 'Estado'],
+                'Entregada el', 'Abierta por el trabajador', 'Conformidad del trabajador', 'Código de conformidad',
+                'Desde (dirección IP)', 'Código del PDF al que dio conformidad (SHA-256)', 'Descargas', 'Estado'],
         ];
 
         foreach ($documentos as $n => $d) {
@@ -189,6 +190,8 @@ class BoletasFirmadasController extends Controller
                 $fecha($d->fecha_visto),
                 $d->estado_firma === 'firmado' ? $fecha($d->fecha_firma) : ($d->estado_firma === 'en_papel' ? 'En papel' : ''),
                 $d->estado_firma === 'firmado' ? (string) $d->codigo_firma : '',
+                $d->estado_firma === 'firmado' ? (string) $d->conformidad_ip : '',
+                $d->estado_firma === 'firmado' ? (string) $d->conformidad_sha256 : '',
                 (int) $d->descargas,
                 $this->estadoParaConstancia($d),
             ];
@@ -196,9 +199,9 @@ class BoletasFirmadasController extends Controller
 
         $libro = new LibroExcel();
         $libro->hoja('Constancia', $filas, [
-            'anchos' => [6, 12, 34, 16, 34, 18, 18, 18, 20, 26, 10, 24],
-            'estiloColumnas' => [1 => LibroExcel::TEXTO],
-            'estiloFilas' => [0 => LibroExcel::ENCABEZADO, 1 => LibroExcel::PARRAFO, 3 => array_fill(0, 12, LibroExcel::TITULO)],
+            'anchos' => [6, 12, 34, 16, 34, 18, 18, 18, 20, 26, 18, 68, 10, 24],
+            'estiloColumnas' => [1 => LibroExcel::TEXTO, 11 => LibroExcel::TEXTO],
+            'estiloFilas' => [0 => LibroExcel::ENCABEZADO, 1 => LibroExcel::PARRAFO, 3 => array_fill(0, 14, LibroExcel::TITULO)],
         ]);
 
         return $libro->descargar('Constancia de entrega - ' . Meses::nombre($mes) . " {$anio}.xlsx");
