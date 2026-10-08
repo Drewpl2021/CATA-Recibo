@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { ProgresoService } from '../../core/services/sistema/progreso.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AjustesService, AjustesSistema, CamposValorLegal, CargaRentaQuintaPrevia, MontoLegal, RentaQuintaPreviaResumen, ToastService, ValorLegal } from '../../core/services';
 import { mensajeErrorApi } from '../../core/utils';
@@ -18,14 +19,24 @@ interface CampoLegal {
   ayuda?: string;
 }
 
+/** Las secciones de la pantalla, en el orden del índice. */
+type SeccionAjustes = 'montos' | 'boletas' | 'renta5ta' | 'planillas';
+
 /**
- * Ajustes del sistema: lo que el Administrador enciende y apaga sin tocar
+ * Ajustes del sistema: lo que RR.HH. y el Administrador cambian sin tocar
  * código. Cada cambio se guarda al momento y queda en la Auditoría.
+ *
+ * En dos columnas: a la izquierda un índice que también dice CÓMO está cada
+ * cosa ahora (sin bajar se sabe si la 5ta va por SUNAT o si las boletas
+ * llevan firma digital); a la derecha, la sección elegida. Cada ajuste es una
+ * pregunta con sus dos respuestas lado a lado, y se ve qué pasa con cada una
+ * antes de elegirla. La sección va en la dirección (?seccion=boletas) para
+ * poder mandar a alguien directo ahí.
  */
 @Component({
   selector: 'app-ajustes',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, FormModalComponent, IconComponent, SelectorArchivoComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PageHeaderComponent, FormModalComponent, IconComponent, SelectorArchivoComponent],
   templateUrl: './ajustes.component.html',
 })
 export class AjustesComponent implements OnInit {
@@ -34,6 +45,46 @@ export class AjustesComponent implements OnInit {
 
   private ajustesService = inject(AjustesService);
   private toastService = inject(ToastService);
+  private ruta = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  seccion: SeccionAjustes = 'montos';
+
+  /** El índice: cada sección con lo que dice de cómo está ahora. */
+  get secciones(): { id: SeccionAjustes; nombre: string; icono: string; estado: string; aviso: boolean }[] {
+    const a = this.ajustes;
+    const deEsteAnio = this.valoresLegales.find((v) => v.anio === this.anioActual);
+    return [
+      {
+        id: 'montos', nombre: 'Montos de ley', icono: 'money',
+        estado: deEsteAnio ? `UIT ${this.anioActual}: S/ ${Number(deEsteAnio.uit).toLocaleString('es-PE')}` : `Falta cargar ${this.anioActual}`,
+        aviso: !deEsteAnio && this.valoresLegales.length > 0,
+      },
+      {
+        id: 'boletas', nombre: 'Boletas', icono: 'receipt',
+        estado: !a ? '…' : a.boleta_firma_digital
+          ? `Con firma digital del colegio (${a.boleta_firmas_requeridas === 2 ? '2 firmas' : '1 firma'})`
+          : 'Se entregan al emitirlas',
+        aviso: !!a && !a.boleta_firma_digital && (a.boletas_esperando_firma_colegio ?? 0) > 0,
+      },
+      {
+        id: 'renta5ta', nombre: 'Renta de 5ta', icono: 'wallet',
+        estado: !a ? '…' : a.renta5ta_como_hoja_rrhh ? 'Como la hoja de RR.HH.' : 'Procedimiento de SUNAT',
+        // No es lo normal: la hoja de RR.HH. es solo para comparar.
+        aviso: !!a?.renta5ta_como_hoja_rrhh,
+      },
+      {
+        id: 'planillas', nombre: 'Planillas', icono: 'table_chart',
+        estado: !a ? '…' : a.permitir_anios_anteriores ? 'También de años anteriores' : `Solo desde ${this.anioActual}`,
+        aviso: false,
+      },
+    ];
+  }
+
+  elegirSeccion(id: SeccionAjustes): void {
+    this.seccion = id;
+    this.router.navigate([], { relativeTo: this.ruta, queryParams: { seccion: id }, replaceUrl: true });
+  }
 
   ajustes: AjustesSistema | null = null;
   cargando = true;
@@ -227,6 +278,9 @@ export class AjustesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const pedida = this.ruta.snapshot.queryParamMap.get('seccion') as SeccionAjustes | null;
+    if (pedida && ['montos', 'boletas', 'renta5ta', 'planillas'].includes(pedida)) this.seccion = pedida;
+
     this.cargarValoresLegales();
     this.cargarPrevia();
 

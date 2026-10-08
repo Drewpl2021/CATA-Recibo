@@ -3606,26 +3606,309 @@ textarea.form-control {
   width: 100%;
 }
 
-/* Ajustes: cuántas personas firman, y la guía de ReFirma. */
-.ajuste-firmas {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin: 14px 0 6px;
+/* ── Ajustes del sistema ──
+   Dos columnas: a la izquierda el índice, que además dice cómo está cada
+   sección (sin bajar se sabe si la 5ta va por SUNAT); a la derecha la
+   sección elegida. En pantallas angostas el índice pasa arriba, en fila. */
+.ajustes-layout {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
 }
 
-.ajuste-firmas__etiqueta {
+.ajustes-indice {
+  position: sticky;
+  top: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.ajustes-indice__item {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  transition: background-color 0.15s;
+}
+
+.ajustes-indice__item:hover {
+  background: var(--surface-hover);
+}
+
+.ajustes-indice__item:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 1px;
+}
+
+.ajustes-indice__icono {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--text-soft);
+}
+
+.ajustes-indice__textos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ajustes-indice__nombre {
+  font-size: 14.5px;
   font-weight: 600;
+  color: var(--heading);
+}
+
+/* Cómo está ahora: lo que hace del índice un resumen de todo. */
+.ajustes-indice__estado {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.ajustes-indice__estado--aviso {
+  color: var(--warning-text);
+  font-weight: 600;
+}
+
+.ajustes-indice__item--activo {
+  background: var(--brand-100);
+  box-shadow: inset 3px 0 0 var(--brand-700);
+}
+
+.ajustes-indice__item--activo:hover {
+  background: var(--brand-100);
+}
+
+.ajustes-indice__item--activo .ajustes-indice__icono {
+  background: var(--brand-700);
+  color: var(--text-on-brand);
+}
+
+.ajustes-panel__cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ajustes-panel__cabecera h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: var(--heading);
+}
+
+.ajustes-panel__cabecera .form-ayuda {
+  margin: 0;
+  max-width: 68ch;
+}
+
+.ajustes-panel__acciones {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.ajustes-panel__acciones select {
+  width: 110px;
+}
+
+/* Un ajuste, dicho como pregunta, con sus respuestas debajo. */
+.ajuste-bloque {
+  padding: 20px 24px;
+}
+
+.ajuste-bloque + .ajuste-bloque {
+  border-top: 1px solid var(--border);
+}
+
+.ajuste-bloque__pregunta {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.ajuste-bloque__pregunta + .form-ayuda {
+  margin: -6px 0 12px;
+}
+
+.ajuste-bloque > .form-nota {
+  margin: 14px 0 0;
+}
+
+/* Las respuestas lado a lado: se lee qué pasa con cada una antes de
+   elegirla, y la elegida dice «Así está ahora». Elegir otra la guarda. */
+.opciones-ajuste {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.opcion-ajuste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.opcion-ajuste:hover {
+  border-color: var(--border-strong);
+}
+
+.opcion-ajuste:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+.opcion-ajuste--elegida,
+.opcion-ajuste--elegida:hover {
+  border-color: var(--brand-600);
+  background: var(--brand-100);
+  cursor: default;
+}
+
+/* Elegida pero no es lo normal (la 5ta como la hoja de RR.HH.). */
+.opcion-ajuste--elegida.opcion-ajuste--aviso {
+  border-color: var(--warning-solid);
+  background: var(--warning-bg);
+}
+
+.opcion-ajuste--ocupada {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.opcion-ajuste__cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.opcion-ajuste__cabeza strong {
+  font-size: 14.5px;
+  color: var(--heading);
+}
+
+.opcion-ajuste__lista {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.opcion-ajuste__texto {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+/* El paso a paso del mes, con su atajo a la pantalla donde se hace. */
+.pasos-mes {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.5;
   color: var(--text);
 }
 
-.ajuste-detalle--pasos {
-  list-style: decimal;
+.pasos-mes__ir {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+/* Los montos de ley en dos columnas: los grupos cortos lado a lado, los
+   largos (el nombre del año, AFP) a lo ancho. */
+.montos-rejilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.montos-rejilla > .grupo-montos {
+  border-top: 1px solid var(--border);
+}
+
+.montos-rejilla > .grupo-montos:first-child {
+  border-top: none;
+}
+
+.montos-rejilla > .grupo-montos:not(.montos-rejilla__ancho) + .grupo-montos:not(.montos-rejilla__ancho) {
+  border-left: 1px solid var(--border);
+}
+
+.montos-rejilla__ancho {
+  grid-column: 1 / -1;
+}
+
+.previa-5ta {
+  margin-top: 12px;
+}
+
+.previa-5ta__boton {
+  align-self: flex-start;
+}
+
+@media (max-width: 1100px) {
+  .ajustes-layout { grid-template-columns: 1fr; }
+
+  .ajustes-indice {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .ajustes-indice__item { min-width: 220px; }
+}
+
+@media (max-width: 760px) {
+  .opciones-ajuste,
+  .montos-rejilla { grid-template-columns: 1fr; }
+
+  .montos-rejilla > .grupo-montos:not(.montos-rejilla__ancho) + .grupo-montos:not(.montos-rejilla__ancho) {
+    border-left: none;
+  }
 }
 
 .guia-refirma {
-  margin-top: 16px;
+  margin-top: 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 12px 16px;
@@ -3637,6 +3920,7 @@ textarea.form-control {
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  font-size: 14px;
   font-weight: 600;
   color: var(--heading);
 }

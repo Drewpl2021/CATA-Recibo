@@ -1,291 +1,353 @@
 <app-page-header
   icono="settings"
   titulo="Ajustes del sistema"
-  subtitulo="Lo que se enciende, se apaga o se actualiza sin tocar código. Cada cambio queda en la Auditoría."
+  subtitulo="Cómo trabaja el sistema: montos de ley, boletas, Renta de 5ta y planillas. Cada cambio se guarda al momento y queda en la Auditoría."
 ></app-page-header>
 
 <p class="form-ayuda" *ngIf="cargando">Cargando los ajustes…</p>
 
-<div class="pila-paneles">
-  <!-- Un ajuste de sí/no: qué es a la izquierda, el interruptor a la derecha. -->
-  <section class="section-panel" *ngIf="ajustes">
-    <div class="ajuste-fila">
-      <div>
-        <h2 class="ajuste-fila__titulo" id="titulo-anios-anteriores">Planillas de años anteriores</h2>
-        <p class="ajuste-fila__descripcion">
-          Para dejar de registro las boletas que antes se firmaban a mano, por ejemplo
-          las de todo {{ anioActual - 1 }}.
-        </p>
-      </div>
+<div class="ajustes-layout" *ngIf="!cargando">
+  <!-- El índice: elegir sección y, de paso, ver cómo está cada una. -->
+  <nav class="ajustes-indice" aria-label="Secciones de ajustes">
+    <button type="button" *ngFor="let s of secciones" class="ajustes-indice__item"
+      [class.ajustes-indice__item--activo]="seccion === s.id" [attr.aria-current]="seccion === s.id ? 'page' : null"
+      (click)="elegirSeccion(s.id)">
+      <span class="ajustes-indice__icono"><app-icon [icono]="s.icono" [tamano]="18"></app-icon></span>
+      <span class="ajustes-indice__textos">
+        <span class="ajustes-indice__nombre">{{ s.nombre }}</span>
+        <span class="ajustes-indice__estado" [class.ajustes-indice__estado--aviso]="s.aviso">
+          <app-icon *ngIf="s.aviso" icono="warning" [tamano]="13"></app-icon>
+          {{ s.estado }}
+        </span>
+      </span>
+    </button>
+  </nav>
 
-      <label class="interruptor">
-        <input type="checkbox" role="switch" aria-labelledby="titulo-anios-anteriores"
-          [checked]="ajustes.permitir_anios_anteriores" [disabled]="guardando"
-          (change)="cambiarAniosAnteriores($any($event.target).checked)" />
-        <span>{{ ajustes.permitir_anios_anteriores ? 'Activado' : 'Desactivado' }}</span>
-      </label>
-    </div>
+  <div class="ajustes-contenido" [ngSwitch]="seccion">
 
-    <ul class="ajuste-detalle" *ngIf="ajustes.permitir_anios_anteriores; else apagado">
-      <li>RR.HH. puede crear planillas y emitir boletas de cualquier mes de años anteriores.</li>
-      <li>Entran también quienes ya cesaron, si todavía trabajaban ese mes.</li>
-      <li>Esas boletas quedan como firmadas en papel: no se le avisa al trabajador ni se le pide firmarlas.</li>
-      <li>El sueldo sale de la ficha de hoy, aunque en ese año haya sido otro.</li>
-    </ul>
-    <ng-template #apagado>
-      <ul class="ajuste-detalle">
-        <li>Solo se pueden crear planillas y emitir boletas de {{ anioActual }} en adelante.</li>
-        <li>Lo que ya se armó de años anteriores se queda como está.</li>
-        <li>Las boletas ya firmadas en papel se pueden seguir subiendo en Documentos → Subir anteriores.</li>
-      </ul>
-    </ng-template>
-  </section>
-
-  <!-- Firma digital del colegio en las boletas (ReFirma de RENIEC). -->
-  <section class="section-panel" *ngIf="ajustes">
-    <div class="ajuste-fila">
-      <div>
-        <h2 class="ajuste-fila__titulo" id="titulo-firma-digital">Boletas con firma digital del colegio</h2>
-        <p class="ajuste-fila__descripcion">
-          La boleta se firma con el DNIe en ReFirma de RENIEC (Ley 27269 y D. Leg. 1310) y recién entonces le llega
-          al trabajador. Quién firma no se configura: el sistema lo lee de la firma, así que si cambia la persona no hay que tocar nada.
-        </p>
-      </div>
-
-      <label class="interruptor">
-        <input type="checkbox" role="switch" aria-labelledby="titulo-firma-digital"
-          [checked]="ajustes.boleta_firma_digital" [disabled]="guardando"
-          (change)="cambiarFirmaDigital({ boleta_firma_digital: $any($event.target).checked })" />
-        <span>{{ ajustes.boleta_firma_digital ? 'Activado' : 'Desactivado' }}</span>
-      </label>
-    </div>
-
-    <ng-container *ngIf="ajustes.boleta_firma_digital; else firmaApagada">
-      <div class="ajuste-firmas">
-        <span class="ajuste-firmas__etiqueta" id="titulo-firmas">¿Cuántas personas firman cada boleta?</span>
-        <div class="chips-filtro" role="radiogroup" aria-labelledby="titulo-firmas">
-          <button type="button" class="chip-filtro" role="radio" *ngFor="let n of [1, 2]"
-            [class.chip-filtro--activo]="ajustes.boleta_firmas_requeridas === n" [attr.aria-checked]="ajustes.boleta_firmas_requeridas === n"
-            [disabled]="guardando" (click)="cambiarFirmaDigital({ boleta_firmas_requeridas: $any(n) })">
-            {{ n === 1 ? 'Una persona' : 'Dos personas' }}
+    <!-- ═══════════ Montos de ley ═══════════ -->
+    <section class="section-panel ajustes-panel" *ngSwitchCase="'montos'">
+      <header class="ajustes-panel__cabecera">
+        <div>
+          <h2>Montos de ley</h2>
+          <p class="form-ayuda">
+            Cada planilla se calcula con los montos de su propio año. Si un año no está cargado, se usan los
+            del último año anterior. Al guardar, cambian solo las planillas que se generen o recalculen desde ahora.
+          </p>
+        </div>
+        <div class="ajustes-panel__acciones" *ngIf="valoresLegales.length">
+          <select class="form-control" aria-label="Año de los montos" [ngModel]="anioLegal" (ngModelChange)="elegirAnioLegal($event)"
+            [disabled]="guardandoLegal">
+            <option *ngFor="let v of valoresLegales" [ngValue]="v.anio">{{ v.anio }}</option>
+          </select>
+          <button type="button" class="btn-secondary" (click)="abrirAgregarAnio()" [disabled]="guardandoLegal">
+            <app-icon icono="plus" [tamano]="16"></app-icon>
+            Agregar año
           </button>
         </div>
-      </div>
+      </header>
 
-      <ol class="ajuste-detalle ajuste-detalle--pasos">
-        <li><strong>Emitir</strong> las boletas del mes como siempre (al trabajador todavía no le llega nada).</li>
-        <li>En Emisión de boletas, <strong>Descargar para firmar</strong>: un .zip con las que faltan firmar.</li>
-        <li>Quien firma las abre en <strong>ReFirma</strong> y las firma con su DNIe{{ ajustes.boleta_firmas_requeridas === 2 ? '; luego la segunda persona firma esos mismos archivos' : '' }}.</li>
-        <li><strong>Subir boletas firmadas</strong>: el sistema revisa cada una y, al guardar, se la entrega al trabajador.</li>
-        <li>El trabajador la abre y da su conformidad con su contraseña. Queda en la <strong>Constancia de entrega</strong>, sin tocar el PDF.</li>
-      </ol>
-    </ng-container>
-    <ng-template #firmaApagada>
-      <ul class="ajuste-detalle">
-        <li>Las boletas se entregan al trabajador al emitirlas, como hasta ahora.</li>
-        <li *ngIf="ajustes.boletas_esperando_firma_colegio">
-          Hay {{ ajustes.boletas_esperando_firma_colegio }} boleta(s) que esperan la firma del colegio: siguen su camino
-          (se suben firmadas desde Emisión de boletas).
-        </li>
-      </ul>
-    </ng-template>
-
-    <!-- La computadora de quien firma: una vez, y se puede volver a mirar. -->
-    <details class="guia-refirma">
-      <summary>
-        <app-icon icono="signature" [tamano]="16"></app-icon>
-        Cómo preparar la computadora de quien firma (una sola vez)
-      </summary>
-      <ol class="guia-refirma__pasos">
-        <li>
-          <strong>DNI electrónico con certificados activos y su PIN.</strong>
-          El PIN (6 a 8 dígitos) se configura en RENIEC al recoger el DNIe. Sin él no se puede firmar.
-        </li>
-        <li>
-          <strong>Un lector de tarjetas (smartcard) USB.</strong>
-          Cuesta entre S/ 30 y S/ 80. Conéctalo e instala su controlador (viene con el lector) como administrador.
-        </li>
-        <li><strong>Java 8 o superior</strong>, desde java.com.</li>
-        <li>
-          <strong>ReFirma PDF de RENIEC</strong>, gratuito. Búscalo como «ReFirma PDF RENIEC» en la página oficial de RENIEC
-          (gob.pe) e instálalo.
-        </li>
-        <li>
-          <strong>Una prueba:</strong> baja una boleta con «Descargar para firmar», ábrela en ReFirma, elige el certificado del
-          DNIe, pon el PIN y fírmala con <strong>firma visible</strong>, ubicando el sello en la casilla
-          «Firma digital del empleador» de abajo de la boleta. Esa posición se deja guardada para las siguientes.
-        </li>
-        <li>
-          <strong>Súbela</strong> con «Subir boletas firmadas»: si el sistema muestra el nombre y DNI de quien firmó, todo está listo.
-        </li>
-      </ol>
-      <p class="form-ayuda">
-        Importante: después de firmar, el PDF no se abre ni se guarda con otro programa. Cualquier cambio, aunque sea
-        mínimo, invalida la firma y el sistema lo rechaza.
-      </p>
-    </details>
-  </section>
-
-  <!-- Cómo se calcula la 5ta: SUNAT, o la hoja de RR.HH. solo para comparar. -->
-  <section class="section-panel" *ngIf="ajustes">
-    <div class="ajuste-fila">
-      <div>
-        <h2 class="ajuste-fila__titulo" id="titulo-metodo-5ta">Renta de 5ta como la hoja de RR.HH.</h2>
-        <p class="ajuste-fila__descripcion">
-          Apagado (lo normal): la 5ta se calcula con el procedimiento de SUNAT. Encendido: como la hoja
-          «Calculo 5ta» de RR.HH., solo para comparar con planillas antiguas.
-        </p>
-      </div>
-
-      <label class="interruptor">
-        <input type="checkbox" role="switch" aria-labelledby="titulo-metodo-5ta"
-          [checked]="ajustes.renta5ta_como_hoja_rrhh" [disabled]="guardando"
-          (change)="cambiarMetodo5ta($any($event.target).checked)" />
-        <span>{{ ajustes.renta5ta_como_hoja_rrhh ? 'Activado' : 'Desactivado' }}</span>
-      </label>
-    </div>
-
-    <ul class="ajuste-detalle" *ngIf="!ajustes.renta5ta_como_hoja_rrhh; else comoHoja">
-      <li>Cada mes rehace la cuenta del año con lo cobrado y lo retenido de verdad, y divide entre 12, 9, 8, 5 o 4 según el mes.</li>
-      <li>Diciembre regulariza: se retiene lo que falte del impuesto del año.</li>
-      <li>Un ingreso extraordinario (un bono) se retiene entero en su mes.</li>
-      <li>Usa la UIT de cada año, de «Montos de ley por año». La hoja de cada trabajador está en Boletas y Finanzas → Renta de 5ta.</li>
-    </ul>
-    <ng-template #comoHoja>
-      <ul class="ajuste-detalle">
-        <li>Se proyecta el año una sola vez y se reparte en partes iguales de marzo a diciembre, como el Excel de RR.HH.</li>
-        <li>No se ajusta solo si cambia el sueldo o hay un bono: al final del año puede sobrar o faltar retención.</li>
-        <li>Úsalo solo para comparar con planillas hechas con ese Excel, y vuelve a apagarlo.</li>
-      </ul>
-    </ng-template>
-  </section>
-
-  <!-- Montos de ley: cada planilla se calcula con los de SU año. -->
-  <section class="section-panel" *ngIf="valoresLegales.length">
-    <header class="panel-header">
-      <div>
-        <h2>Montos de ley por año</h2>
-        <p class="panel-header__descripcion">
-          Cada planilla se calcula con los montos de su propio año, y su boleta lleva el
-          nombre oficial de ese año. Si un año no está cargado, se usan los montos del último
-          año anterior.
-        </p>
-      </div>
-
-      <div class="panel-header__acciones">
-        <select id="anioLegal" class="form-control" aria-label="Año de los montos" [ngModel]="anioLegal" (ngModelChange)="elegirAnioLegal($event)"
-          [disabled]="guardandoLegal">
-          <option *ngFor="let v of valoresLegales" [ngValue]="v.anio">{{ v.anio }}</option>
-        </select>
-        <button type="button" class="btn-secondary" (click)="abrirAgregarAnio()" [disabled]="guardandoLegal">
-          <app-icon icono="plus" [tamano]="16"></app-icon>
-          Agregar año
-        </button>
-      </div>
-    </header>
-
-    <ng-container *ngIf="edicionLegal">
-      <!-- Texto y no monto: cambia cada año por decreto y va arriba en la boleta. -->
-      <div class="grupo-montos">
-        <h3 class="grupo-montos__titulo">Nombre oficial del año</h3>
-        <div class="form-group campo-ancho">
-          <label for="ley_nombre_anio">Denominación de {{ anioLegal }}</label>
-          <input type="text" id="ley_nombre_anio" class="form-control" maxlength="255"
-            placeholder="Ej. Año de la recuperación y consolidación de la economía peruana"
-            [(ngModel)]="edicionLegal.nombre_anio" [disabled]="guardandoLegal"
-            aria-describedby="ayuda_nombre_anio" />
-          <small class="form-ayuda" id="ayuda_nombre_anio">
-            Sale arriba en cada boleta de {{ anioLegal }}, entre comillas. Escríbelo tal como
-            figura en el decreto. Si lo dejas vacío, la boleta no lleva esa línea.
-          </small>
-        </div>
-      </div>
-
-      <div class="grupo-montos" *ngFor="let grupo of gruposLegales">
-        <h3 class="grupo-montos__titulo">{{ grupo.titulo }}</h3>
-        <p class="grupo-montos__descripcion" *ngIf="grupo.descripcion">{{ grupo.descripcion }}</p>
-
-        <div class="rejilla-montos">
-          <div class="form-group" *ngFor="let c of grupo.campos">
-            <label [for]="'ley_' + c.clave">{{ c.etiqueta }}</label>
-            <div class="campo-unidad" [class.campo-unidad--antes]="c.unidad === 'S/'" [class.campo-unidad--despues]="c.unidad === '%'">
-              <span class="campo-unidad__unidad" aria-hidden="true">{{ c.unidad }}</span>
-              <input type="number" class="form-control" [id]="'ley_' + c.clave" min="0" step="0.01"
-                inputmode="decimal" [(ngModel)]="edicionLegal[c.clave]" [disabled]="guardandoLegal"
-                [attr.aria-describedby]="ayudaDe(c) ? 'ayuda_' + c.clave : null" />
+      <ng-container *ngIf="edicionLegal">
+        <div class="montos-rejilla">
+          <!-- Texto y no monto: cambia cada año por decreto y va arriba en la boleta. -->
+          <div class="grupo-montos montos-rejilla__ancho">
+            <h3 class="grupo-montos__titulo">Nombre oficial del año</h3>
+            <div class="form-group campo-ancho">
+              <label for="ley_nombre_anio">Denominación de {{ anioLegal }}</label>
+              <input type="text" id="ley_nombre_anio" class="form-control" maxlength="255"
+                placeholder="Ej. Año de la recuperación y consolidación de la economía peruana"
+                [(ngModel)]="edicionLegal.nombre_anio" [disabled]="guardandoLegal" aria-describedby="ayuda_nombre_anio" />
+              <small class="form-ayuda" id="ayuda_nombre_anio">
+                Sale arriba en cada boleta de {{ anioLegal }}, entre comillas, tal como figura en el decreto.
+                Vacío: la boleta no lleva esa línea.
+              </small>
             </div>
-            <small class="form-ayuda" *ngIf="ayudaDe(c)" [id]="'ayuda_' + c.clave">{{ ayudaDe(c) }}</small>
+          </div>
+
+          <div class="grupo-montos" *ngFor="let grupo of gruposLegales" [class.montos-rejilla__ancho]="grupo.campos.length > 3">
+            <h3 class="grupo-montos__titulo">{{ grupo.titulo }}</h3>
+            <p class="grupo-montos__descripcion" *ngIf="grupo.descripcion">{{ grupo.descripcion }}</p>
+            <div class="rejilla-montos">
+              <div class="form-group" *ngFor="let c of grupo.campos">
+                <label [for]="'ley_' + c.clave">{{ c.etiqueta }}</label>
+                <div class="campo-unidad" [class.campo-unidad--antes]="c.unidad === 'S/'" [class.campo-unidad--despues]="c.unidad === '%'">
+                  <span class="campo-unidad__unidad" aria-hidden="true">{{ c.unidad }}</span>
+                  <input type="number" class="form-control" [id]="'ley_' + c.clave" min="0" step="0.01"
+                    inputmode="decimal" [(ngModel)]="edicionLegal[c.clave]" [disabled]="guardandoLegal"
+                    [attr.aria-describedby]="ayudaDe(c) ? 'ayuda_' + c.clave : null" />
+                </div>
+                <small class="form-ayuda" *ngIf="ayudaDe(c)" [id]="'ayuda_' + c.clave">{{ ayudaDe(c) }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer class="panel-pie">
+          <button type="button" class="btn-primary" (click)="guardarValoresLegales()" [disabled]="guardandoLegal || !hayCambiosLegales">
+            {{ guardandoLegal ? 'Guardando…' : 'Guardar ' + anioLegal }}
+          </button>
+          <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="hayCambiosLegales && !guardandoLegal">
+            Tienes cambios sin guardar en {{ anioLegal }}.
+          </p>
+        </footer>
+      </ng-container>
+
+      <p class="form-ayuda ajuste-bloque" *ngIf="!valoresLegales.length">Todavía no hay montos de ley cargados.</p>
+    </section>
+
+    <!-- ═══════════ Boletas ═══════════ -->
+    <section class="section-panel ajustes-panel" *ngSwitchCase="'boletas'">
+      <header class="ajustes-panel__cabecera">
+        <div>
+          <h2>Boletas</h2>
+          <p class="form-ayuda">Cómo le llega la boleta a cada trabajador.</p>
+        </div>
+      </header>
+
+      <div class="ajuste-bloque" *ngIf="ajustes">
+        <h3 class="ajuste-bloque__pregunta" id="p-entrega">¿Cómo se entregan las boletas?</h3>
+        <div class="opciones-ajuste" role="radiogroup" aria-labelledby="p-entrega">
+          <div class="opcion-ajuste" role="radio" tabindex="0" [attr.aria-checked]="!ajustes.boleta_firma_digital"
+            [class.opcion-ajuste--elegida]="!ajustes.boleta_firma_digital" [class.opcion-ajuste--ocupada]="guardando"
+            (click)="ajustes.boleta_firma_digital && cambiarFirmaDigital({ boleta_firma_digital: false })"
+            (keydown.enter)="ajustes.boleta_firma_digital && cambiarFirmaDigital({ boleta_firma_digital: false })">
+            <span class="opcion-ajuste__cabeza">
+              <strong>Al emitirlas</strong>
+              <span class="status-badge status-badge-success" *ngIf="!ajustes.boleta_firma_digital">Así está ahora</span>
+            </span>
+            <ul class="opcion-ajuste__lista">
+              <li>Al emitir, al trabajador le llega el aviso y la firma con su contraseña.</li>
+              <li>La firma del colegio no lleva certificado digital.</li>
+            </ul>
+          </div>
+
+          <div class="opcion-ajuste" role="radio" tabindex="0" [attr.aria-checked]="ajustes.boleta_firma_digital"
+            [class.opcion-ajuste--elegida]="ajustes.boleta_firma_digital" [class.opcion-ajuste--ocupada]="guardando"
+            (click)="!ajustes.boleta_firma_digital && cambiarFirmaDigital({ boleta_firma_digital: true })"
+            (keydown.enter)="!ajustes.boleta_firma_digital && cambiarFirmaDigital({ boleta_firma_digital: true })">
+            <span class="opcion-ajuste__cabeza">
+              <strong>Con firma digital del colegio</strong>
+              <span class="status-badge status-badge-success" *ngIf="ajustes.boleta_firma_digital">Así está ahora</span>
+            </span>
+            <ul class="opcion-ajuste__lista">
+              <li>Quien firma por el colegio las firma con su DNIe en ReFirma (Ley 27269, D. Leg. 1310).</li>
+              <li>Le llegan al trabajador recién al subirlas firmadas; él da su conformidad.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="form-nota form-nota--aviso-contrato" *ngIf="!ajustes.boleta_firma_digital && ajustes.boletas_esperando_firma_colegio">
+          Hay {{ ajustes.boletas_esperando_firma_colegio }} boleta(s) que esperan la firma del colegio: siguen su camino.
+          Se suben firmadas desde Emisión de boletas.
+        </p>
+      </div>
+
+      <ng-container *ngIf="ajustes?.boleta_firma_digital">
+        <div class="ajuste-bloque">
+          <h3 class="ajuste-bloque__pregunta" id="p-firmas">¿Cuántas personas firman cada boleta?</h3>
+          <p class="form-ayuda">Quién firma no se configura: el sistema lo lee de cada firma. Si cambia la persona, no hay que tocar nada.</p>
+          <div class="opciones-ajuste" role="radiogroup" aria-labelledby="p-firmas">
+            <div class="opcion-ajuste" role="radio" tabindex="0" *ngFor="let n of [1, 2]"
+              [attr.aria-checked]="ajustes!.boleta_firmas_requeridas === n" [class.opcion-ajuste--elegida]="ajustes!.boleta_firmas_requeridas === n"
+              [class.opcion-ajuste--ocupada]="guardando"
+              (click)="ajustes!.boleta_firmas_requeridas !== n && cambiarFirmaDigital({ boleta_firmas_requeridas: $any(n) })"
+              (keydown.enter)="ajustes!.boleta_firmas_requeridas !== n && cambiarFirmaDigital({ boleta_firmas_requeridas: $any(n) })">
+              <span class="opcion-ajuste__cabeza">
+                <strong>{{ n === 1 ? 'Una persona' : 'Dos personas' }}</strong>
+                <span class="status-badge status-badge-success" *ngIf="ajustes!.boleta_firmas_requeridas === n">Así está ahora</span>
+              </span>
+              <span class="opcion-ajuste__texto">
+                {{ n === 1 ? 'La boleta lleva una casilla de firma.' : 'Dos casillas: la segunda persona firma los mismos archivos después de la primera.' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ajuste-bloque">
+          <h3 class="ajuste-bloque__pregunta">Así se trabaja cada mes</h3>
+          <ol class="pasos-mes">
+            <li><strong>Emitir</strong> las boletas del mes, como siempre.</li>
+            <li><strong>Descargar para firmar</strong> en Emisión de boletas.</li>
+            <li><strong>Firmar</strong> en ReFirma con el DNIe{{ ajustes!.boleta_firmas_requeridas === 2 ? ' (las dos personas)' : '' }}.</li>
+            <li><strong>Subir boletas firmadas</strong>: al guardar le llegan al trabajador.</li>
+          </ol>
+          <a class="btn-secondary pasos-mes__ir" routerLink="/inicio/emision-boleta">
+            <app-icon icono="receipt" [tamano]="16"></app-icon>
+            Ir a Emisión de boletas
+          </a>
+        </div>
+      </ng-container>
+
+      <!-- La computadora de quien firma: una vez, y se puede volver a mirar. -->
+      <div class="ajuste-bloque">
+        <details class="guia-refirma">
+          <summary>
+            <app-icon icono="signature" [tamano]="16"></app-icon>
+            Cómo preparar la computadora de quien firma (una sola vez)
+          </summary>
+          <ol class="guia-refirma__pasos">
+            <li><strong>DNI electrónico con certificados activos y su PIN</strong> (6 a 8 dígitos, se configura en RENIEC al recoger el DNIe).</li>
+            <li><strong>Un lector de tarjetas (smartcard) USB</strong>, de S/ 30 a S/ 80. Instala su controlador como administrador.</li>
+            <li><strong>Java 8 o superior</strong>, desde java.com.</li>
+            <li><strong>ReFirma PDF de RENIEC</strong>, gratuito: búscalo como «ReFirma PDF RENIEC» en la página oficial (gob.pe).</li>
+            <li>
+              <strong>Una prueba:</strong> abre en ReFirma una boleta de «Descargar para firmar», elige el certificado del DNIe, pon el PIN y
+              firma con <strong>firma visible</strong>, con el sello en la casilla «Firma digital del empleador». Esa posición queda guardada.
+            </li>
+            <li><strong>Súbela</strong>: si el sistema muestra el nombre y DNI de quien firmó, está todo listo.</li>
+          </ol>
+          <p class="form-ayuda">Después de firmar, no abras ni guardes el PDF con otro programa: cualquier cambio invalida la firma.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- ═══════════ Renta de 5ta ═══════════ -->
+    <section class="section-panel ajustes-panel" *ngSwitchCase="'renta5ta'">
+      <header class="ajustes-panel__cabecera">
+        <div>
+          <h2>Renta de 5ta</h2>
+          <p class="form-ayuda">Cómo se calcula la retención de cada mes. La hoja de cada trabajador está en Boletas y Finanzas → Renta de 5ta.</p>
+        </div>
+      </header>
+
+      <div class="ajuste-bloque" *ngIf="ajustes">
+        <h3 class="ajuste-bloque__pregunta" id="p-metodo">¿Cómo se calcula la Renta de 5ta?</h3>
+        <div class="opciones-ajuste" role="radiogroup" aria-labelledby="p-metodo">
+          <div class="opcion-ajuste" role="radio" tabindex="0" [attr.aria-checked]="!ajustes.renta5ta_como_hoja_rrhh"
+            [class.opcion-ajuste--elegida]="!ajustes.renta5ta_como_hoja_rrhh" [class.opcion-ajuste--ocupada]="guardando"
+            (click)="ajustes.renta5ta_como_hoja_rrhh && cambiarMetodo5ta(false)"
+            (keydown.enter)="ajustes.renta5ta_como_hoja_rrhh && cambiarMetodo5ta(false)">
+            <span class="opcion-ajuste__cabeza">
+              <strong>Procedimiento de SUNAT</strong>
+              <span class="status-badge status-badge-success" *ngIf="!ajustes.renta5ta_como_hoja_rrhh">Así está ahora</span>
+              <span class="status-badge status-badge-info" *ngIf="ajustes.renta5ta_como_hoja_rrhh">Recomendado</span>
+            </span>
+            <ul class="opcion-ajuste__lista">
+              <li>Cada mes rehace la cuenta del año con lo cobrado y lo retenido de verdad.</li>
+              <li>Un bono se retiene entero en su mes; diciembre regulariza el año.</li>
+            </ul>
+          </div>
+
+          <div class="opcion-ajuste" role="radio" tabindex="0" [attr.aria-checked]="ajustes.renta5ta_como_hoja_rrhh"
+            [class.opcion-ajuste--elegida]="ajustes.renta5ta_como_hoja_rrhh" [class.opcion-ajuste--ocupada]="guardando"
+            [class.opcion-ajuste--aviso]="ajustes.renta5ta_como_hoja_rrhh"
+            (click)="!ajustes.renta5ta_como_hoja_rrhh && cambiarMetodo5ta(true)"
+            (keydown.enter)="!ajustes.renta5ta_como_hoja_rrhh && cambiarMetodo5ta(true)">
+            <span class="opcion-ajuste__cabeza">
+              <strong>Como la hoja de RR.HH.</strong>
+              <span class="status-badge status-badge-warning" *ngIf="ajustes.renta5ta_como_hoja_rrhh">Así está ahora</span>
+            </span>
+            <ul class="opcion-ajuste__lista">
+              <li>Proyecta el año una vez y lo reparte igual de marzo a diciembre, como el Excel antiguo.</li>
+              <li>Solo para comparar con planillas viejas: al final del año puede sobrar o faltar retención.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="form-nota form-nota--aviso-contrato" *ngIf="ajustes.renta5ta_como_hoja_rrhh">
+          <strong>Ojo:</strong> mientras esté así, las planillas nuevas calculan la 5ta como el Excel antiguo, no como pide SUNAT.
+          Si fue para comparar, vuelve a elegir «Procedimiento de SUNAT».
+        </p>
+      </div>
+
+      <div class="ajuste-bloque">
+        <h3 class="ajuste-bloque__pregunta">Los meses pagados antes del sistema</h3>
+        <p class="form-ayuda">
+          Para que la retención cuadre, la 5ta necesita lo cobrado y lo retenido en los meses que no se hicieron en el
+          sistema. Se cargan en el módulo Renta de 5ta, con su modelo de Excel o mes por mes en la hoja de cada trabajador.
+        </p>
+        <a class="btn-secondary pasos-mes__ir" routerLink="/inicio/renta-5ta">
+          <app-icon icono="wallet" [tamano]="16"></app-icon>
+          Ir a Renta de 5ta
+        </a>
+
+        <!-- El formato antiguo: el Excel «Calculo 5ta» de RR.HH., solo enero y febrero. -->
+        <details class="guia-refirma">
+          <summary>
+            <app-icon icono="excel" [tamano]="16"></app-icon>
+            Cargar el Excel «Calculo 5ta» de RR.HH. (enero y febrero de {{ anioActual }})
+          </summary>
+          <div class="form-fields previa-5ta">
+            <p class="form-nota" *ngIf="previaResumen as r">
+              <ng-container *ngIf="r.trabajadores; else sinPrevia">
+                Cargado para <strong>{{ r.trabajadores }} trabajadores</strong>: cobrado
+                S/ {{ r.remuneracion | number: '1.2-2' }} y retenido S/ {{ r.retencion | number: '1.2-2' }}
+                <ng-container *ngIf="r.origen">(de «{{ r.origen }}»)</ng-container>.
+              </ng-container>
+              <ng-template #sinPrevia>Todavía no se cargó nada de enero y febrero de {{ anioActual }}.</ng-template>
+            </p>
+
+            <app-selector-archivo
+              [extensiones]="['xlsx', 'xls']"
+              [pesoMaximoMb]="10"
+              [(archivos)]="previaArchivo"
+              [ocupado]="previaSubiendo"
+              textoOcupado="Leyendo el Excel y recalculando…"
+              ayuda="Con las columnas MODULAR (DNI), PATERNO, Enero, Febrero, IRQ DESCONTADO ENERO e IRQ DESCONTADO FEBRERO. Se puede volver a subir: reemplaza lo anterior."
+            ></app-selector-archivo>
+
+            <div class="resumen-masivo" *ngIf="previaResultado as r">
+              <div class="resumen-masivo__dato"><strong>{{ r.leidos }}</strong><span>Leídos</span></div>
+              <div class="resumen-masivo__dato"><strong>{{ r.con_datos }}</strong><span>Con enero o febrero</span></div>
+              <div class="resumen-masivo__dato"><strong>{{ r.recalculadas }}</strong><span>Planillas recalculadas</span></div>
+            </div>
+            <div class="detalle-masivo" *ngIf="previaResultado?.no_encontrados?.length">
+              <div class="detalle-masivo__fila" *ngFor="let n of previaResultado!.no_encontrados">
+                <span>{{ n }}</span>
+                <span class="detalle-masivo__motivo">No está registrado en el sistema</span>
+              </div>
+            </div>
+
+            <button type="button" class="btn-primary previa-5ta__boton" [disabled]="!previaArchivo.length || previaSubiendo" (click)="subirPrevia()">
+              <app-icon icono="upload" [tamano]="16"></app-icon>
+              Cargar enero y febrero
+            </button>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ═══════════ Planillas ═══════════ -->
+    <section class="section-panel ajustes-panel" *ngSwitchCase="'planillas'">
+      <header class="ajustes-panel__cabecera">
+        <div>
+          <h2>Planillas</h2>
+          <p class="form-ayuda">De qué periodos se pueden armar planillas y emitir boletas.</p>
+        </div>
+      </header>
+
+      <div class="ajuste-bloque" *ngIf="ajustes">
+        <h3 class="ajuste-bloque__pregunta" id="p-anios">¿De qué años se pueden armar planillas y boletas?</h3>
+        <div class="opciones-ajuste" role="radiogroup" aria-labelledby="p-anios">
+          <div class="opcion-ajuste" role="radio" tabindex="0" [attr.aria-checked]="!ajustes.permitir_anios_anteriores"
+            [class.opcion-ajuste--elegida]="!ajustes.permitir_anios_anteriores" [class.opcion-ajuste--ocupada]="guardando"
+            (click)="ajustes.permitir_anios_anteriores && cambiarAniosAnteriores(false)"
+            (keydown.enter)="ajustes.permitir_anios_anteriores && cambiarAniosAnteriores(false)">
+            <span class="opcion-ajuste__cabeza">
+              <strong>Solo desde {{ anioActual }}</strong>
+              <span class="status-badge status-badge-success" *ngIf="!ajustes.permitir_anios_anteriores">Así está ahora</span>
+            </span>
+            <ul class="opcion-ajuste__lista">
+              <li>Lo que ya se armó de años anteriores se queda como está.</li>
+              <li>Las boletas firmadas en papel se suben en Documentos → Subir anteriores.</li>
+            </ul>
+          </div>
+
+          <div class="opcion-ajuste" role="radio" tabindex="0" [attr.aria-checked]="ajustes.permitir_anios_anteriores"
+            [class.opcion-ajuste--elegida]="ajustes.permitir_anios_anteriores" [class.opcion-ajuste--ocupada]="guardando"
+            (click)="!ajustes.permitir_anios_anteriores && cambiarAniosAnteriores(true)"
+            (keydown.enter)="!ajustes.permitir_anios_anteriores && cambiarAniosAnteriores(true)">
+            <span class="opcion-ajuste__cabeza">
+              <strong>También de años anteriores</strong>
+              <span class="status-badge status-badge-success" *ngIf="ajustes.permitir_anios_anteriores">Así está ahora</span>
+            </span>
+            <ul class="opcion-ajuste__lista">
+              <li>Para dejar de registro las boletas que se firmaron a mano, por ejemplo las de {{ anioActual - 1 }}.</li>
+              <li>Quedan como firmadas en papel: no se le avisa al trabajador. El sueldo sale de la ficha de hoy.</li>
+            </ul>
           </div>
         </div>
       </div>
-
-      <footer class="panel-pie">
-        <button type="button" class="btn-primary" (click)="guardarValoresLegales()"
-          [disabled]="guardandoLegal || !hayCambiosLegales">
-          {{ guardandoLegal ? 'Guardando…' : 'Guardar ' + anioLegal }}
-        </button>
-        <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="hayCambiosLegales && !guardandoLegal">
-          Tienes cambios sin guardar en {{ anioLegal }}.
-        </p>
-        <p class="panel-pie__nota" *ngIf="!hayCambiosLegales">
-          Al guardar, solo cambian las planillas que se generen o recalculen desde ahora.
-        </p>
-      </footer>
-    </ng-container>
-  </section>
-
-  <!-- Enero y febrero de antes del sistema: la 5ta de marzo a diciembre los necesita. -->
-  <section class="section-panel">
-    <header class="panel-header">
-      <div>
-        <h2>Renta de 5ta: enero y febrero de {{ anioActual }}</h2>
-        <p class="panel-header__descripcion">
-          La retención de marzo a diciembre suma lo que cada trabajador cobró en enero y febrero y
-          resta lo que ya se le retuvo. Esos meses no se hicieron en el sistema: se toman del Excel
-          de cálculo de 5ta de RR.HH. Si un mes sí tiene planilla, manda la planilla.
-        </p>
-      </div>
-    </header>
-
-    <div class="grupo-montos form-fields">
-      <p class="form-nota" *ngIf="previaResumen as r">
-        <ng-container *ngIf="r.trabajadores; else sinPrevia">
-          Cargado para <strong>{{ r.trabajadores }} trabajadores</strong>: cobrado
-          S/ {{ r.remuneracion | number: '1.2-2' }} y retenido S/ {{ r.retencion | number: '1.2-2' }}
-          <ng-container *ngIf="r.origen">(de «{{ r.origen }}»)</ng-container>.
-        </ng-container>
-        <ng-template #sinPrevia>Todavía no se cargó nada de enero y febrero de {{ anioActual }}.</ng-template>
-      </p>
-
-      <app-selector-archivo
-        [extensiones]="['xlsx', 'xls']"
-        [pesoMaximoMb]="10"
-        [(archivos)]="previaArchivo"
-        [ocupado]="previaSubiendo"
-        textoOcupado="Leyendo el Excel y recalculando…"
-        ayuda="El Excel «Calculo 5ta» con las columnas MODULAR (DNI), PATERNO, Enero, Febrero, IRQ DESCONTADO ENERO e IRQ DESCONTADO FEBRERO. Se puede volver a subir: reemplaza lo anterior."
-      ></app-selector-archivo>
-
-      <div class="resumen-masivo" *ngIf="previaResultado as r">
-        <div class="resumen-masivo__dato"><strong>{{ r.leidos }}</strong><span>Leídos</span></div>
-        <div class="resumen-masivo__dato"><strong>{{ r.con_datos }}</strong><span>Con enero o febrero</span></div>
-        <div class="resumen-masivo__dato"><strong>{{ r.recalculadas }}</strong><span>Planillas recalculadas</span></div>
-      </div>
-      <div class="detalle-masivo" *ngIf="previaResultado?.no_encontrados?.length">
-        <div class="detalle-masivo__fila" *ngFor="let n of previaResultado!.no_encontrados">
-          <span>{{ n }}</span>
-          <span class="detalle-masivo__motivo">No está registrado en el sistema</span>
-        </div>
-      </div>
-    </div>
-
-    <footer class="panel-pie">
-      <button type="button" class="btn-primary" [disabled]="!previaArchivo.length || previaSubiendo" (click)="subirPrevia()">
-        <app-icon icono="upload" [tamano]="16"></app-icon>
-        Cargar enero y febrero
-      </button>
-    </footer>
-  </section>
+    </section>
+  </div>
 </div>
 
 <!-- Un año nuevo nace con los montos del anterior: casi siempre solo sube la UIT. -->
@@ -303,8 +365,7 @@
       <input id="nuevoAnioLegal" type="number" class="form-control" min="2000" max="2100"
         [(ngModel)]="nuevoAnioLegal" />
       <small class="form-ayuda">
-        Se crea con los montos del año anterior. Después cambias los que hayan subido, casi
-        siempre la UIT.
+        Se crea con los montos del año anterior. Después cambias los que hayan subido, casi siempre la UIT.
       </small>
     </div>
   </div>
