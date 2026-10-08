@@ -364,36 +364,11 @@ class EmpleadoController extends Controller
      */
     public function boletasEnZip(Request $request)
     {
-        $request->validate([
-            'mes'  => 'required|integer|min:1|max:12',
-            'anio' => 'required|integer|min:2000',
-        ]);
-        $mes  = (int) $request->input('mes');
-        $anio = (int) $request->input('anio');
-
-        $empleados = Empleado::query()->select('empleados.id', 'empleados.dni', 'empleados.nombre', 'empleados.apellido');
-        $this->aplicarBusqueda($request, $empleados, ['nombre', 'apellido', 'dni', 'cargo.nombre', 'area.nombre', 'usuario.email']);
-        $this->aplicarFiltrosDePersonal($request, $empleados);
-
-        // «Para firmar»: solo las que esperan la firma digital del colegio,
-        // así no se vuelve a firmar lo que ya está listo.
-        $paraFirmar = $request->boolean('para_firmar');
-
-        $documentos = \App\Models\Documento::query()
-            ->where('tipo', 'boleta')
-            ->whereIn('empleado_id', $empleados->pluck('empleados.id'))
-            ->whereHas('planilla', fn (Builder $q) => $q->where('mes', $mes)->where('anio', $anio))
-            ->when($paraFirmar, fn ($q) => $q->whereIn('firma_colegio', \App\Models\Documento::FIRMA_COLEGIO_EN_CURSO))
-            ->get();
-
-        if ($documentos->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => $paraFirmar
-                    ? 'No hay boletas de ' . \App\Support\Meses::NOMBRES[$mes] . " {$anio} esperando la firma del colegio con estos filtros."
-                    : 'No hay boletas emitidas de ' . \App\Support\Meses::NOMBRES[$mes] . " {$anio} con estos filtros. Emítelas primero y vuelve a descargarlas.",
-            ], 404);
+        $elegidas = $this->boletasParaElZip($request);
+        if ($elegidas instanceof \Illuminate\Http\JsonResponse) {
+            return $elegidas;
         }
+        ['documentos' => $documentos, 'mes' => $mes, 'anio' => $anio, 'paraFirmar' => $paraFirmar] = $elegidas;
 
         $personas = Empleado::whereIn('id', $documentos->pluck('empleado_id'))->get(['id', 'dni', 'nombre', 'apellido'])->keyBy('id');
         $disco    = \Illuminate\Support\Facades\Storage::disk('local');
@@ -439,6 +414,103 @@ class EmpleadoController extends Controller
         $archivo = sprintf($paraFirmar ? 'Boletas_para_firmar_%s_%d.zip' : 'Boletas_%s_%d.zip', \App\Support\Meses::NOMBRES[$mes], $anio);
 
         return response()->download($ruta, $archivo, ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
+    }
+
+    /**
+     * Las boletas que entran en el .zip: el mes, el buscador y los filtros de
+     * Emisión. Si no hay ninguna, la respuesta que lo dice.
+     *
+     * @return array{documentos: \Illuminate\Support\Collection, mes: int, anio: int, paraFirmar: bool}|\Illuminate\Http\JsonResponse
+     */
+    private function boletasParaElZip(Request $request)
+    {
+        $request->validate([
+            'mes'  => 'required|integer|min:1|max:12',
+            'anio' => 'required|integer|min:2000',
+        ]);
+        $mes  = (int) $request->input('mes');
+        $anio = (int) $request->input('anio');
+
+        $empleados = Empleado::query()->select('empleados.id', 'empleados.dni', 'empleados.nombre', 'empleados.apellido');
+        $this->aplicarBusqueda($request, $empleados, ['nombre', 'apellido', 'dni', 'cargo.nombre', 'area.nombre', 'usuario.email']);
+        $this->aplicarFiltrosDePersonal($request, $empleados);
+
+        // «Para firmar»: solo las que esperan la firma digital del colegio,
+        // así no se vuelve a firmar lo que ya está listo.
+        $paraFirmar = $request->boolean('para_firmar');
+
+        $documentos = \App\Models\Documento::query()
+            ->where('tipo', 'boleta')
+            ->whereIn('empleado_id', $empleados->pluck('empleados.id'))
+            ->whereHas('planilla', fn (Builder $q) => $q->where('mes', $mes)->where('anio', $anio))
+            ->when($paraFirmar, fn ($q) => $q->whereIn('firma_colegio', \App\Models\Documento::FIRMA_COLEGIO_EN_CURSO))
+            ->get();
+
+        if ($documentos->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => $paraFirmar
+                    ? 'No hay boletas de ' . \App\Support\Meses::NOMBRES[$mes] . " {$anio} esperando la firma del colegio con estos filtros."
+                    : 'No hay boletas emitidas de ' . \App\Support\Meses::NOMBRES[$mes] . " {$anio} con estos filtros. Emítelas primero y vuelve a descargarlas.",
+            ], 404);
+        }
+
+        return ['documentos' => $documentos, 'mes' => $mes, 'anio' => $anio, 'paraFirmar' => $paraFirmar];
+    }
+
+    /**
+     * GET /employees/payslips-zip/link — un enlace para que el .zip lo baje
+     * el NAVEGADOR, no la página.
+     *
+     * Bajado por dentro de la página (XHR), un .zip grande se cortaba a la
+     * mitad en computadoras con un gestor de descargas o el escudo web de un
+     * antivirus: agarran los .zip al vuelo y la página recibía un pedazo
+     * («No se pudieron juntar las boletas»). Con un enlace normal lo maneja
+     * la barra de descargas del navegador, como cualquier archivo.
+     *
+     * El enlace va firmado y vence en 10 minutos (no lleva el token de la
+     * sesión): sirve solo para ESE pedido, con esos filtros, y para quien lo
+     * pidió. Se firma relativo, así vale entre por la IP o por el nombre.
+     */
+    public function enlaceBoletasEnZip(Request $request)
+    {
+        $elegidas = $this->boletasParaElZip($request);
+        if ($elegidas instanceof \Illuminate\Http\JsonResponse) {
+            return $elegidas;
+        }
+
+        $parametros = collect($request->query())
+            ->only(['mes', 'anio', 'para_firmar', 'search', 'planilla', 'boleta', 'corrida_id', 'sede_id', 'area_id', 'cargo_id',
+                'tipo_contrato_id', 'sistema_pensiones', 'forma_pago', 'sin_sueldo', 'contrato_vencido', 'estado', 'ingreso_desde', 'ingreso_hasta'])
+            ->filter(fn ($v) => $v !== null && $v !== '')
+            ->all();
+
+        $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'boletas.zip',
+            now()->addMinutes(10),
+            $parametros + ['usuario' => $request->user()->id],
+            absolute: false
+        );
+
+        return response()->json(['success' => true, 'data' => [
+            'url'      => $url,
+            'cantidad' => $elegidas['documentos']->count(),
+        ]]);
+    }
+
+    /**
+     * GET /payslips-zip/download (firmado) — el .zip, para el enlace de arriba.
+     * La firma ya prueba quién lo pidió; aquí solo se confirma que esa
+     * persona sigue pudiendo bajar boletas (RR.HH. o Administración, activa).
+     */
+    public function boletasEnZipConEnlace(Request $request)
+    {
+        $usuario = \App\Models\User::with('rol:id,nombre')->find($request->query('usuario'));
+        if (! $usuario || $usuario->estado_registro !== 'activo' || ! in_array($usuario->rol?->nombre, ['rrhh', 'admin'], true)) {
+            abort(403, 'Este enlace ya no es válido para tu cuenta.');
+        }
+
+        return $this->boletasEnZip($request);
     }
 
     /**

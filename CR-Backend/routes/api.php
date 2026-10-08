@@ -64,6 +64,11 @@ Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle
 
 // Lo que abre el QR de la boleta: si es auténtica. Pública y con la dirección
 // firmada por el servidor (ver VerificarBoletaController).
+// El .zip de boletas por enlace firmado (vence en 10 min): lo baja el
+// navegador, sin el token. Ver EmpleadoController::enlaceBoletasEnZip.
+Route::get('/payslips-zip/download', [EmpleadoController::class, 'boletasEnZipConEnlace'])
+    ->name('boletas.zip')->middleware(['signed:relative', 'throttle:30,1']);
+
 Route::get('/verificar-boleta/{documento}', [\App\Http\Controllers\VerificarBoletaController::class, 'ver'])
     ->name('boleta.verificar')->middleware('throttle:verificacion');
 
@@ -187,6 +192,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // Las boletas YA EMITIDAS del mes, todas en un .zip (mismos filtros
         // de Emisión de Boletas). También antes del apiResource.
         Route::get('employees/payslips-zip', [EmpleadoController::class, 'boletasEnZip']);
+        Route::get('employees/payslips-zip/link', [EmpleadoController::class, 'enlaceBoletasEnZip']);
         // Activar o dar de baja a varios marcados en la lista, de una vez.
         Route::post('employees/status', [EmpleadoController::class, 'cambiarEstado']);
         Route::apiResource('employees',        EmpleadoController::class);

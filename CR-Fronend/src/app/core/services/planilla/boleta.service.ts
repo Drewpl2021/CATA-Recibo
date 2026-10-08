@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { FirmaDelColegio, GeneracionMasivaBoletas, Planilla } from '../../models';
 import { ApiResponse, END_POINTS, END_POINTS_ACCIONES } from '../../utils';
 import { environment } from '../../../../environments/environment';
@@ -38,14 +38,39 @@ export class BoletaService {
 
   /**
    * Las boletas YA EMITIDAS del mes en un .zip, con el buscador y los filtros
-   * de la pantalla. Las que no se emitieron no van.
+   * de la pantalla (las que no se emitieron no van), bajado por el NAVEGADOR
+   * con un enlace firmado que vence en 10 minutos.
+   *
+   * Bajarlo por dentro de la página (como `descargarEmitidasEnZip`) se
+   * cortaba a la mitad en computadoras con un gestor de descargas o el escudo
+   * web de un antivirus: agarran el .zip al vuelo y la página recibía un
+   * pedazo. Un enlace normal lo maneja la barra de descargas, como cualquier
+   * archivo. Devuelve cuántas boletas trae.
    */
-  descargarEmitidasEnZip(filtros: Record<string, string | number | boolean | undefined>): Observable<Blob> {
+  bajarEmitidasEnZip(filtros: Record<string, string | number | boolean | undefined>): Observable<number> {
+    return this.http
+      .get<ApiResponse<{ url: string; cantidad: number }>>(`${this.apiUrl}/${END_POINTS_ACCIONES.boletasEnZip}/link`, {
+        params: this.soloConValor(filtros),
+      })
+      .pipe(
+        map((res) => {
+          // El servidor lo firma relativo (/api/...): se arma con la misma
+          // base de la API para que valga en desarrollo y en el colegio.
+          const enlace = document.createElement('a');
+          enlace.href = `${this.apiUrl}${res.data.url.replace(/^\/api/, '')}`;
+          enlace.rel = 'noopener';
+          enlace.click();
+          return res.data.cantidad;
+        })
+      );
+  }
+
+  private soloConValor(filtros: Record<string, string | number | boolean | undefined>): Record<string, string> {
     const params: Record<string, string> = {};
     Object.entries(filtros).forEach(([clave, valor]) => {
       if (valor !== undefined && valor !== null && valor !== '') params[clave] = String(valor);
     });
-    return this.http.get(`${this.apiUrl}/${END_POINTS_ACCIONES.boletasEnZip}`, { params, responseType: 'blob' });
+    return params;
   }
 
   // ── Firma digital del colegio (ReFirma) ──

@@ -64,5 +64,30 @@ class BoletasEnZipTest extends TestCase
         $this->actingAs($this->crearUsuario('empleado'), 'sanctum')
             ->getJson("/api/employees/payslips-zip?mes={$mes}&anio={$anio}")
             ->assertForbidden();
+        $this->actingAs($this->crearUsuario('empleado'), 'sanctum')
+            ->getJson("/api/employees/payslips-zip/link?mes={$mes}&anio={$anio}")
+            ->assertForbidden();
+
+        // Por enlace (lo baja el navegador): lleva los filtros, y sin sesión
+        // también vale, porque va firmado.
+        $enlace = $this->actingAs($rrhh, 'sanctum')
+            ->getJson("/api/employees/payslips-zip/link?mes={$mes}&anio={$anio}&search=gatica")
+            ->assertOk()->assertJsonPath('data.cantidad', 1)->json('data.url');
+        $this->assertStringStartsWith('/api/payslips-zip/download?', $enlace);
+        $this->app['auth']->forgetGuards();
+        $this->assertSame(["BOL-{$anio}-0001_42083098_Gatica_Quispe_Daniel.pdf"], $nombres($this->get($enlace)->assertOk()));
+
+        // Tocado (otro filtro) o sin firma: no vale.
+        $this->get(str_replace('search=gatica', 'search=perez', $enlace))->assertForbidden();
+        $this->get('/api/payslips-zip/download?mes=' . $mes . '&anio=' . $anio . '&usuario=' . $rrhh->id)->assertForbidden();
+
+        // Si quien lo pidió ya no está activo, el enlace deja de servir.
+        $rrhh->forceFill(['estado_registro' => 'inactivo'])->save();
+        $this->get($enlace)->assertForbidden();
+
+        // Sin boletas con ese filtro, ni siquiera se arma el enlace.
+        $this->actingAs($this->crearUsuario('rrhh'), 'sanctum')
+            ->getJson("/api/employees/payslips-zip/link?mes={$mes}&anio={$anio}&boleta=sin")
+            ->assertNotFound();
     }
 }

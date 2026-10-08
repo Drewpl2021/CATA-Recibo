@@ -262,23 +262,17 @@ export class EmisionBoletaListComponent implements OnInit {
     this.descargandoParaFirmar = true;
     const periodo = `${this.nombreMes(this.mesGlobal * 1)} ${this.anioGlobal}`;
 
-    this.progreso
-      .seguir('Preparando las boletas para firmar', this.boletaService
-        .descargarEmitidasEnZip({ mes: this.mesGlobal, anio: this.anioGlobal, para_firmar: true, search: this.busqueda || undefined, ...this.filtros }))
+    this.boletaService
+      .bajarEmitidasEnZip({ mes: this.mesGlobal, anio: this.anioGlobal, para_firmar: true, search: this.busqueda || undefined, ...this.filtros })
       .subscribe({
-        next: (blob) => {
-          guardarArchivo(blob, `Boletas para firmar ${periodo}.zip`);
+        next: (cantidad) => {
           this.descargandoParaFirmar = false;
-          this.toastService.success('Listas para firmar',
-            'Descomprime el .zip, fírmalas en ReFirma y súbelas con «Subir boletas firmadas».');
+          this.toastService.success(`Bajando ${cantidad} ${cantidad === 1 ? 'boleta' : 'boletas'} para firmar`,
+            `Mira la barra de descargas del navegador. Descomprime «Boletas para firmar ${periodo}», fírmalas en ReFirma y súbelas con «Subir firmadas».`);
         },
-        error: async (err) => {
+        error: (err) => {
           this.descargandoParaFirmar = false;
-          let detalle = err;
-          if (err?.error instanceof Blob) {
-            try { detalle = { error: JSON.parse(await err.error.text()) }; } catch { /* queda el genérico */ }
-          }
-          this.toastService.error('No se descargó', mensajeErrorApi(detalle, 'No se pudieron juntar las boletas.'));
+          this.toastService.error('No se descargó', mensajeErrorApi(err, 'No se pudieron juntar las boletas.'));
         },
       });
   }
@@ -1357,24 +1351,17 @@ export class EmisionBoletaListComponent implements OnInit {
     this.descargandoZip = true;
     const periodo = `${this.nombreMes(this.mesGlobal * 1)} ${this.anioGlobal}`;
 
-    this.progreso
-      .seguir('Preparando el .zip de boletas', this.boletaService
-        .descargarEmitidasEnZip({ mes: this.mesGlobal, anio: this.anioGlobal, search: this.busqueda || undefined, ...this.filtros }))
+    this.boletaService
+      .bajarEmitidasEnZip({ mes: this.mesGlobal, anio: this.anioGlobal, search: this.busqueda || undefined, ...this.filtros })
       .subscribe({
-        next: (blob) => {
-          guardarArchivo(blob, `Boletas ${periodo}.zip`);
+        next: (cantidad) => {
           this.descargandoZip = false;
-          this.toastService.success('Boletas descargadas', `Las boletas emitidas de ${periodo}, en un .zip.`);
+          this.toastService.success(`Bajando ${cantidad} ${cantidad === 1 ? 'boleta' : 'boletas'}`,
+            `Las emitidas de ${periodo}, en un .zip. Mira la barra de descargas del navegador.`);
         },
-        error: async (err) => {
+        error: (err) => {
           this.descargandoZip = false;
-          // Pedido como archivo, el error también llega como archivo: hay
-          // que leerlo para sacar el mensaje.
-          let detalle = err;
-          if (err?.error instanceof Blob) {
-            try { detalle = { error: JSON.parse(await err.error.text()) }; } catch { /* queda el genérico */ }
-          }
-          this.toastService.error('No se descargó', mensajeErrorApi(detalle, 'No se pudieron juntar las boletas.'));
+          this.toastService.error('No se descargó', mensajeErrorApi(err, 'No se pudieron juntar las boletas.'));
         },
       });
   }

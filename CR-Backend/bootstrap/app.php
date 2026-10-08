@@ -83,8 +83,17 @@ return Application::configure(basePath: dirname(__DIR__))
                 $e instanceof AuthenticationException => [
                     401, 'Tu sesión terminó. Vuelve a entrar.',
                 ],
+                // Un enlace firmado (el .zip de boletas, la verificación) que
+                // venció o que alguien tocó.
+                $e instanceof \Illuminate\Routing\Exceptions\InvalidSignatureException => [
+                    403, 'Este enlace venció o no es válido. Vuelve a pedirlo desde el sistema.',
+                ],
                 $e instanceof AuthorizationException, $e instanceof AccessDeniedHttpException => [
                     403, 'No tienes permiso para hacer esto.',
+                ],
+                // Un abort(403, 'motivo') de un controlador: su motivo es para el usuario.
+                $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface && $e->getStatusCode() === 403 => [
+                    403, $e->getMessage() ?: 'No tienes permiso para hacer esto.',
                 ],
                 // El nombre del modelo y el id que se buscó se quedan en el
                 // registro: al usuario no le dicen nada y a un curioso le
