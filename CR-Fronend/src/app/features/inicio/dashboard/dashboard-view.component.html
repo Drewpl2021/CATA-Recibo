@@ -116,18 +116,21 @@
     </section>
 
     <!-- ══ El mes en el azul del colegio ══════════════════════════════
-         La nómina, los doce meses del año (cada barra lleva a su mes) y
-         cómo van las boletas. Es lo primero que RR.HH. pregunta. -->
+         La nómina (sube contando al llegar), los doce meses del año (cada
+         barra lleva a su mes) y el anillo de las boletas firmadas. -->
     <section class="banda-mes" aria-label="Resumen del mes">
       <div class="banda-mes__nomina">
         <h2 class="banda-mes__titulo">Nómina de {{ loQueSeVe }}</h2>
-        <p class="banda-mes__cifra"><span class="banda-mes__moneda">S/</span>{{ enSolesRedondo(nomina) }}</p>
+        <p class="banda-mes__cifra"><span class="banda-mes__moneda">S/</span>{{ enSolesRedondo(nominaMostrada) }}</p>
         <p class="banda-mes__cambio" *ngIf="variacion !== null">
-          <app-icon [icono]="variacion >= 0 ? 'trending_up' : 'trending_down'" [tamano]="16"></app-icon>
+          <app-icon [icono]="variacion >= 0 ? 'trending_up' : 'trending_down'" [tamano]="15"></app-icon>
           {{ variacionAbs }} % {{ variacion >= 0 ? 'más' : 'menos' }} que en {{ nombreMesAnterior }}
         </p>
         <p class="banda-mes__cambio" *ngIf="variacion === null && nomina">Sin planillas el mes anterior para comparar.</p>
         <p class="banda-mes__cambio" *ngIf="!nomina">Todavía no hay planillas en este mes.</p>
+        <p class="banda-mes__detalle" *ngIf="nomina">
+          {{ planillas }} planillas, {{ enSoles(promedio) }} de neto por persona
+        </p>
       </div>
 
       <div class="banda-mes__anio" role="group" [attr.aria-label]="'Nómina de cada mes de ' + filtroAnio">
@@ -141,42 +144,76 @@
       </div>
 
       <div class="banda-mes__boletas">
-        <h2 class="banda-mes__titulo">Boletas firmadas</h2>
-        <p class="banda-mes__cifra banda-mes__cifra--media">
-          {{ porcentajeFirmadas }}<span class="banda-mes__moneda banda-mes__moneda--detras">%</span>
-        </p>
-        <div class="tira-boletas" role="img" [attr.aria-label]="describirBoletas()">
-          <span class="tira-boletas__tramo tira-boletas__tramo--firmadas" [style.width.%]="anchoBoletas(boletas.firmadas)"></span>
-          <span class="tira-boletas__tramo tira-boletas__tramo--vistas" [style.width.%]="anchoBoletas(boletas.vistas)"></span>
-          <span class="tira-boletas__tramo tira-boletas__tramo--sin-abrir" [style.width.%]="anchoBoletas(boletas.sinAbrir)"></span>
+        <div class="anillo" role="img" [attr.aria-label]="describirBoletas()">
+          <svg viewBox="0 0 128 128" class="anillo__svg" aria-hidden="true">
+            <circle cx="64" cy="64" r="54" class="anillo__pista"></circle>
+            <circle *ngFor="let a of arcos" cx="64" cy="64" r="54" class="anillo__arco" [ngClass]="a.clase"
+              [attr.stroke-dasharray]="a.largo + ' ' + circunferencia"
+              [attr.stroke-dashoffset]="-a.inicio"></circle>
+          </svg>
+          <div class="anillo__centro">
+            <strong>{{ porcentajeFirmadas }}%</strong>
+            <span>firmadas</span>
+          </div>
         </div>
-        <ul class="tira-boletas__leyenda">
-          <li><i class="tira-boletas__punto tira-boletas__tramo--firmadas"></i>{{ boletas.firmadas }} firmadas</li>
-          <li><i class="tira-boletas__punto tira-boletas__tramo--vistas"></i>{{ boletas.vistas }} vistas</li>
-          <li><i class="tira-boletas__punto tira-boletas__tramo--sin-abrir"></i>{{ boletas.sinAbrir }} sin abrir</li>
-          <li *ngIf="boletas.sinEmitir"><i class="tira-boletas__punto"></i>{{ boletas.sinEmitir }} sin emitir</li>
+        <ul class="anillo__leyenda">
+          <li><i class="anillo__punto anillo__arco--firmadas"></i><strong>{{ boletas.firmadas }}</strong> firmadas</li>
+          <li><i class="anillo__punto anillo__arco--vistas"></i><strong>{{ boletas.vistas }}</strong> vistas</li>
+          <li><i class="anillo__punto anillo__arco--sin-abrir"></i><strong>{{ boletas.sinAbrir }}</strong> sin abrir</li>
+          <li *ngIf="boletas.sinEmitir"><i class="anillo__punto"></i><strong>{{ boletas.sinEmitir }}</strong> sin emitir</li>
         </ul>
       </div>
-
-      <dl class="banda-mes__cifras">
-        <div>
-          <dt>Personal activo</dt>
-          <dd>{{ activos }}<small *ngIf="altas">+{{ altas }} este mes</small></dd>
-        </div>
-        <div>
-          <dt>Neto promedio</dt>
-          <dd>{{ promedio ? enSoles(promedio) : '—' }}</dd>
-        </div>
-        <div>
-          <dt>Costo con aportes</dt>
-          <dd>{{ nomina ? enSoles(nomina + aportes) : '—' }}</dd>
-        </div>
-        <div>
-          <dt>Contratos que vencen</dt>
-          <dd>{{ porVencer }}<small>en 30 días</small></dd>
-        </div>
-      </dl>
     </section>
+
+    <!-- ══ Cuatro cifras, cada una con su mini gráfico ═════════════════ -->
+    <div class="indicadores">
+      <article class="indicador">
+        <span class="indicador__icono"><app-icon icono="people" [tamano]="20"></app-icon></span>
+        <div class="indicador__texto">
+          <h3 class="indicador__nombre">Personal activo</h3>
+          <p class="indicador__valor">{{ activos }}</p>
+          <p class="indicador__nota">{{ altas ? '+' + altas + ' entraron este mes' : 'Nadie entró este mes' }}</p>
+        </div>
+        <apx-chart class="indicador__chispa" *ngIf="totalAltas" [series]="chispaAltasSeries" [chart]="chispaAltasChart"
+          [colors]="chispaAltasColores" [plotOptions]="chispaAltasPlot" [tooltip]="chispaTooltip"></apx-chart>
+      </article>
+
+      <article class="indicador">
+        <span class="indicador__icono"><app-icon icono="wallet" [tamano]="20"></app-icon></span>
+        <div class="indicador__texto">
+          <h3 class="indicador__nombre">Pagado en {{ filtroAnio }}</h3>
+          <p class="indicador__valor">{{ enMiles(acumulado) }}</p>
+          <p class="indicador__nota">Hasta {{ nombreMes(filtroMes).toLowerCase() }}</p>
+        </div>
+        <apx-chart class="indicador__chispa" *ngIf="acumulado" [series]="chispaNominaSeries" [chart]="chispaNominaChart"
+          [colors]="chispaNominaColores" [stroke]="chispaStroke" [fill]="chispaFill" [tooltip]="chispaTooltip"></apx-chart>
+      </article>
+
+      <article class="indicador">
+        <span class="indicador__icono indicador__icono--dorado"><app-icon icono="money" [tamano]="20"></app-icon></span>
+        <div class="indicador__texto">
+          <h3 class="indicador__nombre">Le cuesta al colegio</h3>
+          <p class="indicador__valor">{{ enMiles(nomina + aportes) }}</p>
+          <p class="indicador__nota">{{ enSoles(aportes) }} son aportes</p>
+        </div>
+        <div class="indicador__reparto" *ngIf="nomina" role="img"
+          [attr.aria-label]="'Aportes: ' + parteAportes.toFixed(0) + ' % del costo'">
+          <span class="indicador__reparto-neto" [style.width.%]="100 - parteAportes"></span>
+          <span class="indicador__reparto-aportes" [style.width.%]="parteAportes"></span>
+        </div>
+      </article>
+
+      <article class="indicador">
+        <span class="indicador__icono" [class.indicador__icono--alerta]="porVencer > 0" [class.indicador__icono--bien]="!porVencer">
+          <app-icon [icono]="porVencer ? 'warning' : 'calendar_check'" [tamano]="20"></app-icon>
+        </span>
+        <div class="indicador__texto">
+          <h3 class="indicador__nombre">Contratos por vencer</h3>
+          <p class="indicador__valor">{{ porVencer }}</p>
+          <p class="indicador__nota">{{ porVencer ? 'En los próximos 30 días' : 'Ninguno en los próximos 30 días' }}</p>
+        </div>
+      </article>
+    </div>
 
     <!-- ══ El año y los cumpleaños ════════════════════════════════════ -->
     <div class="panel-fila panel-fila--8-4">
@@ -184,12 +221,11 @@
         <header class="tarjeta-grafico__cabeza">
           <div>
             <h3 class="tarjeta-grafico__titulo">La nómina mes a mes</h3>
-            <p class="tarjeta-grafico__nota">{{ filtroAnio }} contra {{ filtroAnio - 1 }}. La raya dorada es el mes que estás viendo.</p>
+            <p class="tarjeta-grafico__nota">{{ filtroAnio }} contra {{ filtroAnio - 1 }}. El punto dorado es el mes que estás viendo.</p>
           </div>
-          <div class="dato-lateral" *ngIf="acumulado">
-            <span>Pagado hasta {{ nombreMes(filtroMes).toLowerCase() }}</span>
-            <strong>{{ enSoles(acumulado) }}</strong>
-            <small *ngIf="acumuladoAnterior">{{ diferenciaAcumulada() }}</small>
+          <div class="dato-lateral" *ngIf="acumulado && acumuladoAnterior">
+            <span>Contra el año pasado</span>
+            <strong>{{ diferenciaAcumulada() }}</strong>
           </div>
         </header>
         <apx-chart *ngIf="hayValores(tendenciaSeries)"
@@ -206,21 +242,29 @@
 
       <!-- Los cumpleaños, en un calendario: se ve de un vistazo quién y cuándo -->
       <article class="tarjeta-grafico cumple">
-        <header class="tarjeta-grafico__cabeza">
+        <header class="cumple__cabeza">
+          <span class="cumple__torta"><app-icon icono="cake" [tamano]="22"></app-icon></span>
           <div>
-            <h3 class="tarjeta-grafico__titulo">Cumpleaños de {{ nombreMes(filtroMes).toLowerCase() }}</h3>
-            <p class="tarjeta-grafico__nota" *ngIf="cumpleanos.length">
+            <h3 class="cumple__titulo">Cumpleaños de {{ nombreMes(filtroMes).toLowerCase() }}</h3>
+            <p class="cumple__resumen" *ngIf="cumpleanos.length">
               {{ cumpleanos.length }} {{ cumpleanos.length === 1 ? 'persona' : 'personas' }}<ng-container
                 *ngIf="cumpleanosPorVenir && cumpleanosPorVenir < cumpleanos.length">, faltan {{ cumpleanosPorVenir }}</ng-container>
             </p>
-            <p class="tarjeta-grafico__nota" *ngIf="!cumpleanos.length">Nadie del personal activo cumple este mes.</p>
+            <p class="cumple__resumen" *ngIf="!cumpleanos.length">Nadie del personal activo cumple este mes.</p>
           </div>
         </header>
 
         <div class="cumple__hoy" *ngFor="let c of cumpleanosHoy">
-          <app-icon icono="cake" [tamano]="18"></app-icon>
-          <span>Hoy cumple <strong>{{ c.nombre }}</strong><ng-container *ngIf="c.edad > 0">, {{ c.edad }} años</ng-container></span>
+          <span class="cumple__iniciales cumple__iniciales--grande avatar--dorado">{{ iniciales(c.nombre) }}</span>
+          <span class="cumple__hoy-texto">
+            <small>Hoy cumple</small>
+            <strong>{{ c.nombre }}</strong>
+            <small *ngIf="c.edad > 0">{{ c.edad }} años, {{ c.cargo }}</small>
+          </span>
         </div>
+        <p class="cumple__proximo" *ngIf="proximoCumple as p">
+          <strong>{{ p.dias === 1 ? 'Mañana' : 'En ' + p.dias + ' días' }}</strong> cumple {{ p.persona.nombre }}
+        </p>
 
         <div class="calendario" [attr.aria-label]="'Calendario de ' + nombreMes(filtroMes)">
           <div class="calendario__fila calendario__fila--dias" aria-hidden="true">
@@ -246,8 +290,8 @@
 
         <ul class="cumple__lista" *ngIf="cumpleanos.length">
           <li class="cumple__persona" *ngFor="let c of cumpleanosVisibles"
-            [class.cumple__persona--hoy]="c.es_hoy" [class.cumple__persona--paso]="c.ya_paso && !c.es_hoy">
-            <span class="cumple__iniciales">{{ iniciales(c.nombre) }}</span>
+            [class.cumple__persona--paso]="c.ya_paso && !c.es_hoy">
+            <span class="cumple__iniciales" [ngClass]="c.es_hoy ? 'avatar--dorado' : colorDe(c.nombre)">{{ iniciales(c.nombre) }}</span>
             <span class="cumple__quien">
               <strong>{{ c.nombre }}</strong>
               <small>{{ c.cargo }}{{ c.area && c.area !== '—' ? ', ' + c.area : '' }}</small>
@@ -262,7 +306,7 @@
     </div>
 
     <!-- ══ La plata del mes ═══════════════════════════════════════════ -->
-    <div class="panel-fila panel-fila--6-6">
+    <div class="panel-fila panel-fila--5-7">
       <article class="tarjeta-grafico">
         <header class="tarjeta-grafico__cabeza">
           <div>
@@ -285,47 +329,43 @@
         <p class="card-vacio" *ngIf="!cascada.length">Este mes todavía no tiene planillas.</p>
       </article>
 
-      <article class="tarjeta-grafico">
+      <article class="tarjeta-grafico grafico--mapa">
         <header class="tarjeta-grafico__cabeza">
           <div>
             <h3 class="tarjeta-grafico__titulo">Lo pagado por área</h3>
-            <p class="tarjeta-grafico__nota">Neto del mes. Pasa el cursor para ver entre cuántas personas.</p>
+            <p class="tarjeta-grafico__nota">Cada bloque es del tamaño de lo que cuesta el área. Pasa el cursor para ver entre cuántas personas.</p>
           </div>
         </header>
         <apx-chart *ngIf="hayValores(areaSeries)"
-          [series]="areaSeries" [chart]="areaChart" [plotOptions]="areaPlot" [xaxis]="areaXaxis"
-          [yaxis]="areaYaxis" [colors]="areaColores" [tooltip]="areaTooltip" [responsive]="areaResponsive"
-          [dataLabels]="sinEtiquetas" [legend]="sinLeyenda" [grid]="rejillaHorizontal">
+          [series]="areaSeries" [chart]="areaChart" [plotOptions]="areaPlot" [colors]="areaColores"
+          [dataLabels]="areaEtiquetas" [tooltip]="areaTooltip" [legend]="sinLeyenda">
         </apx-chart>
         <p class="card-vacio" *ngIf="!hayValores(areaSeries)">Este mes todavía no tiene planillas.</p>
       </article>
     </div>
 
-    <!-- ══ El personal ════════════════════════════════════════════════ -->
-    <div class="panel-fila panel-fila--tres">
-      <article class="tarjeta-grafico">
-        <header class="tarjeta-grafico__cabeza">
-          <div>
-            <h3 class="tarjeta-grafico__titulo">Cómo es el personal</h3>
-            <p class="tarjeta-grafico__nota">{{ activos }} {{ activos === 1 ? 'persona activa' : 'personas activas' }}</p>
-          </div>
-        </header>
-        <div class="proporcion" *ngFor="let p of proporciones">
-          <h4 class="proporcion__titulo">{{ p.titulo }}</h4>
-          <div class="proporcion__barra" role="img" [attr.aria-label]="describirProporcion(p)">
-            <span *ngFor="let t of p.tramos; let i = index" class="proporcion__tramo"
-              [ngClass]="'proporcion__color--' + (i % 5)" [style.width.%]="t.porcentaje"></span>
-          </div>
-          <ul class="proporcion__leyenda">
-            <li *ngFor="let t of p.tramos; let i = index">
-              <i class="proporcion__punto" [ngClass]="'proporcion__color--' + (i % 5)"></i>
-              {{ t.etiqueta }} <strong>{{ t.valor }}</strong>
-            </li>
-          </ul>
+    <!-- ══ Cómo es el personal: tres donas ════════════════════════════ -->
+    <section class="tarjeta-grafico">
+      <header class="tarjeta-grafico__cabeza">
+        <div>
+          <h3 class="tarjeta-grafico__titulo">Cómo es el personal</h3>
+          <p class="tarjeta-grafico__nota">{{ activos }} {{ activos === 1 ? 'persona activa' : 'personas activas' }}</p>
         </div>
-        <p class="card-vacio" *ngIf="!proporciones.length">No hay personal activo en esta sede.</p>
-      </article>
+      </header>
+      <div class="donas">
+        <div class="donas__una" *ngFor="let d of donas">
+          <h4 class="donas__titulo">{{ d.titulo }}</h4>
+          <apx-chart *ngIf="d.total"
+            [series]="d.series" [labels]="d.etiquetas" [chart]="donaChart" [colors]="donaColores"
+            [legend]="donaLeyenda" [stroke]="donaStroke" [dataLabels]="donaEtiquetas" [plotOptions]="donaPlot">
+          </apx-chart>
+          <p class="card-vacio" *ngIf="!d.total">Sin datos en esta sede.</p>
+        </div>
+      </div>
+    </section>
 
+    <!-- ══ Edades, conceptos y contratos ══════════════════════════════ -->
+    <div class="panel-fila panel-fila--tres">
       <article class="tarjeta-grafico grafico--etiquetas-fuera">
         <header class="tarjeta-grafico__cabeza">
           <div>
@@ -347,7 +387,7 @@
         <p class="card-vacio" *ngIf="!hayPersonal">Faltan las fechas de nacimiento e ingreso en las fichas.</p>
       </article>
 
-      <article class="tarjeta-grafico">
+      <article class="tarjeta-grafico grafico--etiquetas-fuera">
         <header class="tarjeta-grafico__cabeza">
           <div>
             <h3 class="tarjeta-grafico__titulo">Los conceptos que más pesan</h3>
@@ -356,30 +396,13 @@
         </header>
         <apx-chart *ngIf="hayValores(conceptosSeries)"
           [series]="conceptosSeries" [chart]="conceptosChart" [plotOptions]="conceptosPlot"
-          [xaxis]="conceptosXaxis" [yaxis]="conceptosYaxis" [colors]="conceptosColores" [responsive]="areaResponsive"
-          [tooltip]="tooltipSoles" [dataLabels]="sinEtiquetas" [legend]="sinLeyenda" [grid]="rejillaHorizontal">
+          [xaxis]="conceptosXaxis" [yaxis]="conceptosYaxis" [colors]="conceptosColores" [fill]="conceptosFill"
+          [responsive]="angostoResponsive" [tooltip]="tooltipSoles" [dataLabels]="conceptosEtiquetas"
+          [legend]="sinLeyenda" [grid]="rejillaHorizontal">
         </apx-chart>
         <p class="card-vacio" *ngIf="!hayValores(conceptosSeries)">
           Este mes no se aplicó ningún concepto además de los de ley.
         </p>
-      </article>
-    </div>
-
-    <!-- ══ Quién entra, quién se va ═══════════════════════════════════ -->
-    <div class="panel-fila panel-fila--6-6">
-      <article class="tarjeta-grafico">
-        <header class="tarjeta-grafico__cabeza">
-          <div>
-            <h3 class="tarjeta-grafico__titulo">Altas y bajas de {{ filtroAnio }}</h3>
-            <p class="tarjeta-grafico__nota">Entraron {{ totalAltas }} y se fueron {{ totalBajas }}.</p>
-          </div>
-        </header>
-        <apx-chart *ngIf="totalAltas || totalBajas"
-          [series]="movimientoSeries" [chart]="movimientoChart" [plotOptions]="movimientoPlot"
-          [xaxis]="movimientoXaxis" [yaxis]="movimientoYaxis" [colors]="movimientoColores"
-          [tooltip]="movimientoTooltip" [legend]="movimientoLeyenda" [dataLabels]="sinEtiquetas" [grid]="rejilla">
-        </apx-chart>
-        <p class="card-vacio" *ngIf="!totalAltas && !totalBajas">Nadie entró ni salió en {{ filtroAnio }}.</p>
       </article>
 
       <article class="tarjeta-grafico">
@@ -403,8 +426,27 @@
             </span>
           </li>
         </ul>
-        <p class="card-vacio" *ngIf="!vencimientos.length">Ningún contrato vence en los próximos 60 días.</p>
+        <div class="card-vacio card-vacio--bien" *ngIf="!vencimientos.length">
+          <app-icon icono="calendar_check" [tamano]="34"></app-icon>
+          Ningún contrato vence en los próximos 60 días.
+        </div>
       </article>
     </div>
+
+    <!-- ══ Quién entra, quién se va ═══════════════════════════════════ -->
+    <article class="tarjeta-grafico">
+      <header class="tarjeta-grafico__cabeza">
+        <div>
+          <h3 class="tarjeta-grafico__titulo">Altas y bajas de {{ filtroAnio }}</h3>
+          <p class="tarjeta-grafico__nota">Entraron {{ totalAltas }} y se fueron {{ totalBajas }}.</p>
+        </div>
+      </header>
+      <apx-chart *ngIf="totalAltas || totalBajas"
+        [series]="movimientoSeries" [chart]="movimientoChart" [plotOptions]="movimientoPlot"
+        [xaxis]="movimientoXaxis" [yaxis]="movimientoYaxis" [colors]="movimientoColores"
+        [tooltip]="movimientoTooltip" [legend]="movimientoLeyenda" [dataLabels]="movimientoEtiquetas" [grid]="rejilla">
+      </apx-chart>
+      <p class="card-vacio" *ngIf="!totalAltas && !totalBajas">Nadie entró ni salió en {{ filtroAnio }}.</p>
+    </article>
   </ng-container>
 </div>

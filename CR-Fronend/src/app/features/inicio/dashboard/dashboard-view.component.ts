@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -12,6 +12,7 @@ import {
   ApexGrid,
   ApexLegend,
   ApexMarkers,
+  ApexNonAxisChartSeries,
   ApexPlotOptions,
   ApexResponsive,
   ApexStroke,
@@ -38,12 +39,14 @@ import {
   PALETA_ESTADO,
   PALETA_MARCA,
   PALETA_NEUTRO,
+  PALETA_SERIES,
+  PALETA_SOBRE_ACENTO,
   MESES_OPCIONES,
   nombreMes,
   fechaEnPalabras,
 } from '../../../shared/constants';
 
-/** Una barra de las doce del bloque de arriba. */
+/** Una barra de las doce de la banda. */
 interface MesDelAnio {
   mes: number;
   etiqueta: string;
@@ -74,11 +77,19 @@ interface PasoCascada {
   esTotal: boolean;
 }
 
-/** Una de las barras de proporción de «Cómo es el personal». */
-interface Proporcion {
+/** Un tramo del anillo de boletas. */
+interface ArcoAnillo {
+  clase: string;
+  largo: number;
+  inicio: number;
+}
+
+/** Una dona de «Cómo es el personal». */
+interface Dona {
   titulo: string;
+  series: ApexNonAxisChartSeries;
+  etiquetas: string[];
   total: number;
-  tramos: { etiqueta: string; valor: number; porcentaje: number }[];
 }
 
 /**
@@ -87,11 +98,11 @@ interface Proporcion {
  * Todas las cifras salen de GET /dashboard en una sola respuesta, y todas
  * respetan el mes y la sede elegidos.
  *
- * Arriba va la nómina del mes en el azul de la marca: es la pregunta con la
- * que RR.HH. abre el panel. Al lado, los doce meses del año como barras que
- * llevan a ese mes de un clic, y cómo van las boletas (emitidas, vistas,
- * firmadas). Debajo, el detalle: la comparación con el año anterior, los
- * cumpleaños en un calendario, de dónde sale el neto y cómo es el personal.
+ * Arriba, la banda del mes: la nómina (que sube contando al llegar), los
+ * doce meses del año como barras que llevan a su mes, y el anillo de las
+ * boletas firmadas. Debajo, cuatro cifras con su mini gráfico y el detalle:
+ * la comparación con el año anterior, los cumpleaños en un calendario, de
+ * dónde sale el neto, el mapa de lo pagado por área y cómo es el personal.
  */
 @Component({
   selector: 'app-dashboard-view',
@@ -99,7 +110,7 @@ interface Proporcion {
   imports: [CommonModule, FormsModule, NgApexchartsModule, IconComponent, PistaDirective],
   templateUrl: './dashboard-view.component.html',
 })
-export class DashboardViewComponent implements OnInit {
+export class DashboardViewComponent implements OnInit, OnDestroy {
   private dashboardService = inject(DashboardService);
   private sedeService = inject(SedeService);
   private toastService = inject(ToastService);
@@ -131,8 +142,11 @@ export class DashboardViewComponent implements OnInit {
   vencimientos: ContratoPorVencer[] = [];
   movimiento: MovimientoMes[] = [];
 
-  // ── El bloque de arriba ───────────────────────────────────────────
+  // ── La banda del mes ──────────────────────────────────────────────
   nomina = 0;
+  /** Lo que se ve en la cifra grande mientras sube contando. */
+  nominaMostrada = 0;
+  private animacion = 0;
   nominaAnterior = 0;
   aportes = 0;
   planillas = 0;
@@ -142,6 +156,22 @@ export class DashboardViewComponent implements OnInit {
   mesesDelAnio: MesDelAnio[] = [];
   /** Boletas del mes: cuántas en cada paso, sobre las planillas armadas. */
   boletas = { firmadas: 0, vistas: 0, sinAbrir: 0, sinEmitir: 0, base: 0 };
+  /** El anillo de boletas: radio 54 → circunferencia 2πr. */
+  readonly circunferencia = 2 * Math.PI * 54;
+  arcos: ArcoAnillo[] = [];
+
+  // ── Las cuatro cifras con su mini gráfico ─────────────────────────
+  private chispa: ApexChart = { type: 'area', height: 46, sparkline: { enabled: true }, animations: { enabled: false } };
+  chispaNominaChart: ApexChart = { ...this.chispa };
+  chispaNominaSeries: ApexAxisChartSeries = [];
+  chispaNominaColores = [PALETA_MARCA.b500];
+  chispaAltasChart: ApexChart = { ...this.chispa, type: 'bar' };
+  chispaAltasSeries: ApexAxisChartSeries = [];
+  chispaAltasColores = [PALETA_ESTADO.exito];
+  chispaAltasPlot: ApexPlotOptions = { bar: { columnWidth: '60%', borderRadius: 2 } };
+  chispaStroke: ApexStroke = { curve: 'monotoneCubic', width: 2 };
+  chispaFill: ApexFill = { type: 'gradient', gradient: { opacityFrom: 0.45, opacityTo: 0.02 } };
+  chispaTooltip: ApexTooltip = { enabled: false };
 
   // ── Cumpleaños ────────────────────────────────────────────────────
   semanas: DiaCalendario[][] = [];
@@ -149,21 +179,13 @@ export class DashboardViewComponent implements OnInit {
   /** Un día marcado en el calendario: la lista se queda solo con ese día. */
   diaElegido: number | null = null;
 
-  // ── Cómo es el personal ───────────────────────────────────────────
-  proporciones: Proporcion[] = [];
-
-  /** Edad o antigüedad: las dos van en la misma tarjeta. */
-  vistaPersonal: 'edad' | 'antiguedad' = 'edad';
-  private edades: DatoGrafico[] = [];
-  private antiguedad: DatoGrafico[] = [];
-
   // ── Opciones comunes de ApexCharts ────────────────────────────────
   private base: ApexChart = {
     type: 'bar',
     toolbar: { show: false },
     fontFamily: 'Inter, sans-serif',
     zoom: { enabled: false },
-    animations: { enabled: true, speed: 450 },
+    animations: { enabled: true, speed: 500 },
   };
   sinEtiquetas: ApexDataLabels = { enabled: false };
   sinLeyenda: ApexLegend = { show: false };
@@ -180,17 +202,27 @@ export class DashboardViewComponent implements OnInit {
     yaxis: { lines: { show: false } },
   };
   tooltipSoles: ApexTooltip = { y: { formatter: (v) => this.enSoles(v) } };
+  /** Las barras en degradado: del institucional al claro. */
+  degradadoBarra: ApexFill = {
+    type: 'gradient',
+    gradient: { shade: 'light', type: 'horizontal', gradientToColors: [PALETA_MARCA.b500], stops: [0, 100] },
+  };
 
   // ── 1. La nómina mes a mes, contra el año anterior ────────────────
   tendenciaSeries: ApexAxisChartSeries = [];
-  tendenciaChart: ApexChart = { ...this.base, type: 'line', height: 330 };
+  tendenciaChart: ApexChart = {
+    ...this.base,
+    type: 'line',
+    height: 380,
+    dropShadow: { enabled: true, top: 6, left: 0, blur: 8, opacity: 0.18, color: PALETA_MARCA.b700 },
+  };
   tendenciaColores = [PALETA_MARCA.b700, PALETA_NEUTRO];
-  tendenciaStroke: ApexStroke = { curve: 'monotoneCubic', width: [3, 2], dashArray: [0, 6] };
+  tendenciaStroke: ApexStroke = { curve: 'monotoneCubic', width: [3.5, 2], dashArray: [0, 6] };
   tendenciaFill: ApexFill = {
     type: ['gradient', 'solid'],
-    gradient: { shadeIntensity: 1, opacityFrom: 0.32, opacityTo: 0.02, stops: [0, 95] },
+    gradient: { shadeIntensity: 1, opacityFrom: 0.42, opacityTo: 0.02, stops: [0, 95] },
   };
-  tendenciaMarkers: ApexMarkers = { size: 0, hover: { size: 5 } };
+  tendenciaMarkers: ApexMarkers = { size: 0, hover: { size: 6 } };
   tendenciaXaxis: ApexXAxis = { categories: [], axisBorder: { show: false }, axisTicks: { show: false } };
   tendenciaYaxis: ApexYAxis = { labels: { formatter: (v) => this.enMiles(v) } };
   tendenciaLeyenda: ApexLegend = { position: 'top', horizontalAlign: 'right', fontSize: '12px' };
@@ -204,7 +236,7 @@ export class DashboardViewComponent implements OnInit {
   cascada: PasoCascada[] = [];
   cascadaSeries: ApexAxisChartSeries = [];
   cascadaChart: ApexChart = { ...this.base, type: 'rangeBar', height: 290 };
-  cascadaPlot: ApexPlotOptions = { bar: { horizontal: false, columnWidth: '58%', borderRadius: 4 } };
+  cascadaPlot: ApexPlotOptions = { bar: { horizontal: false, columnWidth: '62%', borderRadius: 6 } };
   cascadaXaxis: ApexXAxis = {
     type: 'category',
     labels: { rotate: 0, trim: false, hideOverlappingLabels: false, style: { fontSize: '11px' } },
@@ -222,48 +254,110 @@ export class DashboardViewComponent implements OnInit {
     },
   };
 
-  // ── 3. Lo pagado por área ─────────────────────────────────────────
+  // ── 3. Lo pagado por área: un mapa de bloques ─────────────────────
+  //
+  // Cada área es un rectángulo del tamaño de lo que cuesta: se ve de golpe
+  // que las planas docentes son el grueso, cosa que con trece barras en
+  // fila había que leer.
   areaSeries: ApexAxisChartSeries = [];
-  areaChart: ApexChart = { ...this.base, height: 260 };
-  areaPlot: ApexPlotOptions = { bar: { horizontal: true, borderRadius: 4, barHeight: '62%' } };
-  areaXaxis: ApexXAxis = { categories: [], labels: { formatter: (v) => this.enMiles(v) } };
-  areaYaxis: ApexYAxis = { labels: { maxWidth: 200, style: { fontSize: '12px' } } };
+  areaChart: ApexChart = { ...this.base, type: 'treemap', height: 360 };
+  areaPlot: ApexPlotOptions = {
+    treemap: { enableShades: true, shadeIntensity: 0.55, reverseNegativeShade: true, distributed: false },
+  };
   areaColores = [PALETA_MARCA.b700];
-  /** En el celular el nombre del área se acorta y el eje lleva menos marcas. */
-  areaResponsive: ApexResponsive[] = [
-    { breakpoint: 640, options: { yaxis: { labels: { maxWidth: 110 } }, xaxis: { tickAmount: 2 } } },
-  ];
+  areaEtiquetas: ApexDataLabels = {
+    enabled: true,
+    style: { fontSize: '13px', fontWeight: 700 },
+    formatter: (texto: string, op: { value: number }) => [texto, this.enMiles(op.value)] as unknown as string,
+    offsetY: -2,
+  };
   areaTooltip: ApexTooltip = {};
   private personasPorArea: number[] = [];
 
-  // ── 4. Edad o antigüedad ──────────────────────────────────────────
-  personalSeries: ApexAxisChartSeries = [];
-  personalChart: ApexChart = { ...this.base, height: 250 };
-  personalPlot: ApexPlotOptions = {
-    bar: { borderRadius: 5, columnWidth: '56%', dataLabels: { position: 'top' } },
+  // ── 4. Cómo es el personal: tres donas con el total al centro ─────
+  donas: Dona[] = [];
+  donaChart: ApexChart = { ...this.base, type: 'donut', height: 250 };
+  donaColores = [...PALETA_SERIES];
+  donaLeyenda: ApexLegend = { position: 'bottom', fontSize: '12px', itemMargin: { horizontal: 6, vertical: 2 } };
+  donaStroke: ApexStroke = { width: 0 };
+  donaEtiquetas: ApexDataLabels = {
+    enabled: true,
+    formatter: (v: number) => (v >= 6 ? `${Math.round(v)}%` : ''),
+    dropShadow: { enabled: false },
+    style: { fontSize: '11px', fontWeight: 700 },
   };
-  personalXaxis: ApexXAxis = { categories: [], labels: { rotate: 0, hideOverlappingLabels: false }, axisBorder: { show: false }, axisTicks: { show: false } };
-  personalYaxis: ApexYAxis = { labels: { formatter: (v) => String(Math.round(v)) } };
-  personalEtiquetas: ApexDataLabels = { enabled: true, offsetY: -20, style: { fontSize: '12px', fontWeight: 700 } };
-  personalColores = [PALETA_MARCA.b500];
+  donaPlot: ApexPlotOptions = {
+    pie: {
+      donut: {
+        size: '68%',
+        labels: {
+          show: true,
+          name: { fontSize: '12px', offsetY: 18 },
+          value: { fontSize: '26px', fontWeight: 800, offsetY: -14 },
+          total: { show: true, showAlways: true, label: 'personas', fontSize: '12px' },
+        },
+      },
+    },
+  };
 
-  // ── 5. Los conceptos que más pesan ────────────────────────────────
+  // ── 5. Edad o antigüedad ──────────────────────────────────────────
+  vistaPersonal: 'edad' | 'antiguedad' = 'edad';
+  private edades: DatoGrafico[] = [];
+  private antiguedad: DatoGrafico[] = [];
+  personalSeries: ApexAxisChartSeries = [];
+  personalChart: ApexChart = { ...this.base, height: 260 };
+  personalPlot: ApexPlotOptions = {
+    bar: { borderRadius: 6, columnWidth: '58%', distributed: true, dataLabels: { position: 'top' } },
+  };
+  personalXaxis: ApexXAxis = {
+    categories: [],
+    labels: { rotate: 0, hideOverlappingLabels: false },
+    axisBorder: { show: false },
+    axisTicks: { show: false },
+  };
+  personalYaxis: ApexYAxis = { labels: { formatter: (v) => String(Math.round(v)) } };
+  personalEtiquetas: ApexDataLabels = { enabled: true, offsetY: -22, style: { fontSize: '13px', fontWeight: 800 } };
+  /** De claro a profundo: a más años, más intenso; el último tramo en dorado. */
+  personalColores = [PALETA_MARCA.b500, PALETA_MARCA.b600, PALETA_MARCA.b700, PALETA_MARCA.b900, PALETA_ACENTO];
+
+  // ── 6. Los conceptos que más pesan ────────────────────────────────
   conceptosSeries: ApexAxisChartSeries = [];
-  conceptosChart: ApexChart = { ...this.base, height: 250 };
-  conceptosPlot: ApexPlotOptions = { bar: { horizontal: true, borderRadius: 4, barHeight: '60%' } };
+  conceptosChart: ApexChart = { ...this.base, height: 260 };
+  conceptosPlot: ApexPlotOptions = {
+    bar: { horizontal: true, borderRadius: 5, barHeight: '62%', dataLabels: { position: 'top' } },
+  };
   conceptosXaxis: ApexXAxis = { categories: [], tickAmount: 3, labels: { formatter: (v) => this.enMiles(v) } };
   conceptosYaxis: ApexYAxis = { labels: { maxWidth: 160, style: { fontSize: '12px' } } };
   conceptosColores = [PALETA_ACENTO];
+  conceptosFill: ApexFill = {
+    type: 'gradient',
+    gradient: { shade: 'light', type: 'horizontal', gradientToColors: [PALETA_ESTADO.aviso], stops: [0, 100] },
+  };
+  conceptosEtiquetas: ApexDataLabels = {
+    enabled: true,
+    offsetX: 34,
+    formatter: (v: number) => this.enMiles(v),
+    style: { fontSize: '11px', fontWeight: 700 },
+  };
+  /** En el celular el nombre se acorta y el eje lleva menos marcas. */
+  angostoResponsive: ApexResponsive[] = [
+    { breakpoint: 640, options: { yaxis: { labels: { maxWidth: 110 } }, xaxis: { tickAmount: 2 } } },
+  ];
 
-  // ── 6. Altas y bajas ──────────────────────────────────────────────
+  // ── 7. Altas y bajas ──────────────────────────────────────────────
   movimientoSeries: ApexAxisChartSeries = [];
-  movimientoChart: ApexChart = { ...this.base, height: 250, stacked: true };
-  movimientoPlot: ApexPlotOptions = { bar: { columnWidth: '52%', borderRadius: 3 } };
+  movimientoChart: ApexChart = { ...this.base, height: 270, stacked: true };
+  movimientoPlot: ApexPlotOptions = { bar: { columnWidth: '48%', borderRadius: 4 } };
   movimientoXaxis: ApexXAxis = { categories: [], axisBorder: { show: false }, axisTicks: { show: false } };
   movimientoYaxis: ApexYAxis = { labels: { formatter: (v) => String(Math.abs(Math.round(v))) } };
   movimientoColores = [PALETA_ESTADO.exito, PALETA_ESTADO.peligro];
   movimientoTooltip: ApexTooltip = { shared: true, intersect: false, y: { formatter: (v) => String(Math.abs(v)) } };
   movimientoLeyenda: ApexLegend = { position: 'top', horizontalAlign: 'right', fontSize: '12px' };
+  movimientoEtiquetas: ApexDataLabels = {
+    enabled: true,
+    formatter: (v: number) => (v ? String(Math.abs(v)) : ''),
+    style: { fontSize: '11px', fontWeight: 700 },
+  };
   totalAltas = 0;
   totalBajas = 0;
 
@@ -279,6 +373,10 @@ export class DashboardViewComponent implements OnInit {
     this.cargar();
   }
 
+  ngOnDestroy(): void {
+    cancelAnimationFrame(this.animacion);
+  }
+
   // ════════ Filtros ════════
 
   alFiltrar(): void {
@@ -290,7 +388,7 @@ export class DashboardViewComponent implements OnInit {
     this.irAMes(fecha.getMonth() + 1, fecha.getFullYear());
   }
 
-  /** Una de las doce barras de arriba: lleva a ese mes del mismo año. */
+  /** Una de las doce barras de la banda: lleva a ese mes del mismo año. */
   irAMes(mes: number, anio = this.filtroAnio): void {
     if (mes === this.filtroMes && anio === this.filtroAnio) return;
     this.filtroMes = mes;
@@ -424,14 +522,14 @@ export class DashboardViewComponent implements OnInit {
     this.pendientes = d.pendientes ?? [];
     this.vencimientos = d.contratosPorVencer ?? [];
 
-    // ── El bloque de arriba ──
-    this.nomina = r.nominaDelMes;
+    // ── La banda ──
     this.nominaAnterior = r.nominaMesAnterior ?? 0;
     this.aportes = r.aportesColegio ?? 0;
     this.planillas = r.planillasDelMes;
     this.activos = r.empleadosActivos;
     this.altas = r.altasDelMes;
     this.porVencer = r.contratosPorVencer;
+    this.contarHasta(r.nominaDelMes);
 
     const tendencia = d.tendenciaNomina ?? [];
     const tope = Math.max(...tendencia.map((m) => m.valor), 1);
@@ -452,6 +550,10 @@ export class DashboardViewComponent implements OnInit {
       sinEmitir: Math.max(0, r.planillasDelMes - emitidas),
       base: Math.max(r.planillasDelMes, emitidas),
     };
+    this.armarAnillo();
+
+    // ── Las cuatro cifras ──
+    this.chispaNominaSeries = [{ name: 'Nómina', data: tendencia.map((m) => m.valor) }];
 
     // ── Tendencia contra el año anterior ──
     const anterior = d.tendenciaAnterior ?? [];
@@ -460,9 +562,26 @@ export class DashboardViewComponent implements OnInit {
       { name: String(this.filtroAnio - 1), type: 'line', data: anterior.map((m) => m.valor) },
     ];
     this.tendenciaXaxis = { ...this.tendenciaXaxis, categories: tendencia.map((m) => m.etiqueta) };
-    const elegido = tendencia[this.filtroMes - 1]?.etiqueta;
+    const elegido = tendencia[this.filtroMes - 1];
     this.tendenciaMarca = elegido
-      ? { xaxis: [{ x: elegido, strokeDashArray: 0, borderColor: PALETA_ACENTO, borderWidth: 2 }] }
+      ? {
+          xaxis: [{ x: elegido.etiqueta, strokeDashArray: 0, borderColor: PALETA_ACENTO, borderWidth: 2 }],
+          points: elegido.valor
+            ? [
+                {
+                  x: elegido.etiqueta,
+                  y: elegido.valor,
+                  marker: { size: 7, fillColor: PALETA_ACENTO, strokeColor: PALETA_MARCA.b100, strokeWidth: 3 },
+                  label: {
+                    text: this.enMiles(elegido.valor),
+                    borderColor: PALETA_ACENTO,
+                    offsetY: -6,
+                    style: { background: PALETA_ACENTO, color: PALETA_SOBRE_ACENTO, fontSize: '12px', fontWeight: 800, padding: { left: 8, right: 8, top: 3, bottom: 4 } },
+                  },
+                },
+              ]
+            : [],
+        }
       : {};
     const hasta = (lista: DatoGrafico[]) => lista.slice(0, this.filtroMes).reduce((t, m) => t + m.valor, 0);
     this.acumulado = hasta(tendencia);
@@ -471,12 +590,23 @@ export class DashboardViewComponent implements OnInit {
     // ── Cascada ──
     this.armarCascada(d.composicionNomina ?? [], r.nominaDelMes, this.aportes);
 
-    // ── Por área: el alto crece con las áreas, para que nunca se apiñen ──
-    const areas = d.remuneracionPorArea ?? [];
+    // ── Por área ──
+    // Las siete más grandes con nombre; el resto junto en «Otras áreas»:
+    // trece bloques dejaban los chicos sin poder leerse.
+    const todas = d.remuneracionPorArea ?? [];
+    const resto = todas.slice(7);
+    const areas = resto.length > 1
+      ? [
+          ...todas.slice(0, 7),
+          {
+            etiqueta: `Otras ${resto.length} áreas`,
+            valor: resto.reduce((t, a) => t + a.valor, 0),
+            personas: resto.reduce((t, a) => t + (a.personas ?? 0), 0),
+          },
+        ]
+      : todas;
     this.personasPorArea = areas.map((a) => a.personas ?? 0);
-    this.areaSeries = [{ name: 'Pagado', data: areas.map((a) => a.valor) }];
-    this.areaXaxis = { ...this.areaXaxis, categories: areas.map((a) => a.etiqueta) };
-    this.areaChart = { ...this.areaChart, height: Math.max(220, areas.length * 42 + 50) };
+    this.areaSeries = [{ name: 'Pagado', data: areas.map((a) => ({ x: a.etiqueta, y: a.valor })) }];
     this.areaTooltip = {
       y: {
         formatter: (v: number, { dataPointIndex }: { dataPointIndex: number }) => {
@@ -487,11 +617,11 @@ export class DashboardViewComponent implements OnInit {
     };
 
     // ── Cómo es el personal ──
-    this.proporciones = [
-      this.proporcion('Sistema de pensiones', d.sistemaPensiones ?? []),
-      this.proporcion('Tipo de contrato', d.tipoContrato ?? []),
-      this.proporcion('Sede', d.personalPorSede ?? []),
-    ].filter((p) => p.total > 0);
+    this.donas = [
+      this.dona('Sistema de pensiones', d.sistemaPensiones ?? []),
+      this.dona('Tipo de contrato', d.tipoContrato ?? []),
+      this.dona('Sede', d.personalPorSede ?? []),
+    ];
     this.edades = d.edades ?? [];
     this.antiguedad = d.antiguedad ?? [];
     this.pintarPersonal();
@@ -500,7 +630,7 @@ export class DashboardViewComponent implements OnInit {
     const tops = d.topConceptos ?? [];
     this.conceptosSeries = [{ name: 'Monto', data: tops.map((x) => x.valor) }];
     this.conceptosXaxis = { ...this.conceptosXaxis, categories: tops.map((x) => x.etiqueta) };
-    this.conceptosChart = { ...this.conceptosChart, height: Math.max(200, tops.length * 40 + 50) };
+    this.conceptosChart = { ...this.conceptosChart, height: Math.max(220, tops.length * 44 + 50) };
 
     // ── Altas y bajas ──
     this.movimiento = d.movimientoPersonal ?? [];
@@ -511,6 +641,7 @@ export class DashboardViewComponent implements OnInit {
     this.movimientoXaxis = { ...this.movimientoXaxis, categories: this.movimiento.map((m) => m.etiqueta) };
     this.totalAltas = this.movimiento.reduce((t, m) => t + m.altas, 0);
     this.totalBajas = this.movimiento.reduce((t, m) => t + m.bajas, 0);
+    this.chispaAltasSeries = [{ name: 'Entraron', data: this.movimiento.map((m) => m.altas) }];
 
     // ── Cumpleaños ──
     this.cumpleanos = d.cumpleanos ?? [];
@@ -518,7 +649,32 @@ export class DashboardViewComponent implements OnInit {
     this.armarCalendario();
   }
 
-  // ════════ El bloque de arriba ════════
+  /**
+   * La cifra grande sube contando hasta la nómina del mes: el único
+   * movimiento que la pantalla hace sola, y es para llevar la vista ahí.
+   * Con «reducir movimiento» del sistema, aparece de una.
+   */
+  private contarHasta(destino: number): void {
+    cancelAnimationFrame(this.animacion);
+    const desde = this.nominaMostrada;
+    this.nomina = destino;
+    const quieto = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (quieto || desde === destino) {
+      this.nominaMostrada = destino;
+      return;
+    }
+    const inicio = performance.now();
+    const duracion = 900;
+    const paso = (ahora: number) => {
+      const t = Math.min(1, (ahora - inicio) / duracion);
+      const suave = 1 - Math.pow(1 - t, 3);
+      this.nominaMostrada = desde + (destino - desde) * suave;
+      if (t < 1) this.animacion = requestAnimationFrame(paso);
+    };
+    this.animacion = requestAnimationFrame(paso);
+  }
+
+  // ════════ La banda ════════
 
   /** Cuánto cambió la nómina contra el mes anterior, en %. */
   get variacion(): number | null {
@@ -538,16 +694,35 @@ export class DashboardViewComponent implements OnInit {
     return this.planillas ? this.nomina / this.planillas : 0;
   }
 
-  /** Ancho de un tramo de la barra de boletas, en %. */
-  anchoBoletas(cuantas: number): number {
-    return this.boletas.base ? (cuantas / this.boletas.base) * 100 : 0;
-  }
-
   get porcentajeFirmadas(): number {
     return this.boletas.base ? Math.round((this.boletas.firmadas / this.boletas.base) * 100) : 0;
   }
 
-  /** La barra de boletas, en palabras, para el lector de pantalla. */
+  /** Lo que pone el colegio, como parte del costo total (para la barrita). */
+  get parteAportes(): number {
+    const total = this.nomina + this.aportes;
+    return total ? (this.aportes / total) * 100 : 0;
+  }
+
+  /** Los tres arcos del anillo, uno detrás de otro, con un respiro entre ellos. */
+  private armarAnillo(): void {
+    const b = this.boletas;
+    const tramos: [string, number][] = [
+      ['anillo__arco--firmadas', b.firmadas],
+      ['anillo__arco--vistas', b.vistas],
+      ['anillo__arco--sin-abrir', b.sinAbrir],
+    ];
+    const respiro = tramos.filter(([, n]) => n > 0).length > 1 ? 3 : 0;
+    let inicio = 0;
+    this.arcos = [];
+    for (const [clase, n] of tramos) {
+      if (!n || !b.base) continue;
+      const largo = (n / b.base) * this.circunferencia;
+      this.arcos.push({ clase, largo: Math.max(0, largo - respiro), inicio });
+      inicio += largo;
+    }
+  }
+
   describirBoletas(): string {
     const b = this.boletas;
     return `${b.firmadas} firmadas, ${b.vistas} vistas, ${b.sinAbrir} sin abrir y ${b.sinEmitir} sin emitir`;
@@ -557,10 +732,6 @@ export class DashboardViewComponent implements OnInit {
   diferenciaAcumulada(): string {
     const dif = this.acumulado - this.acumuladoAnterior;
     return `${dif >= 0 ? '+' : '−'}${this.enSoles(Math.abs(dif))} frente a ${this.filtroAnio - 1}`;
-  }
-
-  describirProporcion(p: Proporcion): string {
-    return `${p.titulo}: ` + p.tramos.map((t) => `${t.etiqueta} ${t.valor}`).join(', ');
   }
 
   pistaMes(m: MesDelAnio): string {
@@ -619,14 +790,13 @@ export class DashboardViewComponent implements OnInit {
 
   // ════════ Personal ════════
 
-  private proporcion(titulo: string, datos: DatoGrafico[]): Proporcion {
-    const total = datos.reduce((t, d) => t + d.valor, 0);
+  private dona(titulo: string, datos: DatoGrafico[]): Dona {
+    const orden = [...datos].sort((a, b) => b.valor - a.valor);
     return {
       titulo,
-      total,
-      tramos: [...datos]
-        .sort((a, b) => b.valor - a.valor)
-        .map((d) => ({ etiqueta: d.etiqueta, valor: d.valor, porcentaje: total ? (d.valor / total) * 100 : 0 })),
+      series: orden.map((d) => d.valor),
+      etiquetas: orden.map((d) => d.etiqueta),
+      total: orden.reduce((t, d) => t + d.valor, 0),
     };
   }
 
@@ -696,10 +866,28 @@ export class DashboardViewComponent implements OnInit {
     return this.cumpleanos.filter((c) => !c.ya_paso).length;
   }
 
+  /** El siguiente que cumple (sin contar los de hoy), para la cuenta regresiva. */
+  get proximoCumple(): { persona: CumpleanosDelMes; dias: number } | null {
+    const hoy = new Date();
+    const esEsteMes = hoy.getFullYear() === this.filtroAnio && hoy.getMonth() + 1 === this.filtroMes;
+    if (!esEsteMes) return null;
+    const persona = this.cumpleanos.find((c) => !c.ya_paso && !c.es_hoy);
+    return persona ? { persona, dias: persona.dia - hoy.getDate() } : null;
+  }
+
   /** "RQ" de Rosa Quispe. */
   iniciales(nombre: string): string {
     const partes = nombre.trim().split(/\s+/);
     return ((partes[0]?.[0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase();
+  }
+
+  /** Un color de la paleta por persona, siempre el mismo para el mismo nombre. */
+  colorDe(nombre: string): string {
+    // Suma simple de las letras: con un hash de multiplicar por 31 casi todos
+    // caían en el mismo color (31 deja el mismo resto entre 4).
+    let h = 0;
+    for (const letra of nombre) h += letra.charCodeAt(0);
+    return 'avatar--' + (h % 4);
   }
 
   /** "Jueves 20". */
@@ -743,7 +931,12 @@ export class DashboardViewComponent implements OnInit {
   }
 
   hayValores(serie: ApexAxisChartSeries): boolean {
-    return serie.some((s) => (s.data as unknown[]).some((v) => Number(v) !== 0));
+    return serie.some((s) =>
+      (s.data as unknown[]).some((v) => {
+        const n = typeof v === 'object' && v !== null ? Number((v as { y: unknown }).y) : Number(v);
+        return n !== 0 && !isNaN(n);
+      }),
+    );
   }
 
   get pendientesConTrabajo(): PendienteRrhh[] {

@@ -51,3 +51,6 @@ export const PALETA_DEGRADADO_BARRA = [PALETA_MARCA.b500];
  * Mismo valor que --text-faint en claro; en oscuro sigue leyéndose.
  */
 export const PALETA_NEUTRO = '#98A2B8';
+
+/** El texto que va encima del dorado, mismo que --on-accent. */
+export const PALETA_SOBRE_ACENTO = '#4A3400';

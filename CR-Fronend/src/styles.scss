@@ -55,15 +55,6 @@
   --accent: #F4B41A;
   --accent-dark: #D49A12;
 
-  /* Las series de las barras de proporción del Panel de Control (pensiones,
-     contratos, sedes): el azul primero y de ahí tonos que no se confunden.
-     Son los mismos de PALETA_SERIES, la paleta de los gráficos de Apex. */
-  --serie-1: var(--brand-700);
-  --serie-2: var(--accent);
-  --serie-3: var(--success);
-  --serie-4: var(--brand-500);
-  --serie-5: var(--warning);
-
   /* ── Superficies ── */
   --bg: #F4F6FA;                   /* fondo de la app */
   --surface: #FFFFFF;              /* tarjetas, modales, tablas, header */
@@ -234,11 +225,6 @@
 
   --brand-100: rgba(59, 114, 196, 0.16);
   --brand-100-hover: rgba(59, 114, 196, 0.28);
-
-  /* El azul institucional casi no se ve sobre la tarjeta oscura: la serie
-     principal pasa al azul claro y el claro al intermedio. */
-  --serie-1: var(--brand-500);
-  --serie-4: var(--brand-600);
 
   --success-bg: rgba(16, 185, 129, 0.16);
   --success-text: #34D399;
@@ -1753,9 +1739,9 @@ td.celda-numero {
 
 /* ══ PANEL DE CONTROL ════════════════════════════════════════════════
    Una banda en el azul del colegio con la nómina del mes (lo primero que
-   RR.HH. pregunta), y debajo tarjetas con el detalle. Antes la pantalla
-   tenía su propio .scss con sombras y tamaños que no eran los del resto
-   del sistema; ahora todo sale de los tokens de aquí.
+   RR.HH. pregunta), cuatro cifras con su mini gráfico y, debajo, tarjetas
+   con el detalle. Antes la pantalla tenía su propio .scss con sombras y
+   tamaños que no eran los del sistema; ahora todo sale de los tokens.
    ════════════════════════════════════════════════════════════════════ */
 .panel {
   display: flex;
@@ -1765,9 +1751,7 @@ td.celda-numero {
 
 /* Al cambiar de mes o de sede no se vacía la pantalla: se atenúa lo que
    hay hasta que llegan las cifras nuevas, y no salta. */
-.panel--recargando .banda-mes,
-.panel--recargando .panel-fila,
-.panel--recargando .pendientes {
+.panel--recargando > :not(.dash-header) {
   opacity: 0.55;
   pointer-events: none;
   transition: opacity .2s ease;
@@ -1798,31 +1782,64 @@ td.celda-numero {
 }
 
 .panel-esqueleto { display: block; min-height: 300px; }
-.panel-esqueleto--banda { min-height: 250px; }
+.panel-esqueleto--banda { min-height: 260px; }
 
-/* ── La banda del mes ──────────────────────────────────────────── */
+/* ── La banda del mes ──────────────────────────────────────────────
+   El azul hondo al institucional, con un resplandor dorado arriba a la
+   derecha y una trama fina de diagonales: la pieza con carácter de la
+   pantalla. Todo lo demás se queda sobrio para que esta mande. */
 .banda-mes {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.5fr) minmax(0, 1fr);
-  grid-template-areas:
-    "nomina anio boletas"
-    "cifras cifras cifras";
-  gap: 22px 36px;
-  padding: 26px 28px 0;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.45fr) minmax(0, 1fr);
+  grid-template-areas: "nomina anio boletas";
+  align-items: center;
+  gap: 24px 40px;
+  padding: 30px 32px;
   border-radius: var(--radius-lg);
-  background-color: var(--marca-bg);
+  background:
+    radial-gradient(ellipse 55% 90% at 100% 0%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%),
+    radial-gradient(ellipse 40% 70% at 0% 100%, color-mix(in srgb, var(--brand-500) 35%, transparent), transparent 70%),
+    linear-gradient(135deg, var(--marca-bg-deep) 0%, var(--marca-bg) 60%);
   color: var(--marca-text);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
+  isolation: isolate;
+}
+
+/* La trama: diagonales de un píxel, casi invisibles. */
+.banda-mes::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--marca-text) 5%, transparent) 0 1px,
+    transparent 1px 14px
+  );
+  mask-image: linear-gradient(90deg, transparent, var(--marca-text) 45%);
+}
+
+/* Un filo dorado arriba, como el ítem activo del menú. */
+.banda-mes::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 32px;
+  width: 64px;
+  height: 4px;
+  border-radius: 0 0 4px 4px;
+  background-color: var(--accent);
 }
 
 .banda-mes__nomina  { grid-area: nomina; }
 .banda-mes__anio    { grid-area: anio; }
 .banda-mes__boletas { grid-area: boletas; }
-.banda-mes__cifras  { grid-area: cifras; }
 
 .banda-mes__titulo {
-  margin: 0 0 8px;
-  font-size: 13.5px;
+  margin: 0 0 10px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--marca-text-soft);
 }
@@ -1830,31 +1847,37 @@ td.celda-numero {
 /* La cifra del mes: lo único grande de la pantalla. */
 .banda-mes__cifra {
   margin: 0;
-  font-size: clamp(2.2rem, 3.6vw, 3.1rem);
+  font-size: clamp(2.4rem, 4vw, 3.5rem);
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-.banda-mes__cifra--media { font-size: clamp(1.9rem, 2.8vw, 2.4rem); }
-
 .banda-mes__moneda {
-  margin-right: 0.2em;
-  font-size: 0.42em;
-  font-weight: 600;
+  margin-right: 0.18em;
+  font-size: 0.4em;
+  font-weight: 700;
   letter-spacing: 0;
-  vertical-align: 0.95em;
-  color: var(--marca-text-soft);
+  vertical-align: 1.05em;
+  color: var(--accent);
 }
 
-.banda-mes__moneda--detras { margin: 0 0 0 0.12em; }
-
 .banda-mes__cambio {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  margin: 14px 0 0;
+  padding: 5px 11px;
+  border-radius: var(--radius-full);
+  background-color: color-mix(in srgb, var(--marca-text) 12%, transparent);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--marca-text);
+}
+
+.banda-mes__detalle {
   margin: 12px 0 0;
   font-size: 13px;
   color: var(--marca-text-soft);
@@ -1864,20 +1887,19 @@ td.celda-numero {
 .banda-mes__anio {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 6px;
-  height: 140px;
-  align-self: end;
+  gap: 7px;
+  height: 168px;
 }
 
 .banda-mes__mes {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
   min-width: 0;
   height: 100%;
   padding: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background: none;
   color: var(--marca-text-soft);
   font: inherit;
@@ -1888,20 +1910,26 @@ td.celda-numero {
   flex: 1;
   display: flex;
   align-items: flex-end;
-  border-bottom: 1px solid var(--marca-border);
+  border-radius: 6px;
+  background-color: color-mix(in srgb, var(--marca-text) 6%, transparent);
 }
 
 .banda-mes__barra {
   display: block;
   width: 100%;
-  border-radius: 4px 4px 0 0;
-  background-color: color-mix(in srgb, var(--marca-text) 26%, transparent);
-  transition: background-color .15s ease;
+  border-radius: 6px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--marca-text) 55%, transparent),
+    color-mix(in srgb, var(--marca-text) 22%, transparent));
+  transition: filter .15s ease;
 }
 
-.banda-mes__mes:hover .banda-mes__barra { background-color: color-mix(in srgb, var(--marca-text) 45%, transparent); }
-.banda-mes__mes--elegido .banda-mes__barra,
-.banda-mes__mes--elegido:hover .banda-mes__barra { background-color: var(--accent); }
+.banda-mes__mes:hover .banda-mes__barra { filter: brightness(1.35); }
+
+.banda-mes__mes--elegido .banda-mes__barra {
+  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 55%, transparent);
+}
 
 .banda-mes__etiqueta {
   font-size: 11px;
@@ -1909,81 +1937,175 @@ td.celda-numero {
 }
 
 .banda-mes__mes--elegido .banda-mes__etiqueta {
-  color: var(--marca-text);
-  font-weight: 700;
+  color: var(--accent);
+  font-weight: 800;
 }
 
 .banda-mes__mes:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
-/* Las boletas del mes: firmadas, vistas y sin abrir, sobre lo emitible. */
-.tira-boletas {
+/* ── El anillo de las boletas ── */
+.banda-mes__boletas {
   display: flex;
-  gap: 2px;
-  height: 10px;
-  margin: 16px 0 10px;
-  border-radius: var(--radius-full);
-  background-color: color-mix(in srgb, var(--marca-text) 14%, transparent);
-  overflow: hidden;
+  align-items: center;
+  gap: 20px;
 }
 
-.tira-boletas__tramo { height: 100%; }
-.tira-boletas__tramo--firmadas { background-color: var(--success); }
-.tira-boletas__tramo--vistas   { background-color: color-mix(in srgb, var(--marca-text) 72%, transparent); }
-.tira-boletas__tramo--sin-abrir { background-color: var(--warning); }
+.anillo {
+  position: relative;
+  flex-shrink: 0;
+  width: 132px;
+  height: 132px;
+}
 
-.tira-boletas__leyenda {
+.anillo__svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.anillo__pista,
+.anillo__arco {
+  fill: none;
+  stroke-width: 13;
+}
+
+.anillo__pista { stroke: color-mix(in srgb, var(--marca-text) 12%, transparent); }
+.anillo__arco { stroke-linecap: round; transition: stroke-dasharray .6s ease; }
+.anillo__arco--firmadas  { stroke: var(--success); background-color: var(--success); }
+.anillo__arco--vistas    { stroke: var(--brand-100-hover); background-color: var(--brand-100-hover); }
+.anillo__arco--sin-abrir { stroke: var(--accent); background-color: var(--accent); }
+
+.anillo__centro {
+  position: absolute;
+  inset: 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 12.5px;
-  color: var(--marca-text-soft);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
 }
 
-.tira-boletas__punto {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 6px;
-  border-radius: 50%;
-  background-color: color-mix(in srgb, var(--marca-text) 14%, transparent);
+.anillo__centro strong {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
-/* La franja de abajo: cuatro cifras que acompañan, sin competir. */
-.banda-mes__cifras {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px 24px;
-  margin: 0 -28px;
-  padding: 16px 28px 18px;
-  border-top: 1px solid var(--marca-border);
-  background-color: var(--marca-bg-deep);
-}
-
-.banda-mes__cifras dt {
+.anillo__centro span {
   font-size: 12px;
   color: var(--marca-text-soft);
 }
 
-.banda-mes__cifras dd {
-  margin: 3px 0 0;
-  font-size: 17px;
-  font-weight: 700;
+.anillo__leyenda {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--marca-text-soft);
+}
+
+.anillo__leyenda strong {
+  margin-right: 4px;
+  color: var(--marca-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.anillo__punto {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--marca-text) 18%, transparent);
+}
+
+/* ── Las cuatro cifras (indicadores) ──
+   «Indicador» y no «cifra»: .cifra ya es la casilla de los paneles de
+   filtros de Emisión y Planillas. */
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.indicador {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  column-gap: 14px;
+  padding: 18px 20px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.indicador__icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background-color: var(--brand-100);
+  color: var(--heading);
+}
+
+.indicador__icono--dorado { background-color: color-mix(in srgb, var(--accent) 22%, var(--surface)); color: var(--accent-dark); }
+.indicador__icono--alerta { background-color: var(--danger-bg); color: var(--danger-text); }
+.indicador__icono--bien   { background-color: var(--success-bg); color: var(--success-text); }
+
+.indicador__nombre {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.indicador__valor {
+  margin: 4px 0 2px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-.banda-mes__cifras small {
-  margin-left: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--marca-text-soft);
+.indicador__nota {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
 }
+
+/* El mini gráfico ocupa el ancho de la tarjeta, debajo de la cifra. */
+.indicador__chispa,
+.indicador__reparto {
+  grid-column: 1 / -1;
+  margin-top: 10px;
+}
+
+.indicador__chispa { margin-bottom: -8px; }
+
+.indicador__reparto {
+  display: flex;
+  gap: 3px;
+  height: 10px;
+  margin-bottom: 6px;
+}
+
+.indicador__reparto-neto    { border-radius: var(--radius-full); background-color: var(--brand-500); }
+.indicador__reparto-aportes { border-radius: var(--radius-full); background-color: var(--accent); }
 
 /* ── Las filas de tarjetas ─────────────────────────────────────── */
 .panel-fila {
@@ -1993,7 +2115,7 @@ td.celda-numero {
 }
 
 .panel-fila--8-4 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
-.panel-fila--6-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.panel-fila--5-7 { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
 .panel-fila--tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .tarjeta-grafico {
@@ -2017,7 +2139,7 @@ td.celda-numero {
 
 .tarjeta-grafico__titulo {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--heading);
 }
@@ -2046,11 +2168,15 @@ td.celda-numero {
 
 /* Apex se queda con el ancho que midió al abrir: sin esto desborda la
    tarjeta cuando la pantalla se angosta. */
-.tarjeta-grafico .apexcharts-canvas { max-width: 100%; }
+.tarjeta-grafico .apexcharts-canvas,
+.indicador .apexcharts-canvas { max-width: 100%; }
 
 /* Las cifras encima de las barras van sobre la tarjeta, no sobre el color
    de la barra: el blanco global de las etiquetas no se vería. */
 .grafico--etiquetas-fuera .apexcharts-datalabels text { fill: var(--text-soft); }
+
+/* El mapa de bloques: separación entre áreas con el color de la tarjeta. */
+.grafico--mapa .apexcharts-treemap-rect { stroke: var(--surface); stroke-width: 3px; }
 
 /* En oscuro el azul institucional casi desaparece sobre la tarjeta. Apex lo
    escribe como atributo del SVG (#1B4282, #0E2650), y una regla de CSS le
@@ -2068,8 +2194,10 @@ td.celda-numero {
 .card-vacio {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   margin: 0;
   padding: 24px 16px;
   text-align: center;
@@ -2077,6 +2205,9 @@ td.celda-numero {
   line-height: 1.5;
   color: var(--text-faint);
 }
+
+.card-vacio--bien { color: var(--text-muted); }
+.card-vacio--bien app-icon { color: var(--success-text); }
 
 /* El globo propio de la cascada (Apex lo arma con este HTML). */
 .grafico-globo {
@@ -2094,7 +2225,7 @@ td.celda-numero {
   font-variant-numeric: tabular-nums;
 }
 
-/* Una cifra al costado del título: el acumulado del año. */
+/* Una cifra al costado del título: cuánto más que el año pasado. */
 .dato-lateral {
   display: flex;
   flex-direction: column;
@@ -2106,7 +2237,8 @@ td.celda-numero {
 }
 
 .dato-lateral strong {
-  font-size: 18px;
+  margin-top: 2px;
+  font-size: 15px;
   font-weight: 800;
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -2156,75 +2288,105 @@ td.celda-numero {
   border-radius: 3px;
 }
 
-/* ── Cómo es el personal: barras de proporción ── */
-.proporcion + .proporcion { margin-top: 16px; }
+/* ── Cómo es el personal: tres donas en fila ── */
+.donas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 24px;
+}
 
-.proporcion__titulo {
-  margin: 8px 0 6px;
-  font-size: 12.5px;
+.donas__una {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.donas__una + .donas__una { border-left: 1px dashed var(--border); padding-left: 24px; }
+
+.donas__titulo {
+  margin: 6px 0 0;
+  font-size: 13px;
   font-weight: 600;
+  text-align: center;
   color: var(--text-soft);
 }
 
-.proporcion__barra {
+/* ── Cumpleaños ── */
+.cumple__cabeza {
   display: flex;
-  gap: 2px;
-  height: 14px;
-  border-radius: var(--radius-full);
-  background-color: var(--surface-alt);
-  overflow: hidden;
+  align-items: center;
+  gap: 12px;
+  margin: -20px -22px 14px;
+  padding: 16px 22px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background:
+    radial-gradient(circle at 92% 20%, color-mix(in srgb, var(--accent) 45%, transparent) 0 6px, transparent 7px),
+    radial-gradient(circle at 80% 70%, color-mix(in srgb, var(--accent) 35%, transparent) 0 4px, transparent 5px),
+    radial-gradient(circle at 70% 25%, color-mix(in srgb, var(--brand-500) 40%, transparent) 0 3px, transparent 4px),
+    linear-gradient(120deg, color-mix(in srgb, var(--accent) 22%, var(--surface)), var(--surface) 75%);
+  border-bottom: 1px solid var(--border);
 }
 
-.proporcion__tramo { height: 100%; }
+.cumple__torta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background-color: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 6px 14px -6px var(--accent-dark);
+}
 
-.proporcion__leyenda {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin: 8px 0 0;
-  padding: 0;
-  list-style: none;
+.cumple__titulo {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.cumple__resumen {
+  margin: 2px 0 0;
   font-size: 12.5px;
   color: var(--text-muted);
 }
 
-.proporcion__leyenda strong { margin-left: 2px; color: var(--text); }
-
-.proporcion__punto {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 5px;
-  border-radius: 2px;
-}
-
-.proporcion__color--0 { background-color: var(--serie-1); }
-.proporcion__color--1 { background-color: var(--serie-2); }
-.proporcion__color--2 { background-color: var(--serie-3); }
-.proporcion__color--3 { background-color: var(--serie-4); }
-.proporcion__color--4 { background-color: var(--serie-5); }
-
-/* ── Cumpleaños: el calendario del mes y la lista ── */
 .cumple__hoy {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 12px;
-  padding: 10px 12px;
+  padding: 12px;
   border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background-color: color-mix(in srgb, var(--accent) 14%, var(--surface));
-  font-size: 13.5px;
-  color: var(--text);
 }
 
-.cumple__hoy app-icon { color: var(--accent-dark); }
+.cumple__hoy-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.cumple__hoy-texto strong { font-size: 14.5px; color: var(--text); }
+.cumple__hoy-texto small  { font-size: 12px; color: var(--text-muted); }
+
+.cumple__proximo {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.cumple__proximo strong { color: var(--heading); }
 
 .calendario {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin: 2px 0 14px;
+  margin: 0 0 14px;
 }
 
 .calendario__fila {
@@ -2266,49 +2428,49 @@ td.celda-numero {
 }
 
 .calendario__dia--cumple {
-  background-color: var(--brand-100);
-  color: var(--heading);
+  background-color: var(--brand-700);
+  color: var(--text-on-brand);
   font-weight: 700;
   cursor: pointer;
 }
 
-.calendario__dia--cumple:hover { background-color: var(--brand-100-hover); }
+.calendario__dia--cumple:hover { background-color: var(--brand-600); }
 
 .calendario__dia--cumple.calendario__dia--paso {
-  background-color: var(--surface-alt);
-  color: var(--text-muted);
+  background-color: var(--brand-100);
+  color: var(--heading);
 }
 
 .calendario__dia--cumple.calendario__dia--hoy {
   background-color: var(--accent);
-  box-shadow: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
   color: var(--on-accent);
 }
 
 .calendario__dia--cumple.calendario__dia--elegido {
-  background-color: var(--brand-700);
-  color: var(--text-on-brand);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--brand-500);
 }
 
 .calendario__dia--cumple:focus-visible {
   outline: 2px solid var(--brand-500);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 /* Más de uno el mismo día: la cuenta en la esquina. */
 .calendario__cuantos {
   position: absolute;
-  top: 2px;
-  right: 3px;
-  min-width: 14px;
-  height: 14px;
-  padding: 0 3px;
+  top: -5px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border: 2px solid var(--surface);
   border-radius: var(--radius-full);
   background-color: var(--accent);
   color: var(--on-accent);
   font-size: 9.5px;
   font-weight: 800;
-  line-height: 14px;
+  line-height: 12px;
 }
 
 .cumple__lista {
@@ -2319,7 +2481,7 @@ td.celda-numero {
   list-style: none;
   border-top: 1px solid var(--border);
   /* Con quince cumpleaños la lista crecería más que el calendario. */
-  max-height: 224px;
+  max-height: 232px;
   overflow-y: auto;
 }
 
@@ -2330,26 +2492,28 @@ td.celda-numero {
   padding: 7px 2px;
 }
 
-.cumple__persona--paso { opacity: 0.6; }
+.cumple__persona--paso { opacity: 0.55; }
 
 .cumple__iniciales {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background-color: var(--brand-100);
-  color: var(--heading);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
-.cumple__persona--hoy .cumple__iniciales {
-  background-color: var(--accent);
-  color: var(--on-accent);
-}
+.cumple__iniciales--grande { width: 44px; height: 44px; font-size: 14px; }
+
+/* Un color de la paleta por persona: la lista se recorre por caras. */
+.avatar--0 { background-color: var(--brand-700); color: var(--text-on-brand); }
+.avatar--1 { background-color: var(--brand-500); color: var(--text-on-brand); }
+.avatar--2 { background-color: var(--success-solid); color: var(--text-on-brand); }
+.avatar--3 { background-color: var(--brand-100); color: var(--heading); }
+.avatar--dorado { background-color: var(--accent); color: var(--on-accent); }
 
 .cumple__quien {
   display: flex;
@@ -2426,24 +2590,27 @@ td.celda-numero {
 .vence__fila--normal  .vence__cuando strong { color: var(--success-text); }
 
 /* ── Pantallas medianas y celular ── */
-@media (max-width: 1200px) {
+@media (max-width: 1280px) {
   .banda-mes {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "nomina boletas"
-      "anio anio"
-      "cifras cifras";
+      "anio anio";
   }
 
+  .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .panel-fila--tres { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .panel-fila--tres > :last-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 1000px) {
   .panel-fila--8-4,
-  .panel-fila--6-6,
+  .panel-fila--5-7,
   .panel-fila--tres { grid-template-columns: minmax(0, 1fr); }
   .panel-fila--tres > :last-child { grid-column: auto; }
+
+  .donas { grid-template-columns: minmax(0, 1fr); }
+  .donas__una + .donas__una { border-left: none; padding-left: 0; border-top: 1px dashed var(--border); padding-top: 12px; }
 }
 
 @media (max-width: 640px) {
@@ -2452,30 +2619,27 @@ td.celda-numero {
 
   .banda-mes {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "nomina" "anio" "boletas" "cifras";
-    gap: 20px;
-    padding: 20px 18px 0;
+    grid-template-areas: "nomina" "anio" "boletas";
+    gap: 24px;
+    padding: 26px 18px 22px;
   }
 
-  .banda-mes__anio { height: 112px; gap: 4px; }
+  .banda-mes::after { left: 18px; }
+  .banda-mes__anio { height: 120px; gap: 4px; }
   .banda-mes__etiqueta { font-size: 10px; }
+  .anillo { width: 116px; height: 116px; }
 
-  .banda-mes__cifras {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin: 0 -18px;
-    padding: 14px 18px 16px;
-  }
-
-  .banda-mes__cifras small { display: block; margin: 1px 0 0; }
+  .indicadores { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 
   .tarjeta-grafico { padding: 16px; }
   .tarjeta-grafico__cabeza { flex-wrap: wrap; }
   .dato-lateral { align-items: flex-start; text-align: left; }
+  .cumple__cabeza { margin: -16px -16px 14px; padding: 14px 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel--recargando .banda-mes,
-  .panel--recargando .panel-fila { transition: none; }
+  .panel--recargando > :not(.dash-header),
+  .anillo__arco { transition: none; }
 }
 
 /* ══ BUSCADOR DE PERSONAS ══════════════════════════════════════════
