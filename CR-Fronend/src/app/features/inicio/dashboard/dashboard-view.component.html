@@ -120,7 +120,7 @@
          barra lleva a su mes) y el anillo de las boletas firmadas. -->
     <section class="banda-mes" aria-label="Resumen del mes">
       <div class="banda-mes__nomina">
-        <h2 class="banda-mes__titulo">Nómina de {{ loQueSeVe }}</h2>
+        <h2 class="banda-mes__titulo">Total de la planilla de {{ loQueSeVe }}</h2>
         <p class="banda-mes__cifra"><span class="banda-mes__moneda">S/</span>{{ enSolesRedondo(nominaMostrada) }}</p>
         <p class="banda-mes__cambio" *ngIf="variacion !== null">
           <app-icon [icono]="variacion >= 0 ? 'trending_up' : 'trending_down'" [tamano]="15"></app-icon>
@@ -181,9 +181,9 @@
       <article class="indicador">
         <span class="indicador__icono"><app-icon icono="wallet" [tamano]="20"></app-icon></span>
         <div class="indicador__texto">
-          <h3 class="indicador__nombre">Pagado en {{ filtroAnio }}</h3>
+          <h3 class="indicador__nombre">Pagado en lo que va del año</h3>
           <p class="indicador__valor">{{ enMiles(acumulado) }}</p>
-          <p class="indicador__nota">Hasta {{ nombreMes(filtroMes).toLowerCase() }}</p>
+          <p class="indicador__nota">De enero a {{ nombreMes(filtroMes).toLowerCase() }} de {{ filtroAnio }}</p>
         </div>
         <apx-chart class="indicador__chispa" *ngIf="acumulado" [series]="chispaNominaSeries" [chart]="chispaNominaChart"
           [colors]="chispaNominaColores" [stroke]="chispaStroke" [fill]="chispaFill" [tooltip]="chispaTooltip"></apx-chart>
@@ -192,9 +192,9 @@
       <article class="indicador">
         <span class="indicador__icono indicador__icono--dorado"><app-icon icono="money" [tamano]="20"></app-icon></span>
         <div class="indicador__texto">
-          <h3 class="indicador__nombre">Le cuesta al colegio</h3>
+          <h3 class="indicador__nombre">Costo total del mes</h3>
           <p class="indicador__valor">{{ enMiles(nomina + aportes) }}</p>
-          <p class="indicador__nota">{{ enSoles(aportes) }} son aportes</p>
+          <p class="indicador__nota">Con {{ enSoles(aportes) }} de aportes del colegio</p>
         </div>
         <div class="indicador__reparto" *ngIf="nomina" role="img"
           [attr.aria-label]="'Aportes: ' + parteAportes.toFixed(0) + ' % del costo'">
@@ -220,8 +220,8 @@
       <article class="tarjeta-grafico">
         <header class="tarjeta-grafico__cabeza">
           <div>
-            <h3 class="tarjeta-grafico__titulo">La nómina mes a mes</h3>
-            <p class="tarjeta-grafico__nota">{{ filtroAnio }} contra {{ filtroAnio - 1 }}. El punto dorado es el mes que estás viendo.</p>
+            <h3 class="tarjeta-grafico__titulo">Lo que se pagó cada mes</h3>
+            <p class="tarjeta-grafico__nota">La línea azul es {{ filtroAnio }} y la punteada, {{ filtroAnio - 1 }}. El punto dorado es el mes que estás viendo.</p>
           </div>
           <div class="dato-lateral" *ngIf="acumulado && acumuladoAnterior">
             <span>Contra el año pasado</span>
@@ -307,36 +307,26 @@
 
     <!-- ══ La plata del mes ═══════════════════════════════════════════ -->
     <div class="panel-fila panel-fila--5-7">
-      <article class="tarjeta-grafico">
+      <article class="tarjeta-grafico grafico--etiquetas-fuera">
         <header class="tarjeta-grafico__cabeza">
           <div>
-            <h3 class="tarjeta-grafico__titulo">De dónde sale el neto</h3>
-            <p class="tarjeta-grafico__nota">Lo que suma sube y lo que resta baja, hasta lo que se paga y lo que le cuesta al colegio.</p>
+            <h3 class="tarjeta-grafico__titulo">Cómo se forma el pago del mes</h3>
+            <p class="tarjeta-grafico__nota">Sueldos y bonos, menos descuentos, es lo que recibe el personal. Con los aportes del colegio sale el costo total.</p>
           </div>
         </header>
-        <!-- Un elemento por juego de escalones: si cambian, se redibuja. -->
-        <ng-container *ngFor="let clave of (cascada.length ? [cascadaClave] : [])">
-          <apx-chart
-            [series]="cascadaSeries" [chart]="cascadaChart" [plotOptions]="cascadaPlot"
-            [xaxis]="cascadaXaxis" [yaxis]="cascadaYaxis" [tooltip]="cascadaTooltip"
-            [dataLabels]="sinEtiquetas" [legend]="sinLeyenda" [grid]="rejilla">
-          </apx-chart>
-        </ng-container>
-        <ol class="cuenta-neto" *ngIf="cascada.length">
-          <li *ngFor="let p of cascada" [class.cuenta-neto__total]="p.esTotal">
-            <i class="cuenta-neto__color" [style.background]="p.color"></i>
-            <span>{{ p.etiqueta }}</span>
-            <strong>{{ p.esTotal ? '' : p.monto < 0 ? '− ' : '+ ' }}{{ enSoles(p.monto < 0 ? -p.monto : p.monto) }}</strong>
-          </li>
-        </ol>
-        <p class="card-vacio" *ngIf="!cascada.length">Este mes todavía no tiene planillas.</p>
+        <apx-chart *ngIf="pago.length"
+          [series]="pagoSeries" [chart]="pagoChart" [plotOptions]="pagoPlot" [colors]="pagoColores"
+          [xaxis]="pagoXaxis" [yaxis]="pagoYaxis" [dataLabels]="pagoEtiquetas" [tooltip]="tooltipSoles"
+          [responsive]="pagoResponsive" [legend]="sinLeyenda" [grid]="rejillaHorizontal">
+        </apx-chart>
+        <p class="card-vacio" *ngIf="!pago.length">Este mes todavía no tiene planillas.</p>
       </article>
 
       <article class="tarjeta-grafico grafico--mapa">
         <header class="tarjeta-grafico__cabeza">
           <div>
-            <h3 class="tarjeta-grafico__titulo">Lo pagado por área</h3>
-            <p class="tarjeta-grafico__nota">Cada bloque es del tamaño de lo que cuesta el área. Pasa el cursor para ver entre cuántas personas.</p>
+            <h3 class="tarjeta-grafico__titulo">Cuánto se paga en cada área</h3>
+            <p class="tarjeta-grafico__nota">Mientras más grande el bloque, más se paga en esa área. Pasa el cursor para ver a cuántas personas.</p>
           </div>
         </header>
         <apx-chart *ngIf="hayValores(areaSeries)"
@@ -351,7 +341,7 @@
     <section class="tarjeta-grafico">
       <header class="tarjeta-grafico__cabeza">
         <div>
-          <h3 class="tarjeta-grafico__titulo">Cómo es el personal</h3>
+          <h3 class="tarjeta-grafico__titulo">Nuestro personal</h3>
           <p class="tarjeta-grafico__nota">{{ activos }} {{ activos === 1 ? 'persona activa' : 'personas activas' }}</p>
         </div>
       </header>
@@ -372,7 +362,7 @@
       <article class="tarjeta-grafico grafico--etiquetas-fuera">
         <header class="tarjeta-grafico__cabeza">
           <div>
-            <h3 class="tarjeta-grafico__titulo">{{ vistaPersonal === 'edad' ? 'Edades' : 'Años en el colegio' }}</h3>
+            <h3 class="tarjeta-grafico__titulo">{{ vistaPersonal === 'edad' ? 'Edades del personal' : 'Años trabajando en el colegio' }}</h3>
             <p class="tarjeta-grafico__nota">Del personal activo</p>
           </div>
           <div class="segmentado segmentado--chico" role="group" aria-label="Qué mostrar">
@@ -393,8 +383,8 @@
       <article class="tarjeta-grafico grafico--etiquetas-fuera">
         <header class="tarjeta-grafico__cabeza">
           <div>
-            <h3 class="tarjeta-grafico__titulo">Los conceptos que más pesan</h3>
-            <p class="tarjeta-grafico__nota">Sin pensión, EsSalud ni renta de quinta</p>
+            <h3 class="tarjeta-grafico__titulo">Otros pagos y descuentos del mes</h3>
+            <p class="tarjeta-grafico__nota">Los más grandes, sin contar pensión, EsSalud ni renta de quinta</p>
           </div>
         </header>
         <apx-chart *ngIf="hayValores(conceptosSeries)"
@@ -411,7 +401,7 @@
       <article class="tarjeta-grafico">
         <header class="tarjeta-grafico__cabeza">
           <div>
-            <h3 class="tarjeta-grafico__titulo">Contratos por vencer</h3>
+            <h3 class="tarjeta-grafico__titulo">Contratos que se acaban pronto</h3>
             <p class="tarjeta-grafico__nota">Los más cercanos de los próximos 60 días</p>
           </div>
           <button type="button" class="tarjeta-grafico__accion" (click)="irAContratos()"
@@ -440,7 +430,7 @@
     <article class="tarjeta-grafico">
       <header class="tarjeta-grafico__cabeza">
         <div>
-          <h3 class="tarjeta-grafico__titulo">Altas y bajas de {{ filtroAnio }}</h3>
+          <h3 class="tarjeta-grafico__titulo">Quién entró y quién se fue en {{ filtroAnio }}</h3>
           <p class="tarjeta-grafico__nota">Entraron {{ totalAltas }} y se fueron {{ totalBajas }}.</p>
         </div>
       </header>

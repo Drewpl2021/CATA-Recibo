@@ -63,18 +63,10 @@ interface DiaCalendario {
   yaPaso: boolean;
 }
 
-/** Un escalón de la cascada de la nómina: de dónde sale el neto. */
-interface PasoCascada {
+/** Una fila de «Cómo se forma el pago del mes». */
+interface PartePago {
   etiqueta: string;
-  /** Para el eje, donde el nombre entero no cabe. */
-  corta: string;
-  /** Con signo: lo que resta va en negativo. */
   monto: number;
-  desde: number;
-  hasta: number;
-  color: string;
-  /** Neto y costo total: van desde cero y cierran la cuenta. */
-  esTotal: boolean;
 }
 
 /** Un tramo del anillo de boletas. */
@@ -248,28 +240,53 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   acumulado = 0;
   acumuladoAnterior = 0;
 
-  // ── 2. De dónde sale el neto (cascada) ────────────────────────────
-  cascada: PasoCascada[] = [];
-  cascadaClave = '';
-  cascadaSeries: ApexAxisChartSeries = [];
-  cascadaChart: ApexChart = { ...this.base, type: 'rangeBar', height: 290 };
-  cascadaPlot: ApexPlotOptions = { bar: { horizontal: false, columnWidth: '62%', borderRadius: 6 } };
-  cascadaXaxis: ApexXAxis = {
-    type: 'category',
-    labels: { rotate: 0, trim: false, hideOverlappingLabels: false, style: { fontSize: '11px' } },
-    tooltip: { enabled: false },
-    axisBorder: { show: false },
-    axisTicks: { show: false },
+  // ── 2. Cómo se forma el pago del mes ───────────────────────────
+  //
+  // Antes era una cascada (barras que flotaban, unas subían y otras
+  // bajaban desde arriba): se leía como un gráfico volteado. Ahora son
+  // barras simples que salen todas de cero, una por concepto, en el orden
+  // en que se arma la planilla, y con el monto escrito al final.
+  pago: PartePago[] = [];
+  pagoSeries: ApexAxisChartSeries = [];
+  pagoChart: ApexChart = { ...this.base, height: 300 };
+  pagoPlot: ApexPlotOptions = {
+    bar: { horizontal: true, distributed: true, borderRadius: 5, barHeight: '64%', dataLabels: { position: 'top' } },
   };
-  cascadaYaxis: ApexYAxis = { min: 0, labels: { formatter: (v) => this.enMiles(v) } };
-  cascadaTooltip: ApexTooltip = {
-    custom: ({ dataPointIndex }: { dataPointIndex: number }) => {
-      const p = this.cascada[dataPointIndex];
-      if (!p) return '';
-      const signo = p.esTotal ? '' : p.monto < 0 ? '− ' : '+ ';
-      return `<div class="grafico-globo"><span>${p.etiqueta}</span><strong>${signo}${this.enSoles(Math.abs(p.monto))}</strong></div>`;
+  /** Sueldos, bonos, descuentos, lo que recibe, aportes, costo total. */
+  pagoColores = [
+    PALETA_MARCA.b700,
+    PALETA_ESTADO.exito,
+    PALETA_ESTADO.peligro,
+    PALETA_MARCA.b900,
+    PALETA_MARCA.b500,
+    PALETA_ACENTO,
+  ];
+  pagoXaxis: ApexXAxis = {
+    categories: [
+      'Sueldos',
+      'Bonos y asignaciones',
+      'Descuentos',
+      'Recibe el personal',
+      'Aportes del colegio',
+      'Costo total',
+    ],
+    tickAmount: 4,
+    labels: { formatter: (v) => this.enMiles(v) },
+  };
+  pagoYaxis: ApexYAxis = { labels: { maxWidth: 190, style: { fontSize: '12.5px' } } };
+  pagoEtiquetas: ApexDataLabels = {
+    enabled: true,
+    offsetX: 46,
+    formatter: (v: number) => this.enMiles(v),
+    style: { fontSize: '12px', fontWeight: 700 },
+  };
+  /** En el celular los nombres se leen enteros: más ancho y letra más chica. */
+  pagoResponsive: ApexResponsive[] = [
+    {
+      breakpoint: 640,
+      options: { yaxis: { labels: { maxWidth: 150, style: { fontSize: '11px' } } }, xaxis: { tickAmount: 2 } },
     },
-  };
+  ];
 
   // ── 3. Lo pagado por área: un mapa de bloques ─────────────────────
   //
@@ -611,8 +628,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     this.acumulado = hasta(tendencia);
     this.acumuladoAnterior = hasta(anterior);
 
-    // ── Cascada ──
-    this.armarCascada(d.composicionNomina ?? [], r.nominaDelMes, this.aportes);
+    // ── Cómo se forma el pago ──
+    this.armarPago(d.composicionNomina ?? [], r.nominaDelMes, this.aportes);
 
     // ── Por área ──
     // Las siete más grandes con nombre; el resto junto en «Otras áreas»:
@@ -636,7 +653,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     const donas = [
       this.dona('Sistema de pensiones', d.sistemaPensiones ?? []),
       this.dona('Tipo de contrato', d.tipoContrato ?? []),
-      this.dona('Sede', d.personalPorSede ?? []),
+      this.dona('Por sede', d.personalPorSede ?? []),
     ];
     // Se actualizan las que ya están, sin crear objetos nuevos: si cambian
     // las etiquetas la dona se redibuja, si no, solo se mueven sus tramos.
@@ -811,57 +828,36 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     return m.valor ? `Ver ${nombre}: ${this.enSoles(m.valor)}` : `Ver ${nombre}: sin planillas`;
   }
 
-  // ════════ Cascada ════════
+  // ════════ Cómo se forma el pago ════════
 
-  private armarCascada(comp: DatoGrafico[], nominaReal: number, aportes: number): void {
+  private armarPago(comp: DatoGrafico[], nominaReal: number, aportes: number): void {
     const valor = (nombre: string) => comp.find((c) => c.etiqueta === nombre)?.valor ?? 0;
     const basico = valor('Sueldo básico');
-    const bonos = valor('Bonificaciones');
-    const descuentos = valor('Descuentos');
-    const adelantos = valor('Adelantos');
-
     if (!basico && !nominaReal) {
-      this.cascada = [];
-      this.cascadaSeries = [];
+      this.pago = [];
+      this.pagoSeries = [];
       return;
     }
 
-    // El neto que cierra la cuenta es el de las planillas, el mismo de
-    // arriba. Lo que no explican los cuatro conceptos (asignaciones que no
-    // son bonificación, redondeos) va en su propio escalón para que cuadre.
-    const otros = Math.round((nominaReal - (basico + bonos - descuentos - adelantos)) * 100) / 100;
+    // Lo que recibe el personal es el neto de las planillas, el mismo de la
+    // banda. Lo que no explican los conceptos (asignaciones que no son
+    // bonificación, redondeos) se suma a bonos o a descuentos para que la
+    // cuenta cuadre: sueldos + bonos − descuentos = lo que recibe.
+    let bonos = valor('Bonificaciones');
+    let descuentos = valor('Descuentos') + valor('Adelantos');
+    const resto = Math.round((nominaReal - (basico + bonos - descuentos)) * 100) / 100;
+    if (resto > 0) bonos += resto;
+    else descuentos -= resto;
 
-    const pasos: PasoCascada[] = [];
-    let nivel = 0;
-    const paso = (etiqueta: string, corta: string, monto: number, color: string) => {
-      if (Math.abs(monto) < 0.5) return;
-      const desde = nivel;
-      nivel += monto;
-      pasos.push({ etiqueta, corta, monto, desde: Math.min(desde, nivel), hasta: Math.max(desde, nivel), color, esTotal: false });
-    };
-    const total = (etiqueta: string, corta: string, color: string) =>
-      pasos.push({ etiqueta, corta, monto: nivel, desde: 0, hasta: nivel, color, esTotal: true });
-
-    paso('Sueldo básico', 'Básico', basico, PALETA_MARCA.b700);
-    paso('Bonificaciones', 'Bonos', bonos, PALETA_ESTADO.exito);
-    if (otros > 0) paso('Otros ingresos', 'Otros', otros, PALETA_ESTADO.exito);
-    paso('Descuentos', 'Desc.', -descuentos, PALETA_ESTADO.peligro);
-    paso('Adelantos', 'Adel.', -adelantos, PALETA_ESTADO.aviso);
-    if (otros < 0) paso('Otros descuentos', 'Otros', otros, PALETA_ESTADO.peligro);
-    total('Neto a pagar', 'Neto', PALETA_MARCA.b900);
-    if (aportes) {
-      paso('Aporta el colegio', 'Aportes', aportes, PALETA_MARCA.b500);
-      total('Costo total', 'Costo', PALETA_ACENTO);
-    }
-
-    this.cascada = pasos;
-    // Si cambian los escalones (un mes trae «Otros descuentos» y otro no),
-    // la cascada se redibuja: Apex no reacomoda bien las etiquetas al
-    // actualizar solo la serie. Si son los mismos, solo se mueven.
-    this.cascadaClave = pasos.map((p) => p.corta).join('|');
-    this.cascadaSeries = [
-      { name: 'Monto', data: pasos.map((p) => ({ x: p.corta, y: [p.desde, p.hasta], fillColor: p.color })) },
+    this.pago = [
+      { etiqueta: 'Sueldos', monto: basico },
+      { etiqueta: 'Bonos y asignaciones', monto: bonos },
+      { etiqueta: 'Descuentos', monto: descuentos },
+      { etiqueta: 'Recibe el personal', monto: nominaReal },
+      { etiqueta: 'Aportes del colegio', monto: aportes },
+      { etiqueta: 'Costo total', monto: nominaReal + aportes },
     ];
+    this.pagoSeries = [{ name: 'Monto', data: this.pago.map((p) => Math.round(p.monto * 100) / 100) }];
   }
 
   // ════════ Personal ════════
