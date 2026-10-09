@@ -134,7 +134,7 @@
       </div>
 
       <div class="banda-mes__anio" role="group" [attr.aria-label]="'Nómina de cada mes de ' + filtroAnio">
-        <button type="button" class="banda-mes__mes" *ngFor="let m of mesesDelAnio"
+        <button type="button" class="banda-mes__mes" *ngFor="let m of mesesDelAnio; trackBy: trackPorMes"
           [class.banda-mes__mes--elegido]="m.mes === filtroMes" (click)="irAMes(m.mes)"
           [appPista]="pistaMes(m)" pistaLado="abajo"
           [attr.aria-label]="pistaMes(m)" [attr.aria-current]="m.mes === filtroMes ? 'true' : null">
@@ -147,7 +147,7 @@
         <div class="anillo" role="img" [attr.aria-label]="describirBoletas()">
           <svg viewBox="0 0 128 128" class="anillo__svg" aria-hidden="true">
             <circle cx="64" cy="64" r="54" class="anillo__pista"></circle>
-            <circle *ngFor="let a of arcos" cx="64" cy="64" r="54" class="anillo__arco" [ngClass]="a.clase"
+            <circle *ngFor="let a of arcos; trackBy: trackPorClase" cx="64" cy="64" r="54" class="anillo__arco" [ngClass]="a.clase"
               [attr.stroke-dasharray]="a.largo + ' ' + circunferencia"
               [attr.stroke-dashoffset]="-a.inicio"></circle>
           </svg>
@@ -232,7 +232,7 @@
           [series]="tendenciaSeries" [chart]="tendenciaChart" [colors]="tendenciaColores"
           [stroke]="tendenciaStroke" [fill]="tendenciaFill" [markers]="tendenciaMarkers"
           [xaxis]="tendenciaXaxis" [yaxis]="tendenciaYaxis" [legend]="tendenciaLeyenda"
-          [tooltip]="tendenciaTooltip" [annotations]="tendenciaMarca" [grid]="rejilla"
+          [tooltip]="tendenciaTooltip" [grid]="rejilla"
           [dataLabels]="sinEtiquetas">
         </apx-chart>
         <p class="card-vacio" *ngIf="!hayValores(tendenciaSeries)">
@@ -314,11 +314,14 @@
             <p class="tarjeta-grafico__nota">Lo que suma sube y lo que resta baja, hasta lo que se paga y lo que le cuesta al colegio.</p>
           </div>
         </header>
-        <apx-chart *ngIf="cascada.length"
-          [series]="cascadaSeries" [chart]="cascadaChart" [plotOptions]="cascadaPlot"
-          [xaxis]="cascadaXaxis" [yaxis]="cascadaYaxis" [tooltip]="cascadaTooltip"
-          [dataLabels]="sinEtiquetas" [legend]="sinLeyenda" [grid]="rejilla">
-        </apx-chart>
+        <!-- Un elemento por juego de escalones: si cambian, se redibuja. -->
+        <ng-container *ngFor="let clave of (cascada.length ? [cascadaClave] : [])">
+          <apx-chart
+            [series]="cascadaSeries" [chart]="cascadaChart" [plotOptions]="cascadaPlot"
+            [xaxis]="cascadaXaxis" [yaxis]="cascadaYaxis" [tooltip]="cascadaTooltip"
+            [dataLabels]="sinEtiquetas" [legend]="sinLeyenda" [grid]="rejilla">
+          </apx-chart>
+        </ng-container>
         <ol class="cuenta-neto" *ngIf="cascada.length">
           <li *ngFor="let p of cascada" [class.cuenta-neto__total]="p.esTotal">
             <i class="cuenta-neto__color" [style.background]="p.color"></i>
@@ -353,7 +356,7 @@
         </div>
       </header>
       <div class="donas">
-        <div class="donas__una" *ngFor="let d of donas">
+        <div class="donas__una" *ngFor="let d of donas; trackBy: trackPorTitulo">
           <h4 class="donas__titulo">{{ d.titulo }}</h4>
           <apx-chart *ngIf="d.total"
             [series]="d.series" [labels]="d.etiquetas" [chart]="donaChart" [colors]="donaColores"

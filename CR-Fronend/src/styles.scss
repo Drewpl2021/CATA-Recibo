@@ -1749,12 +1749,16 @@ td.celda-numero {
   gap: 18px;
 }
 
-/* Al cambiar de mes o de sede no se vacía la pantalla: se atenúa lo que
-   hay hasta que llegan las cifras nuevas, y no salta. */
+/* Al cambiar de mes o de sede no se vacía la pantalla: lo que hay se
+   atenúa un poco hasta que llegan las cifras nuevas. Solo si la carga
+   tarda (150 ms de espera): si llega antes, no parpadea nada. La vuelta
+   también es suave; antes saltaba de 55 % a 100 % de golpe. */
+.panel > :not(.dash-header) { transition: opacity .25s ease; }
+
 .panel--recargando > :not(.dash-header) {
-  opacity: 0.55;
+  opacity: 0.78;
   pointer-events: none;
-  transition: opacity .2s ease;
+  transition-delay: .15s;
 }
 
 .panel .pendientes { margin-bottom: 0; }
@@ -1921,7 +1925,8 @@ td.celda-numero {
   background: linear-gradient(180deg,
     color-mix(in srgb, var(--marca-text) 55%, transparent),
     color-mix(in srgb, var(--marca-text) 22%, transparent));
-  transition: filter .15s ease;
+  /* Al cambiar de mes o de sede la barra crece o baja, no reaparece. */
+  transition: filter .15s ease, height .45s ease;
 }
 
 .banda-mes__mes:hover .banda-mes__barra { filter: brightness(1.35); }
@@ -1973,7 +1978,7 @@ td.celda-numero {
 }
 
 .anillo__pista { stroke: color-mix(in srgb, var(--marca-text) 12%, transparent); }
-.anillo__arco { stroke-linecap: round; transition: stroke-dasharray .6s ease; }
+.anillo__arco { stroke-linecap: round; transition: stroke-dasharray .6s ease, stroke-dashoffset .6s ease; }
 .anillo__arco--firmadas  { stroke: var(--success); background-color: var(--success); }
 .anillo__arco--vistas    { stroke: var(--brand-100-hover); background-color: var(--brand-100-hover); }
 .anillo__arco--sin-abrir { stroke: var(--accent); background-color: var(--accent); }
@@ -2638,7 +2643,8 @@ td.celda-numero {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel--recargando > :not(.dash-header),
+  .panel > :not(.dash-header),
+  .banda-mes__barra,
   .anillo__arco { transition: none; }
 }
 

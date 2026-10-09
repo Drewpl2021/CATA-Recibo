@@ -84,6 +84,13 @@ interface ArcoAnillo {
   inicio: number;
 }
 
+/** Lo que se usa del gráfico de Apex para poner y quitar la marca del mes. */
+interface GraficoConMarcas {
+  clearAnnotations(): void;
+  addXaxisAnnotation(opciones: unknown): void;
+  addPointAnnotation(opciones: unknown): void;
+}
+
 /** Una dona de «Cómo es el personal». */
 interface Dona {
   titulo: string;
@@ -215,6 +222,13 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     type: 'line',
     height: 380,
     dropShadow: { enabled: true, top: 6, left: 0, blur: 8, opacity: 0.18, color: PALETA_MARCA.b700 },
+    // Cada vez que el gráfico se dibuja de cero, se le pone la marca del mes.
+    events: {
+      mounted: (contexto: unknown) => {
+        this.contextoTendencia = contexto as GraficoConMarcas;
+        this.dibujarMarca();
+      },
+    },
   };
   tendenciaColores = [PALETA_MARCA.b700, PALETA_NEUTRO];
   tendenciaStroke: ApexStroke = { curve: 'monotoneCubic', width: [3.5, 2], dashArray: [0, 6] };
@@ -227,13 +241,16 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   tendenciaYaxis: ApexYAxis = { labels: { formatter: (v) => this.enMiles(v) } };
   tendenciaLeyenda: ApexLegend = { position: 'top', horizontalAlign: 'right', fontSize: '12px' };
   tendenciaTooltip: ApexTooltip = { shared: true, intersect: false, y: { formatter: (v) => this.enSoles(v) } };
-  tendenciaMarca: ApexAnnotations = {};
+  /** La marca dorada del mes elegido; se dibuja por código (ver dibujarMarca). */
+  private marca: ApexAnnotations = {};
+  private contextoTendencia: GraficoConMarcas | null = null;
   /** Lo pagado en el año hasta el mes elegido, y lo mismo del año anterior. */
   acumulado = 0;
   acumuladoAnterior = 0;
 
   // ── 2. De dónde sale el neto (cascada) ────────────────────────────
   cascada: PasoCascada[] = [];
+  cascadaClave = '';
   cascadaSeries: ApexAxisChartSeries = [];
   cascadaChart: ApexChart = { ...this.base, type: 'rangeBar', height: 290 };
   cascadaPlot: ApexPlotOptions = { bar: { horizontal: false, columnWidth: '62%', borderRadius: 6 } };
@@ -271,7 +288,14 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     formatter: (texto: string, op: { value: number }) => [texto, this.enMiles(op.value)] as unknown as string,
     offsetY: -2,
   };
-  areaTooltip: ApexTooltip = {};
+  areaTooltip: ApexTooltip = {
+    y: {
+      formatter: (v: number, { dataPointIndex }: { dataPointIndex: number }) => {
+        const n = this.personasPorArea[dataPointIndex] ?? 0;
+        return `${this.enSoles(v)} entre ${n} ${n === 1 ? 'persona' : 'personas'}`;
+      },
+    },
+  };
   private personasPorArea: number[] = [];
 
   // ── 4. Cómo es el personal: tres donas con el total al centro ─────
@@ -561,9 +585,9 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
       { name: String(this.filtroAnio), type: 'area', data: tendencia.map((m) => m.valor) },
       { name: String(this.filtroAnio - 1), type: 'line', data: anterior.map((m) => m.valor) },
     ];
-    this.tendenciaXaxis = { ...this.tendenciaXaxis, categories: tendencia.map((m) => m.etiqueta) };
+    this.tendenciaXaxis = this.siCambia(this.tendenciaXaxis, { ...this.tendenciaXaxis, categories: tendencia.map((m) => m.etiqueta) });
     const elegido = tendencia[this.filtroMes - 1];
-    this.tendenciaMarca = elegido
+    this.ponerMarca(elegido
       ? {
           xaxis: [{ x: elegido.etiqueta, strokeDashArray: 0, borderColor: PALETA_ACENTO, borderWidth: 2 }],
           points: elegido.valor
@@ -582,7 +606,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
               ]
             : [],
         }
-      : {};
+      : {});
     const hasta = (lista: DatoGrafico[]) => lista.slice(0, this.filtroMes).reduce((t, m) => t + m.valor, 0);
     this.acumulado = hasta(tendencia);
     this.acumuladoAnterior = hasta(anterior);
@@ -607,21 +631,25 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
       : todas;
     this.personasPorArea = areas.map((a) => a.personas ?? 0);
     this.areaSeries = [{ name: 'Pagado', data: areas.map((a) => ({ x: a.etiqueta, y: a.valor })) }];
-    this.areaTooltip = {
-      y: {
-        formatter: (v: number, { dataPointIndex }: { dataPointIndex: number }) => {
-          const n = this.personasPorArea[dataPointIndex] ?? 0;
-          return `${this.enSoles(v)} entre ${n} ${n === 1 ? 'persona' : 'personas'}`;
-        },
-      },
-    };
 
     // ── Cómo es el personal ──
-    this.donas = [
+    const donas = [
       this.dona('Sistema de pensiones', d.sistemaPensiones ?? []),
       this.dona('Tipo de contrato', d.tipoContrato ?? []),
       this.dona('Sede', d.personalPorSede ?? []),
     ];
+    // Se actualizan las que ya están, sin crear objetos nuevos: si cambian
+    // las etiquetas la dona se redibuja, si no, solo se mueven sus tramos.
+    if (this.donas.length === donas.length) {
+      donas.forEach((nueva, i) => {
+        const vieja = this.donas[i];
+        vieja.etiquetas = this.siCambia(vieja.etiquetas, nueva.etiquetas);
+        vieja.series = nueva.series;
+        vieja.total = nueva.total;
+      });
+    } else {
+      this.donas = donas;
+    }
     this.edades = d.edades ?? [];
     this.antiguedad = d.antiguedad ?? [];
     this.pintarPersonal();
@@ -629,8 +657,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     // ── Conceptos ──
     const tops = d.topConceptos ?? [];
     this.conceptosSeries = [{ name: 'Monto', data: tops.map((x) => x.valor) }];
-    this.conceptosXaxis = { ...this.conceptosXaxis, categories: tops.map((x) => x.etiqueta) };
-    this.conceptosChart = { ...this.conceptosChart, height: Math.max(220, tops.length * 44 + 50) };
+    this.conceptosXaxis = this.siCambia(this.conceptosXaxis, { ...this.conceptosXaxis, categories: tops.map((x) => x.etiqueta) });
+    this.conceptosChart = this.siCambia(this.conceptosChart, { ...this.conceptosChart, height: Math.max(220, tops.length * 44 + 50) });
 
     // ── Altas y bajas ──
     this.movimiento = d.movimientoPersonal ?? [];
@@ -638,7 +666,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
       { name: 'Entraron', data: this.movimiento.map((m) => m.altas) },
       { name: 'Se fueron', data: this.movimiento.map((m) => -m.bajas) },
     ];
-    this.movimientoXaxis = { ...this.movimientoXaxis, categories: this.movimiento.map((m) => m.etiqueta) };
+    this.movimientoXaxis = this.siCambia(this.movimientoXaxis, { ...this.movimientoXaxis, categories: this.movimiento.map((m) => m.etiqueta) });
     this.totalAltas = this.movimiento.reduce((t, m) => t + m.altas, 0);
     this.totalBajas = this.movimiento.reduce((t, m) => t + m.bajas, 0);
     this.chispaAltasSeries = [{ name: 'Entraron', data: this.movimiento.map((m) => m.altas) }];
@@ -673,6 +701,50 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     };
     this.animacion = requestAnimationFrame(paso);
   }
+
+  /**
+   * Devuelve el valor de antes si el nuevo es igual.
+   *
+   * ApexCharts redibuja el gráfico ENTERO —con su animación desde cero—
+   * cuando le cambia cualquier opción que no sea la serie, aunque el valor
+   * sea el mismo en un objeto nuevo. Eso era el destello al mover un
+   * filtro: todos los gráficos se borraban y crecían otra vez. Con esto,
+   * casi siempre cambia solo la serie y las barras pasan del valor viejo al
+   * nuevo sin borrarse.
+   */
+  private siCambia<T>(actual: T, nuevo: T): T {
+    return JSON.stringify(actual) === JSON.stringify(nuevo) ? actual : nuevo;
+  }
+
+  /**
+   * La marca dorada del mes en la tendencia, siempre por código y nunca por
+   * el input [annotations]: cambiar el input redibuja el gráfico de cero
+   * (el destello), y clearAnnotations() de Apex solo borra las marcas que
+   * se agregaron por código —la del input se quedaba pegada y al cambiar de
+   * mes salían dos—. Apex las guarda y las vuelve a pintar con la serie nueva.
+   */
+  private ponerMarca(marca: ApexAnnotations): void {
+    this.marca = marca;
+    this.dibujarMarca();
+  }
+
+  private dibujarMarca(): void {
+    const grafico = this.contextoTendencia;
+    if (!grafico) return;
+    try {
+      grafico.clearAnnotations();
+      this.marca.xaxis?.forEach((x) => grafico.addXaxisAnnotation(x));
+      this.marca.points?.forEach((p) => grafico.addPointAnnotation(p));
+    } catch {
+      // El gráfico se quitó de la pantalla (un año sin planillas): el
+      // próximo que se dibuje pondrá la marca al montarse.
+      this.contextoTendencia = null;
+    }
+  }
+
+  trackPorMes = (_: number, m: MesDelAnio) => m.mes;
+  trackPorClase = (_: number, a: ArcoAnillo) => a.clase;
+  trackPorTitulo = (_: number, d: Dona) => d.titulo;
 
   // ════════ La banda ════════
 
@@ -783,6 +855,10 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     }
 
     this.cascada = pasos;
+    // Si cambian los escalones (un mes trae «Otros descuentos» y otro no),
+    // la cascada se redibuja: Apex no reacomoda bien las etiquetas al
+    // actualizar solo la serie. Si son los mismos, solo se mueven.
+    this.cascadaClave = pasos.map((p) => p.corta).join('|');
     this.cascadaSeries = [
       { name: 'Monto', data: pasos.map((p) => ({ x: p.corta, y: [p.desde, p.hasta], fillColor: p.color })) },
     ];
@@ -808,7 +884,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   private pintarPersonal(): void {
     const datos = this.vistaPersonal === 'edad' ? this.edades : this.antiguedad;
     this.personalSeries = [{ name: 'Personas', data: datos.map((d) => d.valor) }];
-    this.personalXaxis = { ...this.personalXaxis, categories: datos.map((d) => d.etiqueta) };
+    this.personalXaxis = this.siCambia(this.personalXaxis, { ...this.personalXaxis, categories: datos.map((d) => d.etiqueta) });
   }
 
   get hayPersonal(): boolean {
