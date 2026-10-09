@@ -135,10 +135,12 @@ export class PlanillaService extends EntityDataService<Planilla> {
     cargo_id?: string;
     tipo_contrato_id?: string;
     estado_empleado?: string;
-  }): Observable<Blob> {
-    return this.http.get(`${environment.apiUrl}/${END_POINTS_ACCIONES.exportarPlanilla}`, {
-      params: this.construirParams(filtros),
-      responseType: 'blob',
-    });
+  }, ids?: string[]): Observable<Blob> {
+    const url = `${environment.apiUrl}/${END_POINTS_ACCIONES.exportarPlanilla}`;
+    // Las marcadas van en el cuerpo: con cientos no caben en la dirección.
+    if (ids?.length) {
+      return this.http.post(url, { ...filtros, ids }, { responseType: 'blob' });
+    }
+    return this.http.get(url, { params: this.construirParams(filtros), responseType: 'blob' });
   }
 }

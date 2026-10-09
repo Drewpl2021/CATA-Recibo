@@ -189,10 +189,12 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // La lista del personal en CSV. Va ANTES del apiResource, igual que
         // la de planilla: si no, "exportar" entraría por show({id}).
         Route::get('employees/export',       [EmpleadoController::class, 'exportar']);
+        // Los marcados, en el cuerpo (con cientos no caben en la dirección).
+        Route::post('employees/export',      [EmpleadoController::class, 'exportar']);
         // Las boletas YA EMITIDAS del mes, todas en un .zip (mismos filtros
         // de Emisión de Boletas). También antes del apiResource.
         Route::get('employees/payslips-zip', [EmpleadoController::class, 'boletasEnZip']);
-        Route::get('employees/payslips-zip/link', [EmpleadoController::class, 'enlaceBoletasEnZip']);
+        Route::match(['get', 'post'], 'employees/payslips-zip/link', [EmpleadoController::class, 'enlaceBoletasEnZip']);
         // Activar o dar de baja a varios marcados en la lista, de una vez.
         Route::post('employees/status', [EmpleadoController::class, 'cambiarEstado']);
         Route::apiResource('employees',        EmpleadoController::class);
@@ -201,6 +203,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // "exportar" entraría por show({id}) y devolvería un 404 buscando
         // una planilla con ese id.
         Route::get('payrolls/export',        [PlanillaController::class, 'exportar']);
+        Route::post('payrolls/export',       [PlanillaController::class, 'exportar']);
         // La Renta de 5ta del mes sin guardar nada, para la vista previa de la boleta.
         Route::get('payrolls/renta-5ta',     [PlanillaController::class, 'rentaQuinta']);
         Route::apiResource('payrolls',         PlanillaController::class);

@@ -159,6 +159,8 @@ class PlanillaController extends Controller
         // El mismo buscador de la pantalla: si arriba escribieron un
         // apellido, el archivo sale con esa misma gente.
         $this->aplicarBusqueda($request, $query, ['empleado.nombre', 'empleado.apellido', 'empleado.dni']);
+        // Y si se exportan las marcadas, solo ellas.
+        $this->aplicarMarcados($request, $query, 'planilla.id');
 
         $planillas = $query->get()->sortBy([
             fn ($p) => mb_strtolower($p->empleado->apellido ?? ''),

@@ -18,6 +18,8 @@ import { FiltrosComponent } from '../../../shared/components/filtros/filtros.com
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { BarraSeleccionComponent, resumirMarcados } from '../../../shared/components/barra-seleccion/barra-seleccion.component';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 
 /**
  * Listado del personal (RR.HH. y Admin).
@@ -31,7 +33,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 @Component({
   selector: 'app-empleados-list',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent],
+  imports: [IconComponent, CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, BarraSeleccionComponent, PistaDirective],
   templateUrl: './empleados-list.component.html',
 })
 export class EmpleadosListComponent implements OnInit {
@@ -229,8 +231,46 @@ export class EmpleadosListComponent implements OnInit {
 
   /** "Ana Prueba, Luis Mamani y 3 más". */
   get resumenMarcados(): string {
-    const nombres = this.marcados.map((e) => `${e.nombre} ${e.apellido}`.trim());
-    return nombres.length > 3 ? `${nombres.slice(0, 3).join(', ')} y ${nombres.length - 3} más.` : nombres.join(', ') + '.';
+    return resumirMarcados(this.marcados.map((e) => `${e.nombre} ${e.apellido}`.trim()));
+  }
+
+  marcandoTodos = false;
+  exportandoMarcados = false;
+
+  /**
+   * «Marcar los N de todas las páginas»: los que dan el buscador y los
+   * filtros de ahora, no solo los de la página que se ve.
+   */
+  marcarTodos(): void {
+    this.marcandoTodos = true;
+    this.empleadoService.getTodos({ search: this.busqueda || undefined, ...this.filtros }).subscribe({
+      next: (res) => {
+        this.marcandoTodos = false;
+        if (res.success) this.tablaEmpleados?.marcarFilas(res.data.content);
+      },
+      error: (err) => {
+        this.marcandoTodos = false;
+        this.toastService.error('No se marcaron', mensajeErrorApi(err, 'No se pudo traer la lista completa.'));
+      },
+    });
+  }
+
+  /** La ficha completa de los marcados, en Excel (la misma de «Descargar empleados»). */
+  exportarMarcados(): void {
+    if (!this.marcados.length) return;
+    this.exportandoMarcados = true;
+    const cuantos = this.marcados.length;
+    this.empleadoService.exportar({}, this.marcados.map((e) => String(e.id))).subscribe({
+      next: (blob) => {
+        guardarArchivo(blob, this.nombreDelArchivo(cuantos));
+        this.exportandoMarcados = false;
+        this.toastService.success('Lista descargada', `${cuantos} trabajador(es) marcado(s), con su ficha completa.`);
+      },
+      error: (err) => {
+        this.exportandoMarcados = false;
+        this.toastService.error('No se descargó', mensajeErrorApi(err, 'No se pudo generar la lista.'));
+      },
+    });
   }
 
   soltarMarcados(): void {
@@ -480,12 +520,12 @@ export class EmpleadosListComponent implements OnInit {
    * acá y no se lee de la respuesta porque el backend no expone
    * Content-Disposition al navegador.
    */
-  private nombreDelArchivo(): string {
+  private nombreDelArchivo(marcados?: number): string {
     const hoy = new Date();
     const dosDigitos = (n: number) => String(n).padStart(2, '0');
     const fecha = `${hoy.getFullYear()}-${dosDigitos(hoy.getMonth() + 1)}-${dosDigitos(hoy.getDate())}`;
 
-    return `Empleados ${fecha}.xlsx`;
+    return marcados ? `Empleados marcados (${marcados}) ${fecha}.xlsx` : `Empleados ${fecha}.xlsx`;
   }
 
   /** Altas y cambios de varios trabajadores desde el Excel de RR.HH. */

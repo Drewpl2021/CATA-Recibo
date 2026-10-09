@@ -39,7 +39,10 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
-import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { BarraSeleccionComponent, resumirMarcados } from '../../../shared/components/barra-seleccion/barra-seleccion.component';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 
 import {
   SelectorEmpleadosComponent,
@@ -67,7 +70,7 @@ import {
   imports: [IconComponent, 
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
-    FiltrosComponent,
+    FiltrosComponent, BarraSeleccionComponent, PistaDirective,
   ],
   templateUrl: './planillas-list.component.html',
 })
@@ -588,7 +591,7 @@ export class PlanillasListComponent implements OnInit {
 
   /** El catálogo, para el desplegable de "aplicar concepto". */
   /** La tabla, para poder desmarcar sus filas tras aplicar el concepto. */
-  @ViewChild('tablaPlanillas') tablaPlanillas?: { limpiarSeleccion: () => void };
+  @ViewChild('tablaPlanillas') tablaPlanillas?: { limpiarSeleccion: () => void; marcarFilas: (filas: Planilla[]) => void };
 
   /**
    * Los trabajadores marcados con la casilla de su fila.
@@ -604,6 +607,97 @@ export class PlanillasListComponent implements OnInit {
 
   get nombresMarcados(): string {
     return this.marcados.map((p) => this.nombreEmpleado(p)).join(', ');
+  }
+
+  /** "Ana Prueba, Luis Mamani y 3 más.", para la barra de abajo. */
+  get resumenMarcados(): string {
+    return resumirMarcados(this.marcados.map((p) => this.nombreEmpleado(p)));
+  }
+
+  marcandoTodos = false;
+  exportandoMarcados = false;
+  sacandoMarcados = false;
+
+  /** Los mismos parámetros que la tabla: lo que se marca es lo que se ve filtrado. */
+  private parametrosDeLista() {
+    return {
+      search: this.busqueda || undefined,
+      mes: this.filtroMes || undefined,
+      anio: this.filtroAnio || undefined,
+      empleado_id: this.filtroEmpleado || undefined,
+      periodo_id: this.filtroPeriodo || undefined,
+      corrida_id: this.corridaId || undefined,
+      sin_corrida: this.modoSinAgrupar || undefined,
+      ...this.filtros,
+    };
+  }
+
+  soltarMarcados(): void {
+    this.marcados = [];
+    this.tablaPlanillas?.limpiarSeleccion();
+  }
+
+  /** «Marcar los N de todas las páginas», con el buscador y los filtros de ahora. */
+  marcarTodos(): void {
+    this.marcandoTodos = true;
+    this.planillaService.getTodos(this.parametrosDeLista()).subscribe({
+      next: (res) => {
+        this.marcandoTodos = false;
+        if (res.success) this.tablaPlanillas?.marcarFilas(res.data.content);
+      },
+      error: (err) => {
+        this.marcandoTodos = false;
+        this.toastService.error('No se marcaron', mensajeErrorApi(err, 'No se pudo traer la lista completa.'));
+      },
+    });
+  }
+
+  /** El reporte de la planilla (el de «Descargar reporte»), solo con los marcados. */
+  exportarMarcados(): void {
+    if (!this.marcados.length) return;
+    this.exportandoMarcados = true;
+    const cuantos = this.marcados.length;
+    this.planillaService.exportar(this.parametrosDeLista(), this.marcados.map((p) => String(p.id))).subscribe({
+      next: (blob) => {
+        guardarArchivo(blob, this.nombreDelReporte().replace(/\.xlsx$/, ` - marcados (${cuantos}).xlsx`));
+        this.exportandoMarcados = false;
+        this.toastService.success('Reporte descargado', `${cuantos} trabajador(es) marcado(s), con todos sus conceptos.`);
+      },
+      error: (err) => {
+        this.exportandoMarcados = false;
+        this.toastService.error('No se descargó', mensajeErrorApi(err, 'No se pudo generar el reporte.'));
+      },
+    });
+  }
+
+  /** Saca a los marcados de esta planilla. Como uno por uno: no borra su pago. */
+  sacarMarcados(): void {
+    if (!this.marcados.length || this.estaCerrada) return;
+    const cuantos = this.marcados.length;
+    this.confirmService
+      .confirmar({
+        titulo: 'Sacar de esta planilla',
+        mensaje: `${cuantos} trabajador(es) saldrán de "${this.corrida?.nombre}" y pasarán a "Sin agrupar". `
+          + 'Sus planillas y sus conceptos no se tocan: solo dejan de estar agrupados.',
+        aceptarTexto: `Sí, sacar a ${cuantos}`,
+        variante: 'default',
+      })
+      .then((aceptado) => {
+        if (!aceptado) return;
+        this.sacandoMarcados = true;
+        this.corridaService.sacar(this.marcados.map((p) => String(p.id))).subscribe({
+          next: (res) => {
+            this.sacandoMarcados = false;
+            this.toastService.success('Listo', `${res.data?.sacadas ?? cuantos} trabajador(es) pasaron a "Sin agrupar".`);
+            this.soltarMarcados();
+            this.cargar();
+          },
+          error: (err) => {
+            this.sacandoMarcados = false;
+            this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo sacar de la planilla.'));
+          },
+        });
+      });
   }
 
   abrirConcepto(): void {

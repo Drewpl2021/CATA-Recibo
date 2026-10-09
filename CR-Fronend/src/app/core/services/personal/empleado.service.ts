@@ -80,10 +80,12 @@ export class EmpleadoService extends EntityDataService<Empleado> {
    * Lleva el mismo buscador que la tabla: lo que se ve es lo que baja. Vuelve
    * como blob porque es un archivo, no el { success, data } del resto.
    */
-  exportar(filtros: Record<string, string | number | undefined> = {}): Observable<Blob> {
-    return this.http.get(`${environment.apiUrl}/${END_POINTS_ACCIONES.exportarEmpleados}`, {
-      params: this.construirParams(filtros),
-      responseType: 'blob',
-    });
+  exportar(filtros: Record<string, string | number | undefined> = {}, ids?: string[]): Observable<Blob> {
+    const url = `${environment.apiUrl}/${END_POINTS_ACCIONES.exportarEmpleados}`;
+    // Los marcados van en el cuerpo: con cientos no caben en la dirección.
+    if (ids?.length) {
+      return this.http.post(url, { ids }, { responseType: 'blob' });
+    }
+    return this.http.get(url, { params: this.construirParams(filtros), responseType: 'blob' });
   }
 }

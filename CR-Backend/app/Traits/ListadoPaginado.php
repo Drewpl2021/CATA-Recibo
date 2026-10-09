@@ -37,6 +37,12 @@ trait ListadoPaginado
     private const MAXIMO_POR_PAGINA = 200;
 
     /**
+     * Techo de «Marcar los N de todas las páginas» (?todos=1). Más que eso
+     * no se marca a mano: se acota con el buscador o los filtros.
+     */
+    private const MAXIMO_PARA_MARCAR = 3000;
+
+    /**
      * @param  Builder        $query    consulta ya filtrada por el controlador
      * @param  string[]       $buscarEn columnas sobre las que actúa ?search
      * @param  callable|null  $resumen  cifras del conjunto COMPLETO (no de la
@@ -57,6 +63,27 @@ trait ListadoPaginado
         // Se calcula ANTES de paginar y sobre una copia, porque paginate()
         // ejecuta la consulta y le añade su propio limit.
         $extras = $resumen ? $resumen(clone $query) : [];
+
+        // ?todos=1: todas las filas del buscador y los filtros, sin paginar,
+        // para «Marcar los N de todas las páginas». Mismo formato que una
+        // página, para que la pantalla no tenga que tratarla distinto.
+        if ($request->boolean('todos')) {
+            $filas = (clone $query)->limit(self::MAXIMO_PARA_MARCAR + 1)->get();
+            if ($filas->count() > self::MAXIMO_PARA_MARCAR) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Son más de ' . number_format(self::MAXIMO_PARA_MARCAR, 0, ',', ' ')
+                        . ': acota la lista con el buscador o los filtros y vuelve a marcarlos.',
+                ], 422);
+            }
+
+            return response()->json(['success' => true, 'data' => array_merge([
+                'content'       => $filas,
+                'totalElements' => $filas->count(),
+                'currentPage'   => 0,
+                'totalPages'    => 1,
+            ], $extras)]);
+        }
 
         // Sin ?page el contrato es el de siempre: un arreglo pelado.
         if (!$request->filled('page') && !$request->filled('size')) {
@@ -129,6 +156,29 @@ trait ListadoPaginado
         $filas = $ids->isEmpty() ? $modelo->newCollection() : (clone $query)->whereIn($llave, $ids)->get();
 
         return new LengthAwarePaginator($filas, $total, $porPagina, $pagina + 1);
+    }
+
+    /**
+     * Si la pantalla manda los marcados (ids[], en el cuerpo de un POST),
+     * la consulta se queda solo con esos. Sin ids no hace nada: el archivo
+     * sale con el buscador y los filtros, como siempre.
+     *
+     * Van en el cuerpo y no en la dirección porque con cientos de marcados
+     * la dirección pasaría el largo que acepta el servidor web.
+     *
+     * @param  string  $columna  la llave, con su tabla («empleados.id»)
+     */
+    protected function aplicarMarcados(Request $request, Builder $query, string $columna): void
+    {
+        if (! $request->has('ids')) {
+            return;
+        }
+        $request->validate([
+            'ids'   => 'array|min:1|max:5000',
+            'ids.*' => 'uuid',
+        ], ['ids.min' => 'No hay nada marcado.']);
+
+        $query->whereIn($columna, $request->input('ids'));
     }
 
     protected function conteoPorEstado(Builder $query, string $columna, array $valores): array

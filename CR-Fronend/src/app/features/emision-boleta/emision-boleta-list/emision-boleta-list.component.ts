@@ -1,4 +1,4 @@
-import { inject, Component, OnInit } from '@angular/core';
+import { inject, Component, OnInit, ViewChild } from '@angular/core';
 import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
@@ -19,6 +19,7 @@ import { AlCuerpoDirective } from '../../../shared/directives/al-cuerpo.directiv
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { RouterLink } from '@angular/router';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { BarraSeleccionComponent, resumirMarcados } from '../../../shared/components/barra-seleccion/barra-seleccion.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
@@ -62,7 +63,7 @@ export interface FormularioBoleta {
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, SubirFirmadasComponent, RouterLink],
+  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, SubirFirmadasComponent, RouterLink, BarraSeleccionComponent],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })
@@ -241,6 +242,99 @@ export class EmisionBoletaListComponent implements OnInit {
   abrirSubirFirmadas(): void {
     this.modalFirma = false;
     this.modalSubirFirmadas = true;
+  }
+
+  // ── Los marcados (la barra de abajo) ──
+
+  @ViewChild('tablaEmision') tablaEmision?: { limpiarSeleccion: () => void; marcarFilas: (filas: Empleado[]) => void };
+  marcados: Empleado[] = [];
+  marcandoTodos = false;
+  emitiendoMarcados = false;
+  bajandoMarcados = false;
+
+  get resumenMarcados(): string {
+    return resumirMarcados(this.marcados.map((e) => `${e.nombre} ${e.apellido}`.trim()));
+  }
+
+  soltarMarcados(): void {
+    this.marcados = [];
+    this.tablaEmision?.limpiarSeleccion();
+  }
+
+  /** «Marcar los N de todas las páginas», con el mes, el buscador y los filtros de ahora. */
+  marcarTodos(): void {
+    this.marcandoTodos = true;
+    this.empleadoService
+      .getTodos({ search: this.busqueda || undefined, mes: this.mesGlobal, anio: this.anioGlobal, ...this.filtros })
+      .subscribe({
+        next: (res) => {
+          this.marcandoTodos = false;
+          if (res.success) this.tablaEmision?.marcarFilas(res.data.content);
+        },
+        error: (err) => {
+          this.marcandoTodos = false;
+          this.toastService.error('No se marcaron', mensajeErrorApi(err, 'No se pudo traer la lista completa.'));
+        },
+      });
+  }
+
+  /** Emite las boletas del mes que les falten a los marcados (las que ya tienen no se tocan). */
+  emitirMarcados(): void {
+    if (!this.marcados.length) return;
+    const cuantos = this.marcados.length;
+    const periodo = `${this.nombreMes(Number(this.mesGlobal))} ${this.anioGlobal}`;
+    this.confirmService
+      .confirmar({
+        titulo: 'Emitir las boletas de los marcados',
+        mensaje: `Se emitirá la boleta de ${periodo} de los ${cuantos} marcado(s) que tengan planilla ese mes. A quien ya la tenga no se le vuelve a emitir.`,
+        aceptarTexto: `Sí, emitir`,
+        variante: 'default',
+      })
+      .then((aceptado) => {
+        if (!aceptado) return;
+        this.emitiendoMarcados = true;
+        const ids = this.marcados.map((e) => String(e.id));
+        this.progreso.seguir('Emitiendo boletas', this.boletaService.generarMasivo(this.mesGlobal, this.anioGlobal, null, ids)).subscribe({
+          next: (res) => {
+            this.emitiendoMarcados = false;
+            this.toastService.resultadoMasivo({
+              hechas: res.generadas ?? 0,
+              omitidas: res.omitidas ?? 0,
+              exito: 'Boletas emitidas',
+              nada: 'No se emitió ninguna boleta',
+              cosas: 'boleta(s)',
+              motivo: 'no tienen planilla de ese mes, o ya tenían su boleta',
+            });
+            this.soltarMarcados();
+            this.cargarEstadoBoletas();
+            this.cargarResumenFirma();
+          },
+          error: (err) => {
+            this.emitiendoMarcados = false;
+            this.toastService.error('No se emitieron', mensajeErrorApi(err, 'Hubo un problema al emitir las boletas.'));
+          },
+        });
+      });
+  }
+
+  /** Las boletas ya emitidas de los marcados, en un .zip (lo baja el navegador). */
+  bajarMarcadosEnZip(): void {
+    if (!this.marcados.length) return;
+    this.bajandoMarcados = true;
+    const periodo = `${this.nombreMes(this.mesGlobal * 1)} ${this.anioGlobal}`;
+    this.boletaService
+      .bajarEmitidasEnZip({ mes: this.mesGlobal, anio: this.anioGlobal }, this.marcados.map((e) => String(e.id)))
+      .subscribe({
+        next: (cantidad) => {
+          this.bajandoMarcados = false;
+          this.toastService.success(`Bajando ${cantidad} ${cantidad === 1 ? 'boleta' : 'boletas'}`,
+            `Las emitidas de ${periodo} de los marcados, en un .zip. Mira la barra de descargas del navegador.`);
+        },
+        error: (err) => {
+          this.bajandoMarcados = false;
+          this.toastService.error('No se descargó', mensajeErrorApi(err, 'No se pudieron juntar las boletas.'));
+        },
+      });
   }
 
   emitirDesdeFirma(): void {
@@ -722,6 +816,9 @@ export class EmisionBoletaListComponent implements OnInit {
   }
 
   onGlobalPeriodChange(): void {
+    // Lo marcado era de otro mes: emitir o bajar «los marcados» ya no sería
+    // lo que se eligió.
+    this.soltarMarcados();
     // La planilla elegida era del mes anterior: en este no tiene a nadie,
     // y dejarla puesta enseñaba una tabla vacía sin explicación.
     if (this.filtros['corrida_id']) {

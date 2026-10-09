@@ -5011,7 +5011,8 @@ textarea.form-control {
    Aparece al marcar filas con la casilla y flota pegada abajo mientras se
    baja por la lista. Va oscura y aparte a propósito: arriba, con los mismos
    botones de la cabecera ("Importar", "Descargar"), se confundía con ellos
-   y no se veía. La usa Empleados; sirve para cualquier tabla con casillas. */
+   y no se veía. Es el componente app-barra-seleccion: la usan Empleados,
+   Planillas y Emisión de boletas. */
 .barra-seleccion {
   position: sticky;
   bottom: 18px;
@@ -5122,6 +5123,22 @@ textarea.form-control {
   color: var(--marca-text);
 }
 
+/* «Marcar los N de todas las páginas»: un enlace, no un botón más. */
+.barra-seleccion__todos {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
 .barra-seleccion button:disabled {
   opacity: 0.55;
   cursor: wait;
@@ -5156,10 +5173,11 @@ textarea.form-control {
 
   .barra-seleccion__acciones {
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .barra-seleccion__boton {
-    flex: 1;
+    flex: 1 1 40%;
     justify-content: center;
   }
 }

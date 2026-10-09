@@ -435,6 +435,18 @@ class EmpleadoController extends Controller
         $this->aplicarBusqueda($request, $empleados, ['nombre', 'apellido', 'dni', 'cargo.nombre', 'area.nombre', 'usuario.email']);
         $this->aplicarFiltrosDePersonal($request, $empleados);
 
+        // Solo los marcados: llegan en el cuerpo (ids[]) al pedir el enlace,
+        // y por la referencia que guardó el enlace al bajar el archivo.
+        if ($request->filled('marcados')) {
+            $ids = \Illuminate\Support\Facades\Cache::get('zip-marcados:' . $request->query('marcados'));
+            if (! is_array($ids)) {
+                return response()->json(['success' => false, 'message' => 'Este enlace venció: vuelve a pedir la descarga desde el sistema.'], 410);
+            }
+            $empleados->whereIn('empleados.id', $ids);
+        } else {
+            $this->aplicarMarcados($request, $empleados, 'empleados.id');
+        }
+
         // «Para firmar»: solo las que esperan la firma digital del colegio,
         // así no se vuelve a firmar lo que ya está listo.
         $paraFirmar = $request->boolean('para_firmar');
@@ -479,11 +491,20 @@ class EmpleadoController extends Controller
             return $elegidas;
         }
 
-        $parametros = collect($request->query())
+        // De la dirección (GET) o del cuerpo (POST, con los marcados).
+        $parametros = collect($request->all())
             ->only(['mes', 'anio', 'para_firmar', 'search', 'planilla', 'boleta', 'corrida_id', 'sede_id', 'area_id', 'cargo_id',
                 'tipo_contrato_id', 'sistema_pensiones', 'forma_pago', 'sin_sueldo', 'contrato_vencido', 'estado', 'ingreso_desde', 'ingreso_hasta'])
             ->filter(fn ($v) => $v !== null && $v !== '')
             ->all();
+
+        // Los marcados no caben en la dirección: se guardan unos minutos en el
+        // servidor y el enlace lleva solo su referencia (firmada con el resto).
+        if ($request->has('ids')) {
+            $referencia = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Cache::put('zip-marcados:' . $referencia, array_values($request->input('ids')), now()->addMinutes(15));
+            $parametros['marcados'] = $referencia;
+        }
 
         $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
             'boletas.zip',
@@ -541,6 +562,8 @@ class EmpleadoController extends Controller
         // Los mismos filtros de la pantalla: si arriba se filtró por sede o
         // por tipo de contrato, el archivo sale con esa misma gente.
         $this->aplicarFiltrosDePersonal($request, $query);
+        // Y si se exportan los marcados, solo ellos.
+        $this->aplicarMarcados($request, $query, 'empleados.id');
 
         $empleados = $query->get();
 

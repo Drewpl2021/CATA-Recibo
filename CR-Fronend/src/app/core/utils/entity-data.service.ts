@@ -47,6 +47,20 @@ export abstract class EntityDataService<T> {
     return this.http.get<ApiResponse<Pagina<T>>>(this.baseUrl, { params: this.construirParams(conDefectos) });
   }
 
+  /**
+   * GET /recurso?todos=1 — todas las filas que dan el buscador y los filtros,
+   * sin paginar (con un techo en el servidor). Para «Marcar los N de todas
+   * las páginas»: mismo formato que una página.
+   */
+  getTodos(
+    parametros: Record<string, string | number | boolean | undefined | null> = {}
+  ): Observable<ApiResponse<Pagina<T>>> {
+    const sinPagina: Record<string, string | number | boolean | undefined | null> = { ...parametros, todos: 1 };
+    delete sinPagina['page'];
+    delete sinPagina['size'];
+    return this.http.get<ApiResponse<Pagina<T>>>(this.baseUrl, { params: this.construirParams(sinPagina) });
+  }
+
   /** GET /recurso/{id} */
   getById(id: string | number): Observable<ApiResponse<T>> {
     return this.http.get<ApiResponse<T>>(`${this.baseUrl}/${id}`);

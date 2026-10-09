@@ -47,11 +47,13 @@ export class BoletaService {
    * pedazo. Un enlace normal lo maneja la barra de descargas, como cualquier
    * archivo. Devuelve cuántas boletas trae.
    */
-  bajarEmitidasEnZip(filtros: Record<string, string | number | boolean | undefined>): Observable<number> {
-    return this.http
-      .get<ApiResponse<{ url: string; cantidad: number }>>(`${this.apiUrl}/${END_POINTS_ACCIONES.boletasEnZip}/link`, {
-        params: this.soloConValor(filtros),
-      })
+  bajarEmitidasEnZip(filtros: Record<string, string | number | boolean | undefined>, ids?: string[]): Observable<number> {
+    const url = `${this.apiUrl}/${END_POINTS_ACCIONES.boletasEnZip}/link`;
+    // Con marcados, por POST: van en el cuerpo y el enlace lleva solo una referencia.
+    const pedido = ids?.length
+      ? this.http.post<ApiResponse<{ url: string; cantidad: number }>>(url, { ...this.soloConValor(filtros), ids })
+      : this.http.get<ApiResponse<{ url: string; cantidad: number }>>(url, { params: this.soloConValor(filtros) });
+    return pedido
       .pipe(
         map((res) => {
           // El servidor lo firma relativo (/api/...): se arma con la misma
@@ -149,10 +151,10 @@ export class BoletaService {
    * sin él, las del mes entero. Antes no había forma de decir "de esta
    * planilla", y desde la Planilla TIC se emitían las de todo el colegio.
    */
-  generarMasivo(mes: number, anio: number, corridaId?: string | null): Observable<GeneracionMasivaBoletas> {
+  generarMasivo(mes: number, anio: number, corridaId?: string | null, empleadoIds?: string[]): Observable<GeneracionMasivaBoletas> {
     return this.http.post<GeneracionMasivaBoletas>(
       `${this.apiUrl}/${END_POINTS_ACCIONES.boletasMasivo}`,
-      corridaId ? { corrida_id: corridaId } : { mes, anio }
+      corridaId ? { corrida_id: corridaId } : { mes, anio, ...(empleadoIds?.length ? { empleado_ids: empleadoIds } : {}) }
     );
   }
 }

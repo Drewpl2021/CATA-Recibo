@@ -258,6 +258,9 @@ class BoletaController extends Controller
             'corrida_id' => 'nullable|uuid|exists:planilla_corridas,id',
             'mes'        => 'required_without:corrida_id|integer|min:1|max:12',
             'anio'       => 'required_without:corrida_id|integer|min:2000',
+            // Los marcados en Emisión de boletas: solo a ellos.
+            'empleado_ids'   => 'nullable|array|min:1|max:5000',
+            'empleado_ids.*' => 'uuid',
         ]);
 
         $corrida = $request->filled('corrida_id') ? PlanillaCorrida::findOrFail($request->corrida_id) : null;
@@ -280,6 +283,7 @@ class BoletaController extends Controller
         // planilla de ese mes, es que entonces trabajaban.
         $planillas = ($corrida ? $corrida->planillas() : Planilla::where('mes', $mes)->where('anio', $anio))
             ->when(! $deRegistro, fn ($q) => $q->whereHas('empleado', fn ($e) => $e->where('estado', 'activo')))
+            ->when($request->filled('empleado_ids'), fn ($q) => $q->whereIn('empleado_id', $request->input('empleado_ids')))
             ->with('empleado.area', 'empleado.cargo')
             ->get();
 

@@ -86,7 +86,10 @@
 </div>
 
 <app-data-table
+  #tablaEmision
   [busquedaInicial]="busqueda"
+  [seleccionable]="true"
+  (cambioSeleccion)="marcados = $event"
   entidad="este trabajador"
   [columnas]="columnas"
   [datos]="empleados"
@@ -109,6 +112,22 @@
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
     (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogos()"></app-filtros>
 </app-data-table>
+
+<!-- Lo que se hace con los marcados, abajo y flotando (como en Empleados). -->
+<app-barra-seleccion [cantidad]="marcados.length" singular="trabajador marcado" plural="trabajadores marcados"
+  [resumen]="resumenMarcados" [total]="totalEmpleados" [ocupado]="emitiendoMarcados || bajandoMarcados" [marcandoTodos]="marcandoTodos"
+  (marcarTodos)="marcarTodos()" (soltar)="soltarMarcados()">
+  <button type="button" class="barra-seleccion__boton" (click)="emitirMarcados()" [disabled]="emitiendoMarcados || bajandoMarcados"
+    [appPista]="'Emite la boleta de ' + nombreMes(mesGlobal * 1) + ' de los ' + marcados.length + ' marcado(s) que tengan planilla. A quien ya la tenga no se le vuelve a emitir.'">
+    <app-icon icono="receipt" [tamano]="16"></app-icon>
+    {{ emitiendoMarcados ? 'Emitiendo…' : 'Emitir' }}
+  </button>
+  <button type="button" class="barra-seleccion__boton" (click)="bajarMarcadosEnZip()" [disabled]="emitiendoMarcados || bajandoMarcados"
+    [appPista]="'Baja en un .zip las boletas ya emitidas de ' + nombreMes(mesGlobal * 1) + ' de los marcados (firmadas o no).'">
+    <app-icon icono="download" [tamano]="16"></app-icon>
+    {{ bajandoMarcados ? 'Juntando…' : 'Descargar .zip' }}
+  </button>
+</app-barra-seleccion>
 
 <!-- ============================================================ -->
 <!--  MODAL: FORMULARIO DE EMISIÓN DE BOLETA                      -->

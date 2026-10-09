@@ -113,7 +113,7 @@
   #tablaPlanillas
   entidad="la planilla"
   [columnas]="columnas"
-  [seleccionable]="!!corridaId && !estaCerrada"
+  [seleccionable]="!!corridaId"
   (cambioSeleccion)="alMarcar($event)"
   [datos]="planillas"
   [cargando]="cargando"
@@ -136,6 +136,27 @@
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
     (cambio)="alFiltrar()"></app-filtros>
 </app-data-table>
+
+<!-- Lo que se hace con los marcados, abajo y flotando (como en Empleados). -->
+<app-barra-seleccion [cantidad]="marcados.length" singular="trabajador marcado" plural="trabajadores marcados"
+  [resumen]="resumenMarcados" [total]="total" [ocupado]="exportandoMarcados || sacandoMarcados" [marcandoTodos]="marcandoTodos"
+  (marcarTodos)="marcarTodos()" (soltar)="soltarMarcados()">
+  <button type="button" class="barra-seleccion__boton" (click)="abrirConcepto()" [disabled]="estaCerrada || exportandoMarcados || sacandoMarcados"
+    [appPista]="estaCerrada ? 'La planilla está cerrada: ábrela para agregar conceptos.' : 'Agrega un concepto (bono, descuento…) a los ' + marcados.length + ' marcado(s), en su planilla de este mes.'">
+    <app-icon icono="plus" [tamano]="16"></app-icon>
+    Aplicar concepto
+  </button>
+  <button type="button" class="barra-seleccion__boton" (click)="exportarMarcados()" [disabled]="exportandoMarcados || sacandoMarcados"
+    [appPista]="'Baja en Excel el reporte de la planilla solo con los ' + marcados.length + ' marcado(s), con todos sus conceptos.'">
+    <app-icon icono="excel" [tamano]="16"></app-icon>
+    {{ exportandoMarcados ? 'Exportando…' : 'Exportar' }}
+  </button>
+  <button type="button" class="barra-seleccion__boton" (click)="sacarMarcados()" [disabled]="estaCerrada || exportandoMarcados || sacandoMarcados"
+    [appPista]="estaCerrada ? 'La planilla está cerrada: ábrela para sacar a alguien.' : 'Saca a los marcados de esta planilla y pasan a «Sin agrupar». No borra su pago.'">
+    <app-icon icono="remove_circle" [tamano]="16"></app-icon>
+    {{ sacandoMarcados ? 'Sacando…' : 'Sacar de la planilla' }}
+  </button>
+</app-barra-seleccion>
 
 <!-- ── Generar las planillas del mes ── -->
 <app-form-modal
