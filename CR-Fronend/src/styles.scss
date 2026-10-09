@@ -348,9 +348,9 @@ body {
   color: var(--accent);
 }
 
-/* La marca de la barra lateral: el escudo y, a su lado, el logo CATA en
-   blanco (la imagen es azul; el filtro la vuelve blanca sobre el azul de la
-   barra) con el nombre completo del colegio en dorado. */
+/* La marca de la barra lateral: el logo CATA en blanco (la imagen es azul;
+   el filtro la vuelve blanca sobre el azul de la barra) con «Túpac Amaru»
+   en dorado debajo. Sin el escudo al lado: juntos se veían recargados. */
 .marca-lateral {
   display: flex;
   align-items: center;
@@ -370,15 +370,6 @@ body {
   outline-offset: 4px;
 }
 
-.marca-lateral__escudo {
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  object-fit: contain;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-}
-
 .marca-lateral__textos {
   display: flex;
   flex-direction: column;
@@ -388,14 +379,14 @@ body {
 
 .marca-lateral__cata {
   display: block;
-  height: 24px;
+  height: 30px;
   width: auto;
   align-self: flex-start;
   filter: brightness(0) invert(1);
 }
 
 .marca-lateral__nombre {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   line-height: 1.2;
   white-space: nowrap;
