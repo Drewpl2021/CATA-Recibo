@@ -130,7 +130,7 @@ class UserController extends Controller
 
         // Con correo: el enlace, y la clave que tenía deja de servir.
         if ($user->email && filter_var($user->email, FILTER_VALIDATE_EMAIL) && $user->estado_registro === 'activo') {
-            \App\Support\AccesoPorCorreo::enviar($user);
+            \App\Support\AccesoPorCorreo::enviar($user, true, true);
 
             return response()->json([
                 'success' => true,

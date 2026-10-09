@@ -15,6 +15,8 @@ class BoletaGenerada extends Mailable
     public string $mesNombre;
     public int $anio;
     public string $numeroBoleta;
+    /** Adonde lleva el botón «Ver mi boleta». */
+    public string $enlace;
 
     public function __construct(string $nombreEmpleado, string $mesNombre, int $anio, string $numeroBoleta)
     {
@@ -22,6 +24,7 @@ class BoletaGenerada extends Mailable
         $this->mesNombre      = $mesNombre;
         $this->anio           = $anio;
         $this->numeroBoleta   = $numeroBoleta;
+        $this->enlace         = rtrim((string) config('app.frontend_url'), '/') . '/inicio/mis-boletas';
     }
 
     public function envelope(): Envelope

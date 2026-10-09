@@ -37,8 +37,12 @@ final class AccesoPorCorreo
      *
      * @return string|null por qué no se envió (null si se envió)
      */
-    public static function enviar(User $usuario, bool $anularClaveActual = true): ?string
+    public static function enviar(User $usuario, bool $anularClaveActual = true, ?bool $restablecer = null): ?string
     {
+        // Si ya había puesto su propia contraseña, esto es un restablecimiento
+        // y el correo lo dice así; si no, es su bienvenida.
+        $restablecer ??= ! $usuario->debe_cambiar_password;
+
         if (! $usuario->email || ! filter_var($usuario->email, FILTER_VALIDATE_EMAIL)) {
             return 'no tiene un correo válido';
         }
@@ -56,7 +60,7 @@ final class AccesoPorCorreo
         }
 
         $token = Password::broker(self::BROKER)->createToken($usuario);
-        Mail::to($usuario->email)->queue(new AccesoAlSistema($usuario->name, $usuario->email, $token));
+        Mail::to($usuario->email)->queue(new AccesoAlSistema($usuario->name, $usuario->email, $token, $restablecer));
 
         $usuario->forceFill(['acceso_enviado_en' => now()])->save();
 

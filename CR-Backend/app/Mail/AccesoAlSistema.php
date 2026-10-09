@@ -22,11 +22,14 @@ class AccesoAlSistema extends Mailable implements ShouldQueue
     public string $email;
     public string $enlace;
     public int $horasValidez;
+    /** Si RR.HH. le restableció el acceso (ya tenía contraseña) y no es su primera vez. */
+    public bool $restablecer;
 
-    public function __construct(string $nombre, string $email, string $token)
+    public function __construct(string $nombre, string $email, string $token, bool $restablecer = false)
     {
         $this->nombre = $nombre;
         $this->email = $email;
+        $this->restablecer = $restablecer;
 
         $base = rtrim(config('app.frontend_url'), '/');
         $this->enlace = $base . '/crear-contrasena?token=' . $token . '&email=' . urlencode($email);
@@ -36,7 +39,9 @@ class AccesoAlSistema extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Tu acceso a CATA-Recibo — Colegio Adventista Túpac Amaru');
+        return new Envelope(subject: $this->restablecer
+            ? 'Crea una contraseña nueva para CATA-Recibo'
+            : 'Tu acceso a CATA-Recibo — Colegio Adventista Túpac Amaru');
     }
 
     public function content(): Content

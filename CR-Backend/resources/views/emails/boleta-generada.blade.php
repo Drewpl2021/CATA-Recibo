@@ -1,40 +1,32 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: Arial, sans-serif; color: #222; font-size: 14px; }
-        .contenedor { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .encabezado { background: #1565C0; color: white; padding: 20px; text-align: center; }
-        .encabezado h1 { font-size: 18px; margin: 0; }
-        .encabezado p { font-size: 12px; margin: 5px 0 0; }
-        .cuerpo { padding: 20px; background: #f9f9f9; border: 1px solid #ddd; }
-        .cuerpo p { margin: 8px 0; }
-        .boleta-info { background: white; border: 1px solid #1565C0; padding: 15px; margin: 15px 0; }
-        .boleta-info p { margin: 5px 0; }
-        .pie { text-align: center; font-size: 11px; color: #888; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="contenedor">
-        <div class="encabezado">
-            <h1>Asociación Educativa Colegio Adventista Túpac Amaru</h1>
-            <p>Sistema de Gestión de Planillas</p>
-        </div>
-        <div class="cuerpo">
-            <p>Estimado/a <strong>{{ $nombreEmpleado }}</strong>,</p>
-            <p>Le informamos que su boleta de pago del siguiente periodo ha sido generada:</p>
-            <div class="boleta-info">
-                <p><strong>Periodo:</strong> {{ $mesNombre }} {{ $anio }}</p>
-                <p><strong>N° Boleta:</strong> {{ $numeroBoleta }}</p>
-            </div>
-            <p>Ingrese al sistema y firme su boleta con su contraseña; después podrá verla y descargarla.</p>
-            <p>Si tiene alguna consulta, comuníquese con el área de Recursos Humanos.</p>
-        </div>
-        <div class="pie">
-            <p>Este correo es generado automáticamente. Por favor no responda a este mensaje.</p>
-            <p>© {{ date('Y') }} Colegio Adventista Túpac Amaru</p>
-        </div>
-    </div>
-</body>
-</html>
+@extends('emails.plantilla')
+
+@section('preheader', 'Tu boleta de pago de ' . ($mesNombre) . ' ' . ($anio) . ' ya está en CATA-Recibo, firmada por el colegio.')
+@section('titulo', 'Tu boleta de ' . ($mesNombre) . ' ya está lista')
+
+@section('contenido')
+    <p style="margin:0 0 12px;">Hola, <strong>{{ $nombreEmpleado }}</strong>:</p>
+    <p style="margin:0 0 16px;">
+        Tu boleta de pago ya está en tu cuenta de CATA-Recibo, con la firma digital del colegio.
+    </p>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+        style="background:#F4F7FC; border:1px solid #DCE3EE; border-radius:10px; margin:0 0 6px;">
+        <tr>
+            <td style="padding:14px 18px; font-family:'Segoe UI', Arial, Helvetica, sans-serif;">
+                <span style="display:block; font-size:12px; color:#6B7690;">Periodo</span>
+                <span style="display:block; font-size:17px; font-weight:700; color:#1B4282;">{{ $mesNombre }} {{ $anio }}</span>
+            </td>
+            <td style="padding:14px 18px; font-family:'Segoe UI', Arial, Helvetica, sans-serif; text-align:right;">
+                <span style="display:block; font-size:12px; color:#6B7690;">N.° de boleta</span>
+                <span style="display:block; font-size:17px; font-weight:700; color:#1B4282;">{{ $numeroBoleta }}</span>
+            </td>
+        </tr>
+    </table>
+
+    @include('emails._boton', ['texto' => 'Ver mi boleta'])
+
+    <p style="margin:0 0 12px;">
+        Revísala y, si todo está bien, <strong>da tu conformidad</strong> con tu contraseña. Si algo no cuadra,
+        avísale a Recursos Humanos dentro de los 30 días.
+    </p>
+@endsection
