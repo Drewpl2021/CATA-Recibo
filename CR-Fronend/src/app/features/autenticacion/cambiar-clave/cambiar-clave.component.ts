@@ -81,7 +81,7 @@ export class CambiarClaveComponent implements OnInit {
         // cambio de contraseña igual. Se dice por qué en vez de dejar una
         // pantalla en blanco.
         this.cargandoTerminos = false;
-        this.errorMsg = 'No pudimos cargar los términos de uso. Recarga la página o contacta al administrador del sistema.';
+        this.errorMsg = 'No pudimos cargar el convenio de entrega digital. Recarga la página o contacta al administrador del sistema.';
       },
     });
   }

@@ -16,64 +16,78 @@ namespace App\Support;
  */
 class TerminosDeUso
 {
-    /** Fecha de la versión, que es como se nombran los documentos del colegio. */
-    public const VERSION = '2026.1';
+    /**
+     * Fecha de la versión, que es como se nombran los documentos del colegio.
+     *
+     * 2026.2: pasa a ser el Convenio de entrega digital de documentos
+     * laborales (docs/4. Convenio…docx), en lenguaje sencillo: mismas
+     * cláusulas y mismos plazos, para que lo que se acepta aquí y lo que se
+     * firma en papel no se contradigan. Agrega la firma digital del colegio,
+     * la conformidad con contraseña y la vigencia.
+     */
+    public const VERSION = '2026.2';
 
-    public const TITULO = 'Entrega digital de boletas de pago';
+    public const TITULO = 'Convenio de entrega digital de documentos laborales';
 
-    public const RESUMEN = 'Antes esto se firmaba en papel. Léelo y acéptalo para '
-        . 'empezar a recibir tus boletas en tu cuenta y en tu correo.';
+    public const RESUMEN = 'Es el convenio que antes se firmaba en papel: léelo y acéptalo '
+        . 'para recibir tus boletas y documentos laborales en tu cuenta y en tu correo.';
 
     /**
-     * El documento, por secciones.
+     * El convenio, por cláusulas.
      *
      * Escrito para un docente, no para un abogado: frases cortas, y lo que
-     * le toca hacer a cada parte dicho en voz activa.
+     * le toca hacer a cada parte dicho en voz activa. Dice lo mismo que el
+     * Word del convenio: si se cambia uno, se cambia el otro.
      */
     public const SECCIONES = [
         [
             'titulo' => '1. De qué se trata',
-            'texto'  => 'La Asociación Educativa Colegio Adventista "Túpac Amaru" te '
-                . 'entregará tus boletas de pago en formato digital. Las vas a encontrar '
-                . 'en tu cuenta de este sistema y también te llegará un aviso a tu correo '
-                . 'cada vez que se emita una nueva. Ya no se imprimen ni se reparten en '
-                . 'mano, salvo que las pidas.',
+            'texto'  => 'La Asociación Educativa Colegio Adventista "Túpac Amaru" (RUC 20156630731), '
+                . 'representada por su Director General, te entregará tus boletas de pago y los demás '
+                . 'documentos laborales en formato digital, en tu cuenta de este sistema (CATA-Recibo), '
+                . 'en lugar de imprimirlos.',
         ],
         [
-            'titulo' => '2. Vale igual que la firma en papel',
-            'texto'  => 'Aceptar aquí tiene el mismo valor que la firma que antes ponías '
-                . 'en la hoja impresa. Queda registrada la fecha, la hora y la cuenta '
-                . 'desde la que aceptaste, conforme a la Ley 27269 de Firmas y '
-                . 'Certificados Digitales.',
+            'titulo' => '2. Por qué es válido',
+            'texto'  => 'La ley permite que el colegio firme tus boletas con firma digital y te las entregue '
+                . 'por medios electrónicos (D.S. 001-98-TR modificado por el D.S. 009-2011-TR, y D. Leg. 1310). '
+                . 'El colegio firma con un certificado digital de una entidad acreditada ante el INDECOPI, '
+                . 'que vale igual que su firma a mano (Ley 27269).',
         ],
         [
-            'titulo' => '3. Revisar tu boleta',
-            'texto'  => 'Cuando te llegue el aviso, entra y revísala. Si algo no cuadra '
-                . '—un descuento que no reconoces, un monto que no es— avísale a Recursos '
-                . 'Humanos dentro de los 30 días siguientes a la emisión. Pasado ese '
-                . 'plazo la boleta se da por conforme, igual que antes con el papel.',
+            'titulo' => '3. Cómo te llega cada boleta',
+            'texto'  => 'El colegio firma tu boleta y recién entonces te llega: la ves en tu cuenta y recibes '
+                . 'un aviso aquí y en tu correo. Al revisarla, das tu conformidad con tu contraseña; queda '
+                . 'registrada la fecha, la hora, desde dónde la diste y el código del documento que recibiste. '
+                . 'Cada boleta lleva un código QR para verificar que es auténtica, y si alguien la alterara, '
+                . 'la firma digital dejaría de valer.',
         ],
         [
-            'titulo' => '4. Tu cuenta es tuya',
-            'texto'  => 'Tu contraseña es personal e intransferible: no la compartas ni '
-                . 'la anotes donde otro pueda verla. Tu boleta lleva tu sueldo y tus '
-                . 'descuentos, y lo que se haga desde tu cuenta se considera hecho por '
-                . 'ti. Si crees que alguien más entró, cámbiala y avisa a Recursos '
-                . 'Humanos el mismo día.',
+            'titulo' => '4. Lo que hace el colegio',
+            'texto'  => 'Pone información veraz en tus documentos, guarda en reserva su firma digital, mantiene '
+                . 'el sistema disponible y tus documentos respaldados, te avisa si cambia la forma de entrar, '
+                . 'se asegura de que solo tú veas lo tuyo y te da una copia impresa cuando la pidas.',
         ],
         [
-            'titulo' => '5. Tus datos',
-            'texto'  => 'El colegio trata tus datos personales solo para la gestión de '
-                . 'planillas, boletas y documentos laborales, conforme a la Ley 29733 de '
-                . 'Protección de Datos Personales. No se ceden a terceros ajenos a esa '
-                . 'finalidad. Puedes pedir acceso, rectificación o actualización de tus '
-                . 'datos escribiendo a Recursos Humanos.',
+            'titulo' => '5. Lo que haces tú',
+            'texto'  => 'Dale a Recursos Humanos tu correo y tu celular, y avísale si cambian. Revisa el sistema cuando te llegue un '
+                . 'aviso. Si algo de tu boleta no cuadra —un descuento que no reconoces, un monto que no es—, '
+                . 'avísale a Recursos Humanos dentro de los 30 días siguientes a que te llegue; pasado ese plazo '
+                . 'se da por conforme. Tu contraseña es personal: no la compartas, cierra tu sesión al terminar '
+                . 'y, si crees que alguien más entró, cámbiala y avisa a Recursos Humanos el mismo día.',
         ],
         [
-            'titulo' => '6. Si prefieres el papel',
-            'texto'  => 'Puedes pedir tu boleta impresa cuando la necesites —para un '
-                . 'trámite bancario, por ejemplo— acercándote a Recursos Humanos. '
-                . 'Aceptar la entrega digital no te quita ese derecho.',
+            'titulo' => '6. Tus datos',
+            'texto'  => 'El colegio usa tus datos personales solo para planillas, boletas y documentos laborales, '
+                . 'conforme a la Ley 29733 de Protección de Datos Personales, y no los cede a terceros salvo '
+                . 'que la ley lo exija. Puedes pedir acceso, corrección o actualización de tus datos a '
+                . 'Recursos Humanos.',
+        ],
+        [
+            'titulo' => '7. Vigencia',
+            'texto'  => 'Este convenio vale desde que lo aceptas y mientras trabajes en el colegio. Aceptarlo aquí '
+                . 'con tu cuenta vale igual que firmarlo en papel: queda registrada la versión, la fecha y la hora. '
+                . 'Si lo prefieres, también puedes firmarlo impreso en Recursos Humanos.',
         ],
     ];
 

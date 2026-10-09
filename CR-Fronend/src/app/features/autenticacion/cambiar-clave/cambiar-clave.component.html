@@ -12,8 +12,8 @@
       <p class="acceso__invitacion">Hola{{ nombre ? ', ' + nombre : '' }}</p>
 
       <p class="acceso__motivo" *ngIf="paso === 'terminos'">
-        Lee y acepta los términos de uso. Tu aceptación queda registrada en
-        tu cuenta, con la fecha.
+        Lee y acepta el convenio de entrega digital. Tu aceptación queda
+        registrada en tu cuenta, con la fecha.
       </p>
 
       <p class="acceso__motivo" *ngIf="paso === 'clave'">
@@ -70,8 +70,8 @@
 
         <ng-container *ngIf="!cargandoTerminos && terminos as doc">
           <p class="terminos__aviso" *ngIf="doc.esVersionNueva">
-            Los términos cambiaron desde la última vez que los aceptaste
-            (firmaste la versión {{ doc.versionFirmada }}). Léelos otra vez.
+            El convenio cambió desde la última vez que lo aceptaste
+            (aceptaste la versión {{ doc.versionFirmada }}). Léelo otra vez.
           </p>
 
           <!-- Se desplaza dentro de su caja: el documento entero empujaría
@@ -91,8 +91,8 @@
           <label class="terminos__acepto">
             <input type="checkbox" [(ngModel)]="aceptaTerminos" [ngModelOptions]="{ standalone: true }" />
             <span>
-              He leído y acepto los términos. Entiendo que esto vale igual que
-              la firma que antes ponía en la hoja impresa.
+              He leído y acepto el convenio. Entiendo que esto vale igual que
+              firmarlo en papel.
             </span>
           </label>
 
