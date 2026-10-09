@@ -26,3 +26,6 @@ archivos-*.tar.gz
 *.xlsx
 *.csv
 !_test_data/**/*.csv
+
+# Archivos temporales de Word mientras un documento está abierto
+~$*
