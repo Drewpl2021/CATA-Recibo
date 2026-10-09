@@ -2,14 +2,11 @@
   <!-- Sidebar -->
   <aside class="sidebar" [class.sidebar-open]="sidebarVisible" [class.sidebar-hidden]="!sidebarVisible">
     <div class="sidebar-header">
-      <!-- La marca CATA (la misma imagen de la marca de agua, en blanco
-           sobre el azul de la barra) con «Túpac Amaru» debajo. -->
+      <!-- La marca CATA, sola y al centro (la misma imagen de la marca de
+           agua, en blanco sobre el azul de la barra). -->
       <a class="marca-lateral" routerLink="/inicio/dashboard"
         appPista="Ir al Panel de Control" pistaLado="abajo" aria-label="CATA, Colegio Adventista Túpac Amaru: ir al Panel de Control">
-        <span class="marca-lateral__textos">
-          <img class="marca-lateral__cata" src="logo-cata.png" alt="CATA" />
-          <span class="marca-lateral__nombre">Túpac Amaru</span>
-        </span>
+        <img class="marca-lateral__cata" src="logo-cata.png" alt="CATA" />
       </a>
     </div>
 

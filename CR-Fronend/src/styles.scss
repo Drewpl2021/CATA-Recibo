@@ -348,13 +348,14 @@ body {
   color: var(--accent);
 }
 
-/* La marca de la barra lateral: el logo CATA en blanco (la imagen es azul;
-   el filtro la vuelve blanca sobre el azul de la barra) con «Túpac Amaru»
-   en dorado debajo. Sin el escudo al lado: juntos se veían recargados. */
+/* La marca de la barra lateral: solo el logo CATA, grande y al centro, en
+   blanco (la imagen es azul; el filtro la vuelve blanca sobre el azul de la
+   barra). */
 .marca-lateral {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  flex: 1;
   min-width: 0;
   text-decoration: none;
   border-radius: var(--radius-md);
@@ -370,27 +371,12 @@ body {
   outline-offset: 4px;
 }
 
-.marca-lateral__textos {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
 .marca-lateral__cata {
   display: block;
-  height: 30px;
+  height: 42px;
   width: auto;
-  align-self: flex-start;
+  max-width: 100%;
   filter: brightness(0) invert(1);
-}
-
-.marca-lateral__nombre {
-  font-size: 12.5px;
-  font-weight: 600;
-  line-height: 1.2;
-  white-space: nowrap;
-  color: var(--accent);
 }
 
 /* Solo en el celular, en la barra de arriba (ver la regla de 560px). */
