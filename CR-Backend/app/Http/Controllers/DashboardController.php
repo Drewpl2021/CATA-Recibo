@@ -105,12 +105,18 @@ class DashboardController extends Controller
             // Lo que RR.HH. tiene pendiente de hacer, no de mirar.
             'pendientes'         => $this->pendientes($mes, $anio, $hoy, $sede, $boletasDelMes),
             'cumpleanos'         => $this->cumpleanosDelMes($mes, $anio, $sede, $hoy),
-            'remuneracionPorArea'=> $this->remuneracionPorArea($mes, $anio),
-            'sistemaPensiones'   => $this->sistemaPensiones(),
-            'tipoContrato'       => $this->tipoContrato(),
-            'tendenciaNomina'    => $this->tendenciaNomina($anio),
+            // Todos respetan la sede. Antes cinco de estos la ignoraban: se
+            // elegía un local y el gráfico seguía enseñando el colegio entero.
+            'remuneracionPorArea'=> $this->remuneracionPorArea($mes, $anio, $sede),
+            'sistemaPensiones'   => $this->sistemaPensiones($sede),
+            'tipoContrato'       => $this->tipoContrato($sede),
+            // El año que se mira y el anterior, para compararlos mes a mes.
+            ...$this->tendenciaNomina($anio, $sede),
             'firmaBoletas'       => $this->firmaBoletas($boletasDelMes),
-            'contratosPorVencer' => $this->contratosPorVencer($hoy),
+            'contratosPorVencer' => $this->contratosPorVencer($hoy, $sede),
+            // Quién entró y quién se fue, mes a mes del año.
+            'movimientoPersonal' => $this->movimientoPersonal($anio, $sede),
+            'edades'             => $this->edades($sede, $hoy),
             // ── Los cuatro que faltaban ──
             // La composición y el top salen de la MISMA lectura: los dos
             // suman las líneas de las planillas del mes, y recorrerlas
@@ -198,6 +204,7 @@ class DashboardController extends Controller
             'Remuneración por área (S/)'        => ['datos' => $conMonto($datos['remuneracionPorArea']), 'grafico' => 'barras'],
             'Los conceptos que más pesan (S/)'  => ['datos' => $conMonto($datos['topConceptos']), 'grafico' => 'barras'],
             "Nómina mes a mes de {$anio} (S/)"  => ['datos' => $conMonto($datos['tendenciaNomina']), 'grafico' => 'linea'],
+            'Nómina mes a mes de ' . ($anio - 1) . ' (S/)' => ['datos' => $conMonto($datos['tendenciaAnterior']), 'grafico' => 'linea'],
         ]);
 
         $this->hojaConGraficos($libro, 'Plantilla', [
@@ -205,7 +212,15 @@ class DashboardController extends Controller
             'Sistema de pensiones'      => ['datos' => $conCuenta($datos['sistemaPensiones']), 'grafico' => 'dona'],
             'Tipo de contrato'          => ['datos' => $conCuenta($datos['tipoContrato']), 'grafico' => 'torta'],
             'Antigüedad en el colegio'  => ['datos' => $conCuenta($datos['antiguedad']), 'grafico' => 'barras'],
+            'Edades del personal'       => ['datos' => $conCuenta($datos['edades']), 'grafico' => 'barras'],
         ]);
+
+        $this->tablaSimple(
+            $libro,
+            'Altas y bajas',
+            ['Mes', 'Entraron', 'Se fueron'],
+            array_map(fn (array $m) => [$m['etiqueta'] . ' ' . $anio, $m['altas'], $m['bajas']], $datos['movimientoPersonal'])
+        );
 
         $this->tablaSimple(
             $libro,
@@ -518,15 +533,30 @@ class DashboardController extends Controller
     {
         $activos = $this->empleadosActivos($sede)->count();
 
+        // Las altas del mes que se MIRA, no las del mes de hoy: si se elegía
+        // agosto, la tarjeta seguía contando las de octubre.
         $altasDelMes = $this->empleadosActivos($sede)
-            ->whereYear('fecha_ingreso', $hoy->year)
-            ->whereMonth('fecha_ingreso', $hoy->month)
+            ->whereYear('fecha_ingreso', $anio)
+            ->whereMonth('fecha_ingreso', $mes)
             ->count();
 
         $planillasDelMes = $this->planillasDelMes($mes, $anio, $sede);
 
         $nomina = Planilla::sumaDeNetos($planillasDelMes);
         $cuantasPlanillas = (clone $planillasDelMes)->count();
+
+        // El mes de antes, para el «subió / bajó». Con su propia consulta y no
+        // sacado de la tendencia: en enero, el mes anterior es del otro año.
+        $anterior = Carbon::create($anio, $mes, 1)->subMonth();
+        $nominaAnterior = Planilla::sumaDeNetos($this->planillasDelMes($anterior->month, $anterior->year, $sede));
+
+        // Lo que pone el colegio encima del neto (EsSalud y demás aportes):
+        // con eso, el costo real del mes.
+        $aportes = (float) DB::table('payroll_detalles as pd')
+            ->join('payment_concepts as pc', 'pc.id', '=', 'pd.payment_concept_id')
+            ->whereIn('pd.planilla_id', (clone $planillasDelMes)->select('planilla.id'))
+            ->where('pc.tipo', 'aportacion')
+            ->sum('pd.monto_calculado');
 
         // Boletas emitidas: documentos de tipo boleta atados a una planilla
         // de este mes. Se cuenta contra las planillas, no contra el total de
@@ -542,6 +572,8 @@ class DashboardController extends Controller
             'empleadosActivos' => $activos,
             'altasDelMes'      => $altasDelMes,
             'nominaDelMes'     => round($nomina, 2),
+            'nominaMesAnterior' => round($nominaAnterior, 2),
+            'aportesColegio'   => round($aportes, 2),
             'planillasDelMes'  => $cuantasPlanillas,
             'boletasEmitidas'  => $boletas,
             'contratosPorVencer' => $porVencer,
@@ -554,35 +586,35 @@ class DashboardController extends Controller
      * Sale de las planillas del mes, no del sueldo de la ficha: lo que
      * importa es lo que se pagó de verdad, con sus bonos y descuentos.
      */
-    private function remuneracionPorArea(int $mes, int $anio): array
+    private function remuneracionPorArea(int $mes, int $anio, ?string $sede): array
     {
-        $filas = Planilla::query()
+        $filas = $this->planillasDelMes($mes, $anio, $sede)
             ->join('empleados', 'empleados.id', '=', 'planilla.empleado_id')
             ->leftJoin('areas', 'areas.id', '=', 'empleados.area_id')
-            ->where('planilla.mes', $mes)
-            ->where('planilla.anio', $anio)
             ->groupBy('areas.id', 'areas.nombre')
             ->orderByDesc(DB::raw('SUM(' . Planilla::NETO_EXACTO_SQL . ')'))
             ->get([
-                DB::raw('COALESCE(areas.nombre, "Sin área") as etiqueta'),
+                DB::raw("COALESCE(areas.nombre, 'Sin área') as etiqueta"),
                 DB::raw('SUM(' . Planilla::NETO_EXACTO_SQL . ') as valor'),
+                // Cuántas personas: para el promedio por cabeza de cada área.
+                DB::raw('COUNT(*) as personas'),
             ]);
 
         return $filas->map(fn ($f) => [
             'etiqueta' => $f->etiqueta,
             'valor'    => round((float) $f->valor, 2),
+            'personas' => (int) $f->personas,
         ])->all();
     }
 
     /** Cuántos están en ONP y cuántos en AFP. */
-    private function sistemaPensiones(): array
+    private function sistemaPensiones(?string $sede): array
     {
-        $filas = Empleado::query()
-            ->where('estado', 'activo')
+        $filas = $this->empleadosActivos($sede)
             ->groupBy('sistema_pensiones')
             ->get([
                 // Nulo ya no es "no lo sé": es el que no aporta a ninguna pensión.
-                DB::raw('COALESCE(sistema_pensiones, "No aporta") as etiqueta'),
+                DB::raw("COALESCE(sistema_pensiones, 'No aporta') as etiqueta"),
                 DB::raw('COUNT(*) as valor'),
             ]);
 
@@ -593,11 +625,9 @@ class DashboardController extends Controller
     }
 
     /** Con qué tipo de contrato está cada quien. */
-    private function tipoContrato(): array
+    private function tipoContrato(?string $sede): array
     {
-        $filas = Contrato::query()
-            ->where('contratos.estado', 'vigente')
-            ->where('contratos.estado_registro', 'activo')
+        $filas = $this->contratosVigentes($sede)
             ->join('tipos_contrato', 'tipos_contrato.id', '=', 'contratos.tipo_contrato_id')
             ->groupBy('tipos_contrato.id', 'tipos_contrato.nombre')
             ->get(['tipos_contrato.nombre', DB::raw('COUNT(*) as valor')]);
@@ -614,29 +644,34 @@ class DashboardController extends Controller
      * Devuelve los doce meses aunque no haya planilla: un hueco en el medio
      * de la línea se lee como un error, y un cero se lee como lo que es.
      */
-    private function tendenciaNomina(int $anio): array
+    private function tendenciaNomina(int $anio, ?string $sede): array
     {
-        // El alias "total" es obligatorio: sin él, pluck() no tiene cómo
-        // adivinar qué propiedad leer de la fila. Sin "AS", stripTableForPluck()
-        // -interno de Laravel- parte el SQL crudo por los puntos y se queda con
-        // el ÚLTIMO pedazo; con dos puntos en el COALESCE (planilla.total_exacto,
-        // planilla.total) eso daba la propiedad "total))", que no existe en
-        // ninguna fila — el 500 que tumbaba el Panel de Control.
-        $porMes = Planilla::where('anio', $anio)
-            ->groupBy('mes')
-            ->pluck(DB::raw('SUM(' . Planilla::NETO_EXACTO_SQL . ') as total'), 'mes');
+        // Una sola lectura para los dos años, agrupada por año y mes. El alias
+        // "total" es obligatorio por lo mismo que antes: sin él, Laravel parte
+        // el SQL crudo por los puntos y busca una propiedad que no existe.
+        $filas = Planilla::query()
+            ->whereIn('planilla.anio', [$anio - 1, $anio])
+            ->when($sede, fn ($q) => $q->whereIn('empleado_id', Empleado::where('sede_id', $sede)->select('id')))
+            ->groupBy('planilla.anio', 'planilla.mes')
+            ->get(['planilla.anio', 'planilla.mes', DB::raw('SUM(' . Planilla::NETO_EXACTO_SQL . ') as total')]);
 
         $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
-        $salida = [];
 
-        foreach ($meses as $i => $etiqueta) {
-            $salida[] = [
+        // Los doce meses aunque no haya planilla: un hueco en medio de la
+        // línea se lee como un error, y un cero se lee como lo que es.
+        $delAnio = function (int $cual) use ($filas, $meses) {
+            $porMes = $filas->where('anio', $cual)->pluck('total', 'mes');
+
+            return array_map(fn ($etiqueta, $i) => [
                 'etiqueta' => $etiqueta,
                 'valor'    => round((float) ($porMes[$i + 1] ?? 0), 2),
-            ];
-        }
+            ], $meses, array_keys($meses));
+        };
 
-        return $salida;
+        return [
+            'tendenciaNomina'   => $delAnio($anio),
+            'tendenciaAnterior' => $delAnio($anio - 1),
+        ];
     }
 
     /** En qué va la firma de las boletas de este mes. */
@@ -674,15 +709,15 @@ class DashboardController extends Controller
     }
 
     /** Los contratos que se acaban pronto, con quién y cuándo. */
-    private function contratosPorVencer(Carbon $hoy): array
+    private function contratosPorVencer(Carbon $hoy, ?string $sede): array
     {
-        $contratos = Contrato::with('empleado.cargo')
-            ->where('estado', 'vigente')
-            ->where('estado_registro', 'activo')
+        // Los ocho más cercanos: la lista completa está en Contratos, a un clic.
+        $contratos = $this->contratosVigentes($sede)
+            ->with('empleado.cargo')
             ->whereNotNull('fecha_fin')
             ->whereBetween('fecha_fin', [$hoy->toDateString(), $hoy->copy()->addDays(60)->toDateString()])
             ->orderBy('fecha_fin')
-            ->limit(6)
+            ->limit(8)
             ->get();
 
         return $contratos->map(function (Contrato $c) use ($hoy) {
@@ -716,7 +751,8 @@ class DashboardController extends Controller
 
     private function planillasDelMes(int $mes, int $anio, ?string $sede)
     {
-        $q = Planilla::where('mes', $mes)->where('anio', $anio);
+        // Con la tabla delante, por lo mismo: hay consultas que le hacen join.
+        $q = Planilla::where('planilla.mes', $mes)->where('planilla.anio', $anio);
         return $sede
             ? $q->whereIn('empleado_id', Empleado::where('sede_id', $sede)->select('id'))
             : $q;
@@ -724,7 +760,8 @@ class DashboardController extends Controller
 
     private function contratosVigentes(?string $sede)
     {
-        $q = Contrato::where('estado', 'vigente')->where('estado_registro', 'activo');
+        // Con la tabla delante: tipos_contrato también tiene `estado_registro`.
+        $q = Contrato::where('contratos.estado', 'vigente')->where('contratos.estado_registro', 'activo');
         return $sede
             ? $q->whereIn('empleado_id', Empleado::where('sede_id', $sede)->select('id'))
             : $q;
@@ -803,8 +840,11 @@ class DashboardController extends Controller
             ->whereNotNull('fecha_nacimiento')
             ->whereMonth('fecha_nacimiento', $mes)
             ->with(['cargo:id,nombre', 'area:id,nombre', 'sede:id,nombre'])
-            ->orderByRaw('DAY(fecha_nacimiento)')
             ->get()
+            // Por día, aquí y no en SQL: son los de UN mes (una docena) y así
+            // no depende de DAY(), que no existe en todas las bases.
+            ->sortBy(fn (Empleado $e) => Carbon::parse($e->fecha_nacimiento)->day)
+            ->values()
             ->map(function (Empleado $e) use ($mes, $anio, $hoy) {
                 $nacimiento = Carbon::parse($e->fecha_nacimiento);
                 $dia = (int) $nacimiento->day;
@@ -909,34 +949,108 @@ class DashboardController extends Controller
      */
     private function antiguedad(?string $sede, Carbon $hoy): array
     {
-        $tramos = [
+        return $this->porTramos($this->empleadosActivos($sede), 'empleados.fecha_ingreso', $hoy, [
             'Menos de 1 año' => [0, 1],
             'De 1 a 3 años'  => [1, 3],
             'De 3 a 5 años'  => [3, 5],
             'De 5 a 10 años' => [5, 10],
-            'Más de 10 años' => [10, 200],
-        ];
+            'Más de 10 años' => [10, null],
+        ]);
+    }
 
-        $fechas = $this->empleadosActivos($sede)
-            ->whereNotNull('fecha_ingreso')
-            ->pluck('fecha_ingreso');
+    /**
+     * Las edades del personal activo, por tramos.
+     *
+     * En un colegio dice cuánta gente se acerca a la jubilación y cuánta
+     * recién empieza: lo que hay que prever al planear el año.
+     */
+    private function edades(?string $sede, Carbon $hoy): array
+    {
+        return $this->porTramos($this->empleadosActivos($sede), 'empleados.fecha_nacimiento', $hoy, [
+            '< 30'  => [0, 30],
+            '30–39' => [30, 40],
+            '40–49' => [40, 50],
+            '50–59' => [50, 60],
+            '60+'   => [60, null],
+        ]);
+    }
 
-        $conteo = array_fill_keys(array_keys($tramos), 0);
-
-        foreach ($fechas as $fecha) {
-            $anios = Carbon::parse($fecha)->diffInYears($hoy);
-            foreach ($tramos as $etiqueta => [$desde, $hasta]) {
-                if ($anios >= $desde && $anios < $hasta) {
-                    $conteo[$etiqueta]++;
-                    break;
-                }
+    /**
+     * Cuántos caen en cada tramo de años desde una fecha (ingreso,
+     * nacimiento), contado en la base con UNA consulta.
+     *
+     * Antes se traían todas las fechas a PHP y se contaban una por una: con
+     * mil trabajadores son mil filas para devolver cinco números. Aquí cada
+     * tramo es una suma condicional entre dos fechas de corte, con los
+     * valores enlazados, y funciona igual en MySQL que en SQLite.
+     */
+    private function porTramos($consulta, string $columna, Carbon $hoy, array $tramos): array
+    {
+        $sumas = [];
+        $valores = [];
+        foreach (array_values($tramos) as $i => [$desde, $hasta]) {
+            // Lleva $desde años o más: la fecha es igual o anterior a hoy − $desde.
+            $condicion = "{$columna} <= ?";
+            $valores[] = $hoy->copy()->subYears($desde)->toDateString();
+            if ($hasta !== null) {
+                // ...y menos de $hasta: posterior a hoy − $hasta.
+                $condicion .= " AND {$columna} > ?";
+                $valores[] = $hoy->copy()->subYears($hasta)->toDateString();
             }
+            $sumas[] = "SUM(CASE WHEN {$condicion} THEN 1 ELSE 0 END) as t{$i}";
         }
 
-        return collect($conteo)
-            ->map(fn ($valor, $etiqueta) => ['etiqueta' => $etiqueta, 'valor' => $valor])
-            ->values()
-            ->all();
+        $fila = (clone $consulta)->whereNotNull($columna)
+            ->selectRaw(implode(', ', $sumas), $valores)
+            ->toBase()->first();
+
+        $salida = [];
+        foreach (array_keys($tramos) as $i => $etiqueta) {
+            $salida[] = ['etiqueta' => $etiqueta, 'valor' => (int) ($fila->{"t{$i}"} ?? 0)];
+        }
+
+        return $salida;
+    }
+
+    /**
+     * Quién entró y quién se fue, mes a mes del año que se mira.
+     *
+     * Las bajas son las de quien ya está inactivo: la fecha de cese de un
+     * trabajador activo es el fin programado de su contrato, no una baja.
+     */
+    private function movimientoPersonal(int $anio, ?string $sede): array
+    {
+        $porMes = function (string $columna, callable $filtro) use ($anio, $sede) {
+            $mes = $this->mesDe($columna);
+            $q = Empleado::query()->whereYear($columna, $anio);
+            $filtro($q);
+            if ($sede) {
+                $q->where('empleados.sede_id', $sede);
+            }
+
+            return $q->groupBy(DB::raw($mes))
+                ->get([DB::raw("{$mes} as mes"), DB::raw('COUNT(*) as total')])
+                ->pluck('total', 'mes');
+        };
+
+        $altas = $porMes('empleados.fecha_ingreso', fn ($q) => $q);
+        $bajas = $porMes('empleados.fecha_cese', fn ($q) => $q->where('empleados.estado', 'inactivo'));
+
+        $meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
+
+        return array_map(fn ($etiqueta, $i) => [
+            'etiqueta' => $etiqueta,
+            'altas'    => (int) ($altas[$i + 1] ?? 0),
+            'bajas'    => (int) ($bajas[$i + 1] ?? 0),
+        ], $meses, array_keys($meses));
+    }
+
+    /** El número de mes de una columna de fecha, en el dialecto de la base. */
+    private function mesDe(string $columna): string
+    {
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "CAST(strftime('%m', {$columna}) AS INTEGER)"
+            : "MONTH({$columna})";
     }
 
     /**

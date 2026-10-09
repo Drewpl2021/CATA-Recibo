@@ -16,6 +16,10 @@ export interface ResumenDashboard {
   empleadosActivos: number;
   altasDelMes: number;
   nominaDelMes: number;
+  /** El neto del mes anterior (en enero, el diciembre del año pasado). */
+  nominaMesAnterior: number;
+  /** Lo que pone el colegio encima del neto: EsSalud y demás aportes. */
+  aportesColegio: number;
   planillasDelMes: number;
   boletasEmitidas: number;
   contratosPorVencer: number;
@@ -42,6 +46,18 @@ export interface PendienteRrhh {
   cuantos: number;
   texto: string;
   ruta: string;
+}
+
+/** Lo que se pagó en un área, y a cuántas personas. */
+export interface RemuneracionArea extends DatoGrafico {
+  personas: number;
+}
+
+/** Cuántos entraron y cuántos se fueron en un mes. */
+export interface MovimientoMes {
+  etiqueta: string;
+  altas: number;
+  bajas: number;
 }
 
 /** Quién cumple años este mes. */
@@ -73,10 +89,15 @@ export interface Dashboard {
   /** Los conceptos que más pesan, sin contar los de ley. */
   topConceptos: DatoGrafico[];
   resumen: ResumenDashboard;
-  remuneracionPorArea: DatoGrafico[];
+  remuneracionPorArea: RemuneracionArea[];
   sistemaPensiones: DatoGrafico[];
   tipoContrato: DatoGrafico[];
   tendenciaNomina: DatoGrafico[];
+  /** Los doce meses del año anterior, para compararlos. */
+  tendenciaAnterior: DatoGrafico[];
+  movimientoPersonal: MovimientoMes[];
+  /** Las edades del personal activo, por tramos. */
+  edades: DatoGrafico[];
   firmaBoletas: FirmaBoletas;
   contratosPorVencer: ContratoPorVencer[];
 }

@@ -45,3 +45,9 @@ export const PALETA_SERIE_UNICA = [PALETA_MARCA.b700];
 
 /** Color al que degrada una barra horizontal, del institucional al claro. */
 export const PALETA_DEGRADADO_BARRA = [PALETA_MARCA.b500];
+
+/**
+ * El gris de lo que se compara y no manda (el año anterior en la tendencia).
+ * Mismo valor que --text-faint en claro; en oscuro sigue leyéndose.
+ */
+export const PALETA_NEUTRO = '#98A2B8';

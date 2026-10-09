@@ -1,38 +1,33 @@
-<div class="dashboard-wrapper">
+<div class="panel" [class.panel--recargando]="cargando && hayDatos" [attr.aria-busy]="cargando">
 
-  <!-- ══ CABECERA CON LOS FILTROS DENTRO ══════════════════════════
-       Los filtros van en la misma barra del título y no en un panel aparte:
-       como sección propia ocupaban una franja entera y empujaban todos los
-       gráficos fuera de la pantalla. -->
+  <!-- ══ Cabecera con los filtros dentro ═════════════════════════════ -->
   <div class="dash-header">
-    <div class="dash-header__titulo">
+    <div>
       <h1 class="dash-title">Panel de Control</h1>
-      <p class="dash-subtitle">{{ fechaHoy }}{{ sedeElegida ? ' · ' + sedeElegida.nombre : '' }}</p>
+      <p class="dash-subtitle">{{ fechaHoy }}</p>
     </div>
 
-    <!-- Los filtros, con forma de control y no de formulario -->
     <div class="barra-filtros">
-
-      <!-- Periodo: un paso atrás, un paso adelante, y el calendario -->
+      <!-- Periodo: un paso atrás, un paso adelante, y los doce meses -->
       <div class="filtro-periodo" [class.filtro-periodo--elegido]="mesMovido">
         <button type="button" class="filtro-periodo__paso" (click)="moverMes(-1)"
-          [attr.aria-label]="'Ver ' + etiquetaMesVecino(-1)" [title]="etiquetaMesVecino(-1)">
+          [attr.aria-label]="'Ver ' + etiquetaMesVecino(-1)" [appPista]="'Ver ' + etiquetaMesVecino(-1)">
           <app-icon icono="chevron_left" [tamano]="17"></app-icon>
         </button>
 
         <button type="button" class="filtro-periodo__valor" (click)="alternarCalendario($event)"
-          [attr.aria-expanded]="calendarioAbierto" aria-label="Elegir el mes">
+          [attr.aria-expanded]="calendarioAbierto" appPista="Elegir otro mes">
           <app-icon icono="date_range" [tamano]="15"></app-icon>
           {{ nombreMes(filtroMes) }} {{ filtroAnio }}
-          <app-icon icono="chevron_down" [tamano]="13" class="filtro-periodo__flecha" [class.filtro-periodo__flecha--abierta]="calendarioAbierto"></app-icon>
+          <app-icon icono="chevron_down" [tamano]="13" class="filtro-periodo__flecha"
+            [class.filtro-periodo__flecha--abierta]="calendarioAbierto"></app-icon>
         </button>
 
         <button type="button" class="filtro-periodo__paso" (click)="moverMes(1)"
-          [attr.aria-label]="'Ver ' + etiquetaMesVecino(1)" [title]="etiquetaMesVecino(1)">
+          [attr.aria-label]="'Ver ' + etiquetaMesVecino(1)" [appPista]="'Ver ' + etiquetaMesVecino(1)">
           <app-icon icono="chevron_right" [tamano]="17"></app-icon>
         </button>
 
-        <!-- Los doce meses de un vistazo, en vez de una lista desplegable -->
         <div class="selector-mes" *ngIf="calendarioAbierto" (click)="$event.stopPropagation()">
           <div class="selector-mes__anio">
             <button type="button" (click)="moverAnioDelCalendario(-1)" aria-label="Año anterior">
@@ -43,7 +38,6 @@
               <app-icon icono="chevron_right" [tamano]="14"></app-icon>
             </button>
           </div>
-
           <div class="selector-mes__meses">
             <button type="button" class="selector-mes__mes" *ngFor="let m of meses"
               [class.selector-mes__mes--elegido]="esMesElegido(m.value)"
@@ -55,16 +49,16 @@
         </div>
       </div>
 
-      <!-- Sede: con dos o tres se ven todas de golpe; con más, desplegable -->
+      <!-- Sede: con pocas se ven todas; con más, desplegable -->
       <div class="segmentado" *ngIf="sedes.length && sedes.length <= 3" role="group" aria-label="Sede">
         <button type="button" class="segmentado__opcion" [class.segmentado__opcion--activa]="!filtroSede"
-          (click)="elegirSede('')">
+          (click)="elegirSede('')" appPista="Ver las cifras de todas las sedes juntas">
           <app-icon icono="view_module" [tamano]="14"></app-icon>
           Todas
         </button>
-
         <button type="button" class="segmentado__opcion" *ngFor="let s of sedes"
-          [class.segmentado__opcion--activa]="filtroSede === s.id" (click)="elegirSede(s.id)">
+          [class.segmentado__opcion--activa]="filtroSede === s.id" (click)="elegirSede(s.id)"
+          [appPista]="'Ver solo ' + s.nombre">
           <app-icon icono="location_on" [tamano]="14"></app-icon>
           {{ s.nombre }}
         </button>
@@ -78,356 +72,339 @@
         </select>
       </div>
 
-      <div class="barra-filtros__acciones">
-      <!-- Los cumpleaños del mes: el icono dice cuántos son y el modal, quiénes.
-           Antes esto vivía al final de la pantalla y había que bajar hasta
-           abajo para ver un solo nombre. -->
-      <button type="button" class="boton-cumpleanos" *ngIf="!cargando && cumpleanos.length"
-        [class.boton-cumpleanos--hoy]="hayCumpleanosHoy" (click)="abrirCumpleanos($event)"
-        [title]="'Ver los cumpleaños de ' + nombreMes(filtroMes)"
-        [attr.aria-label]="cumpleanos.length + ' cumpleaños en ' + nombreMes(filtroMes)">
-        <app-icon icono="cake" [tamano]="17"></app-icon>
-        <span class="boton-cumpleanos__cuenta">{{ cumpleanos.length }}</span>
-      </button>
-
-      <!-- El panel, tal como se está viendo, en un Excel -->
       <button type="button" class="btn-exportar btn-exportar--compacto" (click)="exportar()"
-        [disabled]="exportando || cargando" [title]="'Exportar el panel de ' + loQueSeVe + ' a Excel'">
+        [disabled]="exportando || cargando"
+        [appPista]="cargando ? 'Espera a que carguen las cifras' : 'Bajar el panel de ' + loQueSeVe + ' en Excel, con sus gráficos'">
         <app-icon icono="excel" [tamano]="16"></app-icon>
         {{ exportando ? 'Generando…' : 'Exportar' }}
       </button>
-      </div>
 
-      <!-- Solo aparece cuando hay a dónde volver -->
-      <button type="button" class="chip-filtro" *ngIf="hayFiltros" (click)="limpiarFiltros()">
+      <button type="button" class="chip-filtro" *ngIf="hayFiltros" (click)="limpiarFiltros()"
+        appPista="Volver al mes en curso y a todas las sedes">
         <app-icon icono="rotate_ccw" [tamano]="14"></app-icon>
         Este mes
       </button>
     </div>
   </div>
 
-  <!-- ══ LO QUE HAY QUE HACER ══════════════════════════════════════
-       Va antes que los gráficos a propósito: el resto del panel cuenta
-       cosas, y esto señala trabajo que alguien está esperando. -->
-  <section class="pendientes" *ngIf="!cargando">
-    <h2 class="pendientes__titulo">Pendientes</h2>
-
-    <div class="pendientes__lista pendientes__lista--fila" *ngIf="pendientesConTrabajo.length">
-      <button type="button" class="pendiente" *ngFor="let p of pendientesConTrabajo"
-        (click)="irAResolver(p)">
-        <strong class="pendiente__cuantos">{{ p.cuantos }}</strong>
-        <span class="pendiente__texto">{{ p.texto }}</span>
-        <app-icon icono="arrow_right" [tamano]="16" class="pendiente__flecha"></app-icon>
-      </button>
-    </div>
-
-    <p class="pendientes__vacio" *ngIf="todoAlDia">
-      No hay nada pendiente en {{ loQueSeVe }}: las boletas están emitidas y firmadas,
-      no hay vacaciones sin responder y ningún contrato vence este mes.
-    </p>
-  </section>
-
-  <!-- ══ KPIs ════════════════════════════════════════════════════════ -->
-  <div class="kpi-grid" *ngIf="cargando" aria-hidden="true">
-    <div class="kpi-card" *ngFor="let n of [1, 2, 3, 4]">
-      <span class="esqueleto esqueleto--circulo" style="width: 44px; height: 44px;"></span>
-      <div class="kpi-info" style="flex: 1;">
-        <span class="esqueleto esqueleto--linea" style="width: 55%;"></span>
-        <span class="esqueleto esqueleto--linea" style="height: 22px; width: 70%;"></span>
-        <span class="esqueleto esqueleto--linea" style="width: 40%; margin: 0;"></span>
-      </div>
-    </div>
-  </div>
-
-  <div class="kpi-grid" *ngIf="!cargando">
-    <div class="kpi-card" *ngFor="let k of kpis">
-      <!-- El ícono sale del catálogo compartido: cada tarjeta dice cuál
-           quiere y no hay cuatro dibujos repetidos acá dentro. El color lo
-           hereda del recuadro. -->
-      <div class="kpi-icon-wrap" [style.background]="k.bg" [style.color]="k.color">
-        <app-icon [icono]="k.icon" [tamano]="22"></app-icon>
-      </div>
-      <div class="kpi-info">
-        <span class="kpi-label">{{ k.label }}</span>
-        <span class="kpi-value" [style.color]="k.color">{{ k.value }}</span>
-        <span class="kpi-sub">{{ k.sub }}</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Mientras llegan las cifras se pinta la silueta de los seis paneles:
-       la pantalla queda con su forma y no salta cuando aparecen. -->
-  <ng-container *ngIf="cargando">
+  <!-- ══ Primera carga: la silueta del panel ══════════════════════════ -->
+  <ng-container *ngIf="!hayDatos">
     <div class="cargando-caja cargando-caja--linea" role="status">
       <span class="cargador cargador--chico"></span>
       Trayendo las cifras del mes…
     </div>
-
-    <div class="charts-row" aria-hidden="true">
-      <div class="chart-card wide"><span class="esqueleto esqueleto--bloque" style="min-height: 300px;"></span></div>
-      <div class="chart-card"><span class="esqueleto esqueleto--bloque" style="min-height: 300px;"></span></div>
-      <div class="chart-card"><span class="esqueleto esqueleto--bloque" style="min-height: 300px;"></span></div>
-    </div>
-    <div class="charts-row-2" aria-hidden="true">
-      <div class="chart-card trend-card"><span class="esqueleto esqueleto--bloque" style="min-height: 240px;"></span></div>
-      <div class="chart-card"><span class="esqueleto esqueleto--bloque" style="min-height: 240px;"></span></div>
-      <div class="chart-card"><span class="esqueleto esqueleto--bloque" style="min-height: 240px;"></span></div>
+    <span class="esqueleto esqueleto--bloque panel-esqueleto panel-esqueleto--banda" aria-hidden="true"></span>
+    <div class="panel-fila panel-fila--8-4" aria-hidden="true">
+      <span class="esqueleto esqueleto--bloque panel-esqueleto"></span>
+      <span class="esqueleto esqueleto--bloque panel-esqueleto"></span>
     </div>
   </ng-container>
 
-  <!-- ══ FILA 1: Barras + Dona + Radial ══════════════════════════════ -->
-  <div class="charts-row" *ngIf="!cargando">
+  <ng-container *ngIf="hayDatos">
 
-    <!-- Remuneración por Área -->
-    <div class="chart-card wide">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Remuneración por Área</h3>
-          <p class="card-desc">Distribución mensual del presupuesto en nómina</p>
-        </div>
+    <!-- ══ Lo que hay que hacer: antes que los números ═══════════════ -->
+    <section class="pendientes" *ngIf="pendientesConTrabajo.length">
+      <h2 class="pendientes__titulo">Pendientes de {{ loQueSeVe }}</h2>
+      <div class="pendientes__lista pendientes__lista--fila">
+        <button type="button" class="pendiente" *ngFor="let p of pendientesConTrabajo" (click)="irAResolver(p)"
+          appPista="Ir a donde se resuelve">
+          <strong class="pendiente__cuantos">{{ p.cuantos }}</strong>
+          <span class="pendiente__texto">{{ p.texto }}</span>
+          <app-icon icono="arrow_right" [tamano]="16" class="pendiente__flecha"></app-icon>
+        </button>
       </div>
-      <apx-chart
-        [series]="barChartSeries"
-        [chart]="barChartOptions"
-        [xaxis]="barChartXaxis"
-        [yaxis]="barChartYaxis"
-        [plotOptions]="barChartPlot"
-        [dataLabels]="barChartDataLabels"
-        [colors]="barChartColors"
-        [grid]="barChartGrid"
-        [tooltip]="barChartTooltip"
-        [fill]="barChartFill">
-      </apx-chart>
+    </section>
+
+    <!-- ══ El mes en el azul del colegio ══════════════════════════════
+         La nómina, los doce meses del año (cada barra lleva a su mes) y
+         cómo van las boletas. Es lo primero que RR.HH. pregunta. -->
+    <section class="banda-mes" aria-label="Resumen del mes">
+      <div class="banda-mes__nomina">
+        <h2 class="banda-mes__titulo">Nómina de {{ loQueSeVe }}</h2>
+        <p class="banda-mes__cifra"><span class="banda-mes__moneda">S/</span>{{ enSolesRedondo(nomina) }}</p>
+        <p class="banda-mes__cambio" *ngIf="variacion !== null">
+          <app-icon [icono]="variacion >= 0 ? 'trending_up' : 'trending_down'" [tamano]="16"></app-icon>
+          {{ variacionAbs }} % {{ variacion >= 0 ? 'más' : 'menos' }} que en {{ nombreMesAnterior }}
+        </p>
+        <p class="banda-mes__cambio" *ngIf="variacion === null && nomina">Sin planillas el mes anterior para comparar.</p>
+        <p class="banda-mes__cambio" *ngIf="!nomina">Todavía no hay planillas en este mes.</p>
+      </div>
+
+      <div class="banda-mes__anio" role="group" [attr.aria-label]="'Nómina de cada mes de ' + filtroAnio">
+        <button type="button" class="banda-mes__mes" *ngFor="let m of mesesDelAnio"
+          [class.banda-mes__mes--elegido]="m.mes === filtroMes" (click)="irAMes(m.mes)"
+          [appPista]="pistaMes(m)" pistaLado="abajo"
+          [attr.aria-label]="pistaMes(m)" [attr.aria-current]="m.mes === filtroMes ? 'true' : null">
+          <span class="banda-mes__pista"><span class="banda-mes__barra" [style.height.%]="m.alto"></span></span>
+          <span class="banda-mes__etiqueta">{{ m.etiqueta }}</span>
+        </button>
+      </div>
+
+      <div class="banda-mes__boletas">
+        <h2 class="banda-mes__titulo">Boletas firmadas</h2>
+        <p class="banda-mes__cifra banda-mes__cifra--media">
+          {{ porcentajeFirmadas }}<span class="banda-mes__moneda banda-mes__moneda--detras">%</span>
+        </p>
+        <div class="tira-boletas" role="img" [attr.aria-label]="describirBoletas()">
+          <span class="tira-boletas__tramo tira-boletas__tramo--firmadas" [style.width.%]="anchoBoletas(boletas.firmadas)"></span>
+          <span class="tira-boletas__tramo tira-boletas__tramo--vistas" [style.width.%]="anchoBoletas(boletas.vistas)"></span>
+          <span class="tira-boletas__tramo tira-boletas__tramo--sin-abrir" [style.width.%]="anchoBoletas(boletas.sinAbrir)"></span>
+        </div>
+        <ul class="tira-boletas__leyenda">
+          <li><i class="tira-boletas__punto tira-boletas__tramo--firmadas"></i>{{ boletas.firmadas }} firmadas</li>
+          <li><i class="tira-boletas__punto tira-boletas__tramo--vistas"></i>{{ boletas.vistas }} vistas</li>
+          <li><i class="tira-boletas__punto tira-boletas__tramo--sin-abrir"></i>{{ boletas.sinAbrir }} sin abrir</li>
+          <li *ngIf="boletas.sinEmitir"><i class="tira-boletas__punto"></i>{{ boletas.sinEmitir }} sin emitir</li>
+        </ul>
+      </div>
+
+      <dl class="banda-mes__cifras">
+        <div>
+          <dt>Personal activo</dt>
+          <dd>{{ activos }}<small *ngIf="altas">+{{ altas }} este mes</small></dd>
+        </div>
+        <div>
+          <dt>Neto promedio</dt>
+          <dd>{{ promedio ? enSoles(promedio) : '—' }}</dd>
+        </div>
+        <div>
+          <dt>Costo con aportes</dt>
+          <dd>{{ nomina ? enSoles(nomina + aportes) : '—' }}</dd>
+        </div>
+        <div>
+          <dt>Contratos que vencen</dt>
+          <dd>{{ porVencer }}<small>en 30 días</small></dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- ══ El año y los cumpleaños ════════════════════════════════════ -->
+    <div class="panel-fila panel-fila--8-4">
+      <article class="tarjeta-grafico">
+        <header class="tarjeta-grafico__cabeza">
+          <div>
+            <h3 class="tarjeta-grafico__titulo">La nómina mes a mes</h3>
+            <p class="tarjeta-grafico__nota">{{ filtroAnio }} contra {{ filtroAnio - 1 }}. La raya dorada es el mes que estás viendo.</p>
+          </div>
+          <div class="dato-lateral" *ngIf="acumulado">
+            <span>Pagado hasta {{ nombreMes(filtroMes).toLowerCase() }}</span>
+            <strong>{{ enSoles(acumulado) }}</strong>
+            <small *ngIf="acumuladoAnterior">{{ diferenciaAcumulada() }}</small>
+          </div>
+        </header>
+        <apx-chart *ngIf="hayValores(tendenciaSeries)"
+          [series]="tendenciaSeries" [chart]="tendenciaChart" [colors]="tendenciaColores"
+          [stroke]="tendenciaStroke" [fill]="tendenciaFill" [markers]="tendenciaMarkers"
+          [xaxis]="tendenciaXaxis" [yaxis]="tendenciaYaxis" [legend]="tendenciaLeyenda"
+          [tooltip]="tendenciaTooltip" [annotations]="tendenciaMarca" [grid]="rejilla"
+          [dataLabels]="sinEtiquetas">
+        </apx-chart>
+        <p class="card-vacio" *ngIf="!hayValores(tendenciaSeries)">
+          No hay planillas en {{ filtroAnio }} ni en {{ filtroAnio - 1 }}. Cuando generes la del mes, aparece aquí.
+        </p>
+      </article>
+
+      <!-- Los cumpleaños, en un calendario: se ve de un vistazo quién y cuándo -->
+      <article class="tarjeta-grafico cumple">
+        <header class="tarjeta-grafico__cabeza">
+          <div>
+            <h3 class="tarjeta-grafico__titulo">Cumpleaños de {{ nombreMes(filtroMes).toLowerCase() }}</h3>
+            <p class="tarjeta-grafico__nota" *ngIf="cumpleanos.length">
+              {{ cumpleanos.length }} {{ cumpleanos.length === 1 ? 'persona' : 'personas' }}<ng-container
+                *ngIf="cumpleanosPorVenir && cumpleanosPorVenir < cumpleanos.length">, faltan {{ cumpleanosPorVenir }}</ng-container>
+            </p>
+            <p class="tarjeta-grafico__nota" *ngIf="!cumpleanos.length">Nadie del personal activo cumple este mes.</p>
+          </div>
+        </header>
+
+        <div class="cumple__hoy" *ngFor="let c of cumpleanosHoy">
+          <app-icon icono="cake" [tamano]="18"></app-icon>
+          <span>Hoy cumple <strong>{{ c.nombre }}</strong><ng-container *ngIf="c.edad > 0">, {{ c.edad }} años</ng-container></span>
+        </div>
+
+        <div class="calendario" [attr.aria-label]="'Calendario de ' + nombreMes(filtroMes)">
+          <div class="calendario__fila calendario__fila--dias" aria-hidden="true">
+            <span *ngFor="let d of diasSemana">{{ d }}</span>
+          </div>
+          <div class="calendario__fila" *ngFor="let semana of semanas">
+            <ng-container *ngFor="let dia of semana">
+              <span class="calendario__dia calendario__dia--vacio" *ngIf="!dia.dia"></span>
+              <span class="calendario__dia" *ngIf="dia.dia && !dia.cumple.length"
+                [class.calendario__dia--hoy]="dia.esHoy" [class.calendario__dia--paso]="dia.yaPaso">{{ dia.dia }}</span>
+              <button type="button" class="calendario__dia calendario__dia--cumple" *ngIf="dia.dia && dia.cumple.length"
+                (click)="elegirDia(dia)" [appPista]="pistaDia(dia)"
+                [class.calendario__dia--hoy]="dia.esHoy" [class.calendario__dia--paso]="dia.yaPaso"
+                [class.calendario__dia--elegido]="diaElegido === dia.dia"
+                [attr.aria-pressed]="diaElegido === dia.dia"
+                [attr.aria-label]="dia.dia + ': ' + pistaDia(dia)">
+                {{ dia.dia }}
+                <span class="calendario__cuantos" *ngIf="dia.cumple.length > 1">{{ dia.cumple.length }}</span>
+              </button>
+            </ng-container>
+          </div>
+        </div>
+
+        <ul class="cumple__lista" *ngIf="cumpleanos.length">
+          <li class="cumple__persona" *ngFor="let c of cumpleanosVisibles"
+            [class.cumple__persona--hoy]="c.es_hoy" [class.cumple__persona--paso]="c.ya_paso && !c.es_hoy">
+            <span class="cumple__iniciales">{{ iniciales(c.nombre) }}</span>
+            <span class="cumple__quien">
+              <strong>{{ c.nombre }}</strong>
+              <small>{{ c.cargo }}{{ c.area && c.area !== '—' ? ', ' + c.area : '' }}</small>
+            </span>
+            <span class="cumple__cuando">
+              {{ diaEnPalabras(c.dia) }}
+              <small *ngIf="c.edad > 0">{{ c.edad }} años</small>
+            </span>
+          </li>
+        </ul>
+      </article>
     </div>
 
-    <!-- Sistema de pensiones -->
-    <div class="chart-card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Sistema de pensiones</h3>
-          <p class="card-desc">Del personal activo</p>
-        </div>
-      </div>
-      <apx-chart
-        [series]="donutSeries"
-        [chart]="donutChart"
-        [labels]="donutLabels"
-        [colors]="donutColors"
-        [legend]="donutLegend"
-        [dataLabels]="donutDataLabels"
-        [responsive]="donutResponsive">
-      </apx-chart>
+    <!-- ══ La plata del mes ═══════════════════════════════════════════ -->
+    <div class="panel-fila panel-fila--6-6">
+      <article class="tarjeta-grafico">
+        <header class="tarjeta-grafico__cabeza">
+          <div>
+            <h3 class="tarjeta-grafico__titulo">De dónde sale el neto</h3>
+            <p class="tarjeta-grafico__nota">Lo que suma sube y lo que resta baja, hasta lo que se paga y lo que le cuesta al colegio.</p>
+          </div>
+        </header>
+        <apx-chart *ngIf="cascada.length"
+          [series]="cascadaSeries" [chart]="cascadaChart" [plotOptions]="cascadaPlot"
+          [xaxis]="cascadaXaxis" [yaxis]="cascadaYaxis" [tooltip]="cascadaTooltip"
+          [dataLabels]="sinEtiquetas" [legend]="sinLeyenda" [grid]="rejilla">
+        </apx-chart>
+        <ol class="cuenta-neto" *ngIf="cascada.length">
+          <li *ngFor="let p of cascada" [class.cuenta-neto__total]="p.esTotal">
+            <i class="cuenta-neto__color" [style.background]="p.color"></i>
+            <span>{{ p.etiqueta }}</span>
+            <strong>{{ p.esTotal ? '' : p.monto < 0 ? '− ' : '+ ' }}{{ enSoles(p.monto < 0 ? -p.monto : p.monto) }}</strong>
+          </li>
+        </ol>
+        <p class="card-vacio" *ngIf="!cascada.length">Este mes todavía no tiene planillas.</p>
+      </article>
+
+      <article class="tarjeta-grafico">
+        <header class="tarjeta-grafico__cabeza">
+          <div>
+            <h3 class="tarjeta-grafico__titulo">Lo pagado por área</h3>
+            <p class="tarjeta-grafico__nota">Neto del mes. Pasa el cursor para ver entre cuántas personas.</p>
+          </div>
+        </header>
+        <apx-chart *ngIf="hayValores(areaSeries)"
+          [series]="areaSeries" [chart]="areaChart" [plotOptions]="areaPlot" [xaxis]="areaXaxis"
+          [yaxis]="areaYaxis" [colors]="areaColores" [tooltip]="areaTooltip" [responsive]="areaResponsive"
+          [dataLabels]="sinEtiquetas" [legend]="sinLeyenda" [grid]="rejillaHorizontal">
+        </apx-chart>
+        <p class="card-vacio" *ngIf="!hayValores(areaSeries)">Este mes todavía no tiene planillas.</p>
+      </article>
     </div>
 
-    <!-- Nivel Educativo (Radial) -->
-    <div class="chart-card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Firma de boletas</h3>
-          <p class="card-desc">Cómo va el mes en curso</p>
+    <!-- ══ El personal ════════════════════════════════════════════════ -->
+    <div class="panel-fila panel-fila--tres">
+      <article class="tarjeta-grafico">
+        <header class="tarjeta-grafico__cabeza">
+          <div>
+            <h3 class="tarjeta-grafico__titulo">Cómo es el personal</h3>
+            <p class="tarjeta-grafico__nota">{{ activos }} {{ activos === 1 ? 'persona activa' : 'personas activas' }}</p>
+          </div>
+        </header>
+        <div class="proporcion" *ngFor="let p of proporciones">
+          <h4 class="proporcion__titulo">{{ p.titulo }}</h4>
+          <div class="proporcion__barra" role="img" [attr.aria-label]="describirProporcion(p)">
+            <span *ngFor="let t of p.tramos; let i = index" class="proporcion__tramo"
+              [ngClass]="'proporcion__color--' + (i % 5)" [style.width.%]="t.porcentaje"></span>
+          </div>
+          <ul class="proporcion__leyenda">
+            <li *ngFor="let t of p.tramos; let i = index">
+              <i class="proporcion__punto" [ngClass]="'proporcion__color--' + (i % 5)"></i>
+              {{ t.etiqueta }} <strong>{{ t.valor }}</strong>
+            </li>
+          </ul>
         </div>
-      </div>
-      <apx-chart
-        [series]="nivelSeries"
-        [chart]="nivelChart"
-        [labels]="nivelLabels"
-        [colors]="nivelColors"
-        [plotOptions]="nivelPlot">
-      </apx-chart>
+        <p class="card-vacio" *ngIf="!proporciones.length">No hay personal activo en esta sede.</p>
+      </article>
+
+      <article class="tarjeta-grafico grafico--etiquetas-fuera">
+        <header class="tarjeta-grafico__cabeza">
+          <div>
+            <h3 class="tarjeta-grafico__titulo">{{ vistaPersonal === 'edad' ? 'Edades' : 'Años en el colegio' }}</h3>
+            <p class="tarjeta-grafico__nota">Del personal activo</p>
+          </div>
+          <div class="segmentado segmentado--chico" role="group" aria-label="Qué mostrar">
+            <button type="button" class="segmentado__opcion" [class.segmentado__opcion--activa]="vistaPersonal === 'edad'"
+              (click)="cambiarVistaPersonal('edad')" appPista="Agrupar por edad">Edad</button>
+            <button type="button" class="segmentado__opcion" [class.segmentado__opcion--activa]="vistaPersonal === 'antiguedad'"
+              (click)="cambiarVistaPersonal('antiguedad')" appPista="Agrupar por años en el colegio">Antigüedad</button>
+          </div>
+        </header>
+        <apx-chart *ngIf="hayPersonal"
+          [series]="personalSeries" [chart]="personalChart" [plotOptions]="personalPlot"
+          [xaxis]="personalXaxis" [yaxis]="personalYaxis" [colors]="personalColores"
+          [dataLabels]="personalEtiquetas" [legend]="sinLeyenda" [grid]="rejilla">
+        </apx-chart>
+        <p class="card-vacio" *ngIf="!hayPersonal">Faltan las fechas de nacimiento e ingreso en las fichas.</p>
+      </article>
+
+      <article class="tarjeta-grafico">
+        <header class="tarjeta-grafico__cabeza">
+          <div>
+            <h3 class="tarjeta-grafico__titulo">Los conceptos que más pesan</h3>
+            <p class="tarjeta-grafico__nota">Sin pensión, EsSalud ni renta de quinta</p>
+          </div>
+        </header>
+        <apx-chart *ngIf="hayValores(conceptosSeries)"
+          [series]="conceptosSeries" [chart]="conceptosChart" [plotOptions]="conceptosPlot"
+          [xaxis]="conceptosXaxis" [yaxis]="conceptosYaxis" [colors]="conceptosColores" [responsive]="areaResponsive"
+          [tooltip]="tooltipSoles" [dataLabels]="sinEtiquetas" [legend]="sinLeyenda" [grid]="rejillaHorizontal">
+        </apx-chart>
+        <p class="card-vacio" *ngIf="!hayValores(conceptosSeries)">
+          Este mes no se aplicó ningún concepto además de los de ley.
+        </p>
+      </article>
     </div>
 
-  </div>
+    <!-- ══ Quién entra, quién se va ═══════════════════════════════════ -->
+    <div class="panel-fila panel-fila--6-6">
+      <article class="tarjeta-grafico">
+        <header class="tarjeta-grafico__cabeza">
+          <div>
+            <h3 class="tarjeta-grafico__titulo">Altas y bajas de {{ filtroAnio }}</h3>
+            <p class="tarjeta-grafico__nota">Entraron {{ totalAltas }} y se fueron {{ totalBajas }}.</p>
+          </div>
+        </header>
+        <apx-chart *ngIf="totalAltas || totalBajas"
+          [series]="movimientoSeries" [chart]="movimientoChart" [plotOptions]="movimientoPlot"
+          [xaxis]="movimientoXaxis" [yaxis]="movimientoYaxis" [colors]="movimientoColores"
+          [tooltip]="movimientoTooltip" [legend]="movimientoLeyenda" [dataLabels]="sinEtiquetas" [grid]="rejilla">
+        </apx-chart>
+        <p class="card-vacio" *ngIf="!totalAltas && !totalBajas">Nadie entró ni salió en {{ filtroAnio }}.</p>
+      </article>
 
-  <!-- ══ FILA 2: Línea de Tendencia + Tipo Contrato + Tabla ══════════ -->
-  <div class="charts-row-2" *ngIf="!cargando">
-
-    <!-- Tendencia de nómina -->
-    <div class="chart-card trend-card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Tendencia de la nómina</h3>
-          <p class="card-desc">Evolución del gasto en planillas por mes</p>
-        </div>
-        <div class="trend-stat" *ngIf="variacionNomina !== 0">
-          <span [class.trend-up]="variacionNomina > 0" [class.trend-down]="variacionNomina < 0">
-            {{ variacionNomina > 0 ? '▲' : '▼' }} {{ variacionNomina > 0 ? variacionNomina : -variacionNomina }}%
-          </span>
-          <span class="trend-label">vs mes anterior</span>
-        </div>
-      </div>
-      <apx-chart
-        [series]="lineNominaSeries"
-        [chart]="lineNominaChart"
-        [xaxis]="lineNominaXaxis"
-        [yaxis]="lineNominaYaxis"
-        [colors]="lineNominaColors"
-        [stroke]="lineNominaStroke"
-        [fill]="lineNominaFill"
-        [dataLabels]="lineNominaDataLabels"
-        [grid]="lineNominaGrid"
-        [tooltip]="lineNominaTooltip">
-      </apx-chart>
+      <article class="tarjeta-grafico">
+        <header class="tarjeta-grafico__cabeza">
+          <div>
+            <h3 class="tarjeta-grafico__titulo">Contratos por vencer</h3>
+            <p class="tarjeta-grafico__nota">Los más cercanos de los próximos 60 días</p>
+          </div>
+          <button type="button" class="tarjeta-grafico__accion" (click)="irAContratos()"
+            appPista="Abrir la lista completa de contratos">Ver todos</button>
+        </header>
+        <ul class="vence" *ngIf="vencimientos.length">
+          <li class="vence__fila" *ngFor="let v of vencimientos" [ngClass]="'vence__fila--' + v.urgencia">
+            <span class="vence__quien">
+              <strong>{{ v.nombre }}</strong>
+              <small>{{ v.cargo }}</small>
+            </span>
+            <span class="vence__cuando">
+              <strong>{{ cuandoVence(v.dias) }}</strong>
+              <small>{{ fechaVence(v.fecha) }}</small>
+            </span>
+          </li>
+        </ul>
+        <p class="card-vacio" *ngIf="!vencimientos.length">Ningún contrato vence en los próximos 60 días.</p>
+      </article>
     </div>
-
-    <!-- Tipo de Contrato -->
-    <div class="chart-card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Tipo de Contrato</h3>
-          <p class="card-desc">Modalidades de vínculo laboral</p>
-        </div>
-      </div>
-      <apx-chart
-        [series]="pieContrato"
-        [chart]="pieContratoChart"
-        [labels]="pieContratoLabels"
-        [colors]="pieContratoColors"
-        [legend]="pieLegend">
-      </apx-chart>
-    </div>
-
-    <!-- Tabla: Vencimientos de Contratos -->
-    <div class="chart-card vencimientos-card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Contratos por Vencer</h3>
-          <p class="card-desc">Próximos 60 días</p>
-        </div>
-        <button class="btn-ver-todos">Ver todos</button>
-      </div>
-
-      <div class="table-scroll">
-        <table class="venc-table">
-          <thead>
-            <tr>
-              <th>EMPLEADO</th>
-              <th>CARGO</th>
-              <th>VENCE</th>
-              <th>ESTADO</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngIf="!vencimientos.length">
-              <td colspan="4" class="tabla-vacia">
-                Ningún contrato vence en los próximos 60 días.
-              </td>
-            </tr>
-            <tr *ngFor="let v of vencimientos">
-              <td class="emp-name">{{ v.nombre }}</td>
-              <td class="emp-cargo">{{ v.cargo }}</td>
-              <td class="emp-fecha">{{ fechaVence(v.fecha) }}</td>
-              <td>
-                <span class="urgencia-badge" [ngClass]="v.urgencia">
-                  {{ v.urgencia === 'urgente' ? '🔴 Urgente' : v.urgencia === 'proximo' ? '🟡 Próximo' : '🟢 Normal' }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div>
-
-
-  <!-- ══ A DÓNDE SE VA LA PLATA Y CÓMO ES LA PLANTILLA ═════════════ -->
-  <div class="dash-grid dash-grid--tres" *ngIf="!cargando">
-    <div class="chart-card chart-card--ancha">
-      <div class="card-head">
-        <div>
-          <h3 class="card-title">A dónde se va la nómina</h3>
-          <p class="card-sub">{{ loQueSeVe }}</p>
-        </div>
-      </div>
-      <apx-chart
-        [series]="composicionSeries" [chart]="composicionChart" [xaxis]="composicionXaxis"
-        [yaxis]="composicionYaxis" [plotOptions]="composicionPlot" [colors]="composicionColores"
-        [dataLabels]="composicionDataLabels" [legend]="composicionLegend"
-        [tooltip]="composicionTooltip" [grid]="composicionGrid">
-      </apx-chart>
-      <p class="card-pie">
-        Lo que <strong>suma</strong> va en azul y verde; lo que <strong>resta</strong>, en rojo y
-        ámbar. Lo que aporta el colegio no sale del sueldo del trabajador.
-      </p>
-    </div>
-
-    <div class="chart-card">
-      <div class="card-head">
-        <div>
-          <h3 class="card-title">Personal por sede</h3>
-          <p class="card-sub">Del personal activo</p>
-        </div>
-      </div>
-      <apx-chart
-        [series]="sedeSeries" [chart]="sedeChart" [labels]="sedeLabels"
-        [colors]="sedeColores" [legend]="sedeLegend" [dataLabels]="sedeDataLabels">
-      </apx-chart>
-    </div>
-  </div>
-
-  <div class="dash-grid dash-grid--dos" *ngIf="!cargando">
-    <div class="chart-card">
-      <div class="card-head">
-        <div>
-          <h3 class="card-title">Antigüedad del personal</h3>
-          <p class="card-sub">Años en el colegio</p>
-        </div>
-      </div>
-      <apx-chart
-        [series]="antiguedadSeries" [chart]="antiguedadChart" [xaxis]="antiguedadXaxis"
-        [yaxis]="antiguedadYaxis" [plotOptions]="antiguedadPlot" [colors]="antiguedadColores"
-        [dataLabels]="antiguedadDataLabels" [legend]="antiguedadLegend">
-      </apx-chart>
-    </div>
-
-    <div class="chart-card">
-      <div class="card-head">
-        <div>
-          <h3 class="card-title">Los conceptos que más pesan</h3>
-          <p class="card-sub">Sin contar pensión, EsSalud ni Renta de 5ta</p>
-        </div>
-      </div>
-      <apx-chart *ngIf="hayTopConceptos"
-        [series]="conceptosSeries" [chart]="conceptosChart" [xaxis]="conceptosXaxis"
-        [yaxis]="conceptosYaxis" [plotOptions]="conceptosPlot" [colors]="conceptosColores"
-        [dataLabels]="conceptosDataLabels" [legend]="conceptosLegend" [tooltip]="conceptosTooltip">
-      </apx-chart>
-      <p class="card-vacio" *ngIf="!hayTopConceptos">
-        Este mes no se aplicó ningún concepto además de los de ley.
-      </p>
-    </div>
-  </div>
-
-  <!-- ══ LOS CUMPLEAÑOS, CON NOMBRE Y APELLIDO ═════════════════════
-       No es una cifra de planilla, pero es de lo que RR.HH. de un colegio
-       mira cada mes y antes tenía que buscar ficha por ficha. -->
-  <app-form-modal [(visible)]="cumpleanosAbierto" [ancho]="'560px'"
-    [titulo]="'Cumpleaños de ' + nombreMes(filtroMes)"
-    [ocultarBotonesPorDefecto]="true" [cabeceraMarca]="true">
-
-    <p class="cumpleanos__intro">
-      <strong>{{ cumpleanos.length }}</strong>
-      {{ cumpleanos.length === 1 ? 'persona cumple' : 'personas cumplen' }} años en
-      {{ nombreMes(filtroMes) }} {{ filtroAnio }}{{ sedeElegida ? ' · ' + sedeElegida.nombre : '' }}.
-      <span *ngIf="cumpleanosPorVenir">Faltan {{ cumpleanosPorVenir }} por llegar.</span>
-    </p>
-
-    <ul class="cumpleanos__lista">
-      <li class="cumpleanos__item" *ngFor="let c of cumpleanos"
-        [class.cumpleanos__item--hoy]="c.es_hoy"
-        [class.cumpleanos__item--paso]="c.ya_paso && !c.es_hoy">
-        <span class="cumpleanos__dia">{{ c.dia }}</span>
-        <span class="cumpleanos__quien">
-          <strong>{{ c.nombre }}</strong>
-          <small>{{ c.cargo }}{{ c.area && c.area !== '—' ? ' · ' + c.area : '' }}</small>
-        </span>
-        <span class="cumpleanos__edad" *ngIf="c.edad > 0">{{ c.edad }} años</span>
-        <span class="cumpleanos__hoy" *ngIf="c.es_hoy">¡Hoy!</span>
-      </li>
-    </ul>
-
-    <button modalFooter type="button" class="btn-secondary" (click)="cumpleanosAbierto = false">
-      Cerrar
-    </button>
-  </app-form-modal>
+  </ng-container>
 </div>
