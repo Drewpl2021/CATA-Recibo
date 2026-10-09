@@ -23,7 +23,7 @@ import {
 
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
-import { DashboardService, SedeService, ToastService } from '../../../core/services';
+import { AuthService, DashboardService, SedeService, ToastService } from '../../../core/services';
 import {
   ContratoPorVencer,
   CumpleanosDelMes,
@@ -114,6 +114,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   private sedeService = inject(SedeService);
   private toastService = inject(ToastService);
   private router = inject(Router);
+  private authService = inject(AuthService);
 
   cargando = true;
   /** Ya se pintó una vez: los cambios de filtro atenúan en vez de vaciar. */
@@ -128,6 +129,24 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   sedes: Sede[] = [];
   nombreMes = nombreMes;
   fechaHoy = fechaEnPalabras();
+
+  /*
+   * El saludo de arriba. Antes decía «Panel de Control», lo mismo que la
+   * ruta de la barra superior justo encima: se leía dos veces. Ahora saluda
+   * a quien entra (RR.HH. o Administración) por su nombre, según la hora.
+   */
+  get saludo(): string {
+    const hora = new Date().getHours();
+    const parte = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
+    const nombre = this.primerNombre;
+    return nombre ? `${parte}, ${nombre}` : parte;
+  }
+
+  /** "ROSA ELENA QUISPE" → "Rosa". */
+  private get primerNombre(): string {
+    const primero = (this.authService.getUser()?.name ?? '').trim().split(/\s+/)[0] ?? '';
+    return primero ? primero.charAt(0).toUpperCase() + primero.slice(1).toLowerCase() : '';
+  }
 
   calendarioAbierto = false;
   anioDelCalendario = new Date().getFullYear();
