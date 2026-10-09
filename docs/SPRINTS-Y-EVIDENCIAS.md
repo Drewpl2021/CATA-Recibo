@@ -1,6 +1,6 @@
 # Sprints y evidencias — CATA-Recibo
 
-Cada sprint del [plan de prácticas](PLAN-DE-PRACTICAS.md#81-plan-de-sprints) con la
+Cada sprint del [plan de prácticas](PLAN-DEL-PROYECTO-CATA-RECIBO.md#81-plan-de-sprints) con la
 evidencia que lo respalda: **commits reales del repositorio**, archivos y pruebas.
 
 > **Cómo se asignó cada commit a un sprint:** por su tema, no por su fecha. El
@@ -44,7 +44,7 @@ GitHub, rama de trabajo `PastorDev`.
 | 2026-05-03 | modelos, controllers y rutas API |
 | 2026-09-22 | El plan de practicas preprofesionales |
 
-**Evidencia:** `docs/PLAN-DE-PRACTICAS.md`, `CR-Backend/database/migrations/`.
+**Evidencia:** `docs/PLAN-DEL-PROYECTO-CATA-RECIBO.md`, `CR-Backend/database/migrations/`.
 
 ## Sprint 1 — Personal y contratos
 | Fecha | Commit |

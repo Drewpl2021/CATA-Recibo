@@ -128,7 +128,7 @@ Redactar objetivos, alcance y metodología
 Definir los 10 sprints
 Definir riesgos y presupuesto
 ```
-📎 **Evidencia:** captura de `docs/PLAN-DE-PRACTICAS.md`.
+📎 **Evidencia:** captura de `docs/PLAN-DEL-PROYECTO-CATA-RECIBO.md`.
 
 ---
 

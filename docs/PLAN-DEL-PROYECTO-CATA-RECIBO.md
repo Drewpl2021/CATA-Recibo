@@ -1,18 +1,24 @@
-# PLAN DE PRÁCTICAS PREPROFESIONALES
+# PLAN DEL PROYECTO CATA-RECIBO
 
-**Universidad Peruana Unión — Facultad de Ingeniería y Arquitectura — Escuela Profesional de Sistemas**
+**Anexo del Plan de Prácticas Pre-profesionales — Universidad Peruana Unión — Escuela Profesional de Ingeniería de Sistemas**
+
+> Este documento detalla una de las actividades del Plan de Prácticas
+> Pre-profesionales (formato UPeU, `PLAN-DE-PRACTICAS-UPeU.docx`): el
+> **desarrollo del sistema CATA-Recibo**, que el practicante realiza junto con
+> las demás labores del Área de TIC (soporte técnico, mantenimiento, redes,
+> inventario y documentación).
 
 | | |
 |---|---|
 | **Lugar** | Colegio Adventista "Túpac Amaru" — Juliaca, Puno |
-| **Área** | Software |
+| **Área** | Tecnologías de la Información y Comunicación (TIC) |
 | **Línea de carrera** | Desarrollo de Software |
 | **Practicante** | Alessandro Pastor Mamani Mamani |
-| **Proyecto** | CATA-Recibo — Sistema de planillas y boletas de pago |
-| **Periodo** | `[fecha de inicio]` – `[fecha de término]` · `[N.º de horas]` horas |
-| **Supervisor en el centro** | `[nombre y cargo]` |
+| **Proyecto** | CATA-Recibo — Sistema de planillas y boletas de pago con firma digital |
+| **Periodo** | Del 15 de agosto de 2026 al `[fecha de término]` · `[N.º de horas]` horas |
+| **Supervisor en el centro** | Ing. Daniel Edmundo Gatica Quispe — Jefe del Área de TIC |
 | **Docente asesor UPeU** | `[nombre]` |
-| **Fecha de emisión** | Septiembre 2026 |
+| **Fecha de emisión** | Octubre 2026 |
 
 ---
 
@@ -33,9 +39,9 @@ computadoras, sin trazabilidad de quién cambió qué ni respaldo confiable.
 
 **CATA-Recibo** es el sistema web que reemplaza ese proceso: registra al
 personal y sus contratos, genera la planilla del mes aplicando las reglas
-laborales peruanas, emite las boletas en PDF, las pone a disposición del
-trabajador para que las revise y las firme electrónicamente, y conserva el
-expediente digital de cada persona. El sistema está construido sobre Laravel
+laborales peruanas, emite las boletas en PDF, las firma digitalmente por el
+colegio, se las entrega al trabajador para que las revise y dé su
+conformidad, y conserva el expediente digital de cada persona. El sistema está construido sobre Laravel
 (API), Angular (interfaz) y MySQL, empaquetado en contenedores Docker para que
 su instalación no dependa de lo que haya instalado en cada máquina.
 
@@ -45,21 +51,21 @@ en el colegio y la capacitación del personal que va a usarlo.
 
 ### 1.1. Situación del proyecto a la fecha
 
-El trabajo de construcción se inició en mayo de 2026. Al momento de emitir
-este plan, el repositorio registra:
+El trabajo de construcción se inició en mayo de 2026. Al 8 de octubre de
+2026, el repositorio registra:
 
 | Indicador | Valor |
 |---|---|
-| Commits registrados | 83 |
-| Módulos funcionales en el menú | 20 |
-| Pantallas (rutas del frontend) | 43 |
-| Componentes de interfaz | 53 |
-| Endpoints del API | 81 |
-| Tablas en la base de datos | 30 |
-| Migraciones versionadas | 35 |
-| Aserciones de prueba automatizadas | 557 |
-| Líneas de código propias | ≈ 52 800 |
+| Commits registrados | 231 |
+| Pantallas (rutas del frontend) | 42 |
+| Componentes de interfaz | 58 |
+| Endpoints del API | 115 |
+| Tablas en la base de datos | 36 |
+| Migraciones versionadas | 62 |
+| Pruebas automatizadas (PHPUnit) | 182 pruebas, 825 aserciones |
+| Líneas de código propias | ≈ 72 900 |
 | Servicios en el despliegue con Docker | 6 |
+| Personal cargado en el sistema | 94 trabajadores, con su planilla y boleta de octubre de 2026 |
 
 ---
 
@@ -73,9 +79,10 @@ las prácticas.
 
 ### 2.1. Objetivos específicos
 
-1. **Completar los módulos pendientes** del sistema (firma electrónica del
-   trabajador, expediente digital, auditoría de cambios y reportes
-   gerenciales), aplicando la metodología Scrum en sprints de dos semanas.
+1. **Completar los módulos pendientes** del sistema (firma digital de las
+   boletas por el colegio, conformidad del trabajador, expediente digital,
+   auditoría de cambios y reportes gerenciales), aplicando la metodología
+   Scrum en sprints de dos semanas.
 2. **Asegurar el cumplimiento de la normativa laboral peruana** en el cálculo
    de la planilla: aportes, retenciones, asignación familiar, gratificaciones,
    CTS y renta de quinta categoría, verificando cada regla contra el proceso
@@ -93,9 +100,9 @@ las prácticas.
    trabajadores— y entregar el manual de uso correspondiente a cada rol.
 7. **Documentar el sistema** para su mantenimiento: instalación, despliegue,
    estructura de la base de datos y decisiones de diseño.
-8. **Elaborar el plan de firma digital** con DNI electrónico para la
-   aprobación de las boletas por la instancia directiva, evaluando su
-   viabilidad técnica y económica.
+8. **Implantar la firma digital de las boletas** conforme a la Ley N.° 27269:
+   con el certificado digital de quien firma por el colegio desde el propio
+   sistema («Firmar aquí»), o con el DNI electrónico en ReFirma de RENIEC.
 
 ---
 
@@ -109,7 +116,7 @@ las prácticas.
 | **Contratos** | Registro del vínculo laboral por tipo (indeterminado, plazo fijo, suplencia, prácticas), contrato vigente único por trabajador, alerta de vencimientos |
 | **Planilla** | Generación masiva por periodo, aplicación de conceptos por grupo, importación de conceptos desde Excel, cálculo de aportes y retenciones |
 | **Boletas** | Emisión individual y masiva, generación del PDF, entrega al trabajador, control de estado (emitida, vista, firmada) |
-| **Firma electrónica** | Firma del trabajador mediante trazo en pantalla más contraseña; registro de fecha, hora y código de verificación |
+| **Firma digital** | Firma de cada boleta por el colegio con certificado digital (PAdES), desde el sistema o con ReFirma y el DNI electrónico; entrega al trabajador solo cuando está firmada; conformidad del trabajador con su contraseña, con fecha, hora, IP y código de verificación; constancia de entrega del mes |
 | **Expediente digital** | Hoja de vida, contratos, boletas y documentos anteriores al sistema, por trabajador |
 | **Vacaciones** | Solicitud por el trabajador, aprobación por RR.HH., saldo de días |
 | **Seguridad** | Usuarios, roles, permisos por módulo, control de sesión y auditoría de cambios |
@@ -130,9 +137,9 @@ Se deja constancia expresa para evitar expectativas fuera de lo acordado:
 - Control de asistencia por marcación biométrica.
 - Envío automático de la declaración PLAME a SUNAT. El sistema **prepara** la
   información en el formato exigido; la declaración la presenta el colegio.
-- Firma digital con certificado emitido por una Entidad de Certificación
-  acreditada. Queda como **plan evaluado** (objetivo específico 8), sujeto a la
-  decisión y el presupuesto de la institución.
+- La compra del certificado digital de quien firma por el colegio: el sistema
+  ya firma con él, pero el certificado lo adquiere la institución ante una
+  entidad acreditada por INDECOPI (sección 9.2).
 - Aplicación móvil nativa. El sistema es web y responde en el navegador del
   teléfono.
 
@@ -164,18 +171,22 @@ actividad privada:
 | Norma | Implicancia |
 |---|---|
 | **Ley 29733 — Protección de Datos Personales** y su reglamento (D.S. 003-2013-JUS) | Una planilla contiene datos personales y datos sensibles (remuneración, cuentas bancarias, salud). Obliga a limitar el acceso, resguardar la información y conservarla solo mientras sea necesaria |
-| **Ley 27269 — Firmas y Certificados Digitales** y D.S. 052-2008-PCM | Marco de la firma electrónica; distingue la firma electrónica simple (la que hoy implementa el sistema) de la firma digital con certificado acreditado (el plan a evaluar) |
+| **Ley 27269 — Firmas y Certificados Digitales** y D.S. 052-2008-PCM | Da a la firma digital con certificado acreditado el mismo valor que la firma manuscrita: es la que el colegio pone en cada boleta |
+| **D. Leg. 1310** | Permite al empleador sustituir su firma y sello por la firma digital en los documentos laborales, y entregar la boleta por medios digitales cuando el pago se deposita en cuenta |
 
 ### 4.3. Procesos del colegio que el sistema soporta
 
 1. **Alta de trabajador** → ficha, contrato y creación de su cuenta de acceso.
 2. **Cierre de mes** → generación de la planilla del periodo, aplicación de
    conceptos particulares, revisión y cierre.
-3. **Emisión de boletas** → generación masiva, notificación al trabajador.
-4. **Revisión y firma** → el trabajador abre su boleta, la revisa y la firma;
-   recién entonces puede descargarla.
-5. **Vacaciones** → solicitud, aprobación y descuento del saldo.
-6. **Cese** → baja del trabajador, cálculo de truncos y cierre del expediente.
+3. **Emisión de boletas** → generación masiva de los PDF del mes.
+4. **Firma digital del colegio** → quien firma por el colegio las firma con su
+   certificado desde el sistema, o con su DNIe en ReFirma; recién entonces le
+   llegan al trabajador.
+5. **Conformidad** → el trabajador abre su boleta, la revisa y da su
+   conformidad con su contraseña; queda la constancia de entrega del mes.
+6. **Vacaciones** → solicitud, aprobación y descuento del saldo.
+7. **Cese** → baja del trabajador, cálculo de truncos y cierre del expediente.
 
 ---
 
@@ -190,7 +201,7 @@ propone y a una emisión masiva.
 siguientes al pago y el empleador debe poder acreditar esa entrega. Con la
 entrega en papel, la constancia es una firma en una copia archivada que puede
 perderse; con el sistema, cada boleta guarda la fecha en que se emitió, en que
-el trabajador la vio y en que la firmó.
+el trabajador la vio y en que dio su conformidad.
 
 **De integridad de la información.** Una hoja de cálculo copiada entre
 computadoras no registra quién cambió un sueldo ni cuándo. El sistema deja
@@ -270,7 +281,7 @@ Una historia se considera terminada solo cuando cumple **todo** lo siguiente:
 | **2. Análisis** | Historias de usuario con criterios de aceptación; reglas de cálculo contrastadas con la norma | Historias de usuario, reglas de negocio documentadas |
 | **3. Diseño** | Modelo de datos (migraciones versionadas), diseño de la API y de la interfaz sobre el sistema de diseño del proyecto | Modelo entidad-relación, prototipos de pantalla, componentes reutilizables |
 | **4. Construcción** | Backend en Laravel, frontend en Angular, cada cambio en su rama | PHP 8.3 / Laravel 13, TypeScript / Angular 19, MySQL 8.4 |
-| **5. Pruebas** | Pruebas automatizadas del API; verificación funcional en pantalla; pruebas de aceptación con RR.HH. sobre datos reales | Postman + Newman (557 aserciones), verificación manual guiada |
+| **5. Pruebas** | Pruebas automatizadas del API; verificación funcional en pantalla (escritorio y celular); pruebas de aceptación con RR.HH. sobre datos reales | PHPUnit (182 pruebas, 825 aserciones), verificación guiada en el navegador |
 | **6. Despliegue** | Construcción de imágenes y publicación en el servidor; migraciones automáticas al arrancar | Docker Compose (6 servicios), nginx |
 | **7. Capacitación y cierre** | Demostración al área usuaria, manual por rol, acta de conformidad | Sesiones presenciales, manual de usuario |
 | **8. Mantenimiento** | Atención de incidencias reportadas, corrección y nueva entrega | Registro de incidencias, control de versiones |
@@ -288,7 +299,7 @@ del proyecto y la fuente de las evidencias de avance.
 |---|---|
 | Desarrollo | Visual Studio Code, PHP 8.3, Composer, Node.js, Angular CLI |
 | Base de datos | MySQL 8.4 |
-| Pruebas | Postman, Newman |
+| Pruebas | PHPUnit, Chrome (verificación en pantalla) |
 | Despliegue | Docker, Docker Compose, nginx |
 | Control de versiones | Git, GitHub |
 | Gestión | Tablero Scrum, actas de reunión |
@@ -301,7 +312,7 @@ del proyecto y la fuente de las evidencias de avance.
 |---|---|---|---|---|
 | 1 | Alessandro Pastor Mamani Mamani | Practicante — Desarrollador / Scrum Master | Análisis, diseño, construcción, pruebas, despliegue, documentación y capacitación | `[N.º]` h/semana |
 | 2 | `[nombre]` | Jefatura de Recursos Humanos — Product Owner | Define y prioriza requerimientos, valida entregables, aporta el conocimiento del proceso y de la norma | Según ceremonias |
-| 3 | `[nombre]` | Supervisor del centro de prácticas | Supervisa el cumplimiento del plan, firma la conformidad | Semanal |
+| 3 | Ing. Daniel Edmundo Gatica Quispe | Jefe del Área de TIC — Supervisor de prácticas | Supervisa el cumplimiento del plan, firma la conformidad | Semanal |
 | 4 | `[nombre]` | Docente asesor UPeU | Orienta metodológicamente y evalúa el informe | Quincenal |
 | 5 | Dirección / Consejo Directivo | Interesados | Aprueban la puesta en producción y las decisiones de alcance | Por hito |
 
@@ -324,13 +335,13 @@ aprobación del plan.
 | **1** | 2-3 | Personal y contratos: ficha completa, importación masiva del padrón, contratos vigentes | Módulo de personal operativo con el padrón real cargado |
 | **2** | 4-5 | Planilla del mes: generación masiva, conceptos por grupo, importación de conceptos desde Excel | Planilla del mes calculada y contrastada con el Excel del colegio |
 | **3** | 6-7 | Boletas: emisión individual y masiva, PDF, notificación al trabajador | Boletas del primer mes emitidas en paralelo al proceso manual |
-| **4** | 8-9 | Autoservicio del trabajador: ver, firmar y descargar su boleta; firma por trazo en pantalla | Firma electrónica en funcionamiento |
+| **4** | 8-9 | Firma digital y autoservicio: firma de las boletas por el colegio (certificado o DNIe), entrega al trabajador y su conformidad | Firma digital en funcionamiento |
 | **5** | 10-11 | Expediente digital: hoja de vida, contratos, documentos anteriores en lote | Expediente por trabajador con los documentos históricos cargados |
 | **6** | 12-13 | Seguridad y auditoría: roles, permisos por módulo, bitácora de cambios, control de sesión | Módulo de seguridad y auditoría verificado |
 | **7** | 14-15 | Reportes y panel de control: indicadores del mes, exportación a Excel | Panel y reportes en uso por RR.HH. y Dirección |
 | **8** | 16-17 | Despliegue en producción: servidor, contenedores, respaldos automáticos, migración de datos | Sistema en producción con respaldo diario |
 | **9** | 18-19 | Capacitación y estabilización: sesiones por rol, manual de usuario, atención de incidencias | Personal capacitado, manual entregado, incidencias cerradas |
-| **10** | 20 | Cierre: informe final, documentación técnica, plan de firma digital con DNIe, acta de conformidad | Informe de prácticas y entrega formal |
+| **10** | 20 | Cierre: informe final, documentación técnica, acta de conformidad | Informe de prácticas y entrega formal |
 
 ### 8.2. Cronograma
 
@@ -352,14 +363,14 @@ aprobación del plan.
 | Rubro | Monto estimado (S/) |
 |---|---|
 | Infraestructura (servidor y dominio, 12 meses) | 660.00 |
-| Equipamiento para firma digital (opcional, a evaluar) | 1 070.00 |
+| Firma digital (certificado y lector de DNIe) | 474.00 |
 | Recursos del practicante (equipo, internet, movilidad) | 1 240.00 |
 | Materiales de capacitación | 120.00 |
-| **Total estimado** | **3 090.00** |
+| **Total estimado** | **2 494.00** |
 
 El detalle se presenta en la sección 9. Los montos son referenciales a
-septiembre de 2026 y el rubro de firma digital está sujeto a aprobación de la
-institución.
+octubre de 2026; el del certificado debe confirmarse con la cotización de la
+entidad de certificación.
 
 ---
 
@@ -377,14 +388,18 @@ institución.
 > No se presupuesta licencia de base de datos ni de servidor de aplicaciones:
 > todo el software utilizado es libre (MySQL Community, PHP, nginx, Docker).
 
-### 9.2. Firma digital con DNI electrónico *(opcional — a evaluar)*
+### 9.2. Firma digital
 
 | Ítem | Descripción | Cantidad | Costo unitario (S/) | Total (S/) |
 |---|---|---|---|---|
-| Lector de DNI electrónico | ACR39U o equivalente | 1 | 120.00 | 120.00 |
-| Certificado digital de persona jurídica | Emitido por entidad acreditada, vigencia 1 año | 1 | 800.00 | 800.00 |
-| Sellado de tiempo | Servicio anual | 1 | 150.00 | 150.00 |
-| **Subtotal** | | | | **1 070.00** |
+| Certificado digital en archivo (.pfx) | Para documentos PDF, vinculado al colegio, emitido por una entidad acreditada por INDECOPI (referencia: Llama.pe), vigencia 2 años | 1 | 354.00 | 354.00 |
+| Lector de DNI electrónico | Para firmar con ReFirma cuando se use el DNIe | 1 | 120.00 | 120.00 |
+| ReFirma PDF (RENIEC) | Firmador oficial, gratuito | 1 | 0.00 | 0.00 |
+| **Subtotal** | | | | **474.00** |
+
+> El sistema ya firma las boletas con el certificado («Firmar aquí»), sin
+> costo de software adicional. El precio del certificado es referencial (S/ 177
+> por año en la web de Llama.pe) y se confirma con la cotización.
 
 ### 9.3. Recursos del practicante
 
@@ -419,7 +434,7 @@ institución.
 ### 10.1. Estrategia de calidad
 
 - **Pruebas automatizadas como red de seguridad.** La colección del API
-  (557 aserciones) se ejecuta completa antes de cada entrega. Una regla de
+  (182 pruebas, 825 aserciones) se ejecuta completa antes de cada entrega. Una regla de
   cálculo que se rompa —por ejemplo, el 13 % de ONP— hace fallar la prueba
   antes de que llegue a una boleta.
 - **Verificación sobre datos reales.** Cada mes de prueba se calcula en
@@ -436,8 +451,10 @@ institución.
 - Contraseñas almacenadas con función de hash; sesión con cierre por
   inactividad; mensaje único ante credenciales inválidas para no revelar qué
   cuentas existen.
-- Los documentos (boletas, firmas) se guardan fuera de la carpeta pública: se
-  sirven solo a quien tiene derecho a verlos.
+- Los documentos (boletas firmadas, expedientes) se guardan fuera de la
+  carpeta pública: se sirven solo a quien tiene derecho a verlos.
+- El certificado digital de quien firma se guarda cifrado, y su clave no se
+  guarda nunca: se pide cada vez que se firma.
 - Ningún dato real del personal en el repositorio: los archivos de datos y las
   credenciales quedan excluidos por configuración.
 - Respaldo automático diario de la base y de los documentos, con retención de
@@ -449,7 +466,8 @@ institución.
   al proceso en Excel, hasta que RR.HH. confíe en los resultados.
 - **Capacitación por rol y no general**: una sesión para RR.HH. (proceso
   completo), una para Dirección (reportes y aprobación) y una breve para el
-  personal (ver y firmar su boleta), con material impreso de una página.
+  personal (ver su boleta y dar su conformidad), con material impreso de una
+  página.
 - **Acompañamiento en el primer cierre de mes** hecho íntegramente en el
   sistema.
 
@@ -508,7 +526,7 @@ institución.
 | Modelo de datos | Diagrama entidad-relación y diccionario de datos ([MODELO-DE-DATOS.md](MODELO-DE-DATOS.md)) |
 | Manual de instalación y despliegue | Procedimiento completo, del clonado a la puesta en marcha |
 | Manual de usuario por rol | RR.HH., Dirección y trabajador |
-| Plan de firma digital con DNIe | Análisis técnico, normativo y económico |
+| Guía de firma digital | Cómo firmar las boletas con el certificado o con ReFirma, y cómo validar la firma |
 | Informe final de prácticas | Resultados obtenidos frente a los objetivos planteados |
 
 ### 11.4. Evidencias institucionales
@@ -527,10 +545,9 @@ institución.
 
 | Dato | Dónde aparece |
 |---|---|
-| Fecha de inicio y de término de las prácticas | Cabecera y sección 8 |
+| Fecha de término de las prácticas | Cabecera y sección 8 |
 | Número total de horas exigido por la Escuela | Cabecera |
 | Horas semanales de dedicación | Sección 7 |
-| Nombre y cargo del supervisor del centro | Cabecera y sección 7 |
 | Nombre del docente asesor de la UPeU | Cabecera y sección 7 |
 | Nombre de quien ejerce la jefatura de RR.HH. | Sección 7 |
-| Confirmación de los montos del presupuesto | Sección 9 |
+| Confirmación de los montos del presupuesto (en especial el certificado) | Sección 9 |
