@@ -44,7 +44,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       /*
        * Un 401 teniendo sesión iniciada significa que el token ya no vale:
-       * caducó (Sanctum los emite por 24 h) o se cerró desde otro sitio.
+       * venció (se cierra tras 2 h sin usarse, ver RenovarSesionActiva) o se cerró desde otro sitio.
        *
        * Sin esto, el token muerto se quedaba en localStorage, el guard dejaba
        * entrar igual, y cada pantalla soltaba un "no se pudieron cargar los

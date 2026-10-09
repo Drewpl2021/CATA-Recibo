@@ -17,9 +17,9 @@
   <link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48 64x64" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="192x192" href="icono-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- La letra Inter va dentro del sistema (public/fuentes, ver styles.scss):
+       pedirla a Google le mandaba la IP de cada persona a un tercero. -->
+  <link rel="preload" href="fuentes/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <!-- Sin la fuente "Material Icons": ninguna pantalla la usa (los íconos
        salen del catálogo, shared/icons/icon-map.ts) y se descargaba igual en
        cada carga de página. -->

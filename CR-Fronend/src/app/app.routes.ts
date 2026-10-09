@@ -9,6 +9,8 @@ const soloAdmin = roleGuard(['admin']);
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
+  // Pública: se lee sin iniciar sesión (y con sesión también).
+  { path: 'privacidad', loadComponent: () => import('./features/legal/privacidad/privacidad.component').then(m => m.PrivacidadComponent) },
   // El autorregistro está cerrado: las cuentas las crea RR.HH. Quien llegue
   // con un enlace viejo va al login, que explica cómo es el primer ingreso.
   { path: 'registro', redirectTo: 'login', pathMatch: 'full' },

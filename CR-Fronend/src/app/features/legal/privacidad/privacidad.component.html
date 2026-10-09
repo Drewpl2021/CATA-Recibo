@@ -1,0 +1,102 @@
+<div class="pagina-legal">
+  <header class="pagina-legal__cabecera">
+    <img class="pagina-legal__logo" src="logo-cata.png" alt="CATA, Colegio Adventista Túpac Amaru" />
+    <a class="pagina-legal__volver" routerLink="/login">Volver al inicio de sesión</a>
+  </header>
+
+  <article class="pagina-legal__documento">
+    <h1>Privacidad y cookies</h1>
+    <p class="pagina-legal__fecha">Última actualización: {{ actualizada }}</p>
+
+    <p>
+      Esta página explica qué datos usa <strong>CATA-Recibo</strong>, el sistema de planillas y boletas de pago
+      de la <strong>Asociación Educativa Colegio Adventista Túpac Amaru</strong> (RUC 20156630731, Jr. Moquegua
+      N.° 852, Juliaca), qué guarda en tu navegador y cómo se protege tu información.
+    </p>
+
+    <h2>1. Cookies</h2>
+    <p>
+      <strong>CATA-Recibo no usa cookies</strong>: ni propias ni de terceros, ni de publicidad ni de
+      estadísticas. Tu sesión no depende de una cookie, sino de un código de acceso que se guarda en tu
+      navegador (lo verás abajo). Por eso no te pedimos aceptar cookies.
+    </p>
+
+    <h2>2. Lo que se guarda en tu navegador</h2>
+    <p>
+      Para funcionar, el sistema guarda en tu navegador estos datos, y solo estos. Todos son
+      <strong>imprescindibles</strong> para usarlo: ninguno sirve para seguirte ni para publicidad.
+    </p>
+    <div class="pagina-legal__tabla">
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Para qué sirve</th><th>Cuánto dura</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of almacenamiento">
+            <td data-titulo="Nombre"><code>{{ d.nombre }}</code></td>
+            <td data-titulo="Para qué sirve">{{ d.para }}</td>
+            <td data-titulo="Cuánto dura">{{ d.dura }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      <strong>Sin servicios de terceros.</strong> El sistema no usa Google Analytics, publicidad, redes sociales
+      ni fuentes o archivos cargados desde otros sitios: tu navegador solo se conecta con el servidor del colegio.
+    </p>
+
+    <h2>3. Tus datos personales</h2>
+    <p>
+      El colegio trata tus datos conforme a la <strong>Ley N.° 29733, Ley de Protección de Datos Personales</strong>,
+      y su Reglamento (D.S. N.° 003-2013-JUS).
+    </p>
+    <ul>
+      <li>
+        <strong>Qué datos:</strong> de identificación y contacto (DNI, nombres, fecha de nacimiento, teléfono,
+        dirección, correo, foto), laborales (cargo, área, sede, contrato, fechas), de pago (remuneración, conceptos,
+        cuenta bancaria, sistema de pensiones) y los documentos de tu expediente (hoja de vida, contratos, boletas).
+      </li>
+      <li>
+        <strong>Para qué:</strong> solo para gestionar tus planillas, boletas de pago y documentos laborales, y
+        cumplir las obligaciones laborales y tributarias del colegio.
+      </li>
+      <li>
+        <strong>Quién los ve:</strong> tú ves solo lo tuyo; Recursos Humanos y la Administración del colegio, lo
+        necesario para su trabajo. Cada acceso depende del rol de la cuenta, y los cambios sobre datos sensibles
+        quedan registrados en una bitácora que no se puede editar.
+      </li>
+      <li>
+        <strong>A quién se entregan:</strong> a nadie ajeno a esa finalidad, salvo cuando la ley lo exige
+        (por ejemplo, SUNAT, ESSALUD o tu AFP).
+      </li>
+      <li>
+        <strong>Cuánto tiempo:</strong> mientras dure la relación laboral y, después, el plazo que exige la ley
+        para conservar planillas y boletas.
+      </li>
+      <li>
+        <strong>Tus derechos:</strong> puedes pedir el acceso, la rectificación, la actualización o la supresión
+        de tus datos, u oponerte a su uso cuando corresponda, ante la Jefatura de Recursos Humanos.
+      </li>
+    </ul>
+
+    <h2>4. Cómo se protege tu información</h2>
+    <ul>
+      <li>Tu contraseña se guarda cifrada (con <em>hash</em>): nadie, ni el colegio, puede leerla. La inicial es tu DNI, y el sistema te pide cambiarla en tu primer ingreso.</li>
+      <li>La sesión se cierra sola tras 2 horas sin usarla, y el inicio de sesión se frena ante muchos intentos fallidos.</li>
+      <li>Cada persona accede solo a lo que le corresponde según su rol.</li>
+      <li>Las boletas llevan la firma digital del colegio y un código QR para verificarlas: si alguien las altera, la firma deja de valer.</li>
+      <li>Los documentos se guardan fuera del alcance público y solo se entregan a quien tiene derecho a verlos.</li>
+      <li>Se hace un respaldo automático diario de la base de datos y de los documentos.</li>
+    </ul>
+
+    <h2>5. Contacto</h2>
+    <p>
+      Para cualquier consulta sobre tus datos o sobre esta página: <strong>Jefatura de Recursos Humanos</strong>,
+      Colegio Adventista Túpac Amaru, Jr. Moquegua N.° 852, Juliaca. Teléfono 051-325096.
+    </p>
+    <p class="pagina-legal__nota">
+      Esta página complementa el Convenio de entrega digital de documentos laborales que aceptas al ingresar al
+      sistema.
+    </p>
+  </article>
+</div>
