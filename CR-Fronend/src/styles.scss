@@ -7799,130 +7799,405 @@ textarea.form-control {
   .ajuste-detalle { padding-left: 36px; padding-right: 16px; }
 }
 
-/* ── Páginas legales públicas (Privacidad y cookies) ──
-   Se leen sin iniciar sesión: sin la barra del sistema, una columna de
-   lectura cómoda, en claro y en oscuro. */
-.pagina-legal {
+/* ── Privacidad y cookies (pública) ──────────────────────────────────
+   Un centro de privacidad para el personal, no un texto legal corrido:
+   una portada en el azul del colegio, tres promesas en pocas palabras y
+   secciones con íconos. Se lee sin iniciar sesión, en claro y en oscuro. */
+.privacidad {
   min-height: 100vh;
+  padding: 20px 16px 64px;
   background: var(--bg);
   color: var(--text);
-  padding: 24px 16px 56px;
+  line-height: 1.6;
 }
 
-.pagina-legal__cabecera {
-  max-width: 760px;
-  margin: 0 auto 24px;
+.privacidad__barra,
+.privacidad__portada,
+.privacidad__resumen,
+.privacidad__indice,
+.privacidad__cuerpo {
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.privacidad__barra {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
   flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
-.pagina-legal__logo {
-  height: 34px;
-  width: auto;
-}
+.privacidad__logo { height: 36px; width: auto; }
+.dark-mode .privacidad__logo { filter: brightness(0) invert(1); }
 
-.dark-mode .pagina-legal__logo {
-  filter: brightness(0) invert(1);
-}
-
-.pagina-legal__volver {
+.privacidad__volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
+  font-weight: 600;
   color: var(--heading);
+  text-decoration: none;
 }
 
-.pagina-legal__documento {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 32px clamp(18px, 4vw, 40px);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg, 14px);
-  line-height: 1.65;
+.privacidad__volver:hover { text-decoration: underline; }
+
+/* La portada: el mismo azul con resplandor dorado de la banda del panel. */
+.privacidad__portada {
+  position: relative;
+  padding: 44px clamp(22px, 5vw, 56px) 40px;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(ellipse 50% 90% at 100% 0%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 70%),
+    linear-gradient(135deg, var(--marca-bg-deep) 0%, var(--marca-bg) 65%);
+  color: var(--marca-text);
+  overflow: hidden;
 }
 
-.pagina-legal__documento h1 {
+.dark-mode .privacidad__portada,
+.dark-mode .privacidad__contacto { border: 1px solid var(--border-strong); }
+
+.privacidad__portada::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: clamp(22px, 5vw, 56px);
+  width: 64px;
+  height: 4px;
+  border-radius: 0 0 4px 4px;
+  background-color: var(--accent);
+}
+
+.privacidad__escudo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 18px;
+  border-radius: var(--radius-md);
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.privacidad__portada h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.privacidad__portada p {
+  max-width: 62ch;
+  margin: 14px 0 0;
+  font-size: 16.5px;
+  color: var(--marca-text-soft);
+}
+
+.privacidad__fecha {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background-color: color-mix(in srgb, var(--marca-text) 12%, transparent);
+  font-size: 12.5px;
+}
+
+/* Las tres promesas, montadas sobre el borde de la portada. */
+.privacidad__resumen {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: -22px;
+  padding: 0 clamp(12px, 3vw, 28px);
+}
+
+.privacidad__promesa {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.privacidad__promesa h2 {
+  margin: 12px 0 4px;
+  font-size: 16px;
   color: var(--heading);
 }
 
-.pagina-legal__documento h2 {
-  margin: 28px 0 8px;
-  font-size: 18px;
-  color: var(--heading);
-}
-
-.pagina-legal__documento ul {
-  padding-left: 20px;
-}
-
-.pagina-legal__documento li + li {
-  margin-top: 6px;
-}
-
-.pagina-legal__fecha,
-.pagina-legal__nota {
-  font-size: 13px;
+.privacidad__promesa p {
+  margin: 0;
+  font-size: 14px;
   color: var(--text-muted);
 }
 
-.pagina-legal__tabla {
-  overflow-x: auto;
-  margin: 12px 0;
-}
-
-.pagina-legal__tabla table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.pagina-legal__tabla th,
-.pagina-legal__tabla td {
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  text-align: left;
-  vertical-align: top;
-}
-
-.pagina-legal__tabla th {
-  background: var(--brand-100);
+.privacidad__icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background-color: var(--brand-100);
   color: var(--heading);
 }
 
-.pagina-legal__tabla code {
-  font-size: 12.5px;
-  white-space: nowrap;
+.privacidad__icono--chico { width: 36px; height: 36px; border-radius: var(--radius-sm); }
+
+/* El índice: chips que llevan a cada sección. */
+.privacidad__indice {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 28px;
+  margin-bottom: 8px;
 }
 
-/* En el celular la tabla pasa a fichas: tres columnas no caben en 360px. */
+.privacidad__indice a {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background-color: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--heading);
+  text-decoration: none;
+}
+
+.privacidad__indice a:hover { background-color: var(--brand-100); border-color: var(--brand-500); }
+
+.privacidad__seccion {
+  margin-top: 24px;
+  padding: 28px clamp(18px, 4vw, 36px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  scroll-margin-top: 16px;
+}
+
+.privacidad__seccion h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--heading);
+}
+
+.privacidad__intro {
+  margin: 4px 0 0;
+  font-size: 14.5px;
+  color: var(--text-muted);
+}
+
+.privacidad__rejilla {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.privacidad__rejilla--dos    { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.privacidad__rejilla--tres   { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.privacidad__rejilla--cuatro { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.privacidad__ficha,
+.privacidad__derecho {
+  padding: 18px;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-alt);
+}
+
+.privacidad__ficha h3,
+.privacidad__derecho h3 {
+  margin: 12px 0 4px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.privacidad__ficha p,
+.privacidad__derecho p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+.privacidad__ficha ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13.5px;
+  color: var(--text-soft);
+}
+
+.privacidad__ficha li + li { margin-top: 3px; }
+
+/* Los derechos, centrados: son cuatro verbos para leer de un vistazo. */
+.privacidad__derecho { text-align: center; }
+.privacidad__derecho .privacidad__icono { background-color: var(--accent); color: var(--on-accent); }
+
+/* Sí / nunca: verde y rojo, con su ícono en cada línea. */
+.privacidad__lista {
+  padding: 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.privacidad__lista--si { background-color: var(--success-bg); border-color: transparent; }
+.privacidad__lista--no { background-color: var(--danger-bg); border-color: transparent; }
+
+.privacidad__lista h3 { margin: 0 0 10px; font-size: 15px; }
+.privacidad__lista--si h3 { color: var(--success-text); }
+.privacidad__lista--no h3 { color: var(--danger-text); }
+
+.privacidad__lista ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.privacidad__lista li { display: flex; align-items: flex-start; gap: 10px; }
+.privacidad__lista li app-icon { flex-shrink: 0; margin-top: 2px; }
+.privacidad__lista--si li app-icon { color: var(--success-text); }
+.privacidad__lista--no li app-icon { color: var(--danger-text); }
+
+/* Quién los ve: una línea por cada quien. */
+.privacidad__quienes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.privacidad__quienes li {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-alt);
+}
+
+.privacidad__quienes h3 { margin: 0; font-size: 15px; color: var(--text); }
+.privacidad__quienes p  { margin: 2px 0 0; font-size: 13.5px; color: var(--text-muted); }
+
+/* Una nota aparte al pie de una sección. */
+.privacidad__aparte {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-alt);
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+.privacidad__aparte app-icon { flex-shrink: 0; margin-top: 2px; color: var(--accent-dark); }
+
+.privacidad__sin-cookies {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  background-color: var(--success-bg);
+}
+
+.privacidad__sin-cookies app-icon { flex-shrink: 0; color: var(--success-text); }
+.privacidad__sin-cookies h3 { margin: 0; font-size: 16px; color: var(--success-text); }
+.privacidad__sin-cookies p { margin: 4px 0 0; font-size: 14px; color: var(--text); }
+
+.privacidad__detalle {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 18px;
+}
+
+.privacidad__detalle summary {
+  padding: 14px 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--heading);
+  cursor: pointer;
+}
+
+.privacidad__detalle p,
+.privacidad__detalle ul { margin: 0 0 14px; font-size: 14px; color: var(--text-soft); }
+.privacidad__detalle ul { padding-left: 20px; }
+.privacidad__detalle li + li { margin-top: 4px; }
+
+.privacidad__contacto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  margin-top: 24px;
+  padding: 26px clamp(18px, 4vw, 36px);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--marca-bg-deep), var(--marca-bg));
+  color: var(--marca-text);
+}
+
+.privacidad__contacto h2 { margin: 0; font-size: 20px; }
+.privacidad__contacto p { margin: 4px 0 0; color: var(--marca-text-soft); }
+
+.privacidad__contacto ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14.5px;
+}
+
+.privacidad__contacto li { display: flex; align-items: center; gap: 8px; }
+.privacidad__contacto app-icon { color: var(--accent); }
+
+.privacidad__pie {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.privacidad__pie p { max-width: 70ch; margin: 4px auto; }
+
+@media (max-width: 900px) {
+  .privacidad__resumen,
+  .privacidad__rejilla--tres,
+  .privacidad__rejilla--cuatro { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .privacidad__resumen > :last-child { grid-column: 1 / -1; }
+}
+
 @media (max-width: 600px) {
-  .pagina-legal__tabla thead { display: none; }
-
-  .pagina-legal__tabla tr {
-    display: block;
-    margin-bottom: 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 8px 12px;
-  }
-
-  .pagina-legal__tabla td {
-    display: block;
-    border: none;
-    padding: 3px 0;
-  }
-
-  .pagina-legal__tabla td::before {
-    content: attr(data-titulo);
-    display: block;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--text-muted);
-  }
+  .privacidad__resumen,
+  .privacidad__rejilla--dos,
+  .privacidad__rejilla--tres,
+  .privacidad__rejilla--cuatro,
+  .privacidad__quienes { grid-template-columns: minmax(0, 1fr); }
+  .privacidad__resumen { margin-top: 16px; padding: 0; }
+  .privacidad__resumen > :last-child { grid-column: auto; }
+  .privacidad__portada { padding-top: 36px; }
+  .privacidad__portada p { font-size: 15px; }
+  .privacidad__indice { justify-content: flex-start; }
 }
 
 /* El enlace legal al pie del inicio de sesión y del convenio. */
