@@ -14,7 +14,6 @@ import {
   ApexMarkers,
   ApexNonAxisChartSeries,
   ApexPlotOptions,
-  ApexResponsive,
   ApexStroke,
   ApexTooltip,
   ApexXAxis,
@@ -63,10 +62,18 @@ interface DiaCalendario {
   yaPaso: boolean;
 }
 
-/** Una fila de «Cómo se forma el pago del mes». */
-interface PartePago {
+/** Una fila con su barra y su monto: el pago del mes y los conceptos. */
+interface FilaMonto {
   etiqueta: string;
   monto: number;
+  /** '+' lo que suma, '−' lo que resta, '' los totales y lo que arranca. */
+  signo: '' | '+' | '−';
+  /** El color de la barra (clase barras-monto__barra--…). */
+  color: string;
+  /** Lo que recibe el personal y el costo total: van en negrita, con raya. */
+  total: boolean;
+  /** Largo de la barra, en % del monto más grande de la lista. */
+  ancho: number;
 }
 
 /** Un tramo del anillo de boletas. */
@@ -220,12 +227,6 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     yaxis: { lines: { show: false } },
   };
   tooltipSoles: ApexTooltip = { y: { formatter: (v) => this.enSoles(v) } };
-  /** Las barras en degradado: del institucional al claro. */
-  degradadoBarra: ApexFill = {
-    type: 'gradient',
-    gradient: { shade: 'light', type: 'horizontal', gradientToColors: [PALETA_MARCA.b500], stops: [0, 100] },
-  };
-
   // ── 1. La nómina mes a mes, contra el año anterior ────────────────
   tendenciaSeries: ApexAxisChartSeries = [];
   tendenciaChart: ApexChart = {
@@ -249,7 +250,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   };
   tendenciaMarkers: ApexMarkers = { size: 0, hover: { size: 6 } };
   tendenciaXaxis: ApexXAxis = { categories: [], axisBorder: { show: false }, axisTicks: { show: false } };
-  tendenciaYaxis: ApexYAxis = { labels: { formatter: (v) => this.enMiles(v) } };
+  tendenciaYaxis: ApexYAxis = { labels: { formatter: (v) => this.enSolesEnteros(v) } };
   tendenciaLeyenda: ApexLegend = { position: 'top', horizontalAlign: 'right', fontSize: '12px' };
   tendenciaTooltip: ApexTooltip = { shared: true, intersect: false, y: { formatter: (v) => this.enSoles(v) } };
   /** La marca dorada del mes elegido; se dibuja por código (ver dibujarMarca). */
@@ -261,51 +262,11 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
 
   // ── 2. Cómo se forma el pago del mes ───────────────────────────
   //
-  // Antes era una cascada (barras que flotaban, unas subían y otras
-  // bajaban desde arriba): se leía como un gráfico volteado. Ahora son
-  // barras simples que salen todas de cero, una por concepto, en el orden
-  // en que se arma la planilla, y con el monto escrito al final.
-  pago: PartePago[] = [];
-  pagoSeries: ApexAxisChartSeries = [];
-  pagoChart: ApexChart = { ...this.base, height: 300 };
-  pagoPlot: ApexPlotOptions = {
-    bar: { horizontal: true, distributed: true, borderRadius: 5, barHeight: '64%', dataLabels: { position: 'top' } },
-  };
-  /** Sueldos, bonos, descuentos, lo que recibe, aportes, costo total. */
-  pagoColores = [
-    PALETA_MARCA.b700,
-    PALETA_ESTADO.exito,
-    PALETA_ESTADO.peligro,
-    PALETA_MARCA.b900,
-    PALETA_MARCA.b500,
-    PALETA_ACENTO,
-  ];
-  pagoXaxis: ApexXAxis = {
-    categories: [
-      'Sueldos',
-      'Bonos y asignaciones',
-      'Descuentos',
-      'Recibe el personal',
-      'Aportes del colegio',
-      'Costo total',
-    ],
-    tickAmount: 4,
-    labels: { formatter: (v) => this.enMiles(v) },
-  };
-  pagoYaxis: ApexYAxis = { labels: { maxWidth: 190, style: { fontSize: '12.5px' } } };
-  pagoEtiquetas: ApexDataLabels = {
-    enabled: true,
-    offsetX: 46,
-    formatter: (v: number) => this.enMiles(v),
-    style: { fontSize: '12px', fontWeight: 700 },
-  };
-  /** En el celular los nombres se leen enteros: más ancho y letra más chica. */
-  pagoResponsive: ApexResponsive[] = [
-    {
-      breakpoint: 640,
-      options: { yaxis: { labels: { maxWidth: 150, style: { fontSize: '11px' } } }, xaxis: { tickAmount: 2 } },
-    },
-  ];
+  // Una lista con su barra y el monto completo, con céntimos, alineado a
+  // la derecha como una columna de planilla. En un gráfico el monto solo
+  // cabía abreviado («S/ 214k»), y así no lee una planilla nadie de
+  // contabilidad.
+  pago: FilaMonto[] = [];
 
   // ── 3. Lo pagado por área: un mapa de bloques ─────────────────────
   //
@@ -321,7 +282,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   areaEtiquetas: ApexDataLabels = {
     enabled: true,
     style: { fontSize: '13px', fontWeight: 700 },
-    formatter: (texto: string, op: { value: number }) => [texto, this.enMiles(op.value)] as unknown as string,
+    formatter: (texto: string, op: { value: number }) => [texto, this.enSoles(op.value)] as unknown as string,
     offsetY: -2,
   };
   areaTooltip: ApexTooltip = {
@@ -380,29 +341,9 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   /** De claro a profundo: a más años, más intenso; el último tramo en dorado. */
   personalColores = [PALETA_MARCA.b500, PALETA_MARCA.b600, PALETA_MARCA.b700, PALETA_MARCA.b900, PALETA_ACENTO];
 
-  // ── 6. Los conceptos que más pesan ────────────────────────────────
-  conceptosSeries: ApexAxisChartSeries = [];
-  conceptosChart: ApexChart = { ...this.base, height: 260 };
-  conceptosPlot: ApexPlotOptions = {
-    bar: { horizontal: true, borderRadius: 5, barHeight: '62%', dataLabels: { position: 'top' } },
-  };
-  conceptosXaxis: ApexXAxis = { categories: [], tickAmount: 3, labels: { formatter: (v) => this.enMiles(v) } };
-  conceptosYaxis: ApexYAxis = { labels: { maxWidth: 160, style: { fontSize: '12px' } } };
-  conceptosColores = [PALETA_ACENTO];
-  conceptosFill: ApexFill = {
-    type: 'gradient',
-    gradient: { shade: 'light', type: 'horizontal', gradientToColors: [PALETA_ESTADO.aviso], stops: [0, 100] },
-  };
-  conceptosEtiquetas: ApexDataLabels = {
-    enabled: true,
-    offsetX: 34,
-    formatter: (v: number) => this.enMiles(v),
-    style: { fontSize: '11px', fontWeight: 700 },
-  };
-  /** En el celular el nombre se acorta y el eje lleva menos marcas. */
-  angostoResponsive: ApexResponsive[] = [
-    { breakpoint: 640, options: { yaxis: { labels: { maxWidth: 110 } }, xaxis: { tickAmount: 2 } } },
-  ];
+  // ── 6. Otros pagos y descuentos del mes ───────────────────────
+  // También como lista con el monto completo, por lo mismo que el pago.
+  conceptos: FilaMonto[] = [];
 
   // ── 7. Altas y bajas ──────────────────────────────────────────────
   movimientoSeries: ApexAxisChartSeries = [];
@@ -633,7 +574,7 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
                   y: elegido.valor,
                   marker: { size: 7, fillColor: PALETA_ACENTO, strokeColor: PALETA_MARCA.b100, strokeWidth: 3 },
                   label: {
-                    text: this.enMiles(elegido.valor),
+                    text: this.enSoles(elegido.valor),
                     borderColor: PALETA_ACENTO,
                     offsetY: -6,
                     style: { background: PALETA_ACENTO, color: PALETA_SOBRE_ACENTO, fontSize: '12px', fontWeight: 800, padding: { left: 8, right: 8, top: 3, bottom: 4 } },
@@ -692,9 +633,9 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
 
     // ── Conceptos ──
     const tops = d.topConceptos ?? [];
-    this.conceptosSeries = [{ name: 'Monto', data: tops.map((x) => x.valor) }];
-    this.conceptosXaxis = this.siCambia(this.conceptosXaxis, { ...this.conceptosXaxis, categories: tops.map((x) => x.etiqueta) });
-    this.conceptosChart = this.siCambia(this.conceptosChart, { ...this.conceptosChart, height: Math.max(220, tops.length * 44 + 50) });
+    this.conceptos = this.conAncho(
+      tops.map((x) => ({ etiqueta: x.etiqueta, monto: x.valor, signo: '', color: 'concepto', total: false, ancho: 0 })),
+    );
 
     // ── Altas y bajas ──
     this.movimiento = d.movimientoPersonal ?? [];
@@ -849,12 +790,19 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
 
   // ════════ Cómo se forma el pago ════════
 
+  /** Pone el largo de cada barra contra el monto más grande de la lista. */
+  private conAncho(filas: FilaMonto[]): FilaMonto[] {
+    const tope = Math.max(...filas.map((f) => f.monto), 1);
+    return filas.map((f) => ({ ...f, ancho: Math.max(f.monto > 0 ? 1.5 : 0, (f.monto / tope) * 100) }));
+  }
+
+  trackPorEtiqueta = (_: number, f: FilaMonto) => f.etiqueta;
+
   private armarPago(comp: DatoGrafico[], nominaReal: number, aportes: number): void {
     const valor = (nombre: string) => comp.find((c) => c.etiqueta === nombre)?.valor ?? 0;
     const basico = valor('Sueldo básico');
     if (!basico && !nominaReal) {
       this.pago = [];
-      this.pagoSeries = [];
       return;
     }
 
@@ -868,15 +816,14 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     if (resto > 0) bonos += resto;
     else descuentos -= resto;
 
-    this.pago = [
-      { etiqueta: 'Sueldos', monto: basico },
-      { etiqueta: 'Bonos y asignaciones', monto: bonos },
-      { etiqueta: 'Descuentos', monto: descuentos },
-      { etiqueta: 'Recibe el personal', monto: nominaReal },
-      { etiqueta: 'Aportes del colegio', monto: aportes },
-      { etiqueta: 'Costo total', monto: nominaReal + aportes },
-    ];
-    this.pagoSeries = [{ name: 'Monto', data: this.pago.map((p) => Math.round(p.monto * 100) / 100) }];
+    this.pago = this.conAncho([
+      { etiqueta: 'Sueldos básicos', monto: basico, signo: '', color: 'sueldos', total: false, ancho: 0 },
+      { etiqueta: 'Bonos y asignaciones', monto: bonos, signo: '+', color: 'bonos', total: false, ancho: 0 },
+      { etiqueta: 'Descuentos y adelantos', monto: descuentos, signo: '−', color: 'descuentos', total: false, ancho: 0 },
+      { etiqueta: 'Lo que recibe el personal', monto: nominaReal, signo: '', color: 'neto', total: true, ancho: 0 },
+      { etiqueta: 'Aportes del colegio', monto: aportes, signo: '+', color: 'aportes', total: false, ancho: 0 },
+      { etiqueta: 'Costo total del mes', monto: nominaReal + aportes, signo: '', color: 'costo', total: true, ancho: 0 },
+    ]);
   }
 
   // ════════ Personal ════════
@@ -1007,18 +954,26 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     return 'S/ ' + Number(valor).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  /** "148,300" sin céntimos: en la cifra grande los céntimos estorban. */
-  enSolesRedondo(valor: number): string {
-    return Math.round(valor).toLocaleString('es-PE');
+  /**
+   * La parte entera de la cifra grande ("192,183"); los céntimos van
+   * aparte, más chicos (centimos()), pero van: contabilidad lee el monto
+   * exacto, no redondeado.
+   */
+  enSolesRedondo(valor: number, truncar = false): string {
+    const n = truncar ? Math.floor(Math.round(valor * 100) / 100) : Math.round(valor);
+    return n.toLocaleString('es-PE');
   }
 
-  /** "S/ 9k" para los ejes, donde no cabe el número entero. */
-  enMiles(valor: number | string): string {
+  /** "75" de 192,183.75. */
+  centimos(valor: number): string {
+    return String(Math.round(valor * 100) % 100).padStart(2, '0');
+  }
+
+  /** "S/ 200,000": para los ejes, sin céntimos pero con el número entero. */
+  enSolesEnteros(valor: number | string): string {
     const n = Number(valor);
     if (!isFinite(n)) return String(valor);
-    const abs = Math.abs(n);
-    if (abs >= 1_000_000) return `S/ ${(n / 1_000_000).toFixed(1)}M`;
-    return abs >= 1000 ? `S/ ${Math.round(n / 1000)}k` : `S/ ${Math.round(n)}`;
+    return 'S/ ' + Math.round(n).toLocaleString('es-PE');
   }
 
   hayValores(serie: ApexAxisChartSeries): boolean {

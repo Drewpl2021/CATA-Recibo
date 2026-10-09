@@ -1868,6 +1868,15 @@ td.celda-numero {
   color: var(--accent);
 }
 
+/* Los céntimos van, pero más chicos: el monto es exacto y la vista se
+   queda en los soles. */
+.banda-mes__centimos {
+  font-size: 0.5em;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--marca-text-soft);
+}
+
 .banda-mes__cambio {
   display: inline-flex;
   align-items: center;
@@ -2236,6 +2245,81 @@ td.celda-numero {
 .segmentado--chico .segmentado__opcion {
   padding: 4px 10px;
   font-size: 12.5px;
+}
+
+/* ── Barras con su monto: el pago del mes y los conceptos ──
+   El monto completo, con céntimos, alineado a la derecha como en una
+   planilla; la barra debajo da el tamaño de un vistazo. En un gráfico de
+   Apex el monto solo entraba abreviado («S/ 214k»). */
+.barras-monto {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barras-monto__fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 6px 12px;
+  padding: 8px 0;
+}
+
+.barras-monto__nombre {
+  font-size: 13.5px;
+  color: var(--text-soft);
+}
+
+.barras-monto__monto {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Lo que recibe el personal y el costo total: el resultado de la cuenta,
+   con una raya encima como en una boleta. */
+.barras-monto__fila--total {
+  border-top: 1px solid var(--border-strong);
+}
+
+.barras-monto__fila--total .barras-monto__nombre { font-weight: 700; color: var(--text); }
+.barras-monto__fila--total .barras-monto__monto  { font-size: 15px; font-weight: 800; }
+
+.barras-monto__pista {
+  grid-column: 1 / -1;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--surface-alt);
+  overflow: hidden;
+}
+
+.barras-monto__barra {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width .45s ease;
+}
+
+.barras-monto__barra--sueldos    { background-color: var(--brand-700); }
+.barras-monto__barra--bonos      { background-color: var(--success); }
+.barras-monto__barra--descuentos { background-color: var(--danger); }
+.barras-monto__barra--neto       { background-color: var(--brand-900); }
+.barras-monto__barra--aportes    { background-color: var(--brand-500); }
+.barras-monto__barra--costo,
+.barras-monto__barra--concepto   { background-color: var(--accent); }
+
+/* En oscuro los dos azules hondos se pierden sobre la tarjeta. */
+.dark-mode .barras-monto__barra--sueldos { background-color: var(--brand-500); }
+.dark-mode .barras-monto__barra--neto    { background-color: var(--brand-600); }
+.dark-mode .barras-monto__barra--aportes { background-color: var(--brand-100-hover); }
+
+@media (prefers-reduced-motion: reduce) {
+  .barras-monto__barra { transition: none; }
 }
 
 /* ── Cómo es el personal: tres donas en fila ── */

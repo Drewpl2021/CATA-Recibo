@@ -121,7 +121,7 @@
     <section class="banda-mes" aria-label="Resumen del mes">
       <div class="banda-mes__nomina">
         <h2 class="banda-mes__titulo">Total de la planilla de {{ loQueSeVe }}</h2>
-        <p class="banda-mes__cifra"><span class="banda-mes__moneda">S/</span>{{ enSolesRedondo(nominaMostrada) }}</p>
+        <p class="banda-mes__cifra"><span class="banda-mes__moneda">S/</span>{{ enSolesRedondo(nominaMostrada, true) }}<span class="banda-mes__centimos">.{{ centimos(nominaMostrada) }}</span></p>
         <p class="banda-mes__cambio" *ngIf="variacion !== null">
           <app-icon [icono]="variacion >= 0 ? 'trending_up' : 'trending_down'" [tamano]="15"></app-icon>
           {{ variacionAbs }} % {{ variacion >= 0 ? 'más' : 'menos' }} que en {{ nombreMesAnterior }}
@@ -182,7 +182,7 @@
         <span class="indicador__icono"><app-icon icono="wallet" [tamano]="20"></app-icon></span>
         <div class="indicador__texto">
           <h3 class="indicador__nombre">Pagado en lo que va del año</h3>
-          <p class="indicador__valor">{{ enMiles(acumulado) }}</p>
+          <p class="indicador__valor">{{ enSoles(acumulado) }}</p>
           <p class="indicador__nota">De enero a {{ nombreMes(filtroMes).toLowerCase() }} de {{ filtroAnio }}</p>
         </div>
         <apx-chart class="indicador__chispa" *ngIf="acumulado" [series]="chispaNominaSeries" [chart]="chispaNominaChart"
@@ -193,7 +193,7 @@
         <span class="indicador__icono indicador__icono--dorado"><app-icon icono="money" [tamano]="20"></app-icon></span>
         <div class="indicador__texto">
           <h3 class="indicador__nombre">Costo total del mes</h3>
-          <p class="indicador__valor">{{ enMiles(nomina + aportes) }}</p>
+          <p class="indicador__valor">{{ enSoles(nomina + aportes) }}</p>
           <p class="indicador__nota">Con {{ enSoles(aportes) }} de aportes del colegio</p>
         </div>
         <div class="indicador__reparto" *ngIf="nomina" role="img"
@@ -314,11 +314,16 @@
             <p class="tarjeta-grafico__nota">Sueldos y bonos, menos descuentos, es lo que recibe el personal. Con los aportes del colegio sale el costo total.</p>
           </div>
         </header>
-        <apx-chart *ngIf="pago.length"
-          [series]="pagoSeries" [chart]="pagoChart" [plotOptions]="pagoPlot" [colors]="pagoColores"
-          [xaxis]="pagoXaxis" [yaxis]="pagoYaxis" [dataLabels]="pagoEtiquetas" [tooltip]="tooltipSoles"
-          [responsive]="pagoResponsive" [legend]="sinLeyenda" [grid]="rejillaHorizontal">
-        </apx-chart>
+        <ol class="barras-monto" *ngIf="pago.length">
+          <li class="barras-monto__fila" *ngFor="let f of pago; trackBy: trackPorEtiqueta"
+            [class.barras-monto__fila--total]="f.total">
+            <span class="barras-monto__nombre">{{ f.etiqueta }}</span>
+            <strong class="barras-monto__monto">{{ f.signo ? f.signo + ' ' : '' }}{{ enSoles(f.monto) }}</strong>
+            <span class="barras-monto__pista">
+              <span class="barras-monto__barra" [ngClass]="'barras-monto__barra--' + f.color" [style.width.%]="f.ancho"></span>
+            </span>
+          </li>
+        </ol>
         <p class="card-vacio" *ngIf="!pago.length">Este mes todavía no tiene planillas.</p>
       </article>
 
@@ -387,13 +392,16 @@
             <p class="tarjeta-grafico__nota">Los más grandes, sin contar pensión, EsSalud ni renta de quinta</p>
           </div>
         </header>
-        <apx-chart *ngIf="hayValores(conceptosSeries)"
-          [series]="conceptosSeries" [chart]="conceptosChart" [plotOptions]="conceptosPlot"
-          [xaxis]="conceptosXaxis" [yaxis]="conceptosYaxis" [colors]="conceptosColores" [fill]="conceptosFill"
-          [responsive]="angostoResponsive" [tooltip]="tooltipSoles" [dataLabels]="conceptosEtiquetas"
-          [legend]="sinLeyenda" [grid]="rejillaHorizontal">
-        </apx-chart>
-        <p class="card-vacio" *ngIf="!hayValores(conceptosSeries)">
+        <ol class="barras-monto" *ngIf="conceptos.length">
+          <li class="barras-monto__fila" *ngFor="let f of conceptos; trackBy: trackPorEtiqueta">
+            <span class="barras-monto__nombre">{{ f.etiqueta }}</span>
+            <strong class="barras-monto__monto">{{ enSoles(f.monto) }}</strong>
+            <span class="barras-monto__pista">
+              <span class="barras-monto__barra barras-monto__barra--concepto" [style.width.%]="f.ancho"></span>
+            </span>
+          </li>
+        </ol>
+        <p class="card-vacio" *ngIf="!conceptos.length">
           Este mes no se aplicó ningún concepto además de los de ley.
         </p>
       </article>
