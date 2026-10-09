@@ -154,7 +154,6 @@ export class UsuariosListComponent implements OnInit {
   modalPassword = false;
   usuarioRestablecido: Usuario | null = null;
   passwordTemporal = '';
-  passwordEsDni = false;
   restableciendo = false;
 
   form = this.fb.group({
@@ -352,8 +351,9 @@ export class UsuariosListComponent implements OnInit {
       .confirmar({
         titulo: 'Restablecer contraseña',
         mensaje:
-          `A "${usuario.name}" se le pondrá su DNI como contraseña, se le cerrarán ` +
-          `las sesiones abiertas y el sistema le pedirá cambiarla al entrar. ¿Seguimos?`,
+          `A "${usuario.name}" le enviaremos a su correo un enlace para crear una contraseña nueva ` +
+          `(si no tiene correo, se generará una clave temporal para entregársela en persona). ` +
+          `La que tiene ahora deja de servir y se cierran sus sesiones. ¿Seguimos?`,
         aceptarTexto: 'Sí, restablecer',
         // No se borra nada: el tacho rojo daría a entender otra cosa.
         variante: 'default',
@@ -365,12 +365,14 @@ export class UsuariosListComponent implements OnInit {
         this.usuarioService.restablecerPassword(usuario.id).subscribe({
           next: (res) => {
             this.restableciendo = false;
-            if (res.success) {
-              this.usuarioRestablecido = usuario;
-              this.passwordTemporal = res.data.password_temporal;
-              this.passwordEsDni = res.data.es_dni;
-              this.modalPassword = true;
+            if (!res.success) return;
+            if (res.data.por_correo) {
+              this.toastService.success('Acceso enviado', res.data.message);
+              return;
             }
+            this.usuarioRestablecido = usuario;
+            this.passwordTemporal = res.data.password_temporal ?? '';
+            this.modalPassword = true;
           },
           error: (err) => {
             this.restableciendo = false;

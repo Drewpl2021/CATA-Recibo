@@ -80,6 +80,16 @@ export class EmpleadoService extends EntityDataService<Empleado> {
    * Lleva el mismo buscador que la tabla: lo que se ve es lo que baja. Vuelve
    * como blob porque es un archivo, no el { success, data } del resto.
    */
+  /**
+   * «Enviar acceso por correo» a los marcados: a cada uno le llega el enlace
+   * para crear su contraseña, y la que tuviera deja de servir.
+   */
+  enviarAcceso(ids: string[]) {
+    return this.http.post<ApiResponse<{ enviados: number; omitidos: { trabajador: string; motivo: string }[] }>>(
+      `${environment.apiUrl}/employees/send-access`, { ids }
+    );
+  }
+
   exportar(filtros: Record<string, string | number | undefined> = {}, ids?: string[]): Observable<Blob> {
     const url = `${environment.apiUrl}/${END_POINTS_ACCIONES.exportarEmpleados}`;
     // Los marcados van en el cuerpo: con cientos no caben en la dirección.

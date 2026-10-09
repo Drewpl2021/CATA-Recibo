@@ -27,6 +27,8 @@ export class RestablecerPasswordComponent implements OnInit {
 
   token = '';
   email = '';
+  /** Llegó por «Tu acceso a CATA-Recibo» (crear la primera) y no por «olvidé mi contraseña». */
+  invitacion = false;
   enlaceValido = false;
 
   guardando = false;
@@ -43,6 +45,7 @@ export class RestablecerPasswordComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    this.invitacion = !!this.ruta.snapshot.data['invitacion'];
     this.token = this.ruta.snapshot.queryParamMap.get('token') ?? '';
     this.email = this.ruta.snapshot.queryParamMap.get('email') ?? '';
     this.enlaceValido = !!this.token && !!this.email;
@@ -74,13 +77,13 @@ export class RestablecerPasswordComponent implements OnInit {
     this.errorMsg = '';
     const { password, password_confirmation } = this.form.getRawValue();
 
-    this.authService
-      .restablecerPassword({
+    const datos = {
         token: this.token,
         email: this.email,
         password: password!,
         password_confirmation: password_confirmation!,
-      })
+      };
+    (this.invitacion ? this.authService.crearPassword(datos) : this.authService.restablecerPassword(datos))
       .subscribe({
         next: () => {
           this.guardando = false;

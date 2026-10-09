@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\Hash;
  *
  * Hay dos caminos para hacerlo —el formulario de Nuevo Empleado y la
  * importación desde Excel— y los dos tienen que dejar exactamente lo mismo:
- * la ficha, su cuenta con el DNI como contraseña provisional y su contrato
+ * la ficha, su cuenta (sin contraseña usable: entra con el enlace que le
+ * llega al correo, ver AccesoPorCorreo) y su contrato
  * inicial. Con la lógica copiada en dos controladores, el día que se agregara
  * un paso al alta uno de los dos caminos crearía empleados incompletos.
  */
@@ -170,12 +171,12 @@ final class AltaDeEmpleado
                 User::create([
                     'name'        => $empleado->nombre . ' ' . $empleado->apellido,
                     'email'       => $datos['email'],
-                    'password'    => Hash::make($datos['dni']),
+                    // Una clave aleatoria que nadie conoce: entra con el enlace
+                    // «Tu acceso a CATA-Recibo» que le llega al correo. Nunca el
+                    // DNI, que está a la vista de todos en la ficha y la boleta.
+                    'password'    => \App\Support\AccesoPorCorreo::claveQueNadieConoce(),
                     'rol_id'      => $datos['rol_id'],
                     'empleado_id' => $empleado->id,
-                    // Entra con su DNI, y el sistema no le deja hacer nada más
-                    // hasta que ponga una contraseña suya: el DNI está a la vista
-                    // de todos en la ficha y en la boleta.
                     'debe_cambiar_password' => true,
                     'estado_registro'       => $cesado ? 'inactivo' : 'activo',
                 ]);

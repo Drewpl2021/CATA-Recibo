@@ -106,10 +106,9 @@
       <label>Contraseña temporal</label>
       <input type="text" class="form-control" [value]="passwordTemporal" readonly
         style="font-size: 20px; letter-spacing: 2px; text-align: center;" />
-      <small class="form-ayuda" *ngIf="passwordEsDni">Es su DNI, como cuando se le dio de alta.</small>
-      <small class="form-ayuda" *ngIf="!passwordEsDni">
-        Esta cuenta no tiene un empleado con DNI, así que se generó una al azar.
-        Anótala: no vas a poder volver a verla.
+      <small class="form-ayuda">
+        Se generó al azar porque la cuenta no tiene un correo al que enviarle el enlace.
+        Entrégasela en persona: no vas a poder volver a verla.
       </small>
     </div>
 

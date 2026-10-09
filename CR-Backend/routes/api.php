@@ -77,6 +77,8 @@ Route::get('/verificar-boleta/{documento}', [\App\Http\Controllers\VerificarBole
 // ademas no deja pedir dos enlaces seguidos (auth.passwords.users.throttle).
 Route::post('/forgot-password',      [AuthController::class, 'olvidePassword'])->middleware('throttle:recuperacion');
 Route::post('/reset-password', [AuthController::class, 'restablecerPassword'])->middleware('throttle:recuperacion');
+// El enlace de «Tu acceso a CATA-Recibo»: crear la contraseña (ver AccesoPorCorreo).
+Route::post('/create-password', [AuthController::class, 'crearPassword'])->middleware('throttle:recuperacion');
 
 // ── Protegidas ────────────────────────────────────────
 // 'sesion' empuja la caducidad del token en cada petición: mientras se
@@ -191,6 +193,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::get('employees/export',       [EmpleadoController::class, 'exportar']);
         // Los marcados, en el cuerpo (con cientos no caben en la dirección).
         Route::post('employees/export',      [EmpleadoController::class, 'exportar']);
+        // «Enviar acceso por correo» a los marcados.
+        Route::post('employees/send-access', [EmpleadoController::class, 'enviarAcceso'])->middleware('throttle:30,1');
         // Las boletas YA EMITIDAS del mes, todas en un .zip (mismos filtros
         // de Emisión de Boletas). También antes del apiResource.
         Route::get('employees/payslips-zip', [EmpleadoController::class, 'boletasEnZip']);

@@ -43,8 +43,8 @@ Las cabeceras están en `docker/web/cabeceras-seguridad.conf`.
 
 - Contraseñas guardadas con **hash** (bcrypt): no se pueden leer, ni siquiera
   desde la base.
-- La contraseña inicial es el DNI y el sistema **obliga a cambiarla** en el
-  primer ingreso.
+- El primer acceso llega **por correo, con un enlace personal** (punto 7):
+  nunca es el DNI, y la persona crea su propia contraseña.
 - **Límite de intentos** en el inicio de sesión y en la recuperación de
   contraseña. En «Firmar aquí», 5 claves equivocadas del certificado bloquean
   15 minutos.
@@ -79,7 +79,29 @@ Las cabeceras están en `docker/web/cabeceras-seguridad.conf`.
 - El tratamiento de datos sigue la **Ley 29733** y queda declarado en el
   Convenio de entrega digital (cláusula sexta) y en la página de privacidad.
 
-## 6. Pendiente (no depende del código)
+## 6. Primer acceso: por correo, nunca con el DNI
+
+Antes cada cuenta nacía con el DNI como contraseña. El DNI no es un secreto
+(está en la boleta, en las listas, en cualquier trámite): quien supiera el
+correo y el DNI de alguien podía entrar a su cuenta antes que él.
+
+- La cuenta nace con una **clave aleatoria que nadie conoce**.
+- El trabajador recibe el correo **«Tu acceso a CATA-Recibo»**, con un enlace
+  personal que sirve **una sola vez** y **vence en 72 horas**, y crea su
+  contraseña en «Crea tu contraseña» (no puede ser su DNI).
+- En el alta individual el correo sale solo. Para los importados desde Excel,
+  RR.HH. los marca en Empleados y pulsa **«Enviar acceso»**.
+- «Restablecer contraseña» (Usuarios) también envía el enlace. Si la cuenta
+  no tiene correo, genera una clave temporal aleatoria que se muestra una sola
+  vez, para entregarla en persona.
+- Los enlaces de acceso van en su propia tabla (`invitaciones_acceso`): uno de
+  «olvidé mi contraseña» (60 minutos) no puede usarse como acceso, ni al revés.
+- Las cuentas que todavía tenían el DNI quedaron con una clave aleatoria
+  (migración `acceso_por_invitacion_en_lugar_del_dni`).
+
+Prueba automática: `tests/Feature/AccesoPorCorreoTest.php`.
+
+## 7. Pendiente (no depende del código)
 
 1. **HTTPS en el servidor.** Sin él, contraseñas y boletas viajan sin cifrar
    por la red. Ver «Sobre entrar por IP y sin HTTPS» en `DESPLIEGUE.md`. Con
@@ -88,5 +110,8 @@ Las cabeceras están en `docker/web/cabeceras-seguridad.conf`.
    Nacional de Protección de Datos Personales, como pide la Ley 29733.
 3. **Revisión legal** del Convenio de entrega digital y de la página de
    privacidad por el asesor del colegio.
-4. **Conservar la `APP_KEY`** al cambiar de servidor: de ella dependen los QR ya
+4. **Configurar el correo del colegio** en el servidor (`MAIL_MAILER`,
+   `MAIL_HOST`… en el `.env`). Sin él no salen los correos de acceso, y los
+   trabajadores no pueden crear su contraseña.
+5. **Conservar la `APP_KEY`** al cambiar de servidor: de ella dependen los QR ya
    impresos y el cifrado de los certificados.

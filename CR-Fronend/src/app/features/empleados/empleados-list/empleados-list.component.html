@@ -104,8 +104,13 @@
      la lista, con su propio color: arriba en la página se confundía con
      "Importar" y "Descargar empleados" y se perdía. -->
 <app-barra-seleccion [cantidad]="marcados.length" singular="trabajador marcado" plural="trabajadores marcados"
-  [resumen]="resumenMarcados" [total]="total" [ocupado]="cambiandoEstado || exportandoMarcados" [marcandoTodos]="marcandoTodos"
+  [resumen]="resumenMarcados" [total]="total" [ocupado]="cambiandoEstado || exportandoMarcados || enviandoAcceso" [marcandoTodos]="marcandoTodos"
   (marcarTodos)="marcarTodos()" (soltar)="soltarMarcados()">
+  <button type="button" class="barra-seleccion__boton" (click)="enviarAccesoMarcados()" [disabled]="cambiandoEstado || exportandoMarcados || enviandoAcceso"
+    [appPista]="'Les envía a su correo el enlace personal para crear su contraseña (vence en 72 h). Para el primer acceso o para quien perdió el suyo.'">
+    <app-icon icono="mail" [tamano]="16"></app-icon>
+    {{ enviandoAcceso ? 'Enviando…' : 'Enviar acceso' }}
+  </button>
   <button type="button" class="barra-seleccion__boton" (click)="exportarMarcados()" [disabled]="cambiandoEstado || exportandoMarcados"
     [appPista]="'Baja en Excel la ficha completa de los ' + marcados.length + ' marcado(s), igual que «Descargar empleados» pero solo de ellos.'">
     <app-icon icono="excel" [tamano]="16"></app-icon>

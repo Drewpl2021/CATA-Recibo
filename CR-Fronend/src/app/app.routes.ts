@@ -28,6 +28,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/autenticacion/restablecer-password/restablecer-password.component').then(m => m.RestablecerPasswordComponent),
   },
   {
+    // El enlace de «Tu acceso a CATA-Recibo»: la misma pantalla, para crear
+    // la primera contraseña (el acceso nunca es el DNI).
+    path: 'crear-contrasena',
+    data: { invitacion: true },
+    loadComponent: () => import('./features/autenticacion/restablecer-password/restablecer-password.component').then(m => m.RestablecerPasswordComponent),
+  },
+  {
     // El cambio obligatorio del primer ingreso. Pide sesión pero NO exige
     // tener la contraseña al día: es la pantalla donde se arregla eso, así
     // que usa sesionGuard y no authGuard (que mandaría acá otra vez).

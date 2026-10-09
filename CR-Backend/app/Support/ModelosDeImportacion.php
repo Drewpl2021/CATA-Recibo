@@ -100,7 +100,7 @@ final class ModelosDeImportacion
 
         self::instrucciones($libro, 'Cómo llenar el modelo de empleados', [
             'Cada fila es un trabajador' => [
-                'Con un DNI que el sistema todavía no tiene, se da de alta al trabajador: su ficha, su cuenta y su contrato. Entra con su DNI como contraseña provisional y el sistema le pide cambiarla.',
+                'Con un DNI que el sistema todavía no tiene, se da de alta al trabajador: su ficha, su cuenta y su contrato. Su acceso se le envía después por correo, desde Empleados (marcarlos y «Enviar acceso»).',
                 'Con un DNI que ya existe, solo se cambian las celdas que tengan algo escrito. Una celda vacía no borra nada.',
                 'Todos entran como trabajadores. Si a alguien le toca entrar a RR.HH. o a Administración, eso se le cambia después desde Usuarios.',
             ],

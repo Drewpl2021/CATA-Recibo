@@ -59,7 +59,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
       /*
        * 423: la sesión es buena, pero la cuenta está trabada porque todavía
-       * usa la contraseña que le dieron (el DNI). El backend lo responde a
+       * no puso su propia contraseña. El backend lo responde a
        * todo salvo /me, /logout y /cambiar-password.
        *
        * Pasa aunque el login no lo hubiera avisado: por ejemplo si RR.HH. le

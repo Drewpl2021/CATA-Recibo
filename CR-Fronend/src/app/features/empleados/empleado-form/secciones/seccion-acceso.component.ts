@@ -9,7 +9,7 @@ import { SeccionEmpleadoBase } from './seccion-base';
  *
  * Al dar de alta un empleado, el backend le crea el usuario en la misma
  * operación: el correo que se ponga acá será con el que entre, y su
- * CONTRASEÑA INICIAL ES SU DNI. Por eso la pantalla lo dice en grande — es
+ * ACCESO LE LLEGA A ESE CORREO (nunca el DNI). Por eso la pantalla lo dice — es
  * lo que RR.HH. tiene que comunicarle al trabajador.
  *
  * El rol no se elige: toda alta entra como empleado (el backend lo fuerza).
@@ -29,7 +29,7 @@ export class SeccionAccesoComponent extends SeccionEmpleadoBase {
     return !this.roles.length || this.roles.some((r) => r.nombre === 'empleado');
   }
 
-  /** El DNI escrito en el paso 1, que será su contraseña inicial. */
+  /** El DNI escrito en el paso 1 (ya no es la contraseña: el acceso va por correo). */
   get dni(): string {
     return this.form.get('dni')?.value || '';
   }

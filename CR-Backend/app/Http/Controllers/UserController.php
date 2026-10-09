@@ -96,14 +96,13 @@ class UserController extends Controller
     /**
      * POST /users/{id}/restablecer-password
      *
-     * Para cuando un docente se queda fuera y no puede usar el correo (que en
-     * este colegio pasa seguido: muchos entran solo a firmar su boleta y no
-     * revisan el buzón). RR.HH. le repone la contraseña en el momento y se la
-     * dice; el sistema le obliga a cambiarla en cuanto entre.
+     * Para cuando alguien se queda fuera de su cuenta.
      *
-     * La nueva es su DNI, que es la misma regla del alta y la que RR.HH. ya
-     * sabe explicar. Si el usuario no tiene empleado con DNI, se inventa una
-     * temporal y se devuelve UNA sola vez en la respuesta.
+     * Si tiene correo, se le envía «Tu acceso a CATA-Recibo» con el enlace para
+     * crear una contraseña nueva (y la que tenía deja de servir). Si no tiene
+     * correo, se genera una clave temporal aleatoria que se devuelve UNA sola
+     * vez, para que RR.HH. se la entregue en persona; el sistema le obliga a
+     * cambiarla al entrar. Nunca el DNI: no es un secreto, está en la boleta.
      */
     public function restablecerPassword(Request $request, string $id)
     {
@@ -129,26 +128,33 @@ class UserController extends Controller
             ], 403);
         }
 
-        $dni = $user->empleado?->dni;
-        $nueva = $dni ?: Str::upper(Str::random(4)) . random_int(1000, 9999);
+        // Con correo: el enlace, y la clave que tenía deja de servir.
+        if ($user->email && filter_var($user->email, FILTER_VALIDATE_EMAIL) && $user->estado_registro === 'activo') {
+            \App\Support\AccesoPorCorreo::enviar($user);
 
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'message'    => "Le enviamos a {$user->email} el enlace para crear una contraseña nueva. Vence en 72 horas; la que tenía ya no sirve.",
+                    'por_correo' => true,
+                ],
+            ]);
+        }
+
+        // Sin correo: una clave temporal aleatoria, que se muestra una sola vez.
+        $nueva = Str::password(12, symbols: false);
         $user->update([
             'password'              => Hash::make($nueva),
             'debe_cambiar_password' => true,
         ]);
-
-        // Se le cierran las sesiones abiertas: si se le repone la contraseña
-        // es porque algo pasó con la cuenta.
         $user->tokens()->delete();
 
         return response()->json([
             'success' => true,
             'data'    => [
-                'message'           => $dni
-                    ? 'Contraseña restablecida. Ahora entra con su DNI y el sistema le pedirá cambiarla.'
-                    : 'Contraseña restablecida. Entrégale la contraseña temporal: el sistema le pedirá cambiarla al entrar.',
+                'message'           => 'Contraseña restablecida. Entrégale esta clave temporal en persona: se muestra una sola vez, y el sistema le pedirá cambiarla al entrar.',
                 'password_temporal' => $nueva,
-                'es_dni'            => (bool) $dni,
+                'por_correo'        => false,
             ],
         ]);
     }

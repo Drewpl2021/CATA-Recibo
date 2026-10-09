@@ -99,6 +99,17 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // «Tu acceso a CATA-Recibo»: el enlace para crear la primera
+        // contraseña (ver App\Support\AccesoPorCorreo). Dura más que el de
+        // «olvidé mi contraseña» porque llega sin que la persona lo espere,
+        // y va en su propia tabla para que un enlace no valga por el otro.
+        'invitaciones' => [
+            'provider' => 'users',
+            'table' => 'invitaciones_acceso',
+            'expire' => 72 * 60,
+            'throttle' => 0,
+        ],
     ],
 
     /*

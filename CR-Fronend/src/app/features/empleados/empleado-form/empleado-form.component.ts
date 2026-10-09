@@ -47,7 +47,7 @@ function noFutura(control: AbstractControl): ValidationErrors | null {
  * siendo una sola llamada, y el wizard sabe en qué paso está cada error.
  *
  * Lo importante del alta: el backend crea el EMPLEADO y su USUARIO en la
- * misma operación, con el DNI como contraseña inicial. Por eso el correo y
+ * misma operación, y el acceso le llega por correo. Por eso el correo y
  * el rol son obligatorios al crear; al editar, el rol se cambia en Usuarios.
  */
 @Component({
@@ -682,7 +682,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
             this.guardando = false;
             this.toastService.success(
               'Empleado registrado',
-              `Se creó la cuenta ${payload.email}. Su contraseña inicial es su DNI: ${payload.dni}.`
+              (res as { mensaje?: string }).mensaje ?? `Se creó la cuenta ${payload.email}: le llegará a su correo el enlace para crear su contraseña.`
             );
             this.router.navigate(['/inicio/empleados']);
           }));

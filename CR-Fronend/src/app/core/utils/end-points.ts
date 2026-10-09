@@ -12,6 +12,8 @@ export const END_POINTS = {
     verificarPassword: 'verify-password',
     olvidePassword: 'forgot-password',
     restablecerPassword: 'reset-password',
+    /** El enlace de «Tu acceso a CATA-Recibo»: crear la primera contraseña. */
+    crearPassword: 'create-password',
     /** Los términos de uso: el papel que antes se firmaba a mano. */
     terminos: 'terms',
     aceptarTerminos: 'terms/accept',

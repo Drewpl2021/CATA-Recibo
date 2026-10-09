@@ -255,6 +255,50 @@ export class EmpleadosListComponent implements OnInit {
     });
   }
 
+  enviandoAcceso = false;
+
+  /**
+   * «Enviar acceso»: a cada marcado le llega a su correo el enlace para crear
+   * su contraseña (vence en 72 h). La que tuviera deja de servir: sirve para
+   * el primer acceso y para quien perdió el suyo.
+   */
+  enviarAccesoMarcados(): void {
+    if (!this.marcados.length) return;
+    const cuantos = this.marcados.length;
+    this.confirmService
+      .confirmar({
+        titulo: 'Enviar acceso por correo',
+        mensaje: `A los ${cuantos} marcado(s) les llegará a su correo un enlace personal para crear su contraseña `
+          + '(vence en 72 horas). Si ya tenían una, deja de servir y tendrán que crear otra con el enlace.',
+        aceptarTexto: `Sí, enviar a ${cuantos}`,
+        variante: 'default',
+      })
+      .then((aceptado) => {
+        if (!aceptado) return;
+        this.enviandoAcceso = true;
+        this.empleadoService.enviarAcceso(this.marcados.map((e) => String(e.id))).subscribe({
+          next: (res) => {
+            this.enviandoAcceso = false;
+            const { enviados, omitidos } = res.data;
+            if (omitidos.length) {
+              const detalle = omitidos.slice(0, 3).map((o) => `${o.trabajador}: ${o.motivo}`).join('; ');
+              this.toastService.warning(
+                `Acceso enviado a ${enviados}`,
+                `${omitidos.length} sin enviar — ${detalle}${omitidos.length > 3 ? '…' : ''}`
+              );
+            } else {
+              this.toastService.success('Acceso enviado', `A ${enviados} trabajador(es) les llegará el enlace para crear su contraseña.`);
+            }
+            this.soltarMarcados();
+          },
+          error: (err) => {
+            this.enviandoAcceso = false;
+            this.toastService.error('No se envió', mensajeErrorApi(err, 'No se pudieron enviar los accesos.'));
+          },
+        });
+      });
+  }
+
   /** La ficha completa de los marcados, en Excel (la misma de «Descargar empleados»). */
   exportarMarcados(): void {
     if (!this.marcados.length) return;

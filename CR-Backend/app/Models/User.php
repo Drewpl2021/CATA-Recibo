@@ -44,6 +44,7 @@ class User extends Authenticatable
             'terminos_firmados'     => 'boolean',
             'terminos_firmados_en'  => 'datetime',
             'guia_vista_en'         => 'datetime',
+            'acceso_enviado_en'     => 'datetime',
         ];
     }
 

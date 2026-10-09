@@ -679,12 +679,55 @@ class EmpleadoController extends Controller
         // aunque su ficha diga "plazo fijo".
         $empleado = AltaDeEmpleado::crear($request->all());
 
+        // El alta de uno en uno le manda su acceso al momento. La importación
+        // desde Excel no: ahí RR.HH. decide cuándo enviarlos (con los marcados).
+        $usuario = $empleado->usuario()->first();
+        $motivo = $usuario ? \App\Support\AccesoPorCorreo::enviar($usuario, false) : 'no tiene cuenta';
+
         $empleado->load('area', 'cargo', 'sede', 'contratos');
         return response()->json([
             'success' => true,
             'data'    => $empleado,
-            'mensaje' => 'Empleado creado con su contrato inicial. Usuario generado con contraseña: DNI del empleado.'
+            'mensaje' => $motivo === null
+                ? "Empleado creado con su contrato inicial. Le enviamos a {$usuario->email} el enlace para crear su contraseña."
+                : "Empleado creado con su contrato inicial. No se le envió el acceso porque {$motivo}.",
         ], 201);
+    }
+
+    /**
+     * POST /employees/send-access — «Enviar acceso por correo» a los marcados:
+     * a cada uno le llega el enlace para crear su contraseña (y la que tuviera
+     * deja de servir). Dice a quiénes no se les pudo enviar y por qué.
+     */
+    public function enviarAcceso(Request $request)
+    {
+        $request->validate([
+            'ids'   => 'required|array|min:1|max:5000',
+            'ids.*' => 'uuid',
+        ], ['ids.required' => 'Marca al menos a un trabajador.']);
+
+        $empleados = Empleado::with('usuario')->whereIn('id', $request->input('ids'))->get();
+        $enviados = 0;
+        $omitidos = [];
+        foreach ($empleados as $empleado) {
+            $nombre = trim("{$empleado->apellido} {$empleado->nombre}");
+            $motivo = $empleado->usuario
+                ? \App\Support\AccesoPorCorreo::enviar($empleado->usuario)
+                : 'no tiene cuenta (le falta el correo en su ficha)';
+            if ($motivo === null) {
+                $enviados++;
+            } else {
+                $omitidos[] = ['trabajador' => $nombre, 'motivo' => $motivo];
+            }
+        }
+
+        if ($enviados) {
+            \App\Models\Auditoria::registrar('aplicó', 'usuario', null,
+                "Envió por correo el acceso a CATA-Recibo a {$enviados} trabajador(es).",
+                ['enviados' => $enviados, 'omitidos' => count($omitidos)]);
+        }
+
+        return response()->json(['success' => true, 'data' => ['enviados' => $enviados, 'omitidos' => $omitidos]]);
     }
 
     public function show(string $id)

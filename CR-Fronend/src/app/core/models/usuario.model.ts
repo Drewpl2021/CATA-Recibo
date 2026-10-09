@@ -84,7 +84,7 @@ export interface SesionData {
   user: AuthUser;
   token: string;
   /**
-   * La cuenta sigue con la contraseña que le dieron (su DNI). Mientras esté
+   * La cuenta todavía no tiene una contraseña puesta por la persona. Mientras esté
    * en true el backend responde 423 a todo lo demás, así que la app manda
    * derecho a cambiarla.
    */

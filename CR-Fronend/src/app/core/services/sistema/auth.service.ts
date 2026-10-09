@@ -112,6 +112,14 @@ export class AuthService {
     );
   }
 
+  /** Crea la contraseña con el enlace de «Tu acceso a CATA-Recibo» (72 h, un solo uso). */
+  crearPassword(payload: RestablecerPasswordPayload): Observable<ApiResponse<{ message: string }>> {
+    return this.http.post<ApiResponse<{ message: string }>>(
+      `${this.apiUrl}/${END_POINTS.auth.crearPassword}`,
+      payload
+    );
+  }
+
   /**
    * La cuenta sigue con la contraseña que le dieron.
    *

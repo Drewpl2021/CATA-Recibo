@@ -242,6 +242,52 @@ class AuthController extends Controller
      * más había entrado, se queda fuera, que es justo lo que se busca cuando
      * se repone una contraseña.
      */
+    /**
+     * POST /create-password — el enlace de «Tu acceso a CATA-Recibo»: crea la
+     * primera contraseña (o una nueva, si RR.HH. restableció el acceso).
+     * Como el de «olvidé mi contraseña», pero con su propio enlace, que dura
+     * 72 horas (AccesoPorCorreo).
+     */
+    public function crearPassword(Request $request)
+    {
+        $request->validate([
+            'token'    => 'required|string',
+            'email'    => 'required|email',
+            'password' => ['required', 'string', 'confirmed', ReglaDeClave::defaults()],
+        ]);
+
+        $usuario = User::with('empleado:id,dni')->where('email', $request->email)->first();
+        if ($usuario?->empleado && $request->password === $usuario->empleado->dni) {
+            throw ValidationException::withMessages([
+                'password' => ['No uses tu DNI ni otros datos personales como contraseña. Elige una distinta.'],
+            ]);
+        }
+
+        $estado = Password::broker(\App\Support\AccesoPorCorreo::BROKER)->reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password'              => Hash::make($password),
+                    'debe_cambiar_password' => false,
+                    'remember_token'        => Str::random(60),
+                ])->save();
+
+                $user->tokens()->delete();
+            }
+        );
+
+        if ($estado !== Password::PASSWORD_RESET) {
+            throw ValidationException::withMessages([
+                'token' => ['El enlace ya venció o ya se usó. Pídele a Recursos Humanos que te envíe uno nuevo.'],
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => ['message' => 'Listo, tu contraseña quedó creada. Ya puedes entrar con tu correo y tu contraseña.'],
+        ]);
+    }
+
     public function restablecerPassword(Request $request)
     {
         $request->validate([

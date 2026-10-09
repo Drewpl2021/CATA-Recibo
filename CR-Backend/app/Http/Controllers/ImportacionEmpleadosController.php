@@ -417,7 +417,7 @@ class ImportacionEmpleadosController extends Controller
         $resultado = collect($r['filas']);
         if ($resultado->contains(fn ($f) => $f['modo'] === 'alta' && ! $f['cesado'])) {
             $r['advertencias'][] = $this->aviso(null, null, null,
-                'Cada trabajador nuevo entra con su DNI como contraseña provisional, y el sistema le pide cambiarla la primera vez.');
+                'A cada trabajador nuevo se le crea su cuenta todavía sin acceso: cuando quieras que entren, márcalos en Empleados y pulsa «Enviar acceso» (les llega el enlace para crear su contraseña).');
         }
         if ($cesados = $resultado->where('modo', 'alta')->where('cesado', true)->count()) {
             $r['advertencias'][] = $this->aviso(null, null, null,

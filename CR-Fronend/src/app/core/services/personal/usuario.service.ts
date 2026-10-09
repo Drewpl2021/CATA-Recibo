@@ -8,9 +8,11 @@ import { environment } from '../../../../environments/environment';
 /** Lo que devuelve el backend al reponer una contraseña. */
 export interface PasswordRestablecida {
   message: string;
-  password_temporal: string;
+  /** Solo si no tiene correo: una clave aleatoria que se muestra una vez. */
+  password_temporal?: string;
+  /** Si se le envió el enlace al correo. */
+  por_correo: boolean;
   /** true si la temporal es el DNI del empleado. */
-  es_dni: boolean;
 }
 
 /** Los usuarios no se crean por aquí: se crean solos al dar de alta un Empleado. */
