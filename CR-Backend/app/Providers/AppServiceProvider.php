@@ -69,5 +69,10 @@ class AppServiceProvider extends ServiceProvider
 
         // El QR de la boleta: público. Sobra para quien lo escanea de verdad.
         RateLimiter::for('verificacion', fn (Request $peticion) => Limit::perMinute(30)->by($peticion->ip()));
+
+        // La API pública del portal: la leen todas las visitas de cata.edu.pe,
+        // así que el techo es alto. Ver config/portal.php.
+        RateLimiter::for('portal', fn (Request $peticion) => Limit::perMinute(config('portal.limite_por_minuto'))
+            ->by($peticion->ip()));
     }
 }

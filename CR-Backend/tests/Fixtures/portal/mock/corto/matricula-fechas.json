@@ -1,0 +1,14 @@
+{
+  "data": {
+    "nota": null,
+    "items": [
+      {
+        "id": "f",
+        "titulo": "Matrícula",
+        "inicio": "2027-01-04",
+        "fin": null,
+        "detalle": null
+      }
+    ]
+  }
+}

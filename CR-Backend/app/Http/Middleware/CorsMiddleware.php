@@ -18,6 +18,11 @@ class CorsMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
+        // El portal público tiene su propia lista de orígenes: ver CorsDelPortal.
+        if ($request->is('api/portal', 'api/portal/*')) {
+            return $next($request);
+        }
+
         $origin = config('app.frontend_url');
 
         if ($request->getMethod() === 'OPTIONS') {

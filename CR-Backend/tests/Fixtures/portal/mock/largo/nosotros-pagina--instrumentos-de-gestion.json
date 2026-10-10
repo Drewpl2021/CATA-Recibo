@@ -1,0 +1,50 @@
+{
+  "data": {
+    "slug": "instrumentos-de-gestion",
+    "titulo": "Instrumentos de Gestión",
+    "bajada": "Datos de prueba: lista de archivos para descargar.",
+    "bloques": [
+      {
+        "tipo": "enlaces",
+        "titulo": "Documentos de prueba",
+        "enlaces": [
+          {
+            "etiqueta": "Proyecto Educativo Institucional (PEI) de prueba",
+            "url": "https://cata.edu.pe/",
+            "descripcion": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+            "formato": "pdf",
+            "peso": 2457600
+          },
+          {
+            "etiqueta": "Reglamento Interno de prueba",
+            "url": "https://cata.edu.pe/",
+            "descripcion": null,
+            "formato": "pdf",
+            "peso": 870400
+          },
+          {
+            "etiqueta": "Plan Anual de Trabajo de prueba",
+            "url": "https://cata.edu.pe/",
+            "descripcion": null,
+            "formato": "documento",
+            "peso": 312000
+          },
+          {
+            "etiqueta": "Presupuesto de prueba",
+            "url": "https://cata.edu.pe/",
+            "descripcion": null,
+            "formato": "hoja",
+            "peso": 45000
+          },
+          {
+            "etiqueta": "Proyecto Curricular de prueba, en Canva",
+            "url": "https://www.canva.com/",
+            "descripcion": null,
+            "formato": "canva",
+            "peso": null
+          }
+        ]
+      }
+    ]
+  }
+}

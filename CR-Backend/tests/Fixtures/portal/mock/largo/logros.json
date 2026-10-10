@@ -1,0 +1,486 @@
+{
+  "data": {
+    "titulo": "Logros y reconocimientos del Colegio Adventista Túpac Amaru",
+    "bajada": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+    "cifras": [
+      {
+        "id": "nacionales",
+        "valor": 2,
+        "sufijo": null,
+        "etiqueta": "segundos lugares nacionales de la Banda Sinfónica (2011 y 2025)"
+      },
+      {
+        "id": "primeros",
+        "valor": 6,
+        "sufijo": null,
+        "etiqueta": "primeros puestos de la banda entre 2007 y 2010"
+      },
+      {
+        "id": "excelencia",
+        "valor": 3,
+        "sufijo": null,
+        "etiqueta": "veces «Colegio Excelencia» de la UGEL Juliaca"
+      },
+      {
+        "id": "anios",
+        "valor": 55,
+        "sufijo": null,
+        "etiqueta": "años de vida institucional"
+      }
+    ],
+    "logros": [
+      {
+        "id": "pc-capellania",
+        "titulo": "Certificación de Capellanía (por confirmar)",
+        "categoria": "institucional",
+        "anio": null,
+        "nivel": null,
+        "descripcion": "Obtenida en el periodo 2022-2023, según una tesis de la UPeU. Falta el documento oficial y la fecha exacta.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Por confirmar. Tesis de la UPeU",
+          "url": null
+        },
+        "aclaracion": "Por confirmar"
+      },
+      {
+        "id": "pc-banda-nacional",
+        "titulo": "La banda clasificó a la etapa nacional (por confirmar)",
+        "categoria": "artistico",
+        "anio": null,
+        "nivel": "Banda Sinfónica",
+        "descripcion": "Publicado por la UGEL San Román, sin año identificable.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Por confirmar. UGEL San Román",
+          "url": null
+        },
+        "aclaracion": "Por confirmar · año desconocido"
+      },
+      {
+        "id": "pc-licenciamiento",
+        "titulo": "«Licenciamiento» (por confirmar)",
+        "categoria": "institucional",
+        "anio": null,
+        "nivel": null,
+        "descripcion": "El colegio lo menciona, pero no hay fuente pública. Falta la resolución con número y fecha.",
+        "foto": null,
+        "destacado": false,
+        "fuente": null,
+        "aclaracion": "Por confirmar"
+      },
+      {
+        "id": "pc-eureka-2022",
+        "titulo": "3.er lugar, Feria Eureka 2022, etapa UGEL San Román, nivel primario (por confirmar)",
+        "categoria": "academico",
+        "anio": 2022,
+        "nivel": "Primaria",
+        "descripcion": "Proyecto: jabón líquido bactericida a partir de matico.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Por confirmar. UGEL San Román, 12/09/2022",
+          "url": "https://ugelsanroman.gob.pe/inicio-la-preseleccion-de-la-feria-escolar-nacional-de-ciencia-y-tecnologia-eureka-2022-nivel-primario/"
+        },
+        "aclaracion": "Por confirmar"
+      },
+      {
+        "id": "rd-primaria",
+        "titulo": "Reconocimiento del nivel primaria",
+        "categoria": "institucional",
+        "anio": 1971,
+        "nivel": "Primaria",
+        "descripcion": "Resolución Directoral Regional N° 457, del 7 de mayo de 1971.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "cata.edu.pe, Reseña Histórica",
+          "url": "https://cata.edu.pe/new_resenahistorica/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "rd-secundaria",
+        "titulo": "Reconocimiento del nivel secundaria",
+        "categoria": "institucional",
+        "anio": 1982,
+        "nivel": "Secundaria",
+        "descripcion": "R.D.Z. N° 104-DZE-J, del 25 de marzo de 1982.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "cata.edu.pe, Reseña Histórica",
+          "url": "https://cata.edu.pe/new_resenahistorica/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "rd-inicial",
+        "titulo": "Reconocimiento del nivel inicial",
+        "categoria": "institucional",
+        "anio": 1998,
+        "nivel": "Inicial",
+        "descripcion": "R.D. N° 6954-DREP, del 3 de diciembre de 1998.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "cata.edu.pe, Reseña Histórica",
+          "url": "https://cata.edu.pe/new_resenahistorica/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "rd-promotora",
+        "titulo": "Reconocimiento de la promotora AE-CATA",
+        "categoria": "institucional",
+        "anio": 2000,
+        "nivel": null,
+        "descripcion": "La R.D. N° 4609-DREP-2000 reconoce a la Asociación Educativa Colegio Adventista Túpac Amaru como promotora de la institución.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "cata.edu.pe, Reseña Histórica",
+          "url": "https://cata.edu.pe/new_resenahistorica/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "sgce",
+        "titulo": "Equipo docente monitoreado por la certificadora SGCE",
+        "categoria": "institucional",
+        "anio": null,
+        "nivel": null,
+        "descripcion": "El equipo docente está capacitado y monitoreado por la certificadora de calidad internacional SGCE.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "cata.edu.pe, Reseña Histórica",
+          "url": "https://cata.edu.pe/new_resenahistorica/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "upeu",
+        "titulo": "Convenio con la Universidad Peruana Unión",
+        "categoria": "institucional",
+        "anio": null,
+        "nivel": null,
+        "descripcion": "Convenio de apoyo mutuo celebrado con la Universidad Peruana Unión.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "cata.edu.pe, Reseña Histórica",
+          "url": "https://cata.edu.pe/new_resenahistorica/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-1982",
+        "titulo": "Creación de la Banda Sinfónica",
+        "categoria": "artistico",
+        "anio": 1982,
+        "nivel": "Banda Sinfónica",
+        "descripcion": "Primera presentación pública en las fiestas patrias de 1982, integrada por alumnos, profesores y padres de familia.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-2006",
+        "titulo": "Medalla de honor al mérito como mejor banda",
+        "categoria": "artistico",
+        "anio": 2006,
+        "nivel": "Banda Sinfónica",
+        "descripcion": "Otorgada por la UGEL San Román.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-2007-huancane",
+        "titulo": "1.er puesto, concurso de bandas sinfónicas de Huancané",
+        "categoria": "artistico",
+        "anio": 2007,
+        "nivel": "Banda Sinfónica",
+        "descripcion": "Concurso organizado en la provincia de Huancané.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-2007-ugel",
+        "titulo": "1.er puesto, concurso de bandas sinfónicas de la UGEL San Román",
+        "categoria": "artistico",
+        "anio": 2007,
+        "nivel": "Banda Sinfónica",
+        "descripcion": null,
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-2008",
+        "titulo": "1.er puesto, concurso de bandas sinfónicas de la UGEL San Román",
+        "categoria": "artistico",
+        "anio": 2008,
+        "nivel": "Banda Sinfónica",
+        "descripcion": null,
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-2009-ugel",
+        "titulo": "1.er puesto, concurso de bandas sinfónicas de la UGEL San Román",
+        "categoria": "artistico",
+        "anio": 2009,
+        "nivel": "Banda Sinfónica",
+        "descripcion": null,
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-2009-esfa",
+        "titulo": "1.er puesto, concurso organizado por la Escuela Superior de Form. Artística Puno",
+        "categoria": "artistico",
+        "anio": 2009,
+        "nivel": "Banda Sinfónica",
+        "descripcion": null,
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-2010",
+        "titulo": "1.er lugar, concurso de bandas sinfónicas de la UGEL San Román",
+        "categoria": "artistico",
+        "anio": 2010,
+        "nivel": "Banda Sinfónica",
+        "descripcion": null,
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-2011",
+        "titulo": "Subcampeón nacional: 2.º lugar en el XIX Concurso Nacional de Bandas de Música y Bandas Sinfónicas Escolares",
+        "categoria": "artistico",
+        "anio": 2011,
+        "nivel": "Banda Sinfónica",
+        "descripcion": "Concepción, Huancayo, 8 de julio de 2011. Participaron 21 bandas. La banda, de 46 estudiantes y dirigida por el profesor Jhony César Huanca Rodríguez, llegó como tetracampeona consecutiva en Juliaca.",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/noticia-1.svg",
+          "alt": "Foto de prueba: la banda sinfónica en el concurso",
+          "ancho": 1200,
+          "alto": 800
+        },
+        "destacado": true,
+        "fuente": {
+          "etiqueta": "Diario Correo y prensa local, julio de 2011",
+          "url": "https://diariocorreo.pe/peru/juliaca-banda-de-colegio-adventista-es-una-de-los-mejores-del-pais-533005/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-2022",
+        "titulo": "Participación en el I Concurso Regional de Bandas Escolares",
+        "categoria": "artistico",
+        "anio": 2022,
+        "nivel": "Banda Sinfónica",
+        "descripcion": "Organizado en la UPeU Juliaca.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Fuente sin enlace público (por precisar)",
+          "url": null
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-2025",
+        "titulo": "2.º lugar nacional, categoría sinfónica, XXX Concurso Nacional de Bandas Escolares de Música",
+        "categoria": "artistico",
+        "anio": 2025,
+        "nivel": "Banda Sinfónica",
+        "descripcion": "Concepción.",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/noticia-1.svg",
+          "alt": "Foto de prueba: la banda sinfónica en el concurso",
+          "ancho": 1200,
+          "alto": 800
+        },
+        "destacado": true,
+        "fuente": {
+          "etiqueta": "7Días, 9 de julio de 2025",
+          "url": "https://7dias.pe/seminario-san-juan-maria-vianney-de-huancavelica-gana-concurso-de-bandas-escolares/educacion/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "banda-festival",
+        "titulo": "VI Festival de Bandas Sinfónicas Escolares «Homenaje a Nuestra Amada Patria»",
+        "categoria": "artistico",
+        "anio": null,
+        "nivel": "Banda Sinfónica",
+        "descripcion": "Organizado por la GUE José Antonio Encinas y auspiciado por Real Plaza Juliaca.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Facebook del colegio",
+          "url": "https://www.facebook.com/colegiocatajuliaca/"
+        },
+        "aclaracion": "Año por confirmar"
+      },
+      {
+        "id": "excelencia",
+        "titulo": "«Colegio Excelencia» de la UGEL Juliaca, en tres oportunidades",
+        "categoria": "institucional",
+        "anio": null,
+        "nivel": null,
+        "descripcion": "La UGEL Juliaca premió al CATA como «Colegio Excelencia» tres veces.",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/noticia-1.svg",
+          "alt": "Foto de prueba: la banda sinfónica en el concurso",
+          "ancho": 1200,
+          "alto": 800
+        },
+        "destacado": true,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": "Años por confirmar"
+      },
+      {
+        "id": "fencyt",
+        "titulo": "Participación en las ferias FENCYT desde 1996",
+        "categoria": "institucional",
+        "anio": 1996,
+        "nivel": null,
+        "descripcion": "Tres veces organizadora de la fase regional y tres veces finalista nacional (Lima y Pozuzo).",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "pionero-laboratorio",
+        "titulo": "Pionero: laboratorio de ciencias desde 1998",
+        "categoria": "institucional",
+        "anio": 1998,
+        "nivel": null,
+        "descripcion": null,
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "pionero-idiomas",
+        "titulo": "Pionero: sala de idiomas desde 2005",
+        "categoria": "institucional",
+        "anio": 2005,
+        "nivel": null,
+        "descripcion": null,
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "pionero-pizarras",
+        "titulo": "Pionero: pizarras interactivas desde 2009",
+        "categoria": "institucional",
+        "anio": 2009,
+        "nivel": null,
+        "descripcion": null,
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "trayectoria",
+        "titulo": "Trayectoria en concursos académicos, culturales y deportivos",
+        "categoria": "academico",
+        "anio": null,
+        "nivel": null,
+        "descripcion": "Participación y reconocimientos en concursos de historia de Juliaca, ciencias naturales, biología, física, matemática, feria de ciencias, coros escolares, poesía, declamación, arte y deportes, a nivel local, departamental, regional y nacional.",
+        "foto": null,
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Historia del Colegio Adventista Túpac Amaru (2012)",
+          "url": "https://luisroquequispe.wordpress.com/2012/10/18/historia-del-colegio-adventista-tupac-amaru/"
+        },
+        "aclaracion": null
+      },
+      {
+        "id": "largo-1",
+        "titulo": "Logro de prueba con un título muy largo para comprobar que la tarjeta se acomoda en varias líneas sin cortarse",
+        "categoria": "deportivo",
+        "anio": 2024,
+        "nivel": "Secundaria · Selección de vóley de damas de la Sede Central",
+        "descripcion": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/nivel-secundaria.svg",
+          "alt": "Foto de prueba",
+          "ancho": 1200,
+          "alto": 800
+        },
+        "destacado": false,
+        "fuente": {
+          "etiqueta": "Fuente de prueba con un nombre muy largo para comprobar el ajuste del enlace",
+          "url": "https://cata.edu.pe/"
+        },
+        "aclaracion": "Aclaración de prueba larga: dato pendiente de confirmación por el colegio"
+      }
+    ]
+  }
+}

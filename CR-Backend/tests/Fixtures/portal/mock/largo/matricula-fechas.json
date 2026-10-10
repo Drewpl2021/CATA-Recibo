@@ -1,0 +1,91 @@
+{
+  "data": {
+    "nota": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+    "items": [
+      {
+        "id": "f0",
+        "titulo": "Actividad de prueba número 1 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-11-02",
+        "fin": null,
+        "detalle": null
+      },
+      {
+        "id": "f1",
+        "titulo": "Actividad de prueba número 2 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-11-06",
+        "fin": "2027-02-11",
+        "detalle": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "id": "f2",
+        "titulo": "Actividad de prueba número 3 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-11-10",
+        "fin": null,
+        "detalle": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "id": "f3",
+        "titulo": "Actividad de prueba número 4 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-11-14",
+        "fin": "2027-02-13",
+        "detalle": null
+      },
+      {
+        "id": "f4",
+        "titulo": "Actividad de prueba número 5 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-11-18",
+        "fin": null,
+        "detalle": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "id": "f5",
+        "titulo": "Actividad de prueba número 6 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-11-22",
+        "fin": "2027-02-15",
+        "detalle": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "id": "f6",
+        "titulo": "Actividad de prueba número 7 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-12-02",
+        "fin": null,
+        "detalle": null
+      },
+      {
+        "id": "f7",
+        "titulo": "Actividad de prueba número 8 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-12-06",
+        "fin": "2027-02-17",
+        "detalle": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "id": "f8",
+        "titulo": "Actividad de prueba número 9 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-12-10",
+        "fin": null,
+        "detalle": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "id": "f9",
+        "titulo": "Actividad de prueba número 10 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-12-14",
+        "fin": "2027-02-19",
+        "detalle": null
+      },
+      {
+        "id": "f10",
+        "titulo": "Actividad de prueba número 11 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-12-18",
+        "fin": null,
+        "detalle": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "id": "f11",
+        "titulo": "Actividad de prueba número 12 del cronograma de matrícula con un nombre largo",
+        "inicio": "2026-12-22",
+        "fin": "2027-02-21",
+        "detalle": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      }
+    ]
+  }
+}

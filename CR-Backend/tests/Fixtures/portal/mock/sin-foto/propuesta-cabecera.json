@@ -1,0 +1,21 @@
+{
+  "data": {
+    "titulo": "Mejoramos la experiencia de aprendizaje",
+    "bajada": "Colegio Adventista Túpac Amaru: inicial, primaria y secundaria en cuatro sedes de Juliaca, desde 1971.",
+    "figuras": [],
+    "accionPrincipal": {
+      "etiqueta": "Proceso de matrícula",
+      "destino": {
+        "tipo": "pagina",
+        "ruta": "/matricula"
+      }
+    },
+    "accionSecundaria": {
+      "etiqueta": "Conoce la propuesta educativa",
+      "destino": {
+        "tipo": "pagina",
+        "ruta": "/propuesta-educativa"
+      }
+    }
+  }
+}

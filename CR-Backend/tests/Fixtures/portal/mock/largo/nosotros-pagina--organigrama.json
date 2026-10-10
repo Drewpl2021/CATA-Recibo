@@ -1,0 +1,243 @@
+{
+  "data": {
+    "slug": "organigrama",
+    "titulo": "Organigrama",
+    "bajada": "La estructura de la institución.",
+    "bloques": [
+      {
+        "tipo": "organigrama",
+        "titulo": "Organigrama de prueba con cinco niveles",
+        "imagen": {
+          "url": "https://medios.prueba.cata.edu.pe/panoramica.svg",
+          "alt": "Organigrama de prueba en imagen; la misma estructura está en la lista que sigue.",
+          "ancho": 1200,
+          "alto": 375
+        },
+        "enlace": {
+          "etiqueta": "Ver el organigrama completo",
+          "url": "https://cata.edu.pe/",
+          "externo": true
+        },
+        "raiz": {
+          "cargo": "Cargo de prueba de nivel 1 con un nombre largo que ocupa varias líneas",
+          "detalle": "Nombre de prueba Apellido Apellido",
+          "hijos": [
+            {
+              "cargo": "Cargo de prueba de nivel 2 con un nombre largo que ocupa varias líneas",
+              "detalle": null,
+              "hijos": [
+                {
+                  "cargo": "Cargo de prueba de nivel 3 con un nombre largo que ocupa varias líneas",
+                  "detalle": "Nombre de prueba Apellido Apellido",
+                  "hijos": [
+                    {
+                      "cargo": "Cargo de prueba de nivel 4 con un nombre largo que ocupa varias líneas",
+                      "detalle": null,
+                      "hijos": [
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        }
+                      ]
+                    },
+                    {
+                      "cargo": "Cargo de prueba de nivel 4 con un nombre largo que ocupa varias líneas",
+                      "detalle": null,
+                      "hijos": [
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        }
+                      ]
+                    },
+                    {
+                      "cargo": "Cargo de prueba de nivel 4 con un nombre largo que ocupa varias líneas",
+                      "detalle": null,
+                      "hijos": [
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "cargo": "Cargo de prueba de nivel 3 con un nombre largo que ocupa varias líneas",
+                  "detalle": "Nombre de prueba Apellido Apellido",
+                  "hijos": [
+                    {
+                      "cargo": "Cargo de prueba de nivel 4 con un nombre largo que ocupa varias líneas",
+                      "detalle": null,
+                      "hijos": [
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        }
+                      ]
+                    },
+                    {
+                      "cargo": "Cargo de prueba de nivel 4 con un nombre largo que ocupa varias líneas",
+                      "detalle": null,
+                      "hijos": [
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        }
+                      ]
+                    },
+                    {
+                      "cargo": "Cargo de prueba de nivel 4 con un nombre largo que ocupa varias líneas",
+                      "detalle": null,
+                      "hijos": [
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "cargo": "Cargo de prueba de nivel 3 con un nombre largo que ocupa varias líneas",
+                  "detalle": "Nombre de prueba Apellido Apellido",
+                  "hijos": [
+                    {
+                      "cargo": "Cargo de prueba de nivel 4 con un nombre largo que ocupa varias líneas",
+                      "detalle": null,
+                      "hijos": [
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        }
+                      ]
+                    },
+                    {
+                      "cargo": "Cargo de prueba de nivel 4 con un nombre largo que ocupa varias líneas",
+                      "detalle": null,
+                      "hijos": [
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        }
+                      ]
+                    },
+                    {
+                      "cargo": "Cargo de prueba de nivel 4 con un nombre largo que ocupa varias líneas",
+                      "detalle": null,
+                      "hijos": [
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        },
+                        {
+                          "cargo": "Cargo de prueba de nivel 5 con un nombre largo que ocupa varias líneas",
+                          "detalle": "Nombre de prueba Apellido Apellido",
+                          "hijos": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

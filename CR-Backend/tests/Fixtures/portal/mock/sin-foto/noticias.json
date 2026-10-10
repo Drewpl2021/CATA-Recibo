@@ -1,0 +1,53 @@
+{
+  "data": [
+    {
+      "id": "n4",
+      "slug": "horario-de-atencion-de-secretaria",
+      "tipo": "comunicado",
+      "titulo": "Horario de atención de secretaría",
+      "resumen": "Comunicado de prueba: la secretaría atiende de lunes a viernes por la mañana en la Sede Central.",
+      "fecha": "2026-10-06",
+      "foto": null,
+      "enlace": null
+    },
+    {
+      "id": "n3",
+      "slug": "taller-de-musica-en-oasis",
+      "tipo": "noticia",
+      "titulo": "Taller de música en la sede Oasis",
+      "resumen": "Noticia de prueba sobre los talleres que ya funcionan en Chilla.",
+      "fecha": "2026-09-28",
+      "foto": null,
+      "enlace": null
+    },
+    {
+      "id": "n2",
+      "slug": "reunion-de-padres-de-familia",
+      "tipo": "comunicado",
+      "titulo": "Reunión de padres de familia",
+      "resumen": null,
+      "fecha": "2026-09-15",
+      "foto": null,
+      "enlace": {
+        "etiqueta": "Ver el comunicado completo",
+        "url": "https://cata.edu.pe/",
+        "externo": true
+      }
+    },
+    {
+      "id": "n1",
+      "slug": "aniversario-institucional",
+      "tipo": "noticia",
+      "titulo": "Aniversario institucional",
+      "resumen": "Noticia de prueba: cada 30 de junio el colegio celebra un año más de vida institucional.",
+      "fecha": "2026-06-30",
+      "foto": null,
+      "enlace": null
+    }
+  ],
+  "meta": {
+    "pagina": 1,
+    "limite": 6,
+    "total": 4
+  }
+}

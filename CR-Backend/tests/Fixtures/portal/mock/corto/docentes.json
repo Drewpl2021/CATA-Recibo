@@ -1,0 +1,24 @@
+{
+  "data": {
+    "niveles": [
+      {
+        "id": "inicial",
+        "nombre": "Inicial"
+      }
+    ],
+    "docentes": [
+      {
+        "id": "d1",
+        "nombre": "Docente de prueba 01",
+        "cargo": "Aula (dato de prueba)",
+        "nivel": "inicial",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      }
+    ]
+  }
+}

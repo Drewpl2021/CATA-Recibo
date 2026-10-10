@@ -1,0 +1,22 @@
+{
+  "data": {
+    "slug": "planificacion-anual",
+    "titulo": "Planificación Anual",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "enlaces",
+        "titulo": null,
+        "enlaces": [
+          {
+            "etiqueta": "Ver la planificación anual",
+            "url": "https://www.canva.com/design/DAGmI-Pss9M/CI4stUkvSrABb4qjrUwg9Q/view",
+            "descripcion": "Documento del colegio publicado como diseño en Canva.",
+            "formato": "canva",
+            "peso": null
+          }
+        ]
+      }
+    ]
+  }
+}

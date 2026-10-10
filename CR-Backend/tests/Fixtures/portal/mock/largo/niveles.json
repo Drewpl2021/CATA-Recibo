@@ -1,0 +1,55 @@
+{
+  "data": {
+    "titulo": "Educación inicial, primaria y secundaria completa",
+    "propuestaUrl": "https://cata.edu.pe/new_propuestaeducativa/",
+    "items": [
+      {
+        "id": "inicial",
+        "nombre": "Educación Inicial",
+        "rango": "Niños y niñas de 3, 4 y 5 años de edad",
+        "sede": "Sede CATA Inicial, Jr. Raúl Porras Barrenechea",
+        "reconocimiento": "Reconocido por R.D. N° 6954-DREP en 1998",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/nivel-inicial.svg",
+          "alt": "Foto de prueba: niños de inicial",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "primaria",
+        "nombre": "Educación Primaria",
+        "rango": "Del primer al sexto grado de primaria",
+        "sede": "Sede Central y Sede CATA Jerusalén en Cacachi",
+        "reconocimiento": "Reconocido por R.D. Regional N° 457 en 1971",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/nivel-primaria.svg",
+          "alt": "Foto de prueba: estudiantes de primaria",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "secundaria",
+        "nombre": "Educación Secundaria",
+        "rango": "Del primer al quinto año de secundaria",
+        "sede": "Sede Central, Jr. Moquegua N° 852",
+        "reconocimiento": "Reconocido por R.D.Z. N° 104-DZE-J en 1982",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/nivel-secundaria.svg",
+          "alt": "Foto de prueba: estudiantes de secundaria",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "talleres",
+        "nombre": "Talleres Oasis",
+        "rango": "Biohuertos, música, arte y alimentación",
+        "sede": "Sede CATA Oasis, Chilla, Caracoto",
+        "reconocimiento": null,
+        "foto": null
+      }
+    ]
+  }
+}

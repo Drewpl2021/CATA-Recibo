@@ -1,0 +1,53 @@
+{
+  "data": {
+    "nombre": "Colegio Adventista Túpac Amaru",
+    "nombreCorto": "CATA",
+    "subtitulo": "Inicial · Primaria · Secundaria",
+    "ciudad": "Juliaca",
+    "anioFundacion": 1971,
+    "telefono": {
+      "numero": "+5151325096",
+      "visible": "051 325096"
+    },
+    "whatsapp": {
+      "numero": "+51986322833",
+      "visible": "986 322 833"
+    },
+    "direccion": {
+      "linea": "Jr. Moquegua N° 852",
+      "referencia": "Frente al Mercado Internacional Túpac Amaru",
+      "distrito": "Juliaca, San Román, Puno"
+    },
+    "portalAcademico": {
+      "nombre": "Cubicol",
+      "url": "https://cata.cubicol.pe/principal/login"
+    },
+    "promotora": "Asociación Educativa Colegio Adventista Túpac Amaru",
+    "redes": [
+      {
+        "red": "facebook",
+        "cuenta": "Colegio CATA Juliaca",
+        "url": "https://www.facebook.com/colegiocatajuliaca/",
+        "aclaracion": null
+      },
+      {
+        "red": "tiktok",
+        "cuenta": "@colegioadventistacata",
+        "url": "https://www.tiktok.com/@colegioadventistacata",
+        "aclaracion": null
+      },
+      {
+        "red": "youtube",
+        "cuenta": "Colegio CATA",
+        "url": "https://www.youtube.com/@colegiocata828",
+        "aclaracion": "Dato de prueba: dirección por confirmar"
+      },
+      {
+        "red": "whatsapp",
+        "cuenta": "986 322 833",
+        "url": "https://wa.me/51986322833",
+        "aclaracion": "Dato de prueba: número por confirmar"
+      }
+    ]
+  }
+}

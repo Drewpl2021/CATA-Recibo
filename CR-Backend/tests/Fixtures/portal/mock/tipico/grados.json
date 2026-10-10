@@ -1,0 +1,33 @@
+{
+  "data": [
+    {
+      "nivel": "Inicial",
+      "opciones": [
+        "3 años",
+        "4 años",
+        "5 años"
+      ]
+    },
+    {
+      "nivel": "Primaria",
+      "opciones": [
+        "1.er grado",
+        "2.º grado",
+        "3.er grado",
+        "4.º grado",
+        "5.º grado",
+        "6.º grado"
+      ]
+    },
+    {
+      "nivel": "Secundaria",
+      "opciones": [
+        "1.er año",
+        "2.º año",
+        "3.er año",
+        "4.º año",
+        "5.º año"
+      ]
+    }
+  ]
+}

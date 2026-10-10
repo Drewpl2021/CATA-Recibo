@@ -1,0 +1,123 @@
+{
+  "data": {
+    "slug": "emblema",
+    "titulo": "Emblema",
+    "bajada": "Logotipo del Colegio Adventista Túpac Amaru",
+    "bloques": [
+      {
+        "tipo": "texto",
+        "titulo": null,
+        "parrafos": [
+          "El logotipo que caracteriza a la institución fue creado con la participación de los profesores: Ricardo Mamani Flores, Sócrates Quispe Maquera, Basilio Chambi Quispe, Rufino Condori Mendoza (QEPD) y otros. Con la única finalidad de identificar al Colegio Adventista «Túpac Amaru» en los desfiles cívicos y otras actividades."
+        ],
+        "firma": null
+      },
+      {
+        "tipo": "lista",
+        "titulo": "Originalmente fue diseñada de la siguiente forma",
+        "estilo": "vinetas",
+        "items": [
+          {
+            "titulo": "La A",
+            "texto": "Significa Adventista.",
+            "fuente": null
+          },
+          {
+            "titulo": "La T",
+            "texto": "Significa Túpac.",
+            "fuente": null
+          },
+          {
+            "titulo": "Nuevamente la A",
+            "texto": "Significa Amaru.",
+            "fuente": null
+          }
+        ]
+      },
+      {
+        "tipo": "imagen",
+        "imagen": {
+          "url": "https://cata.edu.pe/wp-content/uploads/2023/09/Logo-adventista-1-1-fotor-bg-remover-20230918114531.png",
+          "alt": "Logotipo original: las letras A, T y A entrelazadas, en trazo azul.",
+          "ancho": 500,
+          "alto": 483
+        },
+        "pie": "Logotipo original",
+        "transcripcion": null
+      },
+      {
+        "tipo": "texto",
+        "titulo": null,
+        "parrafos": [
+          "Posteriormente se hizo algunas mejoras incluyendo el nombre completo de la Institución: Colegio Adventista «Túpac Amaru», además el lugar donde está ubicado que es Juliaca."
+        ],
+        "firma": null
+      },
+      {
+        "tipo": "imagen",
+        "imagen": {
+          "url": "https://cata.edu.pe/wp-content/uploads/2023/09/Logo_CATA--226x300.png",
+          "alt": "Logotipo con el nombre completo: «Colegio Adventista \"Túpac Amaru\"», Juliaca. Sobre un globo azul con las letras ATA, unas manos abiertas sostienen la Biblia abierta y una llama.",
+          "ancho": 226,
+          "alto": 300
+        },
+        "pie": "Logotipo con el nombre completo de la institución",
+        "transcripcion": null
+      },
+      {
+        "tipo": "texto",
+        "titulo": "Símbolos de la Institución",
+        "parrafos": [
+          "Se tiene un conjunto de símbolos plasmados en el logotipo de la institución que son: las manos abiertas, la Biblia abierta, la llama encendida y los laureles."
+        ],
+        "firma": null
+      },
+      {
+        "tipo": "lista",
+        "titulo": null,
+        "estilo": "tarjetas",
+        "items": [
+          {
+            "titulo": "Manos abiertas",
+            "texto": "Simboliza que cada docente, personal administrativo, personal de apoyo y estudiante de la Institución, siempre estará dispuesto a extender la mano a los que más los necesitan bajo las recomendaciones de las sagradas escrituras.",
+            "fuente": null
+          },
+          {
+            "titulo": "Biblia abierta",
+            "texto": "Simboliza la enseñanza bajo la cosmovisión cristiana basada en la Biblia.",
+            "fuente": null
+          },
+          {
+            "titulo": "Llama de fuego",
+            "texto": "Simboliza que cada docente, personal administrativo, personal de apoyo y estudiante de la Institución debe mantener la llama encendida del Espíritu Santo que da luz en la oscuridad.",
+            "fuente": null
+          },
+          {
+            "titulo": "Laureles",
+            "texto": "Simboliza la riqueza minera peruana y la abundancia de recursos naturales existentes en el país.",
+            "fuente": null
+          }
+        ]
+      },
+      {
+        "tipo": "texto",
+        "titulo": "Color de la Institución",
+        "parrafos": [
+          "El color principal de la institución es el color Azul Claro, y este color representa la excelencia que se refleja en los cielos de color azul. Este color nos impulsa la mejora continua que se soporta en el sistema de gestión de la calidad."
+        ],
+        "firma": null
+      },
+      {
+        "tipo": "imagen",
+        "imagen": {
+          "url": "https://cata.edu.pe/wp-content/uploads/2023/09/Logo-cata.png",
+          "alt": "Emblema actual: el logotipo del colegio rodeado de laureles dorados, con la palabra CATA debajo.",
+          "ancho": 341,
+          "alto": 360
+        },
+        "pie": "Emblema actual",
+        "transcripcion": null
+      }
+    ]
+  }
+}

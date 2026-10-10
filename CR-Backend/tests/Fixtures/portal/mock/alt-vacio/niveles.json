@@ -1,0 +1,47 @@
+{
+  "data": {
+    "titulo": "Inicial, primaria y secundaria",
+    "propuestaUrl": "https://cata.edu.pe/new_propuestaeducativa/",
+    "items": [
+      {
+        "id": "inicial",
+        "nombre": "Inicial",
+        "rango": "3, 4 y 5 años",
+        "sede": "Sede CATA Inicial",
+        "reconocimiento": "Reconocido en 1998",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/nivel-inicial.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "primaria",
+        "nombre": "Primaria",
+        "rango": "1.er a 6.º grado",
+        "sede": "También en Sede CATA Jerusalén",
+        "reconocimiento": "Reconocido en 1971",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/nivel-primaria.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "secundaria",
+        "nombre": "Secundaria",
+        "rango": "1.er a 5.º año",
+        "sede": null,
+        "reconocimiento": "Reconocido en 1982",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/nivel-secundaria.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 800
+        }
+      }
+    ]
+  }
+}

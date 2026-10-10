@@ -1,0 +1,15 @@
+{
+  "data": {
+    "titulo": "Bienvenidos",
+    "bajada": null,
+    "figuras": [],
+    "accionPrincipal": {
+      "etiqueta": "Matrícula",
+      "destino": {
+        "tipo": "pagina",
+        "ruta": "/matricula"
+      }
+    },
+    "accionSecundaria": null
+  }
+}

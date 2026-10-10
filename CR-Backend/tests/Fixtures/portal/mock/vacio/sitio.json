@@ -1,0 +1,25 @@
+{
+  "data": {
+    "nombre": "Colegio Adventista Túpac Amaru",
+    "nombreCorto": "CATA",
+    "subtitulo": null,
+    "ciudad": "Juliaca",
+    "anioFundacion": 1971,
+    "telefono": {
+      "numero": "+5151325096",
+      "visible": "051 325096"
+    },
+    "whatsapp": {
+      "numero": "+51986322833",
+      "visible": "986 322 833"
+    },
+    "direccion": {
+      "linea": "Jr. Moquegua N° 852",
+      "referencia": "Frente al Mercado Internacional Túpac Amaru",
+      "distrito": "Juliaca, San Román, Puno"
+    },
+    "portalAcademico": null,
+    "promotora": null,
+    "redes": []
+  }
+}

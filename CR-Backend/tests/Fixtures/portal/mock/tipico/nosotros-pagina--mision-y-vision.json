@@ -1,0 +1,41 @@
+{
+  "data": {
+    "slug": "mision-y-vision",
+    "titulo": "Misión y Visión",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "destacado",
+        "rotulo": "Misión",
+        "texto": "Formar ciudadanos íntegros y abnegados para esta vida y la eternidad."
+      },
+      {
+        "tipo": "destacado",
+        "rotulo": "Visión",
+        "texto": "Ser un líder en cada hogar con principios cristianos modelado en experiencias prácticas."
+      },
+      {
+        "tipo": "lista",
+        "titulo": "Valores institucionales",
+        "estilo": "tarjetas",
+        "items": [
+          {
+            "titulo": "Integridad",
+            "texto": "«La mayor necesidad del mundo es la de hombres que no se vendan ni se compren; hombres que sean sinceros y honrados en lo más íntimo de sus almas; hombres que no teman dar al pecado el nombre que le corresponde; hombres cuya conciencia sea tan leal al deber como la brújula al Polo; hombres que se mantengan de parte de la justicia, aunque se desplomen los cielos».",
+            "fuente": "La Educación, p. 57"
+          },
+          {
+            "titulo": "Abnegación",
+            "texto": "«La ley de amor requiere la dedicación del ser entero al servicio de Dios y de nuestros semejantes. Este servicio, a la vez que nos constituye en bendición para los demás, nos proporciona enormes bendiciones. La abnegación es la base de todo verdadero crecimiento. Por medio del servicio abnegado, adquieren su máximo desarrollo todas nuestras facultades. Llegamos a participar cada vez más plenamente de la naturaleza divina. Somos preparados para el cielo, porque lo recibimos en nuestro corazón».",
+            "fuente": "La Educación, cap. 1, p. 16"
+          },
+          {
+            "titulo": "Innovación",
+            "texto": "Dios no es solo el Creador sino también un innovador: el Innovador por excelencia. Por definición, innovación es «una idea nueva, pensamientos creativos, nuevas imaginaciones ya sea de dispositivos o métodos». Ser innovador es ser creativo: tener la capacidad de pensar de manera original. Es lo que se necesitó para salvar a la humanidad una vez que caímos en las manos de Satanás.",
+            "fuente": null
+          }
+        ]
+      }
+    ]
+  }
+}

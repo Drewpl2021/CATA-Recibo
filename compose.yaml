@@ -125,6 +125,11 @@ services:
 
       SESION_INACTIVIDAD_MINUTOS: ${SESION_INACTIVIDAD_MINUTOS:-120}
 
+      # La API pública del portal (cata.edu.pe). Ver CR-Backend/config/portal.php.
+      PORTAL_ORIGENES: ${PORTAL_ORIGENES:-https://cata.edu.pe}
+      PORTAL_CACHE_SEGUNDOS: ${PORTAL_CACHE_SEGUNDOS:-60}
+      PORTAL_LIMITE_POR_MINUTO: ${PORTAL_LIMITE_POR_MINUTO:-120}
+
       # Las dos cuentas con las que se entra a un sistema recién sembrado.
       # Si las contraseñas van vacías, `db:seed` inventa una larga, la enseña
       # una vez y obliga a cambiarla al entrar.

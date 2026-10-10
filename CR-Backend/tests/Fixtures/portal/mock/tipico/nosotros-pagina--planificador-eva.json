@@ -1,0 +1,22 @@
+{
+  "data": {
+    "slug": "planificador-eva",
+    "titulo": "Planificador Inteligente EVA",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "enlaces",
+        "titulo": null,
+        "enlaces": [
+          {
+            "etiqueta": "Ver el Planificador Inteligente EVA",
+            "url": "https://www.canva.com/design/DAGvTPFEMMM/6r3lFiZV0HneNzyyg7cSxw/view",
+            "descripcion": "Documento del colegio publicado como diseño en Canva.",
+            "formato": "canva",
+            "peso": null
+          }
+        ]
+      }
+    ]
+  }
+}

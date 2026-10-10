@@ -1,0 +1,21 @@
+{
+  "data": [
+    {
+      "id": "b-anio",
+      "categoria": "aviso",
+      "titulo": "CATA 2026",
+      "fecha": null,
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/12/Banner-CATA.png",
+        "alt": "Banner con las letras CATA, el emblema del colegio, el año 2026 y la dirección www.cata.edu.pe.",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": false,
+      "ladoAccion": "izquierda",
+      "accion": null
+    }
+  ]
+}

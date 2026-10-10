@@ -1,0 +1,23 @@
+{
+  "data": [
+    {
+      "id": "n",
+      "nombre": "Nuevos",
+      "resumen": null,
+      "listas": [
+        {
+          "titulo": "Requisitos",
+          "items": [
+            "DNI."
+          ]
+        }
+      ],
+      "pasos": [
+        {
+          "titulo": "Firma",
+          "detalle": null
+        }
+      ]
+    }
+  ]
+}

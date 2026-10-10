@@ -1,0 +1,13 @@
+{
+  "data": {
+    "titulo": "Contáctanos y visítanos en cualquiera de nuestras cuatro sedes",
+    "bajada": "Texto de prueba: cuatro sedes en la provincia de San Román, con atención por WhatsApp, por teléfono, por correo electrónico y de manera presencial en la secretaría de cada sede.",
+    "figura": {
+      "url": "https://cata.edu.pe/wp-content/uploads/2023/01/CATA-Matricula_Img_2.png",
+      "alt": "Estudiante con el uniforme del colegio, su mochila y un cuaderno de CATA",
+      "ancho": 500,
+      "alto": 1000
+    },
+    "correo": "mesa-de-partes-y-atencion-al-padre-de-familia-de-prueba@example.com"
+  }
+}

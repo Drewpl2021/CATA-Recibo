@@ -1,0 +1,86 @@
+{
+  "data": [
+    {
+      "id": "central",
+      "nombre": "Sede Central",
+      "direccion": "Jr. Moquegua N° 852",
+      "referencia": "Frente al Mercado Internacional Túpac Amaru",
+      "distrito": "Juliaca, San Román, Puno",
+      "telefono": {
+        "numero": "+5151325096",
+        "visible": "051 325096"
+      },
+      "nota": null,
+      "foto": {
+        "url": "https://medios.prueba.cata.edu.pe/sede-central.svg",
+        "alt": "",
+        "ancho": 1200,
+        "alto": 900
+      },
+      "mapaUrl": null,
+      "correo": null,
+      "horario": [],
+      "mapaEmbedUrl": "https://www.google.com/maps?q=Jr.%20Moquegua%20852%2C%20Juliaca%2C%20Puno%2C%20Per%C3%BA&output=embed"
+    },
+    {
+      "id": "inicial",
+      "nombre": "Sede CATA Inicial",
+      "direccion": "Jr. Raúl Porras B. N° 287",
+      "referencia": "Esquina con Jr. San Martín",
+      "distrito": "Juliaca, San Román, Puno",
+      "telefono": null,
+      "nota": null,
+      "foto": {
+        "url": "https://medios.prueba.cata.edu.pe/sede-inicial.svg",
+        "alt": "",
+        "ancho": 1200,
+        "alto": 900
+      },
+      "mapaUrl": null,
+      "correo": null,
+      "horario": [],
+      "mapaEmbedUrl": "https://www.google.com/maps?q=Jr.%20Ra%C3%BAl%20Porras%20Barrenechea%20287%2C%20Juliaca%2C%20Puno%2C%20Per%C3%BA&output=embed"
+    },
+    {
+      "id": "jerusalen",
+      "nombre": "Sede CATA Jerusalén",
+      "direccion": "Titiline Independencia N° 2, Urb. Jerusalem",
+      "referencia": "Puente Independencia, salida a Huancané",
+      "distrito": "San Miguel, San Román, Puno",
+      "telefono": {
+        "numero": "+51937489399",
+        "visible": "937 489 399"
+      },
+      "nota": "Nivel primaria.",
+      "foto": {
+        "url": "https://medios.prueba.cata.edu.pe/sede-jerusalen.svg",
+        "alt": "",
+        "ancho": 1200,
+        "alto": 900
+      },
+      "mapaUrl": null,
+      "correo": null,
+      "horario": [],
+      "mapaEmbedUrl": "https://www.google.com/maps?q=Urbanizaci%C3%B3n%20Jerusal%C3%A9n%2C%20Cacachi%2C%20San%20Miguel%2C%20San%20Rom%C3%A1n%2C%20Puno%2C%20Per%C3%BA&output=embed"
+    },
+    {
+      "id": "oasis",
+      "nombre": "Sede CATA Oasis",
+      "direccion": "Av. Modesto Borda s/n, Carretera a Coata km 2.5",
+      "referencia": "Chilla",
+      "distrito": "Caracoto, San Román, Puno",
+      "telefono": null,
+      "nota": "Biohuertos y talleres de alimentación saludable, arte y pintura, y música.",
+      "foto": {
+        "url": "https://medios.prueba.cata.edu.pe/sede-oasis.svg",
+        "alt": "",
+        "ancho": 1200,
+        "alto": 900
+      },
+      "mapaUrl": null,
+      "correo": null,
+      "horario": [],
+      "mapaEmbedUrl": "https://www.google.com/maps?q=Chilla%2C%20Caracoto%2C%20San%20Rom%C3%A1n%2C%20Puno%2C%20Per%C3%BA&output=embed"
+    }
+  ]
+}

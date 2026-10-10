@@ -1,0 +1,19 @@
+{
+  "data": {
+    "niveles": [
+      {
+        "id": "inicial",
+        "nombre": "Inicial"
+      },
+      {
+        "id": "primaria",
+        "nombre": "Primaria"
+      },
+      {
+        "id": "secundaria",
+        "nombre": "Secundaria"
+      }
+    ],
+    "docentes": []
+  }
+}

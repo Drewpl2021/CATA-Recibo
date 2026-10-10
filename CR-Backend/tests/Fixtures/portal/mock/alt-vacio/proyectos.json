@@ -1,0 +1,52 @@
+{
+  "data": {
+    "titulo": "Proyectos",
+    "bajada": "Impulsamos el desarrollo físico, motriz, psicológico y espiritual de cada niño a través de nuestros programas educativos, fomentando su crecimiento integral.",
+    "categorias": [
+      {
+        "id": "alimentacion",
+        "nombre": "Alimentación y salud"
+      },
+      {
+        "id": "tecnologia",
+        "nombre": "Tecnología"
+      }
+    ],
+    "proyectos": [
+      {
+        "id": "gastronomia",
+        "slug": "gastronomia",
+        "titulo": "Gastronomía e Industrias Alimentarias",
+        "lema": "Cocinamos con propósito: salud, sabor y servicio.",
+        "resumen": "Desarrolla competencias en cocina, nutrición, procesamiento y control de alimentos, fomentando la creatividad, la innovación y el emprendimiento en el sector alimentario.",
+        "categoria": "alimentacion",
+        "niveles": [],
+        "estado": null,
+        "fecha": null,
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/proyecto-gastronomia.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "robotica",
+        "slug": "robotica",
+        "titulo": "Robótica, Impresiones 3D y Computación",
+        "lema": "Tecnología con propósito: creamos, servimos y transformamos.",
+        "resumen": "Impulsa el desarrollo de competencias digitales en los estudiantes, promoviendo el pensamiento lógico, la resolución de problemas y la creatividad tecnológica.",
+        "categoria": "tecnologia",
+        "niveles": [],
+        "estado": null,
+        "fecha": null,
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/proyecto-robotica.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 800
+        }
+      }
+    ]
+  }
+}

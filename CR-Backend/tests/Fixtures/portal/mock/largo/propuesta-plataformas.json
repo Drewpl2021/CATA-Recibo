@@ -1,0 +1,278 @@
+{
+  "data": [
+    {
+      "id": "cubicol",
+      "nombre": "Cubicol",
+      "descripcion": "La plataforma académica del colegio desde 2026. Reemplaza al iCRM Educativo, que se usó de 2020 a 2025.",
+      "funciones": [
+        {
+          "titulo": "Docentes",
+          "texto": "Por confirmar: qué ofrece Cubicol a docentes."
+        },
+        {
+          "titulo": "Área académica",
+          "texto": "Por confirmar: qué ofrece Cubicol a área académica."
+        },
+        {
+          "titulo": "Padres de familia",
+          "texto": "Por confirmar: qué ofrece Cubicol a padres de familia."
+        },
+        {
+          "titulo": "Estudiantes",
+          "texto": "Por confirmar: qué ofrece Cubicol a estudiantes."
+        }
+      ],
+      "enlace": {
+        "etiqueta": "Entrar a Cubicol",
+        "url": "https://cata.cubicol.pe/principal/login",
+        "externo": true
+      },
+      "aclaracion": "Funciones por confirmar"
+    },
+    {
+      "id": "eva-student",
+      "nombre": "EVA Student",
+      "descripcion": null,
+      "funciones": [],
+      "enlace": null,
+      "aclaracion": "Descripción por confirmar"
+    },
+    {
+      "id": "planificador-eva",
+      "nombre": "Planificador Inteligente EVA",
+      "descripcion": null,
+      "funciones": [],
+      "enlace": {
+        "etiqueta": "Ver el Planificador Inteligente EVA",
+        "url": "https://www.canva.com/design/DAGvTPFEMMM/6r3lFiZV0HneNzyyg7cSxw/view",
+        "externo": true
+      },
+      "aclaracion": "Descripción por confirmar"
+    },
+    {
+      "id": "pl0",
+      "nombre": "Plataforma de prueba número 1 con nombre largo",
+      "descripcion": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+      "funciones": [
+        {
+          "titulo": "Función 1",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 2",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 3",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 4",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 5",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 6",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 7",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 8",
+          "texto": "Texto de prueba de la función."
+        }
+      ],
+      "enlace": {
+        "etiqueta": "Enlace de prueba con una etiqueta larga",
+        "url": "https://cata.edu.pe/",
+        "externo": true
+      },
+      "aclaracion": null
+    },
+    {
+      "id": "pl1",
+      "nombre": "Plataforma de prueba número 2 con nombre largo",
+      "descripcion": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+      "funciones": [
+        {
+          "titulo": "Función 1",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 2",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 3",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 4",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 5",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 6",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 7",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 8",
+          "texto": "Texto de prueba de la función."
+        }
+      ],
+      "enlace": {
+        "etiqueta": "Enlace de prueba con una etiqueta larga",
+        "url": "https://cata.edu.pe/",
+        "externo": true
+      },
+      "aclaracion": "Aclaración de prueba larga: dato pendiente de confirmación"
+    },
+    {
+      "id": "pl2",
+      "nombre": "Plataforma de prueba número 3 con nombre largo",
+      "descripcion": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+      "funciones": [
+        {
+          "titulo": "Función 1",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 2",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 3",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 4",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 5",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 6",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 7",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 8",
+          "texto": "Texto de prueba de la función."
+        }
+      ],
+      "enlace": {
+        "etiqueta": "Enlace de prueba con una etiqueta larga",
+        "url": "https://cata.edu.pe/",
+        "externo": true
+      },
+      "aclaracion": null
+    },
+    {
+      "id": "pl3",
+      "nombre": "Plataforma de prueba número 4 con nombre largo",
+      "descripcion": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+      "funciones": [
+        {
+          "titulo": "Función 1",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 2",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 3",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 4",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 5",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 6",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 7",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 8",
+          "texto": "Texto de prueba de la función."
+        }
+      ],
+      "enlace": {
+        "etiqueta": "Enlace de prueba con una etiqueta larga",
+        "url": "https://cata.edu.pe/",
+        "externo": true
+      },
+      "aclaracion": "Aclaración de prueba larga: dato pendiente de confirmación"
+    },
+    {
+      "id": "pl4",
+      "nombre": "Plataforma de prueba número 5 con nombre largo",
+      "descripcion": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+      "funciones": [
+        {
+          "titulo": "Función 1",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 2",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 3",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 4",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 5",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 6",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 7",
+          "texto": "Texto de prueba de la función."
+        },
+        {
+          "titulo": "Función 8",
+          "texto": "Texto de prueba de la función."
+        }
+      ],
+      "enlace": {
+        "etiqueta": "Enlace de prueba con una etiqueta larga",
+        "url": "https://cata.edu.pe/",
+        "externo": true
+      },
+      "aclaracion": null
+    }
+  ]
+}

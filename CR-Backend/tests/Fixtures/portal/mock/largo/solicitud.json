@@ -1,0 +1,17 @@
+{
+  "data": {
+    "titulo": "Solicitar información sobre el proceso de matrícula y admisión",
+    "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+    "mensajeWhatsapp": "Hola, mi nombre es {nombre}. Quisiera recibir información completa sobre el colegio, sus sedes, niveles y propuesta educativa para {grado}. Muchas gracias.",
+    "mensajesPorPagina": [
+      {
+        "pagina": "matricula",
+        "mensaje": "Hola, mi nombre es {nombre}. Quisiera recibir información completa sobre el proceso de matrícula, los requisitos, las fechas y las vacantes para {grado}. Muchas gracias."
+      },
+      {
+        "pagina": "contacto",
+        "mensaje": "Hola, mi nombre es {nombre}. Quisiera hacer una consulta al colegio y que me indiquen el horario de atención de la secretaría para {grado}. Muchas gracias."
+      }
+    ]
+  }
+}

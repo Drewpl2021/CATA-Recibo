@@ -1,0 +1,198 @@
+{
+  "data": {
+    "titulo": "Academia preuniversitaria",
+    "descripcion": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+    "aclaracion": "Datos de prueba: precios y fechas publicados en 2022-2023",
+    "universidades": [
+      {
+        "id": "una-puno",
+        "nombre": "Universidad Nacional del Altiplano de Puno",
+        "ciclos": [
+          {
+            "id": "una-verano",
+            "nombre": "Verano",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": 440,
+            "precioVirtual": 250,
+            "inicio": "2023-01-02",
+            "fin": "2023-02-18"
+          },
+          {
+            "id": "una-intensivo",
+            "nombre": "Intensivo",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial"
+            ],
+            "precio": 170,
+            "precioVirtual": null,
+            "inicio": "2022-10-24",
+            "fin": "2023-02-25"
+          },
+          {
+            "id": "una-repaso",
+            "nombre": "Repaso",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": 450,
+            "precioVirtual": 250,
+            "inicio": "2023-01-02",
+            "fin": "2023-02-11"
+          }
+        ]
+      },
+      {
+        "id": "unsa",
+        "nombre": "Universidad Nacional de San Agustín",
+        "ciclos": [
+          {
+            "id": "unsa-repaso",
+            "nombre": "Repaso",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": 550,
+            "precioVirtual": 250,
+            "inicio": "2023-01-02",
+            "fin": "2023-02-25"
+          },
+          {
+            "id": "unsa-verano",
+            "nombre": "Verano",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": 440,
+            "precioVirtual": 250,
+            "inicio": "2023-01-02",
+            "fin": "2023-02-18"
+          },
+          {
+            "id": "unsa-semestral",
+            "nombre": "Repaso semestral",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": 450,
+            "precioVirtual": 250,
+            "inicio": "2023-01-02",
+            "fin": "2023-02-11"
+          }
+        ]
+      },
+      {
+        "id": "unaj",
+        "nombre": "Universidad Nacional de Juliaca",
+        "ciclos": [
+          {
+            "id": "unaj-repaso",
+            "nombre": "Repaso",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": 550,
+            "precioVirtual": 250,
+            "inicio": "2023-01-02",
+            "fin": "2023-02-25"
+          }
+        ]
+      },
+      {
+        "id": "prueba",
+        "nombre": "Universidad de prueba con un nombre muy largo para comprobar el ajuste del filtro y de las fichas",
+        "ciclos": [
+          {
+            "id": "p0",
+            "nombre": "Ciclo de prueba 1 con nombre largo",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": 1200,
+            "precioVirtual": 900,
+            "inicio": "2027-01-04",
+            "fin": "2027-03-26"
+          },
+          {
+            "id": "p1",
+            "nombre": "Ciclo de prueba 2 con nombre largo",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial"
+            ],
+            "precio": 1201,
+            "precioVirtual": null,
+            "inicio": "2027-01-04",
+            "fin": "2027-03-26"
+          },
+          {
+            "id": "p2",
+            "nombre": "Ciclo de prueba 3 con nombre largo",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": 1202,
+            "precioVirtual": 900,
+            "inicio": "2027-01-04",
+            "fin": "2027-03-26"
+          },
+          {
+            "id": "p3",
+            "nombre": "Ciclo de prueba 4 con nombre largo",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial"
+            ],
+            "precio": 1203,
+            "precioVirtual": null,
+            "inicio": "2027-01-04",
+            "fin": "2027-03-26"
+          },
+          {
+            "id": "p4",
+            "nombre": "Ciclo de prueba 5 con nombre largo",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": 1204,
+            "precioVirtual": 900,
+            "inicio": "2027-01-04",
+            "fin": "2027-03-26"
+          },
+          {
+            "id": "p5",
+            "nombre": "Ciclo de prueba 6 con nombre largo",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial"
+            ],
+            "precio": 1205,
+            "precioVirtual": null,
+            "inicio": "2027-01-04",
+            "fin": "2027-03-26"
+          }
+        ]
+      }
+    ]
+  }
+}

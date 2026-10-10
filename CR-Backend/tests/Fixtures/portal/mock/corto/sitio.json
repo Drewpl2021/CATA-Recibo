@@ -1,0 +1,41 @@
+{
+  "data": {
+    "nombre": "Colegio Adventista Túpac Amaru",
+    "nombreCorto": "CATA",
+    "subtitulo": null,
+    "ciudad": "Juliaca",
+    "anioFundacion": 1971,
+    "telefono": {
+      "numero": "+5151325096",
+      "visible": "051 325096"
+    },
+    "whatsapp": {
+      "numero": "+51986322833",
+      "visible": "986 322 833"
+    },
+    "direccion": {
+      "linea": "Jr. Moquegua 852",
+      "referencia": null,
+      "distrito": null
+    },
+    "portalAcademico": {
+      "nombre": "Cubicol",
+      "url": "https://cata.cubicol.pe/principal/login"
+    },
+    "promotora": null,
+    "redes": [
+      {
+        "red": "facebook",
+        "cuenta": "Colegio CATA Juliaca",
+        "url": "https://www.facebook.com/colegiocatajuliaca/",
+        "aclaracion": null
+      },
+      {
+        "red": "tiktok",
+        "cuenta": "@colegioadventistacata",
+        "url": "https://www.tiktok.com/@colegioadventistacata",
+        "aclaracion": null
+      }
+    ]
+  }
+}

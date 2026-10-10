@@ -1,0 +1,8 @@
+{
+  "data": {
+    "titulo": "Informes",
+    "texto": null,
+    "mensajeWhatsapp": "Hola, soy {nombre}. Me interesa {grado}.",
+    "mensajesPorPagina": []
+  }
+}

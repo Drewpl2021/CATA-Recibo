@@ -1,0 +1,49 @@
+{
+  "data": {
+    "titulo": "Mejoramos la experiencia de aprendizaje",
+    "bajada": "Colegio Adventista Túpac Amaru: inicial, primaria y secundaria en cuatro sedes de Juliaca, desde 1971.",
+    "figuras": [
+      {
+        "tipo": "recorte",
+        "imagen": {
+          "url": "https://cata.edu.pe/wp-content/uploads/2023/01/CATA-Matricula_Img_2.png",
+          "alt": "Estudiante con el uniforme del colegio, su mochila y un cuaderno de CATA",
+          "ancho": 500,
+          "alto": 1000
+        }
+      },
+      {
+        "tipo": "recorte",
+        "imagen": {
+          "url": "https://cata.edu.pe/wp-content/uploads/2023/01/CATA-Matricula_Img_1.png",
+          "alt": "Estudiante con el uniforme del colegio y su mochila, haciendo el gesto de pulgar arriba",
+          "ancho": 500,
+          "alto": 1000
+        }
+      },
+      {
+        "tipo": "foto",
+        "imagen": {
+          "url": "https://cata.edu.pe/wp-content/uploads/2025/05/Sin-titulo-1200-x-900-px.png",
+          "alt": "Niño con el uniforme del colegio y lentes, sonriendo y abrazando una Santa Biblia",
+          "ancho": 1200,
+          "alto": 900
+        }
+      }
+    ],
+    "accionPrincipal": {
+      "etiqueta": "Proceso de matrícula",
+      "destino": {
+        "tipo": "pagina",
+        "ruta": "/matricula"
+      }
+    },
+    "accionSecundaria": {
+      "etiqueta": "Conoce la propuesta educativa",
+      "destino": {
+        "tipo": "pagina",
+        "ruta": "/propuesta-educativa"
+      }
+    }
+  }
+}

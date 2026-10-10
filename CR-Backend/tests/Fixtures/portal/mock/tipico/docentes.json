@@ -1,0 +1,240 @@
+{
+  "data": {
+    "niveles": [
+      {
+        "id": "inicial",
+        "nombre": "Inicial"
+      },
+      {
+        "id": "primaria",
+        "nombre": "Primaria"
+      },
+      {
+        "id": "secundaria",
+        "nombre": "Secundaria"
+      }
+    ],
+    "docentes": [
+      {
+        "id": "d1",
+        "nombre": "Docente de prueba 01",
+        "cargo": "Aula de 3 años (dato de prueba)",
+        "nivel": "inicial",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d2",
+        "nombre": "Docente de prueba 02",
+        "cargo": "Aula de 4 años (dato de prueba)",
+        "nivel": "inicial",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d3",
+        "nombre": "Docente de prueba 03",
+        "cargo": "Aula de 5 años (dato de prueba)",
+        "nivel": "inicial",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d4",
+        "nombre": "Docente de prueba 04",
+        "cargo": "Auxiliar de aula (dato de prueba)",
+        "nivel": "inicial",
+        "foto": null
+      },
+      {
+        "id": "d5",
+        "nombre": "Docente de prueba 05",
+        "cargo": "1.er grado (dato de prueba)",
+        "nivel": "primaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d6",
+        "nombre": "Docente de prueba 06",
+        "cargo": "2.º grado (dato de prueba)",
+        "nivel": "primaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d7",
+        "nombre": "Docente de prueba 07",
+        "cargo": "3.er grado (dato de prueba)",
+        "nivel": "primaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d8",
+        "nombre": "Docente de prueba 08",
+        "cargo": "4.º grado (dato de prueba)",
+        "nivel": "primaria",
+        "foto": null
+      },
+      {
+        "id": "d9",
+        "nombre": "Docente de prueba 09",
+        "cargo": "5.º grado (dato de prueba)",
+        "nivel": "primaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d10",
+        "nombre": "Docente de prueba 10",
+        "cargo": "6.º grado (dato de prueba)",
+        "nivel": "primaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d11",
+        "nombre": "Docente de prueba 11",
+        "cargo": "Educación física (dato de prueba)",
+        "nivel": "primaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d12",
+        "nombre": "Docente de prueba 12",
+        "cargo": "Inglés (dato de prueba)",
+        "nivel": "primaria",
+        "foto": null
+      },
+      {
+        "id": "d13",
+        "nombre": "Docente de prueba 13",
+        "cargo": "Matemática (dato de prueba)",
+        "nivel": "secundaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d14",
+        "nombre": "Docente de prueba 14",
+        "cargo": "Comunicación (dato de prueba)",
+        "nivel": "secundaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d15",
+        "nombre": "Docente de prueba 15",
+        "cargo": "Ciencia y tecnología (dato de prueba)",
+        "nivel": "secundaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d16",
+        "nombre": "Docente de prueba 16",
+        "cargo": "Ciencias sociales (dato de prueba)",
+        "nivel": "secundaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d17",
+        "nombre": "Docente de prueba 17",
+        "cargo": "Educación religiosa (dato de prueba)",
+        "nivel": "secundaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d18",
+        "nombre": "Docente de prueba 18",
+        "cargo": "Inglés (dato de prueba)",
+        "nivel": "secundaria",
+        "foto": null
+      },
+      {
+        "id": "d19",
+        "nombre": "Docente de prueba 19",
+        "cargo": "Arte y cultura (dato de prueba)",
+        "nivel": "secundaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      },
+      {
+        "id": "d20",
+        "nombre": "Docente de prueba 20",
+        "cargo": "Educación para el trabajo (dato de prueba)",
+        "nivel": "secundaria",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/persona-prueba.svg",
+          "alt": "",
+          "ancho": 1200,
+          "alto": 1200
+        }
+      }
+    ]
+  }
+}

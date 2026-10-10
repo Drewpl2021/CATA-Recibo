@@ -1,0 +1,71 @@
+{
+  "data": {
+    "nombre": "Colegio Particular Adventista Túpac Amaru de la Ciudad de Juliaca",
+    "nombreCorto": "CATA",
+    "subtitulo": "Educación inicial, primaria y secundaria con cosmovisión cristiana desde mil novecientos setenta y uno",
+    "ciudad": "Juliaca",
+    "anioFundacion": 1971,
+    "telefono": {
+      "numero": "+5151325096",
+      "visible": "051 325096"
+    },
+    "whatsapp": {
+      "numero": "+51986322833",
+      "visible": "986 322 833"
+    },
+    "direccion": {
+      "linea": "Jirón Moquegua número 852, cercado de la ciudad de Juliaca",
+      "referencia": "Frente al Mercado Internacional Túpac Amaru, a media cuadra de la avenida principal",
+      "distrito": "Juliaca, provincia de San Román, departamento de Puno"
+    },
+    "portalAcademico": {
+      "nombre": "Cubicol",
+      "url": "https://cata.cubicol.pe/principal/login"
+    },
+    "promotora": "Asociación Educativa Colegio Adventista Túpac Amaru, promotora reconocida por R.D. N° 4609-DREP-2000",
+    "redes": [
+      {
+        "red": "facebook",
+        "cuenta": "Colegio CATA Juliaca · Colegio Adventista Túpac Amaru",
+        "url": "https://www.facebook.com/colegiocatajuliaca/",
+        "aclaracion": "Dato de prueba: dirección por confirmar con el área de comunicaciones"
+      },
+      {
+        "red": "tiktok",
+        "cuenta": "@colegioadventistacata · Colegio Adventista Túpac Amaru",
+        "url": "https://www.tiktok.com/@colegioadventistacata",
+        "aclaracion": "Dato de prueba: dirección por confirmar con el área de comunicaciones"
+      },
+      {
+        "red": "youtube",
+        "cuenta": "Colegio CATA · Colegio Adventista Túpac Amaru",
+        "url": "https://www.youtube.com/@colegiocata828",
+        "aclaracion": "Dato de prueba: dirección por confirmar con el área de comunicaciones"
+      },
+      {
+        "red": "whatsapp",
+        "cuenta": "986 322 833 · Colegio Adventista Túpac Amaru",
+        "url": "https://wa.me/51986322833",
+        "aclaracion": "Dato de prueba: dirección por confirmar con el área de comunicaciones"
+      },
+      {
+        "red": "instagram",
+        "cuenta": "Cuenta de prueba",
+        "url": "https://www.instagram.com/",
+        "aclaracion": "Dato de prueba"
+      },
+      {
+        "red": "x",
+        "cuenta": "Cuenta de prueba",
+        "url": "https://x.com/",
+        "aclaracion": "Dato de prueba"
+      },
+      {
+        "red": "linkedin",
+        "cuenta": "Cuenta de prueba",
+        "url": "https://www.linkedin.com/",
+        "aclaracion": "Dato de prueba"
+      }
+    ]
+  }
+}

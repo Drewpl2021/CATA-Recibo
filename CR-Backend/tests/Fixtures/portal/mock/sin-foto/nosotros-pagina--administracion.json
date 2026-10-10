@@ -1,0 +1,129 @@
+{
+  "data": {
+    "slug": "administracion",
+    "titulo": "Administración",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "personas",
+        "titulo": "Dirección",
+        "personas": [
+          {
+            "id": "lanza",
+            "nombre": "Fredy Lanza Umiña",
+            "cargo": "Director general",
+            "foto": null
+          },
+          {
+            "id": "apaza-sosa",
+            "nombre": "Dino Apaza Sosa",
+            "cargo": "Administrador",
+            "foto": null
+          },
+          {
+            "id": "mamani-apaza",
+            "nombre": "Guillermo Mamani Apaza",
+            "cargo": "Director de gestión de calidad",
+            "foto": null
+          }
+        ]
+      },
+      {
+        "tipo": "personas",
+        "titulo": "Dirección académica",
+        "personas": [
+          {
+            "id": "aliaga",
+            "nombre": "Elisa Aliaga Salcedo",
+            "cargo": "Director académico general",
+            "foto": null
+          },
+          {
+            "id": "coa",
+            "nombre": "Kelia Coa Mamani",
+            "cargo": "Director académico inicial y primaria",
+            "foto": null
+          },
+          {
+            "id": "apaza-apaza",
+            "nombre": "Edwin Apaza Apaza",
+            "cargo": "Director académico secundaria",
+            "foto": null
+          },
+          {
+            "id": "huahuacondori",
+            "nombre": "Ademer Huahuacondori Aranda",
+            "cargo": "Director académico Jerusalén",
+            "foto": null
+          }
+        ]
+      },
+      {
+        "tipo": "personas",
+        "titulo": "Contabilidad y caja",
+        "personas": [
+          {
+            "id": "alca",
+            "nombre": "Karen Alca Apaza",
+            "cargo": "Contador(a)",
+            "foto": null
+          },
+          {
+            "id": "mamani-valera",
+            "nombre": "Griselda Mamani Valera",
+            "cargo": "Auxiliar de contabilidad",
+            "foto": null
+          },
+          {
+            "id": "mamani-tarqui-m",
+            "nombre": "Mary Mamani Tarqui",
+            "cargo": "Caja",
+            "foto": null
+          }
+        ]
+      },
+      {
+        "tipo": "personas",
+        "titulo": "Secretaría, operaciones y TIC",
+        "personas": [
+          {
+            "id": "condori",
+            "nombre": "Luz Condori Quispe",
+            "cargo": "Secretaria general",
+            "foto": null
+          },
+          {
+            "id": "casildo",
+            "nombre": "Yaritza Casildo Chanducas",
+            "cargo": "Asistente de operaciones",
+            "foto": null
+          },
+          {
+            "id": "incahuanaco",
+            "nombre": "Ismael Incahuanaco Mamani",
+            "cargo": "TIC",
+            "foto": null
+          }
+        ]
+      },
+      {
+        "tipo": "personas",
+        "titulo": "Bienestar y pastoral",
+        "personas": [
+          {
+            "id": "cotrina",
+            "nombre": "José Cotrina Alvarado",
+            "cargo": "Capellanía",
+            "foto": null
+          },
+          {
+            "id": "mamani-tarqui-e",
+            "nombre": "Elias Mamani Tarqui",
+            "cargo": "Psicología",
+            "foto": null
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "data": {
+    "id": "p",
+    "slug": "huerto",
+    "titulo": "Huerto",
+    "lema": null,
+    "resumen": "Biohuerto escolar.",
+    "categoria": "c",
+    "niveles": [],
+    "estado": null,
+    "fecha": null,
+    "foto": null,
+    "categoriaNombre": "Ciencia",
+    "descripcion": [
+      "Biohuerto escolar."
+    ],
+    "secciones": [],
+    "galeria": []
+  }
+}
