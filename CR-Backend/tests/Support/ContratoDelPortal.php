@@ -53,6 +53,29 @@ trait ContratoDelPortal
         );
     }
 
+    /**
+     * Igual al ejemplo, salvo el orden de las claves dentro de cada objeto
+     * (JSON no lo tiene, y MySQL lo cambia). Lo demás cuenta: el orden de
+     * las listas, cada null y el tipo exacto (440 no es "440.00").
+     */
+    protected function assertIgualAlEjemplo(array $esperado, array $real, string $mensaje = ''): void
+    {
+        $this->assertSame(self::sinOrdenDeClaves($esperado), self::sinOrdenDeClaves($real), $mensaje);
+    }
+
+    private static function sinOrdenDeClaves(mixed $valor): mixed
+    {
+        if (! is_array($valor)) {
+            return $valor;
+        }
+
+        if (! array_is_list($valor)) {
+            ksort($valor);
+        }
+
+        return array_map(fn ($v) => self::sinOrdenDeClaves($v), $valor);
+    }
+
     /** Carga en la base lo que devuelve GET /v1/sitio en un escenario. */
     protected function cargarSitio(array $sitio): void
     {

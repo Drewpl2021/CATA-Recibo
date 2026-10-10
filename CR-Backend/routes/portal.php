@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Portal\InicioController;
+use App\Http\Controllers\Portal\MatriculaController;
+use App\Http\Controllers\Portal\PropuestaController;
 use App\Http\Controllers\Portal\SitioController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +25,23 @@ use Illuminate\Support\Facades\Route;
 | Va en su propio archivo, y no en routes/api.php, para que nunca quede por
 | error dentro del grupo protegido ni herede sus middleware.
 |
+| En el orden del resumen de endpoints del contrato (§2).
+|
 */
 
 Route::get('sitio', [SitioController::class, 'ver'])->name('sitio');
+
+Route::get('portada/banners',  [InicioController::class, 'banners'])->name('portada.banners');
+Route::get('quienes-somos',    [InicioController::class, 'quienesSomos'])->name('quienes-somos');
+Route::get('niveles',          [InicioController::class, 'niveles'])->name('niveles');
+Route::get('sedes',            [InicioController::class, 'sedes'])->name('sedes');
+Route::get('noticias',         [InicioController::class, 'noticias'])->name('noticias');
+Route::get('grados',           [MatriculaController::class, 'grados'])->name('grados');
+Route::get('propuesta-educativa/cabecera', [PropuestaController::class, 'cabecera'])->name('propuesta.cabecera');
+Route::get('portada/cifras',   [InicioController::class, 'cifras'])->name('portada.cifras');
+
+Route::get('matricula/cabecera',  [MatriculaController::class, 'cabecera'])->name('matricula.cabecera');
+Route::get('matricula/procesos',  [MatriculaController::class, 'procesos'])->name('matricula.procesos');
+Route::get('matricula/vacantes',  [MatriculaController::class, 'vacantes'])->name('matricula.vacantes');
+Route::get('matricula/fechas',    [MatriculaController::class, 'fechas'])->name('matricula.fechas');
+Route::get('matricula/preguntas', [MatriculaController::class, 'preguntas'])->name('matricula.preguntas');

@@ -2,6 +2,8 @@
 
 namespace App\Support\Portal;
 
+use App\Models\Portal\Seccion;
+
 /**
  * Lee el contenido JSON de una sección del portal con las reglas del contrato.
  *
@@ -23,6 +25,12 @@ class Ficha
         private readonly array $contenido,
     ) {}
 
+    /** La ficha de una sección guardada, con sus imágenes ya resueltas. */
+    public static function de(string $clave): self
+    {
+        return new self($clave, ImagenesEnJson::resolver(Seccion::contenido($clave)));
+    }
+
     public function texto(string $campo): string
     {
         return $this->textoOpcional($campo) ?? throw SeccionSinConfigurar::falta($this->seccion, $campo);
@@ -37,13 +45,18 @@ class Ficha
 
     public function entero(string $campo): int
     {
+        return $this->enteroOpcional($campo) ?? throw SeccionSinConfigurar::falta($this->seccion, $campo);
+    }
+
+    public function enteroOpcional(string $campo): ?int
+    {
         $valor = data_get($this->contenido, $campo);
 
-        if (! is_int($valor) && ! (is_string($valor) && ctype_digit($valor))) {
-            throw SeccionSinConfigurar::falta($this->seccion, $campo);
+        if (is_int($valor) || (is_string($valor) && ctype_digit($valor))) {
+            return (int) $valor;
         }
 
-        return (int) $valor;
+        return null;
     }
 
     /** Si el objeto opcional está puesto (p. ej. portalAcademico). */
@@ -52,6 +65,56 @@ class Ficha
         $valor = data_get($this->contenido, $campo);
 
         return is_array($valor) && $valor !== [];
+    }
+
+    /** Una lista de textos (párrafos). Si se exige, al menos uno. */
+    public function textos(string $campo, bool $alMenosUno = false): array
+    {
+        $textos = Formato::textos((array) data_get($this->contenido, $campo, []));
+
+        if ($alMenosUno && $textos === []) {
+            throw SeccionSinConfigurar::falta($this->seccion, $campo);
+        }
+
+        return $textos;
+    }
+
+    /** Una imagen opcional (ya resuelta por ImagenesEnJson). */
+    public function imagen(string $campo): ?array
+    {
+        return $this->tiene($campo) ? Formato::imagenDeArreglo(data_get($this->contenido, $campo)) : null;
+    }
+
+    public function accion(string $campo): array
+    {
+        return $this->accionOpcional($campo) ?? throw SeccionSinConfigurar::falta($this->seccion, $campo);
+    }
+
+    public function accionOpcional(string $campo): ?array
+    {
+        return $this->tiene($campo) ? Formato::accion(data_get($this->contenido, $campo)) : null;
+    }
+
+    /** Un objeto opcional como ficha propia, para leer sus campos. */
+    public function ficha(string $campo): ?self
+    {
+        return $this->tiene($campo) ? new self("{$this->seccion}.{$campo}", data_get($this->contenido, $campo)) : null;
+    }
+
+    /**
+     * Una lista de objetos, cada uno como ficha propia.
+     *
+     * @return self[]
+     */
+    public function fichas(string $campo): array
+    {
+        $lista = data_get($this->contenido, $campo, []);
+        $lista = is_array($lista) ? array_values($lista) : [];
+
+        return array_map(
+            fn ($i) => new self("{$this->seccion}.{$campo}.{$i}", (array) $lista[$i]),
+            array_keys($lista),
+        );
     }
 
     /** Un texto sin espacios en los bordes; vacío vale null. */

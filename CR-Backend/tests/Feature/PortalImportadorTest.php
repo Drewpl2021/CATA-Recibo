@@ -93,9 +93,10 @@ class PortalImportadorTest extends TestCase
     {
         $this->importar($escenario);
 
-        // Lo que se guarda como ficha completa vuelve idéntico, imágenes incluidas.
+        // Lo que se guarda como ficha completa vuelve idéntico, imágenes
+        // incluidas (salvo el orden de las claves, que MySQL cambia).
         foreach (['quienes-somos', 'propuesta-cabecera', 'matricula-cabecera', 'contacto', 'solicitud'] as $archivo) {
-            $this->assertSame(
+            $this->assertIgualAlEjemplo(
                 $this->ejemplo($escenario, "{$archivo}.json")['data'],
                 ImagenesEnJson::resolver(Seccion::contenido($archivo)),
                 $archivo,
@@ -103,7 +104,7 @@ class PortalImportadorTest extends TestCase
         }
 
         foreach (Pagina::all() as $pagina) {
-            $this->assertSame(
+            $this->assertIgualAlEjemplo(
                 $this->ejemplo($escenario, "nosotros-pagina--{$pagina->slug}.json")['data']['bloques'],
                 ImagenesEnJson::resolver($pagina->bloques),
                 $pagina->slug,
