@@ -348,10 +348,10 @@ class PortalReglasTest extends TestCase
     {
         config(['portal.url_medios' => 'https://rrhh.cata.edu.pe/api/portal/medios']);
         $this->importar();
-        Imagen::find(Banner::first()->imagen_id)->update(['url_externa' => null, 'ruta' => 'banners/0199-afiche.webp']);
+        Imagen::find(Banner::first()->imagen_id)->update(['url_externa' => null, 'ruta' => '0199-afiche.webp']);
 
         $url = $this->getJson('/api/portal/v1/portada/banners')->json('data.0.imagen.url');
 
-        $this->assertSame('https://rrhh.cata.edu.pe/api/portal/medios/banners/0199-afiche.webp', $url);
+        $this->assertSame('https://rrhh.cata.edu.pe/api/portal/medios/0199-afiche.webp', $url);
     }
 }

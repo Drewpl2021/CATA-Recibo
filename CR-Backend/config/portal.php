@@ -49,11 +49,21 @@ return [
     'limite_por_minuto' => (int) env('PORTAL_LIMITE_POR_MINUTO', 120),
 
     /*
+     * Lo mismo para las imágenes subidas (/api/portal/medios). Más alto: una
+     * página trae muchas, y el navegador las guarda un año, así que las que
+     * llegan aquí son sobre todo de visitas nuevas.
+     */
+    'limite_medios_por_minuto' => (int) env('PORTAL_LIMITE_MEDIOS_POR_MINUTO', 600),
+
+    /*
      * De dónde sirve el portal las imágenes subidas desde el panel. Tiene que
      * ser una dirección absoluta y https: el contrato hace que el portal
      * descarte cualquier respuesta con una URL http://. Por defecto, la ruta
      * de medios de esta misma API.
      */
-    'url_medios' => env('PORTAL_URL_MEDIOS', rtrim((string) env('APP_URL', 'http://localhost'), '/') . '/api/portal/medios'),
+    // Con `?:` y no con el segundo argumento de env(): una línea
+    // `PORTAL_URL_MEDIOS=` vacía en el .env da "" y no null, y las imágenes
+    // saldrían con una dirección rota.
+    'url_medios' => env('PORTAL_URL_MEDIOS') ?: rtrim((string) env('APP_URL', 'http://localhost'), '/') . '/api/portal/medios',
 
 ];

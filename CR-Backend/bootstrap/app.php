@@ -34,6 +34,16 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->prefix('api/portal/v1')
                 ->name('portal.')
                 ->group(base_path('routes/portal.php'));
+
+            // Las imágenes subidas desde el panel. Fuera de /v1 (no son parte
+            // del contrato versionado: su dirección llega dentro de cada
+            // Imagen) y sin el grupo 'portal', que les pondría el max-age=60
+            // del JSON. Su propio freno: una página con muchas fotos no debe
+            // gastar el de la API. Ver MediosController.
+            Route::get('api/portal/medios/{archivo}', [\App\Http\Controllers\Portal\MediosController::class, 'ver'])
+                ->where('archivo', '[a-z0-9][a-z0-9_-]*\.(jpg|jpeg|png|webp|gif)')
+                ->middleware('throttle:portal_medios')
+                ->name('portal.medios');
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {

@@ -104,15 +104,10 @@ class PortalEndpointsTest extends TestCase
 
         $this->assertCumpleElContrato($esquema, $respuesta->getContent());
 
-        $esperado = $this->ejemplo($escenario, "{$archivo}.json");
-
-        if ($archivo === 'noticias' && $escenario === 'largo') {
-            // El ejemplo largo es la primera página de 23 noticias, pero trae
-            // solo esas 6: el importador no puede inventar las otras 17.
-            $this->assertSame(23, $esperado['meta']['total']);
-            $esperado['meta']['total'] = count($esperado['data']);
-        }
-
-        $this->assertIgualAlEjemplo($esperado, $respuesta->json(), "GET {$ruta} en «{$escenario}»");
+        $this->assertIgualAlEjemplo(
+            $this->ejemplo($escenario, "{$archivo}.json"),
+            $respuesta->json(),
+            "GET {$ruta} en «{$escenario}»",
+        );
     }
 }

@@ -74,5 +74,10 @@ class AppServiceProvider extends ServiceProvider
         // así que el techo es alto. Ver config/portal.php.
         RateLimiter::for('portal', fn (Request $peticion) => Limit::perMinute(config('portal.limite_por_minuto'))
             ->by($peticion->ip()));
+
+        // Las imágenes del portal: más alto, porque una página trae muchas, y
+        // aparte, para que las fotos no gasten el freno de la API.
+        RateLimiter::for('portal_medios', fn (Request $peticion) => Limit::perMinute(config('portal.limite_medios_por_minuto'))
+            ->by($peticion->ip()));
     }
 }
