@@ -2,21 +2,17 @@
 
 namespace App\Models\Portal;
 
-use App\Traits\Auditable;
-use Illuminate\Database\Eloquent\Builder;
+use App\Traits\ContenidoDelPortal;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 /**
  * Una red social oficial del colegio. Ver la migración de portal_redes.
  */
 class RedSocial extends Model
 {
-    use Auditable;
+    use ContenidoDelPortal;
 
     protected $table = 'portal_redes';
-    protected $keyType = 'string';
-    public $incrementing = false;
 
     /** Las que admite el contrato del portal: de cada una pone el icono y el color. */
     public const REDES = ['facebook', 'youtube', 'tiktok', 'whatsapp', 'instagram', 'x', 'linkedin'];
@@ -31,20 +27,8 @@ class RedSocial extends Model
         return ['orden' => 'integer'];
     }
 
-    protected static function boot()
-    {
-        parent::boot();
-        static::creating(fn ($m) => $m->id = $m->id ?: (string) Str::uuid7());
-    }
-
     public function nombreAuditado(): string
     {
         return "la red {$this->red} ({$this->cuenta})";
-    }
-
-    /** Las que se muestran, en el orden del portal. */
-    public function scopePublicadas(Builder $consulta): Builder
-    {
-        return $consulta->where('estado', 'publicado')->orderBy('orden');
     }
 }

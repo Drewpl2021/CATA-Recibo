@@ -40,7 +40,7 @@ class SitioController extends Controller
                 'url'    => $sitio->texto('portalAcademico.url'),
             ] : null,
             'promotora'      => $sitio->textoOpcional('promotora'),
-            'redes'          => RedSocial::publicadas()->get()->map(fn (RedSocial $red) => [
+            'redes'          => RedSocial::publicados()->get()->map(fn (RedSocial $red) => [
                 'red'        => $red->red,
                 'cuenta'     => $red->cuenta,
                 'url'        => $red->url,

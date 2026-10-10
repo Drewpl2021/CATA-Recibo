@@ -28,7 +28,20 @@ class Seccion extends Model
 
     /** Lo que se lee en la auditoría en vez de la clave técnica. */
     public const NOMBRES = [
-        'sitio' => 'los datos del colegio',
+        'sitio'              => 'los datos del colegio',
+        'quienes-somos'      => 'Quiénes somos (Inicio)',
+        'niveles'            => 'el título de Niveles (Inicio)',
+        'propuesta-cabecera' => 'la cabecera de Propuesta Educativa',
+        'propuesta-pilares'  => 'la introducción de los pilares',
+        'propuesta-academia' => 'la academia preuniversitaria',
+        'matricula-cabecera' => 'la cabecera de Matrícula',
+        'matricula-vacantes' => 'la nota de vacantes',
+        'matricula-fechas'   => 'la nota del cronograma de matrícula',
+        'solicitud'          => 'el formulario «Solicitar información»',
+        'contacto'           => 'la cabecera de Contacto',
+        'proyectos'          => 'la cabecera de Proyectos',
+        'nosotros'           => 'el índice de Nosotros',
+        'logros'             => 'la cabecera de Logros',
     ];
 
     protected function casts(): array

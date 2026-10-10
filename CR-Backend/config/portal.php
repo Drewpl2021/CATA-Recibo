@@ -48,4 +48,12 @@ return [
      */
     'limite_por_minuto' => (int) env('PORTAL_LIMITE_POR_MINUTO', 120),
 
+    /*
+     * De dónde sirve el portal las imágenes subidas desde el panel. Tiene que
+     * ser una dirección absoluta y https: el contrato hace que el portal
+     * descarte cualquier respuesta con una URL http://. Por defecto, la ruta
+     * de medios de esta misma API.
+     */
+    'url_medios' => env('PORTAL_URL_MEDIOS', rtrim((string) env('APP_URL', 'http://localhost'), '/') . '/api/portal/medios'),
+
 ];
