@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Portal\Banner;
+use App\Models\Portal\Ciclo;
 use App\Models\Portal\Cifra;
 use App\Models\Portal\DocenteNivel;
 use App\Models\Portal\FechaMatricula;
@@ -10,6 +11,7 @@ use App\Models\Portal\Imagen;
 use App\Models\Portal\Logro;
 use App\Models\Portal\Noticia;
 use App\Models\Portal\Seccion;
+use App\Models\Portal\Universidad;
 use App\Support\Portal\ImportadorDeEjemplos;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\ContratoDelPortal;
@@ -142,6 +144,38 @@ class PortalReglasTest extends TestCase
         $ids = array_column($this->getJson('/api/portal/v1/logros')->json('data.logros'), 'id');
 
         $this->assertNotContains($logro->clave, $ids);
+    }
+
+    // ───────── Academia ─────────
+
+    public function test_los_precios_salen_como_numero_con_o_sin_centimos(): void
+    {
+        $this->importar('largo');
+        [$entero, $conCentimos] = Ciclo::whereNotNull('precio')->orderBy('clave')->take(2)->get();
+        $entero->update(['precio' => 440]);
+        $conCentimos->update(['precio' => 172.5, 'precio_virtual' => null]);
+
+        $respuesta = $this->getJson('/api/portal/v1/propuesta-educativa/academia')->assertOk();
+        $ciclos = collect($respuesta->json('data.universidades'))->flatMap(fn ($u) => $u['ciclos'])->keyBy('id');
+
+        $this->assertSame(440, $ciclos[$entero->clave]['precio']);
+        $this->assertSame(172.5, $ciclos[$conCentimos->clave]['precio']);
+        $this->assertNull($ciclos[$conCentimos->clave]['precioVirtual']);
+        // En el JSON mismo, sin comillas ni ".00".
+        $this->assertStringContainsString('"precio":440,', $respuesta->getContent());
+        $this->assertStringContainsString('"precio":172.5,', $respuesta->getContent());
+        $this->assertCumpleElContrato('/v1/propuesta-educativa/academia', $respuesta->getContent());
+    }
+
+    public function test_una_universidad_en_borrador_no_sale_con_sus_ciclos(): void
+    {
+        $this->importar();
+        $universidad = Universidad::first();
+        $universidad->update(['estado' => Universidad::BORRADOR]);
+
+        $ids = array_column($this->getJson('/api/portal/v1/propuesta-educativa/academia')->json('data.universidades'), 'id');
+
+        $this->assertNotContains($universidad->clave, $ids);
     }
 
     // ───────── Secciones sin cargar ─────────

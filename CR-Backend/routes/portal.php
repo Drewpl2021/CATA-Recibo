@@ -52,3 +52,8 @@ Route::get('contacto',          [ContactoController::class, 'contacto'])->name('
 
 Route::get('docentes',          [NosotrosController::class, 'docentes'])->name('docentes');
 Route::get('logros',            [NosotrosController::class, 'logros'])->name('logros');
+
+Route::get('propuesta-educativa/pilares',     [PropuestaController::class, 'pilares'])->name('propuesta.pilares');
+Route::get('propuesta-educativa/niveles',     [PropuestaController::class, 'niveles'])->name('propuesta.niveles');
+Route::get('propuesta-educativa/academia',    [PropuestaController::class, 'academia'])->name('propuesta.academia');
+Route::get('propuesta-educativa/plataformas', [PropuestaController::class, 'plataformas'])->name('propuesta.plataformas');

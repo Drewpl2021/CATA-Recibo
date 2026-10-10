@@ -41,6 +41,10 @@ class PortalEndpointsTest extends TestCase
         '/v1/contacto'                      => 'contacto',
         '/v1/docentes'                      => 'docentes',
         '/v1/logros'                        => 'logros',
+        '/v1/propuesta-educativa/pilares'     => 'propuesta-pilares',
+        '/v1/propuesta-educativa/niveles'     => 'propuesta-niveles',
+        '/v1/propuesta-educativa/academia'    => 'propuesta-academia',
+        '/v1/propuesta-educativa/plataformas' => 'propuesta-plataformas',
     ];
 
     public static function casos(): iterable
