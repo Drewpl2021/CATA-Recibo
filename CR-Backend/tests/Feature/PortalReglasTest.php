@@ -10,6 +10,8 @@ use App\Models\Portal\FechaMatricula;
 use App\Models\Portal\Imagen;
 use App\Models\Portal\Logro;
 use App\Models\Portal\Noticia;
+use App\Models\Portal\Pagina;
+use App\Models\Portal\Proyecto;
 use App\Models\Portal\Seccion;
 use App\Models\Portal\Universidad;
 use App\Support\Portal\ImportadorDeEjemplos;
@@ -144,6 +146,54 @@ class PortalReglasTest extends TestCase
         $ids = array_column($this->getJson('/api/portal/v1/logros')->json('data.logros'), 'id');
 
         $this->assertNotContains($logro->clave, $ids);
+    }
+
+    // ───────── Proyectos y Nosotros ─────────
+
+    public function test_un_proyecto_que_no_existe_o_en_borrador_responde_404(): void
+    {
+        $this->importar();
+        $proyecto = Proyecto::first();
+
+        $this->getJson("/api/portal/v1/proyectos/{$proyecto->slug}")->assertOk();
+        $this->getJson('/api/portal/v1/proyectos/no-existe')->assertNotFound()->assertJsonPath('error.codigo', 'NO_ENCONTRADO');
+        // Un slug con caracteres que el contrato no admite ni llega al controlador.
+        $this->getJson('/api/portal/v1/proyectos/Robótica')->assertNotFound()->assertJsonPath('error.codigo', 'NO_ENCONTRADO');
+
+        $proyecto->update(['estado' => Proyecto::BORRADOR]);
+
+        $this->getJson("/api/portal/v1/proyectos/{$proyecto->slug}")->assertNotFound();
+        $this->assertNotContains(
+            $proyecto->slug,
+            array_column($this->getJson('/api/portal/v1/proyectos')->json('data.proyectos'), 'slug'),
+        );
+    }
+
+    public function test_la_galeria_va_en_su_orden(): void
+    {
+        $this->importar('largo');
+        $proyecto = Proyecto::has('galeria', '>=', 2)->first();
+        $antes = array_column($this->getJson("/api/portal/v1/proyectos/{$proyecto->slug}")->json('data.galeria'), 'url');
+        $proyecto->galeria()->first()->update(['orden' => 999]);
+
+        $despues = array_column($this->getJson("/api/portal/v1/proyectos/{$proyecto->slug}")->json('data.galeria'), 'url');
+
+        $this->assertSame(array_merge(array_slice($antes, 1), [$antes[0]]), $despues);
+    }
+
+    public function test_el_indice_de_nosotros_solo_lleva_las_publicadas_con_frase(): void
+    {
+        $this->importar();
+        $conFrase = Pagina::whereNotNull('resumen')->orderBy('orden')->first();
+        $conFrase->update(['estado' => Pagina::BORRADOR]);
+        Pagina::whereNotNull('resumen')->where('estado', Pagina::PUBLICADO)->orderBy('orden')->first()->update(['resumen' => '   ']);
+
+        $respuesta = $this->getJson('/api/portal/v1/nosotros')->assertOk();
+        $slugs = array_column($respuesta->json('data.paginas'), 'slug');
+
+        $this->assertNotContains($conFrase->slug, $slugs);
+        $this->assertSame(Pagina::whereNotNull('resumen')->count() - 2, count($slugs));
+        $this->assertCumpleElContrato('/v1/nosotros', $respuesta->getContent());
     }
 
     // ───────── Academia ─────────

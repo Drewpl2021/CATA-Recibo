@@ -45,25 +45,46 @@ class PortalEndpointsTest extends TestCase
         '/v1/propuesta-educativa/niveles'     => 'propuesta-niveles',
         '/v1/propuesta-educativa/academia'    => 'propuesta-academia',
         '/v1/propuesta-educativa/plataformas' => 'propuesta-plataformas',
+        '/v1/proyectos'                     => 'proyectos',
+        '/v1/nosotros'                      => 'nosotros',
     ];
 
+    /**
+     * Cada caso: [ruta que se pide, ruta del esquema, archivo del ejemplo, escenario].
+     * Los detalles se piden uno por uno: cada proyecto de la lista del escenario.
+     */
     public static function casos(): iterable
     {
-        foreach (self::ENDPOINTS as $ruta => $archivo) {
-            foreach (ImportadorDeEjemplos::ESCENARIOS as $escenario) {
-                yield "{$ruta} · {$escenario}" => [$ruta, $archivo, $escenario];
+        foreach (ImportadorDeEjemplos::ESCENARIOS as $escenario) {
+            foreach (self::ENDPOINTS as $ruta => $archivo) {
+                yield "{$ruta} · {$escenario}" => [$ruta, $ruta, $archivo, $escenario];
+            }
+
+            foreach (self::datosDelEjemplo($escenario, 'proyectos')['proyectos'] as $proyecto) {
+                yield "/v1/proyectos/{$proyecto['slug']} · {$escenario}" => [
+                    "/v1/proyectos/{$proyecto['slug']}", '/v1/proyectos/{slug}', "proyecto--{$proyecto['slug']}", $escenario,
+                ];
             }
         }
     }
 
+    /** Para el proveedor de casos, que corre antes de que exista la aplicación. */
+    private static function datosDelEjemplo(string $escenario, string $archivo): array
+    {
+        $raiz = dirname(__DIR__) . '/Fixtures/portal/mock';
+        $ruta = is_file("{$raiz}/{$escenario}/{$archivo}.json") ? "{$raiz}/{$escenario}/{$archivo}.json" : "{$raiz}/tipico/{$archivo}.json";
+
+        return json_decode(file_get_contents($ruta), true)['data'];
+    }
+
     #[DataProvider('casos')]
-    public function test_cumple_el_contrato_y_sale_igual_al_ejemplo(string $ruta, string $archivo, string $escenario): void
+    public function test_cumple_el_contrato_y_sale_igual_al_ejemplo(string $ruta, string $esquema, string $archivo, string $escenario): void
     {
         (new ImportadorDeEjemplos(base_path('tests/Fixtures/portal/mock'), $escenario))->importar();
 
         $respuesta = $this->getJson('/api/portal' . $ruta)->assertOk();
 
-        $this->assertCumpleElContrato($ruta, $respuesta->getContent());
+        $this->assertCumpleElContrato($esquema, $respuesta->getContent());
 
         $esperado = $this->ejemplo($escenario, "{$archivo}.json");
 

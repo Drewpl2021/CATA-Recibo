@@ -8,6 +8,7 @@ use App\Http\Resources\Portal\LogroResource;
 use App\Models\Portal\Docente;
 use App\Models\Portal\DocenteNivel;
 use App\Models\Portal\Logro;
+use App\Models\Portal\Pagina;
 use App\Support\Portal\Ficha;
 use App\Support\Portal\Formato;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +16,29 @@ use Illuminate\Http\JsonResponse;
 /** Nosotros en el portal: su índice, sus subpáginas, Personal Docente y Logros (§3.19 a §3.22). */
 class NosotrosController extends Controller
 {
+    /**
+     * GET /v1/nosotros (§3.19): el título, la frase y una frase por
+     * subpágina. Solo las publicadas que tienen frase: las demás muestran
+     * su nombre solo, sin tarjeta con texto.
+     */
+    public function indice(): JsonResponse
+    {
+        $ficha = Ficha::de('nosotros');
+
+        return response()->json(['data' => [
+            'titulo'  => $ficha->texto('titulo'),
+            'bajada'  => $ficha->textoOpcional('bajada'),
+            'paginas' => Pagina::publicados()->get()
+                ->filter(fn (Pagina $pagina) => Formato::opcional($pagina->resumen) !== null)
+                ->map(fn (Pagina $pagina) => [
+                    'slug'    => $pagina->slug,
+                    'resumen' => Formato::texto($pagina->resumen),
+                ])
+                ->values()
+                ->all(),
+        ]]);
+    }
+
     /**
      * GET /v1/docentes (§3.21).
      *

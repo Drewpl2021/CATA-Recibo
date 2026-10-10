@@ -5,6 +5,7 @@ use App\Http\Controllers\Portal\InicioController;
 use App\Http\Controllers\Portal\MatriculaController;
 use App\Http\Controllers\Portal\NosotrosController;
 use App\Http\Controllers\Portal\PropuestaController;
+use App\Http\Controllers\Portal\ProyectosController;
 use App\Http\Controllers\Portal\SitioController;
 use Illuminate\Support\Facades\Route;
 
@@ -57,3 +58,7 @@ Route::get('propuesta-educativa/pilares',     [PropuestaController::class, 'pila
 Route::get('propuesta-educativa/niveles',     [PropuestaController::class, 'niveles'])->name('propuesta.niveles');
 Route::get('propuesta-educativa/academia',    [PropuestaController::class, 'academia'])->name('propuesta.academia');
 Route::get('propuesta-educativa/plataformas', [PropuestaController::class, 'plataformas'])->name('propuesta.plataformas');
+
+Route::get('proyectos',        [ProyectosController::class, 'index'])->name('proyectos');
+Route::get('proyectos/{slug}', [ProyectosController::class, 'ver'])->where('slug', '[a-z0-9-]+')->name('proyectos.ver');
+Route::get('nosotros',         [NosotrosController::class, 'indice'])->name('nosotros');
