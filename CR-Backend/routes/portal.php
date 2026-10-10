@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Portal\ContactoController;
 use App\Http\Controllers\Portal\InicioController;
 use App\Http\Controllers\Portal\MatriculaController;
+use App\Http\Controllers\Portal\NosotrosController;
 use App\Http\Controllers\Portal\PropuestaController;
 use App\Http\Controllers\Portal\SitioController;
 use Illuminate\Support\Facades\Route;
@@ -45,3 +47,8 @@ Route::get('matricula/procesos',  [MatriculaController::class, 'procesos'])->nam
 Route::get('matricula/vacantes',  [MatriculaController::class, 'vacantes'])->name('matricula.vacantes');
 Route::get('matricula/fechas',    [MatriculaController::class, 'fechas'])->name('matricula.fechas');
 Route::get('matricula/preguntas', [MatriculaController::class, 'preguntas'])->name('matricula.preguntas');
+Route::get('solicitud',         [ContactoController::class, 'solicitud'])->name('solicitud');
+Route::get('contacto',          [ContactoController::class, 'contacto'])->name('contacto');
+
+Route::get('docentes',          [NosotrosController::class, 'docentes'])->name('docentes');
+Route::get('logros',            [NosotrosController::class, 'logros'])->name('logros');

@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Portal\Banner;
 use App\Models\Portal\Cifra;
+use App\Models\Portal\DocenteNivel;
 use App\Models\Portal\FechaMatricula;
 use App\Models\Portal\Imagen;
+use App\Models\Portal\Logro;
 use App\Models\Portal\Noticia;
 use App\Models\Portal\Seccion;
 use App\Support\Portal\ImportadorDeEjemplos;
@@ -114,6 +116,32 @@ class PortalReglasTest extends TestCase
         $ids = array_column($this->getJson('/api/portal/v1/portada/cifras')->json('data'), 'id');
 
         $this->assertSame(Cifra::de('portada')->orderBy('orden')->pluck('clave')->all(), $ids);
+    }
+
+    // ───────── Docentes y logros ─────────
+
+    public function test_un_docente_de_un_nivel_en_borrador_no_sale(): void
+    {
+        $this->importar();
+        $nivel = DocenteNivel::orderBy('orden')->first();
+        $nivel->update(['estado' => DocenteNivel::BORRADOR]);
+
+        $respuesta = $this->getJson('/api/portal/v1/docentes')->assertOk();
+
+        $this->assertNotContains($nivel->clave, array_column($respuesta->json('data.niveles'), 'id'));
+        $this->assertNotContains($nivel->clave, array_column($respuesta->json('data.docentes'), 'nivel'));
+        $this->assertCumpleElContrato('/v1/docentes', $respuesta->getContent());
+    }
+
+    public function test_un_logro_en_borrador_no_sale(): void
+    {
+        $this->importar();
+        $logro = Logro::first();
+        $logro->update(['estado' => Logro::BORRADOR]);
+
+        $ids = array_column($this->getJson('/api/portal/v1/logros')->json('data.logros'), 'id');
+
+        $this->assertNotContains($logro->clave, $ids);
     }
 
     // ───────── Secciones sin cargar ─────────
