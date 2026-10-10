@@ -62,3 +62,4 @@ Route::get('propuesta-educativa/plataformas', [PropuestaController::class, 'plat
 Route::get('proyectos',        [ProyectosController::class, 'index'])->name('proyectos');
 Route::get('proyectos/{slug}', [ProyectosController::class, 'ver'])->where('slug', '[a-z0-9-]+')->name('proyectos.ver');
 Route::get('nosotros',         [NosotrosController::class, 'indice'])->name('nosotros');
+Route::get('nosotros/paginas/{slug}', [NosotrosController::class, 'pagina'])->where('slug', '[a-z0-9-]+')->name('nosotros.pagina');

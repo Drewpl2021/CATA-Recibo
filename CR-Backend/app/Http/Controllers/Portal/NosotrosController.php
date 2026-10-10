@@ -9,8 +9,10 @@ use App\Models\Portal\Docente;
 use App\Models\Portal\DocenteNivel;
 use App\Models\Portal\Logro;
 use App\Models\Portal\Pagina;
+use App\Support\Portal\Bloques;
 use App\Support\Portal\Ficha;
 use App\Support\Portal\Formato;
+use App\Support\Portal\ImagenesEnJson;
 use Illuminate\Http\JsonResponse;
 
 /** Nosotros en el portal: su índice, sus subpáginas, Personal Docente y Logros (§3.19 a §3.22). */
@@ -36,6 +38,24 @@ class NosotrosController extends Controller
                 ])
                 ->values()
                 ->all(),
+        ]]);
+    }
+
+    /**
+     * GET /v1/nosotros/paginas/{slug} (§3.20): una subpágina, como lista de
+     * bloques. Si no existe o está en borrador, 404.
+     */
+    public function pagina(string $slug): JsonResponse
+    {
+        $pagina = Pagina::where('slug', $slug)
+            ->where('estado', Pagina::PUBLICADO)
+            ->firstOrFail();
+
+        return response()->json(['data' => [
+            'slug'    => $pagina->slug,
+            'titulo'  => Formato::texto($pagina->titulo),
+            'bajada'  => Formato::opcional($pagina->bajada),
+            'bloques' => Bloques::armar(ImagenesEnJson::resolver($pagina->bloques ?? []), $pagina->slug),
         ]]);
     }
 

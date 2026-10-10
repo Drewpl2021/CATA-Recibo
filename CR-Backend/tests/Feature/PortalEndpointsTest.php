@@ -65,7 +65,25 @@ class PortalEndpointsTest extends TestCase
                     "/v1/proyectos/{$proyecto['slug']}", '/v1/proyectos/{slug}', "proyecto--{$proyecto['slug']}", $escenario,
                 ];
             }
+
+            // Toda subpágina de Nosotros que el portal puede abrir en el escenario.
+            foreach (self::subpaginas($escenario) as $slug) {
+                yield "/v1/nosotros/paginas/{$slug} · {$escenario}" => [
+                    "/v1/nosotros/paginas/{$slug}", '/v1/nosotros/paginas/{slug}', "nosotros-pagina--{$slug}", $escenario,
+                ];
+            }
         }
+    }
+
+    /** Los slugs con archivo en el escenario o en `tipico`, como los resuelve el portal. */
+    private static function subpaginas(string $escenario): array
+    {
+        $raiz = dirname(__DIR__) . '/Fixtures/portal/mock';
+        $archivos = array_merge(glob("{$raiz}/{$escenario}/nosotros-pagina--*.json"), glob("{$raiz}/tipico/nosotros-pagina--*.json"));
+        $slugs = array_unique(array_map(fn ($a) => substr(basename($a, '.json'), strlen('nosotros-pagina--')), $archivos));
+        sort($slugs);
+
+        return $slugs;
     }
 
     /** Para el proveedor de casos, que corre antes de que exista la aplicación. */

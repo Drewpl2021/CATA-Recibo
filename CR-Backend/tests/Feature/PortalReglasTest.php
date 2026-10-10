@@ -16,6 +16,7 @@ use App\Models\Portal\Seccion;
 use App\Models\Portal\Universidad;
 use App\Support\Portal\ImportadorDeEjemplos;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Tests\Support\ContratoDelPortal;
 use Tests\TestCase;
 
@@ -194,6 +195,78 @@ class PortalReglasTest extends TestCase
         $this->assertNotContains($conFrase->slug, $slugs);
         $this->assertSame(Pagina::whereNotNull('resumen')->count() - 2, count($slugs));
         $this->assertCumpleElContrato('/v1/nosotros', $respuesta->getContent());
+    }
+
+    // ───────── Bloques de las subpáginas de Nosotros ─────────
+
+    private function paginaConBloques(array $bloques): string
+    {
+        Pagina::create(['slug' => 'pagina-de-prueba', 'titulo' => 'Página de prueba', 'bloques' => $bloques]);
+
+        return '/api/portal/v1/nosotros/paginas/pagina-de-prueba';
+    }
+
+    public function test_un_bloque_que_romperia_el_contrato_se_omite_y_la_pagina_se_muestra(): void
+    {
+        Log::spy();
+        $bueno = ['tipo' => 'destacado', 'rotulo' => 'Misión', 'texto' => 'Formar ciudadanos íntegros.'];
+
+        $respuesta = $this->getJson($this->paginaConBloques([
+            ['tipo' => 'carrusel', 'fotos' => []],                                       // tipo que no existe
+            $bueno,
+            ['tipo' => 'lista', 'titulo' => null, 'estilo' => 'vinetas', 'items' => []], // lista sin ítems
+            ['tipo' => 'audio', 'titulo' => 'Himno', 'url' => 'https://x.pe/h.flac', 'formato' => 'audio/flac', 'descripcion' => null],
+            ['tipo' => 'mensaje', 'titulo' => null, 'parrafos' => ['Hola.'], 'firma' => null, 'foto' => null], // carta sin firma
+            'no soy un bloque',
+        ]))->assertOk();
+
+        $this->assertSame([$bueno], $respuesta->json('data.bloques'));
+        $this->assertCumpleElContrato('/v1/nosotros/paginas/{slug}', $respuesta->getContent());
+        Log::shouldHaveReceived('warning')->times(5);
+    }
+
+    public function test_dentro_de_un_bloque_se_descarta_lo_de_mas_y_lo_vacio(): void
+    {
+        $respuesta = $this->getJson($this->paginaConBloques([
+            ['tipo' => 'texto', 'titulo' => '  Reseña  ', 'parrafos' => ['  Primero. ', '   ', 'Segundo.'], 'firma' => null, 'color' => 'rojo'],
+            ['tipo' => 'lista', 'titulo' => null, 'estilo' => 'tarjetas', 'items' => [
+                ['titulo' => 'Integridad', 'texto' => 'Uno.', 'fuente' => null],
+                ['titulo' => 'Vacío', 'texto' => '  ', 'fuente' => null],
+            ]],
+        ]))->assertOk();
+
+        $this->assertCumpleElContrato('/v1/nosotros/paginas/{slug}', $respuesta->getContent());
+        $this->assertSame(
+            ['tipo' => 'texto', 'titulo' => 'Reseña', 'parrafos' => ['Primero.', 'Segundo.'], 'firma' => null],
+            $respuesta->json('data.bloques.0'),
+        );
+        $this->assertCount(1, $respuesta->json('data.bloques.1.items'));
+    }
+
+    public function test_el_organigrama_se_corta_en_el_quinto_nivel(): void
+    {
+        $cargo = fn (string $nombre, array $hijos = []) => ['cargo' => $nombre, 'detalle' => null, 'hijos' => $hijos];
+        $seisNiveles = $cargo('1', [$cargo('2', [$cargo('3', [$cargo('4', [$cargo('5', [$cargo('6')])])])])]);
+
+        $respuesta = $this->getJson($this->paginaConBloques([
+            ['tipo' => 'organigrama', 'titulo' => null, 'imagen' => null, 'enlace' => null, 'raiz' => $seisNiveles],
+        ]))->assertOk();
+
+        $this->assertCumpleElContrato('/v1/nosotros/paginas/{slug}', $respuesta->getContent());
+        $this->assertSame([], $respuesta->json('data.bloques.0.raiz.hijos.0.hijos.0.hijos.0.hijos.0.hijos'));
+    }
+
+    public function test_una_subpagina_que_no_existe_o_en_borrador_responde_404(): void
+    {
+        $this->importar();
+        $pagina = Pagina::first();
+
+        $this->getJson("/api/portal/v1/nosotros/paginas/{$pagina->slug}")->assertOk();
+        $this->getJson('/api/portal/v1/nosotros/paginas/no-existe')->assertNotFound()->assertJsonPath('error.codigo', 'NO_ENCONTRADO');
+
+        $pagina->update(['estado' => Pagina::BORRADOR]);
+
+        $this->getJson("/api/portal/v1/nosotros/paginas/{$pagina->slug}")->assertNotFound();
     }
 
     // ───────── Academia ─────────
