@@ -1,0 +1,97 @@
+<div class="ajuste-bloque" id="docentes-del-nivel">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h3 class="grupo-montos__titulo">Docentes</h3>
+      <p class="form-ayuda">
+        Nombre, cargo o área, y foto cuadrada (sin foto, el portal muestra las iniciales). Se ordenan dentro de su nivel. Publicar la
+        foto de un docente requiere su autorización de uso de imagen.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevo()" [disabled]="!nivelId">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar docente
+      </button>
+    </div>
+  </header>
+
+  <p class="form-ayuda" *ngIf="!niveles.length">Agrega primero un nivel.</p>
+
+  <ng-container *ngIf="niveles.length">
+    <div class="form-group">
+      <label for="docentes-nivel">Docentes de</label>
+      <select id="docentes-nivel" class="form-control" (change)="elegir($any($event.target).value)">
+        <option *ngFor="let n of niveles" [value]="n.id" [selected]="n.id === nivelId">
+          {{ n.nombre }}{{ n.estado === 'borrador' ? ' (borrador: sus docentes no se ven)' : '' }}
+        </option>
+      </select>
+    </div>
+
+    <app-data-table
+      entidad="el docente"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [camposBusqueda]="['nombre', 'cargo']"
+      placeholderBusqueda="Buscar un docente…"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Este nivel todavía no tiene docentes."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </ng-container>
+</div>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar docente' : 'Agregar docente'"
+  ancho="640px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="docente-nombre">Nombre *</label>
+      <input id="docente-nombre" type="text" class="form-control" formControlName="nombre" maxlength="80"
+        placeholder="Ej. Rosa Quispe Mamani" [class.is-invalid]="invalido('nombre')" />
+      <small class="form-error" *ngIf="invalido('nombre')">Obligatorio (máximo 80).</small>
+    </div>
+    <div class="form-group">
+      <label for="docente-cargo">Cargo o área *</label>
+      <input id="docente-cargo" type="text" class="form-control" formControlName="cargo" maxlength="80"
+        placeholder="Ej. Tutora de 3 años, Matemática" [class.is-invalid]="invalido('cargo')" />
+      <small class="form-error" *ngIf="invalido('cargo')">Obligatorio (máximo 80).</small>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="docente-nivel">Nivel *</label>
+        <select id="docente-nivel" class="form-control" formControlName="nivel_id" [class.is-invalid]="invalido('nivel_id')">
+          <option *ngFor="let n of niveles" [value]="n.id">{{ n.nombre }}</option>
+        </select>
+        <small class="form-ayuda" *ngIf="editando">Si cambia de nivel, pasa al final del nuevo.</small>
+      </div>
+      <div class="form-group">
+        <label for="docente-estado">Estado</label>
+        <select id="docente-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicado</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+    <app-selector-imagen *ngIf="modalVisible" uso="persona" etiqueta="Foto" [(imagen)]="foto"></app-selector-imagen>
+    <small class="form-ayuda">Opcional. Cuadrada, de al menos 400 × 400. Solo con la autorización del docente.</small>
+  </form>
+</app-form-modal>

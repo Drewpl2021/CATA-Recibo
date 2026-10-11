@@ -392,6 +392,70 @@ export interface PlataformaPortal {
   estado: EstadoPortal;
 }
 
+// ───────── Nosotros ─────────
+
+/**
+ * Las subpáginas que el portal sabe abrir (contrato §3.19), con su grupo y su
+ * nombre en el menú. Es la misma lista que PaginasDeNosotros en el backend.
+ */
+export const PAGINAS_DE_NOSOTROS: { slug: string; grupo: string; nombre: string }[] = [
+  { slug: 'mision-y-vision', grupo: 'Institución', nombre: 'Misión y Visión' },
+  { slug: 'resena-historica', grupo: 'Institución', nombre: 'Reseña Histórica' },
+  { slug: 'emblema', grupo: 'Institución', nombre: 'Emblema' },
+  { slug: 'himno', grupo: 'Institución', nombre: 'Himno' },
+  { slug: 'consejo-directivo', grupo: 'Institución', nombre: 'Consejo Directivo' },
+  { slug: 'administracion', grupo: 'Institución', nombre: 'Administración' },
+  { slug: 'personal-docente', grupo: 'Institución', nombre: 'Personal Docente' },
+  { slug: 'organigrama', grupo: 'Institución', nombre: 'Organigrama' },
+  { slug: 'procesos', grupo: 'Gestión', nombre: 'Procesos' },
+  { slug: 'planificacion-anual', grupo: 'Gestión', nombre: 'Planificación Anual' },
+  { slug: 'planes-de-mejora', grupo: 'Gestión', nombre: 'Planes de Mejora' },
+  { slug: 'evaluacion-docente', grupo: 'Gestión', nombre: 'Evaluación Docente' },
+  { slug: 'acreditacion', grupo: 'Gestión', nombre: 'Acreditación' },
+  { slug: 'instrumentos-de-gestion', grupo: 'Documentos', nombre: 'Instrumentos de Gestión' },
+  { slug: 'manual-de-identidad', grupo: 'Documentos', nombre: 'Manual de Identidad' },
+  { slug: 'planificador-eva', grupo: 'Documentos', nombre: 'Planificador Inteligente EVA' },
+];
+
+/** Una subpágina de Nosotros, sin sus bloques (solo cuántos tiene). */
+export interface PaginaNosotros {
+  id: string;
+  /** La dirección: /nosotros/{slug}. No cambia. */
+  slug: string;
+  grupo: string | null;
+  nombre: string | null;
+  titulo: string;
+  bajada: string | null;
+  /** La frase de su tarjeta en el índice; null = solo el nombre. */
+  resumen: string | null;
+  bloques: number;
+  orden: number;
+  estado: EstadoPortal;
+}
+
+/** Un nivel (o grupo) de Personal Docente, con su filtro. */
+export interface NivelDocentePortal {
+  id: string;
+  clave: string;
+  nombre: string;
+  docentes: number;
+  orden: number;
+  estado: EstadoPortal;
+}
+
+export interface DocentePortal {
+  id: string;
+  clave: string;
+  nombre: string;
+  /** Cargo o área: «Tutora de 3 años», «Matemática». */
+  cargo: string;
+  nivel_id: string;
+  imagen_id: string | null;
+  imagen: ImagenPortal | null;
+  orden: number;
+  estado: EstadoPortal;
+}
+
 // ───────── Matrícula ─────────
 
 /** La cabecera de Matrícula (ficha `matricula-cabecera`, contrato §3.10). */
@@ -617,7 +681,7 @@ export const CATEGORIAS_DEL_PORTAL: CategoriaDelPortal[] = [
     nombre: 'Nosotros',
     icono: 'people',
     descripcion: 'Misión, historia, emblema, himno, autoridades, documentos y el personal docente.',
-    disponible: false,
+    disponible: true,
     partes: [
       { nombre: 'Índice', descripcion: 'El título de Nosotros y la frase de cada subpágina', ficha: 'nosotros' },
       { nombre: 'Subpáginas', descripcion: 'Cada subpágina, armada con bloques de texto, fotos y listas', lista: 'paginas' },

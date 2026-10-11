@@ -108,6 +108,15 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Pantalla** `/inicio/portal-web/propuesta`: cabecera (figuras con su tipo, subir, bajar y quitar), cifras, pilares con su introducción, niveles, academia (textos, universidades y, debajo, los ciclos de la elegida: el botón de capas de cada fila la elige) y plataformas.
 - **En la base de paneles de Angular**: el gancho `filtro()` de `PanelDeLista` (para una lista dentro de otra, como los ciclos) y `moverEn()` en `compartido/panel.ts` (estaba repetida en Quiénes somos y Proyectos).
 
+### Etapa 9: Nosotros (parte A hecha; falta la B, el editor de bloques)
+
+- **Ficha** `nosotros`: título (hasta 60) y frase (hasta 200) del índice.
+- **Subpáginas**: `/web-portal/pages` (`PaginasController`). Título (60), frase (160) y la frase de su tarjeta en el índice (`resumen`, 140; vacía, la tarjeta muestra solo el nombre). **La dirección se elige de las 16 que el portal sabe abrir** (`App\Support\Portal\PaginasDeNosotros`, la misma lista que `src/sitio/mapa.ts`) y no cambia; al crearla se guardan su grupo y su nombre para el menú del contrato 2.13, y entra sin bloques («se publicará pronto»). **Esta parte no toca los bloques**: un `PUT` que los traiga los ignora. Sin ruta de orden en la pantalla: el lugar en el menú lo pone el portal.
+- **En borrador, la dirección de la subpágina responde 404, pero el menú del portal la sigue nombrando** (está escrito en su código hasta la 2.13), así que lleva a «Página no encontrada». La pantalla lo advierte.
+- **Niveles de Personal Docente**: `/web-portal/teacher-levels` (`NivelesDocentesController`), hasta 6 publicados, se publiquen o no con docentes. Su `clave` (`?nivel=…`) no cambia. Con docentes no se elimina (422 que dice cuántos tiene); en borrador, sus docentes no salen.
+- **Docentes**: `/web-portal/teachers?nivel=…` (`DocentesController`), hasta 150 publicados: nombre (80), cargo o área (80), nivel y foto cuadrada (uso `persona`). **Se ordenan dentro de su nivel** (el orden pide `?nivel=`); quien cambia de nivel pasa al final del nuevo. Se escriben en el panel: no salen de la ficha de RR.HH.
+- **Pantalla** `/inicio/portal-web/nosotros`: el índice, las subpáginas (la tabla dice cuántos bloques tiene cada una) y Personal Docente: los niveles y, debajo, los docentes del nivel elegido, con buscador (el botón de personas de cada fila lo elige). Avisa antes de pedir confirmación si un nivel tiene docentes.
+
 ### Programar la limpieza de imágenes
 
 `portal:limpiar-imagenes` **no está programado**: no se toca `routes/console.php`, que es del sistema. Mientras no se programe, **las imágenes sueltas se acumulan** en `storage/app/portal` (cada foto reemplazada, cada registro eliminado y cada subida que no se llegó a guardar). No rompen nada ni se ven en el portal, pero ocupan disco: conviene correr el comando a mano de vez en cuando, primero simulando:

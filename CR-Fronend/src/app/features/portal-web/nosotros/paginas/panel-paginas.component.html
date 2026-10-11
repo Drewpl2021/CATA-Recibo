@@ -1,0 +1,87 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-paginas">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-paginas">Subpáginas</h2>
+      <p class="form-ayuda">
+        El título y la frase de cada subpágina, y la frase de su tarjeta en el índice de Nosotros. Su lugar en el menú lo pone el
+        portal. En borrador, su dirección no abre, pero el menú del portal la sigue nombrando (hasta que el menú también se edite
+        desde aquí): úsalo solo por poco tiempo.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nueva()" [disabled]="!libres.length">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar página
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="la página"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay subpáginas."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    ></app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar página' : 'Agregar página'"
+  ancho="640px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group" *ngIf="!editando; else direccionFija">
+      <label for="pagina-slug">Página *</label>
+      <select id="pagina-slug" class="form-control" formControlName="slug" (change)="alElegirSlug()" [class.is-invalid]="invalido('slug')">
+        <option value="" disabled>Elige cuál</option>
+        <option *ngFor="let p of libres" [value]="p.slug">{{ p.grupo }} › {{ p.nombre }}</option>
+      </select>
+      <small class="form-error" *ngIf="invalido('slug')">Elige la página.</small>
+      <small class="form-ayuda" *ngIf="!invalido('slug')">Solo las que el portal sabe abrir y aún no existen. Su dirección no cambia después.</small>
+    </div>
+    <ng-template #direccionFija>
+      <p class="form-nota">/nosotros/{{ editando?.slug }} · {{ editando?.grupo }} › {{ editando?.nombre }}. La dirección no cambia.</p>
+    </ng-template>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="pagina-titulo">Título *</label>
+        <input id="pagina-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+          placeholder="Ej. Misión y Visión" [class.is-invalid]="invalido('titulo')" />
+        <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 60).</small>
+      </div>
+      <div class="form-group">
+        <label for="pagina-estado">Estado</label>
+        <select id="pagina-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicada</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="pagina-bajada">Frase bajo el título</label>
+      <textarea id="pagina-bajada" class="form-control" rows="2" formControlName="bajada" maxlength="160"></textarea>
+      <small class="form-ayuda">Opcional. Hasta 160 caracteres.</small>
+    </div>
+
+    <div class="form-group">
+      <label for="pagina-resumen">Frase de su tarjeta en el índice</label>
+      <textarea id="pagina-resumen" class="form-control" rows="2" formControlName="resumen" maxlength="140"></textarea>
+      <small class="form-ayuda">Opcional. Hasta 140 caracteres. Vacía, la tarjeta muestra solo el nombre.</small>
+    </div>
+  </form>
+</app-form-modal>

@@ -27,6 +27,9 @@ export const RECURSOS = {
   universidades: 'universities',
   ciclos: 'cycles',
   plataformas: 'platforms',
+  paginas: 'pages',
+  nivelesDocentes: 'teacher-levels',
+  docentes: 'teachers',
 } as const;
 
 /**

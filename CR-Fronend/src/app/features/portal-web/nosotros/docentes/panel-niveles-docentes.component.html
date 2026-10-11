@@ -1,0 +1,67 @@
+<div class="ajuste-bloque">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h3 class="grupo-montos__titulo">Niveles</h3>
+      <p class="form-ayuda">
+        Las secciones de la página y su filtro, hasta 6 publicados ({{ publicados }} ahora), en este orden. Pueden ser niveles o
+        grupos («Primaria · Sede CATA Jerusalén»). Los docentes de un nivel en borrador no se ven.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevo()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar nivel
+      </button>
+    </div>
+  </header>
+
+  <app-data-table
+    entidad="el nivel"
+    [columnas]="columnas"
+    [datos]="filas"
+    [cargando]="cargando"
+    [mostrarBuscador]="false"
+    [numerarFilas]="false"
+    [acciones]="['editar', 'eliminar']"
+    [accionesPersonalizadas]="accionesDeNivel"
+    mensajeVacio="Todavía no hay niveles: crea uno antes de agregar docentes."
+    (editarFila)="editar($event)"
+    (eliminarFila)="pedirEliminar($event)"
+    (accionPersonalizada)="alAccionar($event)"
+  >
+    <ng-template appCelda="orden" let-fila>
+      <div class="action-btns">
+        <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+          [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
+        <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+          [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+      </div>
+    </ng-template>
+  </app-data-table>
+</div>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar nivel' : 'Agregar nivel'"
+  ancho="520px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="nivel-docente-nombre">Nombre *</label>
+      <input id="nivel-docente-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
+        placeholder="Ej. Primaria" [class.is-invalid]="invalido()" />
+      <small class="form-error" *ngIf="invalido()">Obligatorio (máximo 40).</small>
+      <small class="form-ayuda" *ngIf="!invalido() && editando">Su dirección sigue siendo «?nivel={{ $any(editando).clave }}».</small>
+    </div>
+    <div class="form-group">
+      <label for="nivel-docente-estado">Estado</label>
+      <select id="nivel-docente-estado" class="form-control" formControlName="estado">
+        <option value="publicado">Publicado</option>
+        <option value="borrador">Borrador</option>
+      </select>
+    </div>
+  </form>
+</app-form-modal>

@@ -29,6 +29,10 @@ export const PORTAL_WEB_ROUTES: Routes = [
     loadComponent: () => import('./proyectos/portal-web-proyectos.component').then((m) => m.PortalWebProyectosComponent),
   },
   {
+    path: 'nosotros',
+    loadComponent: () => import('./nosotros/portal-web-nosotros.component').then((m) => m.PortalWebNosotrosComponent),
+  },
+  {
     path: 'propuesta',
     loadComponent: () => import('./propuesta/portal-web-propuesta.component').then((m) => m.PortalWebPropuestaComponent),
   },
