@@ -10,6 +10,8 @@ import { EstadoPortal, FichaPortal, ImagenSubida, RedSocialPortal, ResumenPortal
 export const RECURSOS = {
   redes: 'social-networks',
   sedes: 'campuses',
+  cifras: 'stats',
+  logros: 'achievements',
 } as const;
 
 /**
@@ -44,8 +46,9 @@ export class PortalWebService {
 
   // ───────── Listas (redes, sedes…): las mismas seis acciones ─────────
 
-  getLista<T>(recurso: string): Observable<ApiResponse<T[]>> {
-    return this.http.get<ApiResponse<T[]>>(`${this.base}/${recurso}`);
+  /** `filtro` acota una tabla con varias listas: { ambito: 'logros' }. */
+  getLista<T>(recurso: string, filtro: Record<string, string> = {}): Observable<ApiResponse<T[]>> {
+    return this.http.get<ApiResponse<T[]>>(`${this.base}/${recurso}`, { params: filtro });
   }
 
   crearEnLista<T>(recurso: string, datos: object): Observable<ApiResponse<T>> {
@@ -61,8 +64,8 @@ export class PortalWebService {
   }
 
   /** El orden nuevo de TODA la lista, con todos sus ids. */
-  ordenarLista<T>(recurso: string, ids: string[]): Observable<ApiResponse<T[]>> {
-    return this.http.post<ApiResponse<T[]>>(`${this.base}/${recurso}/order`, { ids });
+  ordenarLista<T>(recurso: string, ids: string[], filtro: Record<string, string> = {}): Observable<ApiResponse<T[]>> {
+    return this.http.post<ApiResponse<T[]>>(`${this.base}/${recurso}/order`, { ids }, { params: filtro });
   }
 
   eliminarDeLista(recurso: string, id: string): Observable<ApiMessageResponse> {

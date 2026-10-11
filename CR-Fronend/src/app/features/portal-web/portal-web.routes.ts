@@ -20,4 +20,8 @@ export const PORTAL_WEB_ROUTES: Routes = [
     path: 'contacto',
     loadComponent: () => import('./contacto/portal-web-contacto.component').then((m) => m.PortalWebContactoComponent),
   },
+  {
+    path: 'logros',
+    loadComponent: () => import('./logros/portal-web-logros.component').then((m) => m.PortalWebLogrosComponent),
+  },
 ];

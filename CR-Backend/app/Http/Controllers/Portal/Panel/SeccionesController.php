@@ -7,6 +7,7 @@ use App\Models\Portal\Imagen;
 use App\Models\Portal\Seccion;
 use App\Support\Portal\Fichas\Ficha;
 use App\Support\Portal\Fichas\FichaContacto;
+use App\Support\Portal\Fichas\FichaLogros;
 use App\Support\Portal\Fichas\FichaSitio;
 use App\Support\Portal\Fichas\FichaSolicitud;
 use App\Support\Portal\ImagenesEnJson;
@@ -37,6 +38,7 @@ class SeccionesController extends Controller
         'sitio'     => FichaSitio::class,
         'contacto'  => FichaContacto::class,
         'solicitud' => FichaSolicitud::class,
+        'logros'    => FichaLogros::class,
     ];
 
     public function ver(string $clave): JsonResponse

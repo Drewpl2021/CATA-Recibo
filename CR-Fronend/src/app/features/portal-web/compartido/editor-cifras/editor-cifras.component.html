@@ -1,0 +1,81 @@
+<section class="section-panel ajustes-panel" [attr.aria-labelledby]="id + '-titulo'">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 [id]="id + '-titulo'">Cifras</h2>
+      <p class="form-ayuda">
+        Los números destacados{{ dondeSeVen ? ' ' + dondeSeVen : '' }}, con un contador que sube al verse. Hasta 4 publicadas
+        ({{ publicadas }} ahora). <strong>Solo cifras reales y verificables.</strong>
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nueva()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar cifra
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="la cifra"
+      [columnas]="columnas"
+      [datos]="cifras"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay cifras. Sin cifras, el portal no muestra esa franja."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimera(fila)"
+            [attr.aria-label]="'Subir ' + fila.etiqueta" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltima(fila)"
+            [attr.aria-label]="'Bajar ' + fila.etiqueta" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar cifra' : 'Agregar cifra'"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-row">
+      <div class="form-group">
+        <label [for]="id + '-valor'">Número *</label>
+        <input [id]="id + '-valor'" type="number" class="form-control" formControlName="valor" min="0" step="1"
+          placeholder="Ej. 55" [class.is-invalid]="invalido('valor')" />
+        <small class="form-error" *ngIf="invalido('valor')">Un número entero, de 0 en adelante.</small>
+      </div>
+      <div class="form-group">
+        <label [for]="id + '-sufijo'">Signo</label>
+        <input [id]="id + '-sufijo'" type="text" class="form-control" formControlName="sufijo" maxlength="3" placeholder="Ej. + o %" />
+        <small class="form-ayuda">Opcional. Va justo después del número.</small>
+      </div>
+      <div class="form-group">
+        <label [for]="id + '-estado'">Estado</label>
+        <select [id]="id + '-estado'" class="form-control" formControlName="estado">
+          <option value="publicado">Publicada</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label [for]="id + '-etiqueta'">Qué cuenta *</label>
+      <input [id]="id + '-etiqueta'" type="text" class="form-control" formControlName="etiqueta" maxlength="60"
+        placeholder="Ej. años educando en Juliaca" [class.is-invalid]="invalido('etiqueta')" />
+      <small class="form-error" *ngIf="invalido('etiqueta')">Obligatorio (máximo 60).</small>
+      <small class="form-ayuda" *ngIf="!invalido('etiqueta')">Se lee después del número: «55 años educando en Juliaca».</small>
+    </div>
+  </form>
+</app-form-modal>

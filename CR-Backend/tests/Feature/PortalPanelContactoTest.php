@@ -227,7 +227,7 @@ class PortalPanelContactoTest extends TestCase
             ->assertUnprocessable()->assertJsonValidationErrors('estado');
         $id = $this->postJson(self::SEDES, $this->sede(['nombre' => 'Sede 9']))->assertCreated()->json('data.id');
         $this->patchJson(self::SEDES . "/{$id}/status", ['estado' => 'publicado'])
-            ->assertUnprocessable()->assertJsonPath('errors.estado.0', 'El portal muestra hasta 8 sedes publicadas. Pasa uno a borrador antes de publicar otro.');
+            ->assertUnprocessable()->assertJsonPath('errors.estado.0', 'El portal muestra hasta 8 sedes publicadas. Para publicar más, primero pasa a borrador lo que ya no deba verse.');
 
         $this->assertCount(8, $this->getJson('/api/portal/v1/sedes')->json('data'));
     }

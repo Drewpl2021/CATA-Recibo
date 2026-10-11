@@ -55,6 +55,14 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Vista previa de las imágenes subidas**: el panel las pide por su ruta relativa (`/api/portal/medios/…`), porque el panel y la ruta de medios viven en el mismo servidor. La dirección pública (la del portal) sigue siendo la absoluta https.
 - **Si `APP_URL` no es https**, el panel no deja publicar imágenes subidas: el portal descartaría la página (probado en `PortalPanelContactoTest`). El mensaje lo dice en palabras de quien edita.
 
+### Etapa 4: Logros (hecha)
+
+- **Ficha** `logros`: título (hasta 60) y frase (hasta 200) de la cabecera.
+- **Cifras**: `/web-portal/stats?ambito=portada|logros|propuesta` (`CifrasController`). El `ambito` se elige al crearla y no cambia; el tope de 4 publicadas y el orden van por página. Número entero de 0 a 999 999, signo de hasta 3 caracteres, «qué cuenta» hasta 60. En Angular es un panel reutilizable, `<app-editor-cifras ambito="…">`, que usarán también Inicio y Propuesta.
+- **Logros**: `/web-portal/achievements` (`LogrosController`), hasta 200 publicados. Título, categoría (las del contrato), año (vacío si no se conoce: no se inventa), nivel o grupo, detalle, foto (uso `logro`), destacado, fuente (nombre, y dirección https opcional; con dirección hace falta el nombre) y aclaración («Año por confirmar»).
+- **Tope de las listas**: el mensaje ahora es neutro («Para publicar más, primero pasa a borrador lo que ya no deba verse»), sirve igual para sedes, cifras o logros. `publicadosJuntoA()` permite contar el tope por grupo (las cifras, por página) y `claveUnica()` arma la clave pública desde el nombre (sedes y cifras).
+- **Pantalla** `/inicio/portal-web/logros`: cabecera, cifras y la tabla de logros con buscador (son muchos), subir y bajar, publicar o pasar a borrador, y el modal. Lo nuevo entra en borrador: se publica cuando el colegio lo confirma.
+
 ### Programar la limpieza de imágenes
 
 `portal:limpiar-imagenes` **no está programado**: no se toca `routes/console.php`, que es del sistema. Mientras no se programe, **las imágenes sueltas se acumulan** en `storage/app/portal` (cada foto reemplazada, cada registro eliminado y cada subida que no se llegó a guardar). No rompen nada ni se ven en el portal, pero ocupan disco: conviene correr el comando a mano de vez en cuando, primero simulando:

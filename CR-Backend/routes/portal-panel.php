@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Portal\Panel\CifrasController;
 use App\Http\Controllers\Portal\Panel\ImagenesController;
+use App\Http\Controllers\Portal\Panel\LogrosController;
 use App\Http\Controllers\Portal\Panel\RedesController;
 use App\Http\Controllers\Portal\Panel\ResumenController;
 use App\Http\Controllers\Portal\Panel\SeccionesController;
@@ -45,3 +47,13 @@ Route::patch('images/{id}', [ImagenesController::class, 'editar'])->whereUuid('i
 Route::post('campuses/order', [SedesController::class, 'ordenar'])->name('sedes.ordenar');
 Route::patch('campuses/{id}/status', [SedesController::class, 'estado'])->name('sedes.estado');
 Route::apiResource('campuses', SedesController::class)->parameters(['campuses' => 'id'])->names('sedes');
+
+// ── Cifras (de Inicio, Logros y Propuesta: ?ambito=…) ──
+Route::post('stats/order', [CifrasController::class, 'ordenar'])->name('cifras.ordenar');
+Route::patch('stats/{id}/status', [CifrasController::class, 'estado'])->name('cifras.estado');
+Route::apiResource('stats', CifrasController::class)->parameters(['stats' => 'id'])->names('cifras');
+
+// ── Logros ──
+Route::post('achievements/order', [LogrosController::class, 'ordenar'])->name('logros.ordenar');
+Route::patch('achievements/{id}/status', [LogrosController::class, 'estado'])->name('logros.estado');
+Route::apiResource('achievements', LogrosController::class)->parameters(['achievements' => 'id'])->names('logros');

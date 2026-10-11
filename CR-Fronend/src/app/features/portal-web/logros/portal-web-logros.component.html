@@ -1,0 +1,182 @@
+<app-page-header
+  icono="trending_up"
+  titulo="Logros"
+  subtitulo="Los logros confirmados del colegio, cada uno con su fuente. Cada cambio queda en la Auditoría y se ve en el portal en hasta un minuto."
+>
+  <button headerActions type="button" class="btn-secondary" (click)="volver()">
+    <app-icon icono="arrow_left" [tamano]="16"></app-icon>
+    Volver a Portal Web
+  </button>
+</app-page-header>
+
+<!-- ═══════════ Cabecera ═══════════ -->
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-cabecera">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-cabecera">Cabecera de la página</h2>
+      <p class="form-ayuda">El título y la frase de arriba de la página Logros.</p>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargandoCabecera">Cargando la cabecera…</p>
+
+  <form [formGroup]="cabecera" *ngIf="!cargandoCabecera" (ngSubmit)="guardarCabecera()" novalidate>
+    <div class="grupo-montos">
+      <div class="form-fields">
+        <div class="form-group">
+          <label for="logros-titulo">Título *</label>
+          <input id="logros-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+            placeholder="Ej. Logros" [class.is-invalid]="invalidoCabecera('titulo')" />
+          <small class="form-error" *ngIf="invalidoCabecera('titulo')">El título es obligatorio.</small>
+        </div>
+        <div class="form-group">
+          <label for="logros-bajada">Frase bajo el título</label>
+          <textarea id="logros-bajada" class="form-control" rows="2" formControlName="bajada" maxlength="200"></textarea>
+          <small class="form-ayuda">Opcional. Hasta 200 caracteres.</small>
+        </div>
+      </div>
+    </div>
+    <footer class="panel-pie">
+      <button type="submit" class="btn-primary" [disabled]="guardandoCabecera || cabecera.pristine">
+        {{ guardandoCabecera ? 'Guardando…' : 'Guardar la cabecera' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="cabecera.dirty && !guardandoCabecera">Tienes cambios sin guardar.</p>
+    </footer>
+  </form>
+</section>
+
+<!-- ═══════════ Cifras ═══════════ -->
+<app-editor-cifras ambito="logros" dondeSeVen="de la página Logros, bajo la cabecera"></app-editor-cifras>
+
+<!-- ═══════════ Logros ═══════════ -->
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-logros">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-logros">Logros</h2>
+      <p class="form-ayuda">
+        <strong>Solo logros que el colegio confirmó</strong>, cada uno con su fuente ({{ publicados }} publicados).
+        El portal los agrupa por década y muestra arriba los destacados. Lo nuevo entra en borrador.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevo()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar logro
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="el logro"
+      [columnas]="columnas"
+      [datos]="logros"
+      [cargando]="cargandoLogros"
+      [camposBusqueda]="['titulo', 'nivel', 'descripcion']"
+      placeholderBusqueda="Buscar un logro…"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay logros. El portal dice que se publicarán pronto."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.titulo" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.titulo" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<!-- ═══════════ Modal de un logro ═══════════ -->
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar logro' : 'Agregar logro'"
+  ancho="760px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="logro-titulo">Qué se logró *</label>
+      <textarea id="logro-titulo" class="form-control" rows="2" formControlName="titulo" maxlength="140"
+        placeholder="Ej. Subcampeón del XIX Concurso Nacional de Bandas Sinfónicas Escolares" [class.is-invalid]="invalido('titulo')"></textarea>
+      <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 140).</small>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="logro-categoria">Categoría *</label>
+        <select id="logro-categoria" class="form-control" formControlName="categoria" [class.is-invalid]="invalido('categoria')">
+          <option value="" disabled>Elige la categoría</option>
+          <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
+        </select>
+        <small class="form-error" *ngIf="invalido('categoria')">Elige una categoría.</small>
+      </div>
+      <div class="form-group">
+        <label for="logro-anio">Año</label>
+        <input id="logro-anio" type="number" class="form-control" formControlName="anio" min="1900" [max]="anioActual"
+          placeholder="Ej. 2011" [class.is-invalid]="invalido('anio')" />
+        <small class="form-error" *ngIf="invalido('anio')">Un año entre 1900 y 2100.</small>
+        <small class="form-ayuda" *ngIf="!invalido('anio')">Vacío si no se conoce: no se inventa.</small>
+      </div>
+      <div class="form-group">
+        <label for="logro-estado">Estado</label>
+        <select id="logro-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicado</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="logro-nivel">Nivel o grupo</label>
+        <input id="logro-nivel" type="text" class="form-control" formControlName="nivel" maxlength="60" placeholder="Ej. Banda Sinfónica" />
+      </div>
+      <div class="form-group">
+        <label for="logro-aclaracion">Aviso sobre un dato incompleto</label>
+        <input id="logro-aclaracion" type="text" class="form-control" formControlName="aclaracion" maxlength="60" placeholder="Ej. Año por confirmar" />
+        <small class="form-ayuda">Se muestra a la vista. No reemplaza el dato: si no se sabe el año, el año va vacío.</small>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="logro-descripcion">Detalle</label>
+      <textarea id="logro-descripcion" class="form-control" rows="2" formControlName="descripcion" maxlength="300"
+        placeholder="Concurso, lugar, organizador."></textarea>
+    </div>
+
+    <label class="check-item">
+      <input type="checkbox" formControlName="destacado" />
+      <span>Destacado: se muestra también arriba de la página (para los más importantes, como los nacionales).</span>
+    </label>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="logro-fuente">Fuente</label>
+        <input id="logro-fuente" type="text" class="form-control" formControlName="fuenteEtiqueta" maxlength="120"
+          placeholder="Ej. Diario Correo, 18/07/2011" [class.is-invalid]="fuenteSinEtiqueta && form.touched" />
+        <small class="form-error" *ngIf="fuenteSinEtiqueta && form.touched">Con dirección, di también cuál es la fuente.</small>
+        <small class="form-ayuda" *ngIf="!(fuenteSinEtiqueta && form.touched)">De dónde sale el dato. Se muestra al pie del logro.</small>
+      </div>
+      <div class="form-group">
+        <label for="logro-fuente-url">Dirección de la fuente</label>
+        <input id="logro-fuente-url" type="url" class="form-control" formControlName="fuenteUrl" placeholder="https://…"
+          [class.is-invalid]="invalido('fuenteUrl')" />
+        <small class="form-error" *ngIf="invalido('fuenteUrl')">Una dirección que empiece con https://.</small>
+        <small class="form-ayuda" *ngIf="!invalido('fuenteUrl')">Solo si es pública. Vacía si la fuente no tiene enlace.</small>
+      </div>
+    </div>
+
+    <app-selector-imagen *ngIf="modalVisible" uso="logro" etiqueta="Foto" [(imagen)]="foto"></app-selector-imagen>
+    <small class="form-ayuda">Opcional. Si muestra estudiantes, hace falta la autorización de sus familias.</small>
+  </form>
+</app-form-modal>

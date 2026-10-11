@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -223,13 +224,13 @@ abstract class ListaDelPortalController extends Controller
             $fila = $cambio();
 
             $tope = $this->topePublicados();
-            if ($tope !== null && ($this->modelo())::where('estado', ($this->modelo())::PUBLICADO)->count() > $tope) {
+            if ($tope !== null && $fila instanceof Model && $fila->exists && $this->publicadosJuntoA($fila) > $tope) {
                 throw ValidationException::withMessages([
-                    'estado' => "El portal muestra hasta {$tope} {$this->plural()}. Pasa uno a borrador antes de publicar otro.",
+                    'estado' => "El portal muestra hasta {$tope} {$this->plural()}. Para publicar más, primero pasa a borrador lo que ya no deba verse.",
                 ]);
             }
 
-            $problemas =app(ValidadorDeContrato::class)->problemas($this->rutasAfectadas($fila instanceof Model && $fila->exists ? $fila : null));
+            $problemas = app(ValidadorDeContrato::class)->problemas($this->rutasAfectadas($fila instanceof Model && $fila->exists ? $fila : null));
 
             if ($problemas !== []) {
                 // Lanzarla deshace la transacción entera.
@@ -238,6 +239,37 @@ abstract class ListaDelPortalController extends Controller
 
             return $fila;
         });
+    }
+
+    /**
+     * Cuántos hay publicados en la misma lista que $fila. Por defecto, toda la
+     * tabla; una tabla con varias listas (las cifras de cada página) la acota.
+     */
+    protected function publicadosJuntoA(Model $fila): int
+    {
+        return ($this->modelo())::where('estado', ($this->modelo())::PUBLICADO)->count();
+    }
+
+    /**
+     * Una `clave` (el id que ve el portal) armada con un texto y que no se
+     * repite: «Sede CATA Jerusalén» → «sede-cata-jerusalen», o -2, -3…
+     * $acotar limita dónde no debe repetirse (las cifras, dentro de su página).
+     */
+    protected function claveUnica(string $texto, string $siNoHay, ?callable $acotar = null): string
+    {
+        $base = Str::limit(Str::slug($texto), 50, '') ?: $siNoHay;
+        $existe = function (string $clave) use ($acotar) {
+            $consulta = ($this->modelo())::where('clave', $clave);
+
+            return ($acotar ? $acotar($consulta) : $consulta)->exists();
+        };
+
+        $clave = $base;
+        for ($i = 2; $existe($clave); $i++) {
+            $clave = "{$base}-{$i}";
+        }
+
+        return $clave;
     }
 
     protected function buscar(Request $peticion, string $id): Model

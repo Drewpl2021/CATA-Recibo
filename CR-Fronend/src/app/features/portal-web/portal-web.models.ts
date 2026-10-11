@@ -112,6 +112,52 @@ export interface SedePortal {
   estado: EstadoPortal;
 }
 
+/** Una página con su propia lista de cifras. */
+export type AmbitoDeCifras = 'portada' | 'logros' | 'propuesta';
+
+/** Una cifra destacada (contrato §3.9). */
+export interface CifraPortal {
+  id: string;
+  clave: string;
+  ambito: AmbitoDeCifras;
+  valor: number;
+  sufijo: string | null;
+  etiqueta: string;
+  orden: number;
+  estado: EstadoPortal;
+}
+
+/** Una cabecera de solo título y frase (Logros, Proyectos, Nosotros). */
+export interface CabeceraSimple {
+  titulo: string;
+  bajada: string | null;
+}
+
+export const CATEGORIAS_DE_LOGRO: { valor: string; nombre: string }[] = [
+  { valor: 'academico', nombre: 'Académico' },
+  { valor: 'deportivo', nombre: 'Deportivo' },
+  { valor: 'artistico', nombre: 'Artístico' },
+  { valor: 'institucional', nombre: 'Institucional' },
+];
+
+/** Un logro (contrato §3.22), con los nombres de las columnas. */
+export interface LogroPortal {
+  id: string;
+  clave: string;
+  titulo: string;
+  categoria: string;
+  anio: number | null;
+  nivel: string | null;
+  descripcion: string | null;
+  imagen_id: string | null;
+  imagen: ImagenPortal | null;
+  destacado: boolean;
+  fuente: { etiqueta: string; url: string | null } | null;
+  aclaracion: string | null;
+  orden: number;
+  estado: EstadoPortal;
+}
+
 /** Las redes que admite el contrato; el portal pone el icono y el color de cada una. */
 export const REDES_DEL_PORTAL: { valor: string; nombre: string }[] = [
   { valor: 'facebook', nombre: 'Facebook' },
@@ -282,7 +328,7 @@ export const CATEGORIAS_DEL_PORTAL: CategoriaDelPortal[] = [
     nombre: 'Logros',
     icono: 'trending_up',
     descripcion: 'Los logros confirmados del colegio, cada uno con su fuente.',
-    disponible: false,
+    disponible: true,
     partes: [
       { nombre: 'Cabecera', descripcion: 'El título y la frase de la página', ficha: 'logros' },
       { nombre: 'Cifras', descripcion: 'Los números destacados', lista: 'cifras-logros' },

@@ -6,7 +6,6 @@ use App\Models\Portal\Imagen;
 use App\Models\Portal\Sede;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /**
@@ -89,7 +88,7 @@ class SedesController extends ListaDelPortalController
 
         if (! $fila) {
             $v['horario'] ??= [];
-            $v['clave'] = $this->claveNueva($v['nombre']);
+            $v['clave'] = $this->claveUnica($v['nombre'], 'sede');
         }
 
         return $v;
@@ -104,18 +103,5 @@ class SedesController extends ListaDelPortalController
             // La foto completa, para la vista previa del panel.
             'imagen' => $fila->imagen_id ? Imagen::find($fila->imagen_id)?->aPanel() : null,
         ];
-    }
-
-    /** «Sede CATA Jerusalén» → «sede-cata-jerusalen», y si ya existe, con -2, -3… */
-    private function claveNueva(string $nombre): string
-    {
-        $base = Str::limit(Str::slug($nombre), 50, '') ?: 'sede';
-        $clave = $base;
-
-        for ($i = 2; Sede::where('clave', $clave)->exists(); $i++) {
-            $clave = "{$base}-{$i}";
-        }
-
-        return $clave;
     }
 }
