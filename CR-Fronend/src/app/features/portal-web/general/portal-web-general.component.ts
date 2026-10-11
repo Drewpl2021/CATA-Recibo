@@ -12,6 +12,7 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { idsMovidos, mostrarErrorDelPanel } from '../compartido/panel';
 import { EstadoPortal, REDES_DEL_PORTAL, RedSocialPortal, SitioPortal } from '../portal-web.models';
 import { PortalWebService } from '../portal-web.service';
 
@@ -341,12 +342,9 @@ export class PortalWebGeneralComponent implements OnInit {
 
   /** Sube o baja una red en el orden del portal. Se manda la lista entera. */
   mover(red: RedSocialPortal, direccion: -1 | 1): void {
-    const ids = this.redes.map((r) => r.id);
-    const i = ids.indexOf(red.id);
-    const j = i + direccion;
-    if (i < 0 || j < 0 || j >= ids.length) return;
+    const ids = idsMovidos(this.redes.map((r) => r.id), red.id, direccion);
+    if (!ids) return;
 
-    [ids[i], ids[j]] = [ids[j], ids[i]];
     this.ordenando = true;
     this.portalWebService.ordenarRedes(ids).subscribe({
       next: (res) => {
@@ -371,31 +369,9 @@ export class PortalWebGeneralComponent implements OnInit {
 
   // ───────── Errores ─────────
 
-  /**
-   * Muestra un error del backend.
-   *
-   *  - 409: alguien guardó entre medio; se pide volver a cargar.
-   *  - 422 con `contrato`: el portal no podría mostrar lo que quedaría.
-   *  - 422 de campos: si la pantalla sabe ponerlos junto a su campo, ahí.
-   */
+  /** Ver mostrarErrorDelPanel (compartido/panel.ts). */
   private mostrarError(err: HttpErrorResponse, porDefecto: string, alCampo?: (campo: string, mensaje: string) => void): void {
-    if (err.status === 409) {
-      this.toastService.warning('Alguien guardó antes', mensajeErrorApi(err, porDefecto));
-      return;
-    }
-
-    const errores: Record<string, string[]> = err.error?.errors ?? {};
-
-    if (errores['contrato']?.length) {
-      this.toastService.error('El portal no podría mostrarlo', errores['contrato'].join(' '));
-      return;
-    }
-
-    if (alCampo && err.status === 422) {
-      Object.entries(errores).forEach(([campo, mensajes]) => alCampo(campo, mensajes[0]));
-    }
-
-    this.toastService.error('No se guardó', mensajeErrorApi(err, porDefecto));
+    mostrarErrorDelPanel(this.toastService, err, porDefecto, alCampo);
   }
 
   /** Para el contador de caracteres: cuánto lleva un campo. */

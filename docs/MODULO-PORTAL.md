@@ -47,9 +47,52 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Docker**: `exif` en `docker/php/Dockerfile`, para enderezar las fotos de celular.
 - **Angular**: `app-selector-imagen` (`features/portal-web/compartido`), sobre el selector de archivos del sistema: pide el alt antes de subir, muestra la vista previa en el marco con la proporción del portal, los avisos, y en los banners el punto focal (tocando la vista previa o escrito en %). Lo usarán las categorías desde la etapa 3.
 
+### Etapa 3: Contacto (hecha)
+
+- **Fichas** `contacto` (título, frase, recorte del estudiante, correo general) y `solicitud` (textos del formulario y el mensaje de WhatsApp, general y por página). En las plantillas solo valen `{nombre}` y `{grado}`. `GET sections/{clave}` devuelve también `imagenes`: cada imagen de la ficha, completa, para la vista previa.
+- **Sedes**: `/web-portal/campuses` (`SedesController`). Hasta 8 publicadas (tope de la base de las listas, con un mensaje claro). La `clave` pública se arma con el nombre al crearla y no cambia. Teléfono E.164 o nada; horario hasta 4 filas; mapa insertable solo de Google Maps u OpenStreetMap.
+- **Pantalla** `/inicio/portal-web/contacto`: la cabecera con el selector de imágenes, las sedes con su modal (foto, horario, teléfono, mapa: se puede pegar el `<iframe>` de «Insertar un mapa» y se toma solo su dirección) y el formulario con una vista previa del mensaje.
+- **Vista previa de las imágenes subidas**: el panel las pide por su ruta relativa (`/api/portal/medios/…`), porque el panel y la ruta de medios viven en el mismo servidor. La dirección pública (la del portal) sigue siendo la absoluta https.
+- **Si `APP_URL` no es https**, el panel no deja publicar imágenes subidas: el portal descartaría la página (probado en `PortalPanelContactoTest`). El mensaje lo dice en palabras de quien edita.
+
+### Programar la limpieza de imágenes
+
+`portal:limpiar-imagenes` **no está programado**: no se toca `routes/console.php`, que es del sistema. Mientras no se programe, **las imágenes sueltas se acumulan** en `storage/app/portal` (cada foto reemplazada, cada registro eliminado y cada subida que no se llegó a guardar). No rompen nada ni se ven en el portal, pero ocupan disco: conviene correr el comando a mano de vez en cuando, primero simulando:
+
+```bash
+php artisan portal:limpiar-imagenes --simular   # dice qué borraría
+php artisan portal:limpiar-imagenes             # borra las sueltas hace más de 24 horas
+```
+
+Para programarlo hay dos formas. Basta una.
+
+**1. Con el programador de Laravel**, si algún día se decide tocar `routes/console.php`. Una línea, junto a las demás tareas diarias:
+
+```php
+Schedule::command('portal:limpiar-imagenes')->dailyAt('03:00');
+```
+
+Así corre con las demás: en Docker, el contenedor `reloj`; sin Docker, el cron que ejecuta `schedule:run`.
+
+**2. Con el cron de cPanel (GoDaddy)**, sin tocar el código. En cPanel › *Avanzado* › **Trabajos de cron** (*Cron Jobs*):
+
+- *Configuración común*: **Una vez al día** (o a mano: minuto `0`, hora `3`, día `*`, mes `*`, día de la semana `*`).
+- *Comando* (cambiar `USUARIO` y la ruta por la del sistema en el hosting):
+
+  ```bash
+  cd /home/USUARIO/ruta/a/CR-Backend && /usr/local/bin/php artisan portal:limpiar-imagenes >> storage/logs/limpieza-portal.log 2>&1
+  ```
+
+Antes de guardarlo, conviene comprobar dos cosas en la *Terminal* de cPanel:
+
+- **Qué `php` usar**: `which php` y `php -v`. Tiene que ser la misma versión que corre el sistema (8.3 o más); en cPanel suele estar en `/usr/local/bin/php` o en `/opt/cpanel/ea-php83/root/usr/bin/php`.
+- **Que el comando funcione** corriéndolo una vez a mano con `--simular`.
+
+La hora del cron es la del servidor de GoDaddy, que puede no ser la de Lima: a las 3:00 del servidor no importa la diferencia, porque la tarea solo borra lo suelto hace más de un día. La salida queda en `storage/logs/limpieza-portal.log`.
+
 ## Pendiente para la etapa 2 (el panel)
 
-1. **Programar la limpieza de imágenes** en `routes/console.php` (archivo existente).
+1. **Programar la limpieza de imágenes** (ver arriba). Mientras tanto, correrla a mano de vez en cuando.
 2. **`APP_URL` en producción debe ser https** (o `PORTAL_URL_MEDIOS` apuntar a una dirección https). El contrato hace que el portal descarte cualquier respuesta con una URL `http://`. Hoy el `.env.example` de la raíz trae una IP con http.
 3. **El panel no debe permitir guardar bloques que rompan el contrato** (tipo desconocido, lista sin ítems, carta sin firma, audio en un formato que el portal no reproduce, organigrama de más de 5 niveles). La API los omite y los anota en el registro (`App\Support\Portal\Bloques`), pero eso es la última red, no la validación.
 4. **El contrato 2.13** (§7 del contrato): `GET /v1/navegacion`, `GET /v1/portada/cierre`, `etiquetas` en `/v1/solicitud` y `sitio.nombreEnLineas`, para que el menú, los títulos de sección y el cierre de Inicio salgan del panel. `portal_paginas` ya tiene `grupo` y `nombre` para el menú de Nosotros.

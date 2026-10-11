@@ -1,0 +1,306 @@
+<app-page-header
+  icono="phone"
+  titulo="Contacto"
+  subtitulo="Cómo encontrar al colegio: la cabecera de la página, las sedes con su mapa y el formulario de WhatsApp. Cada cambio queda en la Auditoría y se ve en el portal en hasta un minuto."
+>
+  <button headerActions type="button" class="btn-secondary" (click)="volver()">
+    <app-icon icono="arrow_left" [tamano]="16"></app-icon>
+    Volver a Portal Web
+  </button>
+</app-page-header>
+
+<!-- ═══════════ Cabecera ═══════════ -->
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-cabecera">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-cabecera">Cabecera de la página</h2>
+      <p class="form-ayuda">El título, la frase, el recorte de un estudiante y el correo general. El WhatsApp y las redes salen de General.</p>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargandoCabecera">Cargando la cabecera…</p>
+
+  <ng-container *ngIf="!cargandoCabecera">
+    <form [formGroup]="cabecera" (ngSubmit)="guardarCabecera()" novalidate>
+      <div class="grupo-montos">
+        <div class="form-fields">
+          <div class="form-group">
+            <label for="contacto-titulo">Título *</label>
+            <input id="contacto-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+              placeholder="Ej. Contáctanos" [class.is-invalid]="invalidoCabecera('titulo')" />
+            <small class="form-error" *ngIf="invalidoCabecera('titulo')">El título es obligatorio.</small>
+          </div>
+          <div class="form-group">
+            <label for="contacto-bajada">Frase bajo el título</label>
+            <input id="contacto-bajada" type="text" class="form-control" formControlName="bajada" maxlength="160"
+              placeholder="Ej. Cuatro sedes en San Román. Escríbenos por WhatsApp, llámanos o visítanos." />
+            <small class="form-ayuda">Opcional. Hasta 160 caracteres.</small>
+          </div>
+          <div class="form-group">
+            <label for="contacto-correo">Correo general</label>
+            <input id="contacto-correo" type="email" class="form-control" formControlName="correo" maxlength="80"
+              placeholder="Ej. informes@cata.edu.pe" [class.is-invalid]="invalidoCabecera('correo')" />
+            <small class="form-error" *ngIf="invalidoCabecera('correo')">Un correo válido.</small>
+            <small class="form-ayuda" *ngIf="!invalidoCabecera('correo')">Opcional. Se muestra junto a las redes.</small>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div class="grupo-montos">
+      <app-selector-imagen uso="recorte" etiqueta="Recorte de un estudiante" [imagen]="figura" (imagenChange)="alCambiarFigura($event)"></app-selector-imagen>
+      <small class="form-ayuda">Opcional. Una foto con fondo transparente, como en Matrícula. Las fotos de estudiantes necesitan la autorización de su familia.</small>
+    </div>
+
+    <footer class="panel-pie">
+      <button type="button" class="btn-primary" (click)="guardarCabecera()" [disabled]="guardandoCabecera || !cabeceraConCambios">
+        {{ guardandoCabecera ? 'Guardando…' : 'Guardar la cabecera' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="cabeceraConCambios && !guardandoCabecera">Tienes cambios sin guardar.</p>
+    </footer>
+  </ng-container>
+</section>
+
+<!-- ═══════════ Sedes ═══════════ -->
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-sedes">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-sedes">Sedes</h2>
+      <p class="form-ayuda">
+        Se muestran en Inicio y en Contacto, en este orden, hasta 8 publicadas. Lo nuevo entra en borrador: publícalo cuando esté listo.
+        No son las sedes de RR.HH.: aquí va lo que ve el público.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevaSede()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar sede
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="la sede"
+      [columnas]="columnasSedes"
+      [datos]="sedes"
+      [cargando]="cargandoSedes"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="accionesSedes"
+      mensajeVacio="Todavía no hay sedes. Sin sedes, el portal dice que se publicarán pronto."
+      (editarFila)="editarSede($event)"
+      (eliminarFila)="eliminarSede($event)"
+      (accionPersonalizada)="alAccionarSede($event)"
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="moverSede(fila, -1)" [disabled]="ordenando || esPrimera(fila)"
+            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="moverSede(fila, 1)" [disabled]="ordenando || esUltima(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<!-- ═══════════ Formulario «Solicitar información» ═══════════ -->
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-solicitud">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-solicitud">Formulario «Solicitar información»</h2>
+      <p class="form-ayuda">
+        Está al final de Contacto y de Matrícula. No envía nada al colegio: arma el mensaje y abre WhatsApp en el teléfono de la familia,
+        con el número de General. En los mensajes, <strong>{{ '{' }}nombre{{ '}' }}</strong> y <strong>{{ '{' }}grado{{ '}' }}</strong>
+        se reemplazan por lo que escribió la familia.
+      </p>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargandoSolicitud">Cargando los textos…</p>
+
+  <form [formGroup]="solicitud" *ngIf="!cargandoSolicitud" (ngSubmit)="guardarSolicitud()" novalidate>
+    <div class="grupo-montos">
+      <div class="form-fields">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="solicitud-titulo">Título *</label>
+            <input id="solicitud-titulo" type="text" class="form-control" formControlName="titulo" maxlength="40"
+              placeholder="Ej. Solicitar información" [class.is-invalid]="invalidoSolicitud('titulo')" />
+            <small class="form-error" *ngIf="invalidoSolicitud('titulo')">El título es obligatorio.</small>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="solicitud-texto">Frase bajo el título</label>
+          <textarea id="solicitud-texto" class="form-control" rows="2" formControlName="texto" maxlength="200"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="solicitud-mensaje">Mensaje de WhatsApp (para todas las páginas) *</label>
+          <textarea id="solicitud-mensaje" class="form-control" rows="2" formControlName="mensajeWhatsapp" maxlength="300"
+            [class.is-invalid]="invalidoSolicitud('mensajeWhatsapp') || marcasDesconocidas(solicitud.value.mensajeWhatsapp).length"></textarea>
+          <small class="form-error" *ngIf="invalidoSolicitud('mensajeWhatsapp')">El mensaje es obligatorio.</small>
+          <small class="form-error" *ngIf="marcasDesconocidas(solicitud.value.mensajeWhatsapp).length">
+            Solo valen {{ '{' }}nombre{{ '}' }} y {{ '{' }}grado{{ '}' }}: «{{ '{' }}{{ marcasDesconocidas(solicitud.value.mensajeWhatsapp)[0] }}{{ '}' }}» llegaría tal cual.
+          </small>
+          <small class="form-ayuda" *ngIf="solicitud.value.mensajeWhatsapp">Así le llega al colegio: «{{ ejemploDe(solicitud.value.mensajeWhatsapp) }}»</small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="solicitud-matricula">Mensaje propio en Matrícula</label>
+            <textarea id="solicitud-matricula" class="form-control" rows="2" formControlName="mensajeMatricula" maxlength="300"
+              [class.is-invalid]="marcasDesconocidas(solicitud.value.mensajeMatricula).length"></textarea>
+            <small class="form-error" *ngIf="marcasDesconocidas(solicitud.value.mensajeMatricula).length">Solo valen {{ '{' }}nombre{{ '}' }} y {{ '{' }}grado{{ '}' }}.</small>
+            <small class="form-ayuda">Vacío: usa el de arriba.</small>
+          </div>
+          <div class="form-group">
+            <label for="solicitud-contacto">Mensaje propio en Contacto</label>
+            <textarea id="solicitud-contacto" class="form-control" rows="2" formControlName="mensajeContacto" maxlength="300"
+              [class.is-invalid]="marcasDesconocidas(solicitud.value.mensajeContacto).length"></textarea>
+            <small class="form-error" *ngIf="marcasDesconocidas(solicitud.value.mensajeContacto).length">Solo valen {{ '{' }}nombre{{ '}' }} y {{ '{' }}grado{{ '}' }}.</small>
+            <small class="form-ayuda">Vacío: usa el de arriba.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="panel-pie">
+      <button type="submit" class="btn-primary" [disabled]="guardandoSolicitud || solicitud.pristine">
+        {{ guardandoSolicitud ? 'Guardando…' : 'Guardar los textos del formulario' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="solicitud.dirty && !guardandoSolicitud">Tienes cambios sin guardar.</p>
+    </footer>
+  </form>
+</section>
+
+<!-- ═══════════ Modal de una sede ═══════════ -->
+<app-form-modal
+  [(visible)]="modalSedeVisible"
+  [titulo]="sedeEditando ? 'Editar sede' : 'Agregar sede'"
+  ancho="760px"
+  [guardando]="guardandoSede"
+  (guardar)="guardarSede()"
+  (cancelar)="cerrarModalSede()"
+>
+  <form [formGroup]="formSede" class="form-fields">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="sede-nombre">Nombre *</label>
+        <input id="sede-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
+          placeholder="Ej. Sede CATA Jerusalén" [class.is-invalid]="invalidoSede('nombre')" />
+        <small class="form-error" *ngIf="invalidoSede('nombre')">El nombre es obligatorio (máximo 40).</small>
+      </div>
+      <div class="form-group">
+        <label for="sede-estado">Estado</label>
+        <select id="sede-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicada</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="sede-direccion">Dirección *</label>
+      <input id="sede-direccion" type="text" class="form-control" formControlName="direccion" maxlength="90"
+        placeholder="Ej. Titiline Independencia N° 2, Urb. Jerusalem" [class.is-invalid]="invalidoSede('direccion')" />
+      <small class="form-error" *ngIf="invalidoSede('direccion')">La dirección es obligatoria.</small>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="sede-referencia">Referencia</label>
+        <input id="sede-referencia" type="text" class="form-control" formControlName="referencia" maxlength="100"
+          placeholder="Ej. Puente Independencia, salida a Huancané" />
+      </div>
+      <div class="form-group">
+        <label for="sede-distrito">Distrito</label>
+        <input id="sede-distrito" type="text" class="form-control" formControlName="distrito" maxlength="80"
+          placeholder="Ej. San Miguel, San Román, Puno" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="sede-tel-numero">Teléfono: número</label>
+        <input id="sede-tel-numero" type="tel" class="form-control" formControlName="telefonoNumero" placeholder="+51937489399"
+          [class.is-invalid]="invalidoSede('telefonoNumero') || (telefonoIncompleto && formSede.touched)" />
+        <small class="form-error" *ngIf="invalidoSede('telefonoNumero')">Con + y el código del país, sin espacios.</small>
+      </div>
+      <div class="form-group">
+        <label for="sede-tel-visible">Cómo se lee</label>
+        <input id="sede-tel-visible" type="text" class="form-control" formControlName="telefonoVisible" maxlength="20" placeholder="937 489 399"
+          [class.is-invalid]="telefonoIncompleto && formSede.touched" />
+      </div>
+    </div>
+    <small class="form-error" *ngIf="telefonoIncompleto && formSede.touched">Con teléfono van los dos datos; sin él, ninguno.</small>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="sede-correo">Correo de la sede</label>
+        <input id="sede-correo" type="email" class="form-control" formControlName="correo" maxlength="80"
+          [class.is-invalid]="invalidoSede('correo')" />
+        <small class="form-error" *ngIf="invalidoSede('correo')">Un correo válido.</small>
+      </div>
+      <div class="form-group">
+        <label for="sede-nota">Nota</label>
+        <input id="sede-nota" type="text" class="form-control" formControlName="nota" maxlength="160" placeholder="Ej. Nivel primaria." />
+      </div>
+    </div>
+
+    <!-- Horario -->
+    <div class="form-group">
+      <label>Horario de atención</label>
+      <small class="form-ayuda">Una fila por grupo de días, hasta 4. Sin filas, no se muestra.</small>
+      <div formArrayName="horario">
+        <div class="form-row" *ngFor="let fila of horario.controls; let i = index" [formGroupName]="i">
+          <div class="form-group">
+            <label [for]="'horario-dias-' + i">Días</label>
+            <input [id]="'horario-dias-' + i" type="text" class="form-control" formControlName="dias" maxlength="40" placeholder="Lunes a viernes"
+              [class.is-invalid]="fila.get('dias')?.invalid && fila.get('dias')?.touched" />
+          </div>
+          <div class="form-group">
+            <label [for]="'horario-horas-' + i">Horas</label>
+            <input [id]="'horario-horas-' + i" type="text" class="form-control" formControlName="horas" maxlength="40" placeholder="8:00 a 13:00"
+              [class.is-invalid]="fila.get('horas')?.invalid && fila.get('horas')?.touched" />
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button type="button" class="btn-secondary" (click)="quitarHorario(i)" [attr.aria-label]="'Quitar la fila ' + (i + 1) + ' del horario'">
+              <app-icon icono="trash" [tamano]="14"></app-icon> Quitar
+            </button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <button type="button" class="btn-secondary" (click)="agregarHorario()" [disabled]="horario.length >= 4">
+          <app-icon icono="plus" [tamano]="14"></app-icon> Agregar fila
+        </button>
+      </div>
+    </div>
+
+    <!-- Mapa -->
+    <div class="form-group">
+      <label for="sede-mapa-embed">Mapa para insertar en la página</label>
+      <input id="sede-mapa-embed" type="text" class="form-control" formControlName="mapaEmbedUrl" (blur)="alPegarMapa()" (paste)="alPegarMapa()"
+        placeholder="https://www.google.com/maps/embed?pb=…" [class.is-invalid]="invalidoSede('mapaEmbedUrl')" />
+      <small class="form-error" *ngIf="invalidoSede('mapaEmbedUrl')">
+        Solo un mapa insertable de Google Maps (https://www.google.com/maps/embed?…) u OpenStreetMap.
+      </small>
+      <small class="form-ayuda" *ngIf="!invalidoSede('mapaEmbedUrl')">
+        En Google Maps: busca la sede › <strong>Compartir</strong> › <strong>Insertar un mapa</strong> › <strong>Copiar HTML</strong>, y pégalo aquí:
+        se toma solo la dirección. Un enlace corto (maps.app.goo.gl) no sirve para insertar.
+      </small>
+    </div>
+    <div class="form-group">
+      <label for="sede-mapa-url">Enlace «Cómo llegar»</label>
+      <input id="sede-mapa-url" type="url" class="form-control" formControlName="mapaUrl" placeholder="https://maps.app.goo.gl/…"
+        [class.is-invalid]="invalidoSede('mapaUrl')" />
+      <small class="form-error" *ngIf="invalidoSede('mapaUrl')">Una dirección que empiece con https://.</small>
+      <small class="form-ayuda" *ngIf="!invalidoSede('mapaUrl')">Opcional. Vacío: el portal busca la dirección en Google Maps.</small>
+    </div>
+
+    <app-selector-imagen *ngIf="modalSedeVisible" uso="sede" etiqueta="Foto de la sede" [(imagen)]="fotoSede"></app-selector-imagen>
+  </form>
+</app-form-modal>

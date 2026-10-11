@@ -46,6 +46,19 @@ class Imagen extends Model
         ];
     }
 
+    /** Cómo la ve el panel: lo del contrato más su id y su peso. */
+    public function aPanel(): array
+    {
+        return [
+            'id'    => $this->id,
+            'url'   => $this->url(),
+            'alt'   => (string) $this->alt,
+            'ancho' => $this->ancho,
+            'alto'  => $this->alto,
+            'bytes' => $this->bytes,
+        ];
+    }
+
     public function nombreAuditado(): string
     {
         return '«' . ($this->alt !== '' ? mb_strimwidth($this->alt, 0, 60, '…') : basename($this->url())) . '»';

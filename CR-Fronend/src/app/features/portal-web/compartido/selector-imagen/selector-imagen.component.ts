@@ -88,6 +88,20 @@ export class SelectorImagenComponent implements OnInit {
     return p ? `${p[0]} / ${p[1]}` : null;
   }
 
+  /**
+   * La dirección para la vista previa del panel. Una imagen subida se pide
+   * por su ruta en este mismo servidor (/api/portal/medios/…): el panel y la
+   * ruta de medios viven juntos, así que funciona aunque la dirección pública
+   * (la que recibe el portal, siempre https) apunte a otro nombre. Una imagen
+   * de fuera, tal cual.
+   */
+  get urlParaVer(): string {
+    const url = this.imagen?.url ?? '';
+    const ruta = '/api/portal/medios/';
+    const i = url.indexOf(ruta);
+    return i >= 0 ? url.slice(i) : url;
+  }
+
   get posicion(): string {
     const f = this.foco ?? { x: 50, y: 50 };
     return `${f.x}% ${f.y}%`;

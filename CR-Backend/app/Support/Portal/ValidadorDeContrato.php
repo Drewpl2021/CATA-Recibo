@@ -154,13 +154,28 @@ class ValidadorDeContrato
         }
     }
 
-    /** El primer error del esquema, en una línea: dónde y qué. */
+    /**
+     * El primer error del esquema, en una línea: qué y dónde.
+     *
+     * Lo lee quien edita, así que los errores que se ven en la práctica van
+     * en sus palabras; el resto, tal como lo dice el validador (con el dónde,
+     * que a soporte le basta para encontrarlo).
+     */
     private function explicar(\Opis\JsonSchema\Errors\ValidationError $error): string
     {
         $errores = (new ErrorFormatter())->format($error, false);
         $donde = array_key_first($errores) ?? '/';
         $que = is_array($errores[$donde] ?? null) ? implode(' ', $errores[$donde]) : (string) ($errores[$donde] ?? '');
 
-        return trim("en {$donde}: {$que}");
+        $enPalabras = match (true) {
+            str_contains($que, '^https') => 'una dirección no empieza con https:// (si es una imagen subida, revisa que APP_URL del servidor sea https)',
+            str_contains($que, 'at most')  => 'hay más elementos de los que el portal muestra',
+            str_contains($que, 'at least') => 'falta al menos un elemento',
+            default                        => null,
+        };
+
+        return $enPalabras !== null
+            ? "{$enPalabras} (en {$donde})."
+            : trim("en {$donde}: {$que}");
     }
 }

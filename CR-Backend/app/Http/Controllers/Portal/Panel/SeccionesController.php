@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Portal\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Models\Portal\Imagen;
 use App\Models\Portal\Seccion;
 use App\Support\Portal\Fichas\Ficha;
+use App\Support\Portal\Fichas\FichaContacto;
 use App\Support\Portal\Fichas\FichaSitio;
+use App\Support\Portal\Fichas\FichaSolicitud;
+use App\Support\Portal\ImagenesEnJson;
 use App\Support\Portal\ValidadorDeContrato;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,7 +34,9 @@ class SeccionesController extends Controller
 {
     /** clave → su definición. */
     private const FICHAS = [
-        'sitio' => FichaSitio::class,
+        'sitio'     => FichaSitio::class,
+        'contacto'  => FichaContacto::class,
+        'solicitud' => FichaSolicitud::class,
     ];
 
     public function ver(string $clave): JsonResponse
@@ -42,9 +48,26 @@ class SeccionesController extends Controller
             'clave'     => $clave,
             'nombre'    => $ficha->nombre(),
             // null si todavía no se cargó: la pantalla parte de un formulario vacío.
+            // Las imágenes van como {"imagenId": …}, igual que se guardan.
             'contenido' => $seccion?->contenido,
+            // …y aquí, cada una completa, para la vista previa.
+            'imagenes'  => $this->imagenesDe($seccion?->contenido ?? []),
             'version'   => $seccion?->updated_at?->toJSON(),
         ]]);
+    }
+
+    /** id → la imagen como la ve el panel, de cada {"imagenId": …} del contenido. */
+    private function imagenesDe(array $contenido): object
+    {
+        $ids = [];
+        array_walk_recursive($contenido, function ($valor, $clave) use (&$ids) {
+            if ($clave === ImagenesEnJson::CLAVE && is_string($valor)) {
+                $ids[] = $valor;
+            }
+        });
+
+        // Un objeto y no una lista: en JSON tiene que salir {} aunque esté vacío.
+        return (object) Imagen::whereIn('id', $ids)->get()->mapWithKeys(fn (Imagen $i) => [$i->id => $i->aPanel()])->all();
     }
 
     public function guardar(Request $peticion, string $clave): JsonResponse

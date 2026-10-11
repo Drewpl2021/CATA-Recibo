@@ -53,6 +53,23 @@ abstract class ListaDelPortalController extends Controller
     /** Cómo se llama un registro en los mensajes: 'el banner'. */
     abstract protected function entidad(): string;
 
+    /**
+     * Cuántos puede haber publicados a la vez, según el contrato (8 sedes, 8
+     * banners…). null = sin tope. Se comprueba antes de confirmar, con un
+     * mensaje que entiende quien edita; el esquema lo atraparía igual, pero
+     * diciéndolo en su idioma.
+     */
+    protected function topePublicados(): ?int
+    {
+        return null;
+    }
+
+    /** Cómo se dicen en ese mensaje, con su concordancia: 'sedes publicadas'. */
+    protected function plural(): string
+    {
+        return 'registros publicados';
+    }
+
     /** Si la lista se publica y se pasa a borrador (las categorías, no). */
     protected function tieneEstado(): bool
     {
@@ -204,7 +221,15 @@ abstract class ListaDelPortalController extends Controller
     {
         return DB::transaction(function () use ($cambio) {
             $fila = $cambio();
-            $problemas = app(ValidadorDeContrato::class)->problemas($this->rutasAfectadas($fila instanceof Model && $fila->exists ? $fila : null));
+
+            $tope = $this->topePublicados();
+            if ($tope !== null && ($this->modelo())::where('estado', ($this->modelo())::PUBLICADO)->count() > $tope) {
+                throw ValidationException::withMessages([
+                    'estado' => "El portal muestra hasta {$tope} {$this->plural()}. Pasa uno a borrador antes de publicar otro.",
+                ]);
+            }
+
+            $problemas =app(ValidadorDeContrato::class)->problemas($this->rutasAfectadas($fila instanceof Model && $fila->exists ? $fila : null));
 
             if ($problemas !== []) {
                 // Lanzarla deshace la transacción entera.

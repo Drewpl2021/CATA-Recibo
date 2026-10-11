@@ -31,8 +31,10 @@ export type EstadoPortal = 'publicado' | 'borrador';
 export interface FichaPortal<T> {
   clave: string;
   nombre: string;
-  /** null si todavía no se cargó. */
+  /** null si todavía no se cargó. Las imágenes van como { imagenId }. */
   contenido: T | null;
+  /** Cada imagen del contenido, completa, para la vista previa: id → imagen. */
+  imagenes: Record<string, ImagenPortal>;
   /** Se manda de vuelta al guardar: si alguien guardó entre medio, el backend responde 409. */
   version: string | null;
 }
@@ -56,6 +58,58 @@ export interface SitioPortal {
   direccion: { linea: string; referencia: string | null; distrito: string | null };
   portalAcademico: { nombre: string; url: string } | null;
   promotora: string | null;
+}
+
+/** Cómo va una imagen dentro de una ficha guardada. */
+export interface RefImagen {
+  imagenId: string;
+}
+
+/** La cabecera de Contacto (ficha `contacto`, contrato §3.16). */
+export interface ContactoPortal {
+  titulo: string;
+  bajada: string | null;
+  figura: RefImagen | null;
+  correo: string | null;
+}
+
+/** Lo que se manda al guardarla: la figura va solo con su id. */
+export interface ContactoParaGuardar {
+  titulo: string;
+  bajada: string | null;
+  figura: string | null;
+  correo: string | null;
+}
+
+export type PaginaConFormulario = 'matricula' | 'contacto';
+
+/** Los textos de «Solicitar información» (ficha `solicitud`, contrato §3.15). */
+export interface SolicitudPortal {
+  titulo: string;
+  texto: string | null;
+  mensajeWhatsapp: string;
+  mensajesPorPagina: { pagina: PaginaConFormulario; mensaje: string }[];
+}
+
+/** Una sede como la ve el panel (contrato §3.6, con los nombres de las columnas). */
+export interface SedePortal {
+  id: string;
+  clave: string;
+  nombre: string;
+  direccion: string;
+  referencia: string | null;
+  distrito: string | null;
+  telefono: TelefonoPortal | null;
+  nota: string | null;
+  imagen_id: string | null;
+  /** La foto completa, para la vista previa. */
+  imagen: ImagenPortal | null;
+  mapa_url: string | null;
+  correo: string | null;
+  horario: { dias: string; horas: string }[];
+  mapa_embed_url: string | null;
+  orden: number;
+  estado: EstadoPortal;
 }
 
 /** Las redes que admite el contrato; el portal pone el icono y el color de cada una. */
@@ -240,7 +294,7 @@ export const CATEGORIAS_DEL_PORTAL: CategoriaDelPortal[] = [
     nombre: 'Contacto',
     icono: 'phone',
     descripcion: 'Cómo encontrar al colegio: sedes, mapas, correo y el formulario de WhatsApp.',
-    disponible: false,
+    disponible: true,
     partes: [
       { nombre: 'Cabecera', descripcion: 'Título, frase, foto y correo general', ficha: 'contacto' },
       { nombre: 'Sedes', descripcion: 'Dirección, teléfono, horario, foto y mapa de cada sede', lista: 'sedes' },

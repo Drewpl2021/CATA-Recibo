@@ -4,6 +4,7 @@ use App\Http\Controllers\Portal\Panel\ImagenesController;
 use App\Http\Controllers\Portal\Panel\RedesController;
 use App\Http\Controllers\Portal\Panel\ResumenController;
 use App\Http\Controllers\Portal\Panel\SeccionesController;
+use App\Http\Controllers\Portal\Panel\SedesController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,3 +40,8 @@ Route::apiResource('social-networks', RedesController::class)->parameters(['soci
 Route::get('images/uses', [ImagenesController::class, 'usos'])->name('imagenes.usos');
 Route::post('images', [ImagenesController::class, 'subir'])->name('imagenes.subir');
 Route::patch('images/{id}', [ImagenesController::class, 'editar'])->whereUuid('id')->name('imagenes.editar');
+
+// ── Contacto: las sedes ──
+Route::post('campuses/order', [SedesController::class, 'ordenar'])->name('sedes.ordenar');
+Route::patch('campuses/{id}/status', [SedesController::class, 'estado'])->name('sedes.estado');
+Route::apiResource('campuses', SedesController::class)->parameters(['campuses' => 'id'])->names('sedes');

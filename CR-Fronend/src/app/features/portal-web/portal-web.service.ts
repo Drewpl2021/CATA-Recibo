@@ -6,6 +6,12 @@ import { environment } from '../../../environments/environment';
 import { ApiMessageResponse, ApiResponse } from '../../core/utils/api-response.model';
 import { EstadoPortal, FichaPortal, ImagenSubida, RedSocialPortal, ResumenPortal, UsoDeImagen } from './portal-web.models';
 
+/** Cómo se llama cada lista en /api/web-portal. */
+export const RECURSOS = {
+  redes: 'social-networks',
+  sedes: 'campuses',
+} as const;
+
 /**
  * Las llamadas del panel «Portal Web» a /api/web-portal.
  *
@@ -28,36 +34,65 @@ export class PortalWebService {
     return this.http.get<ApiResponse<FichaPortal<T>>>(`${this.base}/sections/${clave}`);
   }
 
-  /** Guarda la ficha entera. `version` es la que se leyó: si alguien guardó entre medio, responde 409. */
-  guardarFicha<T>(clave: string, contenido: T, version: string | null): Observable<ApiResponse<FichaPortal<T>>> {
+  /**
+   * Guarda la ficha entera. `version` es la que se leyó: si alguien guardó
+   * entre medio, responde 409. Las imágenes se mandan solo con su id.
+   */
+  guardarFicha<T>(clave: string, contenido: object, version: string | null): Observable<ApiResponse<FichaPortal<T>>> {
     return this.http.put<ApiResponse<FichaPortal<T>>>(`${this.base}/sections/${clave}`, { ...contenido, version });
+  }
+
+  // ───────── Listas (redes, sedes…): las mismas seis acciones ─────────
+
+  getLista<T>(recurso: string): Observable<ApiResponse<T[]>> {
+    return this.http.get<ApiResponse<T[]>>(`${this.base}/${recurso}`);
+  }
+
+  crearEnLista<T>(recurso: string, datos: object): Observable<ApiResponse<T>> {
+    return this.http.post<ApiResponse<T>>(`${this.base}/${recurso}`, datos);
+  }
+
+  editarEnLista<T>(recurso: string, id: string, datos: object): Observable<ApiResponse<T>> {
+    return this.http.put<ApiResponse<T>>(`${this.base}/${recurso}/${id}`, datos);
+  }
+
+  cambiarEstadoEnLista<T>(recurso: string, id: string, estado: EstadoPortal): Observable<ApiResponse<T>> {
+    return this.http.patch<ApiResponse<T>>(`${this.base}/${recurso}/${id}/status`, { estado });
+  }
+
+  /** El orden nuevo de TODA la lista, con todos sus ids. */
+  ordenarLista<T>(recurso: string, ids: string[]): Observable<ApiResponse<T[]>> {
+    return this.http.post<ApiResponse<T[]>>(`${this.base}/${recurso}/order`, { ids });
+  }
+
+  eliminarDeLista(recurso: string, id: string): Observable<ApiMessageResponse> {
+    return this.http.delete<ApiMessageResponse>(`${this.base}/${recurso}/${id}`);
   }
 
   // ───────── Redes sociales ─────────
 
   getRedes(): Observable<ApiResponse<RedSocialPortal[]>> {
-    return this.http.get<ApiResponse<RedSocialPortal[]>>(`${this.base}/social-networks`);
+    return this.getLista<RedSocialPortal>(RECURSOS.redes);
   }
 
   crearRed(datos: Partial<RedSocialPortal>): Observable<ApiResponse<RedSocialPortal>> {
-    return this.http.post<ApiResponse<RedSocialPortal>>(`${this.base}/social-networks`, datos);
+    return this.crearEnLista<RedSocialPortal>(RECURSOS.redes, datos);
   }
 
   editarRed(id: string, datos: Partial<RedSocialPortal>): Observable<ApiResponse<RedSocialPortal>> {
-    return this.http.put<ApiResponse<RedSocialPortal>>(`${this.base}/social-networks/${id}`, datos);
+    return this.editarEnLista<RedSocialPortal>(RECURSOS.redes, id, datos);
   }
 
   cambiarEstadoRed(id: string, estado: EstadoPortal): Observable<ApiResponse<RedSocialPortal>> {
-    return this.http.patch<ApiResponse<RedSocialPortal>>(`${this.base}/social-networks/${id}/status`, { estado });
+    return this.cambiarEstadoEnLista<RedSocialPortal>(RECURSOS.redes, id, estado);
   }
 
-  /** El orden nuevo de TODA la lista, con todos sus ids. */
   ordenarRedes(ids: string[]): Observable<ApiResponse<RedSocialPortal[]>> {
-    return this.http.post<ApiResponse<RedSocialPortal[]>>(`${this.base}/social-networks/order`, { ids });
+    return this.ordenarLista<RedSocialPortal>(RECURSOS.redes, ids);
   }
 
   eliminarRed(id: string): Observable<ApiMessageResponse> {
-    return this.http.delete<ApiMessageResponse>(`${this.base}/social-networks/${id}`);
+    return this.eliminarDeLista(RECURSOS.redes, id);
   }
 
   // ───────── Imágenes ─────────

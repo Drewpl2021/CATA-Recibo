@@ -45,7 +45,7 @@ class ImagenesController extends Controller
         [$imagen, $avisos] = $procesador->procesar($validado['archivo'], $validado['uso'], $this->alt($validado));
 
         return response()->json(['success' => true, 'data' => [
-            'imagen' => $this->aPanel($imagen),
+            'imagen' => $imagen->aPanel(),
             'avisos' => $avisos,
         ]], 201);
     }
@@ -57,7 +57,7 @@ class ImagenesController extends Controller
 
         $imagen->update(['alt' => $this->alt($validado)]);
 
-        return response()->json(['success' => true, 'data' => ['imagen' => $this->aPanel($imagen), 'avisos' => []]]);
+        return response()->json(['success' => true, 'data' => ['imagen' => $imagen->aPanel(), 'avisos' => []]]);
     }
 
     private function reglasDelAlt(): array
@@ -91,17 +91,5 @@ class ImagenesController extends Controller
     private function alt(array $validado): string
     {
         return ($validado['decorativa'] ?? false) ? '' : trim((string) ($validado['alt'] ?? ''));
-    }
-
-    private function aPanel(Imagen $imagen): array
-    {
-        return [
-            'id'    => $imagen->id,
-            'url'   => $imagen->url(),
-            'alt'   => $imagen->alt,
-            'ancho' => $imagen->ancho,
-            'alto'  => $imagen->alto,
-            'bytes' => $imagen->bytes,
-        ];
     }
 }

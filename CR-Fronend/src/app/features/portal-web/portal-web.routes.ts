@@ -16,4 +16,8 @@ export const PORTAL_WEB_ROUTES: Routes = [
     path: 'general',
     loadComponent: () => import('./general/portal-web-general.component').then((m) => m.PortalWebGeneralComponent),
   },
+  {
+    path: 'contacto',
+    loadComponent: () => import('./contacto/portal-web-contacto.component').then((m) => m.PortalWebContactoComponent),
+  },
 ];
