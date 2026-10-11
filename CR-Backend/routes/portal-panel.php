@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Portal\Panel\BannersController;
+use App\Http\Controllers\Portal\Panel\CategoriasProyectoController;
 use App\Http\Controllers\Portal\Panel\CifrasController;
 use App\Http\Controllers\Portal\Panel\FechasMatriculaController;
 use App\Http\Controllers\Portal\Panel\GradosController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Portal\Panel\NivelesController;
 use App\Http\Controllers\Portal\Panel\NoticiasController;
 use App\Http\Controllers\Portal\Panel\PreguntasController;
 use App\Http\Controllers\Portal\Panel\ProcesosMatriculaController;
+use App\Http\Controllers\Portal\Panel\ProyectosController;
 use App\Http\Controllers\Portal\Panel\RedesController;
 use App\Http\Controllers\Portal\Panel\ResumenController;
 use App\Http\Controllers\Portal\Panel\SeccionesController;
@@ -100,3 +102,13 @@ Route::apiResource('home-levels', NivelesController::class)->parameters(['home-l
 // Sin ruta de orden: van siempre por fecha.
 Route::patch('news/{id}/status', [NoticiasController::class, 'estado'])->name('noticias.estado');
 Route::apiResource('news', NoticiasController::class)->parameters(['news' => 'id'])->names('noticias');
+
+// ── Proyectos ──
+// Las categorías no tienen borrador (no hay ruta de estado).
+Route::post('project-categories/order', [CategoriasProyectoController::class, 'ordenar'])->name('categorias-proyecto.ordenar');
+Route::apiResource('project-categories', CategoriasProyectoController::class)->parameters(['project-categories' => 'id'])->names('categorias-proyecto');
+
+Route::post('projects/order', [ProyectosController::class, 'ordenar'])->name('proyectos.ordenar');
+Route::patch('projects/{id}/status', [ProyectosController::class, 'estado'])->name('proyectos.estado');
+Route::put('projects/{id}/gallery', [ProyectosController::class, 'galeria'])->name('proyectos.galeria');
+Route::apiResource('projects', ProyectosController::class)->parameters(['projects' => 'id'])->names('proyectos');

@@ -12,6 +12,7 @@ use App\Support\Portal\Fichas\FichaMatriculaCabecera;
 use App\Support\Portal\Fichas\FichaMatriculaFechas;
 use App\Support\Portal\Fichas\FichaMatriculaVacantes;
 use App\Support\Portal\Fichas\FichaNiveles;
+use App\Support\Portal\Fichas\FichaProyectos;
 use App\Support\Portal\Fichas\FichaQuienesSomos;
 use App\Support\Portal\Fichas\FichaSitio;
 use App\Support\Portal\Fichas\FichaSolicitud;
@@ -51,6 +52,8 @@ class SeccionesController extends Controller
 
         'quienes-somos' => FichaQuienesSomos::class,
         'niveles'       => FichaNiveles::class,
+
+        'proyectos' => FichaProyectos::class,
     ];
 
     public function ver(string $clave): JsonResponse
