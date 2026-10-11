@@ -4,13 +4,16 @@ use App\Http\Controllers\Portal\Panel\BannersController;
 use App\Http\Controllers\Portal\Panel\CategoriasProyectoController;
 use App\Http\Controllers\Portal\Panel\CiclosController;
 use App\Http\Controllers\Portal\Panel\CifrasController;
+use App\Http\Controllers\Portal\Panel\DocentesController;
 use App\Http\Controllers\Portal\Panel\FechasMatriculaController;
 use App\Http\Controllers\Portal\Panel\GradosController;
 use App\Http\Controllers\Portal\Panel\ImagenesController;
 use App\Http\Controllers\Portal\Panel\LogrosController;
 use App\Http\Controllers\Portal\Panel\NivelesController;
+use App\Http\Controllers\Portal\Panel\NivelesDocentesController;
 use App\Http\Controllers\Portal\Panel\NivelesPropuestaController;
 use App\Http\Controllers\Portal\Panel\NoticiasController;
+use App\Http\Controllers\Portal\Panel\PaginasController;
 use App\Http\Controllers\Portal\Panel\PilaresController;
 use App\Http\Controllers\Portal\Panel\PlataformasController;
 use App\Http\Controllers\Portal\Panel\PreguntasController;
@@ -138,3 +141,18 @@ Route::apiResource('cycles', CiclosController::class)->parameters(['cycles' => '
 Route::post('platforms/order', [PlataformasController::class, 'ordenar'])->name('plataformas.ordenar');
 Route::patch('platforms/{id}/status', [PlataformasController::class, 'estado'])->name('plataformas.estado');
 Route::apiResource('platforms', PlataformasController::class)->parameters(['platforms' => 'id'])->names('plataformas');
+
+// ── Nosotros ──
+// La dirección de cada subpágina se elige al crearla y no cambia. Sus bloques se editan aparte.
+Route::post('pages/order', [PaginasController::class, 'ordenar'])->name('paginas.ordenar');
+Route::patch('pages/{id}/status', [PaginasController::class, 'estado'])->name('paginas.estado');
+Route::apiResource('pages', PaginasController::class)->parameters(['pages' => 'id'])->names('paginas');
+
+Route::post('teacher-levels/order', [NivelesDocentesController::class, 'ordenar'])->name('niveles-docentes.ordenar');
+Route::patch('teacher-levels/{id}/status', [NivelesDocentesController::class, 'estado'])->name('niveles-docentes.estado');
+Route::apiResource('teacher-levels', NivelesDocentesController::class)->parameters(['teacher-levels' => 'id'])->names('niveles-docentes');
+
+// Los docentes se ordenan dentro de su nivel (?nivel=…).
+Route::post('teachers/order', [DocentesController::class, 'ordenar'])->name('docentes.ordenar');
+Route::patch('teachers/{id}/status', [DocentesController::class, 'estado'])->name('docentes.estado');
+Route::apiResource('teachers', DocentesController::class)->parameters(['teachers' => 'id'])->names('docentes');

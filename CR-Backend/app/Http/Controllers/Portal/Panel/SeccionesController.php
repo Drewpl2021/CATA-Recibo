@@ -12,6 +12,7 @@ use App\Support\Portal\Fichas\FichaMatriculaCabecera;
 use App\Support\Portal\Fichas\FichaMatriculaFechas;
 use App\Support\Portal\Fichas\FichaMatriculaVacantes;
 use App\Support\Portal\Fichas\FichaNiveles;
+use App\Support\Portal\Fichas\FichaNosotros;
 use App\Support\Portal\Fichas\FichaPropuestaAcademia;
 use App\Support\Portal\Fichas\FichaPropuestaCabecera;
 use App\Support\Portal\Fichas\FichaPropuestaPilares;
@@ -62,6 +63,8 @@ class SeccionesController extends Controller
         'propuesta-cabecera' => FichaPropuestaCabecera::class,
         'propuesta-pilares'  => FichaPropuestaPilares::class,
         'propuesta-academia' => FichaPropuestaAcademia::class,
+
+        'nosotros' => FichaNosotros::class,
     ];
 
     public function ver(string $clave): JsonResponse
