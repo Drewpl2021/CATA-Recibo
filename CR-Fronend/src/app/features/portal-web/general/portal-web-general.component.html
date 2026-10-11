@@ -1,0 +1,283 @@
+<app-page-header
+  icono="settings"
+  titulo="General"
+  subtitulo="Lo que aparece en todas las páginas del portal: la cabecera, el pie y el botón de WhatsApp. Cada cambio queda en la Auditoría y se ve en el portal en hasta un minuto."
+>
+  <button headerActions type="button" class="btn-secondary" (click)="volver()">
+    <app-icon icono="arrow_left" [tamano]="16"></app-icon>
+    Volver a Portal Web
+  </button>
+</app-page-header>
+
+<!-- ═══════════ Datos del colegio ═══════════ -->
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-datos">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-datos">Datos del colegio</h2>
+      <p class="form-ayuda">Nombre, teléfonos, dirección y plataforma académica. Se muestran en la cabecera y el pie de todas las páginas.</p>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargandoSitio">Cargando los datos del colegio…</p>
+
+  <form [formGroup]="sitio" *ngIf="!cargandoSitio" (ngSubmit)="guardarSitio()" novalidate>
+    <!-- El colegio -->
+    <div class="grupo-montos">
+      <h3 class="grupo-montos__titulo">El colegio</h3>
+      <div class="form-fields">
+        <div class="form-group">
+          <label for="nombre">Nombre *</label>
+          <input id="nombre" type="text" class="form-control" formControlName="nombre" maxlength="80"
+            placeholder="Ej. Colegio Adventista Túpac Amaru" [class.is-invalid]="invalido('nombre')" aria-describedby="ayuda-nombre" />
+          <small class="form-error" *ngIf="invalido('nombre')">{{ errorServidor('nombre') ?? 'El nombre es obligatorio.' }}</small>
+          <small class="form-ayuda" id="ayuda-nombre">{{ largo(sitio.get('nombre')) }}/80</small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nombreCorto">Sigla *</label>
+            <input id="nombreCorto" type="text" class="form-control" formControlName="nombreCorto" maxlength="20"
+              placeholder="Ej. CATA" [class.is-invalid]="invalido('nombreCorto')" />
+            <small class="form-error" *ngIf="invalido('nombreCorto')">{{ errorServidor('nombreCorto') ?? 'La sigla es obligatoria.' }}</small>
+          </div>
+          <div class="form-group">
+            <label for="ciudad">Ciudad *</label>
+            <input id="ciudad" type="text" class="form-control" formControlName="ciudad" maxlength="40"
+              placeholder="Ej. Juliaca" [class.is-invalid]="invalido('ciudad')" />
+            <small class="form-error" *ngIf="invalido('ciudad')">{{ errorServidor('ciudad') ?? 'La ciudad es obligatoria.' }}</small>
+          </div>
+          <div class="form-group">
+            <label for="anioFundacion">Año de fundación *</label>
+            <input id="anioFundacion" type="number" class="form-control" formControlName="anioFundacion"
+              min="1800" [max]="anioActual" placeholder="Ej. 1971" [class.is-invalid]="invalido('anioFundacion')" />
+            <small class="form-error" *ngIf="invalido('anioFundacion')">
+              {{ errorServidor('anioFundacion') ?? 'Un año entre 1800 y ' + anioActual + '.' }}
+            </small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="subtitulo">Subtítulo</label>
+          <input id="subtitulo" type="text" class="form-control" formControlName="subtitulo" maxlength="90"
+            placeholder="Ej. Inicial · Primaria · Secundaria" aria-describedby="ayuda-subtitulo" />
+          <small class="form-ayuda" id="ayuda-subtitulo">La línea bajo el nombre. Opcional. {{ largo(sitio.get('subtitulo')) }}/90</small>
+        </div>
+
+        <div class="form-group">
+          <label for="promotora">Promotora</label>
+          <input id="promotora" type="text" class="form-control" formControlName="promotora" maxlength="120"
+            placeholder="Ej. Asociación Educativa Colegio Adventista Túpac Amaru" aria-describedby="ayuda-promotora" />
+          <small class="form-ayuda" id="ayuda-promotora">El texto legal del pie. Opcional. {{ largo(sitio.get('promotora')) }}/120</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Teléfonos -->
+    <div class="grupo-montos">
+      <h3 class="grupo-montos__titulo">Teléfonos</h3>
+      <p class="form-ayuda">
+        El número va con el código del país y sin espacios (<strong>+51986322833</strong>): es el que usan los enlaces para
+        llamar y para abrir WhatsApp. Al lado, cómo debe leerse en la página (<strong>986 322 833</strong>).
+      </p>
+      <div class="form-fields">
+        <div class="form-row" formGroupName="telefono">
+          <div class="form-group">
+            <label for="telefono-numero">Teléfono principal: número *</label>
+            <input id="telefono-numero" type="tel" class="form-control" formControlName="numero" placeholder="+5151325096"
+              [class.is-invalid]="invalido('telefono.numero')" />
+            <small class="form-error" *ngIf="invalido('telefono.numero')">
+              {{ errorServidor('telefono.numero') ?? 'Con + y el código del país, sin espacios: +5151325096.' }}
+            </small>
+          </div>
+          <div class="form-group">
+            <label for="telefono-visible">Cómo se lee *</label>
+            <input id="telefono-visible" type="text" class="form-control" formControlName="visible" maxlength="20"
+              placeholder="051 325096" [class.is-invalid]="invalido('telefono.visible')" />
+            <small class="form-error" *ngIf="invalido('telefono.visible')">{{ errorServidor('telefono.visible') ?? 'Obligatorio (máximo 20).' }}</small>
+          </div>
+        </div>
+
+        <div class="form-row" formGroupName="whatsapp">
+          <div class="form-group">
+            <label for="whatsapp-numero">WhatsApp: número *</label>
+            <input id="whatsapp-numero" type="tel" class="form-control" formControlName="numero" placeholder="+51986322833"
+              [class.is-invalid]="invalido('whatsapp.numero')" aria-describedby="ayuda-whatsapp" />
+            <small class="form-error" *ngIf="invalido('whatsapp.numero')">
+              {{ errorServidor('whatsapp.numero') ?? 'Con + y el código del país, sin espacios: +51986322833.' }}
+            </small>
+            <small class="form-ayuda" id="ayuda-whatsapp">Recibe las solicitudes de información del portal.</small>
+          </div>
+          <div class="form-group">
+            <label for="whatsapp-visible">Cómo se lee *</label>
+            <input id="whatsapp-visible" type="text" class="form-control" formControlName="visible" maxlength="20"
+              placeholder="986 322 833" [class.is-invalid]="invalido('whatsapp.visible')" />
+            <small class="form-error" *ngIf="invalido('whatsapp.visible')">{{ errorServidor('whatsapp.visible') ?? 'Obligatorio (máximo 20).' }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dirección -->
+    <div class="grupo-montos" formGroupName="direccion">
+      <h3 class="grupo-montos__titulo">Dirección</h3>
+      <div class="form-fields">
+        <div class="form-group">
+          <label for="direccion-linea">Dirección *</label>
+          <input id="direccion-linea" type="text" class="form-control" formControlName="linea" maxlength="80"
+            placeholder="Ej. Jr. Moquegua N° 852" [class.is-invalid]="invalido('direccion.linea')" />
+          <small class="form-error" *ngIf="invalido('direccion.linea')">{{ errorServidor('direccion.linea') ?? 'La dirección es obligatoria.' }}</small>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="direccion-referencia">Referencia</label>
+            <input id="direccion-referencia" type="text" class="form-control" formControlName="referencia" maxlength="100"
+              placeholder="Ej. Frente al Mercado Internacional Túpac Amaru" />
+          </div>
+          <div class="form-group">
+            <label for="direccion-distrito">Distrito</label>
+            <input id="direccion-distrito" type="text" class="form-control" formControlName="distrito" maxlength="80"
+              placeholder="Ej. Juliaca, San Román, Puno" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plataforma académica -->
+    <div class="grupo-montos">
+      <h3 class="grupo-montos__titulo">Plataforma académica</h3>
+      <label class="check-item">
+        <input type="checkbox" formControlName="conPlataforma" />
+        <span>Mostrar el botón de la plataforma en la cabecera, el menú y el pie del portal.</span>
+      </label>
+      <p class="form-ayuda">El portal solo enlaza a la plataforma, en otra pestaña: nunca pide usuario ni contraseña.</p>
+      <div class="form-fields" formGroupName="portalAcademico" *ngIf="sitio.controls.conPlataforma.value">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="plataforma-nombre">Texto del botón *</label>
+            <input id="plataforma-nombre" type="text" class="form-control" formControlName="nombre" maxlength="20"
+              placeholder="Ej. Cubicol" [class.is-invalid]="invalido('portalAcademico.nombre')" />
+            <small class="form-error" *ngIf="invalido('portalAcademico.nombre')">
+              {{ errorServidor('portalAcademico.nombre') ?? 'El texto del botón es obligatorio.' }}
+            </small>
+          </div>
+          <div class="form-group">
+            <label for="plataforma-url">Dirección de su inicio de sesión *</label>
+            <input id="plataforma-url" type="url" class="form-control" formControlName="url"
+              placeholder="https://cata.cubicol.pe/principal/login" [class.is-invalid]="invalido('portalAcademico.url')" />
+            <small class="form-error" *ngIf="invalido('portalAcademico.url')">
+              {{ errorServidor('portalAcademico.url') ?? 'Una dirección que empiece con https://.' }}
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="panel-pie">
+      <button type="submit" class="btn-primary" [disabled]="guardandoSitio || sitio.pristine">
+        {{ guardandoSitio ? 'Guardando…' : 'Guardar los datos del colegio' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="sitio.dirty && !guardandoSitio">
+        Tienes cambios sin guardar.
+      </p>
+    </footer>
+  </form>
+</section>
+
+<!-- ═══════════ Redes sociales ═══════════ -->
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-redes">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-redes">Redes sociales</h2>
+      <p class="form-ayuda">
+        Las cuentas oficiales, en el orden en que el portal las muestra (barra flotante, menú móvil, pie y Contacto).
+        Cada red va una sola vez. Lo nuevo entra en borrador: publícalo cuando esté listo.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevaRed()" [disabled]="!redesDisponibles.length && !redEditando">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar red
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="la red"
+      [columnas]="columnasRedes"
+      [datos]="redes"
+      [cargando]="cargandoRedes"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="accionesRedes"
+      mensajeVacio="Todavía no hay redes. Sin redes, el portal no muestra la barra ni «Síguenos»."
+      (editarFila)="editarRed($event)"
+      (eliminarFila)="eliminarRed($event)"
+      (accionPersonalizada)="alAccionarRed($event)"
+    >
+      <!-- Subir y bajar con botones: se usan con el teclado, no solo con el ratón. -->
+      <ng-template appCelda="orden" let-fila>
+        <!-- action-btns: la misma fila de botones que usa la tabla en «Acciones». -->
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimera(fila)"
+            [attr.aria-label]="'Subir ' + nombreDeRed(fila.red)" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltima(fila)"
+            [attr.aria-label]="'Bajar ' + nombreDeRed(fila.red)" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalRedVisible"
+  [titulo]="redEditando ? 'Editar red social' : 'Agregar red social'"
+  [guardando]="guardandoRed"
+  (guardar)="guardarRed()"
+  (cancelar)="cerrarModalRed()"
+>
+  <form [formGroup]="formRed" class="form-fields">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="red">Red *</label>
+        <select id="red" class="form-control" formControlName="red" [class.is-invalid]="invalidoRed('red')">
+          <option value="" disabled>Elige la red</option>
+          <option *ngFor="let r of redesDisponibles" [value]="r.valor">{{ r.nombre }}</option>
+        </select>
+        <small class="form-error" *ngIf="invalidoRed('red')">Elige una red.</small>
+      </div>
+      <div class="form-group">
+        <label for="estado-red">Estado</label>
+        <select id="estado-red" class="form-control" formControlName="estado">
+          <option value="publicado">Publicada</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="cuenta">Cuenta *</label>
+      <input id="cuenta" type="text" class="form-control" formControlName="cuenta" maxlength="60"
+        placeholder="Ej. Colegio CATA Juliaca" [class.is-invalid]="invalidoRed('cuenta')" />
+      <small class="form-error" *ngIf="invalidoRed('cuenta')">El nombre de la cuenta es obligatorio (máximo 60).</small>
+      <small class="form-ayuda" *ngIf="!invalidoRed('cuenta')">Como se ve en la red: el nombre de la página o el &#64;usuario.</small>
+    </div>
+
+    <div class="form-group">
+      <label for="url-red">Dirección *</label>
+      <input id="url-red" type="url" class="form-control" formControlName="url"
+        [placeholder]="esWhatsapp ? 'https://wa.me/51986322833' : 'https://www.facebook.com/colegiocatajuliaca/'"
+        [class.is-invalid]="invalidoRed('url')" />
+      <small class="form-error" *ngIf="invalidoRed('url')">Una dirección que empiece con https://.</small>
+      <small class="form-ayuda" *ngIf="esWhatsapp && !invalidoRed('url')">Para WhatsApp: https://wa.me/ y el número con 51, sin + ni espacios.</small>
+    </div>
+
+    <div class="form-group">
+      <label for="aclaracion">Aviso junto a la red</label>
+      <input id="aclaracion" type="text" class="form-control" formControlName="aclaracion" maxlength="80"
+        placeholder="Ej. Dirección por confirmar" />
+      <small class="form-ayuda">Opcional. Se muestra a la vista: para marcar una dirección que todavía no está confirmada.</small>
+    </div>
+  </form>
+</app-form-modal>

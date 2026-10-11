@@ -24,6 +24,61 @@ export interface ResumenPortal {
   fichas: string[];
 }
 
+/** Publicado: se ve en el portal. Borrador: guardado, pero no se muestra. */
+export type EstadoPortal = 'publicado' | 'borrador';
+
+/** Una ficha del portal tal como la devuelve GET /web-portal/sections/{clave}. */
+export interface FichaPortal<T> {
+  clave: string;
+  nombre: string;
+  /** null si todavía no se cargó. */
+  contenido: T | null;
+  /** Se manda de vuelta al guardar: si alguien guardó entre medio, el backend responde 409. */
+  version: string | null;
+}
+
+export interface TelefonoPortal {
+  /** E.164: +51986322833 */
+  numero: string;
+  /** Como se lee: 986 322 833 */
+  visible: string;
+}
+
+/** Los datos del colegio (ficha `sitio`, contrato §3.1, sin las redes). */
+export interface SitioPortal {
+  nombre: string;
+  nombreCorto: string;
+  subtitulo: string | null;
+  ciudad: string;
+  anioFundacion: number;
+  telefono: TelefonoPortal;
+  whatsapp: TelefonoPortal;
+  direccion: { linea: string; referencia: string | null; distrito: string | null };
+  portalAcademico: { nombre: string; url: string } | null;
+  promotora: string | null;
+}
+
+/** Las redes que admite el contrato; el portal pone el icono y el color de cada una. */
+export const REDES_DEL_PORTAL: { valor: string; nombre: string }[] = [
+  { valor: 'facebook', nombre: 'Facebook' },
+  { valor: 'youtube', nombre: 'YouTube' },
+  { valor: 'tiktok', nombre: 'TikTok' },
+  { valor: 'whatsapp', nombre: 'WhatsApp' },
+  { valor: 'instagram', nombre: 'Instagram' },
+  { valor: 'x', nombre: 'X' },
+  { valor: 'linkedin', nombre: 'LinkedIn' },
+];
+
+export interface RedSocialPortal {
+  id: string;
+  red: string;
+  cuenta: string;
+  url: string;
+  aclaracion: string | null;
+  orden: number;
+  estado: EstadoPortal;
+}
+
 export interface ParteDelPortal {
   nombre: string;
   /** Qué se edita ahí, en palabras de quien lo usa. */
@@ -59,7 +114,7 @@ export const CATEGORIAS_DEL_PORTAL: CategoriaDelPortal[] = [
     nombre: 'General',
     icono: 'settings',
     descripcion: 'Lo que aparece en todas las páginas: la cabecera, el pie y el botón de WhatsApp.',
-    disponible: false,
+    disponible: true,
     partes: [
       { nombre: 'Datos del colegio', descripcion: 'Nombre, teléfono, WhatsApp, dirección y plataforma académica', ficha: 'sitio' },
       { nombre: 'Redes sociales', descripcion: 'Las cuentas oficiales, en el orden en que se muestran', lista: 'redes' },

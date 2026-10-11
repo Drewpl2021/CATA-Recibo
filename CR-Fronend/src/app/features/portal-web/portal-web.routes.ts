@@ -12,4 +12,8 @@ export const PORTAL_WEB_ROUTES: Routes = [
     path: '',
     loadComponent: () => import('./indice/portal-web-indice.component').then((m) => m.PortalWebIndiceComponent),
   },
+  {
+    path: 'general',
+    loadComponent: () => import('./general/portal-web-general.component').then((m) => m.PortalWebGeneralComponent),
+  },
 ];

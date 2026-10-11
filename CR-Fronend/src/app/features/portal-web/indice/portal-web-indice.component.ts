@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 import { ToastService } from '../../../core/services';
 import { mensajeErrorApi } from '../../../core/utils';
@@ -32,6 +33,7 @@ import { PortalWebService } from '../portal-web.service';
 export class PortalWebIndiceComponent implements OnInit {
   private portalWebService = inject(PortalWebService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   readonly categorias = CATEGORIAS_DEL_PORTAL;
   categoria: IdCategoria = 'general';
@@ -53,6 +55,11 @@ export class PortalWebIndiceComponent implements OnInit {
 
   get seleccionada(): CategoriaDelPortal {
     return this.categorias.find((c) => c.id === this.categoria) ?? this.categorias[0];
+  }
+
+  /** Abre la pantalla de edición de una categoría ya habilitada. */
+  abrir(id: IdCategoria): void {
+    this.router.navigate(['/inicio/portal-web', id]);
   }
 
   elegir(id: IdCategoria): void {

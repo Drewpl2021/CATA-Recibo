@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Portal\Panel\RedesController;
 use App\Http\Controllers\Portal\Panel\ResumenController;
+use App\Http\Controllers\Portal\Panel\SeccionesController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,3 +23,13 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('summary', ResumenController::class)->name('resumen');
+
+// ── Fichas: el contenido de una sola vez de cada página ──
+Route::get('sections/{clave}', [SeccionesController::class, 'ver'])->where('clave', '[a-z-]+')->name('secciones.ver');
+Route::put('sections/{clave}', [SeccionesController::class, 'guardar'])->where('clave', '[a-z-]+')->name('secciones.guardar');
+
+// ── General: las redes sociales ──
+// order y status van antes del apiResource: si no, «order» se leería como un id.
+Route::post('social-networks/order', [RedesController::class, 'ordenar'])->name('redes.ordenar');
+Route::patch('social-networks/{id}/status', [RedesController::class, 'estado'])->name('redes.estado');
+Route::apiResource('social-networks', RedesController::class)->parameters(['social-networks' => 'id'])->names('redes');

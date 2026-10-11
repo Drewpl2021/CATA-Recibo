@@ -32,6 +32,12 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Menú:** grupo «Portal Web» › «Contenido del portal» (`/portal-web`), al final del menú y solo para Admin. Migración `agregar_modulo_portal_web` para las bases instaladas; `ModuloSeeder` para las nuevas.
 - **Pantalla índice** (`features/portal-web`): las ocho categorías (General, Inicio, Proyectos, Nosotros, Propuesta Educativa, Matrícula, Logros, Contacto), con lo que se edita en cada una y cómo está hoy (`GET /web-portal/summary`). Usa las clases de Ajustes del sistema; sin estilos propios.
 
+### Etapa 1: General (hecha)
+
+- **Fichas:** `GET` y `PUT /web-portal/sections/{clave}` (`SeccionesController`). Cada ficha declara sus reglas en `App\Support\Portal\Fichas` (hoy, `FichaSitio`). El `PUT` trae la `version` leída: si alguien guardó entre medio, responde 409 y no pisa su trabajo.
+- **Redes sociales:** `/web-portal/social-networks` (`RedesController`, sobre la base de las listas). Cada red una sola vez; dirección https, y la de WhatsApp, `https://wa.me/…`.
+- **Pantalla** `/inicio/portal-web/general`: los datos del colegio en un formulario con los largos del contrato, y las redes en la tabla del sistema, con subir y bajar (botones, para el teclado), publicar o pasar a borrador, editar y eliminar.
+
 ## Pendiente para la etapa 2 (el panel)
 
 1. **Subir imágenes.** La ruta para servirlas ya está; falta la subida. Al subir: comprobar que el contenido sea de verdad una imagen (no basta la extensión), re-codificarla para quitar los datos de ubicación (EXIF), guardarla con un nombre nuevo en minúsculas (por ejemplo, uuid7 + extensión), registrar `ancho` y `alto`, y exigir el `alt`.

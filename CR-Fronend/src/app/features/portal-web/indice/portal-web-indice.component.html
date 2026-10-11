@@ -28,8 +28,12 @@
           <h2>{{ seleccionada.nombre }}</h2>
           <p class="form-ayuda">{{ seleccionada.descripcion }}</p>
         </div>
-        <div class="ajustes-panel__acciones" *ngIf="!seleccionada.disponible">
-          <span class="status-badge status-badge-secondary">Próximamente</span>
+        <div class="ajustes-panel__acciones">
+          <button type="button" class="btn-primary" *ngIf="seleccionada.disponible" (click)="abrir(seleccionada.id)">
+            <app-icon icono="edit" [tamano]="16"></app-icon>
+            Editar {{ seleccionada.nombre }}
+          </button>
+          <span class="status-badge status-badge-secondary" *ngIf="!seleccionada.disponible">Próximamente</span>
         </div>
       </header>
 
