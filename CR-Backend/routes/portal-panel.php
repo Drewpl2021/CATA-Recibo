@@ -2,13 +2,17 @@
 
 use App\Http\Controllers\Portal\Panel\BannersController;
 use App\Http\Controllers\Portal\Panel\CategoriasProyectoController;
+use App\Http\Controllers\Portal\Panel\CiclosController;
 use App\Http\Controllers\Portal\Panel\CifrasController;
 use App\Http\Controllers\Portal\Panel\FechasMatriculaController;
 use App\Http\Controllers\Portal\Panel\GradosController;
 use App\Http\Controllers\Portal\Panel\ImagenesController;
 use App\Http\Controllers\Portal\Panel\LogrosController;
 use App\Http\Controllers\Portal\Panel\NivelesController;
+use App\Http\Controllers\Portal\Panel\NivelesPropuestaController;
 use App\Http\Controllers\Portal\Panel\NoticiasController;
+use App\Http\Controllers\Portal\Panel\PilaresController;
+use App\Http\Controllers\Portal\Panel\PlataformasController;
 use App\Http\Controllers\Portal\Panel\PreguntasController;
 use App\Http\Controllers\Portal\Panel\ProcesosMatriculaController;
 use App\Http\Controllers\Portal\Panel\ProyectosController;
@@ -16,6 +20,7 @@ use App\Http\Controllers\Portal\Panel\RedesController;
 use App\Http\Controllers\Portal\Panel\ResumenController;
 use App\Http\Controllers\Portal\Panel\SeccionesController;
 use App\Http\Controllers\Portal\Panel\SedesController;
+use App\Http\Controllers\Portal\Panel\UniversidadesController;
 use App\Http\Controllers\Portal\Panel\VacantesController;
 use Illuminate\Support\Facades\Route;
 
@@ -112,3 +117,24 @@ Route::post('projects/order', [ProyectosController::class, 'ordenar'])->name('pr
 Route::patch('projects/{id}/status', [ProyectosController::class, 'estado'])->name('proyectos.estado');
 Route::put('projects/{id}/gallery', [ProyectosController::class, 'galeria'])->name('proyectos.galeria');
 Route::apiResource('projects', ProyectosController::class)->parameters(['projects' => 'id'])->names('proyectos');
+
+// ── Propuesta Educativa ──
+Route::post('pillars/order', [PilaresController::class, 'ordenar'])->name('pilares.ordenar');
+Route::patch('pillars/{id}/status', [PilaresController::class, 'estado'])->name('pilares.estado');
+Route::apiResource('pillars', PilaresController::class)->parameters(['pillars' => 'id'])->names('pilares');
+
+Route::post('proposal-levels/order', [NivelesPropuestaController::class, 'ordenar'])->name('niveles-propuesta.ordenar');
+Route::patch('proposal-levels/{id}/status', [NivelesPropuestaController::class, 'estado'])->name('niveles-propuesta.estado');
+Route::apiResource('proposal-levels', NivelesPropuestaController::class)->parameters(['proposal-levels' => 'id'])->names('niveles-propuesta');
+
+Route::post('universities/order', [UniversidadesController::class, 'ordenar'])->name('universidades.ordenar');
+Route::patch('universities/{id}/status', [UniversidadesController::class, 'estado'])->name('universidades.estado');
+Route::apiResource('universities', UniversidadesController::class)->parameters(['universities' => 'id'])->names('universidades');
+
+// Los ciclos de cada universidad (?universidad=…). Sin borrador: se ven con su universidad.
+Route::post('cycles/order', [CiclosController::class, 'ordenar'])->name('ciclos.ordenar');
+Route::apiResource('cycles', CiclosController::class)->parameters(['cycles' => 'id'])->names('ciclos');
+
+Route::post('platforms/order', [PlataformasController::class, 'ordenar'])->name('plataformas.ordenar');
+Route::patch('platforms/{id}/status', [PlataformasController::class, 'estado'])->name('plataformas.estado');
+Route::apiResource('platforms', PlataformasController::class)->parameters(['platforms' => 'id'])->names('plataformas');

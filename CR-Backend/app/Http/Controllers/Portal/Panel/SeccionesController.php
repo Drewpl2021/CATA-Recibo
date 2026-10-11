@@ -12,11 +12,15 @@ use App\Support\Portal\Fichas\FichaMatriculaCabecera;
 use App\Support\Portal\Fichas\FichaMatriculaFechas;
 use App\Support\Portal\Fichas\FichaMatriculaVacantes;
 use App\Support\Portal\Fichas\FichaNiveles;
+use App\Support\Portal\Fichas\FichaPropuestaAcademia;
+use App\Support\Portal\Fichas\FichaPropuestaCabecera;
+use App\Support\Portal\Fichas\FichaPropuestaPilares;
 use App\Support\Portal\Fichas\FichaProyectos;
 use App\Support\Portal\Fichas\FichaQuienesSomos;
 use App\Support\Portal\Fichas\FichaSitio;
 use App\Support\Portal\Fichas\FichaSolicitud;
 use App\Support\Portal\ImagenesEnJson;
+use App\Support\Portal\MensajesDeValidacion;
 use App\Support\Portal\ValidadorDeContrato;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,6 +58,10 @@ class SeccionesController extends Controller
         'niveles'       => FichaNiveles::class,
 
         'proyectos' => FichaProyectos::class,
+
+        'propuesta-cabecera' => FichaPropuestaCabecera::class,
+        'propuesta-pilares'  => FichaPropuestaPilares::class,
+        'propuesta-academia' => FichaPropuestaAcademia::class,
     ];
 
     public function ver(string $clave): JsonResponse
@@ -90,7 +98,7 @@ class SeccionesController extends Controller
     public function guardar(Request $peticion, string $clave): JsonResponse
     {
         $ficha = $this->ficha($clave);
-        $validado = $peticion->validate($ficha->reglas(), [], $ficha->atributos());
+        $validado = $peticion->validate($ficha->reglas(), MensajesDeValidacion::MENSAJES, $ficha->atributos());
 
         $actual = Seccion::find($clave);
 

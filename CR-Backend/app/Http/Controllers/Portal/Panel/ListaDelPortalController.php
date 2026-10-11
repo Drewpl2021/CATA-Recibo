@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Portal\Panel;
 
 use App\Http\Controllers\Controller;
+use App\Support\Portal\MensajesDeValidacion;
 use App\Support\Portal\ValidadorDeContrato;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -135,7 +136,7 @@ abstract class ListaDelPortalController extends Controller
      */
     public function store(Request $peticion): JsonResponse
     {
-        $validado = $peticion->validate($this->reglas($peticion, null) + $this->reglaDeEstado(), [], $this->atributos());
+        $validado = $peticion->validate($this->reglas($peticion, null) + $this->reglaDeEstado(), MensajesDeValidacion::MENSAJES, $this->atributos());
 
         $fila = $this->guardando(function () use ($validado, $peticion) {
             $columnas = $this->aColumnas($validado, $peticion, null);
@@ -161,7 +162,7 @@ abstract class ListaDelPortalController extends Controller
     public function update(Request $peticion, string $id): JsonResponse
     {
         $fila = $this->buscar($peticion, $id);
-        $validado = $peticion->validate($this->reglas($peticion, $fila) + $this->reglaDeEstado(), [], $this->atributos());
+        $validado = $peticion->validate($this->reglas($peticion, $fila) + $this->reglaDeEstado(), MensajesDeValidacion::MENSAJES, $this->atributos());
 
         $this->guardando(function () use ($fila, $validado, $peticion) {
             $fila->update($this->aColumnas($validado, $peticion, $fila)
