@@ -95,6 +95,19 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **En la base de paneles de Angular**: el gancho `alCargar()` (las categorías se pasan al selector de proyectos), `urlParaVer()` en `compartido/panel.ts`, y el aviso «Quedó en borrador» solo cuando de verdad quedó en borrador (las listas sin estado decían que sí).
 - **Demo**: con Playwright (el del repositorio del portal), porque el navegador con extensión no estaba disponible. Las fotos de `tipico` apuntan a `medios.prueba.cata.edu.pe`, que no existe: en el panel salen como texto alternativo. Las que se suben sí se ven.
 
+### Etapa 8: Propuesta Educativa (hecha)
+
+- **Fichas** `propuesta-cabecera` (título hasta 70, frase hasta 180, de 0 a 3 figuras `recorte` o `foto` sin repetir imagen, botón principal obligatorio y secundario opcional, con `ReglasDeAccion`; los errores dicen de qué botón hablan), `propuesta-pilares` (la introducción: título y de 1 a 6 párrafos, o `null` para no mostrarla) y `propuesta-academia` (título, descripción y aviso).
+- **Cifras**: el mismo `app-editor-cifras`, con `ambito="propuesta"`.
+- **Pilares**: `/web-portal/pillars` (`PilaresController`), hasta 8. Texto hasta 400 y de 0 a 8 aspectos de hasta 30, sin repetir.
+- **Niveles de Propuesta**: `/web-portal/proposal-levels` (`NivelesPropuestaController`), hasta 6. Hasta 6 párrafos, 8 rasgos (50) y 12 talleres (título 50, texto opcional 200), foto 3:2. Lista aparte de la de Inicio.
+- **Universidades**: `/web-portal/universities` (`UniversidadesController`), hasta 8. **Solo se publica con al menos un ciclo** (el contrato lo pide); eliminarla se lleva sus ciclos, uno por uno, para la auditoría. Su `clave` (la de `?universidad=…`) no cambia.
+- **Ciclos**: `/web-portal/cycles?universidad=…` (`CiclosController`), de 1 a 12 por universidad, **sin borrador** (se ven con su universidad). La universidad no cambia después de creado. Modalidades presencial y/o virtual (al menos una); precios de 0 a 99 999 con hasta 2 decimales (el virtual se borra si el ciclo no es virtual); fechas con el fin no antes del inicio, también al editar solo una. El último ciclo de una universidad publicada no se elimina.
+- **Plataformas**: `/web-portal/platforms` (`PlataformasController`), hasta 8. Descripción 300, de 0 a 8 funciones (para quién 40, qué ofrece 200), enlace https opcional y aviso.
+- **Mensajes de validación del módulo** (`App\Support\Portal\MensajesDeValidacion`): `lang/es/validation.php` del sistema no traduce `starts_with`, `decimal` ni `prohibited`, y una dirección http mostraba «validation.starts_with» también en las etapas anteriores. Se pasan desde la base de las listas y desde las fichas, sin tocar `lang/`.
+- **Pantalla** `/inicio/portal-web/propuesta`: cabecera (figuras con su tipo, subir, bajar y quitar), cifras, pilares con su introducción, niveles, academia (textos, universidades y, debajo, los ciclos de la elegida: el botón de capas de cada fila la elige) y plataformas.
+- **En la base de paneles de Angular**: el gancho `filtro()` de `PanelDeLista` (para una lista dentro de otra, como los ciclos) y `moverEn()` en `compartido/panel.ts` (estaba repetida en Quiénes somos y Proyectos).
+
 ### Programar la limpieza de imágenes
 
 `portal:limpiar-imagenes` **no está programado**: no se toca `routes/console.php`, que es del sistema. Mientras no se programe, **las imágenes sueltas se acumulan** en `storage/app/portal` (cada foto reemplazada, cada registro eliminado y cada subida que no se llegó a guardar). No rompen nada ni se ven en el portal, pero ocupan disco: conviene correr el comando a mano de vez en cuando, primero simulando:

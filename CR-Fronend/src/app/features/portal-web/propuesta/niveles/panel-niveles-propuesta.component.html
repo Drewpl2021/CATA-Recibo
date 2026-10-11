@@ -1,0 +1,155 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-niveles-propuesta">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-niveles-propuesta">Niveles</h2>
+      <p class="form-ayuda">
+        Cómo enseña el colegio en cada nivel, hasta 6 publicados ({{ publicados }} ahora), en este orden. Son los de Propuesta
+        Educativa: los de la portada se editan en Inicio.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevo()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar nivel
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="el nivel"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay niveles en Propuesta Educativa."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar nivel' : 'Agregar nivel'"
+  ancho="820px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="nivel-propuesta-nombre">Nombre *</label>
+        <input id="nivel-propuesta-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
+          placeholder="Ej. Primaria" [class.is-invalid]="invalido(form.controls.nombre)" />
+        <small class="form-error" *ngIf="invalido(form.controls.nombre)">Obligatorio (máximo 40).</small>
+      </div>
+      <div class="form-group">
+        <label for="nivel-propuesta-rango">Rango</label>
+        <input id="nivel-propuesta-rango" type="text" class="form-control" formControlName="rango" maxlength="40" placeholder="Ej. 1.° a 6.° grado" />
+      </div>
+      <div class="form-group">
+        <label for="nivel-propuesta-estado">Estado</label>
+        <select id="nivel-propuesta-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicado</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+
+    <app-selector-imagen *ngIf="modalVisible" uso="nivel" etiqueta="Foto" [(imagen)]="foto"></app-selector-imagen>
+    <small class="form-ayuda">Opcional. Horizontal 3:2. Las fotos de estudiantes necesitan la autorización de su familia.</small>
+
+    <!-- Descripción -->
+    <div class="form-group" formArrayName="descripcion">
+      <label>Descripción</label>
+      <small class="form-ayuda">Hasta {{ maxParrafos }} párrafos, texto simple. Opcional.</small>
+      <div class="form-row" *ngFor="let p of descripcion.controls; let i = index">
+        <div class="form-group">
+          <label [for]="'nivel-parrafo-' + i">Párrafo {{ i + 1 }} *</label>
+          <textarea [id]="'nivel-parrafo-' + i" class="form-control" rows="3" [formControlName]="i" maxlength="600"
+            [class.is-invalid]="invalido(p)"></textarea>
+          <small class="form-error" *ngIf="invalido(p)">Escribe el párrafo (máximo 600), o quítalo.</small>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <div class="action-btns">
+            <button type="button" class="btn-icon-accion" (click)="moverParrafo(i, -1)" [disabled]="i === 0"
+              [attr.aria-label]="'Subir el párrafo ' + (i + 1)" title="Subir">↑</button>
+            <button type="button" class="btn-icon-accion" (click)="moverParrafo(i, 1)" [disabled]="i === descripcion.length - 1"
+              [attr.aria-label]="'Bajar el párrafo ' + (i + 1)" title="Bajar">↓</button>
+            <button type="button" class="btn-icon-accion" (click)="quitarParrafo(i)"
+              [attr.aria-label]="'Quitar el párrafo ' + (i + 1)" title="Quitar">
+              <app-icon icono="trash" [tamano]="14"></app-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <button type="button" class="btn-secondary" (click)="agregarParrafo()" [disabled]="descripcion.length >= maxParrafos">
+          <app-icon icono="plus" [tamano]="14"></app-icon> Agregar párrafo
+        </button>
+      </div>
+    </div>
+
+    <!-- Rasgos -->
+    <div class="form-group">
+      <label for="nivel-propuesta-rasgos">Rasgos, uno por línea</label>
+      <textarea id="nivel-propuesta-rasgos" class="form-control" rows="4" formControlName="rasgos"
+        placeholder="Aprendizaje a través del juego&#10;Valores cristianos" [class.is-invalid]="invalido(form.controls.rasgos)"></textarea>
+      <small class="form-error" *ngIf="invalido(form.controls.rasgos)">Hasta 8, de hasta 50 caracteres, sin repetir.</small>
+      <small class="form-ayuda" *ngIf="!invalido(form.controls.rasgos)">Opcional. Frases breves.</small>
+    </div>
+
+    <!-- Talleres -->
+    <div class="form-group" formArrayName="talleres">
+      <label>Talleres</label>
+      <small class="form-ayuda">Hasta {{ maxTalleres }}, en este orden. Opcional.</small>
+      <div class="form-row" *ngFor="let t of talleres.controls; let i = index" [formGroupName]="i">
+        <div class="form-group">
+          <label [for]="'taller-titulo-' + i">Taller {{ i + 1 }} *</label>
+          <input [id]="'taller-titulo-' + i" type="text" class="form-control" formControlName="titulo" maxlength="50"
+            placeholder="Ej. Banda" [class.is-invalid]="invalido(t.get('titulo'))" />
+          <small class="form-error" *ngIf="invalido(t.get('titulo'))">Obligatorio (máximo 50).</small>
+        </div>
+        <div class="form-group">
+          <label [for]="'taller-texto-' + i">Descripción</label>
+          <textarea [id]="'taller-texto-' + i" class="form-control" rows="2" formControlName="texto" maxlength="200"></textarea>
+          <small class="form-ayuda">Opcional. Hasta 200.</small>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <div class="action-btns">
+            <button type="button" class="btn-icon-accion" (click)="moverTaller(i, -1)" [disabled]="i === 0"
+              [attr.aria-label]="'Subir el taller ' + (i + 1)" title="Subir">↑</button>
+            <button type="button" class="btn-icon-accion" (click)="moverTaller(i, 1)" [disabled]="i === talleres.length - 1"
+              [attr.aria-label]="'Bajar el taller ' + (i + 1)" title="Bajar">↓</button>
+            <button type="button" class="btn-icon-accion" (click)="quitarTaller(i)"
+              [attr.aria-label]="'Quitar el taller ' + (i + 1)" title="Quitar">
+              <app-icon icono="trash" [tamano]="14"></app-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <button type="button" class="btn-secondary" (click)="agregarTaller()" [disabled]="talleres.length >= maxTalleres">
+          <app-icon icono="plus" [tamano]="14"></app-icon> Agregar taller
+        </button>
+      </div>
+    </div>
+  </form>
+</app-form-modal>

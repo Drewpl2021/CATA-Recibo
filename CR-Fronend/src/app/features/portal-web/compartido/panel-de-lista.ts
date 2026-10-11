@@ -85,7 +85,7 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
 
   cargar(): void {
     this.cargando = true;
-    this.portalWebService.getLista<T>(this.recurso).subscribe({
+    this.portalWebService.getLista<T>(this.recurso, this.filtro()).subscribe({
       next: (res) => {
         this.filas = res.data;
         this.cargando = false;
@@ -100,6 +100,11 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
 
   /** Después de cada carga de la lista (para avisar a otro panel, por ejemplo). */
   protected alCargar(): void {}
+
+  /** Para una lista que vive dentro de otra (los ciclos de una universidad): { universidad: id }. */
+  protected filtro(): Record<string, string> {
+    return {};
+  }
 
   cerrar(): void {
     this.modalVisible = false;
@@ -167,7 +172,7 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
     if (!ids) return;
 
     this.ordenando = true;
-    this.portalWebService.ordenarLista<T>(this.recurso, ids).subscribe({
+    this.portalWebService.ordenarLista<T>(this.recurso, ids, this.filtro()).subscribe({
       next: (res) => {
         this.filas = res.data;
         this.ordenando = false;

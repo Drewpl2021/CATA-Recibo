@@ -9,7 +9,7 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../../shared/components
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { lineas, validarLineas } from '../../compartido/lineas';
-import { mostrarErrorDelPanel, urlParaVer } from '../../compartido/panel';
+import { mostrarErrorDelPanel, moverEn, urlParaVer } from '../../compartido/panel';
 import { accionesDeEstado, PanelDeLista } from '../../compartido/panel-de-lista';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
 import {
@@ -22,16 +22,6 @@ const MAX_PARRAFOS = 6;
 const MAX_SECCIONES = 8;
 const MAX_ITEMS = 12;
 const MAX_GALERIA = 12;
-
-/** Mueve un elemento de una lista del formulario un lugar arriba (-1) o abajo (+1). */
-function moverEn(lista: FormArray, i: number, direccion: -1 | 1): void {
-  const j = i + direccion;
-  if (j < 0 || j >= lista.length) return;
-  const control = lista.at(i);
-  lista.removeAt(i);
-  lista.insert(j, control);
-  lista.markAsDirty();
-}
 
 /**
  * Proyectos › Proyectos: cada uno con su tarjeta (título, lema, resumen,

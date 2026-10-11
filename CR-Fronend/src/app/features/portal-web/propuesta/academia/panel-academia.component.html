@@ -1,0 +1,48 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-academia">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-academia">Academia preuniversitaria</h2>
+      <p class="form-ayuda">Sus textos, las universidades y los ciclos de cada una, con un filtro por universidad en el portal.</p>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargando">Cargando la academia…</p>
+
+  <form [formGroup]="form" *ngIf="!cargando" (ngSubmit)="guardar()" novalidate>
+    <div class="grupo-montos">
+      <div class="form-fields">
+        <div class="form-group">
+          <label for="academia-titulo">Título *</label>
+          <input id="academia-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+            placeholder="Ej. Academia preuniversitaria" [class.is-invalid]="invalido('titulo')" />
+          <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 60).</small>
+        </div>
+        <div class="form-group">
+          <label for="academia-descripcion">Descripción</label>
+          <textarea id="academia-descripcion" class="form-control" rows="2" formControlName="descripcion" maxlength="240"></textarea>
+          <small class="form-ayuda">Opcional. Hasta 240 caracteres.</small>
+        </div>
+        <div class="form-group">
+          <label for="academia-aclaracion">Aviso para toda la academia</label>
+          <input id="academia-aclaracion" type="text" class="form-control" formControlName="aclaracion" maxlength="80"
+            placeholder="Ej. Precios y fechas por actualizar" />
+          <small class="form-ayuda">Opcional. Se ve sobre los ciclos; úsalo si algún dato todavía no está confirmado.</small>
+        </div>
+      </div>
+    </div>
+    <footer class="panel-pie">
+      <button type="submit" class="btn-primary" [disabled]="guardando || form.pristine">
+        {{ guardando ? 'Guardando…' : 'Guardar los textos' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="form.dirty && !guardando">Tienes cambios sin guardar.</p>
+    </footer>
+  </form>
+
+  <app-panel-universidades (cambiaron)="universidades = $event" (verCiclos)="verCiclos($event)"></app-panel-universidades>
+
+  <app-panel-ciclos
+    [universidades]="universidades"
+    [(universidadId)]="universidadElegida"
+    (cambiaron)="recargarUniversidades()"
+  ></app-panel-ciclos>
+</section>

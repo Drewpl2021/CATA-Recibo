@@ -6,23 +6,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ToastService } from '../../../../core/services';
 import { mensajeErrorApi } from '../../../../core/utils';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { mostrarErrorDelPanel } from '../../compartido/panel';
+import { mostrarErrorDelPanel, moverEn } from '../../compartido/panel';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
 import { ImagenPortal, QuienesSomosPortal } from '../../portal-web.models';
 import { PortalWebService } from '../../portal-web.service';
 
 const MAX_PARRAFOS = 6;
 const MAX_SIMBOLOS = 8;
-
-/** Mueve un elemento de una lista del formulario un lugar arriba (-1) o abajo (+1). */
-function moverEn(lista: FormArray, i: number, direccion: -1 | 1): void {
-  const j = i + direccion;
-  if (j < 0 || j >= lista.length) return;
-  const control = lista.at(i);
-  lista.removeAt(i);
-  lista.insert(j, control);
-  lista.markAsDirty();
-}
 
 /**
  * Inicio › Quiénes somos: el título, de 1 a 6 párrafos, una foto vertical 4:5

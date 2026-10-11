@@ -292,6 +292,106 @@ export interface ProyectoPortal {
   estado: EstadoPortal;
 }
 
+// ───────── Propuesta Educativa ─────────
+
+export type TipoDeFigura = 'recorte' | 'foto';
+
+/** La cabecera de Propuesta Educativa (ficha `propuesta-cabecera`, contrato §3.3). */
+export interface CabeceraPropuesta {
+  titulo: string;
+  bajada: string | null;
+  figuras: { tipo: TipoDeFigura; imagen: RefImagen }[];
+  accionPrincipal: AccionPortal;
+  accionSecundaria: AccionPortal | null;
+}
+
+/** La introducción de los pilares (ficha `propuesta-pilares`, contrato §3.23). null = sin introducción. */
+export interface IntroduccionPilares {
+  introduccion: { titulo: string; parrafos: string[] } | null;
+}
+
+/** Los textos de la academia (ficha `propuesta-academia`, contrato §3.25). */
+export interface AcademiaPortal {
+  titulo: string;
+  descripcion: string | null;
+  aclaracion: string | null;
+}
+
+export interface PilarPortal {
+  id: string;
+  clave: string;
+  titulo: string;
+  texto: string;
+  /** Sus aspectos («Espiritual»…), 0 a 8. */
+  puntos: string[];
+  orden: number;
+  estado: EstadoPortal;
+}
+
+/** Un nivel de Propuesta Educativa (contrato §3.24). Aparte de los de Inicio. */
+export interface NivelPropuestaPortal {
+  id: string;
+  clave: string;
+  nombre: string;
+  rango: string | null;
+  descripcion: string[];
+  rasgos: string[];
+  talleres: { titulo: string; texto: string | null }[];
+  imagen_id: string | null;
+  imagen: ImagenPortal | null;
+  orden: number;
+  estado: EstadoPortal;
+}
+
+export interface UniversidadPortal {
+  id: string;
+  /** El id del filtro en la dirección (?universidad=…). No cambia. */
+  clave: string;
+  nombre: string;
+  /** Cuántos ciclos tiene: sin ciclos no se publica. */
+  ciclos: number;
+  orden: number;
+  estado: EstadoPortal;
+}
+
+export type ModalidadDeCiclo = 'presencial' | 'virtual';
+
+export const MODALIDADES_DE_CICLO: { valor: ModalidadDeCiclo; nombre: string }[] = [
+  { valor: 'presencial', nombre: 'Presencial' },
+  { valor: 'virtual', nombre: 'Virtual' },
+];
+
+/** Un ciclo de la academia (CicloAcademia, contrato §3.25). Sin borrador: se ve con su universidad. */
+export interface CicloPortal {
+  id: string;
+  clave: string;
+  universidad_id: string;
+  nombre: string;
+  turno: string | null;
+  modalidades: ModalidadDeCiclo[];
+  /** En soles; null = no vigente, no se muestra. */
+  precio: number | null;
+  precio_virtual: number | null;
+  /** AAAA-MM-DD. */
+  inicio: string | null;
+  fin: string | null;
+  orden: number;
+}
+
+/** Una plataforma digital (contrato §3.26). */
+export interface PlataformaPortal {
+  id: string;
+  clave: string;
+  nombre: string;
+  descripcion: string | null;
+  /** Qué ofrece a quién: «Docentes» y lo que hacen ahí. */
+  funciones: { titulo: string; texto: string }[];
+  enlace: { etiqueta: string; url: string; externo: boolean } | null;
+  aclaracion: string | null;
+  orden: number;
+  estado: EstadoPortal;
+}
+
 // ───────── Matrícula ─────────
 
 /** La cabecera de Matrícula (ficha `matricula-cabecera`, contrato §3.10). */
@@ -529,7 +629,7 @@ export const CATEGORIAS_DEL_PORTAL: CategoriaDelPortal[] = [
     nombre: 'Propuesta Educativa',
     icono: 'graduation_cap',
     descripcion: 'Cómo enseña el colegio: pilares, niveles, academia y plataformas.',
-    disponible: false,
+    disponible: true,
     partes: [
       { nombre: 'Cabecera', descripcion: 'Título, frase, botones y fotos de estudiantes', ficha: 'propuesta-cabecera' },
       { nombre: 'Cifras', descripcion: 'Los números de la franja bajo la cabecera', lista: 'cifras-propuesta' },

@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { FormArray } from '@angular/forms';
 
 import { ToastService } from '../../../core/services';
 import { mensajeErrorApi } from '../../../core/utils';
@@ -51,6 +52,16 @@ export function idsMovidos(ids: string[], id: string, direccion: -1 | 1): string
   const nuevos = [...ids];
   [nuevos[i], nuevos[j]] = [nuevos[j], nuevos[i]];
   return nuevos;
+}
+
+/** Mueve un elemento de una lista del formulario un lugar arriba (-1) o abajo (+1). */
+export function moverEn(lista: FormArray, i: number, direccion: -1 | 1): void {
+  const j = i + direccion;
+  if (j < 0 || j >= lista.length) return;
+  const control = lista.at(i);
+  lista.removeAt(i);
+  lista.insert(j, control);
+  lista.markAsDirty();
 }
 
 /** Hoy en Lima, AAAA-MM-DD: la fecha que usa el colegio (y el portal, para «En curso» o «Terminó»). */

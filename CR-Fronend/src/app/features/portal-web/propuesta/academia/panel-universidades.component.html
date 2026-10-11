@@ -1,0 +1,69 @@
+<div class="ajuste-bloque">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h3 class="grupo-montos__titulo">Universidades</h3>
+      <p class="form-ayuda">
+        Hasta 8 publicadas ({{ publicados }} ahora), en el orden del filtro del portal. Cada una necesita al menos un ciclo para
+        publicarse. Su nombre en la dirección se arma al crearla y no cambia.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nueva()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar universidad
+      </button>
+    </div>
+  </header>
+
+  <app-data-table
+    entidad="la universidad"
+    [columnas]="columnas"
+    [datos]="filas"
+    [cargando]="cargando"
+    [mostrarBuscador]="false"
+    [numerarFilas]="false"
+    [acciones]="['editar', 'eliminar']"
+    [accionesPersonalizadas]="accionesDeUniversidad"
+    mensajeVacio="Todavía no hay universidades: el portal dice «Los ciclos se publicarán pronto»."
+    (editarFila)="editar($event)"
+    (eliminarFila)="eliminar($event)"
+    (accionPersonalizada)="alAccionar($event)"
+  >
+    <ng-template appCelda="orden" let-fila>
+      <div class="action-btns">
+        <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+          [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
+        <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+          [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+      </div>
+    </ng-template>
+  </app-data-table>
+</div>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar universidad' : 'Agregar universidad'"
+  ancho="560px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="universidad-nombre">Nombre *</label>
+      <input id="universidad-nombre" type="text" class="form-control" formControlName="nombre" maxlength="80"
+        placeholder="Ej. Universidad Nacional del Altiplano de Puno" [class.is-invalid]="invalido()" />
+      <small class="form-error" *ngIf="invalido()">Obligatorio (máximo 80).</small>
+    </div>
+    <div class="form-group" *ngIf="puedePublicar; else sinCiclos">
+      <label for="universidad-estado">Estado</label>
+      <select id="universidad-estado" class="form-control" formControlName="estado">
+        <option value="publicado">Publicada</option>
+        <option value="borrador">Borrador</option>
+      </select>
+    </div>
+    <ng-template #sinCiclos>
+      <p class="form-nota">Queda en borrador: agrégale sus ciclos (debajo de la tabla) y después publícala.</p>
+    </ng-template>
+  </form>
+</app-form-modal>

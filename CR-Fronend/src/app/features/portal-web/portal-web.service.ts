@@ -22,6 +22,11 @@ export const RECURSOS = {
   noticias: 'news',
   categoriasProyecto: 'project-categories',
   proyectos: 'projects',
+  pilares: 'pillars',
+  nivelesPropuesta: 'proposal-levels',
+  universidades: 'universities',
+  ciclos: 'cycles',
+  plataformas: 'platforms',
 } as const;
 
 /**

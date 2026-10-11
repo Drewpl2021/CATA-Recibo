@@ -1,0 +1,149 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-plataformas">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-plataformas">Plataformas digitales</h2>
+      <p class="form-ayuda">
+        Cubicol y las demás, hasta 8 publicadas ({{ publicados }} ahora), en este orden. El portal solo enlaza a cada una: nunca pide
+        usuario ni contraseña.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nueva()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar plataforma
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="la plataforma"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay plataformas."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar plataforma' : 'Agregar plataforma'"
+  ancho="760px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="plataforma-nombre">Nombre *</label>
+        <input id="plataforma-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
+          placeholder="Ej. Cubicol" [class.is-invalid]="invalido(form.controls.nombre)" />
+        <small class="form-error" *ngIf="invalido(form.controls.nombre)">Obligatorio (máximo 40).</small>
+      </div>
+      <div class="form-group">
+        <label for="plataforma-estado">Estado</label>
+        <select id="plataforma-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicada</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="plataforma-descripcion">Descripción</label>
+      <textarea id="plataforma-descripcion" class="form-control" rows="3" formControlName="descripcion" maxlength="300"
+        [class.is-invalid]="invalido(form.controls.descripcion)"></textarea>
+      <small class="form-ayuda">Opcional. Hasta 300 caracteres.</small>
+    </div>
+
+    <div class="form-group">
+      <label for="plataforma-aclaracion">Aviso</label>
+      <input id="plataforma-aclaracion" type="text" class="form-control" formControlName="aclaracion" maxlength="60"
+        placeholder="Ej. Descripción por confirmar" />
+      <small class="form-ayuda">Opcional. Se ve junto a la plataforma: úsalo si algo aún no está confirmado.</small>
+    </div>
+
+    <!-- Funciones -->
+    <div class="form-group" formArrayName="funciones">
+      <label>Qué ofrece a quién</label>
+      <small class="form-ayuda">Hasta {{ maxFunciones }}: para quién (docentes, familias…) y qué hace ahí. Opcional.</small>
+      <div class="form-row" *ngFor="let f of funciones.controls; let i = index" [formGroupName]="i">
+        <div class="form-group">
+          <label [for]="'funcion-titulo-' + i">Para quién *</label>
+          <input [id]="'funcion-titulo-' + i" type="text" class="form-control" formControlName="titulo" maxlength="40"
+            placeholder="Ej. Padres de familia" [class.is-invalid]="invalido(f.get('titulo'))" />
+          <small class="form-error" *ngIf="invalido(f.get('titulo'))">Obligatorio (máximo 40).</small>
+        </div>
+        <div class="form-group">
+          <label [for]="'funcion-texto-' + i">Qué ofrece *</label>
+          <textarea [id]="'funcion-texto-' + i" class="form-control" rows="2" formControlName="texto" maxlength="200"
+            [class.is-invalid]="invalido(f.get('texto'))"></textarea>
+          <small class="form-error" *ngIf="invalido(f.get('texto'))">Obligatorio (máximo 200).</small>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <div class="action-btns">
+            <button type="button" class="btn-icon-accion" (click)="moverFuncion(i, -1)" [disabled]="i === 0"
+              [attr.aria-label]="'Subir la función ' + (i + 1)" title="Subir">↑</button>
+            <button type="button" class="btn-icon-accion" (click)="moverFuncion(i, 1)" [disabled]="i === funciones.length - 1"
+              [attr.aria-label]="'Bajar la función ' + (i + 1)" title="Bajar">↓</button>
+            <button type="button" class="btn-icon-accion" (click)="quitarFuncion(i)"
+              [attr.aria-label]="'Quitar la función ' + (i + 1)" title="Quitar">
+              <app-icon icono="trash" [tamano]="14"></app-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <button type="button" class="btn-secondary" (click)="agregarFuncion()" [disabled]="funciones.length >= maxFunciones">
+          <app-icon icono="plus" [tamano]="14"></app-icon> Agregar
+        </button>
+      </div>
+    </div>
+
+    <!-- Enlace -->
+    <div class="form-fields" formGroupName="enlace">
+      <label class="check-item">
+        <input type="checkbox" formControlName="conEnlace" />
+        <span>Lleva un enlace</span>
+      </label>
+      <div class="form-row" *ngIf="enlace.value.conEnlace">
+        <div class="form-group">
+          <label for="plataforma-enlace-etiqueta">Texto del enlace *</label>
+          <input id="plataforma-enlace-etiqueta" type="text" class="form-control" formControlName="etiqueta" maxlength="40"
+            placeholder="Ej. Entrar a Cubicol" [class.is-invalid]="errorDelEnlace('etiquetaMala')" />
+          <small class="form-error" *ngIf="errorDelEnlace('etiquetaMala')">Obligatorio (máximo 40).</small>
+          <small class="form-ayuda" *ngIf="!errorDelEnlace('etiquetaMala')">Que diga a dónde lleva, no «clic aquí».</small>
+        </div>
+        <div class="form-group">
+          <label for="plataforma-enlace-url">Dirección *</label>
+          <input id="plataforma-enlace-url" type="url" class="form-control" formControlName="url" placeholder="https://…"
+            [class.is-invalid]="errorDelEnlace('urlMala')" />
+          <small class="form-error" *ngIf="errorDelEnlace('urlMala')">Una dirección que empiece con https://.</small>
+        </div>
+      </div>
+      <label class="check-item" *ngIf="enlace.value.conEnlace">
+        <input type="checkbox" formControlName="externo" />
+        <span>Abrir en otra pestaña (es otro sitio)</span>
+      </label>
+    </div>
+  </form>
+</app-form-modal>
