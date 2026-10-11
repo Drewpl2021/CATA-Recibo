@@ -146,6 +146,7 @@ Route::apiResource('platforms', PlataformasController::class)->parameters(['plat
 // La dirección de cada subpágina se elige al crearla y no cambia. Sus bloques se editan aparte.
 Route::post('pages/order', [PaginasController::class, 'ordenar'])->name('paginas.ordenar');
 Route::patch('pages/{id}/status', [PaginasController::class, 'estado'])->name('paginas.estado');
+Route::put('pages/{id}/blocks', [PaginasController::class, 'bloques'])->name('paginas.bloques');
 Route::apiResource('pages', PaginasController::class)->parameters(['pages' => 'id'])->names('paginas');
 
 Route::post('teacher-levels/order', [NivelesDocentesController::class, 'ordenar'])->name('niveles-docentes.ordenar');
