@@ -8,6 +8,9 @@ use App\Models\Portal\Seccion;
 use App\Support\Portal\Fichas\Ficha;
 use App\Support\Portal\Fichas\FichaContacto;
 use App\Support\Portal\Fichas\FichaLogros;
+use App\Support\Portal\Fichas\FichaMatriculaCabecera;
+use App\Support\Portal\Fichas\FichaMatriculaFechas;
+use App\Support\Portal\Fichas\FichaMatriculaVacantes;
 use App\Support\Portal\Fichas\FichaSitio;
 use App\Support\Portal\Fichas\FichaSolicitud;
 use App\Support\Portal\ImagenesEnJson;
@@ -39,6 +42,10 @@ class SeccionesController extends Controller
         'contacto'  => FichaContacto::class,
         'solicitud' => FichaSolicitud::class,
         'logros'    => FichaLogros::class,
+
+        'matricula-cabecera' => FichaMatriculaCabecera::class,
+        'matricula-vacantes' => FichaMatriculaVacantes::class,
+        'matricula-fechas'   => FichaMatriculaFechas::class,
     ];
 
     public function ver(string $clave): JsonResponse

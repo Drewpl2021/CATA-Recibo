@@ -1,0 +1,99 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-fechas">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-fechas">Cronograma</h2>
+      <p class="form-ayuda">
+        Las fechas del proceso, hasta 12 publicadas ({{ publicados }} ahora). Van siempre por fecha de inicio: no hace falta ordenarlas.
+        El portal marca «En curso» o «Terminó» según el día. Sin fechas, dice que el cronograma se publicará pronto.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nueva()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar fecha
+      </button>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargandoNota">Cargando el aviso…</p>
+
+  <form [formGroup]="nota" *ngIf="!cargandoNota" (ngSubmit)="guardarNota()" novalidate>
+    <div class="grupo-montos">
+      <div class="form-group">
+        <label for="fechas-nota">Aviso sobre el cronograma</label>
+        <textarea id="fechas-nota" class="form-control" rows="2" formControlName="nota" maxlength="200"
+          placeholder="Ej. Las fechas pueden cambiar; confirma en secretaría."></textarea>
+        <small class="form-ayuda">Opcional. Se muestra en un recuadro sobre la lista. Hasta 200 caracteres.</small>
+      </div>
+    </div>
+    <footer class="panel-pie">
+      <button type="submit" class="btn-primary" [disabled]="guardandoNota || nota.pristine">
+        {{ guardandoNota ? 'Guardando…' : 'Guardar el aviso' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="nota.dirty && !guardandoNota">Tienes cambios sin guardar.</p>
+    </footer>
+  </form>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="la fecha"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay fechas: el portal dice que el cronograma se publicará pronto."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    ></app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar fecha' : 'Agregar fecha'"
+  ancho="640px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="fecha-titulo">Qué pasa *</label>
+      <input id="fecha-titulo" type="text" class="form-control" formControlName="titulo" maxlength="80"
+        placeholder="Ej. Matrícula de estudiantes nuevos" [class.is-invalid]="invalido('titulo')" />
+      <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 80).</small>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="fecha-inicio">Desde *</label>
+        <input id="fecha-inicio" type="date" class="form-control" formControlName="inicio" [class.is-invalid]="invalido('inicio')" />
+        <small class="form-error" *ngIf="invalido('inicio')">Elige la fecha.</small>
+      </div>
+      <div class="form-group">
+        <label for="fecha-fin">Hasta</label>
+        <input id="fecha-fin" type="date" class="form-control" formControlName="fin" [min]="form.value.inicio || null"
+          [class.is-invalid]="form.hasError('finAntes') && form.controls.fin.touched" />
+        <small class="form-error" *ngIf="form.hasError('finAntes') && form.controls.fin.touched">No puede ser antes de «Desde».</small>
+        <small class="form-ayuda" *ngIf="!(form.hasError('finAntes') && form.controls.fin.touched)">Vacío si es un solo día.</small>
+      </div>
+      <div class="form-group">
+        <label for="fecha-estado">Estado</label>
+        <select id="fecha-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicada</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+    <p class="form-nota" *ngIf="vistaDelPeriodo">El portal dirá: <strong>{{ vistaDelPeriodo }}</strong>.</p>
+    <div class="form-group">
+      <label for="fecha-detalle">Detalle</label>
+      <input id="fecha-detalle" type="text" class="form-control" formControlName="detalle" maxlength="160"
+        placeholder="Ej. Con la constancia de vacante y los documentos completos." />
+      <small class="form-ayuda">Opcional. Hasta 160 caracteres.</small>
+    </div>
+  </form>
+</app-form-modal>

@@ -65,6 +65,15 @@ abstract class ListaDelPortalController extends Controller
         return null;
     }
 
+    /**
+     * Cómo se leen los campos en los mensajes de error, sobre todo los de
+     * adentro de una lista: 'pasos.*.titulo' => 'título del paso'.
+     */
+    protected function atributos(): array
+    {
+        return [];
+    }
+
     /** Cómo se dicen en ese mensaje, con su concordancia: 'sedes publicadas'. */
     protected function plural(): string
     {
@@ -117,7 +126,7 @@ abstract class ListaDelPortalController extends Controller
      */
     public function store(Request $peticion): JsonResponse
     {
-        $validado = $peticion->validate($this->reglas($peticion, null) + $this->reglaDeEstado());
+        $validado = $peticion->validate($this->reglas($peticion, null) + $this->reglaDeEstado(), [], $this->atributos());
 
         $fila = $this->guardando(function () use ($validado, $peticion) {
             $columnas = $this->aColumnas($validado, $peticion, null);
@@ -136,7 +145,7 @@ abstract class ListaDelPortalController extends Controller
     public function update(Request $peticion, string $id): JsonResponse
     {
         $fila = $this->buscar($peticion, $id);
-        $validado = $peticion->validate($this->reglas($peticion, $fila) + $this->reglaDeEstado());
+        $validado = $peticion->validate($this->reglas($peticion, $fila) + $this->reglaDeEstado(), [], $this->atributos());
 
         $this->guardando(function () use ($fila, $validado, $peticion) {
             $fila->update($this->aColumnas($validado, $peticion, $fila)

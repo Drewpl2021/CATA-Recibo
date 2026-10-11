@@ -1,0 +1,83 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-grados">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-grados">Grados del formulario</h2>
+      <p class="form-ayuda">
+        Las opciones del selector «Grado de interés» del formulario «Solicitar información» (en Matrícula y en Contacto),
+        agrupadas por nivel y en este orden. Si no hay ninguno, el formulario pide escribir el grado a mano.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevo()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar nivel
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="el nivel"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay grados: el formulario pide escribirlo a mano."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nivel" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nivel" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar nivel del selector' : 'Agregar nivel al selector'"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="grados-nivel">Nivel *</label>
+        <input id="grados-nivel" type="text" class="form-control" formControlName="nivel" maxlength="24"
+          placeholder="Ej. Primaria" [class.is-invalid]="invalido('nivel')" />
+        <small class="form-error" *ngIf="invalido('nivel')">Obligatorio (máximo 24). No puede repetirse.</small>
+      </div>
+      <div class="form-group">
+        <label for="grados-estado">Estado</label>
+        <select id="grados-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicado</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="grados-opciones">Opciones, una por línea *</label>
+      <textarea id="grados-opciones" class="form-control" rows="8" formControlName="opciones"
+        placeholder="1.er grado&#10;2.º grado&#10;3.er grado" [class.is-invalid]="invalido('opciones')"></textarea>
+      <ng-container *ngIf="invalido('opciones'); else ayudaOpciones">
+        <small class="form-error" *ngIf="form.controls.opciones.errors?.['lineasMin']">Escribe al menos una opción.</small>
+        <small class="form-error" *ngIf="form.controls.opciones.errors?.['lineasMax']">Hasta 8 opciones por nivel.</small>
+        <small class="form-error" *ngIf="form.controls.opciones.errors?.['lineaLarga']">Cada opción, hasta 24 caracteres.</small>
+        <small class="form-error" *ngIf="form.controls.opciones.errors?.['lineaRepetida']">Hay una opción repetida.</small>
+      </ng-container>
+      <ng-template #ayudaOpciones>
+        <small class="form-ayuda">{{ cuantasOpciones }} de 8. Se muestran en este orden, cada una hasta 24 caracteres.</small>
+      </ng-template>
+    </div>
+  </form>
+</app-form-modal>

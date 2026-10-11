@@ -1,9 +1,14 @@
 <?php
 
 use App\Http\Controllers\Portal\Panel\CifrasController;
+use App\Http\Controllers\Portal\Panel\FechasMatriculaController;
+use App\Http\Controllers\Portal\Panel\GradosController;
 use App\Http\Controllers\Portal\Panel\ImagenesController;
 use App\Http\Controllers\Portal\Panel\LogrosController;
+use App\Http\Controllers\Portal\Panel\PreguntasController;
+use App\Http\Controllers\Portal\Panel\ProcesosMatriculaController;
 use App\Http\Controllers\Portal\Panel\RedesController;
+use App\Http\Controllers\Portal\Panel\VacantesController;
 use App\Http\Controllers\Portal\Panel\ResumenController;
 use App\Http\Controllers\Portal\Panel\SeccionesController;
 use App\Http\Controllers\Portal\Panel\SedesController;
@@ -57,3 +62,24 @@ Route::apiResource('stats', CifrasController::class)->parameters(['stats' => 'id
 Route::post('achievements/order', [LogrosController::class, 'ordenar'])->name('logros.ordenar');
 Route::patch('achievements/{id}/status', [LogrosController::class, 'estado'])->name('logros.estado');
 Route::apiResource('achievements', LogrosController::class)->parameters(['achievements' => 'id'])->names('logros');
+
+// ── Matrícula ──
+Route::post('enrollment-processes/order', [ProcesosMatriculaController::class, 'ordenar'])->name('procesos.ordenar');
+Route::patch('enrollment-processes/{id}/status', [ProcesosMatriculaController::class, 'estado'])->name('procesos.estado');
+Route::apiResource('enrollment-processes', ProcesosMatriculaController::class)->parameters(['enrollment-processes' => 'id'])->names('procesos');
+
+Route::post('vacancies/order', [VacantesController::class, 'ordenar'])->name('vacantes.ordenar');
+Route::patch('vacancies/{id}/status', [VacantesController::class, 'estado'])->name('vacantes.estado');
+Route::apiResource('vacancies', VacantesController::class)->parameters(['vacancies' => 'id'])->names('vacantes');
+
+// Sin ruta de orden: el cronograma va siempre por fecha.
+Route::patch('enrollment-dates/{id}/status', [FechasMatriculaController::class, 'estado'])->name('fechas.estado');
+Route::apiResource('enrollment-dates', FechasMatriculaController::class)->parameters(['enrollment-dates' => 'id'])->names('fechas');
+
+Route::post('faqs/order', [PreguntasController::class, 'ordenar'])->name('preguntas.ordenar');
+Route::patch('faqs/{id}/status', [PreguntasController::class, 'estado'])->name('preguntas.estado');
+Route::apiResource('faqs', PreguntasController::class)->parameters(['faqs' => 'id'])->names('preguntas');
+
+Route::post('grade-options/order', [GradosController::class, 'ordenar'])->name('grados.ordenar');
+Route::patch('grade-options/{id}/status', [GradosController::class, 'estado'])->name('grados.estado');
+Route::apiResource('grade-options', GradosController::class)->parameters(['grade-options' => 'id'])->names('grados');

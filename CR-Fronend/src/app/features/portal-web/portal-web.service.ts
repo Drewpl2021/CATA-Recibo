@@ -12,6 +12,11 @@ export const RECURSOS = {
   sedes: 'campuses',
   cifras: 'stats',
   logros: 'achievements',
+  procesos: 'enrollment-processes',
+  vacantes: 'vacancies',
+  fechas: 'enrollment-dates',
+  preguntas: 'faqs',
+  grados: 'grade-options',
 } as const;
 
 /**

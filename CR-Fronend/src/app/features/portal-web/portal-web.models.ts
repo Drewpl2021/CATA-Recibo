@@ -158,6 +158,103 @@ export interface LogroPortal {
   estado: EstadoPortal;
 }
 
+// ───────── Matrícula ─────────
+
+/** La cabecera de Matrícula (ficha `matricula-cabecera`, contrato §3.10). */
+export interface MatriculaCabecera {
+  titulo: string;
+  bajada: string | null;
+  /** Lo pone el colegio; null = sin placa del año. */
+  anio: number | null;
+  figura: RefImagen | null;
+}
+
+/** Fecha de actualización y nota de las vacantes (ficha `matricula-vacantes`). */
+export interface MatriculaVacantesNota {
+  /** AAAA-MM-DD. */
+  actualizado: string | null;
+  nota: string | null;
+}
+
+/** Un paso de un proceso, en su orden. */
+export interface PasoMatricula {
+  titulo: string;
+  detalle: string | null;
+}
+
+/** Una lista de un proceso (requisitos, documentos). */
+export interface ListaMatricula {
+  titulo: string;
+  items: string[];
+}
+
+/** Un proceso de matrícula (contrato §3.11). */
+export interface ProcesoPortal {
+  id: string;
+  clave: string;
+  nombre: string;
+  resumen: string | null;
+  pasos: PasoMatricula[];
+  listas: ListaMatricula[];
+  orden: number;
+  estado: EstadoPortal;
+}
+
+export type DisponibilidadVacantes = 'disponible' | 'pocas' | 'agotadas' | 'consultar';
+
+/** Lo que muestra el portal con cada una (contrato §3.12). */
+export const DISPONIBILIDADES: { valor: DisponibilidadVacantes; nombre: string; ayuda: string; conNumero: boolean }[] = [
+  { valor: 'consultar', nombre: 'Consultar', ayuda: '«Consulta las vacantes», sin número. Mientras no haya cifras confirmadas.', conNumero: false },
+  { valor: 'disponible', nombre: 'Disponibles', ayuda: 'El número y «vacantes»; sin número, «Vacantes disponibles».', conNumero: true },
+  { valor: 'pocas', nombre: 'Últimas vacantes', ayuda: 'El número y «Últimas vacantes»; sin número, solo «Últimas vacantes».', conNumero: true },
+  { valor: 'agotadas', nombre: 'Agotadas', ayuda: '«Vacantes agotadas», sin número.', conNumero: false },
+];
+
+/** Las vacantes de un nivel (contrato §3.12). */
+export interface VacantePortal {
+  id: string;
+  clave: string;
+  nivel: string;
+  detalle: string | null;
+  disponibilidad: DisponibilidadVacantes;
+  vacantes: number | null;
+  orden: number;
+  estado: EstadoPortal;
+}
+
+/** Una fecha del cronograma (contrato §3.13). */
+export interface FechaPortal {
+  id: string;
+  clave: string;
+  titulo: string;
+  /** AAAA-MM-DD. */
+  inicio: string;
+  /** null = un solo día. */
+  fin: string | null;
+  detalle: string | null;
+  orden: number;
+  estado: EstadoPortal;
+}
+
+/** Una pregunta frecuente (contrato §3.14). */
+export interface PreguntaPortal {
+  id: string;
+  clave: string;
+  pregunta: string;
+  respuesta: string;
+  orden: number;
+  estado: EstadoPortal;
+}
+
+/** Las opciones de grado de un nivel (contrato §3.8). */
+export interface GrupoGradosPortal {
+  id: string;
+  nivel: string;
+  opciones: string[];
+  orden: number;
+  estado: EstadoPortal;
+}
+
 /** Las redes que admite el contrato; el portal pone el icono y el color de cada una. */
 export const REDES_DEL_PORTAL: { valor: string; nombre: string }[] = [
   { valor: 'facebook', nombre: 'Facebook' },
@@ -313,7 +410,7 @@ export const CATEGORIAS_DEL_PORTAL: CategoriaDelPortal[] = [
     nombre: 'Matrícula',
     icono: 'clipboard_check',
     descripcion: 'El proceso de matrícula: requisitos, vacantes, fechas y preguntas.',
-    disponible: false,
+    disponible: true,
     partes: [
       { nombre: 'Cabecera', descripcion: 'Título, frase, año del proceso y foto', ficha: 'matricula-cabecera' },
       { nombre: 'Procesos', descripcion: 'Pasos, requisitos y documentos de cada tipo de estudiante', lista: 'procesos' },

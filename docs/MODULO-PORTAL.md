@@ -63,6 +63,17 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Tope de las listas**: el mensaje ahora es neutro («Para publicar más, primero pasa a borrador lo que ya no deba verse»), sirve igual para sedes, cifras o logros. `publicadosJuntoA()` permite contar el tope por grupo (las cifras, por página) y `claveUnica()` arma la clave pública desde el nombre (sedes y cifras).
 - **Pantalla** `/inicio/portal-web/logros`: cabecera, cifras y la tabla de logros con buscador (son muchos), subir y bajar, publicar o pasar a borrador, y el modal. Lo nuevo entra en borrador: se publica cuando el colegio lo confirma.
 
+### Etapa 5: Matrícula (hecha)
+
+- **Fichas**: `matricula-cabecera` (título, frase, año del proceso 2000–2100 o vacío, recorte), `matricula-vacantes` (fecha «Actualizado el…», que pone quien edita, y nota) y `matricula-fechas` (aviso sobre el cronograma).
+- **Procesos**: `/web-portal/enrollment-processes` (`ProcesosMatriculaController`), hasta 4 publicados. Los pasos (hasta 8) y las listas (hasta 4, de 1 a 15 elementos) van dentro del proceso y se guardan enteros.
+- **Vacantes**: `/web-portal/vacancies` (`VacantesController`), hasta 6. `disponibilidad` es el `estado` del contrato; con «agotadas» o «consultar» el número no se guarda.
+- **Cronograma**: `/web-portal/enrollment-dates` (`FechasMatriculaController`), hasta 12. Siempre por fecha de inicio: **no tiene ruta de orden**. «Hasta» no puede ser antes de «desde» (al editar solo «hasta», se compara con el «desde» guardado).
+- **Preguntas**: `/web-portal/faqs` (`PreguntasController`), hasta 15.
+- **Grados del formulario**: `/web-portal/grade-options` (`GradosController`). El nivel no se repite (el contrato no les da id); de 1 a 8 opciones sin repetir, hasta 24 caracteres. El portal React las muestra como «{opción} de {nivel}» («Música de talleres»).
+- **Base de las listas**: gancho `atributos()` para que los errores de adentro de una lista digan «título del paso» y no `pasos.0.titulo`.
+- **Angular**: `compartido/panel-de-lista.ts` (`PanelDeLista`) reúne cargar, publicar u ocultar, ordenar, eliminar y guardar; cada panel de Matrícula (`matricula/procesos|vacantes|fechas|preguntas|grados`) solo dice lo suyo. `compartido/lineas.ts`: las listas cortas que se escriben una por línea. La pantalla `/inicio/portal-web/matricula` los reúne bajo la cabecera, en el orden del portal.
+
 ### Programar la limpieza de imágenes
 
 `portal:limpiar-imagenes` **no está programado**: no se toca `routes/console.php`, que es del sistema. Mientras no se programe, **las imágenes sueltas se acumulan** en `storage/app/portal` (cada foto reemplazada, cada registro eliminado y cada subida que no se llegó a guardar). No rompen nada ni se ven en el portal, pero ocupan disco: conviene correr el comando a mano de vez en cuando, primero simulando:

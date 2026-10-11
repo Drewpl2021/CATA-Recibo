@@ -1,0 +1,158 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-procesos">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-procesos">Procesos</h2>
+      <p class="form-ayuda">
+        Uno por tipo de estudiante, con sus pasos y sus listas de requisitos y documentos. Hasta 4 publicados ({{ publicados }} ahora):
+        con dos o más, el portal los muestra en pestañas, en este orden. Sin procesos, invita a escribir por WhatsApp.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevo()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar proceso
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="el proceso"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay procesos: el portal invita a escribir por WhatsApp."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar proceso' : 'Agregar proceso'"
+  ancho="860px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="proceso-nombre">Para quién es *</label>
+        <input id="proceso-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
+          placeholder="Ej. Estudiantes nuevos" [class.is-invalid]="invalido('nombre')" />
+        <small class="form-error" *ngIf="invalido('nombre')">Obligatorio (máximo 40).</small>
+        <small class="form-ayuda" *ngIf="!invalido('nombre')">Es el texto de la pestaña.</small>
+      </div>
+      <div class="form-group">
+        <label for="proceso-estado">Estado</label>
+        <select id="proceso-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicado</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="proceso-resumen">Resumen</label>
+      <input id="proceso-resumen" type="text" class="form-control" formControlName="resumen" maxlength="160"
+        placeholder="Ej. Para quienes ingresan por primera vez a CATA." />
+      <small class="form-ayuda">Opcional. Una frase sobre a quién aplica.</small>
+    </div>
+
+    <!-- Pasos -->
+    <div class="form-group">
+      <label>Pasos, en orden</label>
+      <small class="form-ayuda">Hasta {{ maxPasos }}. El portal los numera: no pongas «1er paso» en el título.</small>
+      <div formArrayName="pasos">
+        <div class="form-row" *ngFor="let paso of pasos.controls; let i = index" [formGroupName]="i">
+          <div class="form-group">
+            <label [for]="'paso-titulo-' + i">Paso {{ i + 1 }} *</label>
+            <input [id]="'paso-titulo-' + i" type="text" class="form-control" formControlName="titulo" maxlength="60"
+              placeholder="Ej. Pago de la matrícula" [class.is-invalid]="paso.get('titulo')?.invalid && paso.get('titulo')?.touched" />
+            <small class="form-error" *ngIf="paso.get('titulo')?.invalid && paso.get('titulo')?.touched">Obligatorio (máximo 60).</small>
+          </div>
+          <div class="form-group">
+            <label [for]="'paso-detalle-' + i">Detalle</label>
+            <textarea [id]="'paso-detalle-' + i" class="form-control" rows="2" formControlName="detalle" maxlength="240"
+              placeholder="Opcional. Dónde o cómo."></textarea>
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <div class="action-btns">
+              <button type="button" class="btn-icon-accion" (click)="moverPaso(i, -1)" [disabled]="i === 0"
+                [attr.aria-label]="'Subir el paso ' + (i + 1)" title="Subir">↑</button>
+              <button type="button" class="btn-icon-accion" (click)="moverPaso(i, 1)" [disabled]="i === pasos.length - 1"
+                [attr.aria-label]="'Bajar el paso ' + (i + 1)" title="Bajar">↓</button>
+              <button type="button" class="btn-icon-accion" (click)="quitarPaso(i)"
+                [attr.aria-label]="'Quitar el paso ' + (i + 1)" title="Quitar">
+                <app-icon icono="trash" [tamano]="14"></app-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <button type="button" class="btn-secondary" (click)="agregarPaso()" [disabled]="pasos.length >= maxPasos">
+          <app-icon icono="plus" [tamano]="14"></app-icon> Agregar paso
+        </button>
+      </div>
+    </div>
+
+    <!-- Listas -->
+    <div class="form-group">
+      <label>Requisitos y documentos</label>
+      <small class="form-ayuda">Hasta {{ maxListas }} listas, cada una con su título y de 1 a 15 elementos, uno por línea.</small>
+      <div formArrayName="listas">
+        <div class="grupo-montos" *ngFor="let lista of listas.controls; let i = index" [formGroupName]="i">
+          <div class="form-row">
+            <div class="form-group">
+              <label [for]="'lista-titulo-' + i">Título de la lista *</label>
+              <input [id]="'lista-titulo-' + i" type="text" class="form-control" formControlName="titulo" maxlength="60"
+                placeholder="Ej. Documentos" [class.is-invalid]="lista.get('titulo')?.invalid && lista.get('titulo')?.touched" />
+              <small class="form-error" *ngIf="lista.get('titulo')?.invalid && lista.get('titulo')?.touched">Obligatorio (máximo 60).</small>
+            </div>
+            <div class="form-group">
+              <label>&nbsp;</label>
+              <button type="button" class="btn-secondary" (click)="quitarLista(i)" [attr.aria-label]="'Quitar la lista ' + (i + 1)">
+                <app-icon icono="trash" [tamano]="14"></app-icon> Quitar lista
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label [for]="'lista-items-' + i">Elementos, uno por línea *</label>
+            <textarea [id]="'lista-items-' + i" class="form-control" rows="5" formControlName="items"
+              [class.is-invalid]="lista.get('items')?.invalid && lista.get('items')?.touched"></textarea>
+            <ng-container *ngIf="lista.get('items')?.invalid && lista.get('items')?.touched; else ayudaItems">
+              <small class="form-error" *ngIf="lista.get('items')?.errors?.['lineasMin']">Escribe al menos un elemento.</small>
+              <small class="form-error" *ngIf="lista.get('items')?.errors?.['lineasMax']">Hasta 15 elementos por lista.</small>
+              <small class="form-error" *ngIf="lista.get('items')?.errors?.['lineaLarga']">Cada elemento, hasta 240 caracteres.</small>
+            </ng-container>
+            <ng-template #ayudaItems>
+              <small class="form-ayuda">{{ cuantosItems(i) }} de 15.</small>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+      <div>
+        <button type="button" class="btn-secondary" (click)="agregarLista()" [disabled]="listas.length >= maxListas">
+          <app-icon icono="plus" [tamano]="14"></app-icon> Agregar lista
+        </button>
+      </div>
+    </div>
+  </form>
+</app-form-modal>
