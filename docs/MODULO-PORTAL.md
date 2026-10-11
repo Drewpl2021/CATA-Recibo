@@ -38,10 +38,20 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Redes sociales:** `/web-portal/social-networks` (`RedesController`, sobre la base de las listas). Cada red una sola vez; dirección https, y la de WhatsApp, `https://wa.me/…`.
 - **Pantalla** `/inicio/portal-web/general`: los datos del colegio en un formulario con los largos del contrato, y las redes en la tabla del sistema, con subir y bajar (botones, para el teclado), publicar o pasar a borrador, editar y eliminar.
 
+### Etapa 2: las imágenes (hecha)
+
+- **`POST /web-portal/images`** (archivo, `uso`, `alt` o `decorativa`) y **`PATCH /web-portal/images/{id}`** (cambiar el alt). `GET /web-portal/images/uses` dice para qué se sube cada una: proporción, mínimo recomendado, si es un recorte transparente, si lleva punto focal (`App\Support\Portal\UsosDeImagen`).
+- **`ProcesadorDeImagenes`**: la abre con GD (solo JPEG, PNG o WebP de verdad; nada de SVG ni GIF; la extensión no cuenta), la endereza según su EXIF, la re-codifica a WebP (sin metadatos: ni GPS ni modelo de celular), lleva el lado más largo a 2560 px, busca los 400 KB bajando calidad y, si no alcanza, tamaño (nunca bajo el mínimo de su uso), conserva la transparencia, y la guarda como `uuid7.webp`. Devuelve avisos que no impiden guardar: más chica de lo recomendado, otra proporción, sin transparencia, muy pesada, alt largo.
+- **Texto alternativo**: obligatorio, salvo que se marque como decorativa (alt vacío). No vale «foto», «imagen» ni un nombre de archivo.
+- **`portal:limpiar-imagenes`** (`--simular`, `--horas=24`): borra las imágenes que nadie usa (ni una columna `*_imagen_id` ni un `{"imagenId"}` en un JSON) y los archivos sin fila, después de un día sueltas. **Falta programarlo** (una línea en `routes/console.php`, archivo existente: se pregunta antes).
+- **Docker**: `exif` en `docker/php/Dockerfile`, para enderezar las fotos de celular.
+- **Angular**: `app-selector-imagen` (`features/portal-web/compartido`), sobre el selector de archivos del sistema: pide el alt antes de subir, muestra la vista previa en el marco con la proporción del portal, los avisos, y en los banners el punto focal (tocando la vista previa o escrito en %). Lo usarán las categorías desde la etapa 3.
+
 ## Pendiente para la etapa 2 (el panel)
 
-1. **Subir imágenes.** La ruta para servirlas ya está; falta la subida. Al subir: comprobar que el contenido sea de verdad una imagen (no basta la extensión), re-codificarla para quitar los datos de ubicación (EXIF), guardarla con un nombre nuevo en minúsculas (por ejemplo, uuid7 + extensión), registrar `ancho` y `alto`, y exigir el `alt`.
+1. **Programar la limpieza de imágenes** en `routes/console.php` (archivo existente).
 2. **`APP_URL` en producción debe ser https** (o `PORTAL_URL_MEDIOS` apuntar a una dirección https). El contrato hace que el portal descarte cualquier respuesta con una URL `http://`. Hoy el `.env.example` de la raíz trae una IP con http.
 3. **El panel no debe permitir guardar bloques que rompan el contrato** (tipo desconocido, lista sin ítems, carta sin firma, audio en un formato que el portal no reproduce, organigrama de más de 5 niveles). La API los omite y los anota en el registro (`App\Support\Portal\Bloques`), pero eso es la última red, no la validación.
 4. **El contrato 2.13** (§7 del contrato): `GET /v1/navegacion`, `GET /v1/portada/cierre`, `etiquetas` en `/v1/solicitud` y `sitio.nombreEnLineas`, para que el menú, los títulos de sección y el cierre de Inicio salgan del panel. `portal_paginas` ya tiene `grupo` y `nombre` para el menú de Nosotros.
-5. **Quién edita.** Los modelos ya registran cada cambio en la auditoría; falta decidir si basta el Administrador o si hace falta un rol nuevo (tipo «TIC»), y dar de alta el módulo en el menú.
+5. **Portal React, «Síguenos»:** en las tarjetas de las redes, los nombres largos se cortan («FACEBOO…», «INSTAGRA…») a pantallas anchas. Es del repositorio del portal; se arregla al terminar el panel.
+6. **Quién edita.** Los modelos ya registran cada cambio en la auditoría; falta decidir si basta el Administrador o si hace falta un rol nuevo (tipo «TIC»), y dar de alta el módulo en el menú.

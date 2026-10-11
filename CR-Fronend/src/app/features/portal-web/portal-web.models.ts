@@ -79,6 +79,42 @@ export interface RedSocialPortal {
   estado: EstadoPortal;
 }
 
+/** Para qué se sube una imagen y qué espera el portal (lo dice el backend: GET /web-portal/images/uses). */
+export interface UsoDeImagen {
+  nombre: string;
+  /** Cómo la recorta el portal; null = se muestra completa. */
+  proporcion: [number, number] | null;
+  /** Tamaño mínimo recomendado [ancho, alto]. */
+  minimo: [number, number];
+  /** Un recorte sin fondo: conserva la transparencia. */
+  transparente: boolean;
+  /** Si se elige el punto que no se recorta (los banners). */
+  foco: boolean;
+}
+
+/** Una imagen ya subida, como la devuelve el panel. */
+export interface ImagenPortal {
+  id: string;
+  url: string;
+  /** "" = decorativa. */
+  alt: string;
+  ancho: number | null;
+  alto: number | null;
+  bytes: number | null;
+}
+
+export interface ImagenSubida {
+  imagen: ImagenPortal;
+  /** Lo que no impidió guardarla pero conviene leer (más chica, otra proporción…). */
+  avisos: string[];
+}
+
+/** El punto que queda a la vista al recortar, en % desde arriba a la izquierda. */
+export interface PuntoFocal {
+  x: number;
+  y: number;
+}
+
 export interface ParteDelPortal {
   nombre: string;
   /** Qué se edita ahí, en palabras de quien lo usa. */

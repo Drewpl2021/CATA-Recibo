@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Portal\Panel\ImagenesController;
 use App\Http\Controllers\Portal\Panel\RedesController;
 use App\Http\Controllers\Portal\Panel\ResumenController;
 use App\Http\Controllers\Portal\Panel\SeccionesController;
@@ -33,3 +34,8 @@ Route::put('sections/{clave}', [SeccionesController::class, 'guardar'])->where('
 Route::post('social-networks/order', [RedesController::class, 'ordenar'])->name('redes.ordenar');
 Route::patch('social-networks/{id}/status', [RedesController::class, 'estado'])->name('redes.estado');
 Route::apiResource('social-networks', RedesController::class)->parameters(['social-networks' => 'id'])->names('redes');
+
+// ── Imágenes: se suben sueltas y después un formulario las usa ──
+Route::get('images/uses', [ImagenesController::class, 'usos'])->name('imagenes.usos');
+Route::post('images', [ImagenesController::class, 'subir'])->name('imagenes.subir');
+Route::patch('images/{id}', [ImagenesController::class, 'editar'])->whereUuid('id')->name('imagenes.editar');

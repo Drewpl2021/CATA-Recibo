@@ -1,0 +1,134 @@
+<div class="form-group" [attr.aria-labelledby]="id + '-titulo'" role="group">
+  <label [id]="id + '-titulo'">{{ etiqueta }}{{ obligatoria ? ' *' : '' }}</label>
+  <small class="form-ayuda" *ngIf="especificacion">
+    {{ especificacion.nombre }}<ng-container *ngIf="especificacion.proporcion">
+      · el portal la muestra en proporción {{ especificacion.proporcion[0] }}:{{ especificacion.proporcion[1] }}</ng-container>
+    <ng-container *ngIf="especificacion.minimo[0]"> · se recomienda al menos {{ especificacion.minimo[0] }}{{ especificacion.minimo[1] ? ' × ' + especificacion.minimo[1] : '' }} px</ng-container>
+    <ng-container *ngIf="especificacion.transparente"> · con fondo transparente (PNG o WebP)</ng-container>.
+  </small>
+
+  <!-- ═══════════ La imagen que ya está ═══════════ -->
+  <ng-container *ngIf="imagen">
+    <!-- El marco tiene la proporción con que la recorta el portal: lo que se ve aquí es lo que se verá allá. -->
+    <div
+      [style.aspect-ratio]="proporcion"
+      [style.cursor]="especificacion?.foco ? 'crosshair' : null"
+      style="position: relative; max-width: 480px; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-alt);"
+      (click)="elegirFoco($event)"
+    >
+      <img
+        [src]="imagen.url"
+        [alt]="imagen.alt"
+        [style.object-fit]="proporcion ? 'cover' : 'contain'"
+        [style.object-position]="posicion"
+        style="display: block; width: 100%; height: 100%;"
+      />
+      <span
+        *ngIf="especificacion?.foco"
+        aria-hidden="true"
+        [style.left]="(foco?.x ?? 50) + '%'"
+        [style.top]="(foco?.y ?? 50) + '%'"
+        style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 3px solid var(--surface); border-radius: var(--radius-full); box-shadow: 0 0 0 2px var(--brand-700); pointer-events: none;"
+      ></span>
+    </div>
+
+    <small class="form-ayuda">
+      {{ imagen.ancho }} × {{ imagen.alto }} px · {{ peso }} ·
+      <ng-container *ngIf="imagen.alt; else decorativaTexto">Texto alternativo: «{{ imagen.alt }}»</ng-container>
+      <ng-template #decorativaTexto>Decorativa: los lectores de pantalla la saltan</ng-template>
+    </small>
+
+    <!-- Punto focal en %, para quien no usa el ratón. -->
+    <div class="form-row" *ngIf="especificacion?.foco">
+      <div class="form-group">
+        <label [for]="id + '-x'">Punto que no se recorta: horizontal (%)</label>
+        <input [id]="id + '-x'" type="number" class="form-control" min="0" max="100"
+          [ngModel]="foco?.x ?? 50" (ngModelChange)="cambiarFocoEn('x', $event)" />
+      </div>
+      <div class="form-group">
+        <label [for]="id + '-y'">Vertical (%)</label>
+        <input [id]="id + '-y'" type="number" class="form-control" min="0" max="100"
+          [ngModel]="foco?.y ?? 50" (ngModelChange)="cambiarFocoEn('y', $event)" />
+      </div>
+    </div>
+    <small class="form-ayuda" *ngIf="especificacion?.foco">
+      Toca la vista previa en lo que no debe cortarse (una cara, un texto). Si el afiche tiene la proporción exacta, se ve completo.
+      <button type="button" class="btn-secondary" (click)="centrar()" [disabled]="!foco">Volver al centro</button>
+    </small>
+
+    <p class="form-nota" *ngFor="let aviso of avisos">
+      <app-icon icono="warning" [tamano]="14"></app-icon>
+      {{ aviso }}
+    </p>
+
+    <!-- Cambiar solo el texto alternativo -->
+    <div class="form-fields" *ngIf="editandoAlt">
+      <div class="form-group">
+        <label [for]="id + '-alt-edit'">Texto alternativo</label>
+        <textarea [id]="id + '-alt-edit'" class="form-control" rows="2" maxlength="1000" [(ngModel)]="altEditado"
+          [disabled]="decorativaEditada"></textarea>
+      </div>
+      <label class="check-item">
+        <input type="checkbox" [(ngModel)]="decorativaEditada" />
+        <span>Es decorativa: no aporta información</span>
+      </label>
+    </div>
+
+    <div class="action-btns" *ngIf="!mostrarSubida">
+      <ng-container *ngIf="!editandoAlt">
+        <button type="button" class="btn-secondary" (click)="empezarEdicionAlt()">
+          <app-icon icono="edit" [tamano]="14"></app-icon> Texto alternativo
+        </button>
+        <button type="button" class="btn-secondary" (click)="reemplazando = true">
+          <app-icon icono="upload" [tamano]="14"></app-icon> Reemplazar
+        </button>
+        <button type="button" class="btn-secondary" (click)="quitar()" *ngIf="!obligatoria">
+          <app-icon icono="trash" [tamano]="14"></app-icon> Quitar
+        </button>
+      </ng-container>
+      <ng-container *ngIf="editandoAlt">
+        <button type="button" class="btn-primary" (click)="guardarAlt()" [disabled]="!decorativaEditada && !altEditado.trim()">Guardar texto</button>
+        <button type="button" class="btn-secondary" (click)="editandoAlt = false">Cancelar</button>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════ Subir una ═══════════ -->
+  <div class="form-fields" *ngIf="mostrarSubida">
+    <app-selector-archivo
+      [extensiones]="['jpg', 'jpeg', 'png', 'webp']"
+      [pesoMaximoMb]="10"
+      [(archivos)]="archivos"
+      [ocupado]="subiendo"
+      textoOcupado="Subiendo y preparando la imagen…"
+      ayuda="JPEG, PNG o WebP, hasta 10 MB. Se le quita la ubicación y los demás datos de la cámara."
+    ></app-selector-archivo>
+
+    <div class="form-group">
+      <label [for]="id + '-alt'">Texto alternativo *</label>
+      <textarea [id]="id + '-alt'" class="form-control" rows="2" maxlength="1000" [(ngModel)]="alt"
+        [disabled]="decorativa" [class.is-invalid]="intentoSubir && altFalta" [attr.aria-describedby]="id + '-alt-ayuda'"
+        placeholder="Ej. Alumnos de primaria en el biohuerto de la sede Oasis"></textarea>
+      <small class="form-error" *ngIf="intentoSubir && altFalta">Escribe qué muestra la imagen, o márcala como decorativa.</small>
+      <small class="form-ayuda" [id]="id + '-alt-ayuda'">
+        Lo que muestra y por qué importa, para quien no puede verla. No escribas «foto» ni el nombre del archivo.
+        <ng-container *ngIf="uso === 'banner' || uso === 'banner-movil'"> Si el afiche tiene texto (títulos, fechas, teléfonos), repítelo completo.</ng-container>
+      </small>
+    </div>
+
+    <label class="check-item">
+      <input type="checkbox" [(ngModel)]="decorativa" />
+      <span>Es decorativa: no aporta información (los lectores de pantalla la saltan)</span>
+    </label>
+
+    <div class="action-btns">
+      <button type="button" class="btn-primary" (click)="subir()" [disabled]="subiendo || !archivos.length">
+        <app-icon icono="upload" [tamano]="14"></app-icon>
+        {{ subiendo ? 'Subiendo…' : 'Subir imagen' }}
+      </button>
+      <button type="button" class="btn-secondary" *ngIf="imagen && reemplazando" (click)="reemplazando = false" [disabled]="subiendo">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

@@ -59,7 +59,10 @@ COPY --from=mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /u
 # mbstring, fileinfo — las pide PhpSpreadsheet; a diferencia de zip y gd,
 #              esta imagen base no las trae de fábrica.
 # opcache    — sin esto PHP recompila el código en cada petición.
-RUN install-php-extensions pdo_mysql gd zip mbstring fileinfo opcache
+# exif       — las fotos del portal subidas desde el panel: lee de qué lado
+#              viene una foto de celular para enderezarla antes de quitarle
+#              los metadatos (ver ProcesadorDeImagenes).
+RUN install-php-extensions pdo_mysql gd zip mbstring fileinfo opcache exif
 
 # El proveedor «legacy» de OpenSSL, para los certificados digitales .pfx con
 # que el colegio firma las boletas desde el sistema. Muchos de los que venden
