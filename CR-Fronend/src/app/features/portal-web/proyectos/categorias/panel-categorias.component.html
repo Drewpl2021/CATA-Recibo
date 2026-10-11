@@ -1,0 +1,62 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-categorias">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-categorias">Categorías</h2>
+      <p class="form-ayuda">
+        Las del filtro de Proyectos, hasta {{ tope }}, en este orden. No tienen borrador: el portal muestra solo las que tienen
+        proyectos, y el filtro, solo si hay dos o más. Su nombre en la dirección se arma al crearla y no cambia.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nueva()" [disabled]="filas.length >= tope">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar categoría
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="la categoría"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      mensajeVacio="Todavía no hay categorías: crea una antes de agregar proyectos."
+      (editarFila)="editar($event)"
+      (eliminarFila)="pedirEliminar($event)"
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Renombrar categoría' : 'Agregar categoría'"
+  ancho="520px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-group">
+      <label for="categoria-nombre">Nombre *</label>
+      <input id="categoria-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
+        placeholder="Ej. Tecnología" [class.is-invalid]="invalido()" />
+      <small class="form-error" *ngIf="invalido()">Obligatorio (máximo 40).</small>
+      <small class="form-ayuda" *ngIf="!invalido() && editando">
+        Su dirección sigue siendo «?categoria={{ $any(editando).clave }}». El nuevo nombre se ve también en el detalle de sus proyectos.
+      </small>
+    </div>
+  </form>
+</app-form-modal>

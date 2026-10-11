@@ -85,6 +85,16 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Pantalla** `/inicio/portal-web/inicio`: carrusel, cifras, Quiénes somos, niveles y noticias, en el orden del portal. Las sedes, que Inicio también muestra, se editan en Contacto. `hoyEnLima()` pasó a `compartido/panel.ts`.
 - **En local, las fotos subidas no se ven en el portal React**: la API las anuncia en https (lo exige el contrato) y `ng serve` sirve http. En producción no pasa.
 
+### Etapa 7: Proyectos (hecha)
+
+- **Ficha** `proyectos`: título (hasta 60) y frase (hasta 240) de la cabecera.
+- **Categorías**: `/web-portal/project-categories` (`CategoriasProyectoController`), hasta 8, en el orden del filtro. **Sin borrador** (no hay ruta de estado: el portal las manda todas y oculta las vacías). Una categoría con proyectos no se elimina (422 que dice cuántos tiene). Su `clave` (la de `?categoria=…`) se arma al crearla y no cambia; al renombrarla se valida también el detalle de sus proyectos publicados, que muestra `categoriaNombre`.
+- **Proyectos**: `/web-portal/projects` (`ProyectosController`), hasta 24 publicados. Tarjeta (título, lema, resumen, categoría, etapa, fecha, niveles, foto 3:2) y detalle: de 1 a 6 párrafos y hasta 8 secciones (`lista` o `numerada`, de 1 a 12 elementos con título opcional y texto). El `slug` se arma con el título, **se puede corregir mientras está en borrador y queda fijo al publicarlo**. Se valida la lista y, si está publicado, su detalle.
+- **Galería**: `PUT /web-portal/projects/{id}/gallery` con `{ imagenes: [ids] }`, de 0 a 12, entera y en orden (sin repetir). Las fotos que salen quedan sueltas y las borra la limpieza. Eliminar el proyecto se lleva su galería.
+- **Pantalla** `/inicio/portal-web/proyectos`: cabecera, categorías y proyectos. El modal del proyecto tiene los párrafos y las secciones con sus elementos (agregar, subir, bajar, quitar); la galería tiene su propio modal (botón de la cámara en la fila). El panel de categorías avisa por qué no se puede eliminar una con proyectos, antes de pedir confirmación.
+- **En la base de paneles de Angular**: el gancho `alCargar()` (las categorías se pasan al selector de proyectos), `urlParaVer()` en `compartido/panel.ts`, y el aviso «Quedó en borrador» solo cuando de verdad quedó en borrador (las listas sin estado decían que sí).
+- **Demo**: con Playwright (el del repositorio del portal), porque el navegador con extensión no estaba disponible. Las fotos de `tipico` apuntan a `medios.prueba.cata.edu.pe`, que no existe: en el panel salen como texto alternativo. Las que se suben sí se ven.
+
 ### Programar la limpieza de imágenes
 
 `portal:limpiar-imagenes` **no está programado**: no se toca `routes/console.php`, que es del sistema. Mientras no se programe, **las imágenes sueltas se acumulan** en `storage/app/portal` (cada foto reemplazada, cada registro eliminado y cada subida que no se llegó a guardar). No rompen nada ni se ven en el portal, pero ocupan disco: conviene correr el comando a mano de vez en cuando, primero simulando:
@@ -126,7 +136,7 @@ La hora del cron es la del servidor de GoDaddy, que puede no ser la de Lima: a l
 2. **`APP_URL` en producción debe ser https** (o `PORTAL_URL_MEDIOS` apuntar a una dirección https). El contrato hace que el portal descarte cualquier respuesta con una URL `http://`. Hoy el `.env.example` de la raíz trae una IP con http.
 3. **El panel no debe permitir guardar bloques que rompan el contrato** (tipo desconocido, lista sin ítems, carta sin firma, audio en un formato que el portal no reproduce, organigrama de más de 5 niveles). La API los omite y los anota en el registro (`App\Support\Portal\Bloques`), pero eso es la última red, no la validación.
 4. **El contrato 2.13** (§7 del contrato): `GET /v1/navegacion`, `GET /v1/portada/cierre`, `etiquetas` en `/v1/solicitud` y `sitio.nombreEnLineas`, para que el menú, los títulos de sección y el cierre de Inicio salgan del panel. `portal_paginas` ya tiene `grupo` y `nombre` para el menú de Nosotros.
-5. **Portal React, «Síguenos»:** en las tarjetas de las redes, los nombres largos se cortan («FACEBOO…», «INSTAGRA…») a pantallas anchas. Es del repositorio del portal; se arregla al terminar el panel.
+5. **Quién edita.** Los modelos ya registran cada cambio en la auditoría; falta decidir si basta el Administrador o si hace falta un rol nuevo (tipo «TIC»), y dar de alta el módulo en el menú.
+6. **Portal React, «Síguenos»:** en las tarjetas de las redes, los nombres largos se cortan («FACEBOO…», «INSTAGRA…») a pantallas anchas. Es del repositorio del portal; se arregla al terminar el panel.
 7. **Portal React, selector de grado:** muestra cada opción como «{opción} de {nivel}» («3 años de inicial»), así que un nivel que no es escolar queda raro («Música de talleres»). La solución va del lado del portal React; se ve junto con el contrato 2.13, en la etapa 10.
 8. **«Actualizado el…» de las vacantes es manual, a propósito** (decisión del 2026-10-11): si se moviera solo, corregir una coma daría a entender que las vacantes se revisaron ese día.
-6. **Quién edita.** Los modelos ya registran cada cambio en la auditoría; falta decidir si basta el Administrador o si hace falta un rol nuevo (tipo «TIC»), y dar de alta el módulo en el menú.

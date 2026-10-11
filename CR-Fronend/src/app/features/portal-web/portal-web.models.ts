@@ -245,6 +245,53 @@ export interface NoticiaPortal {
   estado: EstadoPortal;
 }
 
+// ───────── Proyectos ─────────
+
+/** Una categoría del filtro de Proyectos (contrato §3.17). */
+export interface CategoriaProyectoPortal {
+  id: string;
+  clave: string;
+  nombre: string;
+  orden: number;
+  /** Cuántos proyectos tiene: con alguno, no se elimina. */
+  proyectos: number;
+}
+
+export const ETAPAS_DE_PROYECTO: { valor: string; nombre: string }[] = [
+  { valor: 'en-curso', nombre: 'En curso' },
+  { valor: 'proximo', nombre: 'Próximamente' },
+  { valor: 'finalizado', nombre: 'Finalizado' },
+];
+
+/** Una sección del detalle de un proyecto: viñetas o placas numeradas. */
+export interface SeccionProyecto {
+  titulo: string;
+  tipo: 'lista' | 'numerada';
+  items: { titulo: string | null; texto: string }[];
+}
+
+/** Un proyecto (contrato §3.17 y §3.18), con los nombres de las columnas. */
+export interface ProyectoPortal {
+  id: string;
+  clave: string;
+  slug: string;
+  titulo: string;
+  lema: string | null;
+  resumen: string;
+  categoria_id: string;
+  niveles: string[];
+  etapa: string | null;
+  /** AAAA-MM-DD. */
+  fecha: string | null;
+  imagen_id: string | null;
+  imagen: ImagenPortal | null;
+  descripcion: string[];
+  secciones: SeccionProyecto[];
+  galeria: ImagenPortal[];
+  orden: number;
+  estado: EstadoPortal;
+}
+
 // ───────── Matrícula ─────────
 
 /** La cabecera de Matrícula (ficha `matricula-cabecera`, contrato §3.10). */
@@ -459,7 +506,7 @@ export const CATEGORIAS_DEL_PORTAL: CategoriaDelPortal[] = [
     nombre: 'Proyectos',
     icono: 'lightbulb',
     descripcion: 'Los proyectos del colegio, con su página de detalle y su galería.',
-    disponible: false,
+    disponible: true,
     partes: [
       { nombre: 'Cabecera', descripcion: 'El título y la frase de la página', ficha: 'proyectos' },
       { nombre: 'Proyectos', descripcion: 'Cada proyecto con su categoría, secciones y fotos', lista: 'proyectos' },

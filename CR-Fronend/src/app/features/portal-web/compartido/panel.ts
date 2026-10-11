@@ -57,3 +57,14 @@ export function idsMovidos(ids: string[], id: string, direccion: -1 | 1): string
 export function hoyEnLima(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date());
 }
+
+/**
+ * La dirección para ver en el panel una imagen subida: su ruta relativa
+ * (/api/portal/medios/…), porque el panel y los medios viven en el mismo
+ * servidor. La dirección pública, la del portal, sigue siendo la absoluta.
+ */
+export function urlParaVer(url: string | null | undefined): string {
+  const u = url ?? '';
+  const i = u.indexOf('/api/portal/medios/');
+  return i >= 0 ? u.slice(i) : u;
+}

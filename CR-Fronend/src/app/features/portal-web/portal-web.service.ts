@@ -4,7 +4,7 @@ import { Observable, map, shareReplay } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ApiMessageResponse, ApiResponse } from '../../core/utils/api-response.model';
-import { EstadoPortal, FichaPortal, ImagenSubida, RedSocialPortal, ResumenPortal, UsoDeImagen } from './portal-web.models';
+import { EstadoPortal, FichaPortal, ImagenSubida, ProyectoPortal, RedSocialPortal, ResumenPortal, UsoDeImagen } from './portal-web.models';
 
 /** Cómo se llama cada lista en /api/web-portal. */
 export const RECURSOS = {
@@ -20,6 +20,8 @@ export const RECURSOS = {
   banners: 'banners',
   niveles: 'home-levels',
   noticias: 'news',
+  categoriasProyecto: 'project-categories',
+  proyectos: 'projects',
 } as const;
 
 /**
@@ -78,6 +80,11 @@ export class PortalWebService {
 
   eliminarDeLista(recurso: string, id: string): Observable<ApiMessageResponse> {
     return this.http.delete<ApiMessageResponse>(`${this.base}/${recurso}/${id}`);
+  }
+
+  /** La galería de un proyecto, entera y en orden (0 a 12 fotos). */
+  guardarGaleriaDeProyecto(id: string, imagenes: string[]): Observable<ApiResponse<ProyectoPortal>> {
+    return this.http.put<ApiResponse<ProyectoPortal>>(`${this.base}/${RECURSOS.proyectos}/${id}/gallery`, { imagenes });
   }
 
   // ───────── Redes sociales ─────────

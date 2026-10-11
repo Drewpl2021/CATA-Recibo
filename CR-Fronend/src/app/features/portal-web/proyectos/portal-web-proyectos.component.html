@@ -1,0 +1,49 @@
+<app-page-header
+  icono="lightbulb"
+  titulo="Proyectos"
+  subtitulo="Los proyectos del colegio, con su página de detalle y su galería. Cada cambio queda en la Auditoría y se ve en el portal en hasta un minuto."
+>
+  <button headerActions type="button" class="btn-secondary" (click)="volver()">
+    <app-icon icono="arrow_left" [tamano]="16"></app-icon>
+    Volver a Portal Web
+  </button>
+</app-page-header>
+
+<!-- ═══════════ Cabecera ═══════════ -->
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-cabecera">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-cabecera">Cabecera de la página</h2>
+      <p class="form-ayuda">El título y la frase de arriba de la página Proyectos.</p>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargandoCabecera">Cargando la cabecera…</p>
+
+  <form [formGroup]="cabecera" *ngIf="!cargandoCabecera" (ngSubmit)="guardarCabecera()" novalidate>
+    <div class="grupo-montos">
+      <div class="form-fields">
+        <div class="form-group">
+          <label for="proyectos-titulo">Título *</label>
+          <input id="proyectos-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+            placeholder="Ej. Proyectos" [class.is-invalid]="invalidoCabecera('titulo')" />
+          <small class="form-error" *ngIf="invalidoCabecera('titulo')">El título es obligatorio.</small>
+        </div>
+        <div class="form-group">
+          <label for="proyectos-bajada">Frase bajo el título</label>
+          <textarea id="proyectos-bajada" class="form-control" rows="2" formControlName="bajada" maxlength="240"></textarea>
+          <small class="form-ayuda">Opcional. Hasta 240 caracteres.</small>
+        </div>
+      </div>
+    </div>
+    <footer class="panel-pie">
+      <button type="submit" class="btn-primary" [disabled]="guardandoCabecera || cabecera.pristine">
+        {{ guardandoCabecera ? 'Guardando…' : 'Guardar la cabecera' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="cabecera.dirty && !guardandoCabecera">Tienes cambios sin guardar.</p>
+    </footer>
+  </form>
+</section>
+
+<app-panel-categorias (cambiaron)="categorias = $event"></app-panel-categorias>
+<app-panel-proyectos [categorias]="categorias"></app-panel-proyectos>

@@ -89,6 +89,7 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
       next: (res) => {
         this.filas = res.data;
         this.cargando = false;
+        this.alCargar();
       },
       error: (err) => {
         this.cargando = false;
@@ -96,6 +97,9 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
       },
     });
   }
+
+  /** Después de cada carga de la lista (para avisar a otro panel, por ejemplo). */
+  protected alCargar(): void {}
 
   cerrar(): void {
     this.modalVisible = false;
@@ -116,7 +120,8 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
         this.guardando = false;
         this.toastService.success(
           `${this.Nombre} ${this.concuerda(editando ? 'actualizado' : 'agregado')}`,
-          res.data.estado === 'publicado'
+          // Sin estado (las categorías) se ve igual que publicado.
+          res.data.estado !== 'borrador'
             ? `El portal ${this.lo} mostrará en hasta un minuto.`
             : `Quedó en borrador: ${this.nombre.femenino ? 'publícala' : 'publícalo'} cuando esté ${this.concuerda('listo')}.`,
         );
