@@ -158,6 +158,93 @@ export interface LogroPortal {
   estado: EstadoPortal;
 }
 
+// ───────── Inicio ─────────
+
+/** A dónde lleva un botón (contrato §1.8). */
+export type DestinoPortal =
+  | { tipo: 'seccion'; seccion: string }
+  | { tipo: 'pagina'; ruta: string }
+  | { tipo: 'url'; url: string; externo: boolean };
+
+/** Un botón: lo que dice y a dónde lleva (`AccionHero`, contrato §3.3). */
+export interface AccionPortal {
+  etiqueta: string;
+  destino: DestinoPortal;
+}
+
+export const CATEGORIAS_DE_BANNER: { valor: string; nombre: string }[] = [
+  { valor: 'aviso', nombre: 'Aviso' },
+  { valor: 'matricula', nombre: 'Matrícula' },
+  { valor: 'evento', nombre: 'Evento' },
+  { valor: 'noticia', nombre: 'Noticia' },
+];
+
+/** Un banner del carrusel (contrato §3.2), con los nombres de las columnas. */
+export interface BannerPortal {
+  id: string;
+  clave: string;
+  categoria: string;
+  titulo: string;
+  /** AAAA-MM-DD. */
+  fecha: string | null;
+  imagen_id: string;
+  imagen: ImagenPortal | null;
+  imagen_movil_id: string | null;
+  imagen_movil: ImagenPortal | null;
+  foco_x: number | null;
+  foco_y: number | null;
+  texto_en_imagen: boolean;
+  lado_accion: 'izquierda' | 'derecha';
+  accion: AccionPortal | null;
+  orden: number;
+  estado: EstadoPortal;
+}
+
+/** «Quiénes somos» (ficha `quienes-somos`, contrato §3.4). */
+export interface QuienesSomosPortal {
+  titulo: string;
+  parrafos: string[];
+  foto: RefImagen | null;
+  simbolos: { nombre: string; significado: string }[];
+}
+
+/** La sección Niveles de Inicio (ficha `niveles`, contrato §3.5). */
+export interface SeccionNiveles {
+  titulo: string;
+  propuestaUrl: string | null;
+}
+
+/** Un nivel de Inicio (contrato §3.5). */
+export interface NivelPortal {
+  id: string;
+  clave: string;
+  nombre: string;
+  rango: string | null;
+  sede: string | null;
+  reconocimiento: string | null;
+  imagen_id: string | null;
+  imagen: ImagenPortal | null;
+  orden: number;
+  estado: EstadoPortal;
+}
+
+/** Una noticia o comunicado (contrato §3.7). */
+export interface NoticiaPortal {
+  id: string;
+  clave: string;
+  slug: string;
+  tipo: 'noticia' | 'comunicado';
+  titulo: string;
+  resumen: string | null;
+  /** AAAA-MM-DD. */
+  fecha: string;
+  imagen_id: string | null;
+  imagen: ImagenPortal | null;
+  enlace: { etiqueta: string; url: string; externo: boolean } | null;
+  orden: number;
+  estado: EstadoPortal;
+}
+
 // ───────── Matrícula ─────────
 
 /** La cabecera de Matrícula (ficha `matricula-cabecera`, contrato §3.10). */
@@ -358,7 +445,7 @@ export const CATEGORIAS_DEL_PORTAL: CategoriaDelPortal[] = [
     nombre: 'Inicio',
     icono: 'dashboard',
     descripcion: 'La portada del portal: el carrusel, las cifras y lo que presenta al colegio.',
-    disponible: false,
+    disponible: true,
     partes: [
       { nombre: 'Carrusel', descripcion: 'Los afiches de la portada, con su botón', lista: 'banners' },
       { nombre: 'Cifras', descripcion: 'Los números destacados bajo el carrusel', lista: 'cifras-portada' },

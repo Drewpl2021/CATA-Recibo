@@ -80,6 +80,15 @@ abstract class ListaDelPortalController extends Controller
         return 'registros publicados';
     }
 
+    /**
+     * Si lo nuevo entra al principio de la lista y no al final: los banners,
+     * que el contrato quiere del más reciente al más antiguo.
+     */
+    protected function nuevoAlPrincipio(): bool
+    {
+        return false;
+    }
+
     /** Si la lista se publica y se pasa a borrador (las categorías, no). */
     protected function tieneEstado(): bool
     {
@@ -130,7 +139,14 @@ abstract class ListaDelPortalController extends Controller
 
         $fila = $this->guardando(function () use ($validado, $peticion) {
             $columnas = $this->aColumnas($validado, $peticion, null);
-            $columnas['orden'] = (int) $this->consulta($peticion)->max('orden') + 1;
+
+            if ($this->nuevoAlPrincipio()) {
+                // Los demás bajan un lugar (uno por uno, para que la auditoría lo registre).
+                $this->consulta($peticion)->get()->each(fn (Model $f) => $f->update(['orden' => $f->orden + 1]));
+                $columnas['orden'] = 1;
+            } else {
+                $columnas['orden'] = (int) $this->consulta($peticion)->max('orden') + 1;
+            }
 
             if ($this->tieneEstado()) {
                 $columnas['estado'] = $validado['estado'] ?? ($this->modelo())::BORRADOR;

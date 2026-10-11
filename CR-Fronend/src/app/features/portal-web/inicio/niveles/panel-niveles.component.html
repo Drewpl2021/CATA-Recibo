@@ -1,0 +1,114 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-niveles">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-niveles">Niveles</h2>
+      <p class="form-ayuda">
+        Los niveles de la portada, hasta 4 publicados ({{ publicados }} ahora), en este orden. Son los de Inicio:
+        Propuesta Educativa tiene los suyos.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevo()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar nivel
+      </button>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargandoSeccion">Cargando la sección…</p>
+
+  <form [formGroup]="seccion" *ngIf="!cargandoSeccion" (ngSubmit)="guardarSeccion()" novalidate>
+    <div class="grupo-montos">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="niveles-titulo">Título de la sección *</label>
+          <input id="niveles-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+            placeholder="Ej. Inicial, primaria y secundaria" [class.is-invalid]="invalidoSeccion('titulo')" />
+          <small class="form-error" *ngIf="invalidoSeccion('titulo')">Obligatorio (máximo 60).</small>
+        </div>
+        <div class="form-group">
+          <label for="niveles-propuesta">Enlace a la propuesta educativa</label>
+          <input id="niveles-propuesta" type="url" class="form-control" formControlName="propuestaUrl" placeholder="https://…"
+            [class.is-invalid]="invalidoSeccion('propuestaUrl')" />
+          <small class="form-error" *ngIf="invalidoSeccion('propuestaUrl')">Una dirección que empiece con https://.</small>
+          <small class="form-ayuda" *ngIf="!invalidoSeccion('propuestaUrl')">Opcional. Vacío, el enlace no se muestra.</small>
+        </div>
+      </div>
+    </div>
+    <footer class="panel-pie">
+      <button type="submit" class="btn-primary" [disabled]="guardandoSeccion || seccion.pristine">
+        {{ guardandoSeccion ? 'Guardando…' : 'Guardar título y enlace' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="seccion.dirty && !guardandoSeccion">Tienes cambios sin guardar.</p>
+    </footer>
+  </form>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="el nivel"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay niveles en Inicio."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar nivel' : 'Agregar nivel'"
+  ancho="720px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="nivel-nombre">Nombre *</label>
+        <input id="nivel-nombre" type="text" class="form-control" formControlName="nombre" maxlength="24"
+          placeholder="Ej. Inicial" [class.is-invalid]="invalido('nombre')" />
+        <small class="form-error" *ngIf="invalido('nombre')">Obligatorio (máximo 24).</small>
+      </div>
+      <div class="form-group">
+        <label for="nivel-rango">Rango</label>
+        <input id="nivel-rango" type="text" class="form-control" formControlName="rango" maxlength="40" placeholder="Ej. 3, 4 y 5 años" />
+      </div>
+      <div class="form-group">
+        <label for="nivel-estado">Estado</label>
+        <select id="nivel-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicado</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="nivel-sede">Sede</label>
+        <input id="nivel-sede" type="text" class="form-control" formControlName="sede" maxlength="60" placeholder="Ej. Sede CATA Inicial" />
+      </div>
+      <div class="form-group">
+        <label for="nivel-reconocimiento">Reconocimiento</label>
+        <input id="nivel-reconocimiento" type="text" class="form-control" formControlName="reconocimiento" maxlength="60" placeholder="Ej. Reconocido en 1998" />
+      </div>
+    </div>
+    <app-selector-imagen *ngIf="modalVisible" uso="nivel" etiqueta="Foto" [(imagen)]="foto"></app-selector-imagen>
+    <small class="form-ayuda">Opcional. Horizontal 3:2. Las fotos de estudiantes necesitan la autorización de su familia.</small>
+  </form>
+</app-form-modal>

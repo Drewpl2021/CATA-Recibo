@@ -8,11 +8,11 @@ import { DataTableComponent } from '../../../../shared/components/data-table/dat
 import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { mostrarErrorDelPanel } from '../../compartido/panel';
+import { hoyEnLima, mostrarErrorDelPanel } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
 import { EstadoPortal, FechaPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
-import { hoyEnLima } from '../vacantes/panel-vacantes.component';
+
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 

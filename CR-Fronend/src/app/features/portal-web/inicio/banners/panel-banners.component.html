@@ -1,0 +1,118 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-banners">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-banners">Carrusel</h2>
+      <p class="form-ayuda">
+        Los afiches de la portada, hasta 8 publicados ({{ publicados }} ahora), del más reciente al más antiguo: lo nuevo entra arriba.
+        Con dos o más avanzan solos cada 6 segundos; sin ninguno, la sección desaparece.
+      </p>
+      <p class="form-nota" *ngIf="publicados > 0 && publicadosSinMovil > 0">
+        {{ publicadosSinMovil }} de {{ publicados }} publicados no tienen imagen para celular. El portal la usa solo si todos la traen;
+        si no, en el celular muestra completa la de escritorio, que se ve pequeña.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevo()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar banner
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="el banner"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay banners: la portada empieza por las cifras."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.titulo" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.titulo" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar banner' : 'Agregar banner'"
+  ancho="860px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <ng-container *ngIf="modalVisible">
+      <app-selector-imagen uso="banner" etiqueta="Afiche para escritorio" [obligatoria]="true"
+        [(imagen)]="imagen" [(foco)]="foco"></app-selector-imagen>
+      <small class="form-error" *ngIf="intentoGuardar && !imagen">Sube el afiche para escritorio.</small>
+      <small class="form-ayuda">
+        Deja libre de texto el 10 % de abajo: ahí van el botón y los indicadores. Si el afiche trae texto escrito
+        (fechas, teléfonos, redes), el texto alternativo tiene que repetirlo todo.
+      </small>
+
+      <app-selector-imagen uso="banner-movil" etiqueta="Afiche para celular" [(imagen)]="imagenMovil"></app-selector-imagen>
+      <small class="form-ayuda">Opcional, pero recomendado: vertical 4:5. El portal lo usa solo si todos los banners publicados lo traen.</small>
+    </ng-container>
+
+    <div class="form-group">
+      <label for="banner-titulo">Título *</label>
+      <input id="banner-titulo" type="text" class="form-control" formControlName="titulo" maxlength="80"
+        placeholder="Ej. Matrículas 2027 abiertas para inicial, primaria y secundaria" [class.is-invalid]="invalido('titulo')" />
+      <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 80).</small>
+      <small class="form-ayuda" *ngIf="!invalido('titulo')">Nombra el banner en los indicadores y para los lectores de pantalla.</small>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="banner-categoria">Categoría *</label>
+        <select id="banner-categoria" class="form-control" formControlName="categoria" [class.is-invalid]="invalido('categoria')">
+          <option value="" disabled>Elige la categoría</option>
+          <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
+        </select>
+        <small class="form-error" *ngIf="invalido('categoria')">Elige una categoría.</small>
+      </div>
+      <div class="form-group">
+        <label for="banner-fecha">Fecha</label>
+        <input id="banner-fecha" type="date" class="form-control" formControlName="fecha" />
+        <small class="form-ayuda">Opcional.</small>
+      </div>
+      <div class="form-group">
+        <label for="banner-estado">Estado</label>
+        <select id="banner-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicado</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="check-item">
+      <input type="checkbox" formControlName="texto_en_imagen" />
+      <span>El afiche ya trae escritos su título y su fecha: el portal no los repite y pone encima solo el botón.</span>
+    </label>
+
+    <app-editor-accion [grupo]="form.controls.accion" idBase="banner-accion"></app-editor-accion>
+
+    <div class="form-group" *ngIf="form.controls.accion.value.conBoton">
+      <label for="banner-lado">Esquina del botón</label>
+      <select id="banner-lado" class="form-control" formControlName="lado_accion">
+        <option value="derecha">Abajo a la derecha</option>
+        <option value="izquierda">Abajo a la izquierda</option>
+      </select>
+      <small class="form-ayuda">La que no tape el texto ni los datos de contacto del afiche.</small>
+    </div>
+  </form>
+</app-form-modal>

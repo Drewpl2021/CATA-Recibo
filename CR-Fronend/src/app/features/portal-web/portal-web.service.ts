@@ -17,6 +17,9 @@ export const RECURSOS = {
   fechas: 'enrollment-dates',
   preguntas: 'faqs',
   grados: 'grade-options',
+  banners: 'banners',
+  niveles: 'home-levels',
+  noticias: 'news',
 } as const;
 
 /**

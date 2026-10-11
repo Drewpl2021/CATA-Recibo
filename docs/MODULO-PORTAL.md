@@ -72,7 +72,18 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Preguntas**: `/web-portal/faqs` (`PreguntasController`), hasta 15.
 - **Grados del formulario**: `/web-portal/grade-options` (`GradosController`). El nivel no se repite (el contrato no les da id); de 1 a 8 opciones sin repetir, hasta 24 caracteres. El portal React las muestra como «{opción} de {nivel}» («Música de talleres»).
 - **Base de las listas**: gancho `atributos()` para que los errores de adentro de una lista digan «título del paso» y no `pasos.0.titulo`.
-- **Angular**: `compartido/panel-de-lista.ts` (`PanelDeLista`) reúne cargar, publicar u ocultar, ordenar, eliminar y guardar; cada panel de Matrícula (`matricula/procesos|vacantes|fechas|preguntas|grados`) solo dice lo suyo. `compartido/lineas.ts`: las listas cortas que se escriben una por línea. La pantalla `/inicio/portal-web/matricula` los reúne bajo la cabecera, en el orden del portal.
+- **Angular (Matrícula)**: `compartido/panel-de-lista.ts` (`PanelDeLista`) reúne cargar, publicar u ocultar, ordenar, eliminar y guardar; cada panel de Matrícula (`matricula/procesos|vacantes|fechas|preguntas|grados`) solo dice lo suyo. `compartido/lineas.ts`: las listas cortas que se escriben una por línea. La pantalla `/inicio/portal-web/matricula` los reúne bajo la cabecera, en el orden del portal.
+
+### Etapa 6: Inicio (hecha)
+
+- **Banners**: `/web-portal/banners` (`BannersController`), hasta 8 publicados. **Lo nuevo entra arriba** (gancho `nuevoAlPrincipio()` de la base de las listas: los demás bajan un lugar), porque el contrato los quiere del más reciente al más antiguo; se pueden mover. Afiche de escritorio obligatorio con su punto focal (`foco_x`, `foco_y`, los dos o ninguno), afiche de celular opcional (el panel avisa cuántos publicados no lo traen: el portal lo usa solo si todos), «el afiche ya trae el texto», esquina del botón y el botón.
+- **El botón** (`AccionHero`): `App\Support\Portal\ReglasDeAccion` (reglas y forma de guardarlo, con solo los campos de su tipo) y, en Angular, `compartido/editor-accion` (`grupoDeAccion`, `llenarAccion`, `accionDelGrupo`). Lleva a una sección de Inicio, a una página del portal (`/…`, minúsculas sin tildes) o a una dirección https. Lo usará también la cabecera de Propuesta.
+- **Cifras de Inicio**: el mismo `app-editor-cifras`, con `ambito="portada"`.
+- **Fichas** `quienes-somos` (título, 1 a 6 párrafos de hasta 600, foto 4:5, hasta 8 símbolos) y `niveles` (título de la sección y enlace https a la propuesta).
+- **Niveles de Inicio**: `/web-portal/home-levels` (`NivelesController`), hasta 4, foto 3:2. Es la lista de Inicio, no la de Propuesta.
+- **Noticias**: `/web-portal/news` (`NoticiasController`). Siempre por fecha, de la más reciente a la más antigua: **sin ruta de orden**. El `slug` se arma con el título al crearla (único, -2, -3…) y no cambia. Antes de guardar se valida la primera página del portal y **la página donde cae la noticia** (`?limite=24&pagina=N`), probado con una noticia vieja que rompe el contrato.
+- **Pantalla** `/inicio/portal-web/inicio`: carrusel, cifras, Quiénes somos, niveles y noticias, en el orden del portal. Las sedes, que Inicio también muestra, se editan en Contacto. `hoyEnLima()` pasó a `compartido/panel.ts`.
+- **En local, las fotos subidas no se ven en el portal React**: la API las anuncia en https (lo exige el contrato) y `ng serve` sirve http. En producción no pasa.
 
 ### Programar la limpieza de imágenes
 
@@ -116,4 +127,6 @@ La hora del cron es la del servidor de GoDaddy, que puede no ser la de Lima: a l
 3. **El panel no debe permitir guardar bloques que rompan el contrato** (tipo desconocido, lista sin ítems, carta sin firma, audio en un formato que el portal no reproduce, organigrama de más de 5 niveles). La API los omite y los anota en el registro (`App\Support\Portal\Bloques`), pero eso es la última red, no la validación.
 4. **El contrato 2.13** (§7 del contrato): `GET /v1/navegacion`, `GET /v1/portada/cierre`, `etiquetas` en `/v1/solicitud` y `sitio.nombreEnLineas`, para que el menú, los títulos de sección y el cierre de Inicio salgan del panel. `portal_paginas` ya tiene `grupo` y `nombre` para el menú de Nosotros.
 5. **Portal React, «Síguenos»:** en las tarjetas de las redes, los nombres largos se cortan («FACEBOO…», «INSTAGRA…») a pantallas anchas. Es del repositorio del portal; se arregla al terminar el panel.
+7. **Portal React, selector de grado:** muestra cada opción como «{opción} de {nivel}» («3 años de inicial»), así que un nivel que no es escolar queda raro («Música de talleres»). La solución va del lado del portal React; se ve junto con el contrato 2.13, en la etapa 10.
+8. **«Actualizado el…» de las vacantes es manual, a propósito** (decisión del 2026-10-11): si se moviera solo, corregir una coma daría a entender que las vacantes se revisaron ese día.
 6. **Quién edita.** Los modelos ya registran cada cambio en la auditoría; falta decidir si basta el Administrador o si hace falta un rol nuevo (tipo «TIC»), y dar de alta el módulo en el menú.

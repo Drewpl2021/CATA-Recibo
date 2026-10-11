@@ -1,17 +1,20 @@
 <?php
 
+use App\Http\Controllers\Portal\Panel\BannersController;
 use App\Http\Controllers\Portal\Panel\CifrasController;
 use App\Http\Controllers\Portal\Panel\FechasMatriculaController;
 use App\Http\Controllers\Portal\Panel\GradosController;
 use App\Http\Controllers\Portal\Panel\ImagenesController;
 use App\Http\Controllers\Portal\Panel\LogrosController;
+use App\Http\Controllers\Portal\Panel\NivelesController;
+use App\Http\Controllers\Portal\Panel\NoticiasController;
 use App\Http\Controllers\Portal\Panel\PreguntasController;
 use App\Http\Controllers\Portal\Panel\ProcesosMatriculaController;
 use App\Http\Controllers\Portal\Panel\RedesController;
-use App\Http\Controllers\Portal\Panel\VacantesController;
 use App\Http\Controllers\Portal\Panel\ResumenController;
 use App\Http\Controllers\Portal\Panel\SeccionesController;
 use App\Http\Controllers\Portal\Panel\SedesController;
+use App\Http\Controllers\Portal\Panel\VacantesController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -83,3 +86,17 @@ Route::apiResource('faqs', PreguntasController::class)->parameters(['faqs' => 'i
 Route::post('grade-options/order', [GradosController::class, 'ordenar'])->name('grados.ordenar');
 Route::patch('grade-options/{id}/status', [GradosController::class, 'estado'])->name('grados.estado');
 Route::apiResource('grade-options', GradosController::class)->parameters(['grade-options' => 'id'])->names('grados');
+
+// ── Inicio ──
+// Lo nuevo entra arriba: el carrusel va del más reciente al más antiguo.
+Route::post('banners/order', [BannersController::class, 'ordenar'])->name('banners.ordenar');
+Route::patch('banners/{id}/status', [BannersController::class, 'estado'])->name('banners.estado');
+Route::apiResource('banners', BannersController::class)->parameters(['banners' => 'id'])->names('banners');
+
+Route::post('home-levels/order', [NivelesController::class, 'ordenar'])->name('niveles.ordenar');
+Route::patch('home-levels/{id}/status', [NivelesController::class, 'estado'])->name('niveles.estado');
+Route::apiResource('home-levels', NivelesController::class)->parameters(['home-levels' => 'id'])->names('niveles');
+
+// Sin ruta de orden: van siempre por fecha.
+Route::patch('news/{id}/status', [NoticiasController::class, 'estado'])->name('noticias.estado');
+Route::apiResource('news', NoticiasController::class)->parameters(['news' => 'id'])->names('noticias');

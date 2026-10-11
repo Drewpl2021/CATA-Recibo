@@ -11,6 +11,8 @@ use App\Support\Portal\Fichas\FichaLogros;
 use App\Support\Portal\Fichas\FichaMatriculaCabecera;
 use App\Support\Portal\Fichas\FichaMatriculaFechas;
 use App\Support\Portal\Fichas\FichaMatriculaVacantes;
+use App\Support\Portal\Fichas\FichaNiveles;
+use App\Support\Portal\Fichas\FichaQuienesSomos;
 use App\Support\Portal\Fichas\FichaSitio;
 use App\Support\Portal\Fichas\FichaSolicitud;
 use App\Support\Portal\ImagenesEnJson;
@@ -46,6 +48,9 @@ class SeccionesController extends Controller
         'matricula-cabecera' => FichaMatriculaCabecera::class,
         'matricula-vacantes' => FichaMatriculaVacantes::class,
         'matricula-fechas'   => FichaMatriculaFechas::class,
+
+        'quienes-somos' => FichaQuienesSomos::class,
+        'niveles'       => FichaNiveles::class,
     ];
 
     public function ver(string $clave): JsonResponse

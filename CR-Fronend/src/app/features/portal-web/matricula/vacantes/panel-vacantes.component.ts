@@ -9,15 +9,10 @@ import { DataTableComponent } from '../../../../shared/components/data-table/dat
 import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { mostrarErrorDelPanel } from '../../compartido/panel';
+import { hoyEnLima, mostrarErrorDelPanel } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
 import { DISPONIBILIDADES, DisponibilidadVacantes, EstadoPortal, MatriculaVacantesNota, VacantePortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
-
-/** Hoy en Lima, AAAA-MM-DD: la fecha que el colegio usa. */
-export function hoyEnLima(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date());
-}
 
 /**
  * Matrícula › Vacantes: la disponibilidad de cada nivel, con la fecha en que

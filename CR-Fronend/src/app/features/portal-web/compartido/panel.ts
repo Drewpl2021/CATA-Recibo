@@ -52,3 +52,8 @@ export function idsMovidos(ids: string[], id: string, direccion: -1 | 1): string
   [nuevos[i], nuevos[j]] = [nuevos[j], nuevos[i]];
   return nuevos;
 }
+
+/** Hoy en Lima, AAAA-MM-DD: la fecha que usa el colegio (y el portal, para «En curso» o «Terminó»). */
+export function hoyEnLima(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date());
+}

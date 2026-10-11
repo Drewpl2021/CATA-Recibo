@@ -1,0 +1,106 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-noticias">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-noticias">Noticias y comunicados</h2>
+      <p class="form-ayuda">
+        Lo que publica el colegio ({{ publicados }} publicadas). Van siempre por fecha, de la más reciente a la más antigua:
+        no hace falta ordenarlas. Inicio muestra las últimas.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nueva()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar noticia
+      </button>
+    </div>
+  </header>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="la noticia"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [camposBusqueda]="['titulo', 'resumen']"
+      placeholderBusqueda="Buscar una noticia…"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay noticias: la sección de Inicio lo dice."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    ></app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar noticia' : 'Agregar noticia'"
+  ancho="760px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="noticia-tipo">Tipo</label>
+        <select id="noticia-tipo" class="form-control" formControlName="tipo">
+          <option value="noticia">Noticia</option>
+          <option value="comunicado">Comunicado (aviso oficial para la comunidad)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="noticia-fecha">Fecha *</label>
+        <input id="noticia-fecha" type="date" class="form-control" formControlName="fecha" [class.is-invalid]="invalido('fecha')" />
+        <small class="form-error" *ngIf="invalido('fecha')">Elige la fecha.</small>
+        <small class="form-ayuda" *ngIf="!invalido('fecha')">Ordena la lista: la más reciente va primero.</small>
+      </div>
+      <div class="form-group">
+        <label for="noticia-estado">Estado</label>
+        <select id="noticia-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicada</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="noticia-titulo">Título *</label>
+      <input id="noticia-titulo" type="text" class="form-control" formControlName="titulo" maxlength="120"
+        placeholder="Ej. Reunión de padres de familia" [class.is-invalid]="invalido('titulo')" />
+      <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 120).</small>
+      <small class="form-ayuda" *ngIf="!invalido('titulo') && editando">Su dirección es «{{ editando.slug }}» y no cambia aunque cambie el título.</small>
+    </div>
+
+    <div class="form-group">
+      <label for="noticia-resumen">Resumen</label>
+      <textarea id="noticia-resumen" class="form-control" rows="3" formControlName="resumen" maxlength="280"></textarea>
+      <small class="form-ayuda">Opcional. Hasta 280 caracteres.</small>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="noticia-enlace-url">Documento o página completa</label>
+        <input id="noticia-enlace-url" type="url" class="form-control" formControlName="enlaceUrl" placeholder="https://…"
+          [class.is-invalid]="errorDeEnlace('enlaceUrl')" />
+        <small class="form-error" *ngIf="errorDeEnlace('enlaceUrl')">Una dirección que empiece con https://.</small>
+        <small class="form-ayuda" *ngIf="!errorDeEnlace('enlaceUrl')">Opcional: el PDF del comunicado, por ejemplo.</small>
+      </div>
+      <div class="form-group">
+        <label for="noticia-enlace-etiqueta">Texto del enlace</label>
+        <input id="noticia-enlace-etiqueta" type="text" class="form-control" formControlName="enlaceEtiqueta" maxlength="40"
+          placeholder="Ej. Ver el comunicado completo" [class.is-invalid]="errorDeEnlace('enlaceEtiqueta')" />
+        <small class="form-error" *ngIf="errorDeEnlace('enlaceEtiqueta')">Di a dónde lleva (máximo 40).</small>
+      </div>
+    </div>
+    <label class="check-item" *ngIf="form.value.enlaceUrl">
+      <input type="checkbox" formControlName="enlaceExterno" />
+      <span>Sale del portal: se abre en otra pestaña y se avisa.</span>
+    </label>
+
+    <app-selector-imagen *ngIf="modalVisible" uso="noticia" etiqueta="Foto" [(imagen)]="foto"></app-selector-imagen>
+    <small class="form-ayuda">Opcional. Horizontal 3:2.</small>
+  </form>
+</app-form-modal>

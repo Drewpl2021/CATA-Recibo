@@ -1,0 +1,110 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-quienes-somos">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-quienes-somos">Quiénes somos</h2>
+      <p class="form-ayuda">La presentación del colegio en la portada: título, párrafos, una foto y el significado del emblema.</p>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargando">Cargando Quiénes somos…</p>
+
+  <ng-container *ngIf="!cargando">
+    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+      <div class="grupo-montos">
+        <div class="form-fields">
+          <div class="form-group">
+            <label for="qs-titulo">Título *</label>
+            <input id="qs-titulo" type="text" class="form-control" formControlName="titulo" maxlength="80"
+              placeholder="Ej. Educación adventista en Juliaca desde 1971." [class.is-invalid]="invalido(form.controls.titulo)" />
+            <small class="form-error" *ngIf="invalido(form.controls.titulo)">Obligatorio (máximo 80).</small>
+          </div>
+
+          <!-- Párrafos -->
+          <div class="form-group" formArrayName="parrafos">
+            <label>Párrafos</label>
+            <small class="form-ayuda">De 1 a {{ maxParrafos }}, de hasta 600 caracteres cada uno. Texto simple, sin formato.</small>
+            <div class="form-row" *ngFor="let p of parrafos.controls; let i = index">
+              <div class="form-group">
+                <label [for]="'qs-parrafo-' + i">Párrafo {{ i + 1 }} *</label>
+                <textarea [id]="'qs-parrafo-' + i" class="form-control" rows="4" [formControlName]="i" maxlength="600"
+                  [class.is-invalid]="invalido(p)"></textarea>
+                <small class="form-error" *ngIf="invalido(p)">Escribe el párrafo (máximo 600), o quítalo.</small>
+                <small class="form-ayuda" *ngIf="!invalido(p)">{{ p.value?.length ?? 0 }} de 600.</small>
+              </div>
+              <div class="form-group">
+                <label>&nbsp;</label>
+                <div class="action-btns">
+                  <button type="button" class="btn-icon-accion" (click)="moverParrafo(i, -1)" [disabled]="i === 0"
+                    [attr.aria-label]="'Subir el párrafo ' + (i + 1)" title="Subir">↑</button>
+                  <button type="button" class="btn-icon-accion" (click)="moverParrafo(i, 1)" [disabled]="i === parrafos.length - 1"
+                    [attr.aria-label]="'Bajar el párrafo ' + (i + 1)" title="Bajar">↓</button>
+                  <button type="button" class="btn-icon-accion" (click)="quitarParrafo(i)" [disabled]="parrafos.length === 1"
+                    [attr.aria-label]="'Quitar el párrafo ' + (i + 1)" title="Quitar">
+                    <app-icon icono="trash" [tamano]="14"></app-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <button type="button" class="btn-secondary" (click)="agregarParrafo()" [disabled]="parrafos.length >= maxParrafos">
+                <app-icon icono="plus" [tamano]="14"></app-icon> Agregar párrafo
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Símbolos -->
+      <div class="grupo-montos">
+        <div class="form-group" formArrayName="simbolos">
+          <label>Símbolos del emblema</label>
+          <small class="form-ayuda">Hasta {{ maxSimbolos }}, en este orden. Sin ninguno, el bloque no se muestra.</small>
+          <div class="form-row" *ngFor="let s of simbolos.controls; let i = index" [formGroupName]="i">
+            <div class="form-group">
+              <label [for]="'qs-simbolo-nombre-' + i">Símbolo *</label>
+              <input [id]="'qs-simbolo-nombre-' + i" type="text" class="form-control" formControlName="nombre" maxlength="40"
+                placeholder="Ej. Las manos abiertas" [class.is-invalid]="invalido(s.get('nombre'))" />
+              <small class="form-error" *ngIf="invalido(s.get('nombre'))">Obligatorio (máximo 40).</small>
+            </div>
+            <div class="form-group">
+              <label [for]="'qs-simbolo-significado-' + i">Qué significa *</label>
+              <textarea [id]="'qs-simbolo-significado-' + i" class="form-control" rows="2" formControlName="significado" maxlength="160"
+                [class.is-invalid]="invalido(s.get('significado'))"></textarea>
+              <small class="form-error" *ngIf="invalido(s.get('significado'))">Obligatorio (máximo 160).</small>
+            </div>
+            <div class="form-group">
+              <label>&nbsp;</label>
+              <div class="action-btns">
+                <button type="button" class="btn-icon-accion" (click)="moverSimbolo(i, -1)" [disabled]="i === 0"
+                  [attr.aria-label]="'Subir el símbolo ' + (i + 1)" title="Subir">↑</button>
+                <button type="button" class="btn-icon-accion" (click)="moverSimbolo(i, 1)" [disabled]="i === simbolos.length - 1"
+                  [attr.aria-label]="'Bajar el símbolo ' + (i + 1)" title="Bajar">↓</button>
+                <button type="button" class="btn-icon-accion" (click)="quitarSimbolo(i)"
+                  [attr.aria-label]="'Quitar el símbolo ' + (i + 1)" title="Quitar">
+                  <app-icon icono="trash" [tamano]="14"></app-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <button type="button" class="btn-secondary" (click)="agregarSimbolo()" [disabled]="simbolos.length >= maxSimbolos">
+              <app-icon icono="plus" [tamano]="14"></app-icon> Agregar símbolo
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div class="grupo-montos">
+      <app-selector-imagen uso="quienes-somos" etiqueta="Foto" [imagen]="foto" (imagenChange)="alCambiarFoto($event)"></app-selector-imagen>
+      <small class="form-ayuda">Opcional. Vertical 4:5. Las fotos de estudiantes necesitan la autorización de su familia.</small>
+    </div>
+
+    <footer class="panel-pie">
+      <button type="button" class="btn-primary" (click)="guardar()" [disabled]="guardando || !conCambios">
+        {{ guardando ? 'Guardando…' : 'Guardar Quiénes somos' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="conCambios && !guardando">Tienes cambios sin guardar.</p>
+    </footer>
+  </ng-container>
+</section>
