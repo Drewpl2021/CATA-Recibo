@@ -251,6 +251,13 @@ export const routes: Routes = [
         canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/ajustes/ajustes.component').then(m => m.AjustesComponent),
       },
+      {
+        // El contenido del portal del colegio (cata.edu.pe). Solo Admin, como
+        // la puerta 'editar-portal' del backend. Sus pantallas, en su archivo.
+        path: 'portal-web',
+        canActivate: [soloAdmin],
+        loadChildren: () => import('./features/portal-web/portal-web.routes').then(m => m.PORTAL_WEB_ROUTES),
+      },
       { path: '**', redirectTo: 'dashboard' }
     ]
   },

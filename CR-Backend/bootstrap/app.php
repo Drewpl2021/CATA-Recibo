@@ -44,6 +44,14 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->where('archivo', '[a-z0-9][a-z0-9_-]*\.(jpg|jpeg|png|webp|gif)')
                 ->middleware('throttle:portal_medios')
                 ->name('portal.medios');
+
+            // El panel que edita ese contenido, desde la pantalla de RR.HH.
+            // La misma cadena que las rutas protegidas de routes/api.php, más
+            // la puerta del portal. Ver routes/portal-panel.php.
+            Route::middleware(['api', 'auth:sanctum', 'sesion', 'clave_nueva', 'terminos', 'can:editar-portal'])
+                ->prefix('api/web-portal')
+                ->name('panel-portal.')
+                ->group(base_path('routes/portal-panel.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {

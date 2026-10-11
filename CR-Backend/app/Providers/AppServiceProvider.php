@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -30,6 +32,11 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(fn () => Password::min(8)->letters()->numbers());
 
         $this->frenosDeLasPuertasAbiertas();
+
+        // Quién edita el contenido del portal (cata.edu.pe): la única puerta
+        // del panel. Hoy, solo el Administrador; si mañana es otro rol, se
+        // cambia aquí y en ningún otro lado. Ver routes/portal-panel.php.
+        Gate::define('editar-portal', fn (User $usuario) => $usuario->rol?->nombre === 'admin');
     }
 
     /**

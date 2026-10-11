@@ -4,6 +4,7 @@ namespace Tests\Support;
 
 use App\Models\Portal\RedSocial;
 use App\Models\Portal\Seccion;
+use App\Support\Portal\ValidadorDeContrato;
 use Opis\JsonSchema\Errors\ErrorFormatter;
 use Opis\JsonSchema\Validator;
 
@@ -37,8 +38,8 @@ trait ContratoDelPortal
     /** Falla con la lista de errores si el cuerpo no cumple el esquema del endpoint. */
     protected function assertCumpleElContrato(string $endpoint, string $cuerpo): void
     {
-        $esquema = json_decode(file_get_contents(self::rutaFixtures('api-contract.schema.json')));
-        $definicion = $esquema->definitions->{"GET {$endpoint}"} ?? null;
+        // El mismo esquema que usa el panel antes de guardar.
+        $definicion = ValidadorDeContrato::esquema()->definitions->{"GET {$endpoint}"} ?? null;
 
         $this->assertNotNull($definicion, "El esquema no tiene «GET {$endpoint}».");
 

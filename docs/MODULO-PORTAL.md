@@ -19,6 +19,19 @@ Sirve las imágenes que se suban desde el panel (disco `portal`, en `storage/app
 - Solo los archivos registrados en `portal_imagenes`, con nombre plano: `[a-z0-9][a-z0-9_-]*.(jpg|jpeg|png|webp|gif)`. Sin carpetas ni `../`.
 - Tiene su propio freno (`PORTAL_LIMITE_MEDIOS_POR_MINUTO`, 600), aparte del de la API.
 
+## Etapa 2: el panel «Portal Web» (en curso, rama `feature/portal-panel`)
+
+Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pantallas, componentes compartidos ni el comportamiento de ningún módulo existente; reutiliza los que hay. Si algo existente necesitara cambiar, se pregunta antes.
+
+### Etapa 0: la base (hecha)
+
+- **Una sola puerta:** `Gate::define('editar-portal')` en `AppServiceProvider`, hoy solo el Administrador. En Angular, `soloAdmin` sobre `/inicio/portal-web`. Si otro rol tiene que editar, se cambia ahí y en ningún otro lado.
+- **Rutas:** `routes/portal-panel.php`, bajo `/api/web-portal`, con la misma cadena que el sistema protegido (sesión, contraseña al día, términos) más `can:editar-portal`. No van bajo `/api/portal`: ese prefijo tiene el CORS y los errores del portal público. Responden como el sistema (`{ success, data }`).
+- **Controlador base** (`Portal\Panel\ListaDelPortalController`): ver, crear (al final y en borrador), editar, ordenar (la lista entera), publicar o pasar a borrador, y eliminar. Cada lista solo declara su modelo, sus reglas y qué respuestas del portal cambian.
+- **Validación de salida** (`ValidadorDeContrato`): cada cambio va en una transacción que solo se confirma si las respuestas públicas afectadas, armadas por sus propios controladores, siguen cumpliendo el JSON Schema del contrato (`resources/portal/api-contract.schema.json`). Si no, se deshace y responde 422 con el porqué. Por eso `opis/json-schema` pasó a dependencia de producción.
+- **Menú:** grupo «Portal Web» › «Contenido del portal» (`/portal-web`), al final del menú y solo para Admin. Migración `agregar_modulo_portal_web` para las bases instaladas; `ModuloSeeder` para las nuevas.
+- **Pantalla índice** (`features/portal-web`): las ocho categorías (General, Inicio, Proyectos, Nosotros, Propuesta Educativa, Matrícula, Logros, Contacto), con lo que se edita en cada una y cómo está hoy (`GET /web-portal/summary`). Usa las clases de Ajustes del sistema; sin estilos propios.
+
 ## Pendiente para la etapa 2 (el panel)
 
 1. **Subir imágenes.** La ruta para servirlas ya está; falta la subida. Al subir: comprobar que el contenido sea de verdad una imagen (no basta la extensión), re-codificarla para quitar los datos de ubicación (EXIF), guardarla con un nombre nuevo en minúsculas (por ejemplo, uuid7 + extensión), registrar `ancho` y `alto`, y exigir el `alt`.

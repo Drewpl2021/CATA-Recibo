@@ -1,0 +1,62 @@
+<app-page-header
+  icono="layers"
+  titulo="Portal Web"
+  subtitulo="El contenido de cata.edu.pe: textos, fotos, noticias y todo lo que muestra cada página. Cada cambio queda en la Auditoría y se ve en el portal en hasta un minuto."
+></app-page-header>
+
+<div class="ajustes-layout">
+  <!-- Las páginas del portal y, de paso, cómo está cada una. -->
+  <nav class="ajustes-indice" aria-label="Páginas del portal">
+    <button type="button" *ngFor="let c of categorias; trackBy: porId" class="ajustes-indice__item"
+      [class.ajustes-indice__item--activo]="categoria === c.id" [attr.aria-current]="categoria === c.id ? 'page' : null"
+      (click)="elegir(c.id)">
+      <span class="ajustes-indice__icono"><app-icon [icono]="c.icono" [tamano]="18"></app-icon></span>
+      <span class="ajustes-indice__textos">
+        <span class="ajustes-indice__nombre">{{ c.nombre }}</span>
+        <span class="ajustes-indice__estado" [class.ajustes-indice__estado--aviso]="avisoDe(c)">
+          <app-icon *ngIf="avisoDe(c)" icono="warning" [tamano]="13"></app-icon>
+          {{ estadoDe(c) }}
+        </span>
+      </span>
+    </button>
+  </nav>
+
+  <div class="ajustes-contenido">
+    <section class="section-panel ajustes-panel" aria-live="polite">
+      <header class="ajustes-panel__cabecera">
+        <div>
+          <h2>{{ seleccionada.nombre }}</h2>
+          <p class="form-ayuda">{{ seleccionada.descripcion }}</p>
+        </div>
+        <div class="ajustes-panel__acciones" *ngIf="!seleccionada.disponible">
+          <span class="status-badge status-badge-secondary">Próximamente</span>
+        </div>
+      </header>
+
+      <p class="form-ayuda ajuste-bloque" *ngIf="cargando">Cargando cómo está el portal…</p>
+
+      <table class="data-table" *ngIf="!cargando" [attr.aria-label]="'Lo que se edita en ' + seleccionada.nombre">
+        <thead>
+          <tr>
+            <th scope="col">Parte</th>
+            <th scope="col">Qué se edita</th>
+            <th scope="col">Hoy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of seleccionada.partes">
+            <td>{{ p.nombre }}</td>
+            <td>{{ p.descripcion }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="'status-badge-' + estadoDeParte(p).tono">{{ estadoDeParte(p).texto }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="form-ayuda ajuste-bloque" *ngIf="!seleccionada.disponible">
+        Esta página todavía no se puede editar desde aquí: el panel se va habilitando por partes.
+      </p>
+    </section>
+  </div>
+</div>

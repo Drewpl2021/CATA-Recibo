@@ -4,7 +4,7 @@ Copia **sin cambios** de lo que publica el repositorio del portal (`Portal Web`)
 
 | Aquí | Allá |
 |---|---|
-| `api-contract.schema.json` | `docs/api-contract.schema.json` |
+| `resources/portal/api-contract.schema.json` (fuera de esta carpeta: también lo usa el panel en producción, para no guardar nada que rompa el contrato) | `docs/api-contract.schema.json` |
 | `mock/` | `PW_Frontend/src/api/mock/` |
 
 Versión del contrato: **2.12** (2026-10-09).

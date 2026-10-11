@@ -23,6 +23,7 @@ class ModuloSeeder extends Seeder
         $idBoletas  = Str::uuid()->toString();
         $idConfig   = Str::uuid()->toString();
         $idEspacio  = Str::uuid()->toString();
+        $idPortal   = Str::uuid()->toString();
 
         DB::table('modulo_padre')->insert([
             // Va primero: es la pantalla en la que se cae al entrar. Se llama
@@ -34,6 +35,9 @@ class ModuloSeeder extends Seeder
             ['id' => $idBoletas, 'nombre' => 'Boletas y Finanzas', 'icono' => 'receipt',      'orden' => 2, 'created_at' => now(), 'updated_at' => now()],
             ['id' => $idConfig,  'nombre' => 'Configuración',      'icono' => 'settings',     'orden' => 3, 'created_at' => now(), 'updated_at' => now()],
             ['id' => $idEspacio, 'nombre' => 'Mi Espacio',         'icono' => 'person',       'orden' => 4, 'created_at' => now(), 'updated_at' => now()],
+            // El contenido de cata.edu.pe. Al final, como lo deja la migración
+            // agregar_modulo_portal_web en las bases ya instaladas.
+            ['id' => $idPortal,  'nombre' => 'Portal Web',         'icono' => 'layers',       'orden' => 5, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         // ── Módulos hijos ─────────────────────────────────
@@ -76,6 +80,9 @@ class ModuloSeeder extends Seeder
             ['padre' => $idEspacio, 'nombre' => 'Mis Boletas',    'ruta' => '/mis-boletas',    'icono' => 'receipt_long',  'orden' => 1, 'roles' => [$admin, $rrhh, $empleado]],
             ['padre' => $idEspacio, 'nombre' => 'Mis Documentos', 'ruta' => '/mis-documentos', 'icono' => 'folder_shared', 'orden' => 2, 'roles' => [$admin, $rrhh, $empleado]],
             ['padre' => $idEspacio, 'nombre' => 'Mis Vacaciones', 'ruta' => '/mis-vacaciones', 'icono' => 'beach', 'orden' => 3, 'roles' => [$admin, $rrhh, $empleado]],
+
+            // Portal Web — solo admin: es quien abre la puerta 'editar-portal'.
+            ['padre' => $idPortal, 'nombre' => 'Contenido del portal', 'ruta' => '/portal-web', 'icono' => 'layers', 'orden' => 1, 'roles' => [$admin]],
         ];
 
         foreach ($modulos as $m) {
