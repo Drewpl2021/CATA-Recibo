@@ -544,6 +544,10 @@ export class LayoutComponent implements OnInit {
     corrida: 'Planilla agrupada',
     'sin-agrupar': 'Sin agrupar',
     detalle: 'Detalle',
+    // Pantallas del panel «Portal Web»: con tilde y el mismo nombre que su cabecera.
+    navegacion: 'Menú y títulos',
+    matricula: 'Matrícula',
+    propuesta: 'Propuesta Educativa',
   };
 
   ngOnInit(): void {

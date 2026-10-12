@@ -154,7 +154,7 @@ El portal ya no tiene contenido escrito en su código: el menú, los grupos de N
 - **Inicio › Cierre**: el título (60) y los botones dorado y blanco, con el mismo editor de botones del carrusel y la cabecera de Propuesta. Si solo lleva el blanco, el portal lo muestra como el dorado (se avisa).
 - **Nosotros › Subpáginas**: la dirección se escribe (`a-z`, `0-9` y `-`, hasta 60) con las 16 de cata.edu.pe como sugerencia; al elegir una se proponen su título, su grupo y su nombre. Suma «Grupo del menú» (o «Fuera del menú: el portal no la abre») y «Nombre en el menú» (40, obligatorio con grupo), y las flechas de orden, que ordenan las subpáginas dentro de su grupo. La tabla dice el grupo por su título.
 - **Probado**: compila sin avisos; 116/118 en las pruebas de Angular (las 2 de `AppComponent` de siempre). En el navegador, contra una base MySQL desechable: General, Solicitar información, el menú (renombrar Logros, sumar el grupo «Comunidad»), los títulos (con el aviso del `{n}`), el cierre y una subpágina nueva «APAFA» en «Comunidad» se guardan, y `/v1/navegacion`, `/v1/sitio`, `/v1/solicitud` y `/v1/portada/cierre` sirven lo nuevo.
-- **Detalle que queda**: las migas de la barra de arriba dicen «Navegacion» (y «Matricula» en su pantalla), sin tilde: las arma el layout del sistema con su propio mapa de nombres (`NOMBRE_DE_SEGMENTO`), que no se tocó.
+- **Migas con tilde**: las arma el layout del sistema con su mapa `NOMBRE_DE_SEGMENTO`, que decía «Navegacion», «Matricula» y «Propuesta». Por excepción aprobada (solo se suman entradas al mapa, sin cambiar comportamiento), ahora dice «Menú y títulos», «Matrícula» y «Propuesta Educativa».
 
 ### Programar la limpieza de imágenes
 
