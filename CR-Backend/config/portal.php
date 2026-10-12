@@ -7,7 +7,7 @@
 |
 | El portal del colegio (React) no tiene login ni base propia: todo lo que
 | muestra lo pide a /api/portal/v1/…, siempre con GET y sin token. El
-| contrato vive en el repositorio del portal (docs/API_CONTRACT.md, v2.12) y
+| contrato vive en el repositorio del portal (docs/API_CONTRACT.md, v2.13) y
 | una copia del esquema en tests/Fixtures/portal.
 |
 | Todo sale de config() y no de env() en el código, por el `config:cache`
