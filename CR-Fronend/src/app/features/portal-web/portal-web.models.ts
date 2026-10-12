@@ -50,6 +50,8 @@ export interface TelefonoPortal {
 export interface SitioPortal {
   nombre: string;
   nombreCorto: string;
+  /** Contrato 2.13: el nombre junto a la sigla en la cabecera, en 1 o 2 líneas. */
+  nombreEnLineas: string[];
   subtitulo: string | null;
   ciudad: string;
   anioFundacion: number;
@@ -89,6 +91,8 @@ export interface SolicitudPortal {
   texto: string | null;
   mensajeWhatsapp: string;
   mensajesPorPagina: { pagina: PaginaConFormulario; mensaje: string }[];
+  /** Contrato 2.13: las etiquetas del formulario. */
+  etiquetas: { nombre: string; grado: string; gradoEjemplo: string; gradoElegir: string; boton: string };
 }
 
 /** Una sede como la ve el panel (contrato §3.6, con los nombres de las columnas). */
@@ -422,7 +426,11 @@ export interface PaginaNosotros {
   id: string;
   /** La dirección: /nosotros/{slug}. No cambia. */
   slug: string;
+  /** El id del grupo del menú (contrato 2.13); null = fuera del menú: el portal no la abre. */
   grupo: string | null;
+  /** El título de ese grupo, para la tabla. */
+  grupoTitulo: string | null;
+  /** Su nombre en el menú. */
   nombre: string | null;
   titulo: string;
   bajada: string | null;
@@ -630,6 +638,7 @@ export interface ParteDelPortal {
 
 export type IdCategoria =
   | 'general'
+  | 'navegacion'
   | 'inicio'
   | 'proyectos'
   | 'nosotros'
@@ -662,6 +671,17 @@ export const CATEGORIAS_DEL_PORTAL: CategoriaDelPortal[] = [
     ],
   },
   {
+    id: 'navegacion',
+    nombre: 'Menú y títulos',
+    icono: 'menu',
+    descripcion: 'El menú del portal, los grupos de Nosotros, el pie y los títulos y botones de cada página.',
+    disponible: true,
+    partes: [
+      { nombre: 'Menú, grupos y pie', descripcion: 'Qué páginas van en el menú y con qué nombre, y las columnas de Nosotros', ficha: 'navegacion' },
+      { nombre: 'Títulos de las páginas', descripcion: 'Los títulos de sección, botones y rótulos de cada página', ficha: 'titulos' },
+    ],
+  },
+  {
     id: 'inicio',
     nombre: 'Inicio',
     icono: 'dashboard',
@@ -673,6 +693,7 @@ export const CATEGORIAS_DEL_PORTAL: CategoriaDelPortal[] = [
       { nombre: 'Quiénes somos', descripcion: 'Título, párrafos, foto y el significado del emblema', ficha: 'quienes-somos' },
       { nombre: 'Niveles', descripcion: 'Inicial, primaria y secundaria, con su foto', lista: 'niveles' },
       { nombre: 'Noticias y comunicados', descripcion: 'Lo que publica el colegio, de lo más reciente a lo más antiguo', lista: 'noticias' },
+      { nombre: 'Cierre', descripcion: 'La última sección: el título y sus dos botones', ficha: 'portada-cierre' },
     ],
   },
   {
@@ -753,3 +774,132 @@ export const CATEGORIAS_DEL_PORTAL: CategoriaDelPortal[] = [
     ],
   },
 ];
+
+// ───────── Menú y títulos (contrato 2.13) ─────────
+
+/** Las páginas que puede nombrar el menú: el contrato dice cuál, la ruta la pone el portal. */
+export type PaginaDelMenu = 'inicio' | 'proyectos' | 'nosotros' | 'propuesta-educativa' | 'matricula' | 'logros' | 'contacto';
+
+export const PAGINAS_DEL_MENU: { pagina: PaginaDelMenu; nombre: string }[] = [
+  { pagina: 'inicio', nombre: 'Inicio' },
+  { pagina: 'proyectos', nombre: 'Proyectos' },
+  { pagina: 'nosotros', nombre: 'Nosotros' },
+  { pagina: 'propuesta-educativa', nombre: 'Propuesta Educativa' },
+  { pagina: 'matricula', nombre: 'Matrícula' },
+  { pagina: 'logros', nombre: 'Logros' },
+  { pagina: 'contacto', nombre: 'Contacto' },
+];
+
+/** Las columnas del pie. `redes` también titula «Síguenos» en el menú móvil. */
+export const COLUMNAS_DEL_PIE: { campo: 'colegio' | 'nosotros' | 'contacto' | 'redes'; nombre: string; ejemplo: string }[] = [
+  { campo: 'colegio', nombre: 'Columna de páginas', ejemplo: 'El colegio' },
+  { campo: 'nosotros', nombre: 'Columna de Nosotros', ejemplo: 'Nosotros' },
+  { campo: 'contacto', nombre: 'Columna de contacto', ejemplo: 'Contacto' },
+  { campo: 'redes', nombre: 'Redes sociales (también en el menú móvil)', ejemplo: 'Síguenos' },
+];
+
+/** La ficha `navegacion`: el menú, los grupos de Nosotros y el pie. */
+export interface NavegacionPortal {
+  menu: { pagina: PaginaDelMenu; etiqueta: string }[];
+  /** Un grupo nuevo va con id null: el backend lo arma con su título. */
+  grupos: { id: string | null; titulo: string }[];
+  pie: Record<'colegio' | 'nosotros' | 'contacto' | 'redes', string>;
+}
+
+/** La ficha `titulos`: página → campo → texto. */
+export type TitulosPortal = Record<string, Record<string, string>>;
+
+export interface CampoDeTitulo {
+  campo: string;
+  nombre: string;
+  maximo: number;
+  ejemplo: string;
+  ayuda?: string;
+}
+
+const TITULO = 60;
+const BOTON = 32;
+const ROTULO = 20;
+
+/** Los títulos de cada página, en el orden en que aparecen. Los largos son los del contrato (§3.27). */
+export const TITULOS_DE_PAGINAS: { pagina: string; nombre: string; campos: CampoDeTitulo[] }[] = [
+  {
+    pagina: 'inicio', nombre: 'Inicio', campos: [
+      { campo: 'quienesSomos', nombre: 'Título de Quiénes somos', maximo: TITULO, ejemplo: 'Quiénes somos' },
+      { campo: 'verHistoria', nombre: 'Enlace a la reseña histórica', maximo: BOTON, ejemplo: 'Conoce nuestra historia', ayuda: 'Solo aparece si la Reseña Histórica está en el menú de Nosotros.' },
+      { campo: 'emblema', nombre: 'Título del significado del emblema', maximo: TITULO, ejemplo: 'Lo que dice el emblema' },
+      { campo: 'niveles', nombre: 'Título de Niveles', maximo: TITULO, ejemplo: 'Niveles', ayuda: 'Solo si los niveles no cargan: si cargan, va el título de su propia sección.' },
+      { campo: 'verPropuesta', nombre: 'Enlace a la propuesta educativa', maximo: BOTON, ejemplo: 'Ver la propuesta educativa' },
+      { campo: 'sedesVarias', nombre: 'Título de varias sedes', maximo: TITULO, ejemplo: '{n} sedes en San Román', ayuda: 'Tiene que llevar {n}: el portal pone ahí el número en letras («Cuatro»).' },
+      { campo: 'sedesUna', nombre: 'Título de una sola sede', maximo: TITULO, ejemplo: 'Sede' },
+      { campo: 'sedes', nombre: 'Título de las sedes sin número', maximo: TITULO, ejemplo: 'Sedes', ayuda: 'Mientras cargan, si fallan o si no hay ninguna.' },
+      { campo: 'noticias', nombre: 'Título de las noticias', maximo: TITULO, ejemplo: 'Noticias y comunicados' },
+    ],
+  },
+  {
+    pagina: 'nosotros', nombre: 'Nosotros', campos: [
+      { campo: 'accion', nombre: 'Botón de la cabecera', maximo: BOTON, ejemplo: 'Conócenos' },
+      { campo: 'rotuloAnio', nombre: 'Rótulo del año de fundación', maximo: ROTULO, ejemplo: 'Desde' },
+    ],
+  },
+  {
+    pagina: 'propuestaEducativa', nombre: 'Propuesta Educativa', campos: [
+      { campo: 'pilares', nombre: 'Título de los pilares', maximo: TITULO, ejemplo: 'Nuestros pilares' },
+      { campo: 'rotuloPilar', nombre: 'Rótulo sobre el número de cada pilar', maximo: ROTULO, ejemplo: 'Pilar' },
+      { campo: 'niveles', nombre: 'Título de los niveles', maximo: TITULO, ejemplo: 'Por niveles' },
+      { campo: 'plataformas', nombre: 'Título de las plataformas', maximo: TITULO, ejemplo: 'Plataformas digitales' },
+    ],
+  },
+  {
+    pagina: 'matricula', nombre: 'Matrícula', campos: [
+      { campo: 'accionPrincipal', nombre: 'Botón principal de la cabecera', maximo: BOTON, ejemplo: 'Solicitar información', ayuda: 'También nombra el formulario en el índice de la página.' },
+      { campo: 'accionSecundaria', nombre: 'Botón secundario de la cabecera', maximo: BOTON, ejemplo: 'Ver requisitos' },
+      { campo: 'rotuloAnio', nombre: 'Rótulo del año', maximo: ROTULO, ejemplo: 'Matrícula' },
+      { campo: 'procesos', nombre: 'Título de pasos y requisitos', maximo: TITULO, ejemplo: 'Pasos y requisitos' },
+      { campo: 'vacantes', nombre: 'Título de las vacantes', maximo: TITULO, ejemplo: 'Niveles y vacantes' },
+      { campo: 'preguntarGrado', nombre: 'Botón bajo las vacantes', maximo: BOTON, ejemplo: 'Preguntar por un grado' },
+      { campo: 'fechas', nombre: 'Título del cronograma', maximo: TITULO, ejemplo: 'Fechas' },
+      { campo: 'preguntas', nombre: 'Título de las preguntas', maximo: TITULO, ejemplo: 'Preguntas frecuentes' },
+    ],
+  },
+  {
+    pagina: 'contacto', nombre: 'Contacto', campos: [
+      { campo: 'accionPrincipal', nombre: 'Botón principal de la cabecera', maximo: BOTON, ejemplo: 'Solicitar información', ayuda: 'También nombra el formulario en el índice de la página.' },
+      { campo: 'accionSecundaria', nombre: 'Botón secundario de la cabecera', maximo: BOTON, ejemplo: 'Ver sedes' },
+      { campo: 'rotuloWhatsapp', nombre: 'Rótulo del WhatsApp', maximo: ROTULO, ejemplo: 'WhatsApp' },
+      { campo: 'sedes', nombre: 'Título de las sedes', maximo: TITULO, ejemplo: 'Nuestras sedes' },
+      { campo: 'sedesUna', nombre: 'Título de una sola sede', maximo: TITULO, ejemplo: 'Nuestra sede' },
+      { campo: 'mapa', nombre: 'Título del mapa', maximo: TITULO, ejemplo: 'Ubícanos' },
+      { campo: 'redes', nombre: 'Título de las redes', maximo: TITULO, ejemplo: 'Síguenos' },
+    ],
+  },
+  {
+    pagina: 'proyectos', nombre: 'Proyectos', campos: [
+      { campo: 'accion', nombre: 'Botón de la cabecera', maximo: BOTON, ejemplo: 'Ver proyectos' },
+      { campo: 'contacto', nombre: 'Botón de contacto', maximo: BOTON, ejemplo: 'Contáctanos' },
+      { campo: 'rotulo', nombre: 'Rótulo de la cuenta', maximo: ROTULO, ejemplo: 'Proyectos' },
+      { campo: 'rotuloUno', nombre: 'Rótulo de un solo proyecto', maximo: ROTULO, ejemplo: 'Proyecto' },
+      { campo: 'lista', nombre: 'Título de la lista', maximo: TITULO, ejemplo: 'Nuestros proyectos' },
+      { campo: 'sobre', nombre: 'Detalle: título de la descripción', maximo: TITULO, ejemplo: 'Sobre el proyecto' },
+      { campo: 'galeria', nombre: 'Detalle: título de la galería', maximo: TITULO, ejemplo: 'Galería' },
+      { campo: 'otros', nombre: 'Detalle: título de otros proyectos', maximo: TITULO, ejemplo: 'Más proyectos' },
+      { campo: 'volver', nombre: 'Detalle: botón para volver', maximo: BOTON, ejemplo: 'Todos los proyectos' },
+      { campo: 'verTodos', nombre: 'Detalle: enlace a todos', maximo: BOTON, ejemplo: 'Ver todos los proyectos' },
+    ],
+  },
+  {
+    pagina: 'logros', nombre: 'Logros', campos: [
+      { campo: 'accion', nombre: 'Botón de la cabecera', maximo: BOTON, ejemplo: 'Ver los logros' },
+      { campo: 'rotulo', nombre: 'Rótulo de la cuenta', maximo: ROTULO, ejemplo: 'Logros' },
+      { campo: 'rotuloUno', nombre: 'Rótulo de un solo logro', maximo: ROTULO, ejemplo: 'Logro' },
+      { campo: 'destacados', nombre: 'Título de los destacados', maximo: TITULO, ejemplo: 'Destacados' },
+      { campo: 'todos', nombre: 'Título de la lista', maximo: TITULO, ejemplo: 'Todos los logros' },
+    ],
+  },
+];
+
+/** La ficha `portada-cierre`: el título y hasta dos botones (el dorado y el blanco). */
+export interface CierrePortal {
+  titulo: string;
+  acciones: AccionPortal[];
+}

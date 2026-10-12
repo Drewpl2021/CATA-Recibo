@@ -1,0 +1,123 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-menu">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-menu">Menú, grupos de Nosotros y pie</h2>
+      <p class="form-ayuda">
+        Las páginas del menú, en su orden y con su nombre; las columnas de Nosotros, y los títulos del pie. Una página que no está en el
+        menú tampoco sale en el pie, pero su dirección sigue abriendo.
+      </p>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargando">Cargando el menú…</p>
+
+  <form [formGroup]="form" *ngIf="!cargando" (ngSubmit)="guardar()" novalidate>
+    <!-- El menú -->
+    <div class="grupo-montos" formArrayName="menu">
+      <h3 class="grupo-montos__titulo">Menú</h3>
+      <div class="form-fields">
+        <small class="form-ayuda">
+          Hasta 24 caracteres por nombre. Si los nombres no caben en la barra del portal, se parten en dos líneas y, si aun así no caben,
+          el portal usa el menú de hamburguesa.
+        </small>
+        <div class="form-row" *ngFor="let m of menu.controls; let i = index" [formGroupName]="i">
+          <div class="form-group">
+            <label [for]="'menu-' + i">{{ nombreDePagina(m.value.pagina) }} *</label>
+            <input [id]="'menu-' + i" type="text" class="form-control" formControlName="etiqueta" maxlength="24"
+              [placeholder]="'Ej. ' + nombreDePagina(m.value.pagina)" [class.is-invalid]="invalido(m.get('etiqueta'))" />
+            <small class="form-error" *ngIf="invalido(m.get('etiqueta'))">Obligatorio (máximo 24).</small>
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <div class="action-btns">
+              <button type="button" class="btn-icon-accion" (click)="moverEnMenu(i, -1)" [disabled]="i === 0"
+                [attr.aria-label]="'Subir ' + nombreDePagina(m.value.pagina)" title="Subir">↑</button>
+              <button type="button" class="btn-icon-accion" (click)="moverEnMenu(i, 1)" [disabled]="i === menu.length - 1"
+                [attr.aria-label]="'Bajar ' + nombreDePagina(m.value.pagina)" title="Bajar">↓</button>
+              <button type="button" class="btn-icon-accion" (click)="quitarDelMenu(i)" [disabled]="menu.length === 1"
+                [attr.aria-label]="'Sacar del menú ' + nombreDePagina(m.value.pagina)" title="Sacar del menú">
+                <app-icon icono="trash" [tamano]="16"></app-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group" *ngIf="fueraDelMenu.length">
+          <label for="menu-agregar">Agregar al menú</label>
+          <select id="menu-agregar" class="form-control" #agregar (change)="agregarAlMenu(agregar.value); agregar.value = ''">
+            <option value="">Elige una página…</option>
+            <option *ngFor="let p of fueraDelMenu" [value]="p.pagina">{{ p.nombre }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Los grupos de Nosotros -->
+    <div class="grupo-montos" formArrayName="grupos">
+      <h3 class="grupo-montos__titulo">Grupos de Nosotros</h3>
+      <div class="form-fields">
+        <small class="form-ayuda">
+          Las columnas del menú de Nosotros, de su índice y del pie (el pie muestra la primera). Hasta {{ maxGrupos }}, con hasta 12
+          subpáginas publicadas cada una. Qué subpáginas van en cada grupo se elige en Nosotros › Subpáginas. Un grupo sin ninguna
+          publicada no sale, y uno que tiene subpáginas no se puede quitar: primero pásalas a otro.
+        </small>
+        <div class="form-row" *ngFor="let g of grupos.controls; let i = index" [formGroupName]="i">
+          <div class="form-group">
+            <label [for]="'grupo-' + i">Grupo {{ i + 1 }} *</label>
+            <input [id]="'grupo-' + i" type="text" class="form-control" formControlName="titulo" maxlength="30"
+              placeholder="Ej. Institución" [class.is-invalid]="invalido(g.get('titulo'))" [attr.aria-describedby]="'grupo-paginas-' + i" />
+            <small class="form-error" *ngIf="invalido(g.get('titulo'))">Obligatorio (máximo 30).</small>
+            <small class="form-ayuda" [id]="'grupo-paginas-' + i">
+              <ng-container *ngIf="g.value.id; else nuevo">
+                {{ paginasDe(g).total === 1 ? '1 subpágina' : paginasDe(g).total + ' subpáginas' }}
+                ({{ paginasDe(g).publicadas }} publicadas).
+              </ng-container>
+              <ng-template #nuevo>Nuevo: después de guardar, elige sus subpáginas en Nosotros.</ng-template>
+            </small>
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <div class="action-btns">
+              <button type="button" class="btn-icon-accion" (click)="moverGrupo(i, -1)" [disabled]="i === 0"
+                [attr.aria-label]="'Subir el grupo ' + (i + 1)" title="Subir">↑</button>
+              <button type="button" class="btn-icon-accion" (click)="moverGrupo(i, 1)" [disabled]="i === grupos.length - 1"
+                [attr.aria-label]="'Bajar el grupo ' + (i + 1)" title="Bajar">↓</button>
+              <button type="button" class="btn-icon-accion" (click)="quitarGrupo(i)" [disabled]="paginasDe(g).total > 0"
+                [attr.aria-label]="'Quitar el grupo ' + (i + 1)"
+                [title]="paginasDe(g).total > 0 ? 'Tiene subpáginas: pásalas a otro grupo antes' : 'Quitar'">
+                <app-icon icono="trash" [tamano]="16"></app-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <button type="button" class="btn-secondary" (click)="agregarGrupo()" [disabled]="grupos.length >= maxGrupos">
+            <app-icon icono="plus" [tamano]="16"></app-icon>
+            Agregar grupo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- El pie -->
+    <div class="grupo-montos" formGroupName="pie">
+      <h3 class="grupo-montos__titulo">Títulos del pie</h3>
+      <div class="form-fields">
+        <div class="form-row">
+          <div class="form-group" *ngFor="let c of columnasDelPie">
+            <label [for]="'pie-' + c.campo">{{ c.nombre }} *</label>
+            <input [id]="'pie-' + c.campo" type="text" class="form-control" [formControlName]="c.campo" maxlength="30"
+              [placeholder]="'Ej. ' + c.ejemplo" [class.is-invalid]="invalido(form.controls.pie.get(c.campo))" />
+            <small class="form-error" *ngIf="invalido(form.controls.pie.get(c.campo))">Obligatorio (máximo 30).</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="panel-pie">
+      <button type="submit" class="btn-primary" [disabled]="guardando || form.pristine">
+        {{ guardando ? 'Guardando…' : 'Guardar el menú' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="form.dirty && !guardando">Tienes cambios sin guardar.</p>
+    </footer>
+  </form>
+</section>

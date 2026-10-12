@@ -83,6 +83,14 @@ export class PortalWebContactoComponent implements OnInit {
     mensajeWhatsapp: ['', [Validators.required, Validators.maxLength(300)]],
     mensajeMatricula: ['', [Validators.maxLength(300)]],
     mensajeContacto: ['', [Validators.maxLength(300)]],
+    // Contrato 2.13: las etiquetas del formulario, con los largos del contrato.
+    etiquetas: this.fb.group({
+      nombre: ['', [Validators.required, Validators.maxLength(30)]],
+      grado: ['', [Validators.required, Validators.maxLength(30)]],
+      gradoEjemplo: ['', [Validators.required, Validators.maxLength(60)]],
+      gradoElegir: ['', [Validators.required, Validators.maxLength(30)]],
+      boton: ['', [Validators.required, Validators.maxLength(32)]],
+    }),
   });
 
   // ───────── Sedes ─────────
@@ -214,6 +222,13 @@ export class PortalWebContactoComponent implements OnInit {
           mensajeWhatsapp: s?.mensajeWhatsapp ?? '',
           mensajeMatricula: propio('matricula'),
           mensajeContacto: propio('contacto'),
+          etiquetas: {
+            nombre: s?.etiquetas?.nombre ?? '',
+            grado: s?.etiquetas?.grado ?? '',
+            gradoEjemplo: s?.etiquetas?.gradoEjemplo ?? '',
+            gradoElegir: s?.etiquetas?.gradoElegir ?? '',
+            boton: s?.etiquetas?.boton ?? '',
+          },
         });
         this.cargandoSolicitud = false;
       },
@@ -227,6 +242,7 @@ export class PortalWebContactoComponent implements OnInit {
   guardarSolicitud(): void {
     if (this.solicitud.invalid || this.marcasDesconocidas().length) {
       this.solicitud.markAllAsTouched();
+      this.toastService.warning('Revisa el formulario', 'Hay textos que faltan o son demasiado largos.');
       return;
     }
 
@@ -237,6 +253,10 @@ export class PortalWebContactoComponent implements OnInit {
 
     const datos: SolicitudPortal = {
       titulo: v.titulo!, texto: v.texto || null, mensajeWhatsapp: v.mensajeWhatsapp!, mensajesPorPagina,
+      etiquetas: {
+        nombre: v.etiquetas.nombre!, grado: v.etiquetas.grado!, gradoEjemplo: v.etiquetas.gradoEjemplo!,
+        gradoElegir: v.etiquetas.gradoElegir!, boton: v.etiquetas.boton!,
+      },
     };
 
     this.guardandoSolicitud = true;
@@ -261,13 +281,14 @@ export class PortalWebContactoComponent implements OnInit {
 
   /** Las marcas entre llaves que el portal no reemplaza (solo valen {nombre} y {grado}). */
   marcasDesconocidas(texto?: string | null): string[] {
-    const textos = texto !== undefined ? [texto] : Object.values(this.solicitud.getRawValue());
+    const v = this.solicitud.getRawValue();
+    const textos = texto !== undefined ? [texto] : [v.mensajeWhatsapp, v.mensajeMatricula, v.mensajeContacto];
     return textos.flatMap((t) => [...String(t ?? '').matchAll(MARCAS)].map((m) => m[1]).filter((m) => m !== 'nombre' && m !== 'grado'));
   }
 
   /** Cómo le llegaría el mensaje al colegio, con datos de ejemplo. */
   ejemploDe(plantilla: string | null | undefined): string {
-    return String(plantilla ?? '').replaceAll('{nombre}', 'María Quispe').replaceAll('{grado}', '1.er grado de primaria');
+    return String(plantilla ?? '').replaceAll('{nombre}', 'María Quispe').replaceAll('{grado}', '1.er grado (Primaria)');
   }
 
   // ───────── Sedes ─────────

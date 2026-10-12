@@ -1,0 +1,46 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-titulos">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-titulos">Títulos de las páginas</h2>
+      <p class="form-ayuda">
+        Los títulos de sección, botones y rótulos de cada página. Todos son obligatorios. Las cabeceras, los títulos de Nosotros,
+        Proyectos, Logros y Contacto, el de la academia y el del formulario se editan en su propia página.
+      </p>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargando">Cargando los títulos…</p>
+
+  <form [formGroup]="form" *ngIf="!cargando" (ngSubmit)="guardar()" novalidate>
+    <div class="grupo-montos" *ngFor="let p of paginas" [formGroupName]="p.pagina">
+      <h3 class="grupo-montos__titulo">
+        <button type="button" class="btn-secondary" (click)="alternar(p.pagina)"
+          [attr.aria-expanded]="abierta === p.pagina" [attr.aria-controls]="'titulos-' + p.pagina">
+          {{ abierta === p.pagina ? '▾' : '▸' }} {{ p.nombre }}
+          <span class="form-error" *ngIf="problemasEn(p.pagina)"> · {{ problemasEn(p.pagina) }} por corregir</span>
+        </button>
+      </h3>
+      <div class="form-fields" [id]="'titulos-' + p.pagina" [hidden]="abierta !== p.pagina">
+        <div class="form-group" *ngFor="let c of p.campos">
+          <label [for]="'titulo-' + p.pagina + '-' + c.campo">{{ c.nombre }} *</label>
+          <input [id]="'titulo-' + p.pagina + '-' + c.campo" type="text" class="form-control" [formControlName]="c.campo"
+            [attr.maxlength]="c.maximo" [placeholder]="'Ej. ' + c.ejemplo"
+            [class.is-invalid]="invalido(p.pagina, c.campo)" [attr.aria-describedby]="'ayuda-' + p.pagina + '-' + c.campo" />
+          <small class="form-error" *ngIf="invalido(p.pagina, c.campo)">
+            {{ c.ejemplo.includes(marca) ? 'Obligatorio, con ' + marca + ' donde va el número (máximo ' + c.maximo + ').' : 'Obligatorio (máximo ' + c.maximo + ').' }}
+          </small>
+          <small class="form-ayuda" [id]="'ayuda-' + p.pagina + '-' + c.campo">
+            {{ c.ayuda ? c.ayuda + ' ' : '' }}{{ largo(p.pagina, c.campo) }}/{{ c.maximo }}
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <footer class="panel-pie">
+      <button type="submit" class="btn-primary" [disabled]="guardando || form.pristine">
+        {{ guardando ? 'Guardando…' : 'Guardar los títulos' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="form.dirty && !guardando">Tienes cambios sin guardar.</p>
+    </footer>
+  </form>
+</section>

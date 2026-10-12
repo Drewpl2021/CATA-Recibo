@@ -17,6 +17,10 @@ export const PORTAL_WEB_ROUTES: Routes = [
     loadComponent: () => import('./inicio/portal-web-inicio.component').then((m) => m.PortalWebInicioComponent),
   },
   {
+    path: 'navegacion',
+    loadComponent: () => import('./navegacion/portal-web-navegacion.component').then((m) => m.PortalWebNavegacionComponent),
+  },
+  {
     path: 'general',
     loadComponent: () => import('./general/portal-web-general.component').then((m) => m.PortalWebGeneralComponent),
   },

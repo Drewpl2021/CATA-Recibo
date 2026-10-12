@@ -167,6 +167,49 @@
       </div>
     </div>
 
+    <!-- Contrato 2.13: los textos del propio formulario -->
+    <div class="grupo-montos" formGroupName="etiquetas">
+      <h3 class="grupo-montos__titulo">Etiquetas del formulario</h3>
+      <div class="form-fields">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="etiqueta-nombre">Etiqueta del nombre *</label>
+            <input id="etiqueta-nombre" type="text" class="form-control" formControlName="nombre" maxlength="30"
+              placeholder="Ej. Tu nombre" [class.is-invalid]="invalidoSolicitud('etiquetas.nombre')" />
+            <small class="form-error" *ngIf="invalidoSolicitud('etiquetas.nombre')">Obligatoria, hasta 30 caracteres.</small>
+          </div>
+          <div class="form-group">
+            <label for="etiqueta-grado">Etiqueta del grado *</label>
+            <input id="etiqueta-grado" type="text" class="form-control" formControlName="grado" maxlength="30"
+              placeholder="Ej. Grado de interés" [class.is-invalid]="invalidoSolicitud('etiquetas.grado')" />
+            <small class="form-error" *ngIf="invalidoSolicitud('etiquetas.grado')">Obligatoria, hasta 30 caracteres.</small>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="etiqueta-elegir">Primera opción del selector de grado *</label>
+            <input id="etiqueta-elegir" type="text" class="form-control" formControlName="gradoElegir" maxlength="30"
+              placeholder="Ej. Elige un grado" [class.is-invalid]="invalidoSolicitud('etiquetas.gradoElegir')" />
+            <small class="form-error" *ngIf="invalidoSolicitud('etiquetas.gradoElegir')">Obligatoria, hasta 30 caracteres.</small>
+          </div>
+          <div class="form-group">
+            <label for="etiqueta-boton">Texto del botón *</label>
+            <input id="etiqueta-boton" type="text" class="form-control" formControlName="boton" maxlength="32"
+              placeholder="Ej. Escribir por WhatsApp" [class.is-invalid]="invalidoSolicitud('etiquetas.boton')" />
+            <small class="form-error" *ngIf="invalidoSolicitud('etiquetas.boton')">Obligatorio, hasta 32 caracteres.</small>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="etiqueta-ejemplo">Ejemplo del grado, cuando se escribe a mano *</label>
+          <input id="etiqueta-ejemplo" type="text" class="form-control" formControlName="gradoEjemplo" maxlength="60"
+            placeholder="Ej. Por ejemplo: 1.er grado de primaria" [class.is-invalid]="invalidoSolicitud('etiquetas.gradoEjemplo')"
+            aria-describedby="ayuda-ejemplo" />
+          <small class="form-error" *ngIf="invalidoSolicitud('etiquetas.gradoEjemplo')">Obligatorio, hasta 60 caracteres.</small>
+          <small class="form-ayuda" id="ayuda-ejemplo">Se ve dentro del campo si la lista de grados no carga o está vacía y la familia tiene que escribirlo.</small>
+        </div>
+      </div>
+    </div>
+
     <footer class="panel-pie">
       <button type="submit" class="btn-primary" [disabled]="guardandoSolicitud || solicitud.pristine">
         {{ guardandoSolicitud ? 'Guardando…' : 'Guardar los textos del formulario' }}

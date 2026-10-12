@@ -58,6 +58,9 @@ export class PortalWebGeneralComponent implements OnInit {
   sitio = this.fb.group({
     nombre: ['', [Validators.required, Validators.maxLength(80)]],
     nombreCorto: ['', [Validators.required, Validators.maxLength(20)]],
+    // El nombre junto a la sigla en la cabecera del portal, en una o dos líneas (contrato 2.13).
+    nombreLinea1: ['', [Validators.required, Validators.maxLength(30)]],
+    nombreLinea2: ['', [Validators.maxLength(30)]],
     subtitulo: ['', [Validators.maxLength(90)]],
     ciudad: ['', [Validators.required, Validators.maxLength(40)]],
     anioFundacion: [null as number | null, [Validators.required, Validators.min(1800), Validators.max(this.anioActual)]],
@@ -140,6 +143,8 @@ export class PortalWebGeneralComponent implements OnInit {
         this.sitio.reset({
           nombre: c?.nombre ?? '',
           nombreCorto: c?.nombreCorto ?? '',
+          nombreLinea1: c?.nombreEnLineas?.[0] ?? '',
+          nombreLinea2: c?.nombreEnLineas?.[1] ?? '',
           subtitulo: c?.subtitulo ?? '',
           ciudad: c?.ciudad ?? '',
           anioFundacion: c?.anioFundacion ?? null,
@@ -176,6 +181,7 @@ export class PortalWebGeneralComponent implements OnInit {
     const datos: SitioPortal = {
       nombre: v.nombre!,
       nombreCorto: v.nombreCorto!,
+      nombreEnLineas: [v.nombreLinea1!, v.nombreLinea2!].map((l) => l.trim()).filter((l) => l !== ''),
       subtitulo: v.subtitulo || null,
       ciudad: v.ciudad!,
       anioFundacion: Number(v.anioFundacion),
@@ -198,8 +204,10 @@ export class PortalWebGeneralComponent implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.guardandoSitio = false;
         this.mostrarError(err, 'No se pudieron guardar los datos del colegio.', (campo, mensaje) => {
-          this.erroresServidor[campo] = mensaje;
-          this.sitio.get(campo)?.markAsTouched();
+          // El backend dice «nombreEnLineas.1»; en la pantalla son dos campos.
+          const enPantalla = campo === 'nombreEnLineas.1' ? 'nombreLinea2' : campo.startsWith('nombreEnLineas') ? 'nombreLinea1' : campo;
+          this.erroresServidor[enPantalla] = mensaje;
+          this.sitio.get(enPantalla)?.markAsTouched();
         });
       },
     });

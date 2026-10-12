@@ -5,14 +5,15 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EditorCifrasComponent } from '../compartido/editor-cifras/editor-cifras.component';
 import { PanelBannersComponent } from './banners/panel-banners.component';
+import { PanelCierreComponent } from './cierre/panel-cierre.component';
 import { PanelNivelesComponent } from './niveles/panel-niveles.component';
 import { PanelNoticiasComponent } from './noticias/panel-noticias.component';
 import { PanelQuienesSomosComponent } from './quienes-somos/panel-quienes-somos.component';
 
 /**
  * Panel «Portal Web» › Inicio: la portada, en el orden en que se ve en el
- * portal: el carrusel, las cifras, Quiénes somos, los niveles y las
- * noticias. Cada parte es su propio panel. Las sedes, que Inicio también
+ * portal: el carrusel, las cifras, Quiénes somos, los niveles, las
+ * noticias y el cierre. Cada parte es su propio panel. Las sedes, que Inicio también
  * muestra, se editan en Contacto.
  */
 @Component({
@@ -20,7 +21,7 @@ import { PanelQuienesSomosComponent } from './quienes-somos/panel-quienes-somos.
   standalone: true,
   imports: [
     PageHeaderComponent, IconComponent, EditorCifrasComponent,
-    PanelBannersComponent, PanelQuienesSomosComponent, PanelNivelesComponent, PanelNoticiasComponent,
+    PanelBannersComponent, PanelQuienesSomosComponent, PanelNivelesComponent, PanelNoticiasComponent, PanelCierreComponent,
   ],
   template: `
     <app-page-header
@@ -39,6 +40,7 @@ import { PanelQuienesSomosComponent } from './quienes-somos/panel-quienes-somos.
     <app-panel-quienes-somos></app-panel-quienes-somos>
     <app-panel-niveles></app-panel-niveles>
     <app-panel-noticias></app-panel-noticias>
+    <app-panel-cierre></app-panel-cierre>
   `,
 })
 export class PortalWebInicioComponent {

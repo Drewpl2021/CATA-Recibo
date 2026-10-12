@@ -129,7 +129,7 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Pantalla**: botón de documento en cada fila de las subpáginas → un modal con los bloques, cada uno con los campos de su tipo, subir, bajar, quitar, y «Agregar un bloque» (con la ayuda de cada tipo). Las listas de textos (párrafos, versos, transcripción) se escriben una por línea; el organigrama, como texto con sangría (dos espacios por nivel, el detalle después de « — »); el peso de un documento, en KB. Los mensajes del backend se ponen en su bloque.
 - **Probado**: guardar los 11 tipos; volver a guardar tal cual las 16 páginas del ejemplo sin perder un bloque; un mensaje exacto por cada regla; nada se guarda si algo falla; 409; y que el portal omite lo que llegue sin pasar por el panel.
 
-### Etapa 10: el contrato 2.13 (parte A hecha; parte B, las pantallas, pendiente)
+### Etapa 10: el contrato 2.13 (hecha)
 
 El portal ya no tiene contenido escrito en su código: el menú, los grupos de Nosotros, los títulos y botones de cada página, el cierre de Inicio, las etiquetas del formulario y las líneas del nombre en la cabecera salen de la API. En el código del portal quedan solo las rutas y los textos de interfaz (la lista está en §3.27 del contrato). Se hace en dos partes:
 
@@ -145,9 +145,16 @@ El portal ya no tiene contenido escrito en su código: el menú, los grupos de N
 - **Portal React**: `useMapa()` (`src/sitio/mapa.ts`) reemplaza la lista fija; **`npm run build` descarga `/v1/navegacion`** y la usa como valor inicial (si la API no responde, el build se detiene), y el navegador la vuelve a pedir. Se arreglaron además los nombres que se cortaban en «Síguenos» (la letra se mide con el ancho de la placa y la red de nombre más largo) y los grados: cada opción se muestra y llega al WhatsApp como «{opción} ({nivel})» («Música (Talleres)»). Con nombres de menú largos, las opciones se parten en dos líneas y, si aun así no caben, la cabecera usa el menú de hamburguesa.
 - **Probado**: los 28 endpoints en los seis escenarios contra el esquema y los ejemplos; 13 pruebas nuevas del panel (`PortalPanelNavegacionTest`); suite completa 661/672 en SQLite y en MySQL (solo las 11 de OpenSSL de siempre). De punta a punta, el portal compilado contra la API local: con Himno en borrador, el menú pasa de 16 a 15 subpáginas sin volver a compilar, y su dirección dice «Página no encontrada».
 
-**Mientras no esté la parte B**, las pantallas de General y de Solicitar información no pueden guardar: no mandan `nombreEnLineas` ni `etiquetas`, y el validador del contrato lo frena con un mensaje («falta «etiquetas.nombre»»). No rompe nada publicado.
+**Parte B: las pantallas** (CR-Fronend, solo suma; sin cambios en el backend).
 
-**Parte B (pendiente)**: las pantallas del panel para el menú y los grupos, los títulos de cada página, el cierre de Inicio, las etiquetas del formulario, las líneas del nombre, y el grupo y el nombre de cada subpágina.
+- **General y Solicitar información vuelven a guardar** (entre la parte A y la B daban error porque no mandaban los campos nuevos). General suma «Junto a la sigla, línea 1» (obligatoria) y «Línea 2» (opcional), hasta 30 cada una; el error del backend (`nombreEnLineas.0`/`.1`) se pone en su campo. Contacto › Solicitar información suma «Etiquetas del formulario»: nombre, grado, primera opción del selector, botón y el ejemplo para cuando el grado se escribe a mano. El ejemplo del mensaje ya usa el formato de grado del portal («1.er grado (Primaria)»).
+- **Nueva categoría «Menú y títulos»** (`/inicio/portal-web/navegacion`, segunda en el índice):
+  - *Menú, grupos de Nosotros y pie*: cada página del menú con su nombre (24), subir, bajar, sacar y «Agregar al menú» con las que faltan; los grupos (hasta 4, título 30) con cuántas subpáginas tiene cada uno, subir, bajar y quitar (deshabilitado si tiene subpáginas: el backend también lo frena); los cuatro títulos del pie.
+  - *Títulos de las páginas*: una sección plegable por página con sus campos, el largo de cada uno y una ayuda donde hace falta. El de varias sedes exige `{n}`. Al guardar con errores, abre la primera página que tiene algo por corregir y lo dice en el título de las demás.
+- **Inicio › Cierre**: el título (60) y los botones dorado y blanco, con el mismo editor de botones del carrusel y la cabecera de Propuesta. Si solo lleva el blanco, el portal lo muestra como el dorado (se avisa).
+- **Nosotros › Subpáginas**: la dirección se escribe (`a-z`, `0-9` y `-`, hasta 60) con las 16 de cata.edu.pe como sugerencia; al elegir una se proponen su título, su grupo y su nombre. Suma «Grupo del menú» (o «Fuera del menú: el portal no la abre») y «Nombre en el menú» (40, obligatorio con grupo), y las flechas de orden, que ordenan las subpáginas dentro de su grupo. La tabla dice el grupo por su título.
+- **Probado**: compila sin avisos; 116/118 en las pruebas de Angular (las 2 de `AppComponent` de siempre). En el navegador, contra una base MySQL desechable: General, Solicitar información, el menú (renombrar Logros, sumar el grupo «Comunidad»), los títulos (con el aviso del `{n}`), el cierre y una subpágina nueva «APAFA» en «Comunidad» se guardan, y `/v1/navegacion`, `/v1/sitio`, `/v1/solicitud` y `/v1/portada/cierre` sirven lo nuevo.
+- **Detalle que queda**: las migas de la barra de arriba dicen «Navegacion» (y «Matricula» en su pantalla), sin tilde: las arma el layout del sistema con su propio mapa de nombres (`NOMBRE_DE_SEGMENTO`), que no se tocó.
 
 ### Programar la limpieza de imágenes
 
@@ -188,7 +195,6 @@ La hora del cron es la del servidor de GoDaddy, que puede no ser la de Lima: a l
 
 1. **Programar la limpieza de imágenes** (ver arriba). Mientras tanto, correrla a mano de vez en cuando.
 2. **`APP_URL` en producción debe ser https** (o `PORTAL_URL_MEDIOS` apuntar a una dirección https). El contrato hace que el portal descarte cualquier respuesta con una URL `http://`. Hoy el `.env.example` de la raíz trae una IP con http.
-3. **Parte B de la etapa 10**: las pantallas del contrato 2.13 (ver arriba). Hasta entonces, General y Solicitar información no guardan.
-4. **Al publicar el módulo, cargar las tres fichas nuevas** (`navegacion`, `titulos`, `portada-cierre`) antes de compilar el portal: sin `navegacion`, `/v1/navegacion` responde 503 y el build del portal se detiene. Con `portal:importar` quedan las de los ejemplos.
-5. **Quién edita.** Los modelos ya registran cada cambio en la auditoría; falta decidir si basta el Administrador o si hace falta un rol nuevo (tipo «TIC»), y dar de alta el módulo en el menú.
-6. **«Actualizado el…» de las vacantes es manual, a propósito** (decisión del 2026-10-11): si se moviera solo, corregir una coma daría a entender que las vacantes se revisaron ese día.
+3. **Al publicar el módulo, cargar las tres fichas nuevas** (`navegacion`, `titulos`, `portada-cierre`) antes de compilar el portal: sin `navegacion`, `/v1/navegacion` responde 503 y el build del portal se detiene. Con `portal:importar` quedan las de los ejemplos.
+4. **Quién edita.** Los modelos ya registran cada cambio en la auditoría; falta decidir si basta el Administrador o si hace falta un rol nuevo (tipo «TIC»), y dar de alta el módulo en el menú.
+5. **«Actualizado el…» de las vacantes es manual, a propósito** (decisión del 2026-10-11): si se moviera solo, corregir una coma daría a entender que las vacantes se revisaron ese día.

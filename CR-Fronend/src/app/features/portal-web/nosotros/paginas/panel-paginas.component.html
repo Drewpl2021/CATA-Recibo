@@ -3,13 +3,13 @@
     <div>
       <h2 id="titulo-paginas">Subpáginas</h2>
       <p class="form-ayuda">
-        El título y la frase de cada subpágina, y la frase de su tarjeta en el índice de Nosotros. Su lugar en el menú lo pone el
-        portal. En borrador, su dirección no abre, pero el menú del portal la sigue nombrando (hasta que el menú también se edite
-        desde aquí): úsalo solo por poco tiempo.
+        El título y la frase de cada subpágina, la frase de su tarjeta en el índice de Nosotros y su lugar en el menú: el grupo, el
+        nombre y el orden (las flechas ordenan cada grupo). El portal abre solo las publicadas que están en un grupo; las demás no
+        salen en el menú y su dirección dice «Página no encontrada». Los grupos se crean en Menú y títulos.
       </p>
     </div>
     <div class="ajustes-panel__acciones">
-      <button type="button" class="btn-primary" (click)="nueva()" [disabled]="!libres.length">
+      <button type="button" class="btn-primary" (click)="nueva()">
         <app-icon icono="plus" [tamano]="16"></app-icon>
         Agregar página
       </button>
@@ -30,7 +30,16 @@
       (editarFila)="editar($event)"
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
-    ></app-data-table>
+    >
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.titulo" title="Subir">↑</button>
+          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.titulo" title="Bajar">↓</button>
+        </div>
+      </ng-template>
+    </app-data-table>
   </div>
 </section>
 
@@ -44,17 +53,38 @@
 >
   <form [formGroup]="form" class="form-fields">
     <div class="form-group" *ngIf="!editando; else direccionFija">
-      <label for="pagina-slug">Página *</label>
-      <select id="pagina-slug" class="form-control" formControlName="slug" (change)="alElegirSlug()" [class.is-invalid]="invalido('slug')">
-        <option value="" disabled>Elige cuál</option>
+      <label for="pagina-slug">Dirección *</label>
+      <input id="pagina-slug" type="text" class="form-control" formControlName="slug" maxlength="60" list="paginas-sugeridas"
+        placeholder="Ej. asociacion-de-padres" (change)="alEscribirSlug()" [class.is-invalid]="invalido('slug')" aria-describedby="ayuda-slug" />
+      <datalist id="paginas-sugeridas">
         <option *ngFor="let p of libres" [value]="p.slug">{{ p.grupo }} › {{ p.nombre }}</option>
-      </select>
-      <small class="form-error" *ngIf="invalido('slug')">Elige la página.</small>
-      <small class="form-ayuda" *ngIf="!invalido('slug')">Solo las que el portal sabe abrir y aún no existen. Su dirección no cambia después.</small>
+      </datalist>
+      <small class="form-error" *ngIf="invalido('slug')">Minúsculas sin tildes, números y guiones (máximo 60).</small>
+      <small class="form-ayuda" id="ayuda-slug">
+        Se verá en /nosotros/<strong>{{ form.controls.slug.value || 'direccion' }}</strong> y no cambia después. Se sugieren las de cata.edu.pe que aún no existen.
+      </small>
     </div>
     <ng-template #direccionFija>
-      <p class="form-nota">/nosotros/{{ editando?.slug }} · {{ editando?.grupo }} › {{ editando?.nombre }}. La dirección no cambia.</p>
+      <p class="form-nota">/nosotros/{{ editando?.slug }}. La dirección no cambia.</p>
     </ng-template>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="pagina-grupo">Grupo del menú</label>
+        <select id="pagina-grupo" class="form-control" formControlName="grupo" (change)="alElegirGrupo()">
+          <option value="">Fuera del menú (el portal no la abre)</option>
+          <option *ngFor="let g of grupos" [value]="g.id">{{ g.titulo }}</option>
+        </select>
+        <small class="form-ayuda">Hasta 12 publicadas por grupo.</small>
+      </div>
+      <div class="form-group">
+        <label for="pagina-nombre">Nombre en el menú{{ form.controls.grupo.value ? ' *' : '' }}</label>
+        <input id="pagina-nombre" type="text" class="form-control" formControlName="nombreEnMenu" maxlength="40"
+          placeholder="Ej. Misión y Visión" [class.is-invalid]="(form.controls.nombreEnMenu.touched && faltaNombre) || invalido('nombreEnMenu')" />
+        <small class="form-error" *ngIf="form.controls.nombreEnMenu.touched && faltaNombre">En un grupo, necesita su nombre en el menú.</small>
+        <small class="form-ayuda" *ngIf="!(form.controls.nombreEnMenu.touched && faltaNombre)">Hasta 40 caracteres.</small>
+      </div>
+    </div>
 
     <div class="form-row">
       <div class="form-group">

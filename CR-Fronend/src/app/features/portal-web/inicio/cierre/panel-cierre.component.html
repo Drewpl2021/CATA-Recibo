@@ -1,0 +1,45 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-cierre">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-cierre">Cierre</h2>
+      <p class="form-ayuda">
+        La última sección de Inicio, sobre el fondo celeste. También cierra Nosotros, Proyectos y Logros. Un título y hasta dos botones;
+        sin botones, solo se ve el título.
+      </p>
+    </div>
+  </header>
+
+  <p class="form-ayuda ajuste-bloque" *ngIf="cargando">Cargando el cierre…</p>
+
+  <form [formGroup]="form" *ngIf="!cargando" (ngSubmit)="guardar()" novalidate>
+    <div class="grupo-montos">
+      <div class="form-fields">
+        <div class="form-group">
+          <label for="cierre-titulo">Título *</label>
+          <input id="cierre-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+            placeholder="Ej. ¿Quieres conocer CATA?" [class.is-invalid]="invalido(form.controls.titulo)" aria-describedby="ayuda-cierre-titulo" />
+          <small class="form-error" *ngIf="invalido(form.controls.titulo)">Obligatorio (máximo 60).</small>
+          <small class="form-ayuda" id="ayuda-cierre-titulo">El texto completo, como se lee en el portal.</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="grupo-montos">
+      <h3 class="grupo-montos__titulo">Botón dorado</h3>
+      <app-editor-accion [grupo]="dorado" idBase="cierre-dorado" etiquetaDelCheck="Lleva el botón dorado"></app-editor-accion>
+    </div>
+
+    <div class="grupo-montos">
+      <h3 class="grupo-montos__titulo">Botón blanco</h3>
+      <app-editor-accion [grupo]="blanco" idBase="cierre-blanco" etiquetaDelCheck="Lleva el botón blanco"></app-editor-accion>
+      <small class="form-ayuda">Si solo lleva este, el portal lo muestra como el dorado.</small>
+    </div>
+
+    <footer class="panel-pie">
+      <button type="submit" class="btn-primary" [disabled]="guardando || form.pristine">
+        {{ guardando ? 'Guardando…' : 'Guardar el cierre' }}
+      </button>
+      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="form.dirty && !guardando">Tienes cambios sin guardar.</p>
+    </footer>
+  </form>
+</section>

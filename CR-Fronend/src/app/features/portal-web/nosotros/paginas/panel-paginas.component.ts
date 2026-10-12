@@ -1,31 +1,42 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
 import { DataTableComponent } from '../../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { accionesDeEstado, PanelDeLista } from '../../compartido/panel-de-lista';
 import { EditorBloquesComponent } from '../bloques/editor-bloques.component';
-import { EstadoPortal, PAGINAS_DE_NOSOTROS, PaginaNosotros } from '../../portal-web.models';
+import { EstadoPortal, NavegacionPortal, PAGINAS_DE_NOSOTROS, PaginaNosotros } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
 
+/** a-z, 0-9 y guiones: la dirección /nosotros/{slug}. */
+const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/** «Institución» → «institucion»: el id con que el menú guarda un grupo. */
+const comoId = (texto: string) =>
+  texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
 /**
- * Nosotros › Subpáginas: el título y la frase de cada una, y la frase de su
- * tarjeta en el índice. Su contenido (los bloques) se edita en su propio
+ * Nosotros › Subpáginas: el título y la frase de cada una, la frase de su
+ * tarjeta en el índice y su lugar en el menú (contrato 2.13: el grupo, el
+ * nombre y el orden). Su contenido (los bloques) se edita en su propio
  * modal, con el botón de documento de la fila.
  *
- * Solo las 16 direcciones que el portal sabe abrir; el lugar de cada una en
- * el menú lo pone el portal, por eso aquí no se ordenan.
+ * El portal abre solo las que están en un grupo del menú y publicadas. Los
+ * grupos se crean en Menú y títulos. La dirección puede ser cualquiera; las
+ * 16 de cata.edu.pe se sugieren y, al elegir una, se proponen su título, su
+ * grupo y su nombre.
  */
 @Component({
   selector: 'app-panel-paginas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, FormModalComponent, EditorBloquesComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, EditorBloquesComponent],
   templateUrl: './panel-paginas.component.html',
 })
-export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> {
+export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> implements OnInit {
   private fb = inject(FormBuilder);
 
   protected readonly recurso = RECURSOS.paginas;
@@ -36,12 +47,16 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> {
     ...accionesDeEstado<PaginaNosotros>(),
   ];
 
+  /** Los grupos del menú (ficha `navegacion`), para elegir en cuál va. */
+  grupos: { id: string; titulo: string }[] = [];
+
   /** La página cuyo contenido se edita; null = el editor está cerrado. */
   paginaEnEdicion: PaginaNosotros | null = null;
 
   columnas: ColumnaTabla<PaginaNosotros>[] = [
-    { campo: 'grupo', header: 'Grupo', ancho: '12%', formatear: (g) => g ?? '—' },
-    { campo: 'nombre', header: 'En el menú', ancho: '18%', formatear: (n, p: PaginaNosotros) => n ?? p.slug },
+    this.columnaDeOrden(),
+    { campo: 'grupoTitulo', header: 'Grupo', ancho: '14%', formatear: (g) => g ?? 'Fuera del menú' },
+    { campo: 'nombre', header: 'En el menú', ancho: '18%', formatear: (n) => n ?? '—' },
     { campo: 'titulo', header: 'Título' },
     { campo: 'resumen', header: 'Tarjeta del índice', ancho: '14%', formatear: (r) => (r ? 'Con frase' : 'Solo el nombre') },
     { campo: 'bloques', header: 'Bloques', ancho: '9%', formatear: (n: number) => (n ? String(n) : 'Ninguno') },
@@ -49,17 +64,32 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> {
   ];
 
   form = this.fb.group({
-    slug: ['', [Validators.required]],
+    slug: ['', [Validators.required, Validators.maxLength(60), Validators.pattern(SLUG)]],
     titulo: ['', [Validators.required, Validators.maxLength(60)]],
     bajada: ['', [Validators.maxLength(160)]],
     resumen: ['', [Validators.maxLength(140)]],
+    grupo: [''],
+    nombreEnMenu: ['', [Validators.maxLength(40)]],
     estado: ['borrador' as EstadoPortal],
   });
 
-  /** Las direcciones que todavía no tienen página. */
+  override ngOnInit(): void {
+    super.ngOnInit();
+    this.portalWebService.getFicha<NavegacionPortal>('navegacion').subscribe({
+      next: (res) => (this.grupos = (res.data.contenido?.grupos ?? []).filter((g): g is { id: string; titulo: string } => !!g.id)),
+    });
+  }
+
+  /** Las 16 de cata.edu.pe que todavía no tienen página, como sugerencia. */
   get libres(): typeof PAGINAS_DE_NOSOTROS {
     const usadas = new Set(this.filas.map((p) => p.slug));
     return PAGINAS_DE_NOSOTROS.filter((p) => !usadas.has(p.slug));
+  }
+
+  /** Con grupo, el nombre en el menú es obligatorio. */
+  get faltaNombre(): boolean {
+    const v = this.form.getRawValue();
+    return !!v.grupo && !(v.nombreEnMenu ?? '').trim();
   }
 
   protected describir(p: PaginaNosotros): string {
@@ -68,14 +98,17 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> {
 
   nueva(): void {
     this.editando = null;
-    this.form.reset({ slug: '', titulo: '', bajada: '', resumen: '', estado: 'borrador' });
+    this.form.reset({ slug: '', titulo: '', bajada: '', resumen: '', grupo: '', nombreEnMenu: '', estado: 'borrador' });
     this.form.controls.slug.enable();
     this.modalVisible = true;
   }
 
   editar(p: PaginaNosotros): void {
     this.editando = p;
-    this.form.reset({ slug: p.slug, titulo: p.titulo, bajada: p.bajada ?? '', resumen: p.resumen ?? '', estado: p.estado });
+    this.form.reset({
+      slug: p.slug, titulo: p.titulo, bajada: p.bajada ?? '', resumen: p.resumen ?? '',
+      grupo: p.grupo ?? '', nombreEnMenu: p.nombre ?? '', estado: p.estado,
+    });
     this.form.controls.slug.disable();
     this.modalVisible = true;
   }
@@ -94,10 +127,20 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> {
     if (guardo) this.cargar();
   }
 
-  /** Al elegir la dirección de una nueva, su nombre sirve de título. */
-  alElegirSlug(): void {
+  /** Si la dirección es una de las 16 de siempre, propone su título, su grupo y su nombre. */
+  alEscribirSlug(): void {
     const elegida = PAGINAS_DE_NOSOTROS.find((p) => p.slug === this.form.controls.slug.value);
-    if (elegida && !this.form.controls.titulo.value) this.form.controls.titulo.setValue(elegida.nombre);
+    if (!elegida) return;
+    const c = this.form.controls;
+    if (!c.titulo.value) c.titulo.setValue(elegida.nombre);
+    if (!c.nombreEnMenu.value) c.nombreEnMenu.setValue(elegida.nombre);
+    if (!c.grupo.value) c.grupo.setValue(this.grupos.find((g) => g.id === comoId(elegida.grupo))?.id ?? '');
+  }
+
+  /** Al elegir un grupo sin nombre en el menú, el título sirve de nombre. */
+  alElegirGrupo(): void {
+    const c = this.form.controls;
+    if (c.grupo.value && !c.nombreEnMenu.value) c.nombreEnMenu.setValue((c.titulo.value ?? '').slice(0, 40));
   }
 
   invalido(campo: string): boolean {
@@ -106,7 +149,7 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> {
   }
 
   guardar(): void {
-    if (this.form.invalid) {
+    if (this.form.invalid || this.faltaNombre) {
       this.form.markAllAsTouched();
       return;
     }
@@ -117,6 +160,8 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> {
       titulo: v.titulo,
       bajada: (v.bajada ?? '').trim() || null,
       resumen: (v.resumen ?? '').trim() || null,
+      grupo: v.grupo || null,
+      ...(v.grupo ? { nombre: (v.nombreEnMenu ?? '').trim() } : {}),
       estado: v.estado,
     });
   }
