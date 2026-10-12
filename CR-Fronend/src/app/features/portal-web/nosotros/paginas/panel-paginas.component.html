@@ -25,7 +25,7 @@
       [mostrarBuscador]="false"
       [numerarFilas]="false"
       [acciones]="['editar', 'eliminar']"
-      [accionesPersonalizadas]="acciones"
+      [accionesPersonalizadas]="accionesDePagina"
       mensajeVacio="Todavía no hay subpáginas."
       (editarFila)="editar($event)"
       (eliminarFila)="eliminar($event)"
@@ -85,3 +85,5 @@
     </div>
   </form>
 </app-form-modal>
+
+<app-editor-bloques [pagina]="paginaEnEdicion" (cerrado)="alCerrarEditor($event)"></app-editor-bloques>

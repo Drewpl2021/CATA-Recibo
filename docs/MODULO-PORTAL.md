@@ -108,7 +108,9 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Pantalla** `/inicio/portal-web/propuesta`: cabecera (figuras con su tipo, subir, bajar y quitar), cifras, pilares con su introducción, niveles, academia (textos, universidades y, debajo, los ciclos de la elegida: el botón de capas de cada fila la elige) y plataformas.
 - **En la base de paneles de Angular**: el gancho `filtro()` de `PanelDeLista` (para una lista dentro de otra, como los ciclos) y `moverEn()` en `compartido/panel.ts` (estaba repetida en Quiénes somos y Proyectos).
 
-### Etapa 9: Nosotros (parte A hecha; falta la B, el editor de bloques)
+### Etapa 9: Nosotros (hecha)
+
+**Parte A: subpáginas y Personal Docente.**
 
 - **Ficha** `nosotros`: título (hasta 60) y frase (hasta 200) del índice.
 - **Subpáginas**: `/web-portal/pages` (`PaginasController`). Título (60), frase (160) y la frase de su tarjeta en el índice (`resumen`, 140; vacía, la tarjeta muestra solo el nombre). **La dirección se elige de las 16 que el portal sabe abrir** (`App\Support\Portal\PaginasDeNosotros`, la misma lista que `src/sitio/mapa.ts`) y no cambia; al crearla se guardan su grupo y su nombre para el menú del contrato 2.13, y entra sin bloques («se publicará pronto»). **Esta parte no toca los bloques**: un `PUT` que los traiga los ignora. Sin ruta de orden en la pantalla: el lugar en el menú lo pone el portal.
@@ -116,6 +118,16 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Niveles de Personal Docente**: `/web-portal/teacher-levels` (`NivelesDocentesController`), hasta 6 publicados, se publiquen o no con docentes. Su `clave` (`?nivel=…`) no cambia. Con docentes no se elimina (422 que dice cuántos tiene); en borrador, sus docentes no salen.
 - **Docentes**: `/web-portal/teachers?nivel=…` (`DocentesController`), hasta 150 publicados: nombre (80), cargo o área (80), nivel y foto cuadrada (uso `persona`). **Se ordenan dentro de su nivel** (el orden pide `?nivel=`); quien cambia de nivel pasa al final del nuevo. Se escriben en el panel: no salen de la ficha de RR.HH.
 - **Pantalla** `/inicio/portal-web/nosotros`: el índice, las subpáginas (la tabla dice cuántos bloques tiene cada una) y Personal Docente: los niveles y, debajo, los docentes del nivel elegido, con buscador (el botón de personas de cada fila lo elige). Avisa antes de pedir confirmación si un nivel tiene docentes.
+
+**Parte B: el editor de bloques.**
+
+- **`PUT /web-portal/pages/{id}/blocks`** con `{ bloques, version }`: los bloques enteros, en orden (hasta 30). `GET pages/{id}` los trae tal como se guardan (imágenes como `{"imagenId"}`), cada imagen completa para la vista previa, y la `version` (si alguien guardó la página entre medio, 409).
+- **Se revisan con la misma clase que los sirve.** `Bloques::problemas()` recorre los bloques por el mismo camino que `Bloques::armar()` (los dos anotan en `RevisionDeBloques`), así que no hay dos juegos de reglas. Si algo se omitiría o se perdería en el portal, responde 422 con `errors.bloques`: un mensaje por problema, que dice el bloque y qué falla («Bloque 4 (Audio): la dirección del audio debe empezar con https://.»). Nada se guarda.
+- **Lo que revisa**: tipo que no existe; cuántos elementos admite cada lista (párrafos 1 a 20, en la carta 1 a 12; ítems e hitos 1 a 20; personas 1 a 40; partes 1 a 12 con 1 a 16 versos; documentos 1 a 30; transcripción hasta 20); textos vacíos dentro de una lista; destacado sin rótulo o con más de 200; carta sin firma; audio sin título, con formato que el portal no reproduce o con dirección que no es https; organigrama sin cargo de arriba, con más de 5 niveles o más de 12 cargos debajo de uno, o con un enlace http; documento sin nombre, sin dirección https, sin formato o con un peso que no es un número de bytes; una imagen que ya no existe.
+- **El portal también cambió, para bien**: `armar()` ahora omite lo que antes dejaba pasar y hacía que el portal descartara la página entera (más elementos de los que admite el contrato, direcciones http, más de 12 cargos, pesos inválidos). El registro dice además el porqué de cada bloque omitido. Para el contenido válido, la salida es la misma (las 439 pruebas de la API pública, en los seis escenarios).
+- **Personas**: su `id` se arma con el nombre y no se repite en el bloque (`ana-perez`, `ana-perez-2`); se conserva el que ya tenían. Quien edita no lo ve.
+- **Pantalla**: botón de documento en cada fila de las subpáginas → un modal con los bloques, cada uno con los campos de su tipo, subir, bajar, quitar, y «Agregar un bloque» (con la ayuda de cada tipo). Las listas de textos (párrafos, versos, transcripción) se escriben una por línea; el organigrama, como texto con sangría (dos espacios por nivel, el detalle después de « — »); el peso de un documento, en KB. Los mensajes del backend se ponen en su bloque.
+- **Probado**: guardar los 11 tipos; volver a guardar tal cual las 16 páginas del ejemplo sin perder un bloque; un mensaje exacto por cada regla; nada se guarda si algo falla; 409; y que el portal omite lo que llegue sin pasar por el panel.
 
 ### Programar la limpieza de imágenes
 
@@ -156,9 +168,8 @@ La hora del cron es la del servidor de GoDaddy, que puede no ser la de Lima: a l
 
 1. **Programar la limpieza de imágenes** (ver arriba). Mientras tanto, correrla a mano de vez en cuando.
 2. **`APP_URL` en producción debe ser https** (o `PORTAL_URL_MEDIOS` apuntar a una dirección https). El contrato hace que el portal descarte cualquier respuesta con una URL `http://`. Hoy el `.env.example` de la raíz trae una IP con http.
-3. **El panel no debe permitir guardar bloques que rompan el contrato** (tipo desconocido, lista sin ítems, carta sin firma, audio en un formato que el portal no reproduce, organigrama de más de 5 niveles). La API los omite y los anota en el registro (`App\Support\Portal\Bloques`), pero eso es la última red, no la validación.
-4. **El contrato 2.13** (§7 del contrato): `GET /v1/navegacion`, `GET /v1/portada/cierre`, `etiquetas` en `/v1/solicitud` y `sitio.nombreEnLineas`, para que el menú, los títulos de sección y el cierre de Inicio salgan del panel. `portal_paginas` ya tiene `grupo` y `nombre` para el menú de Nosotros.
-5. **Quién edita.** Los modelos ya registran cada cambio en la auditoría; falta decidir si basta el Administrador o si hace falta un rol nuevo (tipo «TIC»), y dar de alta el módulo en el menú.
-6. **Portal React, «Síguenos»:** en las tarjetas de las redes, los nombres largos se cortan («FACEBOO…», «INSTAGRA…») a pantallas anchas. Es del repositorio del portal; se arregla al terminar el panel.
-7. **Portal React, selector de grado:** muestra cada opción como «{opción} de {nivel}» («3 años de inicial»), así que un nivel que no es escolar queda raro («Música de talleres»). La solución va del lado del portal React; se ve junto con el contrato 2.13, en la etapa 10.
-8. **«Actualizado el…» de las vacantes es manual, a propósito** (decisión del 2026-10-11): si se moviera solo, corregir una coma daría a entender que las vacantes se revisaron ese día.
+3. **El contrato 2.13** (§7 del contrato): `GET /v1/navegacion`, `GET /v1/portada/cierre`, `etiquetas` en `/v1/solicitud` y `sitio.nombreEnLineas`, para que el menú, los títulos de sección y el cierre de Inicio salgan del panel. `portal_paginas` ya tiene `grupo` y `nombre` para el menú de Nosotros.
+4. **Quién edita.** Los modelos ya registran cada cambio en la auditoría; falta decidir si basta el Administrador o si hace falta un rol nuevo (tipo «TIC»), y dar de alta el módulo en el menú.
+5. **Portal React, «Síguenos»:** en las tarjetas de las redes, los nombres largos se cortan («FACEBOO…», «INSTAGRA…») a pantallas anchas. Es del repositorio del portal; se arregla al terminar el panel.
+6. **Portal React, selector de grado:** muestra cada opción como «{opción} de {nivel}» («3 años de inicial»), así que un nivel que no es escolar queda raro («Música de talleres»). La solución va del lado del portal React; se ve junto con el contrato 2.13, en la etapa 10.
+7. **«Actualizado el…» de las vacantes es manual, a propósito** (decisión del 2026-10-11): si se moviera solo, corregir una coma daría a entender que las vacantes se revisaron ese día.

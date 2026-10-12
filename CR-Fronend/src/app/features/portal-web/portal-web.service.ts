@@ -4,7 +4,7 @@ import { Observable, map, shareReplay } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ApiMessageResponse, ApiResponse } from '../../core/utils/api-response.model';
-import { EstadoPortal, FichaPortal, ImagenSubida, ProyectoPortal, RedSocialPortal, ResumenPortal, UsoDeImagen } from './portal-web.models';
+import { EstadoPortal, FichaPortal, ImagenSubida, PaginaConBloques, ProyectoPortal, RedSocialPortal, ResumenPortal, UsoDeImagen } from './portal-web.models';
 
 /** Cómo se llama cada lista en /api/web-portal. */
 export const RECURSOS = {
@@ -93,6 +93,19 @@ export class PortalWebService {
   /** La galería de un proyecto, entera y en orden (0 a 12 fotos). */
   guardarGaleriaDeProyecto(id: string, imagenes: string[]): Observable<ApiResponse<ProyectoPortal>> {
     return this.http.put<ApiResponse<ProyectoPortal>>(`${this.base}/${RECURSOS.proyectos}/${id}/gallery`, { imagenes });
+  }
+
+  /** Una subpágina de Nosotros con sus bloques y su versión. */
+  getPaginaConBloques(id: string): Observable<ApiResponse<PaginaConBloques>> {
+    return this.http.get<ApiResponse<PaginaConBloques>>(`${this.base}/${RECURSOS.paginas}/${id}`);
+  }
+
+  /**
+   * Los bloques enteros, en orden. El backend los revisa con la misma clase
+   * que los sirve: si algo no cumple, 422 con qué falla y en qué bloque.
+   */
+  guardarBloques(id: string, bloques: object[], version: string | null): Observable<ApiResponse<PaginaConBloques>> {
+    return this.http.put<ApiResponse<PaginaConBloques>>(`${this.base}/${RECURSOS.paginas}/${id}/blocks`, { bloques, version });
   }
 
   // ───────── Redes sociales ─────────

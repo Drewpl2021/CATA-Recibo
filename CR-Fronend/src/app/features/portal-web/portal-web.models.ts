@@ -433,6 +433,16 @@ export interface PaginaNosotros {
   estado: EstadoPortal;
 }
 
+/** Una subpágina con sus bloques, para el editor (GET pages/{id}). */
+export interface PaginaConBloques extends Omit<PaginaNosotros, 'bloques'> {
+  /** Como se guardan: las imágenes como { imagenId }. */
+  bloques: Record<string, unknown>[];
+  /** Cada imagen de los bloques, completa, para la vista previa. */
+  imagenes: Record<string, ImagenPortal>;
+  /** Se manda de vuelta al guardar: si alguien guardó entre medio, 409. */
+  version: string | null;
+}
+
 /** Un nivel (o grupo) de Personal Docente, con su filtro. */
 export interface NivelDocentePortal {
   id: string;

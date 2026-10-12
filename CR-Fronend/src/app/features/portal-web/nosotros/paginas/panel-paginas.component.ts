@@ -3,16 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DataTableComponent } from '../../../../shared/components/data-table/data-table.component';
-import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
+import { AccionPersonalizada, ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { PanelDeLista } from '../../compartido/panel-de-lista';
+import { accionesDeEstado, PanelDeLista } from '../../compartido/panel-de-lista';
+import { EditorBloquesComponent } from '../bloques/editor-bloques.component';
 import { EstadoPortal, PAGINAS_DE_NOSOTROS, PaginaNosotros } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
 
 /**
  * Nosotros › Subpáginas: el título y la frase de cada una, y la frase de su
- * tarjeta en el índice. Sus bloques (el contenido) se editan aparte.
+ * tarjeta en el índice. Su contenido (los bloques) se edita en su propio
+ * modal, con el botón de documento de la fila.
  *
  * Solo las 16 direcciones que el portal sabe abrir; el lugar de cada una en
  * el menú lo pone el portal, por eso aquí no se ordenan.
@@ -20,7 +22,7 @@ import { RECURSOS } from '../../portal-web.service';
 @Component({
   selector: 'app-panel-paginas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, FormModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, FormModalComponent, EditorBloquesComponent],
   templateUrl: './panel-paginas.component.html',
 })
 export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> {
@@ -28,6 +30,14 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> {
 
   protected readonly recurso = RECURSOS.paginas;
   protected readonly nombre = { singular: 'página', femenino: true };
+
+  readonly accionesDePagina: AccionPersonalizada<PaginaNosotros>[] = [
+    { id: 'contenido', titulo: 'Editar el contenido (sus bloques)', icono: 'description' },
+    ...accionesDeEstado<PaginaNosotros>(),
+  ];
+
+  /** La página cuyo contenido se edita; null = el editor está cerrado. */
+  paginaEnEdicion: PaginaNosotros | null = null;
 
   columnas: ColumnaTabla<PaginaNosotros>[] = [
     { campo: 'grupo', header: 'Grupo', ancho: '12%', formatear: (g) => g ?? '—' },
@@ -68,6 +78,20 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> {
     this.form.reset({ slug: p.slug, titulo: p.titulo, bajada: p.bajada ?? '', resumen: p.resumen ?? '', estado: p.estado });
     this.form.controls.slug.disable();
     this.modalVisible = true;
+  }
+
+  override alAccionar(evento: { accion: string; fila: PaginaNosotros }): void {
+    if (evento.accion === 'contenido') {
+      this.paginaEnEdicion = evento.fila;
+      return;
+    }
+    super.alAccionar(evento);
+  }
+
+  /** Al cerrar el editor: si se guardó, la tabla vuelve a contar los bloques. */
+  alCerrarEditor(guardo: boolean): void {
+    this.paginaEnEdicion = null;
+    if (guardo) this.cargar();
   }
 
   /** Al elegir la dirección de una nueva, su nombre sirve de título. */
