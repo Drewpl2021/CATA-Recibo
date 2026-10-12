@@ -32,7 +32,7 @@ use RuntimeException;
 
 /**
  * Carga en las tablas del portal un escenario de los ejemplos del contrato
- * (tests/Fixtures/portal/mock): el contenido completo de los 26 endpoints.
+ * (tests/Fixtures/portal/mock): el contenido completo de los 28 endpoints.
  *
  * Sirve para las pruebas, para tener contenido al desarrollar y para la
  * demostración. Lee los archivos como el portal: lo que un escenario no trae
@@ -90,6 +90,7 @@ class ImportadorDeEjemplos
             self::vaciar();
 
             $this->sitio();
+            $this->navegacion();
             $this->inicio();
             $this->matricula();
             $this->contacto();
@@ -125,6 +126,23 @@ class ImportadorDeEjemplos
         $this->seccion('sitio', $sitio);
     }
 
+    /**
+     * El menú, los grupos de Nosotros, el pie y los títulos (2.13). Las
+     * subpáginas de cada grupo no van aquí: cada página guarda su grupo y su
+     * nombre (ver nosotros()).
+     */
+    private function navegacion(): void
+    {
+        $navegacion = $this->leer('navegacion');
+
+        $this->seccion('navegacion', [
+            'menu'   => $navegacion['menu'],
+            'grupos' => array_map(fn ($g) => ['id' => $g['id'], 'titulo' => $g['titulo']], $navegacion['nosotros']),
+            'pie'    => $navegacion['pie'],
+        ]);
+        $this->seccion('titulos', $navegacion['titulos']);
+    }
+
     private function inicio(): void
     {
         foreach ($this->leer('banners') as $i => $b) {
@@ -145,6 +163,7 @@ class ImportadorDeEjemplos
         }
 
         $this->cifras('portada', $this->leer('cifras'));
+        $this->seccion('portada-cierre', $this->leer('cierre'));
         $this->seccion('quienes-somos', $this->leer('quienes-somos'));
 
         $niveles = $this->leer('niveles');
@@ -313,15 +332,25 @@ class ImportadorDeEjemplos
         $resumenes = array_column($indice['paginas'], 'resumen', 'slug');
         $enElIndice = array_flip(array_keys($resumenes));
 
-        // Todas las subpáginas que el portal puede abrir en este escenario.
+        // El grupo y el nombre de cada subpágina en el menú (2.13).
+        $enElMenu = [];
+        foreach ($this->leer('navegacion')['nosotros'] as $grupo) {
+            foreach ($grupo['paginas'] as $p) {
+                $enElMenu[$p['slug']] = ['grupo' => $grupo['id'], 'nombre' => $p['etiqueta']];
+            }
+        }
+        $posicionEnElMenu = array_flip(array_keys($enElMenu));
+
+        // Todas las subpáginas con archivo en este escenario: primero las del
+        // menú, en su orden (el de sus grupos sale de ahí), y después las demás.
         $slugs = collect($this->archivosQueEmpiezanCon('nosotros-pagina--'))
             ->map(fn ($archivo) => substr($archivo, strlen('nosotros-pagina--')))
-            ->sortBy(fn ($slug) => [$enElIndice[$slug] ?? PHP_INT_MAX, $slug])
+            ->sortBy(fn ($slug) => [$posicionEnElMenu[$slug] ?? PHP_INT_MAX, $enElIndice[$slug] ?? PHP_INT_MAX, $slug])
             ->values();
 
-        foreach (array_keys($resumenes) as $slug) {
+        foreach ([...array_keys($resumenes), ...array_keys($enElMenu)] as $slug) {
             if (! $slugs->contains($slug)) {
-                throw new RuntimeException("El índice de Nosotros nombra «{$slug}», pero no hay su página.");
+                throw new RuntimeException("El índice o el menú de Nosotros nombra «{$slug}», pero no hay su página.");
             }
         }
 
@@ -333,6 +362,8 @@ class ImportadorDeEjemplos
                 'titulo'  => $p['titulo'],
                 'bajada'  => $p['bajada'],
                 'resumen' => $resumenes[$slug] ?? null,
+                'grupo'   => $enElMenu[$slug]['grupo'] ?? null,
+                'nombre'  => $enElMenu[$slug]['nombre'] ?? null,
                 'bloques' => ImagenesEnJson::guardar($p['bloques']),
                 'orden'   => $i + 1,
             ]);

@@ -18,6 +18,9 @@ class FichaSolicitud implements Ficha
     public const PAGINAS = ['matricula', 'contacto'];
     private const MARCAS = ['nombre', 'grado'];
 
+    /** Las etiquetas del formulario (2.13) y su largo máximo, en el orden del contrato. */
+    public const ETIQUETAS = ['nombre' => 30, 'grado' => 30, 'gradoEjemplo' => 60, 'gradoElegir' => 30, 'boton' => 32];
+
     public function nombre(): string
     {
         return 'los textos del formulario «Solicitar información»';
@@ -32,6 +35,9 @@ class FichaSolicitud implements Ficha
             'mensajesPorPagina'           => ['present', 'array', 'max:2'],
             'mensajesPorPagina.*.pagina'  => ['required', 'distinct', 'in:' . implode(',', self::PAGINAS)],
             'mensajesPorPagina.*.mensaje' => ['required', 'string', 'max:300', $this->soloMarcasConocidas()],
+            // 2.13: las etiquetas del formulario.
+            'etiquetas'                   => ['required', 'array:' . implode(',', array_keys(self::ETIQUETAS))],
+            ...collect(self::ETIQUETAS)->mapWithKeys(fn ($maximo, $campo) => ["etiquetas.{$campo}" => ['required', 'string', "max:{$maximo}"]])->all(),
         ];
     }
 
@@ -43,6 +49,11 @@ class FichaSolicitud implements Ficha
             'mensajeWhatsapp'             => 'mensaje general de WhatsApp',
             'mensajesPorPagina.*.pagina'  => 'página',
             'mensajesPorPagina.*.mensaje' => 'mensaje de la página',
+            'etiquetas.nombre'            => 'etiqueta del nombre',
+            'etiquetas.grado'             => 'etiqueta del grado',
+            'etiquetas.gradoEjemplo'      => 'ejemplo del grado',
+            'etiquetas.gradoElegir'       => 'primera opción del selector de grado',
+            'etiquetas.boton'             => 'texto del botón',
         ];
     }
 
@@ -58,6 +69,7 @@ class FichaSolicitud implements Ficha
                 ->map(fn ($m) => ['pagina' => $m['pagina'], 'mensaje' => $m['mensaje']])
                 ->values()
                 ->all(),
+            'etiquetas'         => collect(self::ETIQUETAS)->map(fn ($maximo, $campo) => $v['etiquetas'][$campo])->all(),
         ];
     }
 

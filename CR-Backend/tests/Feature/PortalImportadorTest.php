@@ -77,8 +77,19 @@ class PortalImportadorTest extends TestCase
             Ciclo::count(),
         );
 
-        // Las 14 fichas de una sola vez, en todos los escenarios.
-        $this->assertSame(14, Seccion::count());
+        // Las 17 fichas de una sola vez, en todos los escenarios (2.13 suma
+        // navegacion, titulos y portada-cierre).
+        $this->assertSame(17, Seccion::count());
+
+        // Cada subpágina del menú, con su grupo y su nombre; las demás, fuera.
+        $enElMenu = 0;
+        foreach ($e('navegacion')['nosotros'] as $grupo) {
+            foreach ($grupo['paginas'] as $p) {
+                $this->assertSame([$grupo['id'], $p['etiqueta']], array_values(Pagina::where('slug', $p['slug'])->first(['grupo', 'nombre'])->toArray()), $p['slug']);
+                $enElMenu++;
+            }
+        }
+        $this->assertSame($enElMenu, Pagina::whereNotNull('grupo')->count());
 
         // Las subpáginas de Nosotros que el portal puede abrir; las del índice, con su frase.
         $indice = array_column($e('nosotros')['paginas'], 'resumen', 'slug');
@@ -158,7 +169,7 @@ class PortalImportadorTest extends TestCase
         }
 
         $this->assertSame($antes, Banner::pluck('clave')->all());
-        $this->assertSame(14, Seccion::count());
+        $this->assertSame(17, Seccion::count());
     }
 
     public function test_el_comando_tiene_freno(): void

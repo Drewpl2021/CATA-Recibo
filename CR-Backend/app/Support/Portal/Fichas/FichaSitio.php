@@ -24,6 +24,9 @@ class FichaSitio implements Ficha
         return [
             'nombre'                 => ['required', 'string', 'max:80'],
             'nombreCorto'            => ['required', 'string', 'max:20'],
+            // 2.13: el nombre partido en una o dos líneas, junto a la sigla en la cabecera.
+            'nombreEnLineas'         => ['required', 'array', 'min:1', 'max:2'],
+            'nombreEnLineas.*'       => ['required', 'string', 'max:30'],
             'subtitulo'              => ['nullable', 'string', 'max:90'],
             'ciudad'                 => ['required', 'string', 'max:40'],
             'anioFundacion'          => ['required', 'integer', 'between:1800,' . now()->year],
@@ -47,6 +50,8 @@ class FichaSitio implements Ficha
         return [
             'nombre'                 => 'nombre del colegio',
             'nombreCorto'            => 'sigla',
+            'nombreEnLineas'         => 'nombre junto a la sigla',
+            'nombreEnLineas.*'       => 'línea del nombre junto a la sigla',
             'subtitulo'              => 'subtítulo',
             'ciudad'                 => 'ciudad',
             'anioFundacion'          => 'año de fundación',
@@ -70,6 +75,7 @@ class FichaSitio implements Ficha
         return [
             'nombre'          => $v['nombre'],
             'nombreCorto'     => $v['nombreCorto'],
+            'nombreEnLineas'  => array_values($v['nombreEnLineas']),
             'subtitulo'       => $v['subtitulo'] ?? null,
             'ciudad'          => $v['ciudad'],
             'anioFundacion'   => (int) $v['anioFundacion'],

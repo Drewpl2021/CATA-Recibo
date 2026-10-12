@@ -1,0 +1,185 @@
+{
+  "data": {
+    "menu": [
+      {
+        "pagina": "inicio",
+        "etiqueta": "Inicio"
+      },
+      {
+        "pagina": "proyectos",
+        "etiqueta": "Proyectos"
+      },
+      {
+        "pagina": "nosotros",
+        "etiqueta": "Nosotros"
+      },
+      {
+        "pagina": "propuesta-educativa",
+        "etiqueta": "Propuesta Educativa"
+      },
+      {
+        "pagina": "matricula",
+        "etiqueta": "Matrícula"
+      },
+      {
+        "pagina": "logros",
+        "etiqueta": "Logros"
+      },
+      {
+        "pagina": "contacto",
+        "etiqueta": "Contacto"
+      }
+    ],
+    "nosotros": [
+      {
+        "id": "institucion",
+        "titulo": "Institución",
+        "paginas": [
+          {
+            "slug": "mision-y-vision",
+            "etiqueta": "Misión y Visión"
+          },
+          {
+            "slug": "resena-historica",
+            "etiqueta": "Reseña Histórica"
+          },
+          {
+            "slug": "emblema",
+            "etiqueta": "Emblema"
+          },
+          {
+            "slug": "himno",
+            "etiqueta": "Himno"
+          },
+          {
+            "slug": "consejo-directivo",
+            "etiqueta": "Consejo Directivo"
+          },
+          {
+            "slug": "administracion",
+            "etiqueta": "Administración"
+          },
+          {
+            "slug": "personal-docente",
+            "etiqueta": "Personal Docente"
+          },
+          {
+            "slug": "organigrama",
+            "etiqueta": "Organigrama"
+          }
+        ]
+      },
+      {
+        "id": "gestion",
+        "titulo": "Gestión",
+        "paginas": [
+          {
+            "slug": "procesos",
+            "etiqueta": "Procesos"
+          },
+          {
+            "slug": "planificacion-anual",
+            "etiqueta": "Planificación Anual"
+          },
+          {
+            "slug": "planes-de-mejora",
+            "etiqueta": "Planes de Mejora"
+          },
+          {
+            "slug": "evaluacion-docente",
+            "etiqueta": "Evaluación Docente"
+          },
+          {
+            "slug": "acreditacion",
+            "etiqueta": "Acreditación"
+          }
+        ]
+      },
+      {
+        "id": "documentos",
+        "titulo": "Documentos",
+        "paginas": [
+          {
+            "slug": "instrumentos-de-gestion",
+            "etiqueta": "Instrumentos de Gestión"
+          },
+          {
+            "slug": "manual-de-identidad",
+            "etiqueta": "Manual de Identidad"
+          },
+          {
+            "slug": "planificador-eva",
+            "etiqueta": "Planificador Inteligente EVA"
+          }
+        ]
+      }
+    ],
+    "pie": {
+      "colegio": "El colegio",
+      "nosotros": "Nosotros",
+      "contacto": "Contacto",
+      "redes": "Síguenos"
+    },
+    "titulos": {
+      "inicio": {
+        "quienesSomos": "Quiénes somos",
+        "verHistoria": "Conoce nuestra historia",
+        "emblema": "Lo que dice el emblema",
+        "niveles": "Niveles",
+        "verPropuesta": "Ver la propuesta educativa",
+        "sedes": "Sedes",
+        "sedesVarias": "{n} sedes en San Román",
+        "sedesUna": "Sede",
+        "noticias": "Noticias y comunicados"
+      },
+      "nosotros": {
+        "accion": "Conócenos",
+        "rotuloAnio": "Desde"
+      },
+      "propuestaEducativa": {
+        "pilares": "Nuestros pilares",
+        "rotuloPilar": "Pilar",
+        "niveles": "Por niveles",
+        "plataformas": "Plataformas digitales"
+      },
+      "matricula": {
+        "accionPrincipal": "Solicitar información",
+        "accionSecundaria": "Ver requisitos",
+        "rotuloAnio": "Matrícula",
+        "procesos": "Pasos y requisitos",
+        "vacantes": "Niveles y vacantes",
+        "preguntarGrado": "Preguntar por un grado",
+        "fechas": "Fechas",
+        "preguntas": "Preguntas frecuentes"
+      },
+      "contacto": {
+        "accionPrincipal": "Solicitar información",
+        "accionSecundaria": "Ver sedes",
+        "rotuloWhatsapp": "WhatsApp",
+        "sedes": "Nuestras sedes",
+        "sedesUna": "Nuestra sede",
+        "mapa": "Ubícanos",
+        "redes": "Síguenos"
+      },
+      "proyectos": {
+        "accion": "Ver proyectos",
+        "contacto": "Contáctanos",
+        "rotulo": "Proyectos",
+        "rotuloUno": "Proyecto",
+        "lista": "Nuestros proyectos",
+        "sobre": "Sobre el proyecto",
+        "galeria": "Galería",
+        "otros": "Más proyectos",
+        "volver": "Todos los proyectos",
+        "verTodos": "Ver todos los proyectos"
+      },
+      "logros": {
+        "accion": "Ver los logros",
+        "rotulo": "Logros",
+        "rotuloUno": "Logro",
+        "destacados": "Destacados",
+        "todos": "Todos los logros"
+      }
+    }
+  }
+}

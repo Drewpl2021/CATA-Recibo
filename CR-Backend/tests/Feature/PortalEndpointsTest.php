@@ -24,6 +24,7 @@ class PortalEndpointsTest extends TestCase
     /** Ruta del contrato → archivo del ejemplo. */
     private const ENDPOINTS = [
         '/v1/sitio'                         => 'sitio',
+        '/v1/navegacion'                    => 'navegacion',
         '/v1/portada/banners'               => 'banners',
         '/v1/quienes-somos'                 => 'quienes-somos',
         '/v1/niveles'                       => 'niveles',
@@ -32,6 +33,7 @@ class PortalEndpointsTest extends TestCase
         '/v1/grados'                        => 'grados',
         '/v1/propuesta-educativa/cabecera'  => 'propuesta-cabecera',
         '/v1/portada/cifras'                => 'cifras',
+        '/v1/portada/cierre'                => 'cierre',
         '/v1/matricula/cabecera'            => 'matricula-cabecera',
         '/v1/matricula/procesos'            => 'matricula-procesos',
         '/v1/matricula/vacantes'            => 'matricula-vacantes',

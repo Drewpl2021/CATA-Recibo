@@ -3,6 +3,7 @@
 use App\Http\Controllers\Portal\ContactoController;
 use App\Http\Controllers\Portal\InicioController;
 use App\Http\Controllers\Portal\MatriculaController;
+use App\Http\Controllers\Portal\NavegacionController;
 use App\Http\Controllers\Portal\NosotrosController;
 use App\Http\Controllers\Portal\PropuestaController;
 use App\Http\Controllers\Portal\ProyectosController;
@@ -22,7 +23,7 @@ use Illuminate\Support\Facades\Route;
 |     no va nada que no sea contenido que el colegio decidió publicar: ni
 |     datos del personal ni de alumnos.
 |   - Las rutas y la forma de cada respuesta las fija el contrato del portal
-|     (docs/API_CONTRACT.md en su repositorio, v2.12). Un cambio de nombre o
+|     (docs/API_CONTRACT.md en su repositorio, v2.13). Un cambio de nombre o
 |     de tipo es una versión nueva del contrato, acordada con su equipo.
 |
 | Va en su propio archivo, y no en routes/api.php, para que nunca quede por
@@ -33,6 +34,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('sitio', [SitioController::class, 'ver'])->name('sitio');
+Route::get('navegacion', [NavegacionController::class, 'ver'])->name('navegacion');
 
 Route::get('portada/banners',  [InicioController::class, 'banners'])->name('portada.banners');
 Route::get('quienes-somos',    [InicioController::class, 'quienesSomos'])->name('quienes-somos');
@@ -42,6 +44,7 @@ Route::get('noticias',         [InicioController::class, 'noticias'])->name('not
 Route::get('grados',           [MatriculaController::class, 'grados'])->name('grados');
 Route::get('propuesta-educativa/cabecera', [PropuestaController::class, 'cabecera'])->name('propuesta.cabecera');
 Route::get('portada/cifras',   [InicioController::class, 'cifras'])->name('portada.cifras');
+Route::get('portada/cierre',   [InicioController::class, 'cierre'])->name('portada.cierre');
 
 Route::get('matricula/cabecera',  [MatriculaController::class, 'cabecera'])->name('matricula.cabecera');
 Route::get('matricula/procesos',  [MatriculaController::class, 'procesos'])->name('matricula.procesos');

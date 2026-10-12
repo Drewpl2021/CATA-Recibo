@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "API pública del portal CATA 2.12 (docs/API_CONTRACT.md)",
+  "title": "API pública del portal CATA 2.13 (docs/API_CONTRACT.md)",
   "description": "Cuerpo de respuesta 200 de cada endpoint. Generado desde PW_Frontend/src/api/esquemas.ts; no editar a mano.",
   "definitions": {
     "GET /v1/sitio": {
@@ -14,6 +14,15 @@
             },
             "nombreCorto": {
               "type": "string"
+            },
+            "nombreEnLineas": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "maxItems": 2
             },
             "subtitulo": {
               "type": [
@@ -174,6 +183,7 @@
           "required": [
             "nombre",
             "nombreCorto",
+            "nombreEnLineas",
             "subtitulo",
             "ciudad",
             "anioFundacion",
@@ -1807,13 +1817,42 @@
                 "additionalProperties": false
               },
               "maxItems": 2
+            },
+            "etiquetas": {
+              "type": "object",
+              "properties": {
+                "nombre": {
+                  "type": "string"
+                },
+                "grado": {
+                  "type": "string"
+                },
+                "gradoEjemplo": {
+                  "type": "string"
+                },
+                "gradoElegir": {
+                  "type": "string"
+                },
+                "boton": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "nombre",
+                "grado",
+                "gradoEjemplo",
+                "gradoElegir",
+                "boton"
+              ],
+              "additionalProperties": false
             }
           },
           "required": [
             "titulo",
             "texto",
             "mensajeWhatsapp",
-            "mensajesPorPagina"
+            "mensajesPorPagina",
+            "etiquetas"
           ],
           "additionalProperties": false
         }
@@ -4073,6 +4112,486 @@
             "additionalProperties": false
           },
           "maxItems": 8
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GET /v1/navegacion": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "menu": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "pagina": {
+                    "type": "string",
+                    "enum": [
+                      "inicio",
+                      "proyectos",
+                      "nosotros",
+                      "propuesta-educativa",
+                      "matricula",
+                      "logros",
+                      "contacto"
+                    ]
+                  },
+                  "etiqueta": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "pagina",
+                  "etiqueta"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 7
+            },
+            "nosotros": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]+$"
+                  },
+                  "titulo": {
+                    "type": "string"
+                  },
+                  "paginas": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "slug": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9-]+$"
+                        },
+                        "etiqueta": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "slug",
+                        "etiqueta"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 12
+                  }
+                },
+                "required": [
+                  "id",
+                  "titulo",
+                  "paginas"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 4
+            },
+            "pie": {
+              "type": "object",
+              "properties": {
+                "colegio": {
+                  "type": "string"
+                },
+                "nosotros": {
+                  "type": "string"
+                },
+                "contacto": {
+                  "type": "string"
+                },
+                "redes": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "colegio",
+                "nosotros",
+                "contacto",
+                "redes"
+              ],
+              "additionalProperties": false
+            },
+            "titulos": {
+              "type": "object",
+              "properties": {
+                "inicio": {
+                  "type": "object",
+                  "properties": {
+                    "quienesSomos": {
+                      "type": "string"
+                    },
+                    "verHistoria": {
+                      "type": "string"
+                    },
+                    "emblema": {
+                      "type": "string"
+                    },
+                    "niveles": {
+                      "type": "string"
+                    },
+                    "verPropuesta": {
+                      "type": "string"
+                    },
+                    "sedes": {
+                      "type": "string"
+                    },
+                    "sedesVarias": {
+                      "type": "string"
+                    },
+                    "sedesUna": {
+                      "type": "string"
+                    },
+                    "noticias": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "quienesSomos",
+                    "verHistoria",
+                    "emblema",
+                    "niveles",
+                    "verPropuesta",
+                    "sedes",
+                    "sedesVarias",
+                    "sedesUna",
+                    "noticias"
+                  ],
+                  "additionalProperties": false
+                },
+                "nosotros": {
+                  "type": "object",
+                  "properties": {
+                    "accion": {
+                      "type": "string"
+                    },
+                    "rotuloAnio": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "accion",
+                    "rotuloAnio"
+                  ],
+                  "additionalProperties": false
+                },
+                "propuestaEducativa": {
+                  "type": "object",
+                  "properties": {
+                    "pilares": {
+                      "type": "string"
+                    },
+                    "rotuloPilar": {
+                      "type": "string"
+                    },
+                    "niveles": {
+                      "type": "string"
+                    },
+                    "plataformas": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "pilares",
+                    "rotuloPilar",
+                    "niveles",
+                    "plataformas"
+                  ],
+                  "additionalProperties": false
+                },
+                "matricula": {
+                  "type": "object",
+                  "properties": {
+                    "accionPrincipal": {
+                      "type": "string"
+                    },
+                    "accionSecundaria": {
+                      "type": "string"
+                    },
+                    "rotuloAnio": {
+                      "type": "string"
+                    },
+                    "procesos": {
+                      "type": "string"
+                    },
+                    "vacantes": {
+                      "type": "string"
+                    },
+                    "preguntarGrado": {
+                      "type": "string"
+                    },
+                    "fechas": {
+                      "type": "string"
+                    },
+                    "preguntas": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "accionPrincipal",
+                    "accionSecundaria",
+                    "rotuloAnio",
+                    "procesos",
+                    "vacantes",
+                    "preguntarGrado",
+                    "fechas",
+                    "preguntas"
+                  ],
+                  "additionalProperties": false
+                },
+                "contacto": {
+                  "type": "object",
+                  "properties": {
+                    "accionPrincipal": {
+                      "type": "string"
+                    },
+                    "accionSecundaria": {
+                      "type": "string"
+                    },
+                    "rotuloWhatsapp": {
+                      "type": "string"
+                    },
+                    "sedes": {
+                      "type": "string"
+                    },
+                    "sedesUna": {
+                      "type": "string"
+                    },
+                    "mapa": {
+                      "type": "string"
+                    },
+                    "redes": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "accionPrincipal",
+                    "accionSecundaria",
+                    "rotuloWhatsapp",
+                    "sedes",
+                    "sedesUna",
+                    "mapa",
+                    "redes"
+                  ],
+                  "additionalProperties": false
+                },
+                "proyectos": {
+                  "type": "object",
+                  "properties": {
+                    "accion": {
+                      "type": "string"
+                    },
+                    "contacto": {
+                      "type": "string"
+                    },
+                    "rotulo": {
+                      "type": "string"
+                    },
+                    "rotuloUno": {
+                      "type": "string"
+                    },
+                    "lista": {
+                      "type": "string"
+                    },
+                    "sobre": {
+                      "type": "string"
+                    },
+                    "galeria": {
+                      "type": "string"
+                    },
+                    "otros": {
+                      "type": "string"
+                    },
+                    "volver": {
+                      "type": "string"
+                    },
+                    "verTodos": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "accion",
+                    "contacto",
+                    "rotulo",
+                    "rotuloUno",
+                    "lista",
+                    "sobre",
+                    "galeria",
+                    "otros",
+                    "volver",
+                    "verTodos"
+                  ],
+                  "additionalProperties": false
+                },
+                "logros": {
+                  "type": "object",
+                  "properties": {
+                    "accion": {
+                      "type": "string"
+                    },
+                    "rotulo": {
+                      "type": "string"
+                    },
+                    "rotuloUno": {
+                      "type": "string"
+                    },
+                    "destacados": {
+                      "type": "string"
+                    },
+                    "todos": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "accion",
+                    "rotulo",
+                    "rotuloUno",
+                    "destacados",
+                    "todos"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "inicio",
+                "nosotros",
+                "propuestaEducativa",
+                "matricula",
+                "contacto",
+                "proyectos",
+                "logros"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "menu",
+            "nosotros",
+            "pie",
+            "titulos"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GET /v1/portada/cierre": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "titulo": {
+              "type": "string"
+            },
+            "acciones": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "etiqueta": {
+                    "type": "string"
+                  },
+                  "destino": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "const": "seccion"
+                          },
+                          "seccion": {
+                            "type": "string",
+                            "enum": [
+                              "quienes-somos",
+                              "niveles",
+                              "sedes",
+                              "noticias",
+                              "contacto"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "tipo",
+                          "seccion"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "const": "pagina"
+                          },
+                          "ruta": {
+                            "type": "string",
+                            "pattern": "^\\/[a-z0-9/-]*$"
+                          }
+                        },
+                        "required": [
+                          "tipo",
+                          "ruta"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "const": "url"
+                          },
+                          "url": {
+                            "type": "string",
+                            "format": "uri",
+                            "pattern": "^https:\\/\\/"
+                          },
+                          "externo": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "tipo",
+                          "url",
+                          "externo"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "etiqueta",
+                  "destino"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "titulo",
+            "acciones"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [

@@ -39,6 +39,14 @@ class ContactoController extends Controller
                 'pagina'  => $mensaje->texto('pagina'),
                 'mensaje' => $mensaje->texto('mensaje'),
             ], $ficha->fichas('mensajesPorPagina')),
+            // 2.13: las etiquetas del formulario.
+            'etiquetas'         => [
+                'nombre'       => $ficha->texto('etiquetas.nombre'),
+                'grado'        => $ficha->texto('etiquetas.grado'),
+                'gradoEjemplo' => $ficha->texto('etiquetas.gradoEjemplo'),
+                'gradoElegir'  => $ficha->texto('etiquetas.gradoElegir'),
+                'boton'        => $ficha->texto('etiquetas.boton'),
+            ],
         ]]);
     }
 }

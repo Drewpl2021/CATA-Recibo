@@ -86,7 +86,7 @@ class PortalPanelBaseTest extends TestCase
         $this->assertSame(RedSocial::count(), $datos['listas']['redes']['publicados']);
         $this->assertArrayHasKey('cifras-logros', $datos['listas']);
         $this->assertContains('sitio', $datos['fichas']);
-        $this->assertCount(14, $datos['fichas']);
+        $this->assertCount(17, $datos['fichas']);
     }
 
     // ───────── El controlador base ─────────

@@ -29,6 +29,9 @@ class Seccion extends Model
     /** Lo que se lee en la auditoría en vez de la clave técnica. */
     public const NOMBRES = [
         'sitio'              => 'los datos del colegio',
+        'navegacion'         => 'el menú, los grupos de Nosotros y el pie',
+        'titulos'            => 'los títulos de las páginas',
+        'portada-cierre'     => 'el cierre de Inicio',
         'quienes-somos'      => 'Quiénes somos (Inicio)',
         'niveles'            => 'el título de Niveles (Inicio)',
         'propuesta-cabecera' => 'la cabecera de Propuesta Educativa',

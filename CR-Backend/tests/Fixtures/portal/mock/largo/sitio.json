@@ -2,6 +2,10 @@
   "data": {
     "nombre": "Colegio Particular Adventista Túpac Amaru de la Ciudad de Juliaca",
     "nombreCorto": "CATA",
+    "nombreEnLineas": [
+      "Colegio Particular Adventista",
+      "Túpac Amaru de Juliaca, Puno"
+    ],
     "subtitulo": "Educación inicial, primaria y secundaria con cosmovisión cristiana desde mil novecientos setenta y uno",
     "ciudad": "Juliaca",
     "anioFundacion": 1971,

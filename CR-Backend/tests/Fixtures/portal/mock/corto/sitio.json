@@ -2,6 +2,9 @@
   "data": {
     "nombre": "Colegio Adventista Túpac Amaru",
     "nombreCorto": "CATA",
+    "nombreEnLineas": [
+      "Colegio CATA"
+    ],
     "subtitulo": null,
     "ciudad": "Juliaca",
     "anioFundacion": 1971,

@@ -24,6 +24,8 @@ class SitioController extends Controller
         return response()->json(['data' => [
             'nombre'         => $sitio->texto('nombre'),
             'nombreCorto'    => $sitio->texto('nombreCorto'),
+            // 2.13: cómo se parte el nombre junto a la sigla en la cabecera (1 o 2 líneas).
+            'nombreEnLineas' => $sitio->textos('nombreEnLineas', alMenosUno: true),
             'subtitulo'      => $sitio->textoOpcional('subtitulo'),
             'ciudad'         => $sitio->texto('ciudad'),
             'anioFundacion'  => $sitio->entero('anioFundacion'),

@@ -11,8 +11,10 @@ use App\Support\Portal\Fichas\FichaLogros;
 use App\Support\Portal\Fichas\FichaMatriculaCabecera;
 use App\Support\Portal\Fichas\FichaMatriculaFechas;
 use App\Support\Portal\Fichas\FichaMatriculaVacantes;
+use App\Support\Portal\Fichas\FichaNavegacion;
 use App\Support\Portal\Fichas\FichaNiveles;
 use App\Support\Portal\Fichas\FichaNosotros;
+use App\Support\Portal\Fichas\FichaPortadaCierre;
 use App\Support\Portal\Fichas\FichaPropuestaAcademia;
 use App\Support\Portal\Fichas\FichaPropuestaCabecera;
 use App\Support\Portal\Fichas\FichaPropuestaPilares;
@@ -20,6 +22,7 @@ use App\Support\Portal\Fichas\FichaProyectos;
 use App\Support\Portal\Fichas\FichaQuienesSomos;
 use App\Support\Portal\Fichas\FichaSitio;
 use App\Support\Portal\Fichas\FichaSolicitud;
+use App\Support\Portal\Fichas\FichaTitulos;
 use App\Support\Portal\ImagenesEnJson;
 use App\Support\Portal\MensajesDeValidacion;
 use App\Support\Portal\ValidadorDeContrato;
@@ -55,8 +58,9 @@ class SeccionesController extends Controller
         'matricula-vacantes' => FichaMatriculaVacantes::class,
         'matricula-fechas'   => FichaMatriculaFechas::class,
 
-        'quienes-somos' => FichaQuienesSomos::class,
-        'niveles'       => FichaNiveles::class,
+        'quienes-somos'  => FichaQuienesSomos::class,
+        'niveles'        => FichaNiveles::class,
+        'portada-cierre' => FichaPortadaCierre::class,
 
         'proyectos' => FichaProyectos::class,
 
@@ -65,6 +69,10 @@ class SeccionesController extends Controller
         'propuesta-academia' => FichaPropuestaAcademia::class,
 
         'nosotros' => FichaNosotros::class,
+
+        // 2.13: el menú, los grupos de Nosotros, el pie y los títulos de cada página.
+        'navegacion' => FichaNavegacion::class,
+        'titulos'    => FichaTitulos::class,
     ];
 
     public function ver(string $clave): JsonResponse

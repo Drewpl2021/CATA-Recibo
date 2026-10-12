@@ -73,7 +73,8 @@ class PortalPanelNosotrosTest extends TestCase
             // Los bloques no se editan aquí: se ignoran.
             'bloques' => [],
         ])->assertOk()
-            ->assertJsonPath('data.grupo', 'Institución')
+            ->assertJsonPath('data.grupo', 'institucion')
+            ->assertJsonPath('data.grupoTitulo', 'Institución')
             ->assertJsonPath('data.nombre', 'Misión y Visión')
             ->assertJsonPath('data.bloques', count($bloques));
 
@@ -91,9 +92,11 @@ class PortalPanelNosotrosTest extends TestCase
             ->assertJsonPath('errors.slug.0', 'El campo dirección no se puede cambiar.');
     }
 
-    public function test_solo_se_crean_las_paginas_que_el_portal_sabe_abrir(): void
+    public function test_la_direccion_es_unica_y_una_de_las_16_vuelve_a_su_lugar_del_menu(): void
     {
-        $this->postJson(self::PAGINAS, ['slug' => 'nuestra-historia', 'titulo' => 'Historia'])->assertJsonValidationErrors('slug');
+        // Desde la 2.13 cualquier dirección se puede abrir (ver PortalPanelNavegacionTest),
+        // pero tiene que ser una dirección y no repetirse.
+        $this->postJson(self::PAGINAS, ['slug' => 'Nuestra Historia', 'titulo' => 'Historia'])->assertJsonValidationErrors('slug');
         $this->postJson(self::PAGINAS, ['slug' => 'emblema', 'titulo' => 'Emblema'])->assertJsonValidationErrors('slug');
 
         $emblema = Pagina::where('slug', 'emblema')->firstOrFail();
@@ -103,7 +106,9 @@ class PortalPanelNosotrosTest extends TestCase
         $this->postJson(self::PAGINAS, ['slug' => 'emblema', 'titulo' => 'El emblema', 'estado' => 'publicado'])
             ->assertCreated()
             ->assertJsonPath('data.bloques', 0)
-            ->assertJsonPath('data.grupo', 'Institución')
+            // Una de las 16 de siempre vuelve a su grupo y con su nombre, si no se eligen otros.
+            ->assertJsonPath('data.grupo', 'institucion')
+            ->assertJsonPath('data.nombre', 'Emblema')
             // Al final: después de la 16.ª del ejemplo, aunque ahora haya 15.
             ->assertJsonPath('data.orden', 17);
 

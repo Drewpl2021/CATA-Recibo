@@ -33,6 +33,8 @@ class ValidadorDeContrato
     /** Cómo se lee cada endpoint en un mensaje para quien edita. */
     private const NOMBRES = [
         'sitio'                           => 'los datos del colegio',
+        'navegacion'                      => 'el menú y los títulos del sitio',
+        'portada/cierre'                  => 'el cierre de Inicio',
         'portada/banners'                 => 'el carrusel de Inicio',
         'portada/cifras'                  => 'las cifras de Inicio',
         'quienes-somos'                   => 'Quiénes somos',

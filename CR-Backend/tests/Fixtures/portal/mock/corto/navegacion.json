@@ -1,0 +1,97 @@
+{
+  "data": {
+    "menu": [
+      {
+        "pagina": "inicio",
+        "etiqueta": "Inicio"
+      },
+      {
+        "pagina": "matricula",
+        "etiqueta": "Matrícula"
+      },
+      {
+        "pagina": "contacto",
+        "etiqueta": "Contacto"
+      }
+    ],
+    "nosotros": [
+      {
+        "id": "institucion",
+        "titulo": "Institución",
+        "paginas": [
+          {
+            "slug": "mision-y-vision",
+            "etiqueta": "Misión"
+          }
+        ]
+      }
+    ],
+    "pie": {
+      "colegio": "colegio",
+      "nosotros": "Nosotros",
+      "contacto": "Contacto",
+      "redes": "Síguenos"
+    },
+    "titulos": {
+      "inicio": {
+        "quienesSomos": "Quiénes",
+        "verHistoria": "historia",
+        "emblema": "emblema",
+        "niveles": "Niveles",
+        "verPropuesta": "propuesta",
+        "sedes": "Sedes",
+        "sedesVarias": "{n} sedes",
+        "sedesUna": "Sede",
+        "noticias": "comunicados"
+      },
+      "nosotros": {
+        "accion": "Conócenos",
+        "rotuloAnio": "Desde"
+      },
+      "propuestaEducativa": {
+        "pilares": "Nuestros",
+        "rotuloPilar": "Pilar",
+        "niveles": "niveles",
+        "plataformas": "Plataformas"
+      },
+      "matricula": {
+        "accionPrincipal": "información",
+        "accionSecundaria": "requisitos",
+        "rotuloAnio": "Matrícula",
+        "procesos": "requisitos",
+        "vacantes": "vacantes",
+        "preguntarGrado": "Preguntar",
+        "fechas": "Fechas",
+        "preguntas": "frecuentes"
+      },
+      "contacto": {
+        "accionPrincipal": "información",
+        "accionSecundaria": "sedes",
+        "rotuloWhatsapp": "WhatsApp",
+        "sedes": "Nuestras",
+        "sedesUna": "Nuestra",
+        "mapa": "Ubícanos",
+        "redes": "Síguenos"
+      },
+      "proyectos": {
+        "accion": "proyectos",
+        "contacto": "Contáctanos",
+        "rotulo": "Proyectos",
+        "rotuloUno": "Proyecto",
+        "lista": "proyectos",
+        "sobre": "proyecto",
+        "galeria": "Galería",
+        "otros": "proyectos",
+        "volver": "proyectos",
+        "verTodos": "proyectos"
+      },
+      "logros": {
+        "accion": "logros",
+        "rotulo": "Logros",
+        "rotuloUno": "Logro",
+        "destacados": "Destacados",
+        "todos": "logros"
+      }
+    }
+  }
+}

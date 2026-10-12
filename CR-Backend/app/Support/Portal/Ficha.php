@@ -95,6 +95,17 @@ class Ficha
         return $this->tiene($campo) ? Formato::accion(data_get($this->contenido, $campo)) : null;
     }
 
+    /** Una lista de botones (AccionHero), en su orden. */
+    public function acciones(string $campo): array
+    {
+        $lista = data_get($this->contenido, $campo, []);
+
+        return array_values(array_filter(array_map(
+            fn ($accion) => Formato::accion(is_array($accion) ? $accion : null),
+            is_array($lista) ? array_values($lista) : [],
+        )));
+    }
+
     /** Un objeto opcional como ficha propia, para leer sus campos. */
     public function ficha(string $campo): ?self
     {

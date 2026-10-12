@@ -36,6 +36,20 @@ class InicioController extends Controller
         return response()->json(['data' => Formato::cifras('portada')]);
     }
 
+    /**
+     * GET /v1/portada/cierre (2.13, §3.28): la última sección de Inicio, su
+     * título y hasta dos botones. Va aparte: si falla, solo esa sección.
+     */
+    public function cierre(): JsonResponse
+    {
+        $ficha = Ficha::de('portada-cierre');
+
+        return response()->json(['data' => [
+            'titulo'   => $ficha->texto('titulo'),
+            'acciones' => $ficha->acciones('acciones'),
+        ]]);
+    }
+
     /** GET /v1/quienes-somos (§3.4). */
     public function quienesSomos(): JsonResponse
     {

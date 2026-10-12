@@ -12,6 +12,13 @@
         "pagina": "contacto",
         "mensaje": "Hola, soy {nombre}. Tengo una consulta para el colegio sobre {grado}."
       }
-    ]
+    ],
+    "etiquetas": {
+      "nombre": "Tu nombre",
+      "grado": "Grado de interés",
+      "gradoEjemplo": "Por ejemplo: 1.er grado de primaria",
+      "gradoElegir": "Elige un grado",
+      "boton": "Escribir por WhatsApp"
+    }
   }
 }

@@ -12,6 +12,13 @@
         "pagina": "contacto",
         "mensaje": "Hola, mi nombre es {nombre}. Quisiera hacer una consulta al colegio y que me indiquen el horario de atención de la secretaría para {grado}. Muchas gracias."
       }
-    ]
+    ],
+    "etiquetas": {
+      "nombre": "Nombre y apellidos del apoderado",
+      "grado": "Grado y nivel que le interesan",
+      "gradoEjemplo": "Por ejemplo: 1.er grado de primaria en la Sede Central",
+      "gradoElegir": "Elige el grado que te interesa",
+      "boton": "Escribir al colegio por WhatsApp"
+    }
   }
 }

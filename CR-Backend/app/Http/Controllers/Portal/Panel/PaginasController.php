@@ -7,6 +7,7 @@ use App\Models\Portal\Pagina;
 use App\Support\Portal\Bloques;
 use App\Support\Portal\ImagenesEnJson;
 use App\Support\Portal\MensajesDeValidacion;
+use App\Support\Portal\Navegacion;
 use App\Support\Portal\PaginasDeNosotros;
 use App\Support\Portal\RevisionDeBloques;
 use Illuminate\Database\Eloquent\Model;
@@ -18,11 +19,14 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * /web-portal/pages — las subpáginas de Nosotros (contrato §3.19 y §3.20):
- * su título, su frase y la frase de su tarjeta en el índice. Sus bloques se
- * editan aparte (y no se tocan aquí).
+ * su título, su frase, la frase de su tarjeta en el índice y su lugar en el
+ * menú (2.13: el grupo y el nombre). Sus bloques se editan aparte (y no se
+ * tocan aquí).
  *
- * La dirección se elige de las que el portal sabe abrir (PaginasDeNosotros)
- * y no cambia después de creada. En borrador, su dirección responde 404.
+ * La dirección no cambia después de creada. Desde la 2.13 puede ser
+ * cualquiera: el portal abre las que están en el menú (/v1/navegacion). Sin
+ * grupo, la página no sale en el menú y el portal no la abre; en borrador,
+ * tampoco, y su dirección responde 404.
  */
 class PaginasController extends ListaDelPortalController
 {
@@ -36,12 +40,12 @@ class PaginasController extends ListaDelPortalController
         return 'la página';
     }
 
-    /** El índice y, si se ve, la página misma. */
+    /** El índice, el menú y, si se ve, la página misma. */
     protected function rutasAfectadas(?Model $fila): array
     {
         return $fila?->estado === Pagina::PUBLICADO
-            ? ['/v1/nosotros', "/v1/nosotros/paginas/{$fila->slug}"]
-            : ['/v1/nosotros'];
+            ? ['/v1/nosotros', '/v1/navegacion', "/v1/nosotros/paginas/{$fila->slug}"]
+            : ['/v1/nosotros', '/v1/navegacion'];
     }
 
     protected function reglas(Request $peticion, ?Model $fila): array
@@ -49,25 +53,43 @@ class PaginasController extends ListaDelPortalController
         $obligatorio = $fila ? 'sometimes' : 'required';
 
         return [
-            'slug'    => $fila ? ['prohibited'] : ['required', Rule::in(PaginasDeNosotros::slugs()), Rule::unique('portal_paginas', 'slug')],
+            'slug'    => $fila ? ['prohibited'] : ['required', 'string', 'max:60', 'regex:/^[a-z0-9]+(-[a-z0-9]+)*$/', Rule::unique('portal_paginas', 'slug')],
             'titulo'  => [$obligatorio, 'string', 'max:60'],
             'bajada'  => ['nullable', 'string', 'max:160'],
             'resumen' => ['nullable', 'string', 'max:140'],
+            // null = fuera del menú.
+            'grupo'   => ['sometimes', 'nullable', Rule::in(array_keys(Navegacion::grupos()))],
+            'nombre'  => ['sometimes', 'nullable', 'required_with:grupo', 'string', 'max:40'],
         ];
     }
 
     protected function atributos(): array
     {
-        return ['slug' => 'dirección', 'titulo' => 'título', 'bajada' => 'frase bajo el título', 'resumen' => 'frase de su tarjeta'];
+        return [
+            'slug'    => 'dirección',
+            'titulo'  => 'título',
+            'bajada'  => 'frase bajo el título',
+            'resumen' => 'frase de su tarjeta',
+            'grupo'   => 'grupo del menú',
+            'nombre'  => 'nombre en el menú',
+        ];
     }
 
     protected function aColumnas(array $v, Request $peticion, ?Model $fila): array
     {
         if (! $fila) {
-            $v['grupo'] = PaginasDeNosotros::grupo($v['slug']);
-            $v['nombre'] = PaginasDeNosotros::nombre($v['slug']);
+            // Si no se eligió, el lugar que tenía en el menú del portal (las 16 de siempre), si su grupo existe.
+            if (! array_key_exists('grupo', $v)) {
+                $grupo = PaginasDeNosotros::grupo($v['slug']);
+                $v['grupo'] = array_key_exists((string) $grupo, Navegacion::grupos()) ? $grupo : null;
+            }
+            $v['nombre'] ??= $v['grupo'] ? (PaginasDeNosotros::nombre($v['slug']) ?? $v['titulo']) : null;
             // Sin bloques: «El contenido de esta página se publicará pronto».
             $v['bloques'] = [];
+        }
+
+        if (array_key_exists('grupo', $v) && $v['grupo'] === null) {
+            $v['nombre'] = null;
         }
 
         return $v;
@@ -208,9 +230,11 @@ class PaginasController extends ListaDelPortalController
     protected function aPanel(Model $fila): array
     {
         return $fila->only(['id', 'slug', 'titulo', 'bajada', 'resumen', 'orden', 'estado']) + [
-            'grupo'   => $fila->grupo ?? PaginasDeNosotros::grupo($fila->slug),
-            'nombre'  => $fila->nombre ?? PaginasDeNosotros::nombre($fila->slug),
-            'bloques' => count($fila->bloques ?? []),
+            'grupo'       => $fila->grupo,
+            // El título del grupo, para la tabla; null si no está en el menú.
+            'grupoTitulo' => $fila->grupo ? (Navegacion::grupos()[$fila->grupo] ?? null) : null,
+            'nombre'      => $fila->nombre,
+            'bloques'     => count($fila->bloques ?? []),
         ];
     }
 }
