@@ -140,7 +140,7 @@ jobs:
           echo "Sintaxis correcta en $(find app routes database config tests -name '*.php' | wc -l) archivos"
       - name: Avisos de seguridad de Composer
         working-directory: CR-Backend
-        run: composer audit
+        run: composer audit --locked
       # Los avisos de npm se informan pero no frenan el flujo: hoy son avisos
       # de Angular 19 cuya corrección exige saltar a Angular 21 (ver el
       # informe). Quedan visibles en el resumen de cada ejecución.
