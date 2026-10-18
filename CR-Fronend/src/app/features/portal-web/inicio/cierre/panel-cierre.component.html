@@ -2,44 +2,75 @@
   <header class="ajustes-panel__cabecera">
     <div>
       <h2 id="titulo-cierre">Cierre</h2>
-      <p class="form-ayuda">
-        La última sección de Inicio, sobre el fondo celeste. También cierra Nosotros, Proyectos y Logros. Un título y hasta dos botones;
-        sin botones, solo se ve el título.
-      </p>
+      <p class="form-ayuda">La invitación al final de Inicio. También cierra Nosotros, Proyectos y Logros.</p>
+    </div>
+    <div class="ajustes-panel__acciones" *ngIf="!cargando && guardado">
+      <button type="button" class="btn-primary" (click)="abrir()">
+        <app-icon icono="edit" [tamano]="16"></app-icon>
+        Editar cierre
+      </button>
     </div>
   </header>
 
-  <p class="form-ayuda ajuste-bloque" *ngIf="cargando">Cargando el cierre…</p>
+  <div class="pw-esqueleto" *ngIf="cargando" role="status">
+    <span class="solo-lectores">Cargando el cierre…</span>
+    <span class="esqueleto esqueleto--bloque" aria-hidden="true"></span>
+  </div>
 
-  <form [formGroup]="form" *ngIf="!cargando" (ngSubmit)="guardar()" novalidate>
-    <div class="grupo-montos">
-      <div class="form-fields">
-        <div class="form-group">
-          <label for="cierre-titulo">Título *</label>
-          <input id="cierre-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
-            placeholder="Ej. ¿Quieres conocer CATA?" [class.is-invalid]="invalido(form.controls.titulo)" aria-describedby="ayuda-cierre-titulo" />
-          <small class="form-error" *ngIf="invalido(form.controls.titulo)">Obligatorio (máximo 60).</small>
-          <small class="form-ayuda" id="ayuda-cierre-titulo">El texto completo, como se lee en el portal.</small>
+  <ng-container *ngIf="!cargando">
+    <!-- Así se ve: el título y los botones con sus colores del portal -->
+    <div class="ajuste-bloque" *ngIf="guardado">
+      <h3 class="ajuste-bloque__pregunta">Así se ve en el portal</h3>
+      <div class="pw-vista-cierre">
+        <h3>{{ guardado.titulo }}</h3>
+        <div class="pw-vista-cierre__botones" *ngIf="guardado.acciones.length">
+          <span *ngFor="let a of guardado.acciones; let primero = first"
+            [ngClass]="primero ? 'pw-vista-cierre__dorado' : 'pw-vista-cierre__blanco'">{{ a.etiqueta }}</span>
         </div>
+      </div>
+      <p class="form-ayuda" *ngIf="!guardado.acciones.length">Sin botones: solo se ve el título.</p>
+    </div>
+
+    <div class="card-vacio" *ngIf="!guardado">
+      <app-icon icono="check_circle" [tamano]="34"></app-icon>
+      El cierre no está configurado: el portal muestra «Esta sección del portal todavía no está disponible».
+      <button type="button" class="btn-primary" (click)="abrir()">
+        <app-icon icono="edit" [tamano]="16"></app-icon>
+        Configurar el cierre
+      </button>
+    </div>
+  </ng-container>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  titulo="Editar el cierre"
+  ancho="720px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+>
+  <pw-cuerpo-desplazable>
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <div class="seccion-form">
+      <div class="form-group">
+        <label for="cierre-titulo">Título *</label>
+        <input id="cierre-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+          placeholder="Ej. ¿Quieres conocer CATA?" [class.is-invalid]="invalido(form.controls.titulo)" aria-describedby="ayuda-cierre-titulo" />
+        <small class="form-error" *ngIf="invalido(form.controls.titulo)">Obligatorio (máximo 60).</small>
+        <small class="form-ayuda" id="ayuda-cierre-titulo">El texto completo, como se lee en el portal.</small>
       </div>
     </div>
 
-    <div class="grupo-montos">
-      <h3 class="grupo-montos__titulo">Botón dorado</h3>
+    <div class="seccion-form">
+      <h3 class="seccion-form__titulo">Botón dorado</h3>
       <app-editor-accion [grupo]="dorado" idBase="cierre-dorado" etiquetaDelCheck="Lleva el botón dorado"></app-editor-accion>
     </div>
 
-    <div class="grupo-montos">
-      <h3 class="grupo-montos__titulo">Botón blanco</h3>
+    <div class="seccion-form">
+      <h3 class="seccion-form__titulo">Botón blanco</h3>
       <app-editor-accion [grupo]="blanco" idBase="cierre-blanco" etiquetaDelCheck="Lleva el botón blanco"></app-editor-accion>
       <small class="form-ayuda">Si solo lleva este, el portal lo muestra como el dorado.</small>
     </div>
-
-    <footer class="panel-pie">
-      <button type="submit" class="btn-primary" [disabled]="guardando || form.pristine">
-        {{ guardando ? 'Guardando…' : 'Guardar el cierre' }}
-      </button>
-      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="form.dirty && !guardando">Tienes cambios sin guardar.</p>
-    </footer>
   </form>
-</section>
+  </pw-cuerpo-desplazable>
+</app-form-modal>

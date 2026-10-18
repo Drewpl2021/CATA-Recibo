@@ -1,16 +1,15 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { mensajeErrorApi } from '../../../../core/utils';
-import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
-import { DataTableComponent } from '../../../../shared/components/data-table/data-table.component';
-import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { mostrarErrorDelPanel } from '../../compartido/panel';
+import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
+import { mostrarErrorDelPanel, urlParaVer } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
+import { cuantos, ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
 import { EstadoPortal, ImagenPortal, NivelPortal, SeccionNiveles } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
@@ -20,29 +19,26 @@ import { RECURSOS } from '../../portal-web.service';
  * educativa y hasta 4 niveles con su foto 3:2.
  *
  * Son los de Inicio: Propuesta Educativa tiene su propia lista de niveles.
+ * Cada nivel es una tarjeta, como las del dashboard; el título y el enlace
+ * se leen arriba y se cambian en su propio modal.
  */
 @Component({
   selector: 'app-panel-niveles',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, FormModalComponent, SelectorImagenComponent, CuerpoDesplazableComponent],
   templateUrl: './panel-niveles.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements OnInit {
   private fb = inject(FormBuilder);
+
+  /** Cómo está la sección, para el índice de Inicio. */
+  @Output() resumen = new EventEmitter<ResumenDeSeccion>();
 
   protected readonly recurso = RECURSOS.niveles;
   protected readonly nombre = { singular: 'nivel', femenino: false };
 
   foto: ImagenPortal | null = null;
-
-  columnas: ColumnaTabla<NivelPortal>[] = [
-    this.columnaDeOrden(),
-    { campo: 'nombre', header: 'Nivel', ancho: '16%' },
-    { campo: 'rango', header: 'Rango', formatear: (r) => r ?? '—' },
-    { campo: 'sede', header: 'Sede', formatear: (s) => s ?? '—' },
-    { campo: 'imagen_id', header: 'Foto', ancho: '8%', formatear: (f) => (f ? 'Sí' : 'No') },
-    this.columnaDeEstado(),
-  ];
 
   form = this.fb.group({
     nombre: ['', [Validators.required, Validators.maxLength(24)]],
@@ -56,7 +52,10 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
 
   cargandoSeccion = true;
   guardandoSeccion = false;
+  modalSeccion = false;
   private versionSeccion: string | null = null;
+  /** Lo guardado: lo que se lee arriba de las tarjetas. */
+  seccionGuardada: SeccionNiveles | null = null;
 
   seccion = this.fb.group({
     titulo: ['', [Validators.required, Validators.maxLength(60)]],
@@ -70,6 +69,40 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
 
   protected describir(n: NivelPortal): string {
     return `el nivel «${n.nombre}» de Inicio`;
+  }
+
+  protected override alCargar(): void {
+    this.resumir();
+  }
+
+  /** Solo la primera vez: al recargar después de guardar, las tarjetas se quedan donde están. */
+  get primeraCarga(): boolean {
+    return (this.cargando && !this.filas.length) || this.cargandoSeccion;
+  }
+
+  /** Los publicados sin foto: su tarjeta se ve vacía en el portal. */
+  get publicadosSinFoto(): number {
+    return this.filas.filter((n) => n.estado === 'publicado' && !n.imagen_id).length;
+  }
+
+  private resumir(): void {
+    if (this.cargando || this.cargandoSeccion) return;
+
+    const sinFoto = this.publicadosSinFoto;
+    const sinTitulo = !this.seccionGuardada?.titulo;
+    const pendientes = [];
+    if (sinTitulo) pendientes.push({ cuantos: 1, texto: 'sección sin título: Niveles' });
+    if (sinFoto) pendientes.push({ cuantos: sinFoto, texto: sinFoto === 1 ? 'nivel publicado sin foto' : 'niveles publicados sin foto' });
+
+    let estado = this.filas.length ? cuantos(this.publicados, 'publicado', 'publicados') : 'Sin niveles';
+    if (sinFoto) estado += ` · ${sinFoto} sin foto`;
+    if (sinTitulo) estado = 'Falta el título de la sección';
+
+    this.resumen.emit({ estado, aviso: sinTitulo || sinFoto > 0, pendientes });
+  }
+
+  ver(url: string): string {
+    return urlParaVer(url);
   }
 
   nuevo(): void {
@@ -86,6 +119,11 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
     this.modalVisible = true;
   }
 
+  /** Publicar o pasar a borrador, desde el botón de la tarjeta. */
+  alternarEstado(n: NivelPortal): void {
+    this.alAccionar({ accion: n.estado === 'publicado' ? 'ocultar' : 'publicar', fila: n });
+  }
+
   invalido(campo: string): boolean {
     const c = this.form.get(campo);
     return !!c && c.invalid && c.touched;
@@ -99,6 +137,7 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
 
@@ -116,8 +155,9 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
     this.portalWebService.getFicha<SeccionNiveles>('niveles').subscribe({
       next: (res) => {
         this.versionSeccion = res.data.version;
-        this.seccion.reset({ titulo: res.data.contenido?.titulo ?? '', propuestaUrl: res.data.contenido?.propuestaUrl ?? '' });
+        this.seccionGuardada = res.data.contenido ?? null;
         this.cargandoSeccion = false;
+        this.resumir();
       },
       error: (err) => {
         this.cargandoSeccion = false;
@@ -126,19 +166,28 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
     });
   }
 
+  abrirSeccion(): void {
+    this.seccion.reset({ titulo: this.seccionGuardada?.titulo ?? '', propuestaUrl: this.seccionGuardada?.propuestaUrl ?? '' });
+    this.modalSeccion = true;
+  }
+
   guardarSeccion(): void {
     if (this.seccion.invalid) {
       this.seccion.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
 
     const v = this.seccion.getRawValue();
+    const datos: SeccionNiveles = { titulo: v.titulo ?? '', propuestaUrl: v.propuestaUrl || null };
     this.guardandoSeccion = true;
-    this.portalWebService.guardarFicha<SeccionNiveles>('niveles', { titulo: v.titulo, propuestaUrl: v.propuestaUrl || null }, this.versionSeccion).subscribe({
+    this.portalWebService.guardarFicha<SeccionNiveles>('niveles', datos, this.versionSeccion).subscribe({
       next: (res) => {
         this.guardandoSeccion = false;
         this.versionSeccion = res.data.version;
-        this.seccion.markAsPristine();
+        this.seccionGuardada = datos;
+        this.modalSeccion = false;
+        this.resumir();
         this.toastService.success('Sección guardada', 'El portal la mostrará en hasta un minuto.');
       },
       error: (err: HttpErrorResponse) => {

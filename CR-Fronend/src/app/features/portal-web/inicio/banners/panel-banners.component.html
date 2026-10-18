@@ -2,14 +2,7 @@
   <header class="ajustes-panel__cabecera">
     <div>
       <h2 id="titulo-banners">Carrusel</h2>
-      <p class="form-ayuda">
-        Los afiches de la portada, hasta 8 publicados ({{ publicados }} ahora), del más reciente al más antiguo: lo nuevo entra arriba.
-        Con dos o más avanzan solos cada 6 segundos; sin ninguno, la sección desaparece.
-      </p>
-      <p class="form-nota" *ngIf="publicados > 0 && publicadosSinMovil > 0">
-        {{ publicadosSinMovil }} de {{ publicados }} publicados no tienen imagen para celular. El portal la usa solo si todos la traen;
-        si no, en el celular muestra completa la de escritorio, que se ve pequeña.
-      </p>
+      <p class="form-ayuda">Los afiches de la portada: hasta 8 publicados ({{ publicados }} ahora), el más reciente primero.</p>
     </div>
     <div class="ajustes-panel__acciones">
       <button type="button" class="btn-primary" (click)="nuevo()">
@@ -18,6 +11,13 @@
       </button>
     </div>
   </header>
+
+  <div class="ajuste-bloque" *ngIf="publicados > 0 && publicadosSinMovil > 0">
+    <p class="form-nota form-nota--aviso pw-sin-margen">
+      {{ publicadosSinMovil }} de {{ publicados }} publicados no tienen afiche para celular. El portal lo usa solo si todos lo traen;
+      si no, en el celular muestra completo el de escritorio, que se ve pequeño.
+    </p>
+  </div>
 
   <div class="ajuste-bloque">
     <app-data-table
@@ -34,85 +34,140 @@
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
     >
+      <ng-template appCelda="titulo" let-fila>
+        <div class="pw-celda-titulo">
+          <span class="pw-miniatura" aria-hidden="true">
+            <img *ngIf="fila.imagen" [src]="ver(fila.imagen.url)" alt="" loading="lazy" />
+          </span>
+          <span>
+            <strong>{{ fila.titulo }}</strong>
+            <small>
+              {{ detalle(fila) }}<ng-container *ngIf="!fila.imagen_movil_id"> · <span class="pw-falta">sin afiche para celular</span></ng-container>
+            </small>
+          </span>
+        </div>
+      </ng-template>
+
       <ng-template appCelda="orden" let-fila>
         <div class="action-btns">
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
-            [attr.aria-label]="'Subir ' + fila.titulo" title="Subir">↑</button>
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
-            [attr.aria-label]="'Bajar ' + fila.titulo" title="Bajar">↓</button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.titulo" title="Subir">
+            <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+          </button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.titulo" title="Bajar">
+            <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+          </button>
         </div>
       </ng-template>
     </app-data-table>
   </div>
 </section>
 
+<!-- Agregar o editar: en tres pasos, con el wizard del alta de personal. -->
 <app-form-modal
   [(visible)]="modalVisible"
   [titulo]="editando ? 'Editar banner' : 'Agregar banner'"
-  ancho="860px"
+  ancho="760px"
   [guardando]="guardando"
-  (guardar)="guardar()"
+  [ocultarBotonesPorDefecto]="true"
   (cancelar)="cerrar()"
 >
-  <form [formGroup]="form" class="form-fields">
-    <ng-container *ngIf="modalVisible">
-      <app-selector-imagen uso="banner" etiqueta="Afiche para escritorio" [obligatoria]="true"
-        [(imagen)]="imagen" [(foco)]="foco"></app-selector-imagen>
-      <small class="form-error" *ngIf="intentoGuardar && !imagen">Sube el afiche para escritorio.</small>
-      <small class="form-ayuda">
+  <pw-cuerpo-desplazable #cuerpo>
+  <app-wizard #wizard [pasos]="pasos" [(actual)]="paso" [form]="form"></app-wizard>
+
+  <form [formGroup]="form" class="form-fields" novalidate (ngSubmit)="guardar()">
+    <!-- 1 · Afiches -->
+    <div class="seccion-form pw-paso" [hidden]="paso !== 0">
+      <h3 class="seccion-form__titulo">Afiches</h3>
+      <p class="seccion-form__ayuda">
         Deja libre de texto el 10 % de abajo: ahí van el botón y los indicadores. Si el afiche trae texto escrito
         (fechas, teléfonos, redes), el texto alternativo tiene que repetirlo todo.
-      </small>
+      </p>
+      <ng-container *ngIf="modalVisible">
+        <app-selector-imagen uso="banner" etiqueta="Afiche para escritorio" [obligatoria]="true"
+          [imagen]="imagen" (imagenChange)="alCambiarImagen($event)" [(foco)]="foco"></app-selector-imagen>
+        <small class="form-error" *ngIf="invalido('imagen_id')">Sube el afiche para escritorio.</small>
 
-      <app-selector-imagen uso="banner-movil" etiqueta="Afiche para celular" [(imagen)]="imagenMovil"></app-selector-imagen>
-      <small class="form-ayuda">Opcional, pero recomendado: vertical 4:5. El portal lo usa solo si todos los banners publicados lo traen.</small>
-    </ng-container>
-
-    <div class="form-group">
-      <label for="banner-titulo">Título *</label>
-      <input id="banner-titulo" type="text" class="form-control" formControlName="titulo" maxlength="80"
-        placeholder="Ej. Matrículas 2027 abiertas para inicial, primaria y secundaria" [class.is-invalid]="invalido('titulo')" />
-      <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 80).</small>
-      <small class="form-ayuda" *ngIf="!invalido('titulo')">Nombra el banner en los indicadores y para los lectores de pantalla.</small>
+        <app-selector-imagen uso="banner-movil" etiqueta="Afiche para celular" [(imagen)]="imagenMovil"></app-selector-imagen>
+        <small class="form-ayuda">Opcional, pero recomendado: vertical 4:5. El portal lo usa solo si todos los banners publicados lo traen.</small>
+      </ng-container>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label for="banner-categoria">Categoría *</label>
-        <select id="banner-categoria" class="form-control" formControlName="categoria" [class.is-invalid]="invalido('categoria')">
-          <option value="" disabled>Elige la categoría</option>
-          <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
-        </select>
-        <small class="form-error" *ngIf="invalido('categoria')">Elige una categoría.</small>
+    <!-- 2 · Datos -->
+    <div class="seccion-form pw-paso" [hidden]="paso !== 1">
+      <h3 class="seccion-form__titulo">Datos del banner</h3>
+      <div class="rejilla-campos">
+        <div class="form-group rejilla-campos--completo">
+          <label for="banner-titulo">Título *</label>
+          <input id="banner-titulo" type="text" class="form-control" formControlName="titulo" maxlength="80"
+            placeholder="Ej. Matrículas 2027 abiertas para inicial, primaria y secundaria" [class.is-invalid]="invalido('titulo')"
+            aria-describedby="banner-titulo-ayuda" />
+          <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 80).</small>
+          <small class="form-ayuda" id="banner-titulo-ayuda" *ngIf="!invalido('titulo')">Nombra el banner en los indicadores y para los lectores de pantalla.</small>
+        </div>
+        <div class="form-group">
+          <label for="banner-categoria">Categoría *</label>
+          <select id="banner-categoria" class="form-control" formControlName="categoria" [class.is-invalid]="invalido('categoria')">
+            <option value="" disabled>Elige la categoría</option>
+            <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
+          </select>
+          <small class="form-error" *ngIf="invalido('categoria')">Elige una categoría.</small>
+        </div>
+        <div class="form-group">
+          <label for="banner-fecha">Fecha</label>
+          <input id="banner-fecha" type="date" class="form-control" formControlName="fecha" />
+          <small class="form-ayuda">Opcional.</small>
+        </div>
+        <div class="form-group">
+          <label for="banner-estado">Estado</label>
+          <select id="banner-estado" class="form-control" formControlName="estado">
+            <option value="publicado">Publicado</option>
+            <option value="borrador">Borrador</option>
+          </select>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="banner-fecha">Fecha</label>
-        <input id="banner-fecha" type="date" class="form-control" formControlName="fecha" />
-        <small class="form-ayuda">Opcional.</small>
-      </div>
-      <div class="form-group">
-        <label for="banner-estado">Estado</label>
-        <select id="banner-estado" class="form-control" formControlName="estado">
-          <option value="publicado">Publicado</option>
-          <option value="borrador">Borrador</option>
-        </select>
-      </div>
+      <label class="check-item">
+        <input type="checkbox" formControlName="texto_en_imagen" />
+        <span>El afiche ya trae escritos su título y su fecha: el portal no los repite y pone encima solo el botón.</span>
+      </label>
     </div>
 
-    <label class="check-item">
-      <input type="checkbox" formControlName="texto_en_imagen" />
-      <span>El afiche ya trae escritos su título y su fecha: el portal no los repite y pone encima solo el botón.</span>
-    </label>
+    <!-- 3 · Botón -->
+    <div class="seccion-form pw-paso" [hidden]="paso !== 2">
+      <h3 class="seccion-form__titulo">Botón del banner</h3>
+      <p class="seccion-form__ayuda">Opcional. Lleva a una página del portal o a otra web.</p>
+      <app-editor-accion [grupo]="form.controls.accion" idBase="banner-accion"></app-editor-accion>
 
-    <app-editor-accion [grupo]="form.controls.accion" idBase="banner-accion"></app-editor-accion>
-
-    <div class="form-group" *ngIf="form.controls.accion.value.conBoton">
-      <label for="banner-lado">Esquina del botón</label>
-      <select id="banner-lado" class="form-control" formControlName="lado_accion">
-        <option value="derecha">Abajo a la derecha</option>
-        <option value="izquierda">Abajo a la izquierda</option>
-      </select>
-      <small class="form-ayuda">La que no tape el texto ni los datos de contacto del afiche.</small>
+      <div class="form-group" *ngIf="form.controls.accion.value.conBoton">
+        <label for="banner-lado">Esquina del botón</label>
+        <select id="banner-lado" class="form-control" formControlName="lado_accion">
+          <option value="derecha">Abajo a la derecha</option>
+          <option value="izquierda">Abajo a la izquierda</option>
+        </select>
+        <small class="form-ayuda">La que no tape el texto ni los datos de contacto del afiche.</small>
+      </div>
     </div>
   </form>
+  </pw-cuerpo-desplazable>
+
+  <div modalFooter class="asistente-pie asistente-pie--extremos">
+    <button type="button" class="btn-secondary" (click)="wizard.anterior()" [disabled]="guardando" [style.visibility]="paso > 0 ? 'visible' : 'hidden'">
+      <app-icon icono="arrow_left" [tamano]="15"></app-icon>
+      Anterior
+    </button>
+    <div class="asistente-pie">
+      <button type="button" class="btn-secondary" (click)="cerrar()" [disabled]="guardando">Cancelar</button>
+      <button type="button" class="btn-secondary" *ngIf="!wizard.esUltimo && editando" (click)="wizard.siguiente()" [disabled]="guardando">
+        Siguiente
+      </button>
+      <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo && !editando" (click)="wizard.siguiente()">
+        Siguiente
+        <app-icon icono="arrow_right" [tamano]="15"></app-icon>
+      </button>
+      <button type="button" class="btn-primary" *ngIf="wizard.esUltimo || editando" (click)="guardar()" [disabled]="guardando">
+        {{ guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Guardar banner' }}
+      </button>
+    </div>
+  </div>
 </app-form-modal>

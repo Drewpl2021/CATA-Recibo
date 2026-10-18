@@ -2,10 +2,7 @@
   <header class="ajustes-panel__cabecera">
     <div>
       <h2 id="titulo-noticias">Noticias y comunicados</h2>
-      <p class="form-ayuda">
-        Lo que publica el colegio ({{ publicados }} publicadas). Van siempre por fecha, de la más reciente a la más antigua:
-        no hace falta ordenarlas. Inicio muestra las últimas.
-      </p>
+      <p class="form-ayuda">{{ publicados }} publicadas. Van por fecha, la más reciente primero; Inicio muestra las últimas.</p>
     </div>
     <div class="ajustes-panel__acciones">
       <button type="button" class="btn-primary" (click)="nueva()">
@@ -30,7 +27,16 @@
       (editarFila)="editar($event)"
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
-    ></app-data-table>
+    >
+      <ng-template appCelda="titulo" let-fila>
+        <div class="pw-celda-titulo">
+          <span>
+            <strong>{{ fila.titulo }}</strong>
+            <small>{{ detalle(fila) }}</small>
+          </span>
+        </div>
+      </ng-template>
+    </app-data-table>
   </div>
 </section>
 
@@ -42,8 +48,9 @@
   (guardar)="guardar()"
   (cancelar)="cerrar()"
 >
-  <form [formGroup]="form" class="form-fields">
-    <div class="form-row">
+  <pw-cuerpo-desplazable>
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <div class="rejilla-campos">
       <div class="form-group">
         <label for="noticia-tipo">Tipo</label>
         <select id="noticia-tipo" class="form-control" formControlName="tipo">
@@ -80,7 +87,7 @@
       <small class="form-ayuda">Opcional. Hasta 280 caracteres.</small>
     </div>
 
-    <div class="form-row">
+    <div class="rejilla-campos">
       <div class="form-group">
         <label for="noticia-enlace-url">Documento o página completa</label>
         <input id="noticia-enlace-url" type="url" class="form-control" formControlName="enlaceUrl" placeholder="https://…"
@@ -103,4 +110,5 @@
     <app-selector-imagen *ngIf="modalVisible" uso="noticia" etiqueta="Foto" [(imagen)]="foto"></app-selector-imagen>
     <small class="form-ayuda">Opcional. Horizontal 3:2.</small>
   </form>
+  </pw-cuerpo-desplazable>
 </app-form-modal>

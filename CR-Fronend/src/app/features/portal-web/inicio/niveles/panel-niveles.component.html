@@ -2,10 +2,7 @@
   <header class="ajustes-panel__cabecera">
     <div>
       <h2 id="titulo-niveles">Niveles</h2>
-      <p class="form-ayuda">
-        Los niveles de la portada, hasta 4 publicados ({{ publicados }} ahora), en este orden. Son los de Inicio:
-        Propuesta Educativa tiene los suyos.
-      </p>
+      <p class="form-ayuda">Hasta 4 publicados ({{ publicados }} ahora), en este orden. Son los de Inicio: Propuesta Educativa tiene los suyos.</p>
     </div>
     <div class="ajustes-panel__acciones">
       <button type="button" class="btn-primary" (click)="nuevo()">
@@ -15,61 +12,89 @@
     </div>
   </header>
 
-  <p class="form-ayuda ajuste-bloque" *ngIf="cargandoSeccion">Cargando la sección…</p>
+  <div class="pw-esqueleto" *ngIf="primeraCarga" role="status">
+    <span class="solo-lectores">Cargando los niveles…</span>
+    <span class="esqueleto esqueleto--titulo" aria-hidden="true"></span>
+    <span class="esqueleto esqueleto--bloque" aria-hidden="true"></span>
+  </div>
 
-  <form [formGroup]="seccion" *ngIf="!cargandoSeccion" (ngSubmit)="guardarSeccion()" novalidate>
-    <div class="grupo-montos">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="niveles-titulo">Título de la sección *</label>
-          <input id="niveles-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
-            placeholder="Ej. Inicial, primaria y secundaria" [class.is-invalid]="invalidoSeccion('titulo')" />
-          <small class="form-error" *ngIf="invalidoSeccion('titulo')">Obligatorio (máximo 60).</small>
+  <ng-container *ngIf="!primeraCarga">
+    <!-- El título y el enlace: se leen aquí y se cambian en su modal -->
+    <div class="ajuste-bloque">
+      <div class="pw-fila-dato">
+        <div class="pw-dato">
+          <span>Título de la sección</span>
+          <strong>{{ seccionGuardada?.titulo || 'Sin título todavía' }}</strong>
+          <small>Enlace a la propuesta educativa: {{ seccionGuardada?.propuestaUrl || 'ninguno' }}</small>
         </div>
-        <div class="form-group">
-          <label for="niveles-propuesta">Enlace a la propuesta educativa</label>
-          <input id="niveles-propuesta" type="url" class="form-control" formControlName="propuestaUrl" placeholder="https://…"
-            [class.is-invalid]="invalidoSeccion('propuestaUrl')" />
-          <small class="form-error" *ngIf="invalidoSeccion('propuestaUrl')">Una dirección que empiece con https://.</small>
-          <small class="form-ayuda" *ngIf="!invalidoSeccion('propuestaUrl')">Opcional. Vacío, el enlace no se muestra.</small>
-        </div>
+        <button type="button" class="btn-secondary" (click)="abrirSeccion()">
+          <app-icon icono="edit" [tamano]="14"></app-icon>
+          Editar título y enlace
+        </button>
       </div>
     </div>
-    <footer class="panel-pie">
-      <button type="submit" class="btn-primary" [disabled]="guardandoSeccion || seccion.pristine">
-        {{ guardandoSeccion ? 'Guardando…' : 'Guardar título y enlace' }}
-      </button>
-      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="seccion.dirty && !guardandoSeccion">Tienes cambios sin guardar.</p>
-    </footer>
-  </form>
 
-  <div class="ajuste-bloque">
-    <app-data-table
-      entidad="el nivel"
-      [columnas]="columnas"
-      [datos]="filas"
-      [cargando]="cargando"
-      [mostrarBuscador]="false"
-      [numerarFilas]="false"
-      [acciones]="['editar', 'eliminar']"
-      [accionesPersonalizadas]="acciones"
-      mensajeVacio="Todavía no hay niveles en Inicio."
-      (editarFila)="editar($event)"
-      (eliminarFila)="eliminar($event)"
-      (accionPersonalizada)="alAccionar($event)"
-    >
-      <ng-template appCelda="orden" let-fila>
-        <div class="action-btns">
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
-            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
-            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
-        </div>
-      </ng-template>
-    </app-data-table>
-  </div>
+    <!-- Una tarjeta por nivel -->
+    <div class="ajuste-bloque" *ngIf="filas.length">
+      <div class="pw-tarjetas">
+        <article class="tarjeta-grafico" *ngFor="let n of filas; let primero = first; let ultimo = last">
+          <span class="pw-foto pw-foto--ancha" [class.pw-foto--vacia]="!n.imagen">
+            <img *ngIf="n.imagen" [src]="ver(n.imagen.url)" [alt]="n.imagen.alt" loading="lazy" />
+            <ng-container *ngIf="!n.imagen">Sin foto</ng-container>
+          </span>
+          <header class="tarjeta-grafico__cabeza">
+            <div>
+              <h3 class="tarjeta-grafico__titulo">{{ n.nombre }}</h3>
+              <p class="tarjeta-grafico__nota">{{ n.rango || 'Sin rango de edades o grados' }}</p>
+            </div>
+            <button type="button" class="tarjeta-grafico__accion" (click)="editar(n)" [attr.aria-label]="'Editar ' + n.nombre">Editar</button>
+          </header>
+          <ul class="pw-datos">
+            <li *ngIf="n.sede">{{ n.sede }}</li>
+            <li *ngIf="n.reconocimiento">{{ n.reconocimiento }}</li>
+            <li *ngIf="!n.imagen && n.estado === 'publicado'" class="pw-falta">Falta la foto: la tarjeta se ve vacía.</li>
+          </ul>
+          <div class="pw-tarjeta-pie">
+            <span class="status-badge" [ngClass]="n.estado === 'publicado' ? 'status-badge-success' : 'status-badge-secondary'">
+              {{ n.estado === 'publicado' ? 'Publicado' : 'Borrador' }}
+            </span>
+            <div class="action-btns">
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(n, -1)" [disabled]="ordenando || primero"
+                [attr.aria-label]="'Subir ' + n.nombre" title="Subir">
+                <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(n, 1)" [disabled]="ordenando || ultimo"
+                [attr.aria-label]="'Bajar ' + n.nombre" title="Bajar">
+                <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion" [ngClass]="n.estado === 'publicado' ? 'btn-icon-brand' : 'btn-icon-success'"
+                (click)="alternarEstado(n)"
+                [attr.aria-label]="(n.estado === 'publicado' ? 'Pasar a borrador ' : 'Publicar ') + n.nombre"
+                [title]="n.estado === 'publicado' ? 'Pasar a borrador: deja de verse en el portal' : 'Publicar: se verá en el portal'">
+                <app-icon [icono]="n.estado === 'publicado' ? 'eye_off' : 'eye'" [tamano]="16"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-danger" (click)="eliminar(n)"
+                [attr.aria-label]="'Eliminar ' + n.nombre" title="Eliminar">
+                <app-icon icono="trash" [tamano]="16"></app-icon>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div class="card-vacio" *ngIf="!filas.length">
+      <app-icon icono="graduation_cap" [tamano]="34"></app-icon>
+      Todavía no hay niveles en Inicio: la sección no aparece en el portal.
+      <button type="button" class="btn-primary" (click)="nuevo()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar el primero
+      </button>
+    </div>
+  </ng-container>
 </section>
 
+<!-- Un nivel -->
 <app-form-modal
   [(visible)]="modalVisible"
   [titulo]="editando ? 'Editar nivel' : 'Agregar nivel'"
@@ -78,37 +103,69 @@
   (guardar)="guardar()"
   (cancelar)="cerrar()"
 >
-  <form [formGroup]="form" class="form-fields">
-    <div class="form-row">
-      <div class="form-group">
-        <label for="nivel-nombre">Nombre *</label>
-        <input id="nivel-nombre" type="text" class="form-control" formControlName="nombre" maxlength="24"
-          placeholder="Ej. Inicial" [class.is-invalid]="invalido('nombre')" />
-        <small class="form-error" *ngIf="invalido('nombre')">Obligatorio (máximo 24).</small>
-      </div>
-      <div class="form-group">
-        <label for="nivel-rango">Rango</label>
-        <input id="nivel-rango" type="text" class="form-control" formControlName="rango" maxlength="40" placeholder="Ej. 3, 4 y 5 años" />
-      </div>
-      <div class="form-group">
-        <label for="nivel-estado">Estado</label>
-        <select id="nivel-estado" class="form-control" formControlName="estado">
-          <option value="publicado">Publicado</option>
-          <option value="borrador">Borrador</option>
-        </select>
+  <pw-cuerpo-desplazable>
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <div class="seccion-form">
+      <h3 class="seccion-form__titulo">Datos del nivel</h3>
+      <div class="rejilla-campos">
+        <div class="form-group">
+          <label for="nivel-nombre">Nombre *</label>
+          <input id="nivel-nombre" type="text" class="form-control" formControlName="nombre" maxlength="24"
+            placeholder="Ej. Inicial" [class.is-invalid]="invalido('nombre')" />
+          <small class="form-error" *ngIf="invalido('nombre')">Obligatorio (máximo 24).</small>
+        </div>
+        <div class="form-group">
+          <label for="nivel-rango">Edades o grados</label>
+          <input id="nivel-rango" type="text" class="form-control" formControlName="rango" maxlength="40" placeholder="Ej. 3, 4 y 5 años" />
+        </div>
+        <div class="form-group">
+          <label for="nivel-sede">Sede</label>
+          <input id="nivel-sede" type="text" class="form-control" formControlName="sede" maxlength="60" placeholder="Ej. Sede CATA Inicial" />
+        </div>
+        <div class="form-group">
+          <label for="nivel-reconocimiento">Reconocimiento</label>
+          <input id="nivel-reconocimiento" type="text" class="form-control" formControlName="reconocimiento" maxlength="60" placeholder="Ej. Reconocido en 1998" />
+        </div>
+        <div class="form-group">
+          <label for="nivel-estado">Estado</label>
+          <select id="nivel-estado" class="form-control" formControlName="estado">
+            <option value="publicado">Publicado</option>
+            <option value="borrador">Borrador</option>
+          </select>
+        </div>
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label for="nivel-sede">Sede</label>
-        <input id="nivel-sede" type="text" class="form-control" formControlName="sede" maxlength="60" placeholder="Ej. Sede CATA Inicial" />
-      </div>
-      <div class="form-group">
-        <label for="nivel-reconocimiento">Reconocimiento</label>
-        <input id="nivel-reconocimiento" type="text" class="form-control" formControlName="reconocimiento" maxlength="60" placeholder="Ej. Reconocido en 1998" />
-      </div>
+
+    <div class="seccion-form">
+      <h3 class="seccion-form__titulo">Foto</h3>
+      <app-selector-imagen *ngIf="modalVisible" uso="nivel" etiqueta="Foto" [(imagen)]="foto"></app-selector-imagen>
+      <small class="form-ayuda">Opcional, pero sin ella la tarjeta se ve vacía. Horizontal 3:2. Las fotos de estudiantes necesitan la autorización de su familia.</small>
     </div>
-    <app-selector-imagen *ngIf="modalVisible" uso="nivel" etiqueta="Foto" [(imagen)]="foto"></app-selector-imagen>
-    <small class="form-ayuda">Opcional. Horizontal 3:2. Las fotos de estudiantes necesitan la autorización de su familia.</small>
+  </form>
+  </pw-cuerpo-desplazable>
+</app-form-modal>
+
+<!-- El título de la sección y su enlace -->
+<app-form-modal
+  [(visible)]="modalSeccion"
+  titulo="Título y enlace de Niveles"
+  ancho="560px"
+  [guardando]="guardandoSeccion"
+  (guardar)="guardarSeccion()"
+>
+  <form [formGroup]="seccion" class="form-fields" novalidate>
+    <div class="form-group">
+      <label for="niveles-titulo">Título de la sección *</label>
+      <input id="niveles-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+        placeholder="Ej. Inicial, primaria y secundaria" [class.is-invalid]="invalidoSeccion('titulo')" />
+      <small class="form-error" *ngIf="invalidoSeccion('titulo')">Obligatorio (máximo 60).</small>
+    </div>
+    <div class="form-group">
+      <label for="niveles-propuesta">Enlace a la propuesta educativa</label>
+      <input id="niveles-propuesta" type="url" class="form-control" formControlName="propuestaUrl" placeholder="https://…"
+        [class.is-invalid]="invalidoSeccion('propuestaUrl')" />
+      <small class="form-error" *ngIf="invalidoSeccion('propuestaUrl')">Una dirección que empiece con https://.</small>
+      <small class="form-ayuda" *ngIf="!invalidoSeccion('propuestaUrl')">Opcional. Vacío, el enlace no se muestra.</small>
+    </div>
   </form>
 </app-form-modal>

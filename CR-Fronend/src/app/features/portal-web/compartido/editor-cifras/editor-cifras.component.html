@@ -2,7 +2,10 @@
   <header class="ajustes-panel__cabecera">
     <div>
       <h2 [id]="id + '-titulo'">Cifras</h2>
-      <p class="form-ayuda">
+      <p class="form-ayuda" *ngIf="vista === 'tarjetas'">
+        Los números destacados {{ dondeSeVen }}. Hasta 4 publicadas ({{ publicadas }} ahora), solo cifras reales y verificables.
+      </p>
+      <p class="form-ayuda" *ngIf="vista === 'tabla'">
         Los números destacados{{ dondeSeVen ? ' ' + dondeSeVen : '' }}, con un contador que sube al verse. Hasta 4 publicadas
         ({{ publicadas }} ahora). <strong>Solo cifras reales y verificables.</strong>
       </p>
@@ -15,7 +18,7 @@
     </div>
   </header>
 
-  <div class="ajuste-bloque">
+  <div class="ajuste-bloque" *ngIf="vista === 'tabla'">
     <app-data-table
       entidad="la cifra"
       [columnas]="columnas"
@@ -40,6 +43,67 @@
       </ng-template>
     </app-data-table>
   </div>
+
+  <!-- ══ Tarjetas: las cifras del dashboard, con su estado y sus botones ══ -->
+  <ng-container *ngIf="vista === 'tarjetas'">
+    <div class="pw-esqueleto" *ngIf="cargando && !cifras.length" role="status">
+      <span class="solo-lectores">Cargando las cifras…</span>
+      <span class="esqueleto esqueleto--bloque" aria-hidden="true"></span>
+    </div>
+
+    <div class="ajuste-bloque" *ngIf="cifras.length">
+      <div class="pw-tarjetas">
+        <article class="indicador" *ngFor="let c of cifras; let i = index; let primera = first; let ultima = last">
+          <span class="indicador__icono">
+            <app-icon icono="bar_chart" [tamano]="20"></app-icon>
+          </span>
+          <div class="indicador__texto">
+            <h3 class="indicador__nombre">Cifra {{ i + 1 }}</h3>
+            <p class="indicador__valor">{{ c.valor }}{{ c.sufijo ?? '' }}</p>
+            <p class="indicador__nota">{{ c.etiqueta }}</p>
+          </div>
+          <div class="pw-tarjeta-pie">
+            <span class="status-badge" [ngClass]="c.estado === 'publicado' ? 'status-badge-success' : 'status-badge-secondary'">
+              {{ c.estado === 'publicado' ? 'Publicada' : 'Borrador' }}
+            </span>
+            <div class="action-btns">
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(c, -1)" [disabled]="ordenando || primera"
+                [attr.aria-label]="'Subir la cifra ' + c.etiqueta" title="Subir">
+                <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(c, 1)" [disabled]="ordenando || ultima"
+                [attr.aria-label]="'Bajar la cifra ' + c.etiqueta" title="Bajar">
+                <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion" [ngClass]="c.estado === 'publicado' ? 'btn-icon-brand' : 'btn-icon-success'"
+                (click)="alAccionar({ accion: c.estado === 'publicado' ? 'ocultar' : 'publicar', fila: c })"
+                [attr.aria-label]="(c.estado === 'publicado' ? 'Pasar a borrador la cifra ' : 'Publicar la cifra ') + c.etiqueta"
+                [title]="c.estado === 'publicado' ? 'Pasar a borrador: deja de verse en el portal' : 'Publicar: se verá en el portal'">
+                <app-icon [icono]="c.estado === 'publicado' ? 'eye_off' : 'eye'" [tamano]="16"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="editar(c)"
+                [attr.aria-label]="'Editar la cifra ' + c.etiqueta" title="Editar">
+                <app-icon icono="edit" [tamano]="16"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-danger" (click)="eliminar(c)"
+                [attr.aria-label]="'Eliminar la cifra ' + c.etiqueta" title="Eliminar">
+                <app-icon icono="trash" [tamano]="16"></app-icon>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div class="card-vacio" *ngIf="!cargando && !cifras.length">
+      <app-icon icono="bar_chart" [tamano]="34"></app-icon>
+      Todavía no hay cifras. Sin cifras, el portal no muestra esa franja.
+      <button type="button" class="btn-primary" (click)="nueva()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar la primera
+      </button>
+    </div>
+  </ng-container>
 </section>
 
 <app-form-modal

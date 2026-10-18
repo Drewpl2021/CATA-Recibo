@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -13,6 +13,7 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { AmbitoDeCifras, CifraPortal, EstadoPortal } from '../../portal-web.models';
 import { PortalWebService, RECURSOS } from '../../portal-web.service';
 import { idsMovidos, mostrarErrorDelPanel } from '../panel';
+import { cuantos, ResumenDeSeccion } from '../resumen-de-seccion';
 
 /**
  * Las cifras destacadas de una página del portal (Inicio, Logros o Propuesta
@@ -22,13 +23,15 @@ import { idsMovidos, mostrarErrorDelPanel } from '../panel';
  *   <app-editor-cifras ambito="logros"></app-editor-cifras>
  *
  * Es un panel entero (cabecera, tabla y modal), con las mismas piezas que
- * las demás listas del panel.
+ * las demás listas del panel. Con `vista="tarjetas"` (Inicio) cada cifra es
+ * una tarjeta «indicador» del dashboard en vez de una fila de la tabla.
  */
 @Component({
   selector: 'app-editor-cifras',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
   templateUrl: './editor-cifras.component.html',
+  styleUrls: ['../pw-estilos.scss'],
 })
 export class EditorCifrasComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -39,6 +42,10 @@ export class EditorCifrasComponent implements OnInit {
   @Input({ required: true }) ambito!: AmbitoDeCifras;
   /** Dónde se ven, para la ayuda: «bajo el carrusel de Inicio». */
   @Input() dondeSeVen = '';
+  /** Tabla (Logros, Propuesta) o tarjetas, como las cifras del dashboard (Inicio). */
+  @Input() vista: 'tabla' | 'tarjetas' = 'tabla';
+  /** Cómo está la sección, para el índice de la pantalla que la contiene. */
+  @Output() resumen = new EventEmitter<ResumenDeSeccion>();
 
   readonly id = 'cifras-' + Math.random().toString(36).slice(2, 8);
 
@@ -86,6 +93,7 @@ export class EditorCifrasComponent implements OnInit {
       next: (res) => {
         this.cifras = res.data;
         this.cargando = false;
+        this.resumir();
       },
       error: (err) => {
         this.cargando = false;
@@ -186,6 +194,18 @@ export class EditorCifrasComponent implements OnInit {
         mostrarErrorDelPanel(this.toastService, err, 'No se pudo cambiar el orden.');
         this.cargar();
       },
+    });
+  }
+
+  private resumir(): void {
+    const publicadas = this.publicadas;
+    const borradores = this.cifras.length - publicadas;
+    this.resumen.emit({
+      estado: publicadas
+        ? cuantos(publicadas, 'publicada', 'publicadas') + (borradores ? ` · ${cuantos(borradores, 'borrador', 'borradores')}` : '')
+        : 'Ninguna publicada: no se ve',
+      aviso: !publicadas,
+      pendientes: [],
     });
   }
 

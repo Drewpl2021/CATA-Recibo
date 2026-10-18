@@ -2,109 +2,186 @@
   <header class="ajustes-panel__cabecera">
     <div>
       <h2 id="titulo-quienes-somos">Quiénes somos</h2>
-      <p class="form-ayuda">La presentación del colegio en la portada: título, párrafos, una foto y el significado del emblema.</p>
+      <p class="form-ayuda">La presentación del colegio después de las cifras: título, párrafos, una foto y los símbolos del emblema.</p>
     </div>
   </header>
 
-  <p class="form-ayuda ajuste-bloque" *ngIf="cargando">Cargando Quiénes somos…</p>
+  <div class="pw-esqueleto" *ngIf="cargando" role="status">
+    <span class="solo-lectores">Cargando Quiénes somos…</span>
+    <span class="esqueleto esqueleto--titulo" aria-hidden="true"></span>
+    <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+    <span class="esqueleto esqueleto--bloque" aria-hidden="true"></span>
+  </div>
 
   <ng-container *ngIf="!cargando">
-    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
-      <div class="grupo-montos">
-        <div class="form-fields">
-          <div class="form-group">
-            <label for="qs-titulo">Título *</label>
-            <input id="qs-titulo" type="text" class="form-control" formControlName="titulo" maxlength="80"
-              placeholder="Ej. Educación adventista en Juliaca desde 1971." [class.is-invalid]="invalido(form.controls.titulo)" />
-            <small class="form-error" *ngIf="invalido(form.controls.titulo)">Obligatorio (máximo 80).</small>
-          </div>
+    <!-- Sin texto todavía: la sección no se ve en el portal. -->
+    <div class="card-vacio" *ngIf="!tieneTexto">
+      <app-icon icono="info" [tamano]="34"></app-icon>
+      Falta el texto de Quiénes somos: mientras tanto, la sección no se ve en el portal.
+      <button type="button" class="btn-primary" (click)="abrirTexto()">
+        <app-icon icono="edit" [tamano]="16"></app-icon>
+        Escribir el texto
+      </button>
+    </div>
 
-          <!-- Párrafos -->
-          <div class="form-group" formArrayName="parrafos">
-            <label>Párrafos</label>
-            <small class="form-ayuda">De 1 a {{ maxParrafos }}, de hasta 600 caracteres cada uno. Texto simple, sin formato.</small>
-            <div class="form-row" *ngFor="let p of parrafos.controls; let i = index">
-              <div class="form-group">
-                <label [for]="'qs-parrafo-' + i">Párrafo {{ i + 1 }} *</label>
-                <textarea [id]="'qs-parrafo-' + i" class="form-control" rows="4" [formControlName]="i" maxlength="600"
-                  [class.is-invalid]="invalido(p)"></textarea>
-                <small class="form-error" *ngIf="invalido(p)">Escribe el párrafo (máximo 600), o quítalo.</small>
-                <small class="form-ayuda" *ngIf="!invalido(p)">{{ p.value?.length ?? 0 }} de 600.</small>
-              </div>
-              <div class="form-group">
-                <label>&nbsp;</label>
-                <div class="action-btns">
-                  <button type="button" class="btn-icon-accion" (click)="moverParrafo(i, -1)" [disabled]="i === 0"
-                    [attr.aria-label]="'Subir el párrafo ' + (i + 1)" title="Subir">↑</button>
-                  <button type="button" class="btn-icon-accion" (click)="moverParrafo(i, 1)" [disabled]="i === parrafos.length - 1"
-                    [attr.aria-label]="'Bajar el párrafo ' + (i + 1)" title="Bajar">↓</button>
-                  <button type="button" class="btn-icon-accion" (click)="quitarParrafo(i)" [disabled]="parrafos.length === 1"
-                    [attr.aria-label]="'Quitar el párrafo ' + (i + 1)" title="Quitar">
-                    <app-icon icono="trash" [tamano]="14"></app-icon>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div>
-              <button type="button" class="btn-secondary" (click)="agregarParrafo()" [disabled]="parrafos.length >= maxParrafos">
-                <app-icon icono="plus" [tamano]="14"></app-icon> Agregar párrafo
+    <ng-container *ngIf="tieneTexto">
+      <!-- La ficha: lo guardado, como en el alta de personal -->
+      <div class="ajuste-bloque">
+        <div class="ficha-persona pw-ficha">
+          <span class="pw-foto" [class.pw-foto--vacia]="!fotoGuardada">
+            <img *ngIf="fotoGuardada" [src]="ver(fotoGuardada.url)" [alt]="fotoGuardada.alt" />
+            <ng-container *ngIf="!fotoGuardada">Sin foto</ng-container>
+          </span>
+          <div class="ficha-persona__datos">
+            <span class="ficha-persona__nombre">{{ guardado?.titulo }}</span>
+            <span class="ficha-persona__resumen">{{ entrada }}</span>
+            <span class="ficha-persona__nota">
+              {{ guardado?.parrafos?.length }} {{ guardado?.parrafos?.length === 1 ? 'párrafo' : 'párrafos' }} ·
+              {{ fotoGuardada ? 'con foto' : 'sin foto (es opcional)' }}
+            </span>
+            <div class="ficha-persona__acciones">
+              <button type="button" class="btn-secondary" (click)="abrirTexto()">
+                <app-icon icono="edit" [tamano]="14"></app-icon>
+                Editar texto y foto
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Símbolos -->
-      <div class="grupo-montos">
-        <div class="form-group" formArrayName="simbolos">
-          <label>Símbolos del emblema</label>
-          <small class="form-ayuda">Hasta {{ maxSimbolos }}, en este orden. Sin ninguno, el bloque no se muestra.</small>
-          <div class="form-row" *ngFor="let s of simbolos.controls; let i = index" [formGroupName]="i">
-            <div class="form-group">
-              <label [for]="'qs-simbolo-nombre-' + i">Símbolo *</label>
-              <input [id]="'qs-simbolo-nombre-' + i" type="text" class="form-control" formControlName="nombre" maxlength="40"
-                placeholder="Ej. Las manos abiertas" [class.is-invalid]="invalido(s.get('nombre'))" />
-              <small class="form-error" *ngIf="invalido(s.get('nombre'))">Obligatorio (máximo 40).</small>
-            </div>
-            <div class="form-group">
-              <label [for]="'qs-simbolo-significado-' + i">Qué significa *</label>
-              <textarea [id]="'qs-simbolo-significado-' + i" class="form-control" rows="2" formControlName="significado" maxlength="160"
-                [class.is-invalid]="invalido(s.get('significado'))"></textarea>
-              <small class="form-error" *ngIf="invalido(s.get('significado'))">Obligatorio (máximo 160).</small>
-            </div>
-            <div class="form-group">
-              <label>&nbsp;</label>
-              <div class="action-btns">
-                <button type="button" class="btn-icon-accion" (click)="moverSimbolo(i, -1)" [disabled]="i === 0"
-                  [attr.aria-label]="'Subir el símbolo ' + (i + 1)" title="Subir">↑</button>
-                <button type="button" class="btn-icon-accion" (click)="moverSimbolo(i, 1)" [disabled]="i === simbolos.length - 1"
-                  [attr.aria-label]="'Bajar el símbolo ' + (i + 1)" title="Bajar">↓</button>
-                <button type="button" class="btn-icon-accion" (click)="quitarSimbolo(i)"
-                  [attr.aria-label]="'Quitar el símbolo ' + (i + 1)" title="Quitar">
-                  <app-icon icono="trash" [tamano]="14"></app-icon>
-                </button>
-              </div>
-            </div>
-          </div>
+      <!-- Los símbolos, en filas como las del dashboard -->
+      <div class="ajuste-bloque">
+        <div class="tarjeta-grafico__cabeza">
           <div>
-            <button type="button" class="btn-secondary" (click)="agregarSimbolo()" [disabled]="simbolos.length >= maxSimbolos">
-              <app-icon icono="plus" [tamano]="14"></app-icon> Agregar símbolo
-            </button>
+            <h3 class="ajuste-bloque__pregunta pw-sin-margen">Símbolos del emblema</h3>
+            <p class="tarjeta-grafico__nota">{{ simbolos.length }} de {{ maxSimbolos }}, en este orden. Sin ninguno, el bloque no se muestra.</p>
           </div>
+          <button type="button" class="btn-secondary" (click)="nuevoSimbolo()" [disabled]="guardando || simbolos.length >= maxSimbolos">
+            <app-icon icono="plus" [tamano]="14"></app-icon>
+            Agregar símbolo
+          </button>
         </div>
+
+        <ul class="vence" *ngIf="simbolos.length">
+          <li class="vence__fila" *ngFor="let s of simbolos; let i = index; let primero = first; let ultimo = last">
+            <span class="vence__quien">
+              <strong>{{ s.nombre }}</strong>
+              <small>{{ s.significado }}</small>
+            </span>
+            <div class="action-btns">
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverSimbolo(i, -1)" [disabled]="guardando || primero"
+                [attr.aria-label]="'Subir el símbolo ' + s.nombre" title="Subir">
+                <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverSimbolo(i, 1)" [disabled]="guardando || ultimo"
+                [attr.aria-label]="'Bajar el símbolo ' + s.nombre" title="Bajar">
+                <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="editarSimbolo(i)" [disabled]="guardando"
+                [attr.aria-label]="'Editar el símbolo ' + s.nombre" title="Editar">
+                <app-icon icono="edit" [tamano]="16"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarSimbolo(i)" [disabled]="guardando"
+                [attr.aria-label]="'Quitar el símbolo ' + s.nombre" title="Quitar">
+                <app-icon icono="trash" [tamano]="16"></app-icon>
+              </button>
+            </div>
+          </li>
+        </ul>
+
+        <p class="card-vacio" *ngIf="!simbolos.length">Sin símbolos: el bloque del emblema no se muestra en el portal.</p>
       </div>
-    </form>
-
-    <div class="grupo-montos">
-      <app-selector-imagen uso="quienes-somos" etiqueta="Foto" [imagen]="foto" (imagenChange)="alCambiarFoto($event)"></app-selector-imagen>
-      <small class="form-ayuda">Opcional. Vertical 4:5. Las fotos de estudiantes necesitan la autorización de su familia.</small>
-    </div>
-
-    <footer class="panel-pie">
-      <button type="button" class="btn-primary" (click)="guardar()" [disabled]="guardando || !conCambios">
-        {{ guardando ? 'Guardando…' : 'Guardar Quiénes somos' }}
-      </button>
-      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="conCambios && !guardando">Tienes cambios sin guardar.</p>
-    </footer>
+    </ng-container>
   </ng-container>
 </section>
+
+<!-- Texto y foto -->
+<app-form-modal
+  [visible]="modal === 'texto'"
+  (visibleChange)="!$event && cerrar()"
+  titulo="Texto y foto de Quiénes somos"
+  ancho="720px"
+  [guardando]="guardando"
+  textoGuardar="Guardar cambios"
+  (guardar)="guardarTexto()"
+  (cancelar)="cerrar()"
+>
+  <pw-cuerpo-desplazable>
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <div class="seccion-form">
+      <h3 class="seccion-form__titulo">Texto</h3>
+      <div class="form-group">
+        <label for="qs-titulo">Título *</label>
+        <input id="qs-titulo" type="text" class="form-control" formControlName="titulo" maxlength="80"
+          placeholder="Ej. Educación adventista en Juliaca desde 1971." [class.is-invalid]="invalido(form.controls.titulo)" />
+        <small class="form-error" *ngIf="invalido(form.controls.titulo)">Obligatorio (máximo 80).</small>
+      </div>
+
+      <ng-container formArrayName="parrafos">
+        <div class="form-group" *ngFor="let p of parrafos.controls; let i = index; let primero = first; let ultimo = last">
+          <label [for]="'qs-parrafo-' + i">Párrafo {{ i + 1 }} *</label>
+          <textarea [id]="'qs-parrafo-' + i" class="form-control" rows="4" [formControlName]="i" maxlength="600"
+            [class.is-invalid]="invalido(p)"></textarea>
+          <div class="pw-fila-dato">
+            <small class="form-error" *ngIf="invalido(p)">Escribe el párrafo (máximo 600), o quítalo.</small>
+            <small class="form-ayuda" *ngIf="!invalido(p)">{{ p.value?.length ?? 0 }} de 600.</small>
+            <div class="action-btns">
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverParrafo(i, -1)" [disabled]="primero"
+                [attr.aria-label]="'Subir el párrafo ' + (i + 1)" title="Subir">
+                <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverParrafo(i, 1)" [disabled]="ultimo"
+                [attr.aria-label]="'Bajar el párrafo ' + (i + 1)" title="Bajar">
+                <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarParrafo(i)" [disabled]="parrafos.length === 1"
+                [attr.aria-label]="'Quitar el párrafo ' + (i + 1)" title="Quitar">
+                <app-icon icono="trash" [tamano]="16"></app-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+      <div>
+        <button type="button" class="btn-secondary" (click)="agregarParrafo()" [disabled]="parrafos.length >= maxParrafos">
+          <app-icon icono="plus" [tamano]="14"></app-icon> Agregar párrafo
+        </button>
+      </div>
+    </div>
+
+    <div class="seccion-form">
+      <h3 class="seccion-form__titulo">Foto</h3>
+      <app-selector-imagen *ngIf="modal === 'texto'" uso="quienes-somos" etiqueta="Foto" [(imagen)]="foto"></app-selector-imagen>
+      <small class="form-ayuda">Opcional. Vertical 4:5. Las fotos de estudiantes necesitan la autorización de su familia.</small>
+    </div>
+  </form>
+  </pw-cuerpo-desplazable>
+</app-form-modal>
+
+<!-- Un símbolo -->
+<app-form-modal
+  [visible]="modal === 'simbolo'"
+  (visibleChange)="!$event && cerrar()"
+  [titulo]="simboloEditado === null ? 'Agregar símbolo' : 'Editar símbolo'"
+  ancho="520px"
+  [guardando]="guardando"
+  (guardar)="guardarSimbolo()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="simboloForm" class="form-fields" novalidate>
+    <div class="form-group">
+      <label for="qs-simbolo-nombre">Nombre *</label>
+      <input id="qs-simbolo-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
+        placeholder="Ej. Las manos abiertas" [class.is-invalid]="invalido(simboloForm.controls.nombre)" />
+      <small class="form-error" *ngIf="invalido(simboloForm.controls.nombre)">Obligatorio (máximo 40).</small>
+      <small class="form-ayuda" *ngIf="!invalido(simboloForm.controls.nombre)">{{ simboloForm.value.nombre?.length ?? 0 }} de 40.</small>
+    </div>
+    <div class="form-group">
+      <label for="qs-simbolo-significado">Qué significa *</label>
+      <textarea id="qs-simbolo-significado" class="form-control" rows="3" formControlName="significado" maxlength="160"
+        [class.is-invalid]="invalido(simboloForm.controls.significado)"></textarea>
+      <small class="form-error" *ngIf="invalido(simboloForm.controls.significado)">Obligatorio (máximo 160).</small>
+      <small class="form-ayuda" *ngIf="!invalido(simboloForm.controls.significado)">{{ simboloForm.value.significado?.length ?? 0 }} de 160.</small>
+    </div>
+  </form>
+</app-form-modal>

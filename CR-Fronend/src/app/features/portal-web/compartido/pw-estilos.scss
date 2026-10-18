@@ -1,0 +1,247 @@
+/*
+ * Piezas del panel «Portal Web» que no existen en styles.scss. Todo lo demás
+ * (índice, tarjetas, tablas, modales, wizard) son las clases del sistema.
+ *
+ * Cada componente que las usa incluye este archivo en `styleUrls`: así quedan
+ * dentro del módulo y no tocan ninguna otra pantalla.
+ */
+
+/* La columna del detalle puede encoger: con una tabla dentro, la rejilla
+   del índice la ensanchaba hasta sacar el índice de la pantalla. */
+.pw-detalle {
+  min-width: 0;
+}
+
+/* El catálogo de íconos no tiene «chevron_up»: la flecha de bajar, girada. */
+.pw-girado {
+  display: inline-flex;
+  transform: rotate(180deg);
+}
+
+/* Un paso del wizard escondido: `.seccion-form` es flex y le gana a [hidden]. */
+.pw-paso[hidden] {
+  display: none;
+}
+
+/* ── Celda con miniatura y dos líneas (Carrusel, Noticias) ── */
+.pw-celda-titulo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+
+  strong {
+    display: block;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  small {
+    display: block;
+    margin-top: 2px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+}
+
+.pw-falta {
+  color: var(--warning-text);
+  font-weight: 600;
+}
+
+.pw-miniatura {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 96px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-hover);
+  color: var(--text-faint);
+  font-size: 11px;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+/* ── Foto de una ficha o de una tarjeta ── */
+.pw-foto {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 120px;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-hover);
+  color: var(--text-faint);
+  font-size: 12.5px;
+  box-shadow: var(--shadow-sm);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.pw-foto--ancha {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  margin-bottom: 14px;
+}
+
+.pw-foto--vacia {
+  border: 1px dashed var(--border-strong);
+  box-shadow: none;
+}
+
+/* La ficha de «Añadir personal» dentro de un bloque: sin su raya de abajo. */
+.pw-ficha {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* ── Tarjetas en rejilla (Cifras, Niveles) ── */
+.pw-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+/* El pie de una tarjeta: su estado a la izquierda y sus botones a la derecha. */
+.pw-tarjeta-pie {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.indicador .pw-tarjeta-pie {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.pw-datos {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+/* Un dato guardado, leído y no editado: su nombre arriba y su valor. */
+.pw-dato {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  span {
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+
+  strong {
+    font-size: 15px;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+
+  small {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
+  }
+}
+
+.pw-fila-dato {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pw-sin-margen {
+  margin: 0;
+}
+
+/* ── Vista previa del cierre ── */
+.pw-vista-cierre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-alt);
+  text-align: center;
+
+  h3 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--heading);
+  }
+}
+
+.pw-vista-cierre__botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+
+  span {
+    padding: 9px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+  }
+}
+
+/* Los colores del portal: dorado el primero, blanco con borde el segundo. */
+.pw-vista-cierre__dorado {
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.pw-vista-cierre__blanco {
+  border: 1px solid var(--border-strong);
+  background-color: var(--surface);
+  color: var(--heading);
+}
+
+/* El esqueleto de un panel mientras carga. */
+.pw-esqueleto {
+  padding: 20px 24px;
+}
+
+.pw-esqueleto .esqueleto--bloque {
+  margin-top: 16px;
+  min-height: 180px;
+}
+
+@media (max-width: 720px) {
+  .pw-ficha {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pw-miniatura {
+    width: 72px;
+  }
+}

@@ -1,12 +1,15 @@
-import { Component, inject } from '@angular/core';
+import { Component, EventEmitter, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 
+import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
 import { DataTableComponent } from '../../../../shared/components/data-table/data-table.component';
 import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
+import { cuantos, ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
 import { EstadoPortal, ImagenPortal, NoticiaPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
@@ -34,11 +37,15 @@ function enlaceCompleto(grupo: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-panel-noticias',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, FormModalComponent, SelectorImagenComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent, CuerpoDesplazableComponent],
   templateUrl: './panel-noticias.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelNoticiasComponent extends PanelDeLista<NoticiaPortal> {
   private fb = inject(FormBuilder);
+
+  /** Cómo está la sección, para el índice de Inicio. */
+  @Output() resumen = new EventEmitter<ResumenDeSeccion>();
 
   protected readonly recurso = RECURSOS.noticias;
   protected readonly nombre = { singular: 'noticia', femenino: true };
@@ -46,14 +53,12 @@ export class PanelNoticiasComponent extends PanelDeLista<NoticiaPortal> {
   foto: ImagenPortal | null = null;
 
   columnas: ColumnaTabla<NoticiaPortal>[] = [
-    { campo: 'fecha', header: 'Fecha', ancho: '11%', formatear: (f: string) => f.split('-').reverse().join('/') },
     {
       campo: 'tipo', header: 'Tipo', tipo: 'badge', ancho: '12%',
       formatear: (t) => (t === 'comunicado' ? 'Comunicado' : 'Noticia'),
       badgeSeveridad: (t) => (t === 'comunicado' ? 'warning' : 'info'),
     },
     { campo: 'titulo', header: 'Título' },
-    { campo: 'enlace', header: 'Enlace', ancho: '10%', formatear: (e) => (e ? 'Sí' : '—') },
     this.columnaDeEstado(),
   ];
 
@@ -73,6 +78,27 @@ export class PanelNoticiasComponent extends PanelDeLista<NoticiaPortal> {
 
   protected describir(n: NoticiaPortal): string {
     return `${n.tipo === 'comunicado' ? 'el comunicado' : 'la noticia'} «${n.titulo}»`;
+  }
+
+  protected override alCargar(): void {
+    const borradores = this.filas.length - this.publicados;
+    this.resumen.emit({
+      estado: this.filas.length
+        ? cuantos(this.publicados, 'publicada', 'publicadas') + (borradores ? ` · ${cuantos(borradores, 'borrador', 'borradores')}` : '')
+        : 'Sin noticias',
+      aviso: false,
+      pendientes: borradores
+        ? [{ cuantos: borradores, texto: borradores === 1 ? 'noticia en borrador' : 'noticias en borrador' }]
+        : [],
+    });
+  }
+
+  /** La segunda línea de la celda: fecha y lo que trae. */
+  detalle(n: NoticiaPortal): string {
+    const partes = [n.fecha.split('-').reverse().join('/')];
+    if (n.imagen_id) partes.push('con foto');
+    if (n.enlace) partes.push('con enlace');
+    return partes.join(' · ');
   }
 
   nueva(): void {
