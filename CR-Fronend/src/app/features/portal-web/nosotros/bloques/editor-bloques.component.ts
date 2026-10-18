@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -7,6 +7,7 @@ import { ToastService } from '../../../../core/services';
 import { mensajeErrorApi } from '../../../../core/utils';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { mostrarErrorDelPanel } from '../../compartido/panel';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
 import { PaginaNosotros } from '../../portal-web.models';
@@ -29,12 +30,15 @@ const MAX_BLOQUES = 30;
 @Component({
   selector: 'app-editor-bloques',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent, FormModalComponent, SelectorImagenComponent],
+  imports: [CommonModule, FormsModule, IconComponent, FormModalComponent, SelectorImagenComponent, CuerpoDesplazableComponent],
   templateUrl: './editor-bloques.component.html',
 })
 export class EditorBloquesComponent implements OnChanges {
   private portalWebService = inject(PortalWebService);
   private toastService = inject(ToastService);
+
+  /** El cuerpo del modal, con su scroll: sabe llevar la vista al primer bloque con problema. */
+  @ViewChild('cuerpo') private cuerpo?: CuerpoDesplazableComponent;
 
   /** La página a editar; null = cerrado. */
   @Input() pagina: PaginaNosotros | null = null;
@@ -201,6 +205,8 @@ export class EditorBloquesComponent implements OnChanges {
         const mensajes: string[] = err.error?.errors?.bloques ?? [];
         if (err.status === 422 && mensajes.length) {
           this.repartirErrores(mensajes);
+          // Lleva al primer bloque con problema: con 15 personas, puede estar muy abajo.
+          this.cuerpo?.irAlPrimerError();
           this.toastService.error(
             'No se guardó',
             this.cuantosConErrores

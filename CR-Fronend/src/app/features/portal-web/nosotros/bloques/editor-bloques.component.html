@@ -8,6 +8,8 @@
   (guardar)="guardar()"
   (cancelar)="alCancelar()"
 >
+  <!-- Con su propio scroll: «Cancelar» y «Guardar» del modal quedan siempre a la vista. -->
+  <pw-cuerpo-desplazable #cuerpo>
   <div class="form-fields">
     <p class="form-ayuda">
       Los bloques de la página, en el orden en que se ven. Sin bloques, el portal dice «El contenido de esta página se publicará
@@ -366,6 +368,7 @@
       </div>
     </ng-container>
   </div>
+  </pw-cuerpo-desplazable>
 </app-form-modal>
 
 <!-- Subir, bajar y quitar un elemento de una lista dentro de un bloque -->
