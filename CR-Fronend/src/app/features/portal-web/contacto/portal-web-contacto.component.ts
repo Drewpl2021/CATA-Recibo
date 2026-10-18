@@ -1,8 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
 
 import { ConfirmService, ToastService } from '../../../core/services';
 import { mensajeErrorApi } from '../../../core/utils';
@@ -12,7 +11,13 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { idsMovidos, mostrarErrorDelPanel } from '../compartido/panel';
+import { WizardComponent } from '../../../shared/components/wizard/wizard.component';
+import { PasoWizard } from '../../../shared/components/wizard/wizard.models';
+import { CuerpoDesplazableComponent } from '../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
+import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
+import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
+import { idsMovidos, mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
+import { cuantos } from '../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../compartido/selector-imagen/selector-imagen.component';
 import {
   ContactoParaGuardar,
@@ -40,6 +45,10 @@ const MARCAS = /\{([^}]*)\}/g;
  *
  * El backend vuelve a revisar todo y, antes de guardar, comprueba que el
  * portal pueda mostrar lo que queda.
+ *
+ * Con el molde de Ajustes: índice con cabecera, sedes y formulario. Las dos
+ * fichas se leen en su sección y se editan en un modal; la sede, que tiene
+ * muchos datos, en un wizard de tres pasos como el alta de personal.
  */
 @Component({
   selector: 'app-portal-web-contacto',
@@ -47,23 +56,44 @@ const MARCAS = /\{([^}]*)\}/g;
   imports: [
     CommonModule, ReactiveFormsModule, FormsModule,
     PageHeaderComponent, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent,
+    WizardComponent, CuerpoDesplazableComponent, IndiceDeSeccionesComponent,
   ],
   templateUrl: './portal-web-contacto.component.html',
+  styleUrls: ['../compartido/pw-estilos.scss'],
 })
-export class PortalWebContactoComponent implements OnInit {
+export class PortalWebContactoComponent extends PantallaConIndice implements OnInit {
   private fb = inject(FormBuilder);
   private portalWebService = inject(PortalWebService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
-  private router = inject(Router);
+
+  readonly secciones: SeccionDelIndice[] = [
+    { id: 'cabecera', nombre: 'Cabecera', icono: 'phone' },
+    { id: 'sedes', nombre: 'Sedes', icono: 'location_on' },
+    { id: 'solicitud', nombre: 'Solicitar información', icono: 'mail' },
+  ];
+
+  readonly pasosSede: PasoWizard[] = [
+    { id: 'datos', titulo: 'La sede', icono: 'location_on', campos: ['nombre', 'direccion', 'referencia', 'distrito'] },
+    { id: 'contacto', titulo: 'Contacto y horario', icono: 'clock', campos: ['telefonoNumero', 'telefonoVisible', 'correo', 'nota', 'horario'] },
+    { id: 'mapa', titulo: 'Mapa y foto', icono: 'camera', campos: ['mapaEmbedUrl', 'mapaUrl'] },
+  ];
+
+  @ViewChild('wizard') private wizard?: WizardComponent;
+  @ViewChild('cuerpoSede') private cuerpoSede?: CuerpoDesplazableComponent;
+  @ViewChild('cuerpoSolicitud') private cuerpoSolicitud?: CuerpoDesplazableComponent;
 
   // ───────── Cabecera ─────────
 
   cargandoCabecera = true;
   guardandoCabecera = false;
   private versionCabecera: string | null = null;
+  modalCabecera = false;
+  /** Lo guardado: lo que se lee en la sección. */
+  cabeceraGuardada: ContactoPortal | null = null;
+  figuraGuardada: ImagenPortal | null = null;
+  /** La del modal, mientras se edita. */
   figura: ImagenPortal | null = null;
-  figuraCambiada = false;
 
   cabecera = this.fb.group({
     titulo: ['', [Validators.required, Validators.maxLength(60)]],
@@ -75,6 +105,8 @@ export class PortalWebContactoComponent implements OnInit {
 
   cargandoSolicitud = true;
   guardandoSolicitud = false;
+  modalSolicitud = false;
+  solicitudGuardada: SolicitudPortal | null = null;
   private versionSolicitud: string | null = null;
 
   solicitud = this.fb.group({
@@ -102,13 +134,11 @@ export class PortalWebContactoComponent implements OnInit {
   guardandoSede = false;
   sedeEditando: SedePortal | null = null;
   fotoSede: ImagenPortal | null = null;
+  pasoSede = 0;
 
   columnasSedes: ColumnaTabla<SedePortal>[] = [
     { campo: 'orden', header: 'Orden', ancho: '120px' },
-    { campo: 'nombre', header: 'Sede', ancho: '22%' },
-    { campo: 'direccion', header: 'Dirección' },
-    { campo: 'telefono', header: 'Teléfono', ancho: '14%', formatear: (t) => t?.visible ?? '—' },
-    { campo: 'mapa_embed_url', header: 'Mapa', ancho: '10%', formatear: (m) => (m ? 'Sí' : 'Sin mapa') },
+    { campo: 'nombre', header: 'Sede' },
     {
       campo: 'estado', header: 'Estado', tipo: 'badge', ancho: '12%',
       formatear: (v) => (v === 'publicado' ? 'Publicada' : 'Borrador'),
@@ -136,14 +166,15 @@ export class PortalWebContactoComponent implements OnInit {
     estado: ['borrador' as EstadoPortal],
   });
 
-  ngOnInit(): void {
+  override ngOnInit(): void {
+    super.ngOnInit();
     this.cargarCabecera();
     this.cargarSolicitud();
     this.cargarSedes();
   }
 
-  volver(): void {
-    this.router.navigate(['/inicio/portal-web']);
+  ver(url: string): string {
+    return urlParaVer(url);
   }
 
   // ───────── Cabecera ─────────
@@ -154,10 +185,10 @@ export class PortalWebContactoComponent implements OnInit {
       next: (res) => {
         const c = res.data.contenido;
         this.versionCabecera = res.data.version;
-        this.cabecera.reset({ titulo: c?.titulo ?? '', bajada: c?.bajada ?? '', correo: c?.correo ?? '' });
-        this.figura = c?.figura ? res.data.imagenes[c.figura.imagenId] ?? null : null;
-        this.figuraCambiada = false;
+        this.cabeceraGuardada = c ?? null;
+        this.figuraGuardada = c?.figura ? res.data.imagenes[c.figura.imagenId] ?? null : null;
         this.cargandoCabecera = false;
+        this.resumirCabecera();
       },
       error: (err) => {
         this.cargandoCabecera = false;
@@ -166,18 +197,25 @@ export class PortalWebContactoComponent implements OnInit {
     });
   }
 
-  alCambiarFigura(imagen: ImagenPortal | null): void {
-    this.figura = imagen;
-    this.figuraCambiada = true;
+  /** El modal empieza con lo guardado: lo que se canceló antes no queda a medias. */
+  abrirCabecera(): void {
+    const c = this.cabeceraGuardada;
+    this.cabecera.reset({ titulo: c?.titulo ?? '', bajada: c?.bajada ?? '', correo: c?.correo ?? '' });
+    this.figura = this.figuraGuardada;
+    this.modalCabecera = true;
   }
 
-  get cabeceraConCambios(): boolean {
-    return this.cabecera.dirty || this.figuraCambiada;
+  private resumirCabecera(): void {
+    const c = this.cabeceraGuardada;
+    this.alResumir('cabecera', c
+      ? { estado: c.titulo + (this.figuraGuardada ? '' : ' · sin recorte'), aviso: false, pendientes: [] }
+      : { estado: 'Sin configurar: no se ve', aviso: true, pendientes: [{ cuantos: 1, texto: 'cabecera de Contacto sin configurar' }] });
   }
 
   guardarCabecera(): void {
     if (this.cabecera.invalid) {
       this.cabecera.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
 
@@ -191,8 +229,10 @@ export class PortalWebContactoComponent implements OnInit {
       next: (res) => {
         this.guardandoCabecera = false;
         this.versionCabecera = res.data.version;
-        this.cabecera.markAsPristine();
-        this.figuraCambiada = false;
+        this.cabeceraGuardada = { ...datos, figura: this.figura ? { imagenId: this.figura.id } : null } as ContactoPortal;
+        this.figuraGuardada = this.figura;
+        this.modalCabecera = false;
+        this.resumirCabecera();
         this.toastService.success('Cabecera guardada', 'El portal la mostrará en hasta un minuto.');
       },
       error: (err: HttpErrorResponse) => {
@@ -213,24 +253,10 @@ export class PortalWebContactoComponent implements OnInit {
     this.cargandoSolicitud = true;
     this.portalWebService.getFicha<SolicitudPortal>('solicitud').subscribe({
       next: (res) => {
-        const s = res.data.contenido;
-        const propio = (p: PaginaConFormulario) => s?.mensajesPorPagina.find((m) => m.pagina === p)?.mensaje ?? '';
         this.versionSolicitud = res.data.version;
-        this.solicitud.reset({
-          titulo: s?.titulo ?? '',
-          texto: s?.texto ?? '',
-          mensajeWhatsapp: s?.mensajeWhatsapp ?? '',
-          mensajeMatricula: propio('matricula'),
-          mensajeContacto: propio('contacto'),
-          etiquetas: {
-            nombre: s?.etiquetas?.nombre ?? '',
-            grado: s?.etiquetas?.grado ?? '',
-            gradoEjemplo: s?.etiquetas?.gradoEjemplo ?? '',
-            gradoElegir: s?.etiquetas?.gradoElegir ?? '',
-            boton: s?.etiquetas?.boton ?? '',
-          },
-        });
+        this.solicitudGuardada = res.data.contenido ?? null;
         this.cargandoSolicitud = false;
+        this.resumirSolicitud();
       },
       error: (err) => {
         this.cargandoSolicitud = false;
@@ -239,10 +265,42 @@ export class PortalWebContactoComponent implements OnInit {
     });
   }
 
+  /** El mensaje propio de una página, o '' si usa el general. */
+  mensajePropio(s: SolicitudPortal | null, pagina: PaginaConFormulario): string {
+    return s?.mensajesPorPagina.find((m) => m.pagina === pagina)?.mensaje ?? '';
+  }
+
+  private resumirSolicitud(): void {
+    const s = this.solicitudGuardada;
+    this.alResumir('solicitud', s
+      ? { estado: `Botón «${s.etiquetas.boton}»`, aviso: false, pendientes: [] }
+      : { estado: 'Sin configurar', aviso: true, pendientes: [{ cuantos: 1, texto: 'formulario «Solicitar información» sin configurar' }] });
+  }
+
+  abrirSolicitud(): void {
+    const s = this.solicitudGuardada;
+    const propio = (p: PaginaConFormulario) => this.mensajePropio(s, p);
+    this.solicitud.reset({
+      titulo: s?.titulo ?? '',
+      texto: s?.texto ?? '',
+      mensajeWhatsapp: s?.mensajeWhatsapp ?? '',
+      mensajeMatricula: propio('matricula'),
+      mensajeContacto: propio('contacto'),
+      etiquetas: {
+        nombre: s?.etiquetas?.nombre ?? '',
+        grado: s?.etiquetas?.grado ?? '',
+        gradoEjemplo: s?.etiquetas?.gradoEjemplo ?? '',
+        gradoElegir: s?.etiquetas?.gradoElegir ?? '',
+        boton: s?.etiquetas?.boton ?? '',
+      },
+    });
+    this.modalSolicitud = true;
+  }
+
   guardarSolicitud(): void {
     if (this.solicitud.invalid || this.marcasDesconocidas().length) {
       this.solicitud.markAllAsTouched();
-      this.toastService.warning('Revisa el formulario', 'Hay textos que faltan o son demasiado largos.');
+      this.cuerpoSolicitud?.irAlPrimerError();
       return;
     }
 
@@ -265,6 +323,9 @@ export class PortalWebContactoComponent implements OnInit {
         this.guardandoSolicitud = false;
         this.versionSolicitud = res.data.version;
         this.solicitud.markAsPristine();
+        this.solicitudGuardada = datos;
+        this.modalSolicitud = false;
+        this.resumirSolicitud();
         this.toastService.success('Textos guardados', 'El formulario de Matrícula y Contacto los usará en hasta un minuto.');
       },
       error: (err: HttpErrorResponse) => {
@@ -299,11 +360,26 @@ export class PortalWebContactoComponent implements OnInit {
       next: (res) => {
         this.sedes = res.data;
         this.cargandoSedes = false;
+        this.resumirSedes();
       },
       error: (err) => {
         this.cargandoSedes = false;
         this.toastService.error('Error', mensajeErrorApi(err, 'No se pudieron cargar las sedes.'));
       },
+    });
+  }
+
+  private resumirSedes(): void {
+    const publicadas = this.sedes.filter((s) => s.estado === 'publicado');
+    const sinMapa = publicadas.filter((s) => !s.mapa_embed_url).length;
+    const borradores = this.sedes.length - publicadas.length;
+    let estado = this.sedes.length ? cuantos(publicadas.length, 'publicada', 'publicadas') : 'Sin sedes';
+    if (sinMapa) estado += ` · ${sinMapa} sin mapa`;
+    else if (borradores) estado += ` · ${cuantos(borradores, 'borrador', 'borradores')}`;
+    this.alResumir('sedes', {
+      estado,
+      aviso: !publicadas.length || sinMapa > 0,
+      pendientes: sinMapa ? [{ cuantos: sinMapa, texto: sinMapa === 1 ? 'sede publicada sin mapa' : 'sedes publicadas sin mapa' }] : [],
     });
   }
 
@@ -331,6 +407,7 @@ export class PortalWebContactoComponent implements OnInit {
     this.fotoSede = null;
     this.formSede.reset({ estado: 'borrador' });
     this.horario.clear();
+    this.pasoSede = 0;
     this.modalSedeVisible = true;
   }
 
@@ -352,6 +429,7 @@ export class PortalWebContactoComponent implements OnInit {
     });
     this.horario.clear();
     sede.horario.forEach((f) => this.horario.push(this.filaHorario(f.dias, f.horas)));
+    this.pasoSede = 0;
     this.modalSedeVisible = true;
   }
 
@@ -382,9 +460,13 @@ export class PortalWebContactoComponent implements OnInit {
     if (src) control.setValue(src.replaceAll('&amp;', '&'));
   }
 
+  /** Guarda desde cualquier paso; si algo falta, vuelve al primer paso con errores. */
   guardarSede(): void {
-    if (this.formSede.invalid || this.telefonoIncompleto) {
+    const conError = this.pasosSede.findIndex((_, i) => !this.wizard?.validarPaso(i));
+    if (conError >= 0 || this.formSede.invalid || this.telefonoIncompleto) {
       this.formSede.markAllAsTouched();
+      this.pasoSede = conError >= 0 ? conError : 1;
+      this.cuerpoSede?.irAlPrimerError();
       return;
     }
 
