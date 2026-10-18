@@ -180,6 +180,32 @@
   margin: 0;
 }
 
+/* ── Lo guardado de una ficha, leído: nombre del dato a la izquierda y su valor ── */
+.pw-lista-datos {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) minmax(0, 1fr);
+  gap: 10px 20px;
+  margin: 0;
+
+  dt {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  dd {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Un dato opcional que no se llenó. */
+.pw-sin-dato {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
 /* ── Vista previa del cierre ── */
 .pw-vista-cierre {
   display: flex;
@@ -244,4 +270,20 @@
   .pw-miniatura {
     width: 72px;
   }
+
+  .pw-lista-datos {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+
+    dd + dt {
+      margin-top: 10px;
+    }
+  }
+}
+
+/* «Anterior» en el pie de un wizard: el grupo de la derecha (asistente-pie)
+   ocupa todo el ancho y lo aplastaba hasta partirlo en dos líneas. */
+.pw-boton-entero {
+  flex-shrink: 0;
+  white-space: nowrap;
 }

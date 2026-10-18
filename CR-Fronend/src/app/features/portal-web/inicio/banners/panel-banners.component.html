@@ -152,7 +152,7 @@
   </pw-cuerpo-desplazable>
 
   <div modalFooter class="asistente-pie asistente-pie--extremos">
-    <button type="button" class="btn-secondary" (click)="wizard.anterior()" [disabled]="guardando" [style.visibility]="paso > 0 ? 'visible' : 'hidden'">
+    <button type="button" class="btn-secondary pw-boton-entero" (click)="wizard.anterior()" [disabled]="guardando" [style.visibility]="paso > 0 ? 'visible' : 'hidden'">
       <app-icon icono="arrow_left" [tamano]="15"></app-icon>
       Anterior
     </button>

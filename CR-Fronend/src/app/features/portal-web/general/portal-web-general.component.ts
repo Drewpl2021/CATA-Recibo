@@ -1,8 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
 
 import { ConfirmService, ToastService } from '../../../core/services';
 import { mensajeErrorApi } from '../../../core/utils';
@@ -12,7 +11,13 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { WizardComponent } from '../../../shared/components/wizard/wizard.component';
+import { PasoWizard } from '../../../shared/components/wizard/wizard.models';
+import { CuerpoDesplazableComponent } from '../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
+import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
+import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
 import { idsMovidos, mostrarErrorDelPanel } from '../compartido/panel';
+import { cuantos } from '../compartido/resumen-de-seccion';
 import { EstadoPortal, REDES_DEL_PORTAL, RedSocialPortal, SitioPortal } from '../portal-web.models';
 import { PortalWebService } from '../portal-web.service';
 
@@ -27,6 +32,11 @@ const HTTPS = /^https:\/\//;
  * Los largos máximos son los del contrato del portal; el backend los vuelve a
  * revisar y, antes de guardar, comprueba que el portal pueda mostrar lo que
  * queda. Si no, no guarda y dice por qué.
+ *
+ * Con el molde de Ajustes: en el índice, las cuatro partes de los datos del
+ * colegio y las redes. Cada parte se lee en su sección y la ficha se edita
+ * entera en un wizard de cuatro pasos (como el alta de personal), que se
+ * abre en el paso de la parte elegida.
  */
 @Component({
   selector: 'app-portal-web-general',
@@ -34,15 +44,42 @@ const HTTPS = /^https:\/\//;
   imports: [
     CommonModule, ReactiveFormsModule,
     PageHeaderComponent, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent,
+    WizardComponent, CuerpoDesplazableComponent, IndiceDeSeccionesComponent,
   ],
   templateUrl: './portal-web-general.component.html',
+  styleUrls: ['../compartido/pw-estilos.scss'],
 })
-export class PortalWebGeneralComponent implements OnInit {
+export class PortalWebGeneralComponent extends PantallaConIndice implements OnInit {
   private fb = inject(FormBuilder);
   private portalWebService = inject(PortalWebService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
-  private router = inject(Router);
+
+  /** Las partes de la ficha `sitio`, en el orden de los pasos del wizard. */
+  readonly partesDelSitio = [
+    { id: 'colegio', nombre: 'El colegio', icono: 'domain', ayuda: 'El nombre y los datos que van en la cabecera y el pie de todas las páginas.' },
+    { id: 'telefonos', nombre: 'Teléfonos', icono: 'phone', ayuda: 'Para llamar y para el botón de WhatsApp, que recibe las solicitudes de información.' },
+    { id: 'direccion', nombre: 'Dirección', icono: 'location_on', ayuda: 'La de la sede principal, en el pie de todas las páginas.' },
+    { id: 'plataforma', nombre: 'Plataforma académica', icono: 'graduation_cap', ayuda: 'El botón que lleva al inicio de sesión de la plataforma, en otra pestaña.' },
+  ];
+
+  readonly secciones: SeccionDelIndice[] = [
+    ...this.partesDelSitio.map(({ id, nombre, icono }) => ({ id, nombre, icono })),
+    { id: 'redes', nombre: 'Redes sociales', icono: 'people' },
+  ];
+
+  readonly pasosSitio: PasoWizard[] = [
+    {
+      id: 'colegio', titulo: 'El colegio', icono: 'domain',
+      campos: ['nombre', 'nombreCorto', 'nombreLinea1', 'nombreLinea2', 'ciudad', 'anioFundacion', 'subtitulo', 'promotora'],
+    },
+    { id: 'telefonos', titulo: 'Teléfonos', icono: 'phone', campos: ['telefono.numero', 'telefono.visible', 'whatsapp.numero', 'whatsapp.visible'] },
+    { id: 'direccion', titulo: 'Dirección', icono: 'location_on', campos: ['direccion.linea', 'direccion.referencia', 'direccion.distrito'] },
+    { id: 'plataforma', titulo: 'Plataforma', icono: 'graduation_cap', campos: ['portalAcademico.nombre', 'portalAcademico.url'] },
+  ];
+
+  @ViewChild('wizard') private wizard?: WizardComponent;
+  @ViewChild('cuerpo') private cuerpo?: CuerpoDesplazableComponent;
 
   readonly anioActual = new Date().getFullYear();
 
@@ -50,6 +87,10 @@ export class PortalWebGeneralComponent implements OnInit {
 
   cargandoSitio = true;
   guardandoSitio = false;
+  modalSitio = false;
+  pasoSitio = 0;
+  /** Lo guardado: lo que se lee en cada sección. null mientras la ficha no exista. */
+  sitioGuardado: SitioPortal | null = null;
   /** La versión leída: se manda al guardar para no pisar lo que otro guardó. */
   private versionSitio: string | null = null;
   /** Errores que devolvió el backend, por campo ('telefono.numero'). */
@@ -96,10 +137,8 @@ export class PortalWebGeneralComponent implements OnInit {
 
   columnasRedes: ColumnaTabla<RedSocialPortal>[] = [
     { campo: 'orden', header: 'Orden', ancho: '120px' },
-    { campo: 'red', header: 'Red', ancho: '14%', formatear: (v) => this.nombreDeRed(v) },
-    { campo: 'cuenta', header: 'Cuenta' },
+    { campo: 'red', header: 'Red' },
     { campo: 'url', header: 'Dirección', romperTexto: true },
-    { campo: 'aclaracion', header: 'Aviso', formatear: (v) => v ?? '—' },
     {
       campo: 'estado', header: 'Estado', tipo: 'badge', ancho: '12%',
       formatear: (v) => (v === 'publicado' ? 'Publicada' : 'Borrador'),
@@ -120,16 +159,13 @@ export class PortalWebGeneralComponent implements OnInit {
     estado: ['borrador' as EstadoPortal],
   });
 
-  ngOnInit(): void {
+  override ngOnInit(): void {
+    super.ngOnInit();
     this.cargarSitio();
     this.cargarRedes();
 
     // Sin plataforma académica, sus dos datos dejan de ser obligatorios.
     this.sitio.controls.conPlataforma.valueChanges.subscribe(() => this.ajustarPlataforma());
-  }
-
-  volver(): void {
-    this.router.navigate(['/inicio/portal-web']);
   }
 
   // ───────── Datos del colegio ─────────
@@ -138,30 +174,10 @@ export class PortalWebGeneralComponent implements OnInit {
     this.cargandoSitio = true;
     this.portalWebService.getFicha<SitioPortal>('sitio').subscribe({
       next: (res) => {
-        const c = res.data.contenido;
         this.versionSitio = res.data.version;
-        this.sitio.reset({
-          nombre: c?.nombre ?? '',
-          nombreCorto: c?.nombreCorto ?? '',
-          nombreLinea1: c?.nombreEnLineas?.[0] ?? '',
-          nombreLinea2: c?.nombreEnLineas?.[1] ?? '',
-          subtitulo: c?.subtitulo ?? '',
-          ciudad: c?.ciudad ?? '',
-          anioFundacion: c?.anioFundacion ?? null,
-          promotora: c?.promotora ?? '',
-          telefono: { numero: c?.telefono?.numero ?? '', visible: c?.telefono?.visible ?? '' },
-          whatsapp: { numero: c?.whatsapp?.numero ?? '', visible: c?.whatsapp?.visible ?? '' },
-          direccion: {
-            linea: c?.direccion?.linea ?? '',
-            referencia: c?.direccion?.referencia ?? '',
-            distrito: c?.direccion?.distrito ?? '',
-          },
-          conPlataforma: c ? !!c.portalAcademico : true,
-          portalAcademico: { nombre: c?.portalAcademico?.nombre ?? '', url: c?.portalAcademico?.url ?? '' },
-        });
-        this.ajustarPlataforma();
-        this.erroresServidor = {};
+        this.sitioGuardado = res.data.contenido ?? null;
         this.cargandoSitio = false;
+        this.resumirSitio();
       },
       error: (err) => {
         this.cargandoSitio = false;
@@ -170,10 +186,77 @@ export class PortalWebGeneralComponent implements OnInit {
     });
   }
 
+  /** El formulario con lo guardado: al abrir el wizard, lo que se canceló antes no queda a medias. */
+  private llenarSitio(c: SitioPortal | null): void {
+    this.sitio.reset({
+      nombre: c?.nombre ?? '',
+      nombreCorto: c?.nombreCorto ?? '',
+      nombreLinea1: c?.nombreEnLineas?.[0] ?? '',
+      nombreLinea2: c?.nombreEnLineas?.[1] ?? '',
+      subtitulo: c?.subtitulo ?? '',
+      ciudad: c?.ciudad ?? '',
+      anioFundacion: c?.anioFundacion ?? null,
+      promotora: c?.promotora ?? '',
+      telefono: { numero: c?.telefono?.numero ?? '', visible: c?.telefono?.visible ?? '' },
+      whatsapp: { numero: c?.whatsapp?.numero ?? '', visible: c?.whatsapp?.visible ?? '' },
+      direccion: {
+        linea: c?.direccion?.linea ?? '',
+        referencia: c?.direccion?.referencia ?? '',
+        distrito: c?.direccion?.distrito ?? '',
+      },
+      conPlataforma: c ? !!c.portalAcademico : true,
+      portalAcademico: { nombre: c?.portalAcademico?.nombre ?? '', url: c?.portalAcademico?.url ?? '' },
+    });
+    this.ajustarPlataforma();
+    this.erroresServidor = {};
+  }
+
+  abrirSitio(paso: number): void {
+    this.llenarSitio(this.sitioGuardado);
+    this.pasoSitio = paso;
+    this.modalSitio = true;
+  }
+
+  /** La línea del índice de cada parte y, si la ficha no existe, el pendiente. */
+  private resumirSitio(): void {
+    const s = this.sitioGuardado;
+    if (!s) {
+      this.partesDelSitio.forEach((p, i) => this.alResumir(p.id, {
+        estado: 'Sin configurar', aviso: true,
+        pendientes: i === 0 ? [{ cuantos: 1, texto: 'datos del colegio sin configurar: el portal no muestra su cabecera ni su pie' }] : [],
+      }));
+      return;
+    }
+
+    this.alResumir('colegio', { estado: `${s.nombreCorto} · ${s.ciudad}`, aviso: false, pendientes: [] });
+    this.alResumir('telefonos', { estado: `${s.telefono.visible} · WhatsApp ${s.whatsapp.visible}`, aviso: false, pendientes: [] });
+    this.alResumir('direccion', { estado: s.direccion.linea, aviso: false, pendientes: [] });
+    this.alResumir('plataforma', { estado: s.portalAcademico ? `Botón «${s.portalAcademico.nombre}»` : 'Sin botón', aviso: false, pendientes: [] });
+  }
+
+  private resumirRedes(): void {
+    const publicadas = this.redes.filter((r) => r.estado === 'publicado').length;
+    const borradores = this.redes.length - publicadas;
+    this.alResumir('redes', {
+      estado: publicadas
+        ? cuantos(publicadas, 'publicada', 'publicadas') + (borradores ? ` · ${cuantos(borradores, 'borrador', 'borradores')}` : '')
+        : 'Ninguna publicada: no se ven',
+      aviso: !publicadas,
+      pendientes: borradores ? [{ cuantos: borradores, texto: borradores === 1 ? 'red en borrador' : 'redes en borrador' }] : [],
+    });
+  }
+
+  /** El primer paso del wizard con un campo inválido, o -1. */
+  private pasoConError(): number {
+    return this.pasosSitio.findIndex((_, i) => !this.wizard?.validarPaso(i));
+  }
+
   guardarSitio(): void {
-    if (this.sitio.invalid) {
+    const conError = this.pasoConError();
+    if (conError >= 0 || this.sitio.invalid) {
       this.sitio.markAllAsTouched();
-      this.toastService.warning('Revisa el formulario', 'Hay datos que faltan o no tienen el formato correcto.');
+      this.pasoSitio = Math.max(conError, 0);
+      this.cuerpo?.irAlPrimerError();
       return;
     }
 
@@ -199,6 +282,9 @@ export class PortalWebGeneralComponent implements OnInit {
         this.guardandoSitio = false;
         this.versionSitio = res.data.version;
         this.sitio.markAsPristine();
+        this.sitioGuardado = datos;
+        this.modalSitio = false;
+        this.resumirSitio();
         this.toastService.success('Datos guardados', 'El portal los mostrará en hasta un minuto.');
       },
       error: (err: HttpErrorResponse) => {
@@ -208,7 +294,11 @@ export class PortalWebGeneralComponent implements OnInit {
           const enPantalla = campo === 'nombreEnLineas.1' ? 'nombreLinea2' : campo.startsWith('nombreEnLineas') ? 'nombreLinea1' : campo;
           this.erroresServidor[enPantalla] = mensaje;
           this.sitio.get(enPantalla)?.markAsTouched();
+          // Al paso donde está ese campo.
+          const paso = this.pasosSitio.findIndex((p) => p.campos?.includes(enPantalla));
+          if (paso >= 0) this.pasoSitio = paso;
         });
+        this.cuerpo?.irAlPrimerError();
       },
     });
   }
@@ -244,6 +334,7 @@ export class PortalWebGeneralComponent implements OnInit {
       next: (res) => {
         this.redes = res.data;
         this.cargandoRedes = false;
+        this.resumirRedes();
       },
       error: (err) => {
         this.cargandoRedes = false;
