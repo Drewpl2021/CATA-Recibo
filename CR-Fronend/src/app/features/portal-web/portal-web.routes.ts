@@ -13,7 +13,7 @@ export const PORTAL_WEB_ROUTES: Routes = [
     loadComponent: () => import('./indice/portal-web-indice.component').then((m) => m.PortalWebIndiceComponent),
   },
   {
-    path: 'inicio',
+    path: 'portada',
     loadComponent: () => import('./inicio/portal-web-inicio.component').then((m) => m.PortalWebInicioComponent),
   },
   {

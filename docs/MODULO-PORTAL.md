@@ -82,7 +82,7 @@ Regla de toda la etapa: **solo suma**. No cambia colores, estilos globales, pant
 - **Fichas** `quienes-somos` (título, 1 a 6 párrafos de hasta 600, foto 4:5, hasta 8 símbolos) y `niveles` (título de la sección y enlace https a la propuesta).
 - **Niveles de Inicio**: `/web-portal/home-levels` (`NivelesController`), hasta 4, foto 3:2. Es la lista de Inicio, no la de Propuesta.
 - **Noticias**: `/web-portal/news` (`NoticiasController`). Siempre por fecha, de la más reciente a la más antigua: **sin ruta de orden**. El `slug` se arma con el título al crearla (único, -2, -3…) y no cambia. Antes de guardar se valida la primera página del portal y **la página donde cae la noticia** (`?limite=24&pagina=N`), probado con una noticia vieja que rompe el contrato.
-- **Pantalla** `/inicio/portal-web/inicio`: carrusel, cifras, Quiénes somos, niveles y noticias, en el orden del portal. Las sedes, que Inicio también muestra, se editan en Contacto. `hoyEnLima()` pasó a `compartido/panel.ts`.
+- **Pantalla** `/inicio/portal-web/portada`: carrusel, cifras, Quiénes somos, niveles y noticias, en el orden del portal. Las sedes, que Inicio también muestra, se editan en Contacto. `hoyEnLima()` pasó a `compartido/panel.ts`.
 - **En local, las fotos subidas no se ven en el portal React**: la API las anuncia en https (lo exige el contrato) y `ng serve` sirve http. En producción no pasa.
 
 ### Etapa 7: Proyectos (hecha)

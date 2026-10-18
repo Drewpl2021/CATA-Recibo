@@ -548,6 +548,7 @@ export class LayoutComponent implements OnInit {
     navegacion: 'Menú y títulos',
     matricula: 'Matrícula',
     propuesta: 'Propuesta Educativa',
+    portada: 'Inicio',
   };
 
   ngOnInit(): void {

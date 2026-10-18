@@ -57,9 +57,12 @@ export class PortalWebIndiceComponent implements OnInit {
     return this.categorias.find((c) => c.id === this.categoria) ?? this.categorias[0];
   }
 
-  /** Abre la pantalla de edición de una categoría ya habilitada. */
+  /**
+   * Abre la pantalla de edición de una categoría ya habilitada. La de Inicio
+   * vive en «portada»: un segmento «inicio» no llegaría a las migas.
+   */
   abrir(id: IdCategoria): void {
-    this.router.navigate(['/inicio/portal-web', id]);
+    this.router.navigate(['/inicio/portal-web', id === 'inicio' ? 'portada' : id]);
   }
 
   elegir(id: IdCategoria): void {
