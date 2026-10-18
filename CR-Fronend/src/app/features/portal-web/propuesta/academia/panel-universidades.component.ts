@@ -21,6 +21,7 @@ import { RECURSOS } from '../../portal-web.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
   templateUrl: './panel-universidades.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelUniversidadesComponent extends PanelDeLista<UniversidadPortal> {
   private fb = inject(FormBuilder);
@@ -38,11 +39,10 @@ export class PanelUniversidadesComponent extends PanelDeLista<UniversidadPortal>
     ...accionesDeEstado<UniversidadPortal>(),
   ];
 
+  // La dirección y los ciclos van bajo el nombre: así caben las acciones.
   columnas: ColumnaTabla<UniversidadPortal>[] = [
     this.columnaDeOrden(),
     { campo: 'nombre', header: 'Universidad' },
-    { campo: 'clave', header: 'En la dirección', ancho: '22%', formatear: (c) => `?universidad=${c}` },
-    { campo: 'ciclos', header: 'Ciclos', ancho: '10%', formatear: (n: number) => (n ? String(n) : 'Ninguno') },
     this.columnaDeEstado(),
   ];
 
@@ -58,6 +58,10 @@ export class PanelUniversidadesComponent extends PanelDeLista<UniversidadPortal>
   protected describir(u: UniversidadPortal): string {
     const ciclos = u.ciclos === 0 ? '' : u.ciclos === 1 ? ' con su ciclo' : ` con sus ${u.ciclos} ciclos`;
     return `la universidad «${u.nombre}»${ciclos}`;
+  }
+
+  ciclosDe(u: UniversidadPortal): string {
+    return u.ciclos ? `${u.ciclos} ${u.ciclos === 1 ? 'ciclo' : 'ciclos'}` : 'sin ciclos';
   }
 
   nueva(): void {
@@ -99,6 +103,7 @@ export class PanelUniversidadesComponent extends PanelDeLista<UniversidadPortal>
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
     const v = this.form.getRawValue();

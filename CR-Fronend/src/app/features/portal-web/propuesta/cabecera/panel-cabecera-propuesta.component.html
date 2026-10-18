@@ -7,92 +7,175 @@
         del emblema.
       </p>
     </div>
+    <div class="ajustes-panel__acciones" *ngIf="!cargando && guardada">
+      <button type="button" class="btn-primary" (click)="abrir()">
+        <app-icon icono="edit" [tamano]="16"></app-icon>
+        Editar cabecera
+      </button>
+    </div>
   </header>
 
-  <p class="form-ayuda ajuste-bloque" *ngIf="cargando">Cargando la cabecera…</p>
+  <div class="pw-esqueleto" *ngIf="cargando" role="status">
+    <span class="solo-lectores">Cargando la cabecera…</span>
+    <span class="esqueleto esqueleto--titulo" aria-hidden="true"></span>
+    <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+  </div>
 
-  <ng-container *ngIf="!cargando">
-    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
-      <div class="grupo-montos">
-        <div class="form-fields">
-          <div class="form-group">
-            <label for="propuesta-titulo">Título *</label>
-            <input id="propuesta-titulo" type="text" class="form-control" formControlName="titulo" maxlength="70"
-              placeholder="Ej. Mejoramos la experiencia de aprendizaje" [class.is-invalid]="invalido('titulo')" />
-            <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 70).</small>
-            <small class="form-ayuda" *ngIf="!invalido('titulo')">Se muestra muy grande: conviene corto.</small>
-          </div>
-          <div class="form-group">
-            <label for="propuesta-bajada">Frase bajo el título</label>
-            <textarea id="propuesta-bajada" class="form-control" rows="2" formControlName="bajada" maxlength="180"></textarea>
-            <small class="form-ayuda">Opcional. Hasta 180 caracteres.</small>
-          </div>
+  <div class="card-vacio" *ngIf="!cargando && !guardada">
+    <app-icon icono="graduation_cap" [tamano]="34"></app-icon>
+    La cabecera de Propuesta Educativa no está configurada: el portal muestra «Esta sección del portal todavía no está disponible».
+    <button type="button" class="btn-primary" (click)="abrir()">
+      <app-icon icono="edit" [tamano]="16"></app-icon>
+      Configurar la cabecera
+    </button>
+  </div>
+
+  <ng-container *ngIf="!cargando && guardada as c">
+    <div class="ajuste-bloque">
+      <dl class="pw-lista-datos">
+        <dt>Título</dt><dd>{{ c.titulo }}</dd>
+        <dt>Frase bajo el título</dt><dd [class.pw-sin-dato]="!c.bajada">{{ c.bajada || 'Sin frase' }}</dd>
+        <dt>Botón principal</dt><dd>«{{ c.accionPrincipal.etiqueta }}», a {{ adonde(c.accionPrincipal) }}</dd>
+        <dt>Botón secundario</dt>
+        <dd [class.pw-sin-dato]="!c.accionSecundaria">
+          {{ c.accionSecundaria ? '«' + c.accionSecundaria.etiqueta + '», a ' + adonde(c.accionSecundaria) : 'Sin botón secundario' }}
+        </dd>
+      </dl>
+    </div>
+
+    <div class="ajuste-bloque">
+      <h3 class="ajuste-bloque__pregunta">Figuras de la escena</h3>
+      <div class="pw-tarjetas" *ngIf="figurasGuardadas.length; else sinFiguras">
+        <div class="pw-celda-titulo" *ngFor="let f of figurasGuardadas; let i = index">
+          <span class="pw-miniatura" aria-hidden="true">
+            <img *ngIf="f.imagen" [src]="ver(f.imagen.url)" alt="" loading="lazy" />
+          </span>
+          <span>
+            <strong>Figura {{ i + 1 }}</strong>
+            <small>{{ f.tipo === 'recorte' ? 'Recorte sin fondo' : 'Foto con fondo' }}</small>
+          </span>
         </div>
       </div>
+      <ng-template #sinFiguras>
+        <p class="form-ayuda pw-sin-margen">Sin figuras: la cabecera queda solo con texto.</p>
+      </ng-template>
+    </div>
+  </ng-container>
+</section>
 
-      <div class="grupo-montos">
-        <h3 class="grupo-montos__titulo">Botón principal *</h3>
+<!-- ═══════════ Modal: en tres pasos ═══════════ -->
+<app-form-modal
+  [(visible)]="modalVisible"
+  titulo="Cabecera de Propuesta Educativa"
+  ancho="820px"
+  [guardando]="guardando"
+  [ocultarBotonesPorDefecto]="true"
+  (cancelar)="cerrar()"
+>
+  <pw-cuerpo-desplazable #cuerpo>
+  <app-wizard #wizard [pasos]="pasos" [(actual)]="paso" [form]="form"></app-wizard>
+
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <!-- 1 · Texto -->
+    <div class="seccion-form pw-paso" [hidden]="paso !== 0">
+      <h3 class="seccion-form__titulo">Texto</h3>
+      <div class="form-group">
+        <label for="propuesta-titulo">Título *</label>
+        <input id="propuesta-titulo" type="text" class="form-control" formControlName="titulo" maxlength="70"
+          placeholder="Ej. Mejoramos la experiencia de aprendizaje" [class.is-invalid]="invalido('titulo')" />
+        <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 70).</small>
+        <small class="form-ayuda" *ngIf="!invalido('titulo')">Se muestra muy grande: conviene corto.</small>
+      </div>
+      <div class="form-group">
+        <label for="propuesta-bajada">Frase bajo el título</label>
+        <textarea id="propuesta-bajada" class="form-control" rows="2" formControlName="bajada" maxlength="180"></textarea>
+        <small class="form-ayuda">Opcional. Hasta 180 caracteres.</small>
+      </div>
+    </div>
+
+    <!-- 2 · Botones -->
+    <div class="pw-paso" [hidden]="paso !== 1">
+      <div class="seccion-form">
+        <h3 class="seccion-form__titulo">Botón principal *</h3>
         <app-editor-accion [grupo]="form.controls.accionPrincipal" idBase="propuesta-principal"
           etiquetaDelCheck="Lleva el botón principal (obligatorio)"></app-editor-accion>
         <small class="form-error" *ngIf="intentado && faltaPrincipal">La cabecera necesita su botón principal.</small>
       </div>
-
-      <div class="grupo-montos">
-        <h3 class="grupo-montos__titulo">Botón secundario</h3>
+      <div class="seccion-form">
+        <h3 class="seccion-form__titulo">Botón secundario</h3>
         <app-editor-accion [grupo]="form.controls.accionSecundaria" idBase="propuesta-secundaria"
           etiquetaDelCheck="Lleva un botón secundario"></app-editor-accion>
       </div>
-    </form>
+    </div>
+  </form>
 
-    <div class="grupo-montos">
-      <h3 class="grupo-montos__titulo">Figuras de la escena</h3>
-      <p class="form-ayuda">
-        Hasta {{ maxFiguras }}, en orden de importancia. El portal usa hasta dos recortes; si no hay recortes, la primera foto. Sin
-        figuras, la cabecera queda solo con texto. Las fotos de estudiantes necesitan la autorización de su familia.
-      </p>
+  <!-- 3 · Figuras (fuera del form: no son controles) -->
+  <div class="seccion-form pw-paso" [hidden]="paso !== 2">
+    <h3 class="seccion-form__titulo">Figuras de la escena</h3>
+    <p class="form-ayuda">
+      Hasta {{ maxFiguras }}, en orden de importancia. El portal usa hasta dos recortes; si no hay recortes, la primera foto. Sin
+      figuras, la cabecera queda solo con texto. Las fotos de estudiantes necesitan la autorización de su familia.
+    </p>
 
-      <div class="grupo-montos" *ngFor="let f of figuras; let i = index">
-        <div class="form-row">
-          <div class="form-group">
-            <label [for]="'figura-tipo-' + i">Figura {{ i + 1 }}</label>
-            <select [id]="'figura-tipo-' + i" class="form-control" [value]="f.tipo" (change)="cambiarTipo(f, $any($event.target).value)">
-              <option value="recorte">Recorte de un estudiante, sin fondo (vertical)</option>
-              <option value="foto">Foto con fondo (horizontal 4:3)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>&nbsp;</label>
-            <div class="action-btns">
-              <button type="button" class="btn-icon-accion" (click)="moverFigura(i, -1)" [disabled]="i === 0"
-                [attr.aria-label]="'Subir la figura ' + (i + 1)" title="Subir">↑</button>
-              <button type="button" class="btn-icon-accion" (click)="moverFigura(i, 1)" [disabled]="i === figuras.length - 1"
-                [attr.aria-label]="'Bajar la figura ' + (i + 1)" title="Bajar">↓</button>
-              <button type="button" class="btn-icon-accion" (click)="quitarFigura(i)"
-                [attr.aria-label]="'Quitar la figura ' + (i + 1)" title="Quitar">
-                <app-icon icono="trash" [tamano]="14"></app-icon>
-              </button>
-            </div>
+    <div class="grupo-montos" *ngFor="let f of figuras; let i = index">
+      <div class="form-row">
+        <div class="form-group">
+          <label [for]="'figura-tipo-' + i">Figura {{ i + 1 }}</label>
+          <select [id]="'figura-tipo-' + i" class="form-control" [value]="f.tipo" (change)="cambiarTipo(f, $any($event.target).value)">
+            <option value="recorte">Recorte de un estudiante, sin fondo (vertical)</option>
+            <option value="foto">Foto con fondo (horizontal 4:3)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <div class="action-btns">
+            <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverFigura(i, -1)" [disabled]="i === 0"
+              [attr.aria-label]="'Subir la figura ' + (i + 1)" title="Subir">
+              <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+            </button>
+            <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverFigura(i, 1)" [disabled]="i === figuras.length - 1"
+              [attr.aria-label]="'Bajar la figura ' + (i + 1)" title="Bajar">
+              <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+            </button>
+            <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarFigura(i)"
+              [attr.aria-label]="'Quitar la figura ' + (i + 1)" title="Quitar">
+              <app-icon icono="trash" [tamano]="16"></app-icon>
+            </button>
           </div>
         </div>
-        <ng-container *ngFor="let vuelta of [f.vuelta]">
-          <app-selector-imagen [uso]="usoDe(f.tipo)" [etiqueta]="f.tipo === 'recorte' ? 'Recorte' : 'Foto'" [obligatoria]="true"
-            [imagen]="f.imagen" (imagenChange)="cambiarImagen(f, $event)"></app-selector-imagen>
-        </ng-container>
-        <small class="form-error" *ngIf="intentado && !f.imagen">Sube la imagen de esta figura, o quítala.</small>
       </div>
-
-      <div>
-        <button type="button" class="btn-secondary" (click)="agregarFigura()" [disabled]="figuras.length >= maxFiguras">
-          <app-icon icono="plus" [tamano]="14"></app-icon> Agregar figura
-        </button>
-      </div>
+      <ng-container *ngFor="let vuelta of [f.vuelta]">
+        <app-selector-imagen *ngIf="modalVisible" [uso]="usoDe(f.tipo)" [etiqueta]="f.tipo === 'recorte' ? 'Recorte' : 'Foto'" [obligatoria]="true"
+          [imagen]="f.imagen" (imagenChange)="cambiarImagen(f, $event)"></app-selector-imagen>
+      </ng-container>
+      <small class="form-error" *ngIf="intentado && !f.imagen">Sube la imagen de esta figura, o quítala.</small>
     </div>
 
-    <footer class="panel-pie">
-      <button type="button" class="btn-primary" (click)="guardar()" [disabled]="guardando || !conCambios">
-        {{ guardando ? 'Guardando…' : 'Guardar la cabecera' }}
+    <div>
+      <button type="button" class="btn-secondary" (click)="agregarFigura()" [disabled]="figuras.length >= maxFiguras">
+        <app-icon icono="plus" [tamano]="14"></app-icon> Agregar figura
       </button>
-      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="conCambios && !guardando">Tienes cambios sin guardar.</p>
-    </footer>
-  </ng-container>
-</section>
+    </div>
+  </div>
+  </pw-cuerpo-desplazable>
+
+  <div modalFooter class="asistente-pie asistente-pie--extremos">
+    <button type="button" class="btn-secondary pw-boton-entero" (click)="wizard.anterior()" [disabled]="guardando" [style.visibility]="paso > 0 ? 'visible' : 'hidden'">
+      <app-icon icono="arrow_left" [tamano]="15"></app-icon>
+      Anterior
+    </button>
+    <div class="asistente-pie">
+      <button type="button" class="btn-secondary" (click)="cerrar()" [disabled]="guardando">Cancelar</button>
+      <button type="button" class="btn-secondary" *ngIf="!wizard.esUltimo && guardada" (click)="siguiente()" [disabled]="guardando">
+        Siguiente
+      </button>
+      <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo && !guardada" (click)="siguiente()">
+        Siguiente
+        <app-icon icono="arrow_right" [tamano]="15"></app-icon>
+      </button>
+      <button type="button" class="btn-primary" *ngIf="wizard.esUltimo || guardada" (click)="guardar()" [disabled]="guardando">
+        {{ guardando ? 'Guardando…' : 'Guardar cambios' }}
+      </button>
+    </div>
+  </div>
+</app-form-modal>

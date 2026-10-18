@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -7,9 +7,13 @@ import { DataTableComponent } from '../../../../shared/components/data-table/dat
 import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { WizardComponent } from '../../../../shared/components/wizard/wizard.component';
+import { PasoWizard } from '../../../../shared/components/wizard/wizard.models';
+import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { lineas, validarLineas } from '../../compartido/lineas';
-import { moverEn } from '../../compartido/panel';
+import { moverEn, urlParaVer } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
+import { ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
 import { EstadoPortal, ImagenPortal, NivelPropuestaPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
@@ -20,13 +24,18 @@ const MAX_TALLERES = 12;
 /**
  * Propuesta Educativa › Niveles: hasta 6, cada uno con su descripción, sus
  * rasgos, sus talleres y una foto 3:2. Son una lista propia: los niveles de
- * Inicio se editan en Inicio.
+ * Inicio se editan en Inicio. El modal va en tres pasos: el nivel con su
+ * foto, la descripción y los rasgos, y los talleres.
  */
 @Component({
   selector: 'app-panel-niveles-propuesta',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent],
+  imports: [
+    CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent,
+    WizardComponent, CuerpoDesplazableComponent,
+  ],
   templateUrl: './panel-niveles-propuesta.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelNivelesPropuestaComponent extends PanelDeLista<NivelPropuestaPortal> {
   private fb = inject(FormBuilder);
@@ -38,14 +47,22 @@ export class PanelNivelesPropuestaComponent extends PanelDeLista<NivelPropuestaP
   readonly maxTalleres = MAX_TALLERES;
 
   foto: ImagenPortal | null = null;
+  readonly ver = urlParaVer;
 
+  readonly pasosWizard: PasoWizard[] = [
+    { id: 'nivel', titulo: 'El nivel', icono: 'view_module', campos: ['nombre', 'rango'] },
+    { id: 'descripcion', titulo: 'Descripción', icono: 'description', campos: ['descripcion', 'rasgos'] },
+    { id: 'talleres', titulo: 'Talleres', icono: 'layers', campos: ['talleres'] },
+  ];
+
+  @ViewChild('wizard') private wizard?: WizardComponent;
+  @ViewChild('cuerpo') private cuerpo?: CuerpoDesplazableComponent;
+  pasoActual = 0;
+
+  // El rango, los rasgos y los talleres van bajo el nombre: así caben las acciones.
   columnas: ColumnaTabla<NivelPropuestaPortal>[] = [
     this.columnaDeOrden(),
-    { campo: 'nombre', header: 'Nivel', ancho: '16%' },
-    { campo: 'rango', header: 'Rango', formatear: (r) => r ?? '—' },
-    { campo: 'rasgos', header: 'Rasgos', ancho: '10%', formatear: (r: string[]) => String(r.length) },
-    { campo: 'talleres', header: 'Talleres', ancho: '10%', formatear: (t: unknown[]) => String(t.length) },
-    { campo: 'imagen_id', header: 'Foto', ancho: '8%', formatear: (f) => (f ? 'Sí' : 'No') },
+    { campo: 'nombre', header: 'Nivel' },
     this.columnaDeEstado(),
   ];
 
@@ -68,6 +85,25 @@ export class PanelNivelesPropuestaComponent extends PanelDeLista<NivelPropuestaP
 
   protected describir(n: NivelPropuestaPortal): string {
     return `el nivel «${n.nombre}» de Propuesta Educativa`;
+  }
+
+  /** «1.° a 6.° grado · 4 rasgos · 3 talleres», bajo el nombre en la tabla. */
+  detalle(n: NivelPropuestaPortal): string {
+    const partes = [n.rango, n.rasgos.length ? `${n.rasgos.length} ${n.rasgos.length === 1 ? 'rasgo' : 'rasgos'}` : null,
+      n.talleres.length ? `${n.talleres.length} ${n.talleres.length === 1 ? 'taller' : 'talleres'}` : 'sin talleres'];
+    return partes.filter(Boolean).join(' · ');
+  }
+
+  /** Los publicados sin foto: su bloque se ve sin imagen en el portal. */
+  protected override resumir(): ResumenDeSeccion | null {
+    const r = super.resumir();
+    const sinFoto = this.filas.filter((n) => n.estado === 'publicado' && !n.imagen_id).length;
+    if (r && sinFoto) {
+      r.estado += ` · ${sinFoto} sin foto`;
+      r.aviso = true;
+      r.pendientes = [{ cuantos: sinFoto, texto: sinFoto === 1 ? 'nivel de Propuesta publicado sin foto' : 'niveles de Propuesta publicados sin foto' }];
+    }
+    return r;
   }
 
   private parrafo(texto = '') {
@@ -95,13 +131,26 @@ export class PanelNivelesPropuestaComponent extends PanelDeLista<NivelPropuestaP
   nuevo(): void {
     this.editando = null;
     this.llenar(null);
+    this.pasoActual = 0;
     this.modalVisible = true;
   }
 
   editar(n: NivelPropuestaPortal): void {
     this.editando = n;
     this.llenar(n);
+    this.pasoActual = 0;
     this.modalVisible = true;
+  }
+
+  /**
+   * El wizard marca como tocada la lista entera, no cada párrafo: aquí se
+   * marcan sus campos, para que se vea cuál falta antes de seguir.
+   */
+  siguiente(): void {
+    this.pasosWizard[this.pasoActual].campos?.forEach((c) => this.form.get(c)?.markAllAsTouched());
+    const antes = this.pasoActual;
+    this.wizard?.siguiente();
+    if (this.pasoActual === antes) this.cuerpo?.irAlPrimerError();
   }
 
   agregarParrafo(): void {
@@ -132,9 +181,13 @@ export class PanelNivelesPropuestaComponent extends PanelDeLista<NivelPropuestaP
     return !!control && control.invalid && control.touched;
   }
 
+  /** Si algo falta, el wizard vuelve al primer paso con error. */
   guardar(): void {
-    if (this.form.invalid) {
+    const conError = this.pasosWizard.findIndex((_, i) => !this.wizard?.validarPaso(i));
+    if (conError >= 0 || this.form.invalid) {
       this.form.markAllAsTouched();
+      this.pasoActual = Math.max(conError, 0);
+      this.cuerpo?.irAlPrimerError();
       return;
     }
 

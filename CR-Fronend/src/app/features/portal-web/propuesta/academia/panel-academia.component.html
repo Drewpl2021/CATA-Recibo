@@ -6,39 +6,27 @@
     </div>
   </header>
 
-  <p class="form-ayuda ajuste-bloque" *ngIf="cargando">Cargando la academia…</p>
+  <div class="pw-esqueleto" *ngIf="cargando" role="status">
+    <span class="solo-lectores">Cargando la academia…</span>
+    <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+  </div>
 
-  <form [formGroup]="form" *ngIf="!cargando" (ngSubmit)="guardar()" novalidate>
-    <div class="grupo-montos">
-      <div class="form-fields">
-        <div class="form-group">
-          <label for="academia-titulo">Título *</label>
-          <input id="academia-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
-            placeholder="Ej. Academia preuniversitaria" [class.is-invalid]="invalido('titulo')" />
-          <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 60).</small>
-        </div>
-        <div class="form-group">
-          <label for="academia-descripcion">Descripción</label>
-          <textarea id="academia-descripcion" class="form-control" rows="2" formControlName="descripcion" maxlength="240"></textarea>
-          <small class="form-ayuda">Opcional. Hasta 240 caracteres.</small>
-        </div>
-        <div class="form-group">
-          <label for="academia-aclaracion">Aviso para toda la academia</label>
-          <input id="academia-aclaracion" type="text" class="form-control" formControlName="aclaracion" maxlength="80"
-            placeholder="Ej. Precios y fechas por actualizar" />
-          <small class="form-ayuda">Opcional. Se ve sobre los ciclos; úsalo si algún dato todavía no está confirmado.</small>
-        </div>
+  <!-- Los textos: se leen aquí y se cambian en su modal -->
+  <div class="ajuste-bloque" *ngIf="!cargando">
+    <div class="pw-fila-dato">
+      <div class="pw-dato">
+        <span>Textos de la academia</span>
+        <strong [class.pw-sin-dato]="!guardada">{{ guardada?.titulo || 'Sin textos: la academia no se muestra' }}</strong>
+        <small *ngIf="guardada">{{ guardada.descripcion || 'Sin descripción' }}{{ guardada.aclaracion ? ' · Aviso: ' + guardada.aclaracion : '' }}</small>
       </div>
-    </div>
-    <footer class="panel-pie">
-      <button type="submit" class="btn-primary" [disabled]="guardando || form.pristine">
-        {{ guardando ? 'Guardando…' : 'Guardar los textos' }}
+      <button type="button" class="btn-secondary" (click)="abrir()">
+        <app-icon icono="edit" [tamano]="14"></app-icon>
+        Editar textos
       </button>
-      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="form.dirty && !guardando">Tienes cambios sin guardar.</p>
-    </footer>
-  </form>
+    </div>
+  </div>
 
-  <app-panel-universidades (cambiaron)="universidades = $event" (verCiclos)="verCiclos($event)"></app-panel-universidades>
+  <app-panel-universidades (cambiaron)="alCambiarUniversidades($event)" (verCiclos)="verCiclos($event)"></app-panel-universidades>
 
   <app-panel-ciclos
     [universidades]="universidades"
@@ -46,3 +34,33 @@
     (cambiaron)="recargarUniversidades()"
   ></app-panel-ciclos>
 </section>
+
+<!-- Los textos de la academia -->
+<app-form-modal
+  [(visible)]="modalVisible"
+  titulo="Textos de la academia"
+  ancho="640px"
+  [guardando]="guardando"
+  textoGuardar="Guardar cambios"
+  (guardar)="guardar()"
+>
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <div class="form-group">
+      <label for="academia-titulo">Título *</label>
+      <input id="academia-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+        placeholder="Ej. Academia preuniversitaria" [class.is-invalid]="invalido('titulo')" />
+      <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 60).</small>
+    </div>
+    <div class="form-group">
+      <label for="academia-descripcion">Descripción</label>
+      <textarea id="academia-descripcion" class="form-control" rows="2" formControlName="descripcion" maxlength="240"></textarea>
+      <small class="form-ayuda">Opcional. Hasta 240 caracteres.</small>
+    </div>
+    <div class="form-group">
+      <label for="academia-aclaracion">Aviso para toda la academia</label>
+      <input id="academia-aclaracion" type="text" class="form-control" formControlName="aclaracion" maxlength="80"
+        placeholder="Ej. Precios y fechas por actualizar" />
+      <small class="form-ayuda">Opcional. Se ve sobre los ciclos; úsalo si algún dato todavía no está confirmado.</small>
+    </div>
+  </form>
+</app-form-modal>

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -9,6 +9,7 @@ import { DataTableComponent } from '../../../../shared/components/data-table/dat
 import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { lineas, validarLineas } from '../../compartido/lineas';
 import { mostrarErrorDelPanel, moverEn } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
@@ -20,13 +21,15 @@ const MAX_PARRAFOS = 6;
 /**
  * Propuesta Educativa › Pilares: la introducción (un título y de 1 a 6
  * párrafos, o ninguna) y hasta 8 pilares, cada uno con su texto y, si los
- * tiene, sus aspectos («Espiritual», «Mental»…).
+ * tiene, sus aspectos («Espiritual», «Mental»…). La introducción se lee
+ * sobre la tabla y se cambia en su modal.
  */
 @Component({
   selector: 'app-panel-pilares',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, CuerpoDesplazableComponent],
   templateUrl: './panel-pilares.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelPilaresComponent extends PanelDeLista<PilarPortal> implements OnInit {
   private fb = inject(FormBuilder);
@@ -36,11 +39,10 @@ export class PanelPilaresComponent extends PanelDeLista<PilarPortal> implements 
 
   readonly maxParrafos = MAX_PARRAFOS;
 
+  // El texto y los aspectos van bajo el título: así caben las acciones.
   columnas: ColumnaTabla<PilarPortal>[] = [
     this.columnaDeOrden(),
-    { campo: 'titulo', header: 'Pilar', ancho: '24%' },
-    { campo: 'texto', header: 'Texto' },
-    { campo: 'puntos', header: 'Aspectos', ancho: '18%', formatear: (p: string[]) => (p.length ? p.join(', ') : '—') },
+    { campo: 'titulo', header: 'Pilar' },
     this.columnaDeEstado(),
   ];
 
@@ -56,6 +58,10 @@ export class PanelPilaresComponent extends PanelDeLista<PilarPortal> implements 
   cargandoIntro = true;
   guardandoIntro = false;
   private versionIntro: string | null = null;
+  modalIntro = false;
+  /** Lo guardado: lo que se lee sobre la tabla. null = sin introducción. */
+  introGuardada: IntroduccionPilares['introduccion'] = null;
+  @ViewChild('cuerpoIntro') private cuerpoIntro?: CuerpoDesplazableComponent;
 
   intro = this.fb.group({
     conIntroduccion: [true],
@@ -97,6 +103,7 @@ export class PanelPilaresComponent extends PanelDeLista<PilarPortal> implements 
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
 
@@ -125,13 +132,8 @@ export class PanelPilaresComponent extends PanelDeLista<PilarPortal> implements 
     this.cargandoIntro = true;
     this.portalWebService.getFicha<IntroduccionPilares>('propuesta-pilares').subscribe({
       next: (res) => {
-        const i = res.data.contenido?.introduccion ?? null;
         this.versionIntro = res.data.version;
-        this.intro.reset({ conIntroduccion: !!i, titulo: i?.titulo ?? '' });
-        this.parrafos.clear();
-        (i?.parrafos?.length ? i.parrafos : ['']).forEach((p) => this.parrafos.push(this.parrafo(p)));
-        this.habilitarIntro(!!i);
-        this.intro.markAsPristine();
+        this.introGuardada = res.data.contenido?.introduccion ?? null;
         this.cargandoIntro = false;
       },
       error: (err) => {
@@ -139,6 +141,16 @@ export class PanelPilaresComponent extends PanelDeLista<PilarPortal> implements 
         this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo cargar la introducción de los pilares.'));
       },
     });
+  }
+
+  /** El modal empieza con lo guardado: lo que se canceló antes no queda a medias. */
+  abrirIntro(): void {
+    const i = this.introGuardada;
+    this.intro.reset({ conIntroduccion: !!i, titulo: i?.titulo ?? '' });
+    this.parrafos.clear();
+    (i?.parrafos?.length ? i.parrafos : ['']).forEach((p) => this.parrafos.push(this.parrafo(p)));
+    this.habilitarIntro(!!i);
+    this.modalIntro = true;
   }
 
   agregarParrafo(): void {
@@ -162,12 +174,13 @@ export class PanelPilaresComponent extends PanelDeLista<PilarPortal> implements 
   guardarIntro(): void {
     if (this.intro.invalid) {
       this.intro.markAllAsTouched();
+      this.cuerpoIntro?.irAlPrimerError();
       return;
     }
 
     const v = this.intro.getRawValue();
     const introduccion = v.conIntroduccion
-      ? { titulo: v.titulo, parrafos: v.parrafos.map((p) => (p ?? '').trim()) }
+      ? { titulo: v.titulo ?? '', parrafos: v.parrafos.map((p) => (p ?? '').trim()) }
       : null;
 
     this.guardandoIntro = true;
@@ -175,7 +188,8 @@ export class PanelPilaresComponent extends PanelDeLista<PilarPortal> implements 
       next: (res) => {
         this.guardandoIntro = false;
         this.versionIntro = res.data.version;
-        this.intro.markAsPristine();
+        this.introGuardada = introduccion;
+        this.modalIntro = false;
         this.toastService.success('Introducción guardada', introduccion ? 'El portal la mostrará en hasta un minuto.' : 'El portal dejará de mostrarla en hasta un minuto.');
       },
       error: (err: HttpErrorResponse) => {

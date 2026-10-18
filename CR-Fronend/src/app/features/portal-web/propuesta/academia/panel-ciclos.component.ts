@@ -40,6 +40,7 @@ function soles(n: number | null): string {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
   templateUrl: './panel-ciclos.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelCiclosComponent extends PanelDeLista<FilaCiclo> implements OnInit, OnChanges {
   private fb = inject(FormBuilder);
@@ -55,14 +56,19 @@ export class PanelCiclosComponent extends PanelDeLista<FilaCiclo> implements OnI
 
   readonly tope = TOPE;
 
+  // El turno y la modalidad van bajo el nombre; el precio y las fechas, en sus columnas.
   columnas: ColumnaTabla<FilaCiclo>[] = [
     this.columnaDeOrden(),
-    { campo: 'nombre', header: 'Ciclo', ancho: '18%' },
-    { campo: 'turno', header: 'Turno', ancho: '12%', formatear: (t) => t ?? '—' },
-    { campo: 'modalidades', header: 'Modalidad', ancho: '16%', formatear: (m: ModalidadDeCiclo[]) => m.map((x) => (x === 'presencial' ? 'Presencial' : 'Virtual')).join(' y ') },
-    { campo: 'precio', header: 'Precio', formatear: (_: unknown, f: FilaCiclo) => this.precios(f) },
-    { campo: 'inicio', header: 'Fechas', formatear: (_: unknown, f: FilaCiclo) => (f.inicio ? `${f.inicio}${f.fin ? ` al ${f.fin}` : ''}` : '—') },
+    { campo: 'nombre', header: 'Ciclo' },
+    { campo: 'precio', header: 'Precio', ancho: '18%', formatear: (_: unknown, f: FilaCiclo) => this.precios(f) },
+    { campo: 'inicio', header: 'Fechas', ancho: '18%', formatear: (_: unknown, f: FilaCiclo) => (f.inicio ? `${f.inicio}${f.fin ? ` al ${f.fin}` : ''}` : '—') },
   ];
+
+  /** «Mañana · Presencial y virtual», bajo el nombre en la tabla. */
+  detalle(c: FilaCiclo): string {
+    const modalidad = c.modalidades.map((x: ModalidadDeCiclo) => (x === 'presencial' ? 'Presencial' : 'Virtual')).join(' y ');
+    return [c.turno, modalidad].filter(Boolean).join(' · ');
+  }
 
   form = this.fb.group(
     {
@@ -180,6 +186,7 @@ export class PanelCiclosComponent extends PanelDeLista<FilaCiclo> implements OnI
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
 

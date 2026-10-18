@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 
@@ -7,8 +7,10 @@ import { DataTableComponent } from '../../../../shared/components/data-table/dat
 import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { moverEn } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
+import { ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { EstadoPortal, PlataformaPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
 
@@ -35,8 +37,9 @@ function validarEnlace(grupo: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-panel-plataformas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, CuerpoDesplazableComponent],
   templateUrl: './panel-plataformas.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelPlataformasComponent extends PanelDeLista<PlataformaPortal> {
   private fb = inject(FormBuilder);
@@ -46,12 +49,12 @@ export class PanelPlataformasComponent extends PanelDeLista<PlataformaPortal> {
 
   readonly maxFunciones = MAX_FUNCIONES;
 
+  @ViewChild('cuerpo') private cuerpo?: CuerpoDesplazableComponent;
+
+  // Para quién, el enlace y el aviso van bajo el nombre: así caben las acciones.
   columnas: ColumnaTabla<PlataformaPortal>[] = [
     this.columnaDeOrden(),
-    { campo: 'nombre', header: 'Plataforma', ancho: '20%' },
-    { campo: 'funciones', header: 'Para quién', formatear: (f: { titulo: string }[]) => (f.length ? f.map((x) => x.titulo).join(', ') : '—') },
-    { campo: 'enlace', header: 'Enlace', ancho: '10%', formatear: (e) => (e ? 'Sí' : 'No') },
-    { campo: 'aclaracion', header: 'Aviso', ancho: '18%', formatear: (a) => a ?? '—' },
+    { campo: 'nombre', header: 'Plataforma' },
     this.columnaDeEstado(),
   ];
 
@@ -77,6 +80,24 @@ export class PanelPlataformasComponent extends PanelDeLista<PlataformaPortal> {
 
   protected describir(p: PlataformaPortal): string {
     return `la plataforma «${p.nombre}»`;
+  }
+
+  /** «Docentes, Padres de familia · con enlace», bajo el nombre en la tabla. */
+  detalle(p: PlataformaPortal): string {
+    const quienes = p.funciones.length ? p.funciones.map((f) => f.titulo).join(', ') : 'sin funciones';
+    return `${quienes} · ${p.enlace ? 'con enlace' : 'sin enlace'}`;
+  }
+
+  /** Las publicadas con un aviso («Descripción por confirmar») tienen algo por resolver. */
+  protected override resumir(): ResumenDeSeccion | null {
+    const r = super.resumir();
+    const conAviso = this.filas.filter((p) => p.estado === 'publicado' && p.aclaracion).length;
+    if (r && conAviso) {
+      r.estado += ` · ${conAviso} con aviso`;
+      r.aviso = true;
+      r.pendientes = [{ cuantos: conAviso, texto: conAviso === 1 ? 'plataforma publicada con un dato por confirmar' : 'plataformas publicadas con datos por confirmar' }];
+    }
+    return r;
   }
 
   private funcion(f?: { titulo: string; texto: string }): FormGroup {
@@ -130,6 +151,7 @@ export class PanelPlataformasComponent extends PanelDeLista<PlataformaPortal> {
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.cuerpo?.irAlPrimerError();
       return;
     }
 

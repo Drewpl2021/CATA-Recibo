@@ -30,12 +30,25 @@
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
     >
+      <ng-template appCelda="nombre" let-fila>
+        <div class="pw-celda-titulo">
+          <span>
+            <strong>{{ fila.nombre }}</strong>
+            <small>{{ detalle(fila) }}<ng-container *ngIf="fila.aclaracion"> · <span class="pw-falta">{{ fila.aclaracion }}</span></ng-container></small>
+          </span>
+        </div>
+      </ng-template>
+
       <ng-template appCelda="orden" let-fila>
         <div class="action-btns">
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
-            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
-            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">
+            <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+          </button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">
+            <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+          </button>
         </div>
       </ng-template>
     </app-data-table>
@@ -50,7 +63,8 @@
   (guardar)="guardar()"
   (cancelar)="cerrar()"
 >
-  <form [formGroup]="form" class="form-fields">
+  <pw-cuerpo-desplazable #cuerpo>
+  <form [formGroup]="form" class="form-fields" novalidate>
     <div class="form-row">
       <div class="form-group">
         <label for="plataforma-nombre">Nombre *</label>
@@ -101,13 +115,17 @@
         <div class="form-group">
           <label>&nbsp;</label>
           <div class="action-btns">
-            <button type="button" class="btn-icon-accion" (click)="moverFuncion(i, -1)" [disabled]="i === 0"
-              [attr.aria-label]="'Subir la función ' + (i + 1)" title="Subir">↑</button>
-            <button type="button" class="btn-icon-accion" (click)="moverFuncion(i, 1)" [disabled]="i === funciones.length - 1"
-              [attr.aria-label]="'Bajar la función ' + (i + 1)" title="Bajar">↓</button>
-            <button type="button" class="btn-icon-accion" (click)="quitarFuncion(i)"
+            <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverFuncion(i, -1)" [disabled]="i === 0"
+              [attr.aria-label]="'Subir la función ' + (i + 1)" title="Subir">
+              <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+            </button>
+            <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverFuncion(i, 1)" [disabled]="i === funciones.length - 1"
+              [attr.aria-label]="'Bajar la función ' + (i + 1)" title="Bajar">
+              <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+            </button>
+            <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarFuncion(i)"
               [attr.aria-label]="'Quitar la función ' + (i + 1)" title="Quitar">
-              <app-icon icono="trash" [tamano]="14"></app-icon>
+              <app-icon icono="trash" [tamano]="16"></app-icon>
             </button>
           </div>
         </div>
@@ -146,4 +164,5 @@
       </label>
     </div>
   </form>
+  </pw-cuerpo-desplazable>
 </app-form-modal>

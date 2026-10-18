@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component } from '@angular/core';
 
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { EditorCifrasComponent } from '../compartido/editor-cifras/editor-cifras.component';
+import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
+import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
 import { PanelAcademiaComponent } from './academia/panel-academia.component';
 import { PanelCabeceraPropuestaComponent } from './cabecera/panel-cabecera-propuesta.component';
 import { PanelNivelesPropuestaComponent } from './niveles/panel-niveles-propuesta.component';
@@ -14,14 +15,17 @@ import { PanelPlataformasComponent } from './plataformas/panel-plataformas.compo
  * Panel «Portal Web» › Propuesta Educativa, en el orden en que se ve en el
  * portal: la cabecera, las cifras, los pilares, los niveles, la academia
  * preuniversitaria y las plataformas digitales. Cada parte es su propio panel.
+ *
+ * Con el molde de Ajustes: un índice con una sección por panel.
  */
 @Component({
   selector: 'app-portal-web-propuesta',
   standalone: true,
   imports: [
-    PageHeaderComponent, IconComponent, EditorCifrasComponent,
+    PageHeaderComponent, IconComponent, EditorCifrasComponent, IndiceDeSeccionesComponent,
     PanelCabeceraPropuestaComponent, PanelPilaresComponent, PanelNivelesPropuestaComponent, PanelAcademiaComponent, PanelPlataformasComponent,
   ],
+  styleUrls: ['../compartido/pw-estilos.scss'],
   template: `
     <app-page-header
       icono="graduation_cap"
@@ -34,18 +38,37 @@ import { PanelPlataformasComponent } from './plataformas/panel-plataformas.compo
       </button>
     </app-page-header>
 
-    <app-panel-cabecera-propuesta></app-panel-cabecera-propuesta>
-    <app-editor-cifras ambito="propuesta" dondeSeVen="de Propuesta Educativa, en la franja bajo la cabecera"></app-editor-cifras>
-    <app-panel-pilares></app-panel-pilares>
-    <app-panel-niveles-propuesta></app-panel-niveles-propuesta>
-    <app-panel-academia></app-panel-academia>
-    <app-panel-plataformas></app-panel-plataformas>
+    <pw-indice-de-secciones nombre="Propuesta Educativa" [secciones]="secciones" [resumenes]="resumenes" [pendientes]="pendientes"
+      [actual]="actual" (actualChange)="elegir($event)">
+      <div id="pw-seccion-cabecera" [hidden]="actual !== 'cabecera'">
+        <app-panel-cabecera-propuesta (resumen)="alResumir('cabecera', $event)"></app-panel-cabecera-propuesta>
+      </div>
+      <div id="pw-seccion-cifras" [hidden]="actual !== 'cifras'">
+        <app-editor-cifras ambito="propuesta" vista="tarjetas" dondeSeVen="de Propuesta Educativa, en la franja bajo la cabecera"
+          (resumen)="alResumir('cifras', $event)"></app-editor-cifras>
+      </div>
+      <div id="pw-seccion-pilares" [hidden]="actual !== 'pilares'">
+        <app-panel-pilares (resumen)="alResumir('pilares', $event)"></app-panel-pilares>
+      </div>
+      <div id="pw-seccion-niveles" [hidden]="actual !== 'niveles'">
+        <app-panel-niveles-propuesta (resumen)="alResumir('niveles', $event)"></app-panel-niveles-propuesta>
+      </div>
+      <div id="pw-seccion-academia" [hidden]="actual !== 'academia'">
+        <app-panel-academia (resumen)="alResumir('academia', $event)"></app-panel-academia>
+      </div>
+      <div id="pw-seccion-plataformas" [hidden]="actual !== 'plataformas'">
+        <app-panel-plataformas (resumen)="alResumir('plataformas', $event)"></app-panel-plataformas>
+      </div>
+    </pw-indice-de-secciones>
   `,
 })
-export class PortalWebPropuestaComponent {
-  private router = inject(Router);
-
-  volver(): void {
-    this.router.navigate(['/inicio/portal-web']);
-  }
+export class PortalWebPropuestaComponent extends PantallaConIndice {
+  readonly secciones: SeccionDelIndice[] = [
+    { id: 'cabecera', nombre: 'Cabecera', icono: 'graduation_cap' },
+    { id: 'cifras', nombre: 'Cifras', icono: 'bar_chart' },
+    { id: 'pilares', nombre: 'Pilares', icono: 'layers' },
+    { id: 'niveles', nombre: 'Niveles', icono: 'view_module' },
+    { id: 'academia', nombre: 'Academia preuniversitaria', icono: 'domain' },
+    { id: 'plataformas', nombre: 'Plataformas digitales', icono: 'table_chart' },
+  ];
 }
