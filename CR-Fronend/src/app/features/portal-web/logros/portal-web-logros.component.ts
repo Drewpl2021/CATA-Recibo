@@ -1,8 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
 
 import { ConfirmService, ToastService } from '../../../core/services';
 import { mensajeErrorApi } from '../../../core/utils';
@@ -12,8 +11,14 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { WizardComponent } from '../../../shared/components/wizard/wizard.component';
+import { PasoWizard } from '../../../shared/components/wizard/wizard.models';
+import { CuerpoDesplazableComponent } from '../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { EditorCifrasComponent } from '../compartido/editor-cifras/editor-cifras.component';
-import { idsMovidos, mostrarErrorDelPanel } from '../compartido/panel';
+import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
+import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
+import { idsMovidos, mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
+import { cuantos } from '../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../compartido/selector-imagen/selector-imagen.component';
 import { CATEGORIAS_DE_LOGRO, CabeceraSimple, EstadoPortal, ImagenPortal, LogroPortal } from '../portal-web.models';
 import { PortalWebService, RECURSOS } from '../portal-web.service';
@@ -28,6 +33,10 @@ const HTTPS = /^https:\/\//;
  * se deja vacío (no se inventa) y, si el dato está incompleto, se avisa a la
  * vista con la aclaración («Año por confirmar»). El portal los agrupa por
  * década y muestra arriba los destacados.
+ *
+ * Con el molde de Ajustes: índice con cabecera, cifras y logros. La cabecera
+ * se lee en su sección y se edita en un modal; el logro, en un wizard de tres
+ * pasos (el logro, su fuente y la foto).
  */
 @Component({
   selector: 'app-portal-web-logros',
@@ -35,25 +44,43 @@ const HTTPS = /^https:\/\//;
   imports: [
     CommonModule, ReactiveFormsModule,
     PageHeaderComponent, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent,
-    SelectorImagenComponent, EditorCifrasComponent,
+    SelectorImagenComponent, EditorCifrasComponent, WizardComponent, CuerpoDesplazableComponent, IndiceDeSeccionesComponent,
   ],
   templateUrl: './portal-web-logros.component.html',
+  styleUrls: ['../compartido/pw-estilos.scss'],
 })
-export class PortalWebLogrosComponent implements OnInit {
+export class PortalWebLogrosComponent extends PantallaConIndice implements OnInit {
   private fb = inject(FormBuilder);
   private portalWebService = inject(PortalWebService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
-  private router = inject(Router);
 
   readonly categorias = CATEGORIAS_DE_LOGRO;
   readonly anioActual = new Date().getFullYear();
+
+  readonly secciones: SeccionDelIndice[] = [
+    { id: 'cabecera', nombre: 'Cabecera', icono: 'description' },
+    { id: 'cifras', nombre: 'Cifras', icono: 'bar_chart' },
+    { id: 'logros', nombre: 'Logros', icono: 'trending_up' },
+  ];
+
+  readonly pasos: PasoWizard[] = [
+    { id: 'logro', titulo: 'El logro', icono: 'trending_up', campos: ['titulo', 'categoria', 'anio', 'nivel', 'descripcion'] },
+    { id: 'fuente', titulo: 'Fuente', icono: 'description', campos: ['fuenteEtiqueta', 'fuenteUrl', 'aclaracion'] },
+    { id: 'foto', titulo: 'Foto', icono: 'camera', campos: [] },
+  ];
+
+  @ViewChild('wizard') private wizard?: WizardComponent;
+  @ViewChild('cuerpo') private cuerpo?: CuerpoDesplazableComponent;
 
   // ───────── Cabecera ─────────
 
   cargandoCabecera = true;
   guardandoCabecera = false;
   private versionCabecera: string | null = null;
+  modalCabecera = false;
+  /** Lo guardado: lo que se lee en la sección. */
+  cabeceraGuardada: CabeceraSimple | null = null;
 
   cabecera = this.fb.group({
     titulo: ['', [Validators.required, Validators.maxLength(60)]],
@@ -69,17 +96,12 @@ export class PortalWebLogrosComponent implements OnInit {
   guardando = false;
   editando: LogroPortal | null = null;
   foto: ImagenPortal | null = null;
+  paso = 0;
 
+  // La categoría, el año, el nivel y si es destacado van bajo el título: así caben las acciones.
   columnas: ColumnaTabla<LogroPortal>[] = [
     { campo: 'orden', header: 'Orden', ancho: '120px' },
     { campo: 'titulo', header: 'Logro' },
-    { campo: 'categoria', header: 'Categoría', ancho: '12%', formatear: (v) => this.nombreDeCategoria(v) },
-    { campo: 'anio', header: 'Año', ancho: '8%', formatear: (v) => (v ?? 'Sin año') },
-    {
-      campo: 'destacado', header: 'Destacado', tipo: 'badge', ancho: '10%',
-      formatear: (v) => (v ? 'Sí' : 'No'),
-      badgeSeveridad: (v) => (v ? 'info' : 'secondary'),
-    },
     {
       campo: 'estado', header: 'Estado', tipo: 'badge', ancho: '11%',
       formatear: (v) => (v === 'publicado' ? 'Publicado' : 'Borrador'),
@@ -105,13 +127,19 @@ export class PortalWebLogrosComponent implements OnInit {
     estado: ['borrador' as EstadoPortal],
   });
 
-  ngOnInit(): void {
+  override ngOnInit(): void {
+    super.ngOnInit();
     this.cargarCabecera();
     this.cargarLogros();
   }
 
-  volver(): void {
-    this.router.navigate(['/inicio/portal-web']);
+  ver(url: string): string {
+    return urlParaVer(url);
+  }
+
+  /** «Música · 2011 · Banda Sinfónica · destacado», bajo el título en la tabla. */
+  detalle(l: LogroPortal): string {
+    return [this.nombreDeCategoria(l.categoria), l.anio ?? 'Sin año', l.nivel, l.destacado ? 'destacado' : null].filter(Boolean).join(' · ');
   }
 
   nombreDeCategoria(valor: string): string {
@@ -125,8 +153,9 @@ export class PortalWebLogrosComponent implements OnInit {
     this.portalWebService.getFicha<CabeceraSimple>('logros').subscribe({
       next: (res) => {
         this.versionCabecera = res.data.version;
-        this.cabecera.reset({ titulo: res.data.contenido?.titulo ?? '', bajada: res.data.contenido?.bajada ?? '' });
+        this.cabeceraGuardada = res.data.contenido ?? null;
         this.cargandoCabecera = false;
+        this.resumirCabecera();
       },
       error: (err) => {
         this.cargandoCabecera = false;
@@ -135,19 +164,37 @@ export class PortalWebLogrosComponent implements OnInit {
     });
   }
 
+  /** El modal empieza con lo guardado: lo que se canceló antes no queda a medias. */
+  abrirCabecera(): void {
+    const c = this.cabeceraGuardada;
+    this.cabecera.reset({ titulo: c?.titulo ?? '', bajada: c?.bajada ?? '' });
+    this.modalCabecera = true;
+  }
+
+  private resumirCabecera(): void {
+    const c = this.cabeceraGuardada;
+    this.alResumir('cabecera', c
+      ? { estado: c.titulo, aviso: false, pendientes: [] }
+      : { estado: 'Sin configurar: no se ve', aviso: true, pendientes: [{ cuantos: 1, texto: 'cabecera de Logros sin configurar' }] });
+  }
+
   guardarCabecera(): void {
     if (this.cabecera.invalid) {
       this.cabecera.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
 
     const v = this.cabecera.getRawValue();
+    const datos = { titulo: v.titulo!, bajada: v.bajada || null };
     this.guardandoCabecera = true;
-    this.portalWebService.guardarFicha<CabeceraSimple>('logros', { titulo: v.titulo, bajada: v.bajada || null }, this.versionCabecera).subscribe({
+    this.portalWebService.guardarFicha<CabeceraSimple>('logros', datos, this.versionCabecera).subscribe({
       next: (res) => {
         this.guardandoCabecera = false;
         this.versionCabecera = res.data.version;
-        this.cabecera.markAsPristine();
+        this.cabeceraGuardada = datos as CabeceraSimple;
+        this.modalCabecera = false;
+        this.resumirCabecera();
         this.toastService.success('Cabecera guardada', 'El portal la mostrará en hasta un minuto.');
       },
       error: (err: HttpErrorResponse) => {
@@ -170,6 +217,7 @@ export class PortalWebLogrosComponent implements OnInit {
       next: (res) => {
         this.logros = res.data;
         this.cargandoLogros = false;
+        this.resumirLogros();
       },
       error: (err) => {
         this.cargandoLogros = false;
@@ -182,10 +230,26 @@ export class PortalWebLogrosComponent implements OnInit {
     return this.logros.filter((l) => l.estado === 'publicado').length;
   }
 
+  /** Cada logro publicado necesita su fuente: los que no la tienen suben a Pendientes. */
+  private resumirLogros(): void {
+    const publicados = this.logros.filter((l) => l.estado === 'publicado');
+    const sinFuente = publicados.filter((l) => !l.fuente).length;
+    const borradores = this.logros.length - publicados.length;
+    let estado = this.logros.length ? cuantos(publicados.length, 'publicado', 'publicados') : 'Sin logros';
+    if (sinFuente) estado += ` · ${sinFuente} sin fuente`;
+    else if (borradores) estado += ` · ${cuantos(borradores, 'borrador', 'borradores')}`;
+    this.alResumir('logros', {
+      estado,
+      aviso: !publicados.length || sinFuente > 0,
+      pendientes: sinFuente ? [{ cuantos: sinFuente, texto: sinFuente === 1 ? 'logro publicado sin fuente' : 'logros publicados sin fuente' }] : [],
+    });
+  }
+
   nuevo(): void {
     this.editando = null;
     this.foto = null;
     this.form.reset({ categoria: '', anio: null, destacado: false, estado: 'borrador' });
+    this.paso = 0;
     this.modalVisible = true;
   }
 
@@ -204,6 +268,7 @@ export class PortalWebLogrosComponent implements OnInit {
       aclaracion: logro.aclaracion ?? '',
       estado: logro.estado,
     });
+    this.paso = 0;
     this.modalVisible = true;
   }
 
@@ -223,9 +288,13 @@ export class PortalWebLogrosComponent implements OnInit {
     return !!v.fuenteUrl && !v.fuenteEtiqueta;
   }
 
+  /** Si algo falta, el wizard vuelve al primer paso con error (la fuente sin etiqueta es del segundo). */
   guardar(): void {
-    if (this.form.invalid || this.fuenteSinEtiqueta) {
+    const conError = this.pasos.findIndex((_, i) => !this.wizard?.validarPaso(i));
+    if (conError >= 0 || this.form.invalid || this.fuenteSinEtiqueta) {
       this.form.markAllAsTouched();
+      this.paso = conError >= 0 ? conError : 1;
+      this.cuerpo?.irAlPrimerError();
       return;
     }
 
@@ -298,6 +367,7 @@ export class PortalWebLogrosComponent implements OnInit {
       next: (res) => {
         this.logros = res.data;
         this.ordenando = false;
+        this.resumirLogros();
       },
       error: (err: HttpErrorResponse) => {
         this.ordenando = false;
