@@ -8,6 +8,7 @@ import { ColumnaTabla } from '../../../../shared/components/data-table/data-tabl
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { FilaDelPortal, PanelDeLista } from '../../compartido/panel-de-lista';
+import { cuantos, ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { CategoriaProyectoPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
 
@@ -25,6 +26,7 @@ const TOPE = 8;
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
   templateUrl: './panel-categorias.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelCategoriasComponent extends PanelDeLista<CategoriaProyectoPortal & FilaDelPortal> {
   private fb = inject(FormBuilder);
@@ -37,11 +39,10 @@ export class PanelCategoriasComponent extends PanelDeLista<CategoriaProyectoPort
 
   readonly tope = TOPE;
 
+  // La dirección y cuántos proyectos tiene van bajo el nombre.
   columnas: ColumnaTabla<CategoriaProyectoPortal>[] = [
     { campo: 'orden', header: 'Orden', ancho: '120px' },
     { campo: 'nombre', header: 'Categoría' },
-    { campo: 'clave', header: 'En la dirección', ancho: '24%', formatear: (c) => `?categoria=${c}` },
-    { campo: 'proyectos', header: 'Proyectos', ancho: '12%', formatear: (n: number) => (n ? String(n) : 'Ninguno') },
   ];
 
   form = this.fb.group({ nombre: ['', [Validators.required, Validators.maxLength(40)]] });
@@ -52,6 +53,23 @@ export class PanelCategoriasComponent extends PanelDeLista<CategoriaProyectoPort
 
   protected describir(c: CategoriaProyectoPortal): string {
     return `la categoría «${c.nombre}»`;
+  }
+
+  proyectosDe(c: CategoriaProyectoPortal): string {
+    return c.proyectos ? cuantos(c.proyectos, 'proyecto', 'proyectos') : 'sin proyectos: no se ve';
+  }
+
+  /** No tienen borrador: se cuentan todas. Sin ninguna, no se puede agregar un proyecto. */
+  protected override resumir(): ResumenDeSeccion {
+    if (!this.filas.length) {
+      return { estado: 'Sin categorías', aviso: true, pendientes: [{ cuantos: 1, texto: 'categoría por crear antes de agregar proyectos' }] };
+    }
+    const vacias = this.filas.filter((c) => !c.proyectos).length;
+    return {
+      estado: cuantos(this.filas.length, 'categoría', 'categorías') + (vacias ? ` · ${vacias} sin proyectos` : ''),
+      aviso: false,
+      pendientes: [],
+    };
   }
 
   nueva(): void {
@@ -86,6 +104,7 @@ export class PanelCategoriasComponent extends PanelDeLista<CategoriaProyectoPort
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
     this.enviar(this.form.getRawValue());

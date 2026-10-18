@@ -31,113 +31,134 @@
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
     >
+      <ng-template appCelda="titulo" let-fila>
+        <!-- Sin miniatura: con cuatro acciones, no cabría. Si falta la foto, lo dice el detalle. -->
+        <div class="pw-celda-titulo">
+          <span>
+            <strong>{{ fila.titulo }}</strong>
+            <small>{{ detalle(fila) }}<ng-container *ngIf="!fila.imagen"> · <span class="pw-falta">sin foto</span></ng-container></small>
+          </span>
+        </div>
+      </ng-template>
+
       <ng-template appCelda="orden" let-fila>
         <div class="action-btns">
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
-            [attr.aria-label]="'Subir ' + fila.titulo" title="Subir">↑</button>
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
-            [attr.aria-label]="'Bajar ' + fila.titulo" title="Bajar">↓</button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.titulo" title="Subir">
+            <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+          </button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.titulo" title="Bajar">
+            <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+          </button>
         </div>
       </ng-template>
     </app-data-table>
   </div>
 </section>
 
-<!-- ═══════════ Modal del proyecto ═══════════ -->
+<!-- ═══════════ Modal del proyecto: en cuatro pasos ═══════════ -->
 <app-form-modal
   [(visible)]="modalVisible"
   [titulo]="editando ? 'Editar proyecto' : 'Agregar proyecto'"
   ancho="900px"
   [guardando]="guardando"
-  (guardar)="guardar()"
+  [ocultarBotonesPorDefecto]="true"
   (cancelar)="cerrar()"
 >
-  <form [formGroup]="form" class="form-fields">
-    <!-- La tarjeta -->
-    <div class="form-row">
-      <div class="form-group">
-        <label for="proyecto-titulo">Título *</label>
-        <input id="proyecto-titulo" type="text" class="form-control" formControlName="titulo" maxlength="80"
-          placeholder="Ej. Robótica, Impresiones 3D y Computación" [class.is-invalid]="invalido(form.controls.titulo)" />
-        <small class="form-error" *ngIf="invalido(form.controls.titulo)">Obligatorio (máximo 80).</small>
+  <pw-cuerpo-desplazable #cuerpo>
+  <app-wizard #wizard [pasos]="pasosWizard" [(actual)]="pasoActual" [form]="form"></app-wizard>
+
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <!-- 1 · La tarjeta -->
+    <div class="seccion-form pw-paso" [hidden]="pasoActual !== 0">
+      <h3 class="seccion-form__titulo">La tarjeta</h3>
+      <div class="rejilla-campos">
+        <div class="form-group">
+          <label for="proyecto-titulo">Título *</label>
+          <input id="proyecto-titulo" type="text" class="form-control" formControlName="titulo" maxlength="80"
+            placeholder="Ej. Robótica, Impresiones 3D y Computación" [class.is-invalid]="invalido(form.controls.titulo)" />
+          <small class="form-error" *ngIf="invalido(form.controls.titulo)">Obligatorio (máximo 80).</small>
+        </div>
+        <div class="form-group">
+          <label for="proyecto-estado">Estado</label>
+          <select id="proyecto-estado" class="form-control" formControlName="estado">
+            <option value="publicado">Publicado</option>
+            <option value="borrador">Borrador</option>
+          </select>
+        </div>
+
+        <div class="form-group rejilla-campos--completo">
+          <label for="proyecto-slug">Dirección de su página</label>
+          <ng-container *ngIf="!slugFijo; else slugPublicado">
+            <input id="proyecto-slug" type="text" class="form-control" formControlName="slug" maxlength="60"
+              [placeholder]="editando ? '' : 'Vacío: se arma con el título'" [class.is-invalid]="invalido(form.controls.slug)" />
+            <small class="form-error" *ngIf="invalido(form.controls.slug)">Solo minúsculas sin tildes, números y guiones, sin espacios: robotica-3d.</small>
+            <small class="form-ayuda" *ngIf="!invalido(form.controls.slug)">
+              Será /proyectos/{{ form.value.slug || '…' }}. Se puede corregir mientras está en borrador; al publicarlo queda fija.
+            </small>
+          </ng-container>
+          <ng-template #slugPublicado>
+            <p class="form-nota">/proyectos/{{ editando?.slug }}. Ya está publicado: no cambia, para no romper los enlaces que circulan.</p>
+          </ng-template>
+        </div>
+
+        <div class="form-group rejilla-campos--completo">
+          <label for="proyecto-lema">Lema</label>
+          <input id="proyecto-lema" type="text" class="form-control" formControlName="lema" maxlength="100"
+            placeholder="Ej. Tecnología con propósito: creamos, servimos y transformamos." />
+          <small class="form-ayuda">Opcional. Una frase corta.</small>
+        </div>
+
+        <div class="form-group rejilla-campos--completo">
+          <label for="proyecto-resumen">Resumen *</label>
+          <textarea id="proyecto-resumen" class="form-control" rows="3" formControlName="resumen" maxlength="240"
+            [class.is-invalid]="invalido(form.controls.resumen)"></textarea>
+          <small class="form-error" *ngIf="invalido(form.controls.resumen)">Obligatorio (máximo 240).</small>
+          <small class="form-ayuda" *ngIf="!invalido(form.controls.resumen)">Se muestra completo en la tarjeta. {{ form.value.resumen?.length ?? 0 }} de 240.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="proyecto-categoria">Categoría *</label>
+          <select id="proyecto-categoria" class="form-control" formControlName="categoria_id" [class.is-invalid]="invalido(form.controls.categoria_id)">
+            <option value="" disabled>Elige la categoría</option>
+            <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
+          </select>
+          <small class="form-error" *ngIf="invalido(form.controls.categoria_id)">Elige una categoría.</small>
+        </div>
+        <div class="form-group">
+          <label for="proyecto-etapa">Etapa</label>
+          <select id="proyecto-etapa" class="form-control" formControlName="etapa">
+            <option value="">No se indica</option>
+            <option *ngFor="let e of etapas" [value]="e.valor">{{ e.nombre }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="proyecto-fecha">Fecha</label>
+          <input id="proyecto-fecha" type="date" class="form-control" formControlName="fecha" />
+          <small class="form-ayuda">Opcional: inicio o realización.</small>
+        </div>
+        <div class="form-group">
+          <label for="proyecto-niveles">Niveles o grados que participan, uno por línea</label>
+          <textarea id="proyecto-niveles" class="form-control" rows="3" formControlName="niveles" placeholder="Primaria&#10;Secundaria"
+            [class.is-invalid]="invalido(form.controls.niveles)"></textarea>
+          <small class="form-error" *ngIf="invalido(form.controls.niveles)">Hasta 6, de hasta 40 caracteres, sin repetir.</small>
+          <small class="form-ayuda" *ngIf="!invalido(form.controls.niveles)">Opcional. Vacío, no se indica.</small>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="proyecto-estado">Estado</label>
-        <select id="proyecto-estado" class="form-control" formControlName="estado">
-          <option value="publicado">Publicado</option>
-          <option value="borrador">Borrador</option>
-        </select>
-      </div>
     </div>
 
-    <div class="form-group">
-      <label for="proyecto-slug">Dirección de su página</label>
-      <ng-container *ngIf="!slugFijo; else slugPublicado">
-        <input id="proyecto-slug" type="text" class="form-control" formControlName="slug" maxlength="60"
-          [placeholder]="editando ? '' : 'Vacío: se arma con el título'" [class.is-invalid]="invalido(form.controls.slug)" />
-        <small class="form-error" *ngIf="invalido(form.controls.slug)">Solo minúsculas sin tildes, números y guiones, sin espacios: robotica-3d.</small>
-        <small class="form-ayuda" *ngIf="!invalido(form.controls.slug)">
-          Será /proyectos/{{ form.value.slug || '…' }}. Se puede corregir mientras está en borrador; al publicarlo queda fija.
-        </small>
-      </ng-container>
-      <ng-template #slugPublicado>
-        <p class="form-nota">/proyectos/{{ editando?.slug }}. Ya está publicado: no cambia, para no romper los enlaces que circulan.</p>
-      </ng-template>
+    <!-- 2 · Foto -->
+    <div class="seccion-form pw-paso" [hidden]="pasoActual !== 1">
+      <h3 class="seccion-form__titulo">Foto de la tarjeta</h3>
+      <app-selector-imagen *ngIf="modalVisible" uso="proyecto" etiqueta="Foto de la tarjeta" [(imagen)]="foto"></app-selector-imagen>
+      <small class="form-ayuda">Opcional. Horizontal 3:2: una foto real del proyecto, no una ilustración. La galería se edita aparte, con el botón de la cámara.</small>
     </div>
 
-    <div class="form-group">
-      <label for="proyecto-lema">Lema</label>
-      <input id="proyecto-lema" type="text" class="form-control" formControlName="lema" maxlength="100"
-        placeholder="Ej. Tecnología con propósito: creamos, servimos y transformamos." />
-      <small class="form-ayuda">Opcional. Una frase corta.</small>
-    </div>
-
-    <div class="form-group">
-      <label for="proyecto-resumen">Resumen *</label>
-      <textarea id="proyecto-resumen" class="form-control" rows="3" formControlName="resumen" maxlength="240"
-        [class.is-invalid]="invalido(form.controls.resumen)"></textarea>
-      <small class="form-error" *ngIf="invalido(form.controls.resumen)">Obligatorio (máximo 240).</small>
-      <small class="form-ayuda" *ngIf="!invalido(form.controls.resumen)">Se muestra completo en la tarjeta. {{ form.value.resumen?.length ?? 0 }} de 240.</small>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label for="proyecto-categoria">Categoría *</label>
-        <select id="proyecto-categoria" class="form-control" formControlName="categoria_id" [class.is-invalid]="invalido(form.controls.categoria_id)">
-          <option value="" disabled>Elige la categoría</option>
-          <option *ngFor="let c of categorias" [value]="c.id">{{ c.nombre }}</option>
-        </select>
-        <small class="form-error" *ngIf="invalido(form.controls.categoria_id)">Elige una categoría.</small>
-      </div>
-      <div class="form-group">
-        <label for="proyecto-etapa">Etapa</label>
-        <select id="proyecto-etapa" class="form-control" formControlName="etapa">
-          <option value="">No se indica</option>
-          <option *ngFor="let e of etapas" [value]="e.valor">{{ e.nombre }}</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="proyecto-fecha">Fecha</label>
-        <input id="proyecto-fecha" type="date" class="form-control" formControlName="fecha" />
-        <small class="form-ayuda">Opcional: inicio o realización.</small>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label for="proyecto-niveles">Niveles o grados que participan, uno por línea</label>
-      <textarea id="proyecto-niveles" class="form-control" rows="3" formControlName="niveles" placeholder="Primaria&#10;Secundaria"
-        [class.is-invalid]="invalido(form.controls.niveles)"></textarea>
-      <small class="form-error" *ngIf="invalido(form.controls.niveles)">Hasta 6, de hasta 40 caracteres, sin repetir.</small>
-      <small class="form-ayuda" *ngIf="!invalido(form.controls.niveles)">Opcional. Vacío, no se indica.</small>
-    </div>
-
-    <app-selector-imagen *ngIf="modalVisible" uso="proyecto" etiqueta="Foto de la tarjeta" [(imagen)]="foto"></app-selector-imagen>
-    <small class="form-ayuda">Opcional. Horizontal 3:2: una foto real del proyecto, no una ilustración.</small>
-
-    <!-- El detalle: descripción -->
-    <div class="form-group" formArrayName="descripcion">
-      <label>Sobre el proyecto (página de detalle)</label>
-      <small class="form-ayuda">De 1 a {{ maxParrafos }} párrafos, texto simple.</small>
+    <!-- 3 · Sobre el proyecto -->
+    <div class="seccion-form pw-paso" [hidden]="pasoActual !== 2" formArrayName="descripcion">
+      <h3 class="seccion-form__titulo">Sobre el proyecto</h3>
+      <p class="form-ayuda">El texto de su página de detalle: de 1 a {{ maxParrafos }} párrafos, texto simple.</p>
       <div class="form-row" *ngFor="let p of descripcion.controls; let i = index">
         <div class="form-group">
           <label [for]="'proyecto-parrafo-' + i">Párrafo {{ i + 1 }} *</label>
@@ -148,13 +169,17 @@
         <div class="form-group">
           <label>&nbsp;</label>
           <div class="action-btns">
-            <button type="button" class="btn-icon-accion" (click)="moverParrafo(i, -1)" [disabled]="i === 0"
-              [attr.aria-label]="'Subir el párrafo ' + (i + 1)" title="Subir">↑</button>
-            <button type="button" class="btn-icon-accion" (click)="moverParrafo(i, 1)" [disabled]="i === descripcion.length - 1"
-              [attr.aria-label]="'Bajar el párrafo ' + (i + 1)" title="Bajar">↓</button>
-            <button type="button" class="btn-icon-accion" (click)="quitarParrafo(i)" [disabled]="descripcion.length === 1"
+            <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverParrafo(i, -1)" [disabled]="i === 0"
+              [attr.aria-label]="'Subir el párrafo ' + (i + 1)" title="Subir">
+              <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+            </button>
+            <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverParrafo(i, 1)" [disabled]="i === descripcion.length - 1"
+              [attr.aria-label]="'Bajar el párrafo ' + (i + 1)" title="Bajar">
+              <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+            </button>
+            <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarParrafo(i)" [disabled]="descripcion.length === 1"
               [attr.aria-label]="'Quitar el párrafo ' + (i + 1)" title="Quitar">
-              <app-icon icono="trash" [tamano]="14"></app-icon>
+              <app-icon icono="trash" [tamano]="16"></app-icon>
             </button>
           </div>
         </div>
@@ -166,13 +191,13 @@
       </div>
     </div>
 
-    <!-- El detalle: secciones -->
-    <div class="form-group" formArrayName="secciones">
-      <label>Secciones del detalle</label>
-      <small class="form-ayuda">
+    <!-- 4 · Secciones del detalle -->
+    <div class="seccion-form pw-paso" [hidden]="pasoActual !== 3" formArrayName="secciones">
+      <h3 class="seccion-form__titulo">Secciones del detalle</h3>
+      <p class="form-ayuda">
         Hasta {{ maxSecciones }}, en orden: «Objetivos», «Ejes fundamentales», «Metodología»… Con viñetas (las seguidas van lado a lado)
         o numeradas (el portal pone los números: no los escribas).
-      </small>
+      </p>
 
       <div class="grupo-montos" *ngFor="let s of secciones.controls; let i = index" [formGroupName]="i">
         <div class="form-row">
@@ -192,13 +217,17 @@
           <div class="form-group">
             <label>&nbsp;</label>
             <div class="action-btns">
-              <button type="button" class="btn-icon-accion" (click)="moverSeccion(i, -1)" [disabled]="i === 0"
-                [attr.aria-label]="'Subir la sección ' + (i + 1)" title="Subir">↑</button>
-              <button type="button" class="btn-icon-accion" (click)="moverSeccion(i, 1)" [disabled]="i === secciones.length - 1"
-                [attr.aria-label]="'Bajar la sección ' + (i + 1)" title="Bajar">↓</button>
-              <button type="button" class="btn-icon-accion" (click)="quitarSeccion(i)"
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverSeccion(i, -1)" [disabled]="i === 0"
+                [attr.aria-label]="'Subir la sección ' + (i + 1)" title="Subir">
+                <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverSeccion(i, 1)" [disabled]="i === secciones.length - 1"
+                [attr.aria-label]="'Bajar la sección ' + (i + 1)" title="Bajar">
+                <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarSeccion(i)"
                 [attr.aria-label]="'Quitar la sección ' + (i + 1)" title="Quitar">
-                <app-icon icono="trash" [tamano]="14"></app-icon>
+                <app-icon icono="trash" [tamano]="16"></app-icon>
               </button>
             </div>
           </div>
@@ -220,13 +249,17 @@
             <div class="form-group">
               <label>&nbsp;</label>
               <div class="action-btns">
-                <button type="button" class="btn-icon-accion" (click)="moverItem(i, j, -1)" [disabled]="j === 0"
-                  [attr.aria-label]="'Subir el elemento ' + (j + 1) + ' de la sección ' + (i + 1)" title="Subir">↑</button>
-                <button type="button" class="btn-icon-accion" (click)="moverItem(i, j, 1)" [disabled]="j === itemsDe(i).length - 1"
-                  [attr.aria-label]="'Bajar el elemento ' + (j + 1) + ' de la sección ' + (i + 1)" title="Bajar">↓</button>
-                <button type="button" class="btn-icon-accion" (click)="quitarItem(i, j)" [disabled]="itemsDe(i).length === 1"
+                <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverItem(i, j, -1)" [disabled]="j === 0"
+                  [attr.aria-label]="'Subir el elemento ' + (j + 1) + ' de la sección ' + (i + 1)" title="Subir">
+                  <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+                </button>
+                <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverItem(i, j, 1)" [disabled]="j === itemsDe(i).length - 1"
+                  [attr.aria-label]="'Bajar el elemento ' + (j + 1) + ' de la sección ' + (i + 1)" title="Bajar">
+                  <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+                </button>
+                <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarItem(i, j)" [disabled]="itemsDe(i).length === 1"
                   [attr.aria-label]="'Quitar el elemento ' + (j + 1) + ' de la sección ' + (i + 1)" title="Quitar">
-                  <app-icon icono="trash" [tamano]="14"></app-icon>
+                  <app-icon icono="trash" [tamano]="16"></app-icon>
                 </button>
               </div>
             </div>
@@ -239,6 +272,7 @@
         </div>
       </div>
 
+      <p class="form-ayuda" *ngIf="!secciones.length">Todavía no tiene secciones: son opcionales.</p>
       <div>
         <button type="button" class="btn-secondary" (click)="agregarSeccion()" [disabled]="secciones.length >= maxSecciones">
           <app-icon icono="plus" [tamano]="14"></app-icon> Agregar sección
@@ -246,6 +280,27 @@
       </div>
     </div>
   </form>
+  </pw-cuerpo-desplazable>
+
+  <div modalFooter class="asistente-pie asistente-pie--extremos">
+    <button type="button" class="btn-secondary pw-boton-entero" (click)="wizard.anterior()" [disabled]="guardando" [style.visibility]="pasoActual > 0 ? 'visible' : 'hidden'">
+      <app-icon icono="arrow_left" [tamano]="15"></app-icon>
+      Anterior
+    </button>
+    <div class="asistente-pie">
+      <button type="button" class="btn-secondary" (click)="cerrar()" [disabled]="guardando">Cancelar</button>
+      <button type="button" class="btn-secondary" *ngIf="!wizard.esUltimo && editando" (click)="siguiente()" [disabled]="guardando">
+        Siguiente
+      </button>
+      <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo && !editando" (click)="siguiente()">
+        Siguiente
+        <app-icon icono="arrow_right" [tamano]="15"></app-icon>
+      </button>
+      <button type="button" class="btn-primary" *ngIf="wizard.esUltimo || editando" (click)="guardar()" [disabled]="guardando">
+        {{ guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Guardar proyecto' }}
+      </button>
+    </div>
+  </div>
 </app-form-modal>
 
 <!-- ═══════════ Modal de la galería ═══════════ -->
@@ -254,32 +309,39 @@
   [titulo]="'Galería de «' + (galeriaDe?.titulo ?? '') + '»'"
   ancho="760px"
   [guardando]="guardandoGaleria"
+  textoGuardar="Guardar galería"
   (guardar)="guardarGaleria()"
   (cancelar)="cerrarGaleria()"
 >
+  <pw-cuerpo-desplazable>
   <div class="form-fields">
     <p class="form-ayuda">
       Hasta {{ maxGaleria }} fotos horizontales 3:2, en este orden ({{ fotos.length }} ahora). Sin fotos, la página no muestra galería.
     </p>
 
-    <div class="form-row" *ngFor="let f of fotos; let i = index">
-      <div class="form-group">
-        <img [src]="ver(f.url)" [alt]="f.alt" width="120" height="80" loading="lazy" />
+    <div class="pw-fila-dato" *ngFor="let f of fotos; let i = index">
+      <div class="pw-celda-titulo">
+        <span class="pw-miniatura" aria-hidden="true">
+          <img [src]="ver(f.url)" alt="" loading="lazy" />
+        </span>
+        <span>
+          <strong>Foto {{ i + 1 }}</strong>
+          <small [class.pw-sin-dato]="!f.alt">{{ f.alt || 'Decorativa (sin texto alternativo)' }}</small>
+        </span>
       </div>
-      <div class="form-group">
-        <p class="form-nota">{{ i + 1 }}. {{ f.alt || 'Decorativa (sin texto alternativo)' }}</p>
-      </div>
-      <div class="form-group">
-        <div class="action-btns">
-          <button type="button" class="btn-icon-accion" (click)="moverFoto(i, -1)" [disabled]="i === 0"
-            [attr.aria-label]="'Subir la foto ' + (i + 1)" title="Subir">↑</button>
-          <button type="button" class="btn-icon-accion" (click)="moverFoto(i, 1)" [disabled]="i === fotos.length - 1"
-            [attr.aria-label]="'Bajar la foto ' + (i + 1)" title="Bajar">↓</button>
-          <button type="button" class="btn-icon-accion" (click)="quitarFoto(i)"
-            [attr.aria-label]="'Quitar la foto ' + (i + 1) + ' de la galería'" title="Quitar">
-            <app-icon icono="trash" [tamano]="14"></app-icon>
-          </button>
-        </div>
+      <div class="action-btns">
+        <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverFoto(i, -1)" [disabled]="i === 0"
+          [attr.aria-label]="'Subir la foto ' + (i + 1)" title="Subir">
+          <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+        </button>
+        <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverFoto(i, 1)" [disabled]="i === fotos.length - 1"
+          [attr.aria-label]="'Bajar la foto ' + (i + 1)" title="Bajar">
+          <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+        </button>
+        <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarFoto(i)"
+          [attr.aria-label]="'Quitar la foto ' + (i + 1) + ' de la galería'" title="Quitar">
+          <app-icon icono="trash" [tamano]="16"></app-icon>
+        </button>
       </div>
     </div>
 
@@ -289,6 +351,7 @@
       </ng-container>
     </ng-container>
     <p class="form-nota" *ngIf="fotos.length >= maxGaleria">La galería está completa: quita una foto para agregar otra.</p>
-    <small class="form-ayuda">Los cambios se guardan con «Guardar». Las fotos que quites quedan sueltas y la limpieza las borra después.</small>
+    <small class="form-ayuda">Los cambios se guardan con «Guardar galería». Las fotos que quites quedan sueltas y la limpieza las borra después.</small>
   </div>
+  </pw-cuerpo-desplazable>
 </app-form-modal>

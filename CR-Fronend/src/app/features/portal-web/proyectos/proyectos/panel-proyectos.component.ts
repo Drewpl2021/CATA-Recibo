@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -8,9 +8,13 @@ import { DataTableComponent } from '../../../../shared/components/data-table/dat
 import { AccionPersonalizada, ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { WizardComponent } from '../../../../shared/components/wizard/wizard.component';
+import { PasoWizard } from '../../../../shared/components/wizard/wizard.models';
+import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { lineas, validarLineas } from '../../compartido/lineas';
 import { mostrarErrorDelPanel, moverEn, urlParaVer } from '../../compartido/panel';
 import { accionesDeEstado, PanelDeLista } from '../../compartido/panel-de-lista';
+import { ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
 import {
   CategoriaProyectoPortal, ETAPAS_DE_PROYECTO, EstadoPortal, ImagenPortal, ProyectoPortal, SeccionProyecto,
@@ -30,13 +34,19 @@ const MAX_GALERIA = 12;
  *
  * La dirección del detalle (/proyectos/{slug}) se arma con el título; se
  * puede corregir mientras está en borrador y queda fija al publicarlo.
- * La galería se edita aparte, con su propio botón en la fila.
+ * La galería se edita aparte, con su propio botón en la fila. El proyecto,
+ * en un wizard de cuatro pasos: la tarjeta, su foto, el texto del detalle y
+ * sus secciones.
  */
 @Component({
   selector: 'app-panel-proyectos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent],
+  imports: [
+    CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent,
+    WizardComponent, CuerpoDesplazableComponent,
+  ],
   templateUrl: './panel-proyectos.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelProyectosComponent extends PanelDeLista<ProyectoPortal> {
   private fb = inject(FormBuilder);
@@ -61,12 +71,21 @@ export class PanelProyectosComponent extends PanelDeLista<ProyectoPortal> {
 
   foto: ImagenPortal | null = null;
 
+  readonly pasosWizard: PasoWizard[] = [
+    { id: 'tarjeta', titulo: 'La tarjeta', icono: 'lightbulb', campos: ['titulo', 'slug', 'lema', 'resumen', 'categoria_id', 'niveles'] },
+    { id: 'foto', titulo: 'Foto', icono: 'camera', campos: [] },
+    { id: 'detalle', titulo: 'Sobre el proyecto', icono: 'description', campos: ['descripcion'] },
+    { id: 'secciones', titulo: 'Secciones', icono: 'layers', campos: ['secciones'] },
+  ];
+
+  @ViewChild('wizard') private wizard?: WizardComponent;
+  @ViewChild('cuerpo') private cuerpo?: CuerpoDesplazableComponent;
+  pasoActual = 0;
+
+  // La categoría, la dirección y las fotos van bajo el título: así caben las acciones.
   columnas: ColumnaTabla<ProyectoPortal>[] = [
     this.columnaDeOrden(),
     { campo: 'titulo', header: 'Proyecto' },
-    { campo: 'categoria_id', header: 'Categoría', ancho: '15%', formatear: (id) => this.categorias.find((c) => c.id === id)?.nombre ?? '—' },
-    { campo: 'slug', header: 'Dirección', ancho: '18%', formatear: (s) => `/proyectos/${s}` },
-    { campo: 'galeria', header: 'Fotos', ancho: '7%', formatear: (g: ImagenPortal[]) => String(g.length) },
     this.columnaDeEstado(),
   ];
 
@@ -103,6 +122,25 @@ export class PanelProyectosComponent extends PanelDeLista<ProyectoPortal> {
 
   protected describir(p: ProyectoPortal): string {
     return `el proyecto «${p.titulo}» con su galería`;
+  }
+
+  /** «Tecnología · /proyectos/robotica · 6 fotos», bajo el título en la tabla. */
+  detalle(p: ProyectoPortal): string {
+    const categoria = this.categorias.find((c) => c.id === p.categoria_id)?.nombre;
+    const fotos = p.galeria.length ? `${p.galeria.length} ${p.galeria.length === 1 ? 'foto' : 'fotos'} en la galería` : 'sin galería';
+    return [categoria, `/proyectos/${p.slug}`, fotos].filter(Boolean).join(' · ');
+  }
+
+  /** Los publicados sin foto: su tarjeta se ve vacía en el portal. */
+  protected override resumir(): ResumenDeSeccion | null {
+    const r = super.resumir();
+    const sinFoto = this.filas.filter((p) => p.estado === 'publicado' && !p.imagen_id).length;
+    if (r && sinFoto) {
+      r.estado += ` · ${sinFoto} sin foto`;
+      r.aviso = true;
+      r.pendientes = [{ cuantos: sinFoto, texto: sinFoto === 1 ? 'proyecto publicado sin foto' : 'proyectos publicados sin foto' }];
+    }
+    return r;
   }
 
   // ───────── Armar el formulario ─────────
@@ -143,13 +181,26 @@ export class PanelProyectosComponent extends PanelDeLista<ProyectoPortal> {
   nuevo(): void {
     this.editando = null;
     this.llenar(null);
+    this.pasoActual = 0;
     this.modalVisible = true;
   }
 
   editar(p: ProyectoPortal): void {
     this.editando = p;
     this.llenar(p);
+    this.pasoActual = 0;
     this.modalVisible = true;
+  }
+
+  /**
+   * El wizard marca como tocada la lista entera, no cada párrafo: aquí se
+   * marcan sus campos, para que se vea cuál falta antes de seguir.
+   */
+  siguiente(): void {
+    this.pasosWizard[this.pasoActual].campos?.forEach((c) => this.form.get(c)?.markAllAsTouched());
+    const antes = this.pasoActual;
+    this.wizard?.siguiente();
+    if (this.pasoActual === antes) this.cuerpo?.irAlPrimerError();
   }
 
   // ───────── Párrafos, secciones y elementos ─────────
@@ -194,9 +245,13 @@ export class PanelProyectosComponent extends PanelDeLista<ProyectoPortal> {
     return !!control && control.invalid && control.touched;
   }
 
+  /** Si algo falta, el wizard vuelve al primer paso con error. */
   guardar(): void {
-    if (this.form.invalid) {
+    const conError = this.pasosWizard.findIndex((_, i) => !this.wizard?.validarPaso(i));
+    if (conError >= 0 || this.form.invalid) {
       this.form.markAllAsTouched();
+      this.pasoActual = Math.max(conError, 0);
+      this.cuerpo?.irAlPrimerError();
       return;
     }
 
