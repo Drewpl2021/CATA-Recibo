@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -31,9 +31,6 @@ import { RECURSOS } from '../../portal-web.service';
 })
 export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements OnInit {
   private fb = inject(FormBuilder);
-
-  /** Cómo está la sección, para el índice de Inicio. */
-  @Output() resumen = new EventEmitter<ResumenDeSeccion>();
 
   protected readonly recurso = RECURSOS.niveles;
   protected readonly nombre = { singular: 'nivel', femenino: false };
@@ -71,10 +68,6 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
     return `el nivel «${n.nombre}» de Inicio`;
   }
 
-  protected override alCargar(): void {
-    this.resumir();
-  }
-
   /** Solo la primera vez: al recargar después de guardar, las tarjetas se quedan donde están. */
   get primeraCarga(): boolean {
     return (this.cargando && !this.filas.length) || this.cargandoSeccion;
@@ -85,8 +78,8 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
     return this.filas.filter((n) => n.estado === 'publicado' && !n.imagen_id).length;
   }
 
-  private resumir(): void {
-    if (this.cargando || this.cargandoSeccion) return;
+  protected override resumir(): ResumenDeSeccion | null {
+    if (this.cargando || this.cargandoSeccion) return null;
 
     const sinFoto = this.publicadosSinFoto;
     const sinTitulo = !this.seccionGuardada?.titulo;
@@ -98,7 +91,7 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
     if (sinFoto) estado += ` · ${sinFoto} sin foto`;
     if (sinTitulo) estado = 'Falta el título de la sección';
 
-    this.resumen.emit({ estado, aviso: sinTitulo || sinFoto > 0, pendientes });
+    return { estado, aviso: sinTitulo || sinFoto > 0, pendientes };
   }
 
   ver(url: string): string {
@@ -157,7 +150,7 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
         this.versionSeccion = res.data.version;
         this.seccionGuardada = res.data.contenido ?? null;
         this.cargandoSeccion = false;
-        this.resumir();
+        this.avisarResumen();
       },
       error: (err) => {
         this.cargandoSeccion = false;
@@ -187,7 +180,7 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
         this.versionSeccion = res.data.version;
         this.seccionGuardada = datos;
         this.modalSeccion = false;
-        this.resumir();
+        this.avisarResumen();
         this.toastService.success('Sección guardada', 'El portal la mostrará en hasta un minuto.');
       },
       error: (err: HttpErrorResponse) => {

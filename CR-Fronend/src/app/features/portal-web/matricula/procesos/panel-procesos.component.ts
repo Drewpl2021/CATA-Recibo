@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -7,6 +7,9 @@ import { DataTableComponent } from '../../../../shared/components/data-table/dat
 import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { WizardComponent } from '../../../../shared/components/wizard/wizard.component';
+import { PasoWizard } from '../../../../shared/components/wizard/wizard.models';
+import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { lineas, validarLineas } from '../../compartido/lineas';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
 import { EstadoPortal, ListaMatricula, PasoMatricula, ProcesoPortal } from '../../portal-web.models';
@@ -21,13 +24,18 @@ const MAX_LISTAS = 4;
  * publicados; con dos o más, el portal los muestra en pestañas.
  *
  * Los pasos y las listas se editan dentro del proceso y se guardan con él.
- * El portal numera los pasos: en el título no va «1er paso».
+ * El portal numera los pasos: en el título no va «1er paso». El modal va en
+ * tres pasos: el proceso, sus pasos y sus listas.
  */
 @Component({
   selector: 'app-panel-procesos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
+  imports: [
+    CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent,
+    WizardComponent, CuerpoDesplazableComponent,
+  ],
   templateUrl: './panel-procesos.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelProcesosComponent extends PanelDeLista<ProcesoPortal> {
   private fb = inject(FormBuilder);
@@ -38,12 +46,20 @@ export class PanelProcesosComponent extends PanelDeLista<ProcesoPortal> {
   readonly maxPasos = MAX_PASOS;
   readonly maxListas = MAX_LISTAS;
 
+  readonly pasosWizard: PasoWizard[] = [
+    { id: 'proceso', titulo: 'El proceso', icono: 'clipboard_check', campos: ['nombre', 'resumen'] },
+    { id: 'pasos', titulo: 'Pasos', icono: 'layers', campos: ['pasos'] },
+    { id: 'listas', titulo: 'Requisitos', icono: 'description', campos: ['listas'] },
+  ];
+
+  @ViewChild('wizard') private wizard?: WizardComponent;
+  @ViewChild('cuerpo') private cuerpo?: CuerpoDesplazableComponent;
+  pasoActual = 0;
+
+  // Los pasos y las listas van bajo el nombre: así caben las acciones.
   columnas: ColumnaTabla<ProcesoPortal>[] = [
     this.columnaDeOrden(),
-    { campo: 'nombre', header: 'Para quién', ancho: '24%' },
-    { campo: 'resumen', header: 'Resumen', formatear: (r) => r ?? '—' },
-    { campo: 'pasos', header: 'Pasos', ancho: '8%', formatear: (p: PasoMatricula[]) => String(p.length) },
-    { campo: 'listas', header: 'Listas', ancho: '16%', formatear: (l: ListaMatricula[]) => (l.length ? l.map((x) => x.titulo).join(', ') : '—') },
+    { campo: 'nombre', header: 'Para quién' },
     this.columnaDeEstado(),
   ];
 
@@ -65,6 +81,14 @@ export class PanelProcesosComponent extends PanelDeLista<ProcesoPortal> {
 
   protected describir(p: ProcesoPortal): string {
     return `el proceso «${p.nombre}» con sus pasos y listas`;
+  }
+
+  /** «3 pasos · Requisitos, Documentos», bajo el nombre en la tabla. */
+  detalle(p: ProcesoPortal): string {
+    const partes = [];
+    if (p.pasos.length) partes.push(p.pasos.length === 1 ? '1 paso' : `${p.pasos.length} pasos`);
+    partes.push(p.listas.length ? p.listas.map((l: ListaMatricula) => l.titulo).join(', ') : 'sin listas');
+    return partes.join(' · ');
   }
 
   private paso(p?: PasoMatricula): FormGroup {
@@ -92,13 +116,26 @@ export class PanelProcesosComponent extends PanelDeLista<ProcesoPortal> {
   nuevo(): void {
     this.editando = null;
     this.llenar(null);
+    this.pasoActual = 0;
     this.modalVisible = true;
   }
 
   editar(p: ProcesoPortal): void {
     this.editando = p;
     this.llenar(p);
+    this.pasoActual = 0;
     this.modalVisible = true;
+  }
+
+  /**
+   * El wizard marca como tocada la lista entera, no cada paso: aquí se marcan
+   * sus campos, para que se vea cuál falta antes de seguir.
+   */
+  siguiente(): void {
+    this.pasosWizard[this.pasoActual].campos?.forEach((c) => this.form.get(c)?.markAllAsTouched());
+    const antes = this.pasoActual;
+    this.wizard?.siguiente();
+    if (this.pasoActual === antes) this.cuerpo?.irAlPrimerError();
   }
 
   // ───────── Pasos y listas dentro del modal ─────────
@@ -139,9 +176,13 @@ export class PanelProcesosComponent extends PanelDeLista<ProcesoPortal> {
     return !!c && c.invalid && c.touched;
   }
 
+  /** Si algo falta, el wizard vuelve al primer paso con error. */
   guardar(): void {
-    if (this.form.invalid) {
+    const conError = this.pasosWizard.findIndex((_, i) => !this.wizard?.validarPaso(i));
+    if (conError >= 0 || this.form.invalid) {
       this.form.markAllAsTouched();
+      this.pasoActual = Math.max(conError, 0);
+      this.cuerpo?.irAlPrimerError();
       return;
     }
 

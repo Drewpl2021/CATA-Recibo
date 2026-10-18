@@ -20,6 +20,7 @@ import { RECURSOS } from '../../portal-web.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
   templateUrl: './panel-preguntas.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelPreguntasComponent extends PanelDeLista<PreguntaPortal> {
   private fb = inject(FormBuilder);
@@ -27,10 +28,10 @@ export class PanelPreguntasComponent extends PanelDeLista<PreguntaPortal> {
   protected readonly recurso = RECURSOS.preguntas;
   protected readonly nombre = { singular: 'pregunta', femenino: true };
 
+  // El comienzo de la respuesta va bajo la pregunta: así caben las acciones.
   columnas: ColumnaTabla<PreguntaPortal>[] = [
     this.columnaDeOrden(),
-    { campo: 'pregunta', header: 'Pregunta', ancho: '36%' },
-    { campo: 'respuesta', header: 'Respuesta', formatear: (r: string) => (r.length > 110 ? r.slice(0, 110) + '…' : r) },
+    { campo: 'pregunta', header: 'Pregunta' },
     this.columnaDeEstado(),
   ];
 
@@ -64,6 +65,7 @@ export class PanelPreguntasComponent extends PanelDeLista<PreguntaPortal> {
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
 

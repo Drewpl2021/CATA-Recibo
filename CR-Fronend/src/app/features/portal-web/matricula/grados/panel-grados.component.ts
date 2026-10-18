@@ -21,6 +21,7 @@ import { RECURSOS } from '../../portal-web.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
   templateUrl: './panel-grados.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelGradosComponent extends PanelDeLista<GrupoGradosPortal> {
   private fb = inject(FormBuilder);
@@ -28,10 +29,10 @@ export class PanelGradosComponent extends PanelDeLista<GrupoGradosPortal> {
   protected readonly recurso = RECURSOS.grados;
   protected readonly nombre = { singular: 'nivel', femenino: false };
 
+  // Las opciones van bajo el nivel: así caben las acciones.
   columnas: ColumnaTabla<GrupoGradosPortal>[] = [
     this.columnaDeOrden(),
-    { campo: 'nivel', header: 'Nivel', ancho: '22%' },
-    { campo: 'opciones', header: 'Opciones del selector', formatear: (o: string[]) => o.join(' · ') },
+    { campo: 'nivel', header: 'Nivel y sus opciones' },
     this.columnaDeEstado(),
   ];
 
@@ -69,6 +70,7 @@ export class PanelGradosComponent extends PanelDeLista<GrupoGradosPortal> {
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
 

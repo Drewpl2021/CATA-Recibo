@@ -4,12 +4,14 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { mensajeErrorApi } from '../../../../core/utils';
+import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
 import { DataTableComponent } from '../../../../shared/components/data-table/data-table.component';
 import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { hoyEnLima, mostrarErrorDelPanel } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
+import { ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { EstadoPortal, FechaPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
 
@@ -17,7 +19,7 @@ import { RECURSOS } from '../../portal-web.service';
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
 /** «2 de noviembre de 2026», desde AAAA-MM-DD (sin pasar por la zona horaria del navegador). */
-function fechaLarga(iso: string, conAnio = true): string {
+export function fechaLarga(iso: string, conAnio = true): string {
   const [a, m, d] = iso.split('-').map(Number);
   return `${d} de ${MESES[m - 1]}${conAnio ? ` de ${a}` : ''}`;
 }
@@ -40,13 +42,15 @@ function finDespuesDeInicio(grupo: AbstractControl): ValidationErrors | null {
  *
  * Van siempre en orden cronológico (el portal las ordena por su inicio), así
  * que no se suben ni se bajan a mano. El portal marca «En curso» o «Terminó»
- * según la fecha de hoy en Lima.
+ * según la fecha de hoy en Lima. El aviso se lee sobre la tabla y se cambia
+ * en su modal.
  */
 @Component({
   selector: 'app-panel-fechas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, FormModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
   templateUrl: './panel-fechas.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelFechasComponent extends PanelDeLista<FechaPortal> implements OnInit {
   private fb = inject(FormBuilder);
@@ -54,9 +58,11 @@ export class PanelFechasComponent extends PanelDeLista<FechaPortal> implements O
   protected readonly recurso = RECURSOS.fechas;
   protected readonly nombre = { singular: 'fecha', femenino: true };
 
+  readonly periodo = periodo;
+
+  // Cuándo va bajo qué pasa: así caben las acciones.
   columnas: ColumnaTabla<FechaPortal>[] = [
-    { campo: 'inicio', header: 'Cuándo', ancho: '30%', formatear: (_v, f) => periodo(f) },
-    { campo: 'titulo', header: 'Qué pasa' },
+    { campo: 'titulo', header: 'Qué pasa y cuándo' },
     {
       campo: 'fin', header: 'Hoy', tipo: 'badge', ancho: '11%',
       formatear: (_v, f) => this.momento(f),
@@ -81,6 +87,9 @@ export class PanelFechasComponent extends PanelDeLista<FechaPortal> implements O
   cargandoNota = true;
   guardandoNota = false;
   private versionNota: string | null = null;
+  modalNota = false;
+  /** Lo guardado: lo que se lee sobre la tabla. */
+  notaGuardada: string | null = null;
   nota = this.fb.group({ nota: ['', [Validators.maxLength(200)]] });
 
   override ngOnInit(): void {
@@ -104,6 +113,18 @@ export class PanelFechasComponent extends PanelDeLista<FechaPortal> implements O
     return `la fecha «${f.titulo}»`;
   }
 
+  /** Si todas las publicadas ya terminaron, el cronograma quedó atrás: toca el del próximo proceso. */
+  protected override resumir(): ResumenDeSeccion | null {
+    const r = super.resumir();
+    const publicadas = this.filas.filter((f) => f.estado === 'publicado');
+    if (r && publicadas.length && publicadas.every((f) => this.momento(f) === 'Terminó')) {
+      r.estado += ' · todas terminaron';
+      r.aviso = true;
+      r.pendientes = [{ cuantos: 1, texto: 'cronograma con todas sus fechas terminadas' }];
+    }
+    return r;
+  }
+
   nueva(): void {
     this.editando = null;
     this.form.reset({ titulo: '', inicio: '', fin: '', detalle: '', estado: 'borrador' });
@@ -124,6 +145,7 @@ export class PanelFechasComponent extends PanelDeLista<FechaPortal> implements O
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
 
@@ -138,7 +160,7 @@ export class PanelFechasComponent extends PanelDeLista<FechaPortal> implements O
     this.portalWebService.getFicha<{ nota: string | null }>('matricula-fechas').subscribe({
       next: (res) => {
         this.versionNota = res.data.version;
-        this.nota.reset({ nota: res.data.contenido?.nota ?? '' });
+        this.notaGuardada = res.data.contenido?.nota ?? null;
         this.cargandoNota = false;
       },
       error: (err) => {
@@ -148,18 +170,26 @@ export class PanelFechasComponent extends PanelDeLista<FechaPortal> implements O
     });
   }
 
+  /** El modal empieza con lo guardado: lo que se canceló antes no queda a medias. */
+  abrirNota(): void {
+    this.nota.reset({ nota: this.notaGuardada ?? '' });
+    this.modalNota = true;
+  }
+
   guardarNota(): void {
     if (this.nota.invalid) {
       this.nota.markAllAsTouched();
       return;
     }
 
+    const nota = this.nota.getRawValue().nota || null;
     this.guardandoNota = true;
-    this.portalWebService.guardarFicha('matricula-fechas', { nota: this.nota.getRawValue().nota || null }, this.versionNota).subscribe({
+    this.portalWebService.guardarFicha('matricula-fechas', { nota }, this.versionNota).subscribe({
       next: (res) => {
         this.guardandoNota = false;
         this.versionNota = res.data.version;
-        this.nota.markAsPristine();
+        this.notaGuardada = nota;
+        this.modalNota = false;
         this.toastService.success('Aviso guardado', 'El portal lo mostrará en hasta un minuto.');
       },
       error: (err: HttpErrorResponse) => {

@@ -31,12 +31,25 @@
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
     >
+      <ng-template appCelda="pregunta" let-fila>
+        <div class="pw-celda-titulo">
+          <span>
+            <strong>{{ fila.pregunta }}</strong>
+            <small>{{ fila.respuesta.length > 110 ? fila.respuesta.slice(0, 110) + '…' : fila.respuesta }}</small>
+          </span>
+        </div>
+      </ng-template>
+
       <ng-template appCelda="orden" let-fila>
         <div class="action-btns">
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
-            [attr.aria-label]="'Subir ' + fila.pregunta" title="Subir">↑</button>
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
-            [attr.aria-label]="'Bajar ' + fila.pregunta" title="Bajar">↓</button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.pregunta" title="Subir">
+            <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+          </button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.pregunta" title="Bajar">
+            <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+          </button>
         </div>
       </ng-template>
     </app-data-table>
@@ -51,7 +64,7 @@
   (guardar)="guardar()"
   (cancelar)="cerrar()"
 >
-  <form [formGroup]="form" class="form-fields">
+  <form [formGroup]="form" class="form-fields" novalidate>
     <div class="form-group">
       <label for="pregunta-texto">Pregunta *</label>
       <input id="pregunta-texto" type="text" class="form-control" formControlName="pregunta" maxlength="140"

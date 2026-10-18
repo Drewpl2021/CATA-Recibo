@@ -9,63 +9,114 @@
   </button>
 </app-page-header>
 
-<!-- ═══════════ Cabecera ═══════════ -->
-<section class="section-panel ajustes-panel" aria-labelledby="titulo-cabecera">
-  <header class="ajustes-panel__cabecera">
-    <div>
-      <h2 id="titulo-cabecera">Cabecera de la página</h2>
-      <p class="form-ayuda">El título, la frase y, a la derecha, el año del proceso en una placa con el recorte de un estudiante delante.</p>
-    </div>
-  </header>
+<pw-indice-de-secciones nombre="Matrícula" [secciones]="secciones" [resumenes]="resumenes" [pendientes]="pendientes"
+  [actual]="actual" (actualChange)="elegir($event)">
 
-  <p class="form-ayuda ajuste-bloque" *ngIf="cargandoCabecera">Cargando la cabecera…</p>
+  <!-- ═══════════ Cabecera ═══════════ -->
+  <div id="pw-seccion-cabecera" [hidden]="actual !== 'cabecera'">
+    <section class="section-panel ajustes-panel" aria-labelledby="titulo-cabecera">
+      <header class="ajustes-panel__cabecera">
+        <div>
+          <h2 id="titulo-cabecera">Cabecera de la página</h2>
+          <p class="form-ayuda">El título, la frase y, a la derecha, el año del proceso en una placa con el recorte de un estudiante delante.</p>
+        </div>
+        <div class="ajustes-panel__acciones" *ngIf="!cargandoCabecera && cabeceraGuardada">
+          <button type="button" class="btn-primary" (click)="abrirCabecera()">
+            <app-icon icono="edit" [tamano]="16"></app-icon>
+            Editar cabecera
+          </button>
+        </div>
+      </header>
 
-  <ng-container *ngIf="!cargandoCabecera">
-    <form [formGroup]="cabecera" (ngSubmit)="guardarCabecera()" novalidate>
-      <div class="grupo-montos">
-        <div class="form-fields">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="matricula-titulo">Título *</label>
-              <input id="matricula-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
-                placeholder="Ej. Proceso de matrícula" [class.is-invalid]="invalidoCabecera('titulo')" />
-              <small class="form-error" *ngIf="invalidoCabecera('titulo')">El título es obligatorio.</small>
-            </div>
-            <div class="form-group">
-              <label for="matricula-anio">Año del proceso</label>
-              <input id="matricula-anio" type="number" class="form-control" formControlName="anio" min="2000" max="2100" step="1"
-                placeholder="Ej. 2027" [class.is-invalid]="invalidoCabecera('anio')" />
-              <small class="form-error" *ngIf="invalidoCabecera('anio')">Un año entre 2000 y 2100.</small>
-              <small class="form-ayuda" *ngIf="!invalidoCabecera('anio')">
-                El año escolar al que corresponde. No se calcula solo: cámbialo cuando abra el proceso. Vacío, no hay placa.
-              </small>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="matricula-bajada">Frase bajo el título</label>
-            <textarea id="matricula-bajada" class="form-control" rows="2" formControlName="bajada" maxlength="160"></textarea>
-            <small class="form-ayuda">Opcional. Hasta 160 caracteres.</small>
+      <div class="pw-esqueleto" *ngIf="cargandoCabecera" role="status">
+        <span class="solo-lectores">Cargando la cabecera…</span>
+        <span class="esqueleto esqueleto--titulo" aria-hidden="true"></span>
+        <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+      </div>
+
+      <div class="card-vacio" *ngIf="!cargandoCabecera && !cabeceraGuardada">
+        <app-icon icono="clipboard_check" [tamano]="34"></app-icon>
+        La cabecera de Matrícula no está configurada: el portal muestra «Esta sección del portal todavía no está disponible».
+        <button type="button" class="btn-primary" (click)="abrirCabecera()">
+          <app-icon icono="edit" [tamano]="16"></app-icon>
+          Configurar la cabecera
+        </button>
+      </div>
+
+      <div class="ajuste-bloque" *ngIf="!cargandoCabecera && cabeceraGuardada as c">
+        <div class="ficha-persona pw-ficha">
+          <span class="pw-foto" [class.pw-foto--vacia]="!figuraGuardada">
+            <img *ngIf="figuraGuardada" [src]="ver(figuraGuardada.url)" [alt]="figuraGuardada.alt" />
+            <ng-container *ngIf="!figuraGuardada">Sin recorte</ng-container>
+          </span>
+          <div class="ficha-persona__datos">
+            <span class="ficha-persona__nombre">{{ c.titulo }}</span>
+            <span class="ficha-persona__resumen" [class.pw-sin-dato]="!c.bajada">{{ c.bajada || 'Sin frase bajo el título' }}</span>
+            <span class="ficha-persona__nota">{{ c.anio ? 'Placa: proceso ' + c.anio : 'Sin año: no hay placa' }}</span>
           </div>
         </div>
       </div>
-    </form>
+    </section>
+  </div>
 
-    <div class="grupo-montos">
-      <app-selector-imagen uso="recorte" etiqueta="Recorte de un estudiante" [imagen]="figura" (imagenChange)="alCambiarFigura($event)"></app-selector-imagen>
+  <div id="pw-seccion-procesos" [hidden]="actual !== 'procesos'">
+    <app-panel-procesos (resumen)="alResumir('procesos', $event)"></app-panel-procesos>
+  </div>
+  <div id="pw-seccion-vacantes" [hidden]="actual !== 'vacantes'">
+    <app-panel-vacantes (resumen)="alResumir('vacantes', $event)"></app-panel-vacantes>
+  </div>
+  <div id="pw-seccion-cronograma" [hidden]="actual !== 'cronograma'">
+    <app-panel-fechas (resumen)="alResumir('cronograma', $event)"></app-panel-fechas>
+  </div>
+  <div id="pw-seccion-preguntas" [hidden]="actual !== 'preguntas'">
+    <app-panel-preguntas (resumen)="alResumir('preguntas', $event)"></app-panel-preguntas>
+  </div>
+  <div id="pw-seccion-grados" [hidden]="actual !== 'grados'">
+    <app-panel-grados (resumen)="alResumir('grados', $event)"></app-panel-grados>
+  </div>
+</pw-indice-de-secciones>
+
+<!-- ═══════════ Modal de la cabecera ═══════════ -->
+<app-form-modal
+  [(visible)]="modalCabecera"
+  titulo="Cabecera de Matrícula"
+  ancho="720px"
+  [guardando]="guardandoCabecera"
+  textoGuardar="Guardar cambios"
+  (guardar)="guardarCabecera()"
+>
+  <pw-cuerpo-desplazable>
+  <form [formGroup]="cabecera" class="form-fields" novalidate>
+    <div class="seccion-form">
+      <h3 class="seccion-form__titulo">Texto y placa</h3>
+      <div class="rejilla-campos">
+        <div class="form-group">
+          <label for="matricula-titulo">Título *</label>
+          <input id="matricula-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+            placeholder="Ej. Proceso de matrícula" [class.is-invalid]="invalidoCabecera('titulo')" />
+          <small class="form-error" *ngIf="invalidoCabecera('titulo')">El título es obligatorio.</small>
+        </div>
+        <div class="form-group">
+          <label for="matricula-anio">Año del proceso</label>
+          <input id="matricula-anio" type="number" class="form-control" formControlName="anio" min="2000" max="2100" step="1"
+            placeholder="Ej. 2027" [class.is-invalid]="invalidoCabecera('anio')" />
+          <small class="form-error" *ngIf="invalidoCabecera('anio')">Un año entre 2000 y 2100.</small>
+          <small class="form-ayuda" *ngIf="!invalidoCabecera('anio')">
+            El año escolar al que corresponde. No se calcula solo: cámbialo cuando abra el proceso. Vacío, no hay placa.
+          </small>
+        </div>
+        <div class="form-group rejilla-campos--completo">
+          <label for="matricula-bajada">Frase bajo el título</label>
+          <textarea id="matricula-bajada" class="form-control" rows="2" formControlName="bajada" maxlength="160"></textarea>
+          <small class="form-ayuda">Opcional. Hasta 160 caracteres.</small>
+        </div>
+      </div>
+    </div>
+    <div class="seccion-form">
+      <h3 class="seccion-form__titulo">Recorte</h3>
+      <app-selector-imagen *ngIf="modalCabecera" uso="recorte" etiqueta="Recorte de un estudiante" [(imagen)]="figura"></app-selector-imagen>
       <small class="form-ayuda">Opcional. Una foto con fondo transparente, vertical. Las fotos de estudiantes necesitan la autorización de su familia.</small>
     </div>
-
-    <footer class="panel-pie">
-      <button type="button" class="btn-primary" (click)="guardarCabecera()" [disabled]="guardandoCabecera || !cabeceraConCambios">
-        {{ guardandoCabecera ? 'Guardando…' : 'Guardar la cabecera' }}
-      </button>
-      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="cabeceraConCambios && !guardandoCabecera">Tienes cambios sin guardar.</p>
-    </footer>
-  </ng-container>
-</section>
-
-<app-panel-procesos></app-panel-procesos>
-<app-panel-vacantes></app-panel-vacantes>
-<app-panel-fechas></app-panel-fechas>
-<app-panel-preguntas></app-panel-preguntas>
-<app-panel-grados></app-panel-grados>
+  </form>
+  </pw-cuerpo-desplazable>
+</app-form-modal>

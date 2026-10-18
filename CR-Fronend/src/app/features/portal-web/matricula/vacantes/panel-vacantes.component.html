@@ -15,35 +15,25 @@
     </div>
   </header>
 
-  <p class="form-ayuda ajuste-bloque" *ngIf="cargandoNota">Cargando la nota…</p>
+  <div class="pw-esqueleto" *ngIf="cargandoNota" role="status">
+    <span class="solo-lectores">Cargando la nota…</span>
+    <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+  </div>
 
-  <form [formGroup]="nota" *ngIf="!cargandoNota" (ngSubmit)="guardarNota()" novalidate>
-    <div class="grupo-montos">
-      <div class="form-fields">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="vacantes-actualizado">Actualizado el</label>
-            <input id="vacantes-actualizado" type="date" class="form-control" formControlName="actualizado" />
-            <small class="form-ayuda">
-              Se muestra «Actualizado el…». Ponla al confirmar las cifras.
-              <button type="button" class="btn-secondary" (click)="ponerHoy()">Poner la de hoy</button>
-            </small>
-          </div>
-          <div class="form-group">
-            <label for="vacantes-nota">Nota bajo la lista</label>
-            <textarea id="vacantes-nota" class="form-control" rows="2" formControlName="nota" maxlength="240"></textarea>
-            <small class="form-ayuda">Opcional. Hasta 240 caracteres.</small>
-          </div>
-        </div>
+  <!-- La fecha y la nota: se leen aquí y se cambian en su modal -->
+  <div class="ajuste-bloque" *ngIf="!cargandoNota">
+    <div class="pw-fila-dato">
+      <div class="pw-dato">
+        <span>Actualizado el</span>
+        <strong [class.pw-sin-dato]="!notaGuardada.actualizado">{{ notaGuardada.actualizado ? fechaLarga(notaGuardada.actualizado) : 'Sin fecha: el portal no dice desde cuándo valen' }}</strong>
+        <small>Nota bajo la lista: {{ notaGuardada.nota || 'ninguna' }}</small>
       </div>
-    </div>
-    <footer class="panel-pie">
-      <button type="submit" class="btn-primary" [disabled]="guardandoNota || nota.pristine">
-        {{ guardandoNota ? 'Guardando…' : 'Guardar fecha y nota' }}
+      <button type="button" class="btn-secondary" (click)="abrirNota()">
+        <app-icon icono="edit" [tamano]="14"></app-icon>
+        Editar fecha y nota
       </button>
-      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="nota.dirty && !guardandoNota">Tienes cambios sin guardar.</p>
-    </footer>
-  </form>
+    </div>
+  </div>
 
   <div class="ajuste-bloque">
     <app-data-table
@@ -60,12 +50,25 @@
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
     >
+      <ng-template appCelda="nivel" let-fila>
+        <div class="pw-celda-titulo">
+          <span>
+            <strong>{{ fila.nivel }}</strong>
+            <small>{{ detalle(fila) }}</small>
+          </span>
+        </div>
+      </ng-template>
+
       <ng-template appCelda="orden" let-fila>
         <div class="action-btns">
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
-            [attr.aria-label]="'Subir ' + fila.nivel" title="Subir">↑</button>
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
-            [attr.aria-label]="'Bajar ' + fila.nivel" title="Bajar">↓</button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nivel" title="Subir">
+            <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+          </button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nivel" title="Bajar">
+            <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+          </button>
         </div>
       </ng-template>
     </app-data-table>
@@ -80,8 +83,8 @@
   (guardar)="guardar()"
   (cancelar)="cerrar()"
 >
-  <form [formGroup]="form" class="form-fields">
-    <div class="form-row">
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <div class="rejilla-campos">
       <div class="form-group">
         <label for="vacante-nivel">Nivel *</label>
         <input id="vacante-nivel" type="text" class="form-control" formControlName="nivel" maxlength="40"
@@ -92,8 +95,6 @@
         <label for="vacante-detalle">Detalle</label>
         <input id="vacante-detalle" type="text" class="form-control" formControlName="detalle" maxlength="60" placeholder="Ej. 1.er a 6.º grado" />
       </div>
-    </div>
-    <div class="form-row">
       <div class="form-group">
         <label for="vacante-disponibilidad">Qué se muestra *</label>
         <select id="vacante-disponibilidad" class="form-control" formControlName="disponibilidad">
@@ -117,6 +118,33 @@
           <option value="borrador">Borrador</option>
         </select>
       </div>
+    </div>
+  </form>
+</app-form-modal>
+
+<!-- La fecha de actualización y la nota -->
+<app-form-modal
+  [(visible)]="modalNota"
+  titulo="Fecha y nota de las vacantes"
+  ancho="640px"
+  [guardando]="guardandoNota"
+  textoGuardar="Guardar cambios"
+  (guardar)="guardarNota()"
+>
+  <form [formGroup]="nota" class="form-fields" novalidate>
+    <div class="form-group">
+      <label for="vacantes-actualizado">Actualizado el</label>
+      <input id="vacantes-actualizado" type="date" class="form-control" formControlName="actualizado" />
+      <small class="form-ayuda">
+        Se muestra «Actualizado el…». Ponla al confirmar las cifras.
+        <button type="button" class="btn-secondary" (click)="ponerHoy()">Poner la de hoy</button>
+      </small>
+    </div>
+    <div class="form-group">
+      <label for="vacantes-nota">Nota bajo la lista</label>
+      <textarea id="vacantes-nota" class="form-control" rows="3" formControlName="nota" maxlength="240"
+        [class.is-invalid]="nota.controls.nota.invalid && nota.controls.nota.touched"></textarea>
+      <small class="form-ayuda">Opcional. Hasta 240 caracteres.</small>
     </div>
   </form>
 </app-form-modal>

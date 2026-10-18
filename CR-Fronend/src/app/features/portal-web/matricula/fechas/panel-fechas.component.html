@@ -15,24 +15,25 @@
     </div>
   </header>
 
-  <p class="form-ayuda ajuste-bloque" *ngIf="cargandoNota">Cargando el aviso…</p>
+  <div class="pw-esqueleto" *ngIf="cargandoNota" role="status">
+    <span class="solo-lectores">Cargando el aviso…</span>
+    <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+  </div>
 
-  <form [formGroup]="nota" *ngIf="!cargandoNota" (ngSubmit)="guardarNota()" novalidate>
-    <div class="grupo-montos">
-      <div class="form-group">
-        <label for="fechas-nota">Aviso sobre el cronograma</label>
-        <textarea id="fechas-nota" class="form-control" rows="2" formControlName="nota" maxlength="200"
-          placeholder="Ej. Las fechas pueden cambiar; confirma en secretaría."></textarea>
-        <small class="form-ayuda">Opcional. Se muestra en un recuadro sobre la lista. Hasta 200 caracteres.</small>
+  <!-- El aviso: se lee aquí y se cambia en su modal -->
+  <div class="ajuste-bloque" *ngIf="!cargandoNota">
+    <div class="pw-fila-dato">
+      <div class="pw-dato">
+        <span>Aviso sobre el cronograma</span>
+        <strong [class.pw-sin-dato]="!notaGuardada">{{ notaGuardada || 'Sin aviso' }}</strong>
+        <small>Se muestra en un recuadro sobre la lista.</small>
       </div>
-    </div>
-    <footer class="panel-pie">
-      <button type="submit" class="btn-primary" [disabled]="guardandoNota || nota.pristine">
-        {{ guardandoNota ? 'Guardando…' : 'Guardar el aviso' }}
+      <button type="button" class="btn-secondary" (click)="abrirNota()">
+        <app-icon icono="edit" [tamano]="14"></app-icon>
+        Editar aviso
       </button>
-      <p class="panel-pie__nota panel-pie__nota--pendiente" *ngIf="nota.dirty && !guardandoNota">Tienes cambios sin guardar.</p>
-    </footer>
-  </form>
+    </div>
+  </div>
 
   <div class="ajuste-bloque">
     <app-data-table
@@ -48,7 +49,16 @@
       (editarFila)="editar($event)"
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
-    ></app-data-table>
+    >
+      <ng-template appCelda="titulo" let-fila>
+        <div class="pw-celda-titulo">
+          <span>
+            <strong>{{ fila.titulo }}</strong>
+            <small>{{ periodo(fila) }}</small>
+          </span>
+        </div>
+      </ng-template>
+    </app-data-table>
   </div>
 </section>
 
@@ -60,7 +70,7 @@
   (guardar)="guardar()"
   (cancelar)="cerrar()"
 >
-  <form [formGroup]="form" class="form-fields">
+  <form [formGroup]="form" class="form-fields" novalidate>
     <div class="form-group">
       <label for="fecha-titulo">Qué pasa *</label>
       <input id="fecha-titulo" type="text" class="form-control" formControlName="titulo" maxlength="80"
@@ -94,6 +104,25 @@
       <input id="fecha-detalle" type="text" class="form-control" formControlName="detalle" maxlength="160"
         placeholder="Ej. Con la constancia de vacante y los documentos completos." />
       <small class="form-ayuda">Opcional. Hasta 160 caracteres.</small>
+    </div>
+  </form>
+</app-form-modal>
+
+<!-- El aviso sobre el cronograma -->
+<app-form-modal
+  [(visible)]="modalNota"
+  titulo="Aviso sobre el cronograma"
+  ancho="640px"
+  [guardando]="guardandoNota"
+  textoGuardar="Guardar cambios"
+  (guardar)="guardarNota()"
+>
+  <form [formGroup]="nota" class="form-fields" novalidate>
+    <div class="form-group">
+      <label for="fechas-nota">Aviso</label>
+      <textarea id="fechas-nota" class="form-control" rows="3" formControlName="nota" maxlength="200"
+        placeholder="Ej. Las fechas pueden cambiar; confirma en secretaría."></textarea>
+      <small class="form-ayuda">Opcional. Se muestra en un recuadro sobre la lista. Hasta 200 caracteres.</small>
     </div>
   </form>
 </app-form-modal>

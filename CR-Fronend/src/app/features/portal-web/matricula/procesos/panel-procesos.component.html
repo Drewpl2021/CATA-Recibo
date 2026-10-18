@@ -30,54 +30,75 @@
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
     >
+      <ng-template appCelda="nombre" let-fila>
+        <div class="pw-celda-titulo">
+          <span>
+            <strong>{{ fila.nombre }}</strong>
+            <small>{{ detalle(fila) }}<ng-container *ngIf="!fila.pasos.length"> · <span class="pw-falta">sin pasos</span></ng-container></small>
+          </span>
+        </div>
+      </ng-template>
+
       <ng-template appCelda="orden" let-fila>
         <div class="action-btns">
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
-            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
-            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">
+            <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+          </button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">
+            <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+          </button>
         </div>
       </ng-template>
     </app-data-table>
   </div>
 </section>
 
+<!-- Un proceso: en tres pasos (el proceso, sus pasos y sus listas) -->
 <app-form-modal
   [(visible)]="modalVisible"
   [titulo]="editando ? 'Editar proceso' : 'Agregar proceso'"
   ancho="860px"
   [guardando]="guardando"
-  (guardar)="guardar()"
+  [ocultarBotonesPorDefecto]="true"
   (cancelar)="cerrar()"
 >
-  <form [formGroup]="form" class="form-fields">
-    <div class="form-row">
-      <div class="form-group">
-        <label for="proceso-nombre">Para quién es *</label>
-        <input id="proceso-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
-          placeholder="Ej. Estudiantes nuevos" [class.is-invalid]="invalido('nombre')" />
-        <small class="form-error" *ngIf="invalido('nombre')">Obligatorio (máximo 40).</small>
-        <small class="form-ayuda" *ngIf="!invalido('nombre')">Es el texto de la pestaña.</small>
+  <pw-cuerpo-desplazable #cuerpo>
+  <app-wizard #wizard [pasos]="pasosWizard" [(actual)]="pasoActual" [form]="form"></app-wizard>
+
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <!-- 1 · El proceso -->
+    <div class="seccion-form pw-paso" [hidden]="pasoActual !== 0">
+      <h3 class="seccion-form__titulo">El proceso</h3>
+      <div class="rejilla-campos">
+        <div class="form-group">
+          <label for="proceso-nombre">Para quién es *</label>
+          <input id="proceso-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
+            placeholder="Ej. Estudiantes nuevos" [class.is-invalid]="invalido('nombre')" />
+          <small class="form-error" *ngIf="invalido('nombre')">Obligatorio (máximo 40).</small>
+          <small class="form-ayuda" *ngIf="!invalido('nombre')">Es el texto de la pestaña.</small>
+        </div>
+        <div class="form-group">
+          <label for="proceso-estado">Estado</label>
+          <select id="proceso-estado" class="form-control" formControlName="estado">
+            <option value="publicado">Publicado</option>
+            <option value="borrador">Borrador</option>
+          </select>
+        </div>
+        <div class="form-group rejilla-campos--completo">
+          <label for="proceso-resumen">Resumen</label>
+          <input id="proceso-resumen" type="text" class="form-control" formControlName="resumen" maxlength="160"
+            placeholder="Ej. Para quienes ingresan por primera vez a CATA." />
+          <small class="form-ayuda">Opcional. Una frase sobre a quién aplica.</small>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="proceso-estado">Estado</label>
-        <select id="proceso-estado" class="form-control" formControlName="estado">
-          <option value="publicado">Publicado</option>
-          <option value="borrador">Borrador</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label for="proceso-resumen">Resumen</label>
-      <input id="proceso-resumen" type="text" class="form-control" formControlName="resumen" maxlength="160"
-        placeholder="Ej. Para quienes ingresan por primera vez a CATA." />
-      <small class="form-ayuda">Opcional. Una frase sobre a quién aplica.</small>
     </div>
 
-    <!-- Pasos -->
-    <div class="form-group">
-      <label>Pasos, en orden</label>
-      <small class="form-ayuda">Hasta {{ maxPasos }}. El portal los numera: no pongas «1er paso» en el título.</small>
+    <!-- 2 · Pasos -->
+    <div class="seccion-form pw-paso" [hidden]="pasoActual !== 1">
+      <h3 class="seccion-form__titulo">Pasos, en orden</h3>
+      <p class="form-ayuda">Hasta {{ maxPasos }}. El portal los numera: no pongas «1er paso» en el título.</p>
       <div formArrayName="pasos">
         <div class="form-row" *ngFor="let paso of pasos.controls; let i = index" [formGroupName]="i">
           <div class="form-group">
@@ -94,18 +115,23 @@
           <div class="form-group">
             <label>&nbsp;</label>
             <div class="action-btns">
-              <button type="button" class="btn-icon-accion" (click)="moverPaso(i, -1)" [disabled]="i === 0"
-                [attr.aria-label]="'Subir el paso ' + (i + 1)" title="Subir">↑</button>
-              <button type="button" class="btn-icon-accion" (click)="moverPaso(i, 1)" [disabled]="i === pasos.length - 1"
-                [attr.aria-label]="'Bajar el paso ' + (i + 1)" title="Bajar">↓</button>
-              <button type="button" class="btn-icon-accion" (click)="quitarPaso(i)"
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverPaso(i, -1)" [disabled]="i === 0"
+                [attr.aria-label]="'Subir el paso ' + (i + 1)" title="Subir">
+                <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverPaso(i, 1)" [disabled]="i === pasos.length - 1"
+                [attr.aria-label]="'Bajar el paso ' + (i + 1)" title="Bajar">
+                <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarPaso(i)"
                 [attr.aria-label]="'Quitar el paso ' + (i + 1)" title="Quitar">
-                <app-icon icono="trash" [tamano]="14"></app-icon>
+                <app-icon icono="trash" [tamano]="16"></app-icon>
               </button>
             </div>
           </div>
         </div>
       </div>
+      <p class="form-ayuda" *ngIf="!pasos.length">Todavía no tiene pasos.</p>
       <div>
         <button type="button" class="btn-secondary" (click)="agregarPaso()" [disabled]="pasos.length >= maxPasos">
           <app-icon icono="plus" [tamano]="14"></app-icon> Agregar paso
@@ -113,10 +139,10 @@
       </div>
     </div>
 
-    <!-- Listas -->
-    <div class="form-group">
-      <label>Requisitos y documentos</label>
-      <small class="form-ayuda">Hasta {{ maxListas }} listas, cada una con su título y de 1 a 15 elementos, uno por línea.</small>
+    <!-- 3 · Requisitos y documentos -->
+    <div class="seccion-form pw-paso" [hidden]="pasoActual !== 2">
+      <h3 class="seccion-form__titulo">Requisitos y documentos</h3>
+      <p class="form-ayuda">Hasta {{ maxListas }} listas, cada una con su título y de 1 a 15 elementos, uno por línea.</p>
       <div formArrayName="listas">
         <div class="grupo-montos" *ngFor="let lista of listas.controls; let i = index" [formGroupName]="i">
           <div class="form-row">
@@ -148,6 +174,7 @@
           </div>
         </div>
       </div>
+      <p class="form-ayuda" *ngIf="!listas.length">Todavía no tiene listas.</p>
       <div>
         <button type="button" class="btn-secondary" (click)="agregarLista()" [disabled]="listas.length >= maxListas">
           <app-icon icono="plus" [tamano]="14"></app-icon> Agregar lista
@@ -155,4 +182,25 @@
       </div>
     </div>
   </form>
+  </pw-cuerpo-desplazable>
+
+  <div modalFooter class="asistente-pie asistente-pie--extremos">
+    <button type="button" class="btn-secondary pw-boton-entero" (click)="wizard.anterior()" [disabled]="guardando" [style.visibility]="pasoActual > 0 ? 'visible' : 'hidden'">
+      <app-icon icono="arrow_left" [tamano]="15"></app-icon>
+      Anterior
+    </button>
+    <div class="asistente-pie">
+      <button type="button" class="btn-secondary" (click)="cerrar()" [disabled]="guardando">Cancelar</button>
+      <button type="button" class="btn-secondary" *ngIf="!wizard.esUltimo && editando" (click)="siguiente()" [disabled]="guardando">
+        Siguiente
+      </button>
+      <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo && !editando" (click)="siguiente()">
+        Siguiente
+        <app-icon icono="arrow_right" [tamano]="15"></app-icon>
+      </button>
+      <button type="button" class="btn-primary" *ngIf="wizard.esUltimo || editando" (click)="guardar()" [disabled]="guardando">
+        {{ guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Guardar proceso' }}
+      </button>
+    </div>
+  </div>
 </app-form-modal>

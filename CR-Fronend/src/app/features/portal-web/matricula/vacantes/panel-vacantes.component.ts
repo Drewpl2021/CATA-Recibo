@@ -11,21 +11,25 @@ import { FormModalComponent } from '../../../../shared/components/form-modal/for
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { hoyEnLima, mostrarErrorDelPanel } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
+import { ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { DISPONIBILIDADES, DisponibilidadVacantes, EstadoPortal, MatriculaVacantesNota, VacantePortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
+import { fechaLarga } from '../fechas/panel-fechas.component';
 
 /**
  * Matrícula › Vacantes: la disponibilidad de cada nivel, con la fecha en que
  * se confirmó y una nota bajo la lista. Hasta 6 niveles publicados.
  *
  * Solo cifras reales: el número es opcional, y con «Agotadas» o «Consultar»
- * no se pide (el portal no lo mostraría).
+ * no se pide (el portal no lo mostraría). La fecha y la nota se leen sobre
+ * la tabla y se cambian en su modal.
  */
 @Component({
   selector: 'app-panel-vacantes',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
   templateUrl: './panel-vacantes.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelVacantesComponent extends PanelDeLista<VacantePortal> implements OnInit {
   private fb = inject(FormBuilder);
@@ -34,17 +38,17 @@ export class PanelVacantesComponent extends PanelDeLista<VacantePortal> implemen
   protected readonly nombre = { singular: 'nivel', femenino: false };
 
   readonly disponibilidades = DISPONIBILIDADES;
+  readonly fechaLarga = fechaLarga;
 
+  // El detalle y el número van bajo el nivel: así caben las acciones.
   columnas: ColumnaTabla<VacantePortal>[] = [
     this.columnaDeOrden(),
-    { campo: 'nivel', header: 'Nivel', ancho: '18%' },
-    { campo: 'detalle', header: 'Detalle', formatear: (d) => d ?? '—' },
+    { campo: 'nivel', header: 'Nivel' },
     {
       campo: 'disponibilidad', header: 'Se muestra', tipo: 'badge', ancho: '18%',
       formatear: (d: DisponibilidadVacantes) => this.disponibilidad(d).nombre,
       badgeSeveridad: (d: DisponibilidadVacantes) => ({ disponible: 'success', pocas: 'warning', agotadas: 'danger', consultar: 'info' } as const)[d],
     },
-    { campo: 'vacantes', header: 'Número', ancho: '10%', formatear: (n) => (n ?? '—') },
     this.columnaDeEstado(),
   ];
 
@@ -61,6 +65,9 @@ export class PanelVacantesComponent extends PanelDeLista<VacantePortal> implemen
   cargandoNota = true;
   guardandoNota = false;
   private versionNota: string | null = null;
+  modalNota = false;
+  /** Lo guardado: lo que se lee sobre la tabla. */
+  notaGuardada: MatriculaVacantesNota = { actualizado: null, nota: null };
 
   nota = this.fb.group({
     actualizado: [''],
@@ -92,6 +99,24 @@ export class PanelVacantesComponent extends PanelDeLista<VacantePortal> implemen
     return `las vacantes de «${v.nivel}»`;
   }
 
+  /** «1.er a 6.º grado · 25 vacantes», bajo el nivel en la tabla. */
+  detalle(v: VacantePortal): string {
+    const partes = [v.detalle, v.vacantes !== null ? `${v.vacantes} ${v.vacantes === 1 ? 'vacante' : 'vacantes'}` : null];
+    return partes.filter(Boolean).join(' · ');
+  }
+
+  /** Con niveles publicados y sin fecha, el portal no dice desde cuándo valen las cifras. */
+  protected override resumir(): ResumenDeSeccion | null {
+    const r = super.resumir();
+    if (!r || this.cargandoNota) return null;
+    if (this.publicados && !this.notaGuardada.actualizado) {
+      r.estado += ' · sin fecha';
+      r.aviso = true;
+      r.pendientes = [{ cuantos: 1, texto: 'fecha de actualización de las vacantes por poner' }];
+    }
+    return r;
+  }
+
   nuevo(): void {
     this.editando = null;
     this.form.reset({ nivel: '', detalle: '', disponibilidad: 'consultar', vacantes: null, estado: 'borrador' });
@@ -114,6 +139,7 @@ export class PanelVacantesComponent extends PanelDeLista<VacantePortal> implemen
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
 
@@ -129,14 +155,21 @@ export class PanelVacantesComponent extends PanelDeLista<VacantePortal> implemen
     this.portalWebService.getFicha<MatriculaVacantesNota>('matricula-vacantes').subscribe({
       next: (res) => {
         this.versionNota = res.data.version;
-        this.nota.reset({ actualizado: res.data.contenido?.actualizado ?? '', nota: res.data.contenido?.nota ?? '' });
+        this.notaGuardada = { actualizado: res.data.contenido?.actualizado ?? null, nota: res.data.contenido?.nota ?? null };
         this.cargandoNota = false;
+        this.avisarResumen();
       },
       error: (err) => {
         this.cargandoNota = false;
         this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo cargar la nota de las vacantes.'));
       },
     });
+  }
+
+  /** El modal empieza con lo guardado: lo que se canceló antes no queda a medias. */
+  abrirNota(): void {
+    this.nota.reset({ actualizado: this.notaGuardada.actualizado ?? '', nota: this.notaGuardada.nota ?? '' });
+    this.modalNota = true;
   }
 
   ponerHoy(): void {
@@ -151,12 +184,15 @@ export class PanelVacantesComponent extends PanelDeLista<VacantePortal> implemen
     }
 
     const v = this.nota.getRawValue();
+    const datos = { actualizado: v.actualizado || null, nota: v.nota || null };
     this.guardandoNota = true;
-    this.portalWebService.guardarFicha<MatriculaVacantesNota>('matricula-vacantes', { actualizado: v.actualizado || null, nota: v.nota || null }, this.versionNota).subscribe({
+    this.portalWebService.guardarFicha<MatriculaVacantesNota>('matricula-vacantes', datos, this.versionNota).subscribe({
       next: (res) => {
         this.guardandoNota = false;
         this.versionNota = res.data.version;
-        this.nota.markAsPristine();
+        this.notaGuardada = datos;
+        this.modalNota = false;
+        this.avisarResumen();
         this.toastService.success('Guardado', 'El portal lo mostrará en hasta un minuto.');
       },
       error: (err: HttpErrorResponse) => {

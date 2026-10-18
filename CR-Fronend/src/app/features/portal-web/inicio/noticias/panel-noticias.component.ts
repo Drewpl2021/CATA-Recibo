@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 
@@ -44,9 +44,6 @@ function enlaceCompleto(grupo: AbstractControl): ValidationErrors | null {
 export class PanelNoticiasComponent extends PanelDeLista<NoticiaPortal> {
   private fb = inject(FormBuilder);
 
-  /** Cómo está la sección, para el índice de Inicio. */
-  @Output() resumen = new EventEmitter<ResumenDeSeccion>();
-
   protected readonly recurso = RECURSOS.noticias;
   protected readonly nombre = { singular: 'noticia', femenino: true };
 
@@ -80,9 +77,9 @@ export class PanelNoticiasComponent extends PanelDeLista<NoticiaPortal> {
     return `${n.tipo === 'comunicado' ? 'el comunicado' : 'la noticia'} «${n.titulo}»`;
   }
 
-  protected override alCargar(): void {
+  protected override resumir(): ResumenDeSeccion {
     const borradores = this.filas.length - this.publicados;
-    this.resumen.emit({
+    return {
       estado: this.filas.length
         ? cuantos(this.publicados, 'publicada', 'publicadas') + (borradores ? ` · ${cuantos(borradores, 'borrador', 'borradores')}` : '')
         : 'Sin noticias',
@@ -90,7 +87,7 @@ export class PanelNoticiasComponent extends PanelDeLista<NoticiaPortal> {
       pendientes: borradores
         ? [{ cuantos: borradores, texto: borradores === 1 ? 'noticia en borrador' : 'noticias en borrador' }]
         : [],
-    });
+    };
   }
 
   /** La segunda línea de la celda: fecha y lo que trae. */

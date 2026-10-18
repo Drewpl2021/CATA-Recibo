@@ -1,4 +1,4 @@
-import { Directive, OnInit, inject } from '@angular/core';
+import { Directive, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { ConfirmService, ToastService } from '../../../core/services';
@@ -7,6 +7,7 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { EstadoPortal } from '../portal-web.models';
 import { PortalWebService } from '../portal-web.service';
 import { idsMovidos, mostrarErrorDelPanel } from './panel';
+import { cuantos, ResumenDeSeccion } from './resumen-de-seccion';
 
 /** Lo mínimo de una fila de cualquier lista del portal. */
 export interface FilaDelPortal {
@@ -18,6 +19,8 @@ export interface FilaDelPortal {
 export interface NombreDeRegistro {
   singular: string;
   femenino: boolean;
+  /** Solo si no basta con sumar «s» o «es» («nivel» › «niveles» sale solo). */
+  plural?: string;
 }
 
 /** Publicar o pasar a borrador, las dos acciones de toda lista del portal. */
@@ -58,6 +61,9 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
 
   readonly acciones = accionesDeEstado<T>();
 
+  /** Cómo está la lista, para el índice de la pantalla (ver resumir()). */
+  @Output() resumen = new EventEmitter<ResumenDeSeccion>();
+
   ngOnInit(): void {
     this.cargar();
   }
@@ -90,6 +96,7 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
         this.filas = res.data;
         this.cargando = false;
         this.alCargar();
+        this.avisarResumen();
       },
       error: (err) => {
         this.cargando = false;
@@ -100,6 +107,33 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
 
   /** Después de cada carga de la lista (para avisar a otro panel, por ejemplo). */
   protected alCargar(): void {}
+
+  /**
+   * La línea del índice y los pendientes de la lista: «3 publicados · 1
+   * borrador». Cada panel puede contar lo suyo (los publicados sin foto, por
+   * ejemplo); null, si todavía no lo sabe.
+   */
+  protected resumir(): ResumenDeSeccion | null {
+    const borradores = this.filas.length - this.publicados;
+    const publicado = this.nombre.femenino ? ['publicada', 'publicadas'] : ['publicado', 'publicados'];
+    return {
+      estado: this.filas.length
+        ? cuantos(this.publicados, publicado[0], publicado[1]) + (borradores ? ` · ${cuantos(borradores, 'borrador', 'borradores')}` : '')
+        : `Sin ${this.plural}`,
+      aviso: false,
+      pendientes: [],
+    };
+  }
+
+  protected avisarResumen(): void {
+    const r = this.resumir();
+    if (r) this.resumen.emit(r);
+  }
+
+  private get plural(): string {
+    const s = this.nombre.singular;
+    return this.nombre.plural ?? (/[aeiouáéó]$/.test(s) ? `${s}s` : `${s}es`);
+  }
 
   /** Para una lista que vive dentro de otra (los ciclos de una universidad): { universidad: id }. */
   protected filtro(): Record<string, string> {

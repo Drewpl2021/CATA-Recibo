@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, ViewChild, inject } from '@angular/core';
+import { Component, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -44,8 +44,6 @@ import { RECURSOS } from '../../portal-web.service';
 export class PanelBannersComponent extends PanelDeLista<BannerPortal> {
   private fb = inject(FormBuilder);
 
-  /** Cómo está el carrusel, para el índice de Inicio. */
-  @Output() resumen = new EventEmitter<ResumenDeSeccion>();
   @ViewChild('wizard') private wizard?: WizardComponent;
   @ViewChild('cuerpo') private cuerpo?: CuerpoDesplazableComponent;
 
@@ -86,7 +84,7 @@ export class PanelBannersComponent extends PanelDeLista<BannerPortal> {
     return `el banner «${b.titulo}»`;
   }
 
-  protected override alCargar(): void {
+  protected override resumir(): ResumenDeSeccion {
     const publicados = this.publicados;
     const borradores = this.filas.length - publicados;
     const sinMovil = this.publicadosSinMovil;
@@ -94,13 +92,13 @@ export class PanelBannersComponent extends PanelDeLista<BannerPortal> {
     if (sinMovil) partes.push(`${sinMovil} sin celular`);
     else if (borradores) partes.push(cuantos(borradores, 'borrador', 'borradores'));
 
-    this.resumen.emit({
+    return {
       estado: this.filas.length ? partes.join(' · ') : 'Sin banners',
       aviso: sinMovil > 0,
       pendientes: sinMovil
         ? [{ cuantos: sinMovil, texto: sinMovil === 1 ? 'banner publicado sin afiche para celular' : 'banners publicados sin afiche para celular' }]
         : [],
-    });
+    };
   }
 
   /** La miniatura de la tabla: la imagen subida, por la ruta del panel. */
