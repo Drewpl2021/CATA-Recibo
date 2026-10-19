@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEvent } from '@angular/common/http';
 import { Observable, map, shareReplay } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -148,15 +148,24 @@ export class PortalWebService {
   /**
    * POST /web-portal/images — la sube suelta; después un formulario la usa.
    * El backend la abre, la endereza, le quita los metadatos y la comprime.
+   *
+   * Con sus eventos: cuánto del archivo ya llegó (para la barra) y, al final,
+   * la respuesta. Entre que termina de llegar y responde, la está preparando.
    */
-  subirImagen(archivo: File, uso: string, alt: string, decorativa: boolean): Observable<ApiResponse<ImagenSubida>> {
+  subirImagen(archivo: File, uso: string, alt: string, decorativa: boolean): Observable<HttpEvent<ApiResponse<ImagenSubida>>> {
+    return this.http.post<ApiResponse<ImagenSubida>>(`${this.base}/images`, this.datosDeImagen(archivo, uso, alt, decorativa), {
+      reportProgress: true,
+      observe: 'events',
+    });
+  }
+
+  private datosDeImagen(archivo: File, uso: string, alt: string, decorativa: boolean): FormData {
     const datos = new FormData();
     datos.append('archivo', archivo);
     datos.append('uso', uso);
     datos.append('decorativa', decorativa ? '1' : '0');
     if (!decorativa) datos.append('alt', alt);
-
-    return this.http.post<ApiResponse<ImagenSubida>>(`${this.base}/images`, datos);
+    return datos;
   }
 
   editarAltImagen(id: string, alt: string, decorativa: boolean): Observable<ApiResponse<ImagenSubida>> {
