@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -7,7 +7,9 @@ import { DataTableComponent } from '../../../../shared/components/data-table/dat
 import { AccionPersonalizada, ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { accionesDeEstado, PanelDeLista } from '../../compartido/panel-de-lista';
+import { ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { EditorBloquesComponent } from '../bloques/editor-bloques.component';
 import { EstadoPortal, NavegacionPortal, PAGINAS_DE_NOSOTROS, PaginaNosotros } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
@@ -33,8 +35,12 @@ const comoId = (texto: string) =>
 @Component({
   selector: 'app-panel-paginas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, EditorBloquesComponent],
+  imports: [
+    CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, EditorBloquesComponent,
+    CuerpoDesplazableComponent,
+  ],
   templateUrl: './panel-paginas.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> implements OnInit {
   private fb = inject(FormBuilder);
@@ -53,13 +59,12 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> implemen
   /** La página cuyo contenido se edita; null = el editor está cerrado. */
   paginaEnEdicion: PaginaNosotros | null = null;
 
+  @ViewChild('cuerpo') private cuerpo?: CuerpoDesplazableComponent;
+
+  // El grupo, el nombre en el menú, la dirección y los bloques van bajo el título: así caben las cuatro acciones.
   columnas: ColumnaTabla<PaginaNosotros>[] = [
     this.columnaDeOrden(),
-    { campo: 'grupoTitulo', header: 'Grupo', ancho: '14%', formatear: (g) => g ?? 'Fuera del menú' },
-    { campo: 'nombre', header: 'En el menú', ancho: '18%', formatear: (n) => n ?? '—' },
-    { campo: 'titulo', header: 'Título' },
-    { campo: 'resumen', header: 'Tarjeta del índice', ancho: '14%', formatear: (r) => (r ? 'Con frase' : 'Solo el nombre') },
-    { campo: 'bloques', header: 'Bloques', ancho: '9%', formatear: (n: number) => (n ? String(n) : 'Ninguno') },
+    { campo: 'titulo', header: 'Subpágina' },
     this.columnaDeEstado(),
   ];
 
@@ -94,6 +99,25 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> implemen
 
   protected describir(p: PaginaNosotros): string {
     return `la página «${p.nombre ?? p.titulo}» (su dirección dejará de abrir)`;
+  }
+
+  /**
+   * Las publicadas que el portal no abre (fuera del menú) o que abren vacías
+   * (sin bloques) suben a Pendientes.
+   */
+  protected override resumir(): ResumenDeSeccion | null {
+    const r = super.resumir();
+    if (!r) return r;
+    const publicadas = this.filas.filter((p) => p.estado === 'publicado');
+    const fuera = publicadas.filter((p) => !p.grupo).length;
+    const vacias = publicadas.filter((p) => !p.bloques).length;
+    if (fuera) r.pendientes.push({ cuantos: fuera, texto: fuera === 1 ? 'subpágina publicada fuera del menú: no abre' : 'subpáginas publicadas fuera del menú: no abren' });
+    if (vacias) r.pendientes.push({ cuantos: vacias, texto: vacias === 1 ? 'subpágina publicada sin contenido' : 'subpáginas publicadas sin contenido' });
+    if (fuera || vacias) {
+      r.aviso = true;
+      r.estado = `${r.estado.split(' · ')[0]} · ${fuera + vacias} por revisar`;
+    }
+    return r;
   }
 
   nueva(): void {
@@ -151,6 +175,7 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> implemen
   guardar(): void {
     if (this.form.invalid || this.faltaNombre) {
       this.form.markAllAsTouched();
+      this.cuerpo?.irAlPrimerError();
       return;
     }
 
