@@ -142,14 +142,14 @@
 
         <div class="form-group" formArrayName="parrafos">
           <label>Párrafos</label>
-          <small class="form-ayuda">De 1 a {{ maxParrafos }}, de hasta 600 caracteres cada uno. Texto simple, sin formato.</small>
+          <small class="form-ayuda">De 1 a {{ maxParrafos }}, de hasta {{ maxParrafo }} caracteres cada uno. Texto simple, sin formato.</small>
           <div class="form-row" *ngFor="let p of parrafos.controls; let i = index">
             <div class="form-group">
               <label [for]="'intro-parrafo-' + i">Párrafo {{ i + 1 }} *</label>
-              <textarea [id]="'intro-parrafo-' + i" class="form-control" rows="4" [formControlName]="i" maxlength="600"
+              <textarea [id]="'intro-parrafo-' + i" class="form-control" rows="4" [formControlName]="i" [attr.maxlength]="maxParrafo"
                 [class.is-invalid]="invalido(p)"></textarea>
-              <small class="form-error" *ngIf="invalido(p)">Escribe el párrafo (máximo 600), o quítalo.</small>
-              <small class="form-ayuda" *ngIf="!invalido(p)">{{ p.value?.length ?? 0 }} de 600.</small>
+              <small class="form-error" *ngIf="invalido(p)">Escribe el párrafo (máximo {{ maxParrafo }}), o quítalo.</small>
+              <small class="form-ayuda" *ngIf="!invalido(p)">{{ p.value?.length ?? 0 }} de {{ maxParrafo }}.</small>
             </div>
             <div class="form-group">
               <label>&nbsp;</label>

@@ -127,6 +127,20 @@ class PortalPanelPropuestaTest extends TestCase
             ->assertJsonValidationErrors('introduccion.parrafos');
     }
 
+    public function test_el_texto_que_publica_el_colegio_cabe_en_la_introduccion(): void
+    {
+        // El de cata.edu.pe tiene un párrafo de 629 caracteres: tiene que poder guardarse tal cual.
+        $ejemplo = json_decode(file_get_contents(base_path('tests/Fixtures/portal/mock/tipico/propuesta-pilares.json')), true);
+        $introduccion = $ejemplo['data']['introduccion'];
+        $this->assertGreaterThan(600, max(array_map('mb_strlen', $introduccion['parrafos'])));
+
+        $this->guardarFicha('propuesta-pilares', ['introduccion' => $introduccion])->assertOk();
+        $this->assertSame($introduccion['parrafos'], $this->portal('pilares')['introduccion']['parrafos']);
+
+        $this->guardarFicha('propuesta-pilares', ['introduccion' => ['titulo' => 'T', 'parrafos' => [str_repeat('p', 701)]]])
+            ->assertJsonValidationErrors('introduccion.parrafos.0');
+    }
+
     public function test_un_pilar_con_sus_aspectos_llega_al_portal(): void
     {
         $id = $this->postJson(self::PILARES, [

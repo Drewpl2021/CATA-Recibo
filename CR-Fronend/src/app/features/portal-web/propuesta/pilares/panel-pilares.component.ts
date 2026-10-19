@@ -17,6 +17,8 @@ import { EstadoPortal, IntroduccionPilares, PilarPortal } from '../../portal-web
 import { RECURSOS } from '../../portal-web.service';
 
 const MAX_PARRAFOS = 6;
+/** Como el backend: 700, porque el texto que el colegio publica hoy tiene un párrafo de 629. */
+const MAX_PARRAFO = 700;
 
 /**
  * Propuesta Educativa › Pilares: la introducción (un título y de 1 a 6
@@ -38,6 +40,7 @@ export class PanelPilaresComponent extends PanelDeLista<PilarPortal> implements 
   protected readonly nombre = { singular: 'pilar', femenino: false };
 
   readonly maxParrafos = MAX_PARRAFOS;
+  readonly maxParrafo = MAX_PARRAFO;
 
   // El texto y los aspectos van bajo el título: así caben las acciones.
   columnas: ColumnaTabla<PilarPortal>[] = [
@@ -114,7 +117,7 @@ export class PanelPilaresComponent extends PanelDeLista<PilarPortal> implements 
   // ───────── La introducción ─────────
 
   private parrafo(texto = '') {
-    return this.fb.control(texto, [Validators.required, Validators.maxLength(600)]);
+    return this.fb.control(texto, [Validators.required, Validators.maxLength(MAX_PARRAFO)]);
   }
 
   private habilitarIntro(con: boolean): void {

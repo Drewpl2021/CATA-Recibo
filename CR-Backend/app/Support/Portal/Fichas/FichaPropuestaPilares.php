@@ -20,7 +20,8 @@ class FichaPropuestaPilares implements Ficha
             'introduccion'            => ['nullable', 'array:titulo,parrafos'],
             'introduccion.titulo'     => ['required_with:introduccion', 'string', 'max:60'],
             'introduccion.parrafos'   => ['required_with:introduccion', 'array', 'min:1', 'max:6'],
-            'introduccion.parrafos.*' => ['required', 'string', 'max:600'],
+            // 700, no 600: el texto que el colegio publica hoy tiene un párrafo de 629. El contrato no fija tope.
+            'introduccion.parrafos.*' => ['required', 'string', 'max:700'],
         ];
     }
 
