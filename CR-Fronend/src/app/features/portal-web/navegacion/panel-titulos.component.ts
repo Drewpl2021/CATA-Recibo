@@ -1,13 +1,19 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { ToastService } from '../../../core/services';
 import { mensajeErrorApi } from '../../../core/utils';
+import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { CuerpoDesplazableComponent } from '../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { mostrarErrorDelPanel } from '../compartido/panel';
+import { ResumenDeSeccion } from '../compartido/resumen-de-seccion';
 import { CampoDeTitulo, TITULOS_DE_PAGINAS, TitulosPortal } from '../portal-web.models';
 import { PortalWebService } from '../portal-web.service';
+
+type PaginaDeTitulos = (typeof TITULOS_DE_PAGINAS)[number];
 
 /**
  * Menú y títulos › Los títulos de cada página (ficha `titulos`, contrato
@@ -15,17 +21,26 @@ import { PortalWebService } from '../portal-web.service';
  * campos y sus largos salen de TITULOS_DE_PAGINAS. Los que ya tienen su
  * propia ficha (las cabeceras, el título de la academia…) se editan en su
  * página.
+ *
+ * Se leen por página y cada página se edita en su modal. Es una sola ficha:
+ * al guardar una página, las demás van como estaban guardadas.
  */
 @Component({
   selector: 'app-panel-titulos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, FormModalComponent, CuerpoDesplazableComponent],
   templateUrl: './panel-titulos.component.html',
+  styleUrls: ['../compartido/pw-estilos.scss'],
 })
 export class PanelTitulosComponent implements OnInit {
   private fb = inject(FormBuilder);
   private portalWebService = inject(PortalWebService);
   private toastService = inject(ToastService);
+
+  /** Cómo está la sección, para el índice de la pantalla. */
+  @Output() resumen = new EventEmitter<ResumenDeSeccion>();
+
+  @ViewChild('cuerpo') private cuerpo?: CuerpoDesplazableComponent;
 
   readonly paginas = TITULOS_DE_PAGINAS;
   /** La marca del número en «{n} sedes…» (en la plantilla, unas llaves sueltas serían sintaxis de Angular). */
@@ -34,8 +49,10 @@ export class PanelTitulosComponent implements OnInit {
   cargando = true;
   guardando = false;
   private version: string | null = null;
-  /** La página que se ve; las demás quedan plegadas. */
-  abierta = TITULOS_DE_PAGINAS[0].pagina;
+  /** Lo guardado: lo que se lee en la sección. */
+  guardados: TitulosPortal = {};
+  /** La página que se edita en el modal. */
+  editando: PaginaDeTitulos | null = null;
 
   form: FormGroup = this.fb.group(
     Object.fromEntries(
@@ -61,14 +78,10 @@ export class PanelTitulosComponent implements OnInit {
     this.cargando = true;
     this.portalWebService.getFicha<TitulosPortal>('titulos').subscribe({
       next: (res) => {
-        const c = res.data.contenido ?? {};
         this.version = res.data.version;
-        this.form.reset(
-          Object.fromEntries(
-            TITULOS_DE_PAGINAS.map((p) => [p.pagina, Object.fromEntries(p.campos.map((f) => [f.campo, c[p.pagina]?.[f.campo] ?? '']))]),
-          ),
-        );
+        this.guardados = res.data.contenido ?? {};
         this.cargando = false;
+        this.resumir();
       },
       error: (err) => {
         this.cargando = false;
@@ -77,14 +90,27 @@ export class PanelTitulosComponent implements OnInit {
     });
   }
 
-  grupoDe(pagina: string): FormGroup {
-    return this.form.get(pagina) as FormGroup;
+  /** Lo guardado de un campo, o vacío. */
+  valor(pagina: string, campo: string): string {
+    return this.guardados[pagina]?.[campo] ?? '';
   }
 
-  /** Cuántos campos de una página tienen algún problema, para avisarlo aunque esté plegada. */
-  problemasEn(pagina: string): number {
-    const grupo = this.grupoDe(pagina);
-    return Object.values(grupo.controls).filter((c) => c.invalid && (c.touched || c.dirty)).length;
+  /** Cuántos títulos de una página faltan en lo guardado: el portal no tendría qué mostrar. */
+  faltanEn(p: PaginaDeTitulos): number {
+    return p.campos.filter((c) => !this.valor(p.pagina, c.campo).trim()).length;
+  }
+
+  private resumir(): void {
+    const faltan = this.paginas.reduce((n, p) => n + this.faltanEn(p), 0);
+    this.resumen.emit({
+      estado: faltan ? `${faltan} ${faltan === 1 ? 'título sin llenar' : 'títulos sin llenar'}` : `${this.paginas.length} páginas, completas`,
+      aviso: faltan > 0,
+      pendientes: faltan ? [{ cuantos: faltan, texto: faltan === 1 ? 'título de página sin llenar' : 'títulos de página sin llenar' }] : [],
+    });
+  }
+
+  grupoDe(pagina: string): FormGroup {
+    return this.form.get(pagina) as FormGroup;
   }
 
   invalido(pagina: string, campo: string): boolean {
@@ -96,30 +122,38 @@ export class PanelTitulosComponent implements OnInit {
     return String(this.form.get([pagina, campo])?.value ?? '').length;
   }
 
-  alternar(pagina: string): void {
-    this.abierta = this.abierta === pagina ? '' : pagina;
+  /** El modal de una página empieza con lo guardado: lo que se canceló antes no queda a medias. */
+  abrir(p: PaginaDeTitulos): void {
+    this.grupoDe(p.pagina).reset(Object.fromEntries(p.campos.map((c) => [c.campo, this.valor(p.pagina, c.campo)])));
+    this.editando = p;
+  }
+
+  cerrar(): void {
+    this.editando = null;
   }
 
   guardar(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      // Abre la primera página con algo por corregir.
-      this.abierta = this.paginas.find((p) => this.grupoDe(p.pagina).invalid)?.pagina ?? this.abierta;
-      this.toastService.warning('Revisa los títulos', 'Hay títulos que faltan o son demasiado largos.');
+    const p = this.editando;
+    if (!p) return;
+    const grupo = this.grupoDe(p.pagina);
+    if (grupo.invalid) {
+      grupo.markAllAsTouched();
+      this.cuerpo?.irAlPrimerError();
       return;
     }
 
-    const v = this.form.getRawValue() as TitulosPortal;
-    const datos = Object.fromEntries(
-      Object.entries(v).map(([pagina, campos]) => [pagina, Object.fromEntries(Object.entries(campos).map(([k, t]) => [k, String(t).trim()]))]),
-    );
+    // Las demás páginas van como estaban guardadas.
+    const pagina = Object.fromEntries(Object.entries(grupo.getRawValue()).map(([k, t]) => [k, String(t).trim()]));
+    const datos: TitulosPortal = { ...this.guardados, [p.pagina]: pagina };
 
     this.guardando = true;
     this.portalWebService.guardarFicha<TitulosPortal>('titulos', datos, this.version).subscribe({
       next: (res) => {
         this.guardando = false;
         this.version = res.data.version;
-        this.form.markAsPristine();
+        this.guardados = datos;
+        this.editando = null;
+        this.resumir();
         this.toastService.success('Títulos guardados', 'El portal los mostrará en hasta un minuto.');
       },
       error: (err: HttpErrorResponse) => {
