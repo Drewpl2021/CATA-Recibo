@@ -17,7 +17,7 @@ import { CuerpoDesplazableComponent } from '../compartido/cuerpo-desplazable/cue
 import { EditorCifrasComponent } from '../compartido/editor-cifras/editor-cifras.component';
 import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
 import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
-import { idsMovidos, mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
+import { enfocarPrimerError, idsMovidos, mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
 import { cuantos } from '../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../compartido/selector-imagen/selector-imagen.component';
 import { CATEGORIAS_DE_LOGRO, CabeceraSimple, EstadoPortal, ImagenPortal, LogroPortal } from '../portal-web.models';
@@ -181,7 +181,7 @@ export class PortalWebLogrosComponent extends PantallaConIndice implements OnIni
   guardarCabecera(): void {
     if (this.cabecera.invalid) {
       this.cabecera.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 
@@ -286,6 +286,13 @@ export class PortalWebLogrosComponent extends PantallaConIndice implements OnIni
   get fuenteSinEtiqueta(): boolean {
     const v = this.form.getRawValue();
     return !!v.fuenteUrl && !v.fuenteEtiqueta;
+  }
+
+  /** Si el paso tiene algo por corregir, no avanza y el foco va al primer error. */
+  siguiente(): void {
+    const antes = this.paso;
+    this.wizard?.siguiente();
+    if (this.paso === antes) this.cuerpo?.irAlPrimerError();
   }
 
   /** Si algo falta, el wizard vuelve al primer paso con error (la fuente sin etiqueta es del segundo). */

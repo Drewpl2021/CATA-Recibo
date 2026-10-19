@@ -458,10 +458,10 @@
     </button>
     <div class="asistente-pie">
       <button type="button" class="btn-secondary" (click)="cerrarModalSede()" [disabled]="guardandoSede">Cancelar</button>
-      <button type="button" class="btn-secondary" *ngIf="!wizard.esUltimo && sedeEditando" (click)="wizard.siguiente()" [disabled]="guardandoSede">
+      <button type="button" class="btn-secondary" *ngIf="!wizard.esUltimo && sedeEditando" (click)="siguienteSede()" [disabled]="guardandoSede">
         Siguiente
       </button>
-      <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo && !sedeEditando" (click)="wizard.siguiente()">
+      <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo && !sedeEditando" (click)="siguienteSede()">
         Siguiente
         <app-icon icono="arrow_right" [tamano]="15"></app-icon>
       </button>

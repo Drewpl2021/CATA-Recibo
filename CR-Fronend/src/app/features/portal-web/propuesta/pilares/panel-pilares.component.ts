@@ -11,7 +11,7 @@ import { FormModalComponent } from '../../../../shared/components/form-modal/for
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { lineas, validarLineas } from '../../compartido/lineas';
-import { mostrarErrorDelPanel, moverEn } from '../../compartido/panel';
+import { enfocarPrimerError, mostrarErrorDelPanel, moverEn } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
 import { EstadoPortal, IntroduccionPilares, PilarPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
@@ -106,7 +106,7 @@ export class PanelPilaresComponent extends PanelDeLista<PilarPortal> implements 
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 

@@ -13,7 +13,7 @@ import { cuantos, ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
 import { EstadoPortal, ImagenPortal, NoticiaPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
-import { hoyEnLima } from '../../compartido/panel';
+import { enfocarPrimerError, hoyEnLima } from '../../compartido/panel';
 
 const HTTPS = /^https:\/\/\S+$/;
 
@@ -128,6 +128,7 @@ export class PanelNoticiasComponent extends PanelDeLista<NoticiaPortal> {
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      enfocarPrimerError();
       return;
     }
 

@@ -95,13 +95,23 @@ export class CuerpoDesplazableComponent implements AfterViewInit, OnDestroy {
     let campo: HTMLElement | undefined = problema;
     if (!problema.matches('input, textarea, select')) {
       const bloque = problema.closest('section, .form-group') ?? problema.parentElement;
-      const campos = Array.from(bloque?.querySelectorAll<HTMLInputElement>('input, textarea, select') ?? [])
-        .filter((c) => c.offsetParent !== null && !c.disabled && c.type !== 'file' && c.type !== 'hidden');
-      campo = campos.find((c) => !c.value.trim()) ?? campos[0];
+      // «Sube el afiche…»: el mensaje va justo después de su selector de imagen. Si ese selector no
+      // tiene archivo elegido, el foco va a elegirlo (el campo es «solo-lectores», pero recibe el foco).
+      const archivos = Array.from(bloque?.querySelectorAll<HTMLInputElement>('input[type="file"]') ?? [])
+        .filter((c) => !c.disabled && c.compareDocumentPosition(problema) & Node.DOCUMENT_POSITION_FOLLOWING);
+      const archivo = archivos[archivos.length - 1];
+      if (archivo && !archivo.files?.length) {
+        campo = archivo;
+      } else {
+        const campos = Array.from(bloque?.querySelectorAll<HTMLInputElement>('input, textarea, select') ?? [])
+          .filter((c) => c.offsetParent !== null && !c.disabled && c.type !== 'file' && c.type !== 'hidden');
+        campo = campos.find((c) => !c.value.trim()) ?? campos[0];
+      }
     }
 
-    // A la vista queda el campo a corregir (o el mensaje, si no hay campo).
-    (campo ?? problema).scrollIntoView({ block: 'center', behavior: quieto ? 'auto' : 'smooth' });
+    // A la vista queda el campo a corregir (o el mensaje, si no hay campo). El de archivos, por su zona.
+    const aLaVista = campo?.matches('input[type="file"]') ? campo.closest('label') ?? campo : campo;
+    (aLaVista ?? problema).scrollIntoView({ block: 'center', behavior: quieto ? 'auto' : 'smooth' });
     campo?.focus({ preventScroll: true });
   }
 

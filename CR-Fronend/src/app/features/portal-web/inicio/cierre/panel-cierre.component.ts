@@ -9,7 +9,7 @@ import { EditorAccionComponent, accionDelGrupo, grupoDeAccion, llenarAccion } fr
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
-import { mostrarErrorDelPanel } from '../../compartido/panel';
+import { enfocarPrimerError, mostrarErrorDelPanel } from '../../compartido/panel';
 import { ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { AccionPortal, CierrePortal } from '../../portal-web.models';
 import { PortalWebService } from '../../portal-web.service';
@@ -104,7 +104,7 @@ export class PanelCierreComponent implements OnInit {
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 

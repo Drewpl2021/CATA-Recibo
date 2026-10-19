@@ -16,7 +16,7 @@ import { PasoWizard } from '../../../shared/components/wizard/wizard.models';
 import { CuerpoDesplazableComponent } from '../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
 import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
-import { idsMovidos, mostrarErrorDelPanel } from '../compartido/panel';
+import { enfocarPrimerError, idsMovidos, mostrarErrorDelPanel } from '../compartido/panel';
 import { cuantos } from '../compartido/resumen-de-seccion';
 import { EstadoPortal, REDES_DEL_PORTAL, RedSocialPortal, SitioPortal } from '../portal-web.models';
 import { PortalWebService } from '../portal-web.service';
@@ -251,6 +251,13 @@ export class PortalWebGeneralComponent extends PantallaConIndice implements OnIn
     return this.pasosSitio.findIndex((_, i) => !this.wizard?.validarPaso(i));
   }
 
+  /** Si el paso tiene algo por corregir, no avanza y el foco va al primer error. */
+  siguienteSitio(): void {
+    const antes = this.pasoSitio;
+    this.wizard?.siguiente();
+    if (this.pasoSitio === antes) this.cuerpo?.irAlPrimerError();
+  }
+
   guardarSitio(): void {
     const conError = this.pasoConError();
     if (conError >= 0 || this.sitio.invalid) {
@@ -382,6 +389,7 @@ export class PortalWebGeneralComponent extends PantallaConIndice implements OnIn
   guardarRed(): void {
     if (this.formRed.invalid) {
       this.formRed.markAllAsTouched();
+      enfocarPrimerError();
       return;
     }
 

@@ -10,6 +10,7 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { PanelDeLista } from '../../compartido/panel-de-lista';
 import { EstadoPortal, PreguntaPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
+import { enfocarPrimerError } from '../../compartido/panel';
 
 /**
  * Matrícula › Preguntas frecuentes: las dudas de las familias, con su
@@ -65,7 +66,7 @@ export class PanelPreguntasComponent extends PanelDeLista<PreguntaPortal> {
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 

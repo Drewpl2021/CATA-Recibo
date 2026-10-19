@@ -10,7 +10,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
 import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
-import { mostrarErrorDelPanel } from '../compartido/panel';
+import { enfocarPrimerError, mostrarErrorDelPanel } from '../compartido/panel';
 import { CabeceraSimple, NivelDocentePortal } from '../portal-web.models';
 import { PortalWebService } from '../portal-web.service';
 import { PanelDocentesComponent } from './docentes/panel-docentes.component';
@@ -117,7 +117,7 @@ export class PortalWebNosotrosComponent extends PantallaConIndice implements OnI
   guardarIndice(): void {
     if (this.indice.invalid) {
       this.indice.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 

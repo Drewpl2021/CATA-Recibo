@@ -8,7 +8,7 @@ import { ColumnaTabla } from '../../../../shared/components/data-table/data-tabl
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
-import { urlParaVer } from '../../compartido/panel';
+import { enfocarPrimerError, urlParaVer } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
 import { DocentePortal, EstadoPortal, ImagenPortal, NivelDocentePortal } from '../../portal-web.models';
@@ -137,7 +137,7 @@ export class PanelDocentesComponent extends PanelDeLista<DocentePortal> implemen
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 

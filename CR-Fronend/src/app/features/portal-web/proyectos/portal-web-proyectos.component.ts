@@ -10,7 +10,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
 import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
-import { mostrarErrorDelPanel } from '../compartido/panel';
+import { enfocarPrimerError, mostrarErrorDelPanel } from '../compartido/panel';
 import { CabeceraSimple, CategoriaProyectoPortal } from '../portal-web.models';
 import { PortalWebService } from '../portal-web.service';
 import { PanelCategoriasComponent } from './categorias/panel-categorias.component';
@@ -102,7 +102,7 @@ export class PortalWebProyectosComponent extends PantallaConIndice implements On
   guardarCabecera(): void {
     if (this.cabecera.invalid) {
       this.cabecera.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 

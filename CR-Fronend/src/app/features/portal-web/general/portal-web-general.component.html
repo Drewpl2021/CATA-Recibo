@@ -311,10 +311,10 @@
     </button>
     <div class="asistente-pie">
       <button type="button" class="btn-secondary" (click)="modalSitio = false" [disabled]="guardandoSitio">Cancelar</button>
-      <button type="button" class="btn-secondary" *ngIf="!wizard.esUltimo && sitioGuardado" (click)="wizard.siguiente()" [disabled]="guardandoSitio">
+      <button type="button" class="btn-secondary" *ngIf="!wizard.esUltimo && sitioGuardado" (click)="siguienteSitio()" [disabled]="guardandoSitio">
         Siguiente
       </button>
-      <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo && !sitioGuardado" (click)="wizard.siguiente()">
+      <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo && !sitioGuardado" (click)="siguienteSitio()">
         Siguiente
         <app-icon icono="arrow_right" [tamano]="15"></app-icon>
       </button>

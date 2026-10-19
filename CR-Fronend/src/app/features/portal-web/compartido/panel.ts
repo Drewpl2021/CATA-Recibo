@@ -64,6 +64,15 @@ export function moverEn(lista: FormArray, i: number, direccion: -1 | 1): void {
   lista.markAsDirty();
 }
 
+/**
+ * Lleva el foco al primer campo con error del modal abierto, después de que
+ * la plantilla lo marque. Para los modales cortos; los largos (con
+ * pw-cuerpo-desplazable) usan su irAlPrimerError(), que además desplaza.
+ */
+export function enfocarPrimerError(): void {
+  setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+}
+
 /** Hoy en Lima, AAAA-MM-DD: la fecha que usa el colegio (y el portal, para «En curso» o «Terminó»). */
 export function hoyEnLima(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date());

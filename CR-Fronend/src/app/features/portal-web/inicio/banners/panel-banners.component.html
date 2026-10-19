@@ -158,10 +158,10 @@
     </button>
     <div class="asistente-pie">
       <button type="button" class="btn-secondary" (click)="cerrar()" [disabled]="guardando">Cancelar</button>
-      <button type="button" class="btn-secondary" *ngIf="!wizard.esUltimo && editando" (click)="wizard.siguiente()" [disabled]="guardando">
+      <button type="button" class="btn-secondary" *ngIf="!wizard.esUltimo && editando" (click)="siguiente()" [disabled]="guardando">
         Siguiente
       </button>
-      <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo && !editando" (click)="wizard.siguiente()">
+      <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo && !editando" (click)="siguiente()">
         Siguiente
         <app-icon icono="arrow_right" [tamano]="15"></app-icon>
       </button>

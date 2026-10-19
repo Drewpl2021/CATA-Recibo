@@ -11,6 +11,7 @@ import { accionesDeEstado, PanelDeLista } from '../../compartido/panel-de-lista'
 import { cuantos, ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { EstadoPortal, NivelDocentePortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
+import { enfocarPrimerError } from '../../compartido/panel';
 
 /**
  * Personal Docente › Niveles: las secciones de la página y su filtro, hasta
@@ -120,7 +121,7 @@ export class PanelNivelesDocentesComponent extends PanelDeLista<NivelDocentePort
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
     this.enviar(this.form.getRawValue());

@@ -10,6 +10,7 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { FilaDelPortal, PanelDeLista } from '../../compartido/panel-de-lista';
 import { CicloPortal, ModalidadDeCiclo, UniversidadPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
+import { enfocarPrimerError } from '../../compartido/panel';
 
 const TOPE = 12;
 
@@ -186,7 +187,7 @@ export class PanelCiclosComponent extends PanelDeLista<FilaCiclo> implements OnI
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 

@@ -9,7 +9,7 @@ import { DataTableComponent } from '../../../../shared/components/data-table/dat
 import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { hoyEnLima, mostrarErrorDelPanel } from '../../compartido/panel';
+import { enfocarPrimerError, hoyEnLima, mostrarErrorDelPanel } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
 import { ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { EstadoPortal, FechaPortal } from '../../portal-web.models';
@@ -145,7 +145,7 @@ export class PanelFechasComponent extends PanelDeLista<FechaPortal> implements O
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 
@@ -179,6 +179,7 @@ export class PanelFechasComponent extends PanelDeLista<FechaPortal> implements O
   guardarNota(): void {
     if (this.nota.invalid) {
       this.nota.markAllAsTouched();
+      enfocarPrimerError();
       return;
     }
 

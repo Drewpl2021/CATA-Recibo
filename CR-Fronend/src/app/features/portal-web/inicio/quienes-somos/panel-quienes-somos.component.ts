@@ -8,7 +8,7 @@ import { mensajeErrorApi } from '../../../../core/utils';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
-import { mostrarErrorDelPanel, moverEn, urlParaVer } from '../../compartido/panel';
+import { enfocarPrimerError, mostrarErrorDelPanel, moverEn, urlParaVer } from '../../compartido/panel';
 import { cuantos, ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
 import { ImagenPortal, QuienesSomosPortal } from '../../portal-web.models';
@@ -172,7 +172,7 @@ export class PanelQuienesSomosComponent implements OnInit {
   guardarTexto(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 
@@ -202,7 +202,7 @@ export class PanelQuienesSomosComponent implements OnInit {
   guardarSimbolo(): void {
     if (this.simboloForm.invalid) {
       this.simboloForm.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 

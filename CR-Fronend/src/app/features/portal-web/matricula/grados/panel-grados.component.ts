@@ -11,6 +11,7 @@ import { lineas, validarLineas } from '../../compartido/lineas';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
 import { EstadoPortal, GrupoGradosPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
+import { enfocarPrimerError } from '../../compartido/panel';
 
 /**
  * Matrícula › Grados: las opciones del selector de grado del formulario
@@ -70,7 +71,7 @@ export class PanelGradosComponent extends PanelDeLista<GrupoGradosPortal> {
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 

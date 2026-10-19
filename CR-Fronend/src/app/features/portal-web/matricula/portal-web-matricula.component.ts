@@ -11,7 +11,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { CuerpoDesplazableComponent } from '../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
 import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
-import { mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
+import { enfocarPrimerError, mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
 import { SelectorImagenComponent } from '../compartido/selector-imagen/selector-imagen.component';
 import { ImagenPortal, MatriculaCabecera } from '../portal-web.models';
 import { PortalWebService } from '../portal-web.service';
@@ -129,7 +129,7 @@ export class PortalWebMatriculaComponent extends PantallaConIndice implements On
   guardarCabecera(): void {
     if (this.cabecera.invalid) {
       this.cabecera.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 

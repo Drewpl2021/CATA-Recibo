@@ -7,7 +7,7 @@ import { mensajeErrorApi } from '../../../../core/utils';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
-import { mostrarErrorDelPanel, urlParaVer } from '../../compartido/panel';
+import { enfocarPrimerError, mostrarErrorDelPanel, urlParaVer } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
 import { cuantos, ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
@@ -130,7 +130,7 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 
@@ -167,7 +167,7 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
   guardarSeccion(): void {
     if (this.seccion.invalid) {
       this.seccion.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 

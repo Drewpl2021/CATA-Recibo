@@ -10,6 +10,7 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { accionesDeEstado, PanelDeLista } from '../../compartido/panel-de-lista';
 import { EstadoPortal, UniversidadPortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
+import { enfocarPrimerError } from '../../compartido/panel';
 
 /**
  * Academia › Universidades: hasta 8 publicadas, en el orden del filtro del
@@ -103,7 +104,7 @@ export class PanelUniversidadesComponent extends PanelDeLista<UniversidadPortal>
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
     const v = this.form.getRawValue();

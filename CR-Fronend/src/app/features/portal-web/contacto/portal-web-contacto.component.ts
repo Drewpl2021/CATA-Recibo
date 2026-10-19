@@ -16,7 +16,7 @@ import { PasoWizard } from '../../../shared/components/wizard/wizard.models';
 import { CuerpoDesplazableComponent } from '../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
 import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
-import { idsMovidos, mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
+import { enfocarPrimerError, idsMovidos, mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
 import { cuantos } from '../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../compartido/selector-imagen/selector-imagen.component';
 import {
@@ -215,7 +215,7 @@ export class PortalWebContactoComponent extends PantallaConIndice implements OnI
   guardarCabecera(): void {
     if (this.cabecera.invalid) {
       this.cabecera.markAllAsTouched();
-      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
+      enfocarPrimerError();
       return;
     }
 
@@ -461,6 +461,13 @@ export class PortalWebContactoComponent extends PantallaConIndice implements OnI
   }
 
   /** Guarda desde cualquier paso; si algo falta, vuelve al primer paso con errores. */
+  /** Si el paso tiene algo por corregir, no avanza y el foco va al primer error. */
+  siguienteSede(): void {
+    const antes = this.pasoSede;
+    this.wizard?.siguiente();
+    if (this.pasoSede === antes) this.cuerpoSede?.irAlPrimerError();
+  }
+
   guardarSede(): void {
     const conError = this.pasosSede.findIndex((_, i) => !this.wizard?.validarPaso(i));
     if (conError >= 0 || this.formSede.invalid || this.telefonoIncompleto) {

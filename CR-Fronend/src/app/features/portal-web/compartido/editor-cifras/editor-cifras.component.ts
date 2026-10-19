@@ -12,7 +12,7 @@ import { FormModalComponent } from '../../../../shared/components/form-modal/for
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { AmbitoDeCifras, CifraPortal, EstadoPortal } from '../../portal-web.models';
 import { PortalWebService, RECURSOS } from '../../portal-web.service';
-import { idsMovidos, mostrarErrorDelPanel } from '../panel';
+import { enfocarPrimerError, idsMovidos, mostrarErrorDelPanel } from '../panel';
 import { cuantos, ResumenDeSeccion } from '../resumen-de-seccion';
 
 /**
@@ -127,6 +127,7 @@ export class EditorCifrasComponent implements OnInit {
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      enfocarPrimerError();
       return;
     }
 

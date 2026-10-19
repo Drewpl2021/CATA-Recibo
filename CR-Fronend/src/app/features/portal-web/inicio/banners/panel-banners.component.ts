@@ -158,6 +158,13 @@ export class PanelBannersComponent extends PanelDeLista<BannerPortal> {
     return !!c && c.invalid && c.touched;
   }
 
+  /** Si el paso tiene algo por corregir, no avanza y el foco va al primer error. */
+  siguiente(): void {
+    const antes = this.paso;
+    this.wizard?.siguiente();
+    if (this.paso === antes) this.cuerpo?.irAlPrimerError();
+  }
+
   /** Guarda desde cualquier paso; si algo falta, vuelve al primer paso con errores. */
   guardar(): void {
     const conError = this.pasos.findIndex((_, i) => !this.wizard?.validarPaso(i));
