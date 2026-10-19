@@ -8,6 +8,7 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../../shared/components
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { accionesDeEstado, PanelDeLista } from '../../compartido/panel-de-lista';
+import { cuantos, ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { EstadoPortal, NivelDocentePortal } from '../../portal-web.models';
 import { RECURSOS } from '../../portal-web.service';
 
@@ -21,6 +22,7 @@ import { RECURSOS } from '../../portal-web.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
   templateUrl: './panel-niveles-docentes.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelNivelesDocentesComponent extends PanelDeLista<NivelDocentePortal> {
   private fb = inject(FormBuilder);
@@ -38,11 +40,10 @@ export class PanelNivelesDocentesComponent extends PanelDeLista<NivelDocentePort
     ...accionesDeEstado<NivelDocentePortal>(),
   ];
 
+  // La dirección y cuántos docentes tiene van bajo el nombre: así caben las cuatro acciones.
   columnas: ColumnaTabla<NivelDocentePortal>[] = [
     this.columnaDeOrden(),
     { campo: 'nombre', header: 'Nivel' },
-    { campo: 'clave', header: 'En la dirección', ancho: '22%', formatear: (c) => `?nivel=${c}` },
-    { campo: 'docentes', header: 'Docentes', ancho: '10%', formatear: (n: number) => (n ? String(n) : 'Ninguno') },
     this.columnaDeEstado(),
   ];
 
@@ -57,6 +58,26 @@ export class PanelNivelesDocentesComponent extends PanelDeLista<NivelDocentePort
 
   protected describir(n: NivelDocentePortal): string {
     return `el nivel «${n.nombre}» de Personal Docente`;
+  }
+
+  docentesDe(n: NivelDocentePortal): string {
+    return n.docentes ? cuantos(n.docentes, 'docente', 'docentes') : 'sin docentes';
+  }
+
+  /**
+   * Para el índice cuentan los docentes, no los niveles. Un nivel publicado
+   * sin docentes sale en el portal como una sección vacía.
+   */
+  protected override resumir(): ResumenDeSeccion {
+    const docentes = this.filas.reduce((n, f) => n + f.docentes, 0);
+    const vacios = this.filas.filter((f) => f.estado === 'publicado' && !f.docentes).length;
+    return {
+      estado: this.filas.length
+        ? `${cuantos(docentes, 'docente', 'docentes')} en ${cuantos(this.filas.length, 'nivel', 'niveles')}` + (vacios ? ` · ${vacios} vacío${vacios === 1 ? '' : 's'}` : '')
+        : 'Sin niveles ni docentes',
+      aviso: vacios > 0,
+      pendientes: vacios ? [{ cuantos: vacios, texto: vacios === 1 ? 'nivel de Personal Docente publicado sin docentes' : 'niveles de Personal Docente publicados sin docentes' }] : [],
+    };
   }
 
   nuevo(): void {
@@ -99,6 +120,7 @@ export class PanelNivelesDocentesComponent extends PanelDeLista<NivelDocentePort
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
     this.enviar(this.form.getRawValue());

@@ -7,6 +7,8 @@ import { DataTableComponent } from '../../../../shared/components/data-table/dat
 import { ColumnaTabla } from '../../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
+import { urlParaVer } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
 import { DocentePortal, EstadoPortal, ImagenPortal, NivelDocentePortal } from '../../portal-web.models';
@@ -23,8 +25,12 @@ import { RECURSOS } from '../../portal-web.service';
 @Component({
   selector: 'app-panel-docentes',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent],
+  imports: [
+    CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent,
+    CuerpoDesplazableComponent,
+  ],
   templateUrl: './panel-docentes.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class PanelDocentesComponent extends PanelDeLista<DocentePortal> implements OnInit, OnChanges {
   private fb = inject(FormBuilder);
@@ -39,12 +45,12 @@ export class PanelDocentesComponent extends PanelDeLista<DocentePortal> implemen
   protected readonly nombre = { singular: 'docente', femenino: false };
 
   foto: ImagenPortal | null = null;
+  readonly ver = urlParaVer;
 
+  // El cargo y la foto van con el nombre: así caben las acciones.
   columnas: ColumnaTabla<DocentePortal>[] = [
     this.columnaDeOrden(),
-    { campo: 'nombre', header: 'Nombre' },
-    { campo: 'cargo', header: 'Cargo o área', ancho: '26%' },
-    { campo: 'imagen_id', header: 'Foto', ancho: '8%', formatear: (f) => (f ? 'Sí' : 'Iniciales') },
+    { campo: 'nombre', header: 'Docente' },
     this.columnaDeEstado(),
   ];
 
@@ -131,6 +137,7 @@ export class PanelDocentesComponent extends PanelDeLista<DocentePortal> implemen
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('.modal-container .is-invalid')?.focus());
       return;
     }
 

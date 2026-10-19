@@ -42,12 +42,28 @@
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
     >
+      <ng-template appCelda="nombre" let-fila>
+        <div class="pw-celda-titulo">
+          <span class="pw-miniatura" aria-hidden="true">
+            <img *ngIf="fila.imagen" [src]="ver(fila.imagen.url)" alt="" loading="lazy" />
+          </span>
+          <span>
+            <strong>{{ fila.nombre }}</strong>
+            <small>{{ fila.cargo }}<ng-container *ngIf="!fila.imagen"> · sin foto: el portal muestra sus iniciales</ng-container></small>
+          </span>
+        </div>
+      </ng-template>
+
       <ng-template appCelda="orden" let-fila>
         <div class="action-btns">
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
-            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">↑</button>
-          <button type="button" class="btn-icon-accion" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
-            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">↓</button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">
+            <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+          </button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">
+            <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+          </button>
         </div>
       </ng-template>
     </app-data-table>
@@ -62,7 +78,8 @@
   (guardar)="guardar()"
   (cancelar)="cerrar()"
 >
-  <form [formGroup]="form" class="form-fields">
+  <pw-cuerpo-desplazable>
+  <form [formGroup]="form" class="form-fields" novalidate>
     <div class="form-group">
       <label for="docente-nombre">Nombre *</label>
       <input id="docente-nombre" type="text" class="form-control" formControlName="nombre" maxlength="80"
@@ -94,4 +111,5 @@
     <app-selector-imagen *ngIf="modalVisible" uso="persona" etiqueta="Foto" [(imagen)]="foto"></app-selector-imagen>
     <small class="form-ayuda">Opcional. Cuadrada, de al menos 400 × 400. Solo con la autorización del docente.</small>
   </form>
+  </pw-cuerpo-desplazable>
 </app-form-modal>
