@@ -19,6 +19,18 @@ import {
 
 const MAX_BLOQUES = 30;
 
+/** Una línea del índice: hasta 60 caracteres, cortada en una palabra. */
+function corto(texto: string, maximo = 60): string {
+  if (texto.length <= maximo) return texto;
+  return texto.slice(0, maximo).replace(/\s+\S*$/, '') + '…';
+}
+
+/** El ícono de cada tipo en el índice (del catálogo del sistema). */
+const ICONO_DE_TIPO: Record<string, string> = {
+  texto: 'description', destacado: 'lightbulb', lista: 'menu', hitos: 'date_range', imagen: 'camera', personas: 'people',
+  mensaje: 'mail', letra: 'file', audio: 'bell', organigrama: 'layers', enlaces: 'folder',
+};
+
 /**
  * El contenido de una subpágina de Nosotros: sus bloques, en orden, cada uno
  * con los campos de su tipo. Se guardan todos juntos.
@@ -26,12 +38,17 @@ const MAX_BLOQUES = 30;
  * Lo que no cumpla el contrato no se guarda: el backend lo revisa con la
  * misma clase que sirve la página y dice qué falla en qué bloque; aquí cada
  * mensaje se pone en su bloque.
+ *
+ * Con el molde de Ajustes: el índice de bloques a la izquierda (su tipo, una
+ * línea de resumen y si tiene algo por corregir) y el bloque elegido a la
+ * derecha, en vez de los treinta uno debajo de otro.
  */
 @Component({
   selector: 'app-editor-bloques',
   standalone: true,
   imports: [CommonModule, FormsModule, IconComponent, FormModalComponent, SelectorImagenComponent, CuerpoDesplazableComponent],
   templateUrl: './editor-bloques.component.html',
+  styleUrls: ['../../compartido/pw-estilos.scss'],
 })
 export class EditorBloquesComponent implements OnChanges {
   private portalWebService = inject(PortalWebService);
@@ -54,6 +71,8 @@ export class EditorBloquesComponent implements OnChanges {
   cargando = false;
   guardando = false;
   bloques: BloqueEnEdicion[] = [];
+  /** La posición del bloque que se ve a la derecha. */
+  actual = 0;
   tipoNuevo: TipoDeBloque = 'texto';
   private version: string | null = null;
   private cambiado = false;
@@ -81,6 +100,7 @@ export class EditorBloquesComponent implements OnChanges {
       next: (res) => {
         this.version = res.data.version;
         this.bloques = res.data.bloques.map((b) => aEditor(b, res.data.imagenes));
+        this.actual = 0;
         this.cambiado = false;
         this.cargando = false;
       },
@@ -111,23 +131,72 @@ export class EditorBloquesComponent implements OnChanges {
 
   readonly porClave = (_: number, b: BloqueEnEdicion) => b.clave;
 
+  elegir(i: number): void {
+    this.actual = i;
+  }
+
+  iconoDe(tipo: string): string {
+    return ICONO_DE_TIPO[tipo] ?? 'description';
+  }
+
+  ayudaDe(tipo: string): string {
+    return this.tipos.find((t) => t.valor === tipo)?.ayuda ?? '';
+  }
+
+  /** La línea bajo el tipo en el índice: lo que hace reconocible a cada bloque. */
+  resumenDe(b: BloqueEnEdicion): string {
+    const n = (lista: unknown[] | undefined, uno: string, varios: string) => {
+      const c = lista?.length ?? 0;
+      return c ? `${c} ${c === 1 ? uno : varios}` : `sin ${varios}`;
+    };
+    const primera = (texto: string | undefined) => (texto ?? '').split('\n').find((l) => l.trim())?.trim() ?? '';
+    return corto(this.resumenLargo(b, n, primera));
+  }
+
+  private resumenLargo(
+    b: BloqueEnEdicion,
+    n: (lista: unknown[] | undefined, uno: string, varios: string) => string,
+    primera: (texto: string | undefined) => string,
+  ): string {
+    switch (b.tipo) {
+      case 'texto': return b['titulo'] || primera(b['parrafos']) || 'Sin texto';
+      case 'destacado': return b['rotulo'] || 'Sin rótulo';
+      case 'lista': return [b['titulo'], n(b['items'], 'elemento', 'elementos')].filter(Boolean).join(' · ');
+      case 'hitos': return [b['titulo'], n(b['items'], 'fecha', 'fechas')].filter(Boolean).join(' · ');
+      case 'imagen': return b['imagen'] ? b['pie'] || 'Con imagen' : 'Sin imagen';
+      case 'personas': return [b['titulo'], n(b['personas'], 'persona', 'personas')].filter(Boolean).join(' · ');
+      case 'mensaje': return b['firmaNombre'] ? `Firma ${b['firmaNombre']}` : 'Sin firma';
+      case 'letra': return [b['titulo'], n(b['partes'], 'parte', 'partes')].filter(Boolean).join(' · ');
+      case 'audio': return b['titulo'] || 'Sin título';
+      case 'organigrama': return primera(b['arbol']).split(' — ')[0] || 'Sin cargos';
+      case 'enlaces': return [b['titulo'], n(b['enlaces'], 'documento', 'documentos')].filter(Boolean).join(' · ');
+      default: return 'Se conserva tal cual';
+    }
+  }
+
+  /** El nuevo va al final y queda elegido. */
   agregarBloque(): void {
     if (this.bloques.length >= MAX_BLOQUES) return;
     this.bloques = [...this.bloques, bloqueNuevo(this.tipoNuevo)];
+    this.actual = this.bloques.length - 1;
     this.alCambiarLaLista();
   }
 
+  /** El elegido acompaña al bloque que se mueve. */
   moverBloque(i: number, direccion: -1 | 1): void {
     const j = i + direccion;
     if (j < 0 || j >= this.bloques.length) return;
     const nuevos = [...this.bloques];
     [nuevos[i], nuevos[j]] = [nuevos[j], nuevos[i]];
     this.bloques = nuevos;
+    if (this.actual === i) this.actual = j;
     this.alCambiarLaLista();
   }
 
+  /** Queda elegido el que ocupa su lugar (o el anterior, si era el último). */
   quitarBloque(i: number): void {
     this.bloques = this.bloques.filter((_, j) => j !== i);
+    this.actual = Math.min(this.actual > i ? this.actual - 1 : this.actual, Math.max(this.bloques.length - 1, 0));
     this.alCambiarLaLista();
   }
 
@@ -183,6 +252,11 @@ export class EditorBloquesComponent implements OnChanges {
     }
   }
 
+  /** Los mensajes de un bloque, o ninguno. */
+  erroresDe(i: number): string[] {
+    return this.erroresPorBloque[i] ?? [];
+  }
+
   get cuantosConErrores(): number {
     return Object.keys(this.erroresPorBloque).length;
   }
@@ -205,6 +279,9 @@ export class EditorBloquesComponent implements OnChanges {
         const mensajes: string[] = err.error?.errors?.bloques ?? [];
         if (err.status === 422 && mensajes.length) {
           this.repartirErrores(mensajes);
+          // A la derecha, el primer bloque con problema.
+          const primero = Math.min(...Object.keys(this.erroresPorBloque).map(Number));
+          if (Number.isFinite(primero)) this.actual = primero;
           // Lleva al primer bloque con problema: con 15 personas, puede estar muy abajo.
           this.cuerpo?.irAlPrimerError();
           this.toastService.error(

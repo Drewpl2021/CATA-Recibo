@@ -287,3 +287,17 @@
   flex-shrink: 0;
   white-space: nowrap;
 }
+
+/* ── Editor de bloques: el índice de Ajustes dentro del modal ── */
+.pw-bloques__lado {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* El índice del sistema se pega a 88 px de la página (bajo la barra); en el
+   cuerpo del modal, que tiene su propio scroll, se pega arriba. */
+.pw-bloques .ajustes-indice {
+  top: 0;
+}
