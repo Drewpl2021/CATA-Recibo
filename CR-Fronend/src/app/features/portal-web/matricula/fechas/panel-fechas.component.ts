@@ -57,6 +57,8 @@ export class PanelFechasComponent extends PanelDeLista<FechaPortal> implements O
 
   protected readonly recurso = RECURSOS.fechas;
   protected readonly nombre = { singular: 'fecha', femenino: true };
+  /** Al editar se vuelve a pedir la lista: van por fecha de inicio. */
+  protected override readonly recargarAlEditar = true;
 
   readonly periodo = periodo;
 

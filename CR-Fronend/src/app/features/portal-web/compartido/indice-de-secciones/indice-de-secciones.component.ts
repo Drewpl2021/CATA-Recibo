@@ -27,7 +27,7 @@ import { ResumenDeSeccion } from '../resumen-de-seccion';
     <section class="pendientes" *ngIf="pendientes.length" [attr.aria-labelledby]="id + '-pendientes'">
       <h2 class="pendientes__titulo" [id]="id + '-pendientes'">Pendientes de {{ nombre }}</h2>
       <div class="pendientes__lista pendientes__lista--fila">
-        <button type="button" class="pendiente" *ngFor="let p of pendientes" (click)="irA(p.seccion)">
+        <button type="button" class="pendiente" *ngFor="let p of pendientes; trackBy: porPendiente" (click)="irA(p.seccion)">
           <strong class="pendiente__cuantos">{{ p.cuantos }}</strong>
           <span class="pendiente__texto">{{ p.texto }}</span>
           <app-icon icono="arrow_right" [tamano]="16" class="pendiente__flecha"></app-icon>
@@ -37,7 +37,7 @@ import { ResumenDeSeccion } from '../resumen-de-seccion';
 
     <div class="ajustes-layout">
       <nav class="ajustes-indice" [attr.aria-label]="'Secciones de ' + nombre">
-        <button type="button" *ngFor="let s of secciones" class="ajustes-indice__item"
+        <button type="button" *ngFor="let s of secciones; trackBy: porSeccion" class="ajustes-indice__item"
           [class.ajustes-indice__item--activo]="actual === s.id" [attr.aria-current]="actual === s.id ? 'page' : null"
           [attr.aria-controls]="'pw-seccion-' + s.id" (click)="actualChange.emit(s.id)">
           <span class="ajustes-indice__icono"><app-icon [icono]="s.icono" [tamano]="18"></app-icon></span>
@@ -69,6 +69,10 @@ export class IndiceDeSeccionesComponent {
   @Output() actualChange = new EventEmitter<string>();
 
   readonly id = 'pw-indice-' + Math.random().toString(36).slice(2, 8);
+
+  /** Los pendientes se vuelven a armar cada vez que una sección se resume: el mismo es el de la misma sección y texto. */
+  readonly porPendiente = (_: number, p: PendienteConSeccion): string => `${p.seccion}|${p.texto}`;
+  readonly porSeccion = (_: number, s: SeccionDelIndice): string => s.id;
 
   irA(id: string): void {
     this.actualChange.emit(id);

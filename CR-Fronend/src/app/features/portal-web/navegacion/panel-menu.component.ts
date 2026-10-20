@@ -110,6 +110,10 @@ export class PanelMenuComponent implements OnInit {
     return PAGINAS_DEL_MENU.filter((p) => !usadas.has(p.pagina)).map((p) => p.nombre);
   }
 
+  /** Lo leído se recarga al guardar: el mismo es el de la misma página o el mismo grupo. */
+  readonly porPagina = (_: number, m: { pagina: string }): string => m.pagina;
+  readonly porGrupo = (_: number, g: { id: string | null; titulo: string }): string => g.id ?? g.titulo;
+
   ngOnInit(): void {
     this.cargar();
   }

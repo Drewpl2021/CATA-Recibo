@@ -6,7 +6,7 @@ import { mensajeErrorApi } from '../../../core/utils';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { EstadoPortal } from '../portal-web.models';
 import { PortalWebService } from '../portal-web.service';
-import { idsMovidos, mostrarErrorDelPanel } from './panel';
+import { conFila, enOrden, idsMovidos, mostrarErrorDelPanel } from './panel';
 import { cuantos, ResumenDeSeccion } from './resumen-de-seccion';
 
 /** Lo mínimo de una fila de cualquier lista del portal. */
@@ -135,6 +135,14 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
     return this.nombre.plural ?? (/[aeiouáéó]$/.test(s) ? `${s}s` : `${s}es`);
   }
 
+  /**
+   * Al editar, la fila se cambia por la que devuelve el servidor, sin volver
+   * a pedir la lista. Las listas que ordena o filtra el servidor (por fecha,
+   * por grupo, por nivel) la vuelven a pedir: la fila editada puede cambiar
+   * de lugar o dejar de estar.
+   */
+  protected readonly recargarAlEditar: boolean = false;
+
   /** Para una lista que vive dentro de otra (los ciclos de una universidad): { universidad: id }. */
   protected filtro(): Record<string, string> {
     return {};
@@ -165,7 +173,8 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
             : `Quedó en borrador: ${this.nombre.femenino ? 'publícala' : 'publícalo'} cuando esté ${this.concuerda('listo')}.`,
         );
         this.cerrar();
-        this.cargar();
+        if (editando && !this.recargarAlEditar) this.reemplazar(res.data);
+        else this.cargar();
       },
       error: (err: HttpErrorResponse) => {
         this.guardando = false;
@@ -178,12 +187,13 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
     const estado: EstadoPortal = evento.accion === 'publicar' ? 'publicado' : 'borrador';
 
     this.portalWebService.cambiarEstadoEnLista<T>(this.recurso, evento.fila.id, estado).subscribe({
-      next: () => {
+      next: (res) => {
         this.toastService.success(
           estado === 'publicado' ? `${this.Nombre} ${this.concuerda('publicado')}` : `${this.Nombre} en borrador`,
           `El portal ${this.lo} reflejará en hasta un minuto.`,
         );
-        this.cargar();
+        // El estado no cambia el orden ni el filtro: basta con la fila que devolvió el servidor.
+        this.reemplazar(res.data);
       },
       error: (err: HttpErrorResponse) => mostrarErrorDelPanel(this.toastService, err, `No se pudo cambiar el estado de ${this.el} ${this.nombre.singular}.`),
     });
@@ -201,10 +211,23 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
     });
   }
 
+  /** La fila cambiada por la que devolvió el servidor, con lo que hace cada carga (avisar a otro panel, el resumen). */
+  protected reemplazar(nueva: T): void {
+    this.filas = conFila(this.filas, nueva);
+    this.alCargar();
+    this.avisarResumen();
+  }
+
+  /**
+   * Se mueve en pantalla en el momento y el orden se guarda detrás. Si el
+   * servidor no lo acepta, vuelve a como estaba y se recarga la lista.
+   */
   mover(fila: T, direccion: -1 | 1): void {
     const ids = idsMovidos(this.filas.map((f) => f.id), fila.id, direccion);
     if (!ids) return;
 
+    const antes = this.filas;
+    this.filas = enOrden(antes, ids);
     this.ordenando = true;
     this.portalWebService.ordenarLista<T>(this.recurso, ids, this.filtro()).subscribe({
       next: (res) => {
@@ -212,6 +235,7 @@ export abstract class PanelDeLista<T extends FilaDelPortal> implements OnInit {
         this.ordenando = false;
       },
       error: (err: HttpErrorResponse) => {
+        this.filas = antes;
         this.ordenando = false;
         mostrarErrorDelPanel(this.toastService, err, 'No se pudo cambiar el orden.');
         this.cargar();

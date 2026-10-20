@@ -43,6 +43,8 @@ export class PanelDocentesComponent extends PanelDeLista<DocentePortal> implemen
 
   protected readonly recurso = RECURSOS.docentes;
   protected readonly nombre = { singular: 'docente', femenino: false };
+  /** Al editar se vuelve a pedir la lista: se ven las del nivel elegido: al cambiar de nivel, sale. */
+  protected override readonly recargarAlEditar = true;
 
   foto: ImagenPortal | null = null;
   readonly ver = urlParaVer;

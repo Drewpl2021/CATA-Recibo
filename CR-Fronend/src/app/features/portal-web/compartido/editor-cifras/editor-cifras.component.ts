@@ -12,7 +12,7 @@ import { FormModalComponent } from '../../../../shared/components/form-modal/for
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { AmbitoDeCifras, CifraPortal, EstadoPortal } from '../../portal-web.models';
 import { PortalWebService, RECURSOS } from '../../portal-web.service';
-import { enfocarPrimerError, idsMovidos, mostrarErrorDelPanel } from '../panel';
+import { conFila, enfocarPrimerError, enOrden, idsMovidos, mostrarErrorDelPanel, porId } from '../panel';
 import { cuantos, ResumenDeSeccion } from '../resumen-de-seccion';
 
 /**
@@ -46,6 +46,8 @@ export class EditorCifrasComponent implements OnInit {
   @Input() vista: 'tabla' | 'tarjetas' = 'tabla';
   /** Cómo está la sección, para el índice de la pantalla que la contiene. */
   @Output() resumen = new EventEmitter<ResumenDeSeccion>();
+
+  readonly porId = porId;
 
   readonly id = 'cifras-' + Math.random().toString(36).slice(2, 8);
 
@@ -146,8 +148,11 @@ export class EditorCifrasComponent implements OnInit {
           this.editando ? 'Cifra actualizada' : 'Cifra agregada',
           res.data.estado === 'publicado' ? 'El portal la mostrará en hasta un minuto.' : 'Quedó en borrador: publícala cuando esté lista.',
         );
+        const editado = !!this.editando;
         this.cerrar();
-        this.cargar();
+        // Al editar basta con la fila que devolvió el servidor; al agregar, la lista entera.
+        if (editado) this.cambiarFila(res.data);
+        else this.cargar();
       },
       error: (err: HttpErrorResponse) => {
         this.guardando = false;
@@ -160,9 +165,9 @@ export class EditorCifrasComponent implements OnInit {
     const estado: EstadoPortal = evento.accion === 'publicar' ? 'publicado' : 'borrador';
 
     this.portalWebService.cambiarEstadoEnLista<CifraPortal>(RECURSOS.cifras, evento.fila.id, estado).subscribe({
-      next: () => {
+      next: (res) => {
         this.toastService.success(estado === 'publicado' ? 'Cifra publicada' : 'Cifra en borrador', 'El portal lo reflejará en hasta un minuto.');
-        this.cargar();
+        this.cambiarFila(res.data);
       },
       error: (err: HttpErrorResponse) => mostrarErrorDelPanel(this.toastService, err, 'No se pudo cambiar el estado de la cifra.'),
     });
@@ -180,10 +185,18 @@ export class EditorCifrasComponent implements OnInit {
     });
   }
 
+  private cambiarFila(nueva: CifraPortal): void {
+    this.cifras = conFila(this.cifras, nueva);
+    this.resumir();
+  }
+
+  /** Se mueve en pantalla en el momento; si el servidor no acepta el orden, vuelve atrás. */
   mover(cifra: CifraPortal, direccion: -1 | 1): void {
     const ids = idsMovidos(this.cifras.map((c) => c.id), cifra.id, direccion);
     if (!ids) return;
 
+    const antes = this.cifras;
+    this.cifras = enOrden(antes, ids);
     this.ordenando = true;
     this.portalWebService.ordenarLista<CifraPortal>(RECURSOS.cifras, ids, { ambito: this.ambito }).subscribe({
       next: (res) => {
@@ -191,6 +204,7 @@ export class EditorCifrasComponent implements OnInit {
         this.ordenando = false;
       },
       error: (err: HttpErrorResponse) => {
+        this.cifras = antes;
         this.ordenando = false;
         mostrarErrorDelPanel(this.toastService, err, 'No se pudo cambiar el orden.');
         this.cargar();

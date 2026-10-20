@@ -47,6 +47,8 @@ export class PanelPaginasComponent extends PanelDeLista<PaginaNosotros> implemen
 
   protected readonly recurso = RECURSOS.paginas;
   protected readonly nombre = { singular: 'página', femenino: true };
+  /** Al editar se vuelve a pedir la lista: van agrupadas por su grupo del menú. */
+  protected override readonly recargarAlEditar = true;
 
   readonly accionesDePagina: AccionPersonalizada<PaginaNosotros>[] = [
     { id: 'contenido', titulo: 'Editar el contenido (sus bloques)', icono: 'description' },

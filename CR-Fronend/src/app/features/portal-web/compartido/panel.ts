@@ -54,6 +54,30 @@ export function idsMovidos(ids: string[], id: string, direccion: -1 | 1): string
   return nuevos;
 }
 
+/**
+ * La lista en el orden de esos ids, con los MISMOS objetos: para moverla en
+ * pantalla en el momento, antes de que responda el servidor (si falla, se
+ * vuelve a la de antes).
+ */
+export function enOrden<T extends { id: string }>(filas: T[], ids: string[]): T[] {
+  const filaDe = new Map(filas.map((f) => [f.id, f]));
+  return ids.map((id) => filaDe.get(id)).filter((f): f is T => !!f);
+}
+
+/**
+ * Para el trackBy de un *ngFor de filas con id: la misma fila es la del
+ * mismo id, aunque llegue como objeto nuevo. Así no se destruye y se vuelve a
+ * crear con sus íconos cada vez que la lista se recarga.
+ */
+export function porId(_: number, fila: { id: string }): string {
+  return fila.id;
+}
+
+/** La lista con esa fila cambiada por la que devolvió el servidor (al publicar o editar), sin volver a pedirla entera. */
+export function conFila<T extends { id: string }>(filas: T[], nueva: T): T[] {
+  return filas.map((f) => (f.id === nueva.id ? nueva : f));
+}
+
 /** Mueve un elemento de una lista del formulario un lugar arriba (-1) o abajo (+1). */
 export function moverEn(lista: FormArray, i: number, direccion: -1 | 1): void {
   const j = i + direccion;

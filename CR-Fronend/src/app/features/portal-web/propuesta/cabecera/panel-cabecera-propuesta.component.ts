@@ -93,6 +93,9 @@ export class PanelCabeceraPropuestaComponent implements OnInit {
     return this.figuras.some((f) => !f.imagen);
   }
 
+  /** Al guardar, las figuras leídas se vuelven a armar: la misma es la de la misma imagen. */
+  readonly porFigura = (i: number, f: Figura): string => f.imagen?.id ?? String(i);
+
   ngOnInit(): void {
     this.cargar();
   }

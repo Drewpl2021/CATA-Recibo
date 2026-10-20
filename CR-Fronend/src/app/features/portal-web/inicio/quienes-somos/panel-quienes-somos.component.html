@@ -63,7 +63,7 @@
         </div>
 
         <ul class="vence" *ngIf="simbolos.length">
-          <li class="vence__fila" *ngFor="let s of simbolos; let i = index; let primero = first; let ultimo = last">
+          <li class="vence__fila" *ngFor="let s of simbolos; let i = index; let primero = first; let ultimo = last; trackBy: porNombre">
             <span class="vence__quien">
               <strong>{{ s.nombre }}</strong>
               <small>{{ s.significado }}</small>

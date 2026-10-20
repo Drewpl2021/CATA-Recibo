@@ -46,6 +46,8 @@ export class PanelNoticiasComponent extends PanelDeLista<NoticiaPortal> {
 
   protected readonly recurso = RECURSOS.noticias;
   protected readonly nombre = { singular: 'noticia', femenino: true };
+  /** Al editar se vuelve a pedir la lista: van de la más reciente a la más antigua. */
+  protected override readonly recargarAlEditar = true;
 
   foto: ImagenPortal | null = null;
 

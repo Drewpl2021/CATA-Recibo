@@ -37,7 +37,7 @@
     <!-- Una tarjeta por nivel -->
     <div class="ajuste-bloque" *ngIf="filas.length">
       <div class="pw-tarjetas">
-        <article class="tarjeta-grafico" *ngFor="let n of filas; let primero = first; let ultimo = last">
+        <article class="tarjeta-grafico" *ngFor="let n of filas; let primero = first; let ultimo = last; trackBy: porId">
           <span class="pw-foto pw-foto--ancha" [class.pw-foto--vacia]="!n.imagen">
             <img *ngIf="n.imagen" [src]="ver(n.imagen.url)" [alt]="n.imagen.alt" loading="lazy" />
             <ng-container *ngIf="!n.imagen">Sin foto</ng-container>

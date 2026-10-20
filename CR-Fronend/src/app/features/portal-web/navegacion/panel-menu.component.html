@@ -26,7 +26,7 @@
     <ng-container *ngIf="!cargando">
       <div class="ajuste-bloque" *ngIf="guardada?.menu?.length; else sinMenu">
         <dl class="pw-lista-datos">
-          <ng-container *ngFor="let m of guardada!.menu; let i = index">
+          <ng-container *ngFor="let m of guardada!.menu; let i = index; trackBy: porPagina">
             <dt>{{ i + 1 }}. {{ nombreDePagina(m.pagina) }}</dt>
             <dd>{{ m.etiqueta }}</dd>
           </ng-container>
@@ -73,7 +73,7 @@
 
     <div class="ajuste-bloque" *ngIf="!cargando">
       <dl class="pw-lista-datos" *ngIf="guardada?.grupos?.length; else sinGrupos">
-        <ng-container *ngFor="let g of guardada!.grupos; let i = index">
+        <ng-container *ngFor="let g of guardada!.grupos; let i = index; trackBy: porGrupo">
           <dt>Grupo {{ i + 1 }}: {{ g.titulo }}</dt>
           <dd [class.pw-falta]="!paginasDe(g.id).publicadas">{{ textoDePaginas(g.id) }}</dd>
         </ng-container>

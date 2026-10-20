@@ -16,7 +16,7 @@ import { PasoWizard } from '../../../shared/components/wizard/wizard.models';
 import { CuerpoDesplazableComponent } from '../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
 import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
-import { enfocarPrimerError, idsMovidos, mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
+import { conFila, enfocarPrimerError, enOrden, idsMovidos, mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
 import { cuantos } from '../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../compartido/selector-imagen/selector-imagen.component';
 import {
@@ -505,8 +505,11 @@ export class PortalWebContactoComponent extends PantallaConIndice implements OnI
           this.sedeEditando ? 'Sede actualizada' : 'Sede agregada',
           res.data.estado === 'publicado' ? 'El portal la mostrará en hasta un minuto.' : 'Quedó en borrador: publícala cuando esté lista.',
         );
+        const editado = !!this.sedeEditando;
         this.cerrarModalSede();
-        this.cargarSedes();
+        // Al editar basta con la fila que devolvió el servidor; al agregar, la lista entera.
+        if (editado) this.cambiarFila(res.data);
+        else this.cargarSedes();
       },
       error: (err: HttpErrorResponse) => {
         this.guardandoSede = false;
@@ -519,12 +522,12 @@ export class PortalWebContactoComponent extends PantallaConIndice implements OnI
     const estado: EstadoPortal = evento.accion === 'publicar' ? 'publicado' : 'borrador';
 
     this.portalWebService.cambiarEstadoEnLista<SedePortal>(RECURSOS.sedes, evento.fila.id, estado).subscribe({
-      next: () => {
+      next: (res) => {
         this.toastService.success(
           estado === 'publicado' ? 'Sede publicada' : 'Sede en borrador',
           `${evento.fila.nombre} ${estado === 'publicado' ? 'se verá' : 'dejará de verse'} en el portal en hasta un minuto.`,
         );
-        this.cargarSedes();
+        this.cambiarFila(res.data);
       },
       error: (err: HttpErrorResponse) => mostrarErrorDelPanel(this.toastService, err, 'No se pudo cambiar el estado de la sede.'),
     });
@@ -542,10 +545,18 @@ export class PortalWebContactoComponent extends PantallaConIndice implements OnI
     });
   }
 
+  private cambiarFila(nueva: SedePortal): void {
+    this.sedes = conFila(this.sedes, nueva);
+    this.resumirSedes();
+  }
+
+  /** Se mueve en pantalla en el momento; si el servidor no acepta el orden, vuelve atrás. */
   moverSede(sede: SedePortal, direccion: -1 | 1): void {
     const ids = idsMovidos(this.sedes.map((s) => s.id), sede.id, direccion);
     if (!ids) return;
 
+    const antes = this.sedes;
+    this.sedes = enOrden(antes, ids);
     this.ordenando = true;
     this.portalWebService.ordenarLista<SedePortal>(RECURSOS.sedes, ids).subscribe({
       next: (res) => {
@@ -553,6 +564,7 @@ export class PortalWebContactoComponent extends PantallaConIndice implements OnI
         this.ordenando = false;
       },
       error: (err: HttpErrorResponse) => {
+        this.sedes = antes;
         this.ordenando = false;
         mostrarErrorDelPanel(this.toastService, err, 'No se pudo cambiar el orden.');
         this.cargarSedes();

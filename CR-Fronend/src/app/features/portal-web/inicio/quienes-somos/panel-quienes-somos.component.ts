@@ -238,6 +238,9 @@ export class PanelQuienesSomosComponent implements OnInit {
     return false;
   }
 
+  /** Los símbolos no tienen id: el mismo símbolo es el del mismo nombre. */
+  readonly porNombre = (_: number, s: Simbolo): string => s.nombre;
+
   private enviarSimbolos(simbolos: Simbolo[], aviso: string): void {
     const g = this.guardado;
     if (!g || !this.puedeTocarSimbolos()) return;

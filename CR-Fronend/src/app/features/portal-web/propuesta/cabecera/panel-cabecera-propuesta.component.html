@@ -46,7 +46,7 @@
     <div class="ajuste-bloque">
       <h3 class="ajuste-bloque__pregunta">Figuras de la escena</h3>
       <div class="pw-tarjetas" *ngIf="figurasGuardadas.length; else sinFiguras">
-        <div class="pw-celda-titulo" *ngFor="let f of figurasGuardadas; let i = index">
+        <div class="pw-celda-titulo" *ngFor="let f of figurasGuardadas; let i = index; trackBy: porFigura">
           <span class="pw-miniatura" aria-hidden="true">
             <img *ngIf="f.imagen" [src]="ver(f.imagen.url)" alt="" loading="lazy" />
           </span>

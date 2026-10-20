@@ -12,7 +12,7 @@ import { WizardComponent } from '../../../../shared/components/wizard/wizard.com
 import { PasoWizard } from '../../../../shared/components/wizard/wizard.models';
 import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { lineas, validarLineas } from '../../compartido/lineas';
-import { mostrarErrorDelPanel, moverEn, urlParaVer } from '../../compartido/panel';
+import { mostrarErrorDelPanel, moverEn, porId, urlParaVer } from '../../compartido/panel';
 import { accionesDeEstado, PanelDeLista } from '../../compartido/panel-de-lista';
 import { ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
@@ -63,6 +63,7 @@ export class PanelProyectosComponent extends PanelDeLista<ProyectoPortal> {
   readonly maxItems = MAX_ITEMS;
   readonly maxGaleria = MAX_GALERIA;
   readonly ver = urlParaVer;
+  readonly porId = porId;
 
   override readonly acciones: AccionPersonalizada<ProyectoPortal>[] = [
     { id: 'galeria', titulo: 'Galería de fotos', icono: 'camera' },

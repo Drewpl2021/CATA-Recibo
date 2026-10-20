@@ -17,7 +17,7 @@ import { CuerpoDesplazableComponent } from '../compartido/cuerpo-desplazable/cue
 import { EditorCifrasComponent } from '../compartido/editor-cifras/editor-cifras.component';
 import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
 import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
-import { enfocarPrimerError, idsMovidos, mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
+import { conFila, enfocarPrimerError, enOrden, idsMovidos, mostrarErrorDelPanel, urlParaVer } from '../compartido/panel';
 import { cuantos } from '../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../compartido/selector-imagen/selector-imagen.component';
 import { CATEGORIAS_DE_LOGRO, CabeceraSimple, EstadoPortal, ImagenPortal, LogroPortal } from '../portal-web.models';
@@ -331,8 +331,11 @@ export class PortalWebLogrosComponent extends PantallaConIndice implements OnIni
           this.editando ? 'Logro actualizado' : 'Logro agregado',
           res.data.estado === 'publicado' ? 'El portal lo mostrará en hasta un minuto.' : 'Quedó en borrador: publícalo cuando el colegio lo confirme.',
         );
+        const editado = !!this.editando;
         this.cerrar();
-        this.cargarLogros();
+        // Al editar basta con la fila que devolvió el servidor; al agregar, la lista entera.
+        if (editado) this.cambiarFila(res.data);
+        else this.cargarLogros();
       },
       error: (err: HttpErrorResponse) => {
         this.guardando = false;
@@ -345,9 +348,9 @@ export class PortalWebLogrosComponent extends PantallaConIndice implements OnIni
     const estado: EstadoPortal = evento.accion === 'publicar' ? 'publicado' : 'borrador';
 
     this.portalWebService.cambiarEstadoEnLista<LogroPortal>(RECURSOS.logros, evento.fila.id, estado).subscribe({
-      next: () => {
+      next: (res) => {
         this.toastService.success(estado === 'publicado' ? 'Logro publicado' : 'Logro en borrador', 'El portal lo reflejará en hasta un minuto.');
-        this.cargarLogros();
+        this.cambiarFila(res.data);
       },
       error: (err: HttpErrorResponse) => mostrarErrorDelPanel(this.toastService, err, 'No se pudo cambiar el estado del logro.'),
     });
@@ -365,10 +368,18 @@ export class PortalWebLogrosComponent extends PantallaConIndice implements OnIni
     });
   }
 
+  private cambiarFila(nueva: LogroPortal): void {
+    this.logros = conFila(this.logros, nueva);
+    this.resumirLogros();
+  }
+
+  /** Se mueve en pantalla en el momento; si el servidor no acepta el orden, vuelve atrás. */
   mover(logro: LogroPortal, direccion: -1 | 1): void {
     const ids = idsMovidos(this.logros.map((l) => l.id), logro.id, direccion);
     if (!ids) return;
 
+    const antes = this.logros;
+    this.logros = enOrden(antes, ids);
     this.ordenando = true;
     this.portalWebService.ordenarLista<LogroPortal>(RECURSOS.logros, ids).subscribe({
       next: (res) => {
@@ -377,6 +388,7 @@ export class PortalWebLogrosComponent extends PantallaConIndice implements OnIni
         this.resumirLogros();
       },
       error: (err: HttpErrorResponse) => {
+        this.logros = antes;
         this.ordenando = false;
         mostrarErrorDelPanel(this.toastService, err, 'No se pudo cambiar el orden.');
         this.cargarLogros();

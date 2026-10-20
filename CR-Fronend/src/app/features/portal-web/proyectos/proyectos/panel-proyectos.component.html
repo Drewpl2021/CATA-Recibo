@@ -319,7 +319,7 @@
       Hasta {{ maxGaleria }} fotos horizontales 3:2, en este orden ({{ fotos.length }} ahora). Sin fotos, la página no muestra galería.
     </p>
 
-    <div class="pw-fila-dato" *ngFor="let f of fotos; let i = index">
+    <div class="pw-fila-dato" *ngFor="let f of fotos; let i = index; trackBy: porId">
       <div class="pw-celda-titulo">
         <span class="pw-miniatura" aria-hidden="true">
           <img [src]="ver(f.url)" alt="" loading="lazy" />

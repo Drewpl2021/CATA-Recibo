@@ -7,7 +7,7 @@ import { mensajeErrorApi } from '../../../../core/utils';
 import { FormModalComponent } from '../../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { CuerpoDesplazableComponent } from '../../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
-import { enfocarPrimerError, mostrarErrorDelPanel, urlParaVer } from '../../compartido/panel';
+import { enfocarPrimerError, mostrarErrorDelPanel, porId, urlParaVer } from '../../compartido/panel';
 import { PanelDeLista } from '../../compartido/panel-de-lista';
 import { cuantos, ResumenDeSeccion } from '../../compartido/resumen-de-seccion';
 import { SelectorImagenComponent } from '../../compartido/selector-imagen/selector-imagen.component';
@@ -34,6 +34,7 @@ export class PanelNivelesComponent extends PanelDeLista<NivelPortal> implements 
 
   protected readonly recurso = RECURSOS.niveles;
   protected readonly nombre = { singular: 'nivel', femenino: false };
+  readonly porId = porId;
 
   foto: ImagenPortal | null = null;
 

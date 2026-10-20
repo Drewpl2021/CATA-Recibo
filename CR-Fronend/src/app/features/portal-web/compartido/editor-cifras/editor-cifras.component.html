@@ -53,7 +53,7 @@
 
     <div class="ajuste-bloque" *ngIf="cifras.length">
       <div class="pw-tarjetas">
-        <article class="indicador" *ngFor="let c of cifras; let i = index; let primera = first; let ultima = last">
+        <article class="indicador" *ngFor="let c of cifras; let i = index; let primera = first; let ultima = last; trackBy: porId">
           <span class="indicador__icono">
             <app-icon icono="bar_chart" [tamano]="20"></app-icon>
           </span>

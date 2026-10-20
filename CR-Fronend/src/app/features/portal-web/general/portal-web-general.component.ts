@@ -16,7 +16,7 @@ import { PasoWizard } from '../../../shared/components/wizard/wizard.models';
 import { CuerpoDesplazableComponent } from '../compartido/cuerpo-desplazable/cuerpo-desplazable.component';
 import { IndiceDeSeccionesComponent } from '../compartido/indice-de-secciones/indice-de-secciones.component';
 import { PantallaConIndice, SeccionDelIndice } from '../compartido/pantalla-con-indice';
-import { enfocarPrimerError, idsMovidos, mostrarErrorDelPanel } from '../compartido/panel';
+import { conFila, enfocarPrimerError, enOrden, idsMovidos, mostrarErrorDelPanel } from '../compartido/panel';
 import { cuantos } from '../compartido/resumen-de-seccion';
 import { EstadoPortal, REDES_DEL_PORTAL, RedSocialPortal, SitioPortal } from '../portal-web.models';
 import { PortalWebService } from '../portal-web.service';
@@ -410,8 +410,11 @@ export class PortalWebGeneralComponent extends PantallaConIndice implements OnIn
           this.redEditando ? 'Red actualizada' : 'Red agregada',
           res.data.estado === 'publicado' ? 'El portal la mostrará en hasta un minuto.' : 'Quedó en borrador: publícala cuando esté lista.',
         );
+        const editado = !!this.redEditando;
         this.cerrarModalRed();
-        this.cargarRedes();
+        // Al editar basta con la fila que devolvió el servidor; al agregar, la lista entera.
+        if (editado) this.cambiarFila(res.data);
+        else this.cargarRedes();
       },
       error: (err: HttpErrorResponse) => {
         this.guardandoRed = false;
@@ -424,12 +427,12 @@ export class PortalWebGeneralComponent extends PantallaConIndice implements OnIn
     const estado: EstadoPortal = evento.accion === 'publicar' ? 'publicado' : 'borrador';
 
     this.portalWebService.cambiarEstadoRed(evento.fila.id, estado).subscribe({
-      next: () => {
+      next: (res) => {
         this.toastService.success(
           estado === 'publicado' ? 'Red publicada' : 'Red en borrador',
           `${this.nombreDeRed(evento.fila.red)} ${estado === 'publicado' ? 'se verá' : 'dejará de verse'} en el portal en hasta un minuto.`,
         );
-        this.cargarRedes();
+        this.cambiarFila(res.data);
       },
       error: (err: HttpErrorResponse) => this.mostrarError(err, 'No se pudo cambiar el estado de la red.'),
     });
@@ -447,11 +450,18 @@ export class PortalWebGeneralComponent extends PantallaConIndice implements OnIn
     });
   }
 
-  /** Sube o baja una red en el orden del portal. Se manda la lista entera. */
+  private cambiarFila(nueva: RedSocialPortal): void {
+    this.redes = conFila(this.redes, nueva);
+    this.resumirRedes();
+  }
+
+  /** Sube o baja una red en el orden del portal: se mueve en pantalla en el momento y se manda la lista entera; si falla, vuelve atrás. */
   mover(red: RedSocialPortal, direccion: -1 | 1): void {
     const ids = idsMovidos(this.redes.map((r) => r.id), red.id, direccion);
     if (!ids) return;
 
+    const antes = this.redes;
+    this.redes = enOrden(antes, ids);
     this.ordenando = true;
     this.portalWebService.ordenarRedes(ids).subscribe({
       next: (res) => {
@@ -459,6 +469,7 @@ export class PortalWebGeneralComponent extends PantallaConIndice implements OnIn
         this.ordenando = false;
       },
       error: (err: HttpErrorResponse) => {
+        this.redes = antes;
         this.ordenando = false;
         this.mostrarError(err, 'No se pudo cambiar el orden.');
         this.cargarRedes();
