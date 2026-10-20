@@ -319,6 +319,20 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     return (fila as Record<string, unknown>)['id'];
   }
 
+  /**
+   * Para el *ngFor de las filas: la misma fila es la del mismo `id`, como al
+   * marcarlas. Sin esto, cada vez que la pantalla volvía a pedir la lista
+   * (después de guardar, publicar u ordenar) llegaban objetos nuevos y TODAS
+   * las filas se destruían y entraban otra vez con su fundido, aunque solo
+   * hubiera cambiado una. Ahora se queda cada fila y solo se mueve o se
+   * redibuja la que cambió; las nuevas siguen entrando con su fundido.
+   *
+   * Una fila sin `id` (las de las importaciones, por ejemplo) se sigue por el
+   * objeto mismo, que es lo que Angular hace sin trackBy: para esas tablas no
+   * cambia nada.
+   */
+  readonly porFila = (_: number, fila: T): unknown => this.idDe(fila) ?? fila;
+
   estaMarcada(fila: T): boolean {
     return this.marcadas.has(this.idDe(fila));
   }
