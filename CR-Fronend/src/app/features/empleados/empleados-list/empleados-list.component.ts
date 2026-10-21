@@ -82,8 +82,10 @@ export class EmpleadosListComponent implements OnInit {
   orden = '';
   readonly opcionesDeOrden: OpcionOrden[] = [
     { valor: 'recientes', etiqueta: 'Registrados más recientes' },
-    { valor: 'apellido', etiqueta: 'Apellido de la A a la Z' },
-    { valor: 'apellido_desc', etiqueta: 'Apellido de la Z a la A' },
+    { valor: 'apellido', etiqueta: 'Apellidos de la A a la Z' },
+    { valor: 'apellido_desc', etiqueta: 'Apellidos de la Z a la A' },
+    { valor: 'nombre', etiqueta: 'Nombres de la A a la Z' },
+    { valor: 'nombre_desc', etiqueta: 'Nombres de la Z a la A' },
     { valor: 'ingreso', etiqueta: 'Más antiguos en el colegio' },
     { valor: 'ingreso_desc', etiqueta: 'Ingresaron más recientemente' },
     { valor: 'sueldo_desc', etiqueta: 'Sueldo de mayor a menor' },

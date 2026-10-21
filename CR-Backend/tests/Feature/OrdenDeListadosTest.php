@@ -17,8 +17,8 @@ class OrdenDeListadosTest extends TestCase
 
     public function test_empleados_por_apellido_de_la_a_a_la_z_y_al_reves(): void
     {
-        foreach (['Mamani' => 2000, 'Apaza' => 3500, 'Quispe' => 1800] as $apellido => $sueldo) {
-            $this->crearEmpleado(['apellido' => $apellido, 'sueldo_base' => $sueldo]);
+        foreach (['Mamani' => [2000, 'Beatriz'], 'Apaza' => [3500, 'Carlos'], 'Quispe' => [1800, 'Ana']] as $apellido => [$sueldo, $nombre]) {
+            $this->crearEmpleado(['apellido' => $apellido, 'nombre' => $nombre, 'sueldo_base' => $sueldo]);
         }
         $rrhh = $this->crearUsuario('rrhh');
         $apellidos = fn (string $orden) => collect($this->actingAs($rrhh, 'sanctum')
@@ -27,6 +27,9 @@ class OrdenDeListadosTest extends TestCase
         $this->assertSame(['Apaza', 'Mamani', 'Quispe'], $apellidos('apellido'));
         $this->assertSame(['Quispe', 'Mamani', 'Apaza'], $apellidos('apellido_desc'));
         $this->assertSame(['Apaza', 'Mamani', 'Quispe'], $apellidos('sueldo_desc'));
+        // Por nombres: Ana Quispe, Beatriz Mamani, Carlos Apaza.
+        $this->assertSame(['Quispe', 'Mamani', 'Apaza'], $apellidos('nombre'));
+        $this->assertSame(['Apaza', 'Mamani', 'Quispe'], $apellidos('nombre_desc'));
     }
 
     public function test_el_orden_vale_tambien_en_la_segunda_pagina(): void

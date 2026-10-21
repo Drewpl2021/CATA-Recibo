@@ -417,8 +417,10 @@ export class PlanillasListComponent implements OnInit {
   orden = '';
   readonly opcionesDeOrden: OpcionOrden[] = [
     { valor: 'defecto', etiqueta: 'Como se generó' },
-    { valor: 'apellido', etiqueta: 'Apellido de la A a la Z' },
-    { valor: 'apellido_desc', etiqueta: 'Apellido de la Z a la A' },
+    { valor: 'apellido', etiqueta: 'Apellidos de la A a la Z' },
+    { valor: 'apellido_desc', etiqueta: 'Apellidos de la Z a la A' },
+    { valor: 'nombre', etiqueta: 'Nombres de la A a la Z' },
+    { valor: 'nombre_desc', etiqueta: 'Nombres de la Z a la A' },
     { valor: 'neto_desc', etiqueta: 'Neto de mayor a menor' },
     { valor: 'neto', etiqueta: 'Neto de menor a mayor' },
     { valor: 'sueldo_desc', etiqueta: 'Sueldo de mayor a menor' },

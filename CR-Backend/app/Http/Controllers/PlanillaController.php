@@ -41,6 +41,8 @@ class PlanillaController extends Controller
         $this->aplicarOrden($request, $query, [
             'apellido'      => fn (Builder $q) => $q->orderBy($apellido())->orderBy($nombre()),
             'apellido_desc' => fn (Builder $q) => $q->orderByDesc($apellido())->orderByDesc($nombre()),
+            'nombre'        => fn (Builder $q) => $q->orderBy($nombre())->orderBy($apellido()),
+            'nombre_desc'   => fn (Builder $q) => $q->orderByDesc($nombre())->orderByDesc($apellido()),
             'neto_desc'     => fn (Builder $q) => $q->orderByDesc('planilla.total'),
             'neto'          => fn (Builder $q) => $q->orderBy('planilla.total'),
             'sueldo_desc'   => fn (Builder $q) => $q->orderByDesc('planilla.sueldo_base'),

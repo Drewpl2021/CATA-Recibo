@@ -73,6 +73,8 @@ class EmpleadoController extends Controller
         $this->aplicarOrden($request, $ordenado, [
             'apellido'      => fn (Builder $q) => $q->orderBy('empleados.apellido')->orderBy('empleados.nombre'),
             'apellido_desc' => fn (Builder $q) => $q->orderByDesc('empleados.apellido')->orderByDesc('empleados.nombre'),
+            'nombre'        => fn (Builder $q) => $q->orderBy('empleados.nombre')->orderBy('empleados.apellido'),
+            'nombre_desc'   => fn (Builder $q) => $q->orderByDesc('empleados.nombre')->orderByDesc('empleados.apellido'),
             'ingreso'       => fn (Builder $q) => $q->orderBy('empleados.fecha_ingreso'),
             'ingreso_desc'  => fn (Builder $q) => $q->orderByDesc('empleados.fecha_ingreso'),
             'sueldo_desc'   => fn (Builder $q) => $q->orderByDesc('empleados.sueldo_base'),

@@ -49,7 +49,7 @@ export class PlanillaService extends EntityDataService<Planilla> {
     corrida_id?: string;
     /** Las que no están en ninguna: el grupo "Sin agrupar". */
     sin_corrida?: boolean;
-    /** El botón «Ordenar»: apellido, apellido_desc, neto_desc, neto, sueldo_desc. */
+    /** El botón «Ordenar»: apellido, apellido_desc, nombre, nombre_desc, neto_desc, neto, sueldo_desc. */
     orden?: string;
     page?: number;
     size?: number;
