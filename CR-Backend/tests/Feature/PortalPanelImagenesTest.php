@@ -120,8 +120,13 @@ class PortalPanelImagenesTest extends TestCase
 
     public function test_una_foto_enorme_se_achica_y_se_comprime(): void
     {
+        // Enorme en píxeles y pesada, pero lejos de los 10 MB: si no, lo que se prueba es el límite de subida.
+        $archivo = ImagenesDePrueba::jpegRuidoso(3600, 2400);
+        $this->assertLessThan(8 * 1024 * 1024, $archivo->getSize(), 'La imagen de prueba se acercó al límite de 10 MB.');
+        $this->assertGreaterThan(2 * 1024 * 1024, $archivo->getSize(), 'La imagen de prueba ya no pesa lo suficiente.');
+
         $imagen = $this->subir([
-            'archivo' => ImagenesDePrueba::jpegRuidoso(3600, 2400),
+            'archivo' => $archivo,
             'uso'     => 'contenido',
             'alt'     => 'Ruido de colores de prueba',
         ])->assertCreated()->json('data');

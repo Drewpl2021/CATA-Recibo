@@ -49,7 +49,14 @@ final class ImagenesDePrueba
         return self::archivo('recorte.png', ob_get_clean());
     }
 
-    /** Ruido de colores: lo que más cuesta comprimir. */
+    /**
+     * Ruido de colores: lo que más cuesta comprimir.
+     *
+     * Calidad 75 y no 95: a 3600 × 2400 pesa unos 5 MB, la mitad del límite
+     * de subida (10 MB). Con 95 pesaba 9,75 MB con la GD de Windows y pasaba
+     * los 10 MB con la de Linux (la CI), así que la prueba dependía del
+     * codificador JPEG de cada máquina.
+     */
     public static function jpegRuidoso(int $ancho, int $alto): UploadedFile
     {
         $imagen = imagecreatetruecolor($ancho, $alto);
@@ -61,7 +68,7 @@ final class ImagenesDePrueba
         }
 
         ob_start();
-        imagejpeg($imagen, null, 95);
+        imagejpeg($imagen, null, 75);
 
         return self::archivo('ruido.jpg', ob_get_clean());
     }
