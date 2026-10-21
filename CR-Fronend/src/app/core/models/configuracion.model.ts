@@ -30,6 +30,8 @@ export interface TipoContrato {
   requiere_fecha_fin: boolean;
   /** Solo el indeterminado hoy: puede pedir vacaciones reales (los demás cobran Vacaciones Truncas al terminar). */
   permite_vacaciones: boolean;
+  /** Todos menos las prácticas: entra al cálculo de la CTS. */
+  genera_cts: boolean;
   estado?: EstadoCatalogo;
 }
 
@@ -37,6 +39,7 @@ export interface TipoContratoPayload {
   nombre: string;
   requiere_fecha_fin?: boolean;
   permite_vacaciones?: boolean;
+  genera_cts?: boolean;
   estado?: EstadoCatalogo;
 }
 

@@ -306,6 +306,14 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::get('income-tax/export',           [\App\Http\Controllers\Renta5taController::class, 'exportar']);
         Route::get('income-tax/{empleado}',       [\App\Http\Controllers\Renta5taController::class, 'show'])->whereUuid('empleado');
         Route::put('income-tax/{empleado}/history', [\App\Http\Controllers\Renta5taController::class, 'guardarHistorial'])->whereUuid('empleado');
+        // CTS: la liquidación de cada semestre (mayo y noviembre), su depósito
+        // y la hoja que queda en el expediente. Las rutas fijas van antes de {liquidacion}.
+        Route::get('cts',                          [\App\Http\Controllers\CtsController::class, 'index']);
+        Route::post('cts/calculate',               [\App\Http\Controllers\CtsController::class, 'calcular']);
+        Route::post('cts/deposit',                 [\App\Http\Controllers\CtsController::class, 'depositar']);
+        Route::delete('cts/{liquidacion}/deposit', [\App\Http\Controllers\CtsController::class, 'anularDeposito'])->whereUuid('liquidacion');
+        Route::get('cts/{liquidacion}/sheet',      [\App\Http\Controllers\CtsController::class, 'hoja'])->whereUuid('liquidacion');
+        Route::get('cts/{empleado}/history',       [\App\Http\Controllers\CtsController::class, 'historial'])->whereUuid('empleado');
 
         Route::get('legal-values',        [\App\Http\Controllers\ValorLegalController::class, 'index']);
         Route::get('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'show'])->whereNumber('anio');

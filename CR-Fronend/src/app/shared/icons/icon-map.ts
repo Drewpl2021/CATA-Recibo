@@ -42,6 +42,11 @@ export const ICON_MAP: Record<string, string> = {
   /* Antes era el símbolo del dólar suelto, y en el colegio se habla de
      soles. Un billete no depende de la moneda y se lee igual de lejos. */
   money: `<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M14.5 12.001a2.5 2.5 0 1 1-5 0a2.5 2.5 0 0 1 5 0"/><path d="M16 5.001c2.48 0 4.19.384 5.133.676c.543.168.867.683.867 1.251v9.755c0 1.115-1.228 1.954-2.324 1.747c-.94-.177-2.165-.32-3.676-.32c-4.75 0-5.89 1.806-12.855.27A1.47 1.47 0 0 1 2 16.94V6.921c0-.976.92-1.687 1.878-1.497C10.197 6.678 11.421 5 16 5"/><path d="M2 9.001c1.951 0 3.705-1.595 3.929-3.246M18.5 5.501c0 2.04 1.765 3.969 3.5 3.969m0 5.531c-1.9 0-3.74 1.31-3.898 3.098M6 18.497a4 4 0 0 0-4-4"/></g>`,
+  /* La CTS es un fondo que se le guarda al trabajador: la caja fuerte.
+     Nunca una alcancía de cerdo: el colegio es adventista. */
+  money_safe: `<g fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2h-2C6.757 2 4.636 2 3.318 3.318S2 6.758 2 11s0 6.364 1.318 7.682S6.758 20 11 20h2c4.243 0 6.364 0 7.682-1.318S22 15.242 22 11s0-6.364-1.318-7.682S17.242 2 13 2Z"/><path stroke-linecap="round" d="M17 15c1-.53 1-1.385 1-3.094v-1.812C18 8.385 18 7.53 17 7m1 15v-2M6 22v-2"/><path stroke-linecap="round" stroke-linejoin="round" d="M9.5 13a2.01 2.01 0 0 0 2.02-2c0-1.105-.904-2-2.02-2m0 4a2.01 2.01 0 0 1-2.02-2c0-1.105.904-2 2.02-2m0 4v2m0-6V7m-1.75 5L6 13m7-4l-1.75 1m0 2L13 13M6 9l1.75 1"/></g>`,
+  /* El depósito en la cuenta del banco. */
+  bank: `<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M12.125 5.75H12m.25 0a.25.25 0 1 1-.5 0a.25.25 0 0 1 .5 0M5 9v10M9 9v10m6-10v10m4-10v10"/><path d="M21.352 9H2.648a.657.657 0 0 1-.353-1.205l6.435-4.23C10.317 2.522 11.11 2 12 2s1.683.522 3.27 1.565l6.435 4.23A.658.658 0 0 1 21.352 9m-.312 11.293l-.688-.707c-.281-.29-.422-.434-.6-.51c-.18-.076-.378-.076-.776-.076H5.024c-.398 0-.597 0-.775.076c-.18.076-.32.22-.6.51l-.689.707c-.706.726-1.06 1.09-.935 1.398c.124.309.624.309 1.623.309h16.704c1 0 1.5 0 1.623-.309c.125-.308-.229-.672-.935-1.398"/></g>`,
   wallet: `<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M14 3H5a2 2 0 1 0 0 4h13c0-.93 0-1.395-.102-1.776a3 3 0 0 0-2.121-2.122C15.395 3 14.93 3 14 3"/><path d="M3 5v10c0 2.828 0 4.243.879 5.121C4.757 21 6.172 21 9 21h6c2.828 0 4.243 0 5.121-.879C21 19.243 21 17.828 21 15v-2c0-2.828 0-4.243-.879-5.121C19.243 7 17.828 7 15 7H7"/><path d="M21 12h-2c-.465 0-.698 0-.888.051a1.5 1.5 0 0 0-1.06 1.06C17 13.303 17 13.536 17 14s0 .697.051.888a1.5 1.5 0 0 0 1.06 1.06c.191.052.424.052.889.052h2"/></g>`,
   table_chart: `<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 3h-2C7.229 3 5.343 3 4.172 4.172S3 7.229 3 11v2c0 3.771 0 5.657 1.172 6.828S7.229 21 11 21h2c3.771 0 5.657 0 6.828-1.172S21 16.771 21 13v-2c0-3.771 0-5.657-1.172-6.828S16.771 3 13 3M9 3v18m6-18v18m6-12H3m18 6H3"/>`,
   chart: `<g fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" d="M7 17v-4m5 4V7m5 10v-6"/><path stroke-linejoin="round" d="M2.5 12c0-4.478 0-6.718 1.391-8.109S7.521 2.5 12 2.5c4.478 0 6.718 0 8.109 1.391S21.5 7.521 21.5 12c0 4.478 0 6.718-1.391 8.109S16.479 21.5 12 21.5c-4.478 0-6.718 0-8.109-1.391S2.5 16.479 2.5 12Z"/></g>`,
@@ -192,6 +197,7 @@ const ICONO_POR_NOMBRE: Record<string, string> = {
   contratos: 'clipboard_check',
   vacaciones: 'beach',
   descuentos: 'remove_circle',
+  cts: 'money_safe',
   documentos: 'folder',
 
   // ── Autoservicio ──

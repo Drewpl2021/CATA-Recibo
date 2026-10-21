@@ -385,6 +385,22 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     return this.accionesPersonalizadas.filter((a) => !a.visible || a.visible(fila));
   }
 
+  /*
+   * Con qué se reconoce una fila y una acción de una vuelta a otra.
+   *
+   * Sin esto, *ngFor compara por referencia: accionesVisibles() arma una
+   * lista nueva en cada ciclo, así que los botones —con su ícono— se
+   * destruían y se volvían a crear sin parar; y al cambiar `datos` (un
+   * filtro, otro año) todas las filas se rehacían de cero aunque fueran las
+   * mismas. Con el id, Angular conserva lo que no cambió y solo pinta lo nuevo.
+   */
+  seguirFila = (indice: number, fila: T): unknown => {
+    const id = (fila as { id?: unknown } | null)?.id;
+    return id ?? indice;
+  };
+
+  seguirAccion = (_indice: number, accion: AccionPersonalizada<T>): string => accion.id;
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['pagina'] && this.paginacionServidor) {
       // La página la manda la pantalla; acá solo se refleja.

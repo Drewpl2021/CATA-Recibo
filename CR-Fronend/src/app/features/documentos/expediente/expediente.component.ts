@@ -22,12 +22,13 @@ import {
   nombreDocumento,
   severidadFirma,
 } from '../../../core/utils';
-import { ESTADO_CONTRATO_OPCIONES, nombreMes } from '../../../shared/constants';
+import { ESTADO_CONTRATO_OPCIONES, MOTIVO_FIN_CONTRATO_OPCIONES, nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { PanelLateralComponent } from '../../../shared/components/panel-lateral/panel-lateral.component';
 import { SelectorArchivoComponent } from '../../../shared/components/selector-archivo/selector-archivo.component';
 import { VisorDocumentoComponent } from '../../../shared/components/visor-documento/visor-documento.component';
 
@@ -44,13 +45,22 @@ import { VisorDocumentoComponent } from '../../../shared/components/visor-docume
  * Subir, ver, descargar y quitar van por los caminos de siempre
  * (DocumentoService); esta pantalla solo los junta alrededor de la persona.
  */
+type SeccionExpediente = 'documentos' | 'contratos' | 'boletas' | 'otros';
+
+/** Un paso del recorrido de una boleta, en el panel lateral. */
+interface PasoBoleta {
+  titulo: string;
+  fecha: string | null | undefined;
+  detalle?: string;
+}
+
 @Component({
   selector: 'app-expediente',
   standalone: true,
   imports: [
     CommonModule, FormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, IconComponent,
-    SelectorArchivoComponent, VisorDocumentoComponent,
+    SelectorArchivoComponent, VisorDocumentoComponent, PanelLateralComponent,
   ],
   templateUrl: './expediente.component.html',
 })
@@ -69,6 +79,44 @@ export class ExpedienteComponent implements OnInit {
   /** El documento abierto en el visor. */
   docAbierto: Documento | null = null;
 
+  // ── Secciones ──
+  //
+  // Una a la vez, en pestañas. Antes eran cuatro bloques uno debajo del otro
+  // con un índice de enlaces <a href="#…">: con el enrutador esos enlaces
+  // mandaban al inicio, y con años de boletas la página no terminaba nunca.
+  readonly pestanas: { id: SeccionExpediente; titulo: string; icono: string }[] = [
+    { id: 'documentos', titulo: 'Sus documentos', icono: 'person' },
+    { id: 'contratos', titulo: 'Contratos', icono: 'badge' },
+    { id: 'boletas', titulo: 'Boletas', icono: 'receipt' },
+    { id: 'otros', titulo: 'Otros documentos', icono: 'folder' },
+  ];
+  seccion: SeccionExpediente = 'documentos';
+
+  /** El año de boletas a la vista; null = todas. */
+  anioBoletas: number | null = null;
+
+  /** Lo que está abierto en el panel lateral. */
+  contratoAbierto: ContratoDelExpediente | null = null;
+  boletaAbierta: Documento | null = null;
+  /** El recorrido de la boleta abierta, armado una vez al abrirla. */
+  rastroAbierto: PasoBoleta[] = [];
+
+  /*
+   * Listas derivadas del expediente, GUARDADAS y no calculadas con un getter.
+   *
+   * Un getter que filtra devuelve un arreglo nuevo en cada ciclo de Angular:
+   * la tabla lo recibía como `datos` distintos, volvía a la página 1 y
+   * redibujaba todas las filas con sus íconos, aunque nada hubiera cambiado.
+   * Se recalculan solo en `recalcular()`: al llegar el expediente y al
+   * cambiar de año.
+   */
+  otrosPersonales: Documento[] = [];
+  aniosBoletas: number[] = [];
+  boletasVisibles: Documento[] = [];
+  contratosPasados: ContratoDelExpediente[] = [];
+  /** Cuántas boletas tiene cada año, para el chip. */
+  boletasPorAnio = new Map<number, number>();
+
   // ── Subir un documento ──
   modalSubir = false;
   tipoASubir = 'hoja_de_vida';
@@ -77,12 +125,6 @@ export class ExpedienteComponent implements OnInit {
   subiendo = false;
 
   readonly tiposSubibles = TIPOS_DOCUMENTO_SUBIBLES;
-
-  /** Sus papeles, menos la hoja de vida vigente, que va en su propia fila. */
-  get otrosPersonales(): Documento[] {
-    const vigente = this.expediente?.hoja_de_vida?.id;
-    return (this.expediente?.personales ?? []).filter((d) => d.id !== vigente);
-  }
 
   /** "Mayo 2026, Junio 2026": los meses que esperan su boleta. */
   get mesesSinEmitir(): string {
@@ -119,6 +161,7 @@ export class ExpedienteComponent implements OnInit {
   ];
 
   readonly accionesBoletas: AccionPersonalizada<Documento>[] = [
+    { id: 'detalle', titulo: 'Ver su recorrido', icono: 'eye' },
     { id: 'ver', titulo: 'Ver la boleta', icono: 'description', visible: (d) => sePuedeVer(d) },
     { id: 'descargar', titulo: 'Descargar la boleta', icono: 'folder_open' },
     // Solo la subida a mano se quita: la que generó el sistema es la constancia del pago.
@@ -138,6 +181,8 @@ export class ExpedienteComponent implements OnInit {
 
   ngOnInit(): void {
     this.empleadoId = this.route.snapshot.paramMap.get('empleadoId') ?? '';
+    const pedida = this.route.snapshot.queryParamMap.get('seccion');
+    if (this.pestanas.some((p) => p.id === pedida)) this.seccion = pedida as SeccionExpediente;
     this.cargar();
   }
 
@@ -147,12 +192,155 @@ export class ExpedienteComponent implements OnInit {
       next: (res) => {
         this.expediente = res.data;
         this.cargando = false;
+        this.recalcular();
+        this.refrescarPaneles();
       },
       error: (err) => {
         this.cargando = false;
         this.toast.error('No se pudo abrir el expediente', mensajeErrorApi(err, 'Vuelve a la lista e intenta de nuevo.'));
       },
     });
+  }
+
+  // ── Secciones ──
+
+  elegirSeccion(id: SeccionExpediente): void {
+    this.seccion = id;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { seccion: id },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
+  cuenta(id: SeccionExpediente): number {
+    const e = this.expediente;
+    if (!e) return 0;
+    switch (id) {
+      case 'documentos': return (e.hoja_de_vida ? 1 : 0) + this.otrosPersonales.length;
+      case 'contratos': return e.contratos.length + e.contratos_anteriores.length;
+      case 'boletas': return e.boletas.length;
+      case 'otros': return e.otros.length;
+    }
+  }
+
+  // ── Boletas por año ──
+
+  /** De qué año es: el de su planilla, el que se le puso al subirla o el de subida. */
+  anioDe(doc: Documento): number {
+    return doc.planilla?.anio ?? doc.periodo_anio ?? Number(String(doc.created_at ?? '').slice(0, 4));
+  }
+
+  /** Arma las listas derivadas. Solo al llegar el expediente. */
+  private recalcular(): void {
+    const e = this.expediente;
+    const vigente = e?.hoja_de_vida?.id;
+    // Sus papeles, menos la hoja de vida vigente, que va en su propia fila.
+    this.otrosPersonales = (e?.personales ?? []).filter((d) => d.id !== vigente);
+    // Los contratos que ya no rigen; el vigente va aparte, arriba.
+    this.contratosPasados = (e?.contratos ?? []).filter((c) => c.estado !== 'vigente');
+
+    this.boletasPorAnio = new Map();
+    for (const b of e?.boletas ?? []) {
+      const a = this.anioDe(b);
+      if (a) this.boletasPorAnio.set(a, (this.boletasPorAnio.get(a) ?? 0) + 1);
+    }
+    this.aniosBoletas = [...this.boletasPorAnio.keys()].sort((a, b) => b - a);
+
+    // El año más reciente, salvo que el elegido siga existiendo.
+    if (this.anioBoletas === null || !this.aniosBoletas.includes(this.anioBoletas)) {
+      this.anioBoletas = this.aniosBoletas[0] ?? null;
+    }
+    this.filtrarBoletas();
+  }
+
+  elegirAnio(anio: number | null): void {
+    if (anio === this.anioBoletas) return;
+    this.anioBoletas = anio;
+    this.filtrarBoletas();
+  }
+
+  private filtrarBoletas(): void {
+    const todas = this.expediente?.boletas ?? [];
+    this.boletasVisibles = this.anioBoletas === null ? todas : todas.filter((b) => this.anioDe(b) === this.anioBoletas);
+  }
+
+  // ── Panel lateral ──
+
+  abrirContrato(c: ContratoDelExpediente): void {
+    this.contratoAbierto = c;
+  }
+
+  abrirBoleta(doc: Documento): void {
+    this.boletaAbierta = doc;
+    this.rastroAbierto = this.rastro(doc);
+  }
+
+  cerrarBoleta(): void {
+    this.boletaAbierta = null;
+    this.rastroAbierto = [];
+  }
+
+  /**
+   * Al recargar el expediente (después de subir o quitar algo) el panel
+   * abierto debe mostrar lo nuevo, no la copia vieja que tenía.
+   */
+  private refrescarPaneles(): void {
+    const e = this.expediente;
+    if (this.contratoAbierto) {
+      this.contratoAbierto = e?.contratos.find((c) => c.id === this.contratoAbierto!.id) ?? null;
+    }
+    if (this.boletaAbierta) {
+      const nueva = e?.boletas.find((b) => b.id === this.boletaAbierta!.id);
+      if (nueva) this.abrirBoleta(nueva); else this.cerrarBoleta();
+    }
+  }
+
+  mesDeBoleta(d: Documento): string {
+    if (d.planilla) return `${nombreMes(d.planilla.mes)} ${d.planilla.anio}`;
+    return d.periodo_anio ? `${nombreMes(d.periodo_mes)} ${d.periodo_anio}` : fechaLegible(d.created_at);
+  }
+
+  estadoFirma(d: Documento): string {
+    return estadoFirmaLegible(d);
+  }
+
+  esAnterior(d: Documento): boolean {
+    return esDocumentoAnterior(d);
+  }
+
+  fechaDia(valor: string | null | undefined): string {
+    return fechaDeDia(valor);
+  }
+
+  /**
+   * El recorrido de la boleta, paso a paso, para contestar con una fecha
+   * cuando alguien dice «a mí nunca me llegó». Una boleta anterior al
+   * sistema no tiene recorrido: solo cuándo se subió.
+   */
+  private rastro(d: Documento): PasoBoleta[] {
+    if (esDocumentoAnterior(d)) {
+      return [{ titulo: 'Subida al expediente', fecha: d.created_at, detalle: 'Archivo anterior al sistema' }];
+    }
+    const pasos: PasoBoleta[] = [
+      { titulo: 'Emitida', fecha: d.created_at },
+    ];
+    if (d.firma_colegio) {
+      const ultima = (d.firmas_colegio ?? []).filter((f) => f.fecha).slice(-1)[0];
+      pasos.push({
+        titulo: 'Firmada por el colegio',
+        fecha: d.firma_colegio === 'completa' ? (ultima?.fecha ?? null) : null,
+        detalle: ultima?.nombre ?? (d.firma_colegio === 'parcial' ? 'Falta una firma' : undefined),
+      });
+    }
+    pasos.push(
+      { titulo: 'Aviso enviado', fecha: d.fecha_aviso, detalle: d.aviso_correo ?? undefined },
+      { titulo: 'La revisó', fecha: d.fecha_visto },
+      { titulo: 'La descargó', fecha: d.fecha_descarga, detalle: d.descargas ? `${d.descargas} vez(ces)` : undefined },
+      { titulo: 'Dio su conformidad', fecha: d.fecha_firma, detalle: d.codigo_firma ?? undefined },
+    );
+    return pasos;
   }
 
   // ── Quién es ──
@@ -228,6 +416,10 @@ export class ExpedienteComponent implements OnInit {
     return ESTADO_CONTRATO_OPCIONES.find((o) => o.value === valor)?.label ?? valor;
   }
 
+  motivoFin(valor: string): string {
+    return MOTIVO_FIN_CONTRATO_OPCIONES.find((o) => o.value === valor)?.label ?? valor;
+  }
+
   severidadContrato(valor: string): string {
     if (valor === 'vigente') return 'success';
     return valor === 'renovado' ? 'info' : 'secondary';
@@ -259,6 +451,7 @@ export class ExpedienteComponent implements OnInit {
   // ── Ver, descargar y quitar ──
 
   alAccionar(evento: { accion: string; fila: Documento }): void {
+    if (evento.accion === 'detalle') this.abrirBoleta(evento.fila);
     if (evento.accion === 'ver') this.ver(evento.fila);
     if (evento.accion === 'descargar') this.descargar(evento.fila);
     if (evento.accion === 'quitar') this.quitar(evento.fila);
