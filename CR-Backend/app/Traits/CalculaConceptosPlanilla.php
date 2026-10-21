@@ -184,68 +184,181 @@ trait CalculaConceptosPlanilla
     }
 
 
+    /**
+     * La gratificación de julio o diciembre (Ley 27735, D.S. 005-2002-TR).
+     *
+     *   julio       semestre de enero a junio
+     *   diciembre   semestre de julio a diciembre
+     *
+     *   Remuneración computable = sueldo + asignación familiar + bonificación
+     *                             por cargo (fija, se pone al crear al empleado)
+     *   Gratificación = computable ÷ 6 × MESES COMPLETOS del semestre
+     *   Bonificación extraordinaria (Ley 30334) = gratificación × tasa de EsSalud
+     *
+     * Reglas que se corrigieron el 21/10/2026:
+     *   - Solo cuentan los meses calendario completos: quien entró el 15 de
+     *     marzo cuenta desde abril (3/6 en julio). Antes se contaba marzo.
+     *   - La bonificación por cargo entra: es fija y mensual.
+     *   - No la generan las prácticas ni las jornadas de menos de 4 horas
+     *     (`tipos_contrato.genera_gratificacion`).
+     *   - Quien cesó antes de terminar el semestre no la cobra en julio o
+     *     diciembre: cobra la trunca en el mes de su cese (gratificacionTrunca).
+     *
+     * `$sueldoBase` es el sueldo MENSUAL (el de la ficha), nunca el pagado por
+     * días del mes: la gratificación no baja porque julio tuvo días sin goce.
+     */
     protected function calcularGratificacion($empleado, $sueldoBase, $mes, $anio): array
     {
         $mes  = (int) $mes;
         $anio = (int) $anio;
 
-        if (!in_array($mes, [7, 12])) {
-            return [
-                'aplica'                    => false,
-                'meses_trabajados'          => 0,
-                'monto_base'                => 0.00,
-                'asignacion_familiar'       => 0.00,
-                'bonificacion_extraordinaria' => 0.00,
-                'total'                     => 0.00,
-            ];
+        if (! in_array($mes, [7, 12], true)) {
+            return $this->sinGratificacion();
         }
 
-        $sueldoBase = (float) $sueldoBase;
-
-        if ($mes === 7) {
-            $inicioSemestre = \Carbon\Carbon::create($anio, 1, 1);
-            $finSemestre    = \Carbon\Carbon::create($anio, 6, 30);
-        } else {
-            $inicioSemestre = \Carbon\Carbon::create($anio, 7, 1);
-            $finSemestre    = \Carbon\Carbon::create($anio, 12, 31);
+        $tipo = method_exists($empleado, 'tipoContratoVigente') ? $empleado->tipoContratoVigente() : null;
+        if ($tipo && ! ($tipo->genera_gratificacion ?? true)) {
+            return $this->sinGratificacion("Su tipo de contrato ({$tipo->nombre}) no genera gratificación.");
         }
 
-        $fechaIngreso = \Carbon\Carbon::parse($empleado->fecha_ingreso);
+        $inicio  = \Carbon\Carbon::create($anio, $mes === 7 ? 1 : 7, 1)->startOfDay();
+        $fin     = \Carbon\Carbon::create($anio, $mes === 7 ? 6 : 12, 1)->endOfMonth()->startOfDay();
+        $ingreso = \Carbon\Carbon::parse($empleado->fecha_ingreso)->startOfDay();
+        $cese    = $empleado->estado === 'inactivo' && $empleado->fecha_cese
+            ? \Carbon\Carbon::parse($empleado->fecha_cese)->startOfDay() : null;
 
-        // Si ingresó después del semestre correspondiente, no le corresponde esta gratificación
-        if ($fechaIngreso->gt($finSemestre)) {
-            return [
-                'aplica'                    => false,
-                'meses_trabajados'          => 0,
-                'monto_base'                => 0.00,
-                'asignacion_familiar'       => 0.00,
-                'bonificacion_extraordinaria' => 0.00,
-                'total'                     => 0.00,
-            ];
+        if ($ingreso->gt($fin)) {
+            return $this->sinGratificacion('Ingresó después de este semestre.');
+        }
+        if ($cese && $cese->lt($fin)) {
+            return $this->sinGratificacion('Cesó antes de terminar el semestre: le corresponde la gratificación trunca en el mes de su cese.');
         }
 
-        $inicioEfectivo = $fechaIngreso->gt($inicioSemestre) ? $fechaIngreso : $inicioSemestre;
+        $meses = $this->mesesCompletos($ingreso->gt($inicio) ? $ingreso : $inicio, $fin);
 
-        $mesesTrabajados = $finSemestre->month - $inicioEfectivo->month + 1;
-        $mesesTrabajados = min(6, max(0, $mesesTrabajados));
+        return $this->montosDeGratificacion($empleado, (float) $sueldoBase, $meses, $anio);
+    }
 
-        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado, $anio);
+    /**
+     * La gratificación trunca de quien cesa a mitad de semestre: los meses
+     * completos desde que empezó el semestre (o desde su ingreso) hasta su
+     * cese. Se paga en la planilla del mes del cese.
+     *
+     * Si cesa el último día del semestre no es trunca: cobra la normal de
+     * julio o diciembre (calcularGratificacion), y esta da cero.
+     */
+    protected function gratificacionTrunca($empleado, $sueldoBase, $mes, $anio): array
+    {
+        $mes  = (int) $mes;
+        $anio = (int) $anio;
 
-        $montoBase               = round(($sueldoBase * $mesesTrabajados) / 6, 2);
-        $asignacionProrrateada   = round(($asignacionFamiliar * $mesesTrabajados) / 6, 2);
-        $subtotal                = $montoBase + $asignacionProrrateada;
-        // Ley 30334: la bonificación es lo que el colegio habría aportado a
-        // EsSalud sobre la gratificación, así que usa la misma tasa del año.
-        $bonificacionExtraordinaria = round($subtotal * ($this->valoresLegales($anio)->essalud / 100), 2);
+        if ($empleado->estado !== 'inactivo' || ! $empleado->fecha_cese) {
+            return $this->sinGratificacion();
+        }
+        $cese = \Carbon\Carbon::parse($empleado->fecha_cese)->startOfDay();
+        if ((int) $cese->month !== $mes || (int) $cese->year !== $anio) {
+            return $this->sinGratificacion();
+        }
+
+        $tipo = method_exists($empleado, 'tipoContratoVigente') ? $empleado->tipoContratoVigente() : null;
+        if ($tipo && ! ($tipo->genera_gratificacion ?? true)) {
+            return $this->sinGratificacion("Su tipo de contrato ({$tipo->nombre}) no genera gratificación.");
+        }
+
+        $finSemestre = \Carbon\Carbon::create($anio, $mes <= 6 ? 6 : 12, 1)->endOfMonth()->startOfDay();
+        if ($cese->gte($finSemestre)) {
+            return $this->sinGratificacion();
+        }
+
+        $inicio  = \Carbon\Carbon::create($anio, $mes <= 6 ? 1 : 7, 1)->startOfDay();
+        $ingreso = \Carbon\Carbon::parse($empleado->fecha_ingreso)->startOfDay();
+        $meses   = $this->mesesCompletos($ingreso->gt($inicio) ? $ingreso : $inicio, $cese);
+
+        return ['trunca' => true] + $this->montosDeGratificacion($empleado, (float) $sueldoBase, $meses, $anio);
+    }
+
+    /** Los montos para tantos meses: la gratificación, su bonificación del 9% y el total. */
+    private function montosDeGratificacion($empleado, float $sueldoMensual, int $meses, int $anio): array
+    {
+        if ($meses <= 0) {
+            return $this->sinGratificacion('No completó ningún mes calendario en el semestre.');
+        }
+
+        $sueldo        = round($sueldoMensual * $meses / 6, 2);
+        $cargo         = round((float) ($empleado->bonificacion_cargo ?? 0) * $meses / 6, 2);
+        $asignacion    = round($this->calcularAsignacionFamiliar($empleado, $anio) * $meses / 6, 2);
+        $gratificacion = round($sueldo + $cargo + $asignacion, 2);
+        // Ley 30334: lo que el colegio habría aportado a EsSalud sobre ella.
+        $bonificacion  = round($gratificacion * ($this->valoresLegales($anio)->essalud / 100), 2);
 
         return [
-            'aplica'                    => true,
-            'meses_trabajados'          => $mesesTrabajados,
-            'monto_base'                => $montoBase,
-            'asignacion_familiar'       => $asignacionProrrateada,
-            'bonificacion_extraordinaria' => $bonificacionExtraordinaria,
-            'total'                     => round($subtotal + $bonificacionExtraordinaria, 2),
+            'aplica'                      => true,
+            'trunca'                      => false,
+            'motivo'                      => null,
+            'meses_trabajados'            => $meses,
+            'monto_base'                  => $sueldo,
+            'bonificacion_cargo'          => $cargo,
+            'asignacion_familiar'         => $asignacion,
+            'gratificacion'               => $gratificacion,
+            'bonificacion_extraordinaria' => $bonificacion,
+            'total'                       => round($gratificacion + $bonificacion, 2),
         ];
+    }
+
+    private function sinGratificacion(?string $motivo = null): array
+    {
+        return [
+            'aplica' => false, 'trunca' => false, 'motivo' => $motivo, 'meses_trabajados' => 0,
+            'monto_base' => 0.00, 'bonificacion_cargo' => 0.00, 'asignacion_familiar' => 0.00,
+            'gratificacion' => 0.00, 'bonificacion_extraordinaria' => 0.00, 'total' => 0.00,
+        ];
+    }
+
+    /**
+     * Meses calendario completos entre dos fechas, ambas incluidas: un mes
+     * cuenta solo si se trabajó del 1 al último día. Los días sueltos no
+     * suman (en la gratificación, a diferencia de la CTS, no se pagan días).
+     *
+     *   1 ene – 30 jun  → 6      15 mar – 30 jun → 3 (abr, may, jun)
+     *   1 jul – 20 nov  → 4 (jul a oct)
+     *
+     * Entrar el primer día HÁBIL del mes (o cesar el último) cuenta el mes
+     * entero: lo de antes (o lo de después) era sábado y domingo, días en que
+     * nadie trabaja. Así lo paga el colegio: GATICA QUISPE entró el lunes 2
+     * de marzo de 2026 (el 1 fue domingo) y su julio es 4/6, no 3/6.
+     */
+    protected function mesesCompletos(\Carbon\Carbon $desde, \Carbon\Carbon $hasta): int
+    {
+        $desde = $desde->copy()->startOfDay();
+        $hasta = $hasta->copy()->startOfDay();
+        if ($this->soloFinDeSemanaEntre($desde->copy()->startOfMonth(), $desde->copy()->subDay())) {
+            $desde = $desde->copy()->startOfMonth();
+        }
+        if ($this->soloFinDeSemanaEntre($hasta->copy()->addDay(), $hasta->copy()->endOfMonth()->startOfDay())) {
+            $hasta = $hasta->copy()->endOfMonth()->startOfDay();
+        }
+
+        $meses = 0;
+        for ($cursor = $desde->copy(); $cursor->lte($hasta); $cursor = $cursor->copy()->startOfMonth()->addMonth()) {
+            $finDeMes = $cursor->copy()->endOfMonth()->startOfDay();
+            if ($cursor->day === 1 && $finDeMes->lte($hasta)) {
+                $meses++;
+            }
+        }
+
+        return $meses;
+    }
+
+    /** ¿Entre esas dos fechas (incluidas) solo hay sábados y domingos? Un tramo vacío también cuenta. */
+    private function soloFinDeSemanaEntre(\Carbon\Carbon $desde, \Carbon\Carbon $hasta): bool
+    {
+        for ($dia = $desde->copy(); $dia->lte($hasta); $dia->addDay()) {
+            if (! $dia->isWeekend()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -757,13 +870,21 @@ trait CalculaConceptosPlanilla
          * No entran en $baseAfecta: están exoneradas de pensión y EsSalud
          * (Ley 29351/30334), y por eso mismo existe la bonificación del 9%.
          */
-        $gratificacion = $this->calcularGratificacion($empleado, $sueldoBase, $planilla->mes, $planilla->anio);
+        // Sobre el sueldo MENSUAL de su ficha, no el pagado por los días de
+        // este mes: unos días sin goce en julio no le bajan la gratificación.
+        // Si cesa este mes a mitad de semestre, va la trunca.
+        $sueldoMensual = (float) $empleado->sueldo_base;
+        $gratificacion = $this->calcularGratificacion($empleado, $sueldoMensual, $planilla->mes, $planilla->anio);
+        if (! $gratificacion['aplica']) {
+            $gratificacion = $this->gratificacionTrunca($empleado, $sueldoMensual, $planilla->mes, $planilla->anio);
+        }
         if ($gratificacion['aplica']) {
             $this->crearDetalleAutomatico(
                 $planilla,
                 \App\Support\ConceptosDePago::GRATIFICACION,
-                $gratificacion['monto_base'] + $gratificacion['asignacion_familiar'],
-                \App\Support\Meses::nombre((int) $planilla->mes) . ", {$gratificacion['meses_trabajados']}/6 meses"
+                $gratificacion['gratificacion'],
+                ($gratificacion['trunca'] ? 'Trunca' : \App\Support\Meses::nombre((int) $planilla->mes))
+                    . ", {$gratificacion['meses_trabajados']}/6 meses"
             );
 
             $this->crearDetalleAutomatico(
@@ -771,6 +892,14 @@ trait CalculaConceptosPlanilla
                 \App\Support\ConceptosDePago::BONIF_EXTRAORDINARIA,
                 $gratificacion['bonificacion_extraordinaria']
             );
+        } elseif (in_array((int) $planilla->mes, [7, 12], true)) {
+            // Ya no le corresponde (cambió su contrato o su fecha de cese): se quitan las de antes.
+            \App\Models\PayrollDetalle::where('planilla_id', $planilla->id)
+                ->whereHas('paymentConcept', fn ($q) => $q->whereIn('nombre', [
+                    \App\Support\ConceptosDePago::GRATIFICACION,
+                    \App\Support\ConceptosDePago::BONIF_EXTRAORDINARIA,
+                ]))
+                ->delete();
         }
 
         if ($empleado->sistema_pensiones === 'AFP' && $empleado->afp) {

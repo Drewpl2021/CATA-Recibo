@@ -319,6 +319,12 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::get('cts/{liquidacion}/sheet',      [\App\Http\Controllers\CtsController::class, 'hoja'])->whereUuid('liquidacion');
         Route::get('cts/{empleado}/history',       [\App\Http\Controllers\CtsController::class, 'historial'])->whereUuid('empleado');
 
+        // Gratificaciones de julio y diciembre: lo que corresponde, lo pagado en planilla y la hoja.
+        Route::get('bonuses',                      [\App\Http\Controllers\GratificacionController::class, 'index']);
+        Route::post('bonuses/deliver',             [\App\Http\Controllers\GratificacionController::class, 'entregar']);
+        Route::get('bonuses/{empleado}/history',   [\App\Http\Controllers\GratificacionController::class, 'historial'])->whereUuid('empleado');
+        Route::get('bonuses/{empleado}/sheet',     [\App\Http\Controllers\GratificacionController::class, 'hoja'])->whereUuid('empleado');
+
         Route::get('legal-values',        [\App\Http\Controllers\ValorLegalController::class, 'index']);
         Route::get('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'show'])->whereNumber('anio');
         Route::post('legal-values',       [\App\Http\Controllers\ValorLegalController::class, 'store']);

@@ -36,6 +36,7 @@ export const TIPOS_DOCUMENTO_SUBIBLES: readonly { value: string; label: string }
   { value: 'certificado', label: 'Certificado de estudios' },
   { value: 'contrato', label: 'Contrato firmado' },
   { value: 'cts', label: 'CTS' },
+  { value: 'gratificacion', label: 'Gratificación' },
   { value: 'vacaciones_truncas', label: 'Vacaciones truncas' },
   { value: 'comprobante_transferencia', label: 'Comprobante de transferencia' },
   { value: 'otro', label: 'Otro documento' },

@@ -8,8 +8,8 @@ class TipoContrato extends Model
     protected $table = 'tipos_contrato';
     protected $keyType = 'string';
     public $incrementing = false;
-    protected $fillable = ['id', 'nombre', 'requiere_fecha_fin', 'permite_vacaciones', 'genera_cts', 'estado'];
-    protected $casts = ['requiere_fecha_fin' => 'boolean', 'permite_vacaciones' => 'boolean', 'genera_cts' => 'boolean'];
+    protected $fillable = ['id', 'nombre', 'requiere_fecha_fin', 'permite_vacaciones', 'genera_cts', 'genera_gratificacion', 'estado'];
+    protected $casts = ['requiere_fecha_fin' => 'boolean', 'permite_vacaciones' => 'boolean', 'genera_cts' => 'boolean', 'genera_gratificacion' => 'boolean'];
 
     protected static function boot()
     {

@@ -35,6 +35,7 @@ class TipoContratoController extends Controller
             'requiere_fecha_fin'  => 'sometimes|boolean',
             'permite_vacaciones'  => 'sometimes|boolean',
             'genera_cts'          => 'sometimes|boolean',
+            'genera_gratificacion'=> 'sometimes|boolean',
             'estado'              => 'nullable|string|in:activo,inactivo',
         ]);
         $tipo = TipoContrato::create($datos);
@@ -54,6 +55,7 @@ class TipoContratoController extends Controller
             'requiere_fecha_fin'  => 'sometimes|boolean',
             'permite_vacaciones'  => 'sometimes|boolean',
             'genera_cts'          => 'sometimes|boolean',
+            'genera_gratificacion'=> 'sometimes|boolean',
             'estado'              => 'nullable|string|in:activo,inactivo',
         ]);
         $tipo->update($datos);

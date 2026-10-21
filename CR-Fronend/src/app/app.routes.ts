@@ -230,6 +230,11 @@ export const routes: Routes = [
         canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/cts/cts-list/cts-list.component').then(m => m.CtsListComponent),
       },
+      {
+        path: 'gratificaciones',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/gratificaciones/gratificaciones-list/gratificaciones-list.component').then(m => m.GratificacionesListComponent),
+      },
       // ── Sistema de permisos y menús (solo Admin) ──
       {
         path: 'usuarios',

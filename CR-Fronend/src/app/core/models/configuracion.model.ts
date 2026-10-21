@@ -32,6 +32,8 @@ export interface TipoContrato {
   permite_vacaciones: boolean;
   /** Todos menos las prácticas: entra al cálculo de la CTS. */
   genera_cts: boolean;
+  /** Le toca gratificación de julio y diciembre (no a prácticas ni a jornadas de menos de 4 h). */
+  genera_gratificacion: boolean;
   estado?: EstadoCatalogo;
 }
 
@@ -40,6 +42,7 @@ export interface TipoContratoPayload {
   requiere_fecha_fin?: boolean;
   permite_vacaciones?: boolean;
   genera_cts?: boolean;
+  genera_gratificacion?: boolean;
   estado?: EstadoCatalogo;
 }
 

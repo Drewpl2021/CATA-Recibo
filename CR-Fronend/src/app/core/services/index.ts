@@ -38,6 +38,7 @@ export * from './sistema/dashboard.service';
 export * from './planilla/planilla-corrida.service';
 export * from './planilla/renta5ta.service';
 export * from './planilla/cts.service';
+export * from './planilla/gratificacion.service';
 export * from './sistema/auditoria.service';
 export * from './sistema/ajustes.service';
 export * from './planilla/importacion-conceptos.service';

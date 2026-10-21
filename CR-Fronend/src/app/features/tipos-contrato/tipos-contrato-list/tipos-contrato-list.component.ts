@@ -71,7 +71,11 @@ export class TiposContratoListComponent implements OnInit {
       formatear: (v) => (v ? 'Sí' : 'No — cobra Vacaciones Truncas'),
     },
     {
-      campo: 'genera_cts', header: 'Genera CTS', ancho: '14%',
+      campo: 'genera_cts', header: 'Genera CTS', ancho: '12%',
+      formatear: (v) => (v ? 'Sí' : 'No'),
+    },
+    {
+      campo: 'genera_gratificacion', header: 'Genera gratificación', ancho: '14%',
       formatear: (v) => (v ? 'Sí' : 'No'),
     },
     columnaEstado<TipoContrato>(),
@@ -84,6 +88,7 @@ export class TiposContratoListComponent implements OnInit {
     requiere_fecha_fin: [true],
     permite_vacaciones: [false],
     genera_cts: [true],
+    genera_gratificacion: [true],
     estado: [ESTADO_CATALOGO_POR_DEFECTO],
   });
 
@@ -130,7 +135,7 @@ export class TiposContratoListComponent implements OnInit {
 
   nuevo(): void {
     this.tipoEditando = null;
-    this.form.reset({ requiere_fecha_fin: true, permite_vacaciones: false, genera_cts: true, estado: ESTADO_CATALOGO_POR_DEFECTO });
+    this.form.reset({ requiere_fecha_fin: true, permite_vacaciones: false, genera_cts: true, genera_gratificacion: true, estado: ESTADO_CATALOGO_POR_DEFECTO });
     this.modalVisible = true;
   }
 
@@ -141,6 +146,7 @@ export class TiposContratoListComponent implements OnInit {
       requiere_fecha_fin: tipo.requiere_fecha_fin,
       permite_vacaciones: tipo.permite_vacaciones,
       genera_cts: tipo.genera_cts,
+      genera_gratificacion: tipo.genera_gratificacion,
       estado: tipo.estado ?? ESTADO_CATALOGO_POR_DEFECTO,
     });
     this.modalVisible = true;
@@ -149,7 +155,7 @@ export class TiposContratoListComponent implements OnInit {
   cerrarModal(): void {
     this.modalVisible = false;
     this.tipoEditando = null;
-    this.form.reset({ requiere_fecha_fin: true, permite_vacaciones: false, genera_cts: true, estado: ESTADO_CATALOGO_POR_DEFECTO });
+    this.form.reset({ requiere_fecha_fin: true, permite_vacaciones: false, genera_cts: true, genera_gratificacion: true, estado: ESTADO_CATALOGO_POR_DEFECTO });
   }
 
   guardar(): void {

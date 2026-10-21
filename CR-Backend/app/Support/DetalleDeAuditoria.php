@@ -74,7 +74,7 @@ final class DetalleDeAuditoria
     private const ENTIDADES = [
         'empleado' => 'Ficha de un trabajador', 'usuario' => 'Cuenta de acceso', 'concepto' => 'Concepto de pago',
         'planilla' => 'Planilla', 'linea' => 'Línea de una planilla', 'configuración' => 'Ajuste del sistema',
-        'montos de ley' => 'Montos de ley', 'boleta' => 'Boleta', 'cts' => 'CTS',
+        'montos de ley' => 'Montos de ley', 'boleta' => 'Boleta', 'cts' => 'CTS', 'gratificación' => 'Gratificación',
     ];
 
     public static function de(Auditoria $registro): array
@@ -122,6 +122,7 @@ final class DetalleDeAuditoria
             'concepto' => ($p = $id ? PaymentConcept::find($id) : null) ? [$p->nombre, '/inicio/conceptos-pago'] : [null, null],
             'configuración', 'montos de ley' => [null, '/inicio/ajustes'],
             'cts'      => [null, '/inicio/cts'],
+            'gratificación' => [null, '/inicio/gratificaciones'],
             default    => [null, null],
         };
 

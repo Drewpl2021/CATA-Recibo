@@ -78,6 +78,8 @@ export const ICON_MAP: Record<string, string> = {
   /* Los filtros: dos reguladores. El embudo de antes era una figura
      rellena y pesaba el doble que todo lo demás. */
   filter: `<g fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7h3M3 17h6m9 0h3M15 7h6"/><path d="M6 7c0-.932 0-1.398.152-1.765a2 2 0 0 1 1.083-1.083C7.602 4 8.068 4 9 4s1.398 0 1.765.152a2 2 0 0 1 1.083 1.083C12 5.602 12 6.068 12 7s0 1.398-.152 1.765a2 2 0 0 1-1.083 1.083C10.398 10 9.932 10 9 10s-1.398 0-1.765-.152a2 2 0 0 1-1.083-1.083C6 8.398 6 7.932 6 7Zm6 10c0-.932 0-1.398.152-1.765a2 2 0 0 1 1.083-1.083C13.602 14 14.068 14 15 14s1.398 0 1.765.152a2 2 0 0 1 1.083 1.083C18 15.602 18 16.068 18 17s0 1.398-.152 1.765a2 2 0 0 1-1.083 1.083C16.398 20 15.932 20 15 20s-1.398 0-1.765-.152a2 2 0 0 1-1.083-1.083C12 18.398 12 17.932 12 17Z"/></g>`,
+  // Gratificaciones (Fiestas Patrias y Navidad): un regalo.
+  regalo: `<g fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.5"><path stroke-linecap="round" d="M4 11v4c0 3.3 0 4.95 1.025 5.975S7.7 22 11 22h2c3.3 0 4.95 0 5.975-1.025S20 18.3 20 15v-4"/><path d="M3 9c0-.748 0-1.122.201-1.4a1.4 1.4 0 0 1 .549-.44C4.098 7 4.565 7 5.5 7h13c.935 0 1.402 0 1.75.16c.228.106.417.258.549.44C21 7.878 21 8.252 21 9s0 1.121-.201 1.4a1.4 1.4 0 0 1-.549.44c-.348.16-.815.16-1.75.16h-13c-.935 0-1.402 0-1.75-.16a1.4 1.4 0 0 1-.549-.44C3 10.121 3 9.748 3 9Zm3-5.214C6 2.799 6.8 2 7.786 2h.357A3.857 3.857 0 0 1 12 5.857V7H9.214A3.214 3.214 0 0 1 6 3.786Zm12 0C18 2.799 17.2 2 16.214 2h-.357A3.857 3.857 0 0 0 12 5.857V7h2.786A3.214 3.214 0 0 0 18 3.786Z"/><path stroke-linecap="round" d="M12 11v11"/></g>`,
   // Ordenar la tabla (A arriba, Z abajo): va al lado del embudo de Filtros.
   ordenar: `<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 14h4.421c.93 0 1.395 0 1.52.28c.123.28-.193.616-.826 1.288l-3.638 3.864c-.633.672-.95 1.008-.826 1.288s.59.28 1.52.28H10M4 9l2.106-4.695C6.496 3.435 6.69 3 7 3s.504.435.894 1.305L10 9m7.5 11V4m0 16c-.7 0-2.008-1.994-2.5-2.5m2.5 2.5c.7 0 2.009-1.994 2.5-2.5"/>`,
   upload: `<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.25 21h13.5c.232 0 .348 0 .446-.01a2 2 0 0 0 1.794-1.794c.01-.098.01-.214.01-.446s0-.348-.01-.446a2 2 0 0 0-1.794-1.794c-.098-.01-.214-.01-.446-.01h-1.69c-.228 0-.342 0-.451.012a2 2 0 0 0-1.03.427c-.087.069-.168.15-.329.311a4 4 0 0 1-.328.311a2 2 0 0 1-1.03.427c-.11.012-.224.012-.453.012h-2.878c-.229 0-.343 0-.452-.012a2 2 0 0 1-1.03-.427c-.087-.069-.168-.15-.329-.311s-.242-.242-.328-.311a2 2 0 0 0-1.03-.427c-.11-.012-.224-.012-.453-.012H5.25c-.232 0-.348 0-.446.01a2 2 0 0 0-1.794 1.794c-.01.098-.01.214-.01.446s0 .348.01.446a2 2 0 0 0 1.794 1.794c.098.01.214.01.446.01M16.5 7.5S13.186 3 12 3S7.5 7.5 7.5 7.5M12 4v11"/>`,
@@ -200,6 +202,7 @@ const ICONO_POR_NOMBRE: Record<string, string> = {
   vacaciones: 'beach',
   descuentos: 'remove_circle',
   cts: 'money_safe',
+  gratificaciones: 'regalo',
   documentos: 'folder',
 
   // ── Autoservicio ──

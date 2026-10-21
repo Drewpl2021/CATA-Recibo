@@ -38,7 +38,7 @@ final class ExpedienteDigital
 
     /** Todo lo que acepta el expediente, incluido lo que emite el colegio. */
     public const TIPOS = [
-        'boleta', 'contrato', 'cts', 'vacaciones_truncas', 'comprobante_transferencia',
+        'boleta', 'contrato', 'cts', 'gratificacion', 'vacaciones_truncas', 'comprobante_transferencia',
         self::HOJA_DE_VIDA, self::FOTO, self::DNI, self::CERTIFICADO, self::OTRO,
     ];
 
@@ -47,6 +47,7 @@ final class ExpedienteDigital
         'boleta'                    => 'Boleta',
         'contrato'                  => 'Contrato',
         'cts'                       => 'CTS',
+        'gratificacion'             => 'Gratificación',
         'vacaciones_truncas'        => 'Vacaciones truncas',
         'comprobante_transferencia' => 'Comprobante de transferencia',
         self::HOJA_DE_VIDA          => 'Hoja de vida',

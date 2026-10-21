@@ -1,0 +1,248 @@
+<app-page-header
+  icono="regalo"
+  titulo="Gratificaciones"
+  subtitulo="La de Fiestas Patrias y la de Navidad: lo que le corresponde a cada uno por ley y lo que tiene su planilla."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+></app-page-header>
+
+<!-- ── Qué gratificación se está revisando ── -->
+<section class="cts-deposito">
+  <div class="cts-deposito__elegir">
+    <span class="cts-deposito__rotulo">Gratificación</span>
+    <div class="cts-deposito__periodos" role="tablist" aria-label="Gratificación del año">
+      <button type="button" class="cts-periodo" role="tab" *ngFor="let p of periodos"
+        [class.cts-periodo--activo]="periodo === p.valor" [attr.aria-selected]="periodo === p.valor"
+        [disabled]="cargando" (click)="elegirPeriodo(p.valor)">
+        <strong>{{ p.titulo }}</strong>
+        <span>{{ p.detalle }}</span>
+      </button>
+    </div>
+    <select id="anioGrati" class="form-control cts-deposito__anio" aria-label="Año" [(ngModel)]="anio" (ngModelChange)="cargar()" [disabled]="cargando">
+      <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
+    </select>
+  </div>
+
+  <div class="cts-deposito__datos" *ngIf="datos">
+    <div class="cts-dato" [class.cts-dato--aviso]="diasParaLimite >= 0 && diasParaLimite <= 15 && datos.resumen.por_pagar > 0"
+      [class.cts-dato--vencido]="diasParaLimite < 0 && datos.resumen.por_pagar > 0">
+      <span>Pagar hasta el</span>
+      <strong>{{ fecha(datos.limite) }}</strong>
+      <small *ngIf="datos.resumen.por_pagar > 0">
+        {{ diasParaLimite > 0 ? 'faltan ' + diasParaLimite + ' día(s)' : diasParaLimite === 0 ? 'es hoy' : 'venció hace ' + -diasParaLimite + ' día(s)' }}
+      </small>
+    </div>
+    <div class="cts-dato cts-dato--total">
+      <span>Total del semestre</span>
+      <strong>S/ {{ datos.resumen.total | number: '1.2-2' }}</strong>
+      <small>Gratificación {{ datos.resumen.gratificacion | number: '1.2-2' }} + 9 % {{ datos.resumen.bonificacion | number: '1.2-2' }}</small>
+    </div>
+  </div>
+</section>
+
+<!-- ── El recorrido: lo que toca ahora, resaltado ── -->
+<ol class="cts-pasos" *ngIf="datos" aria-label="Pasos de la gratificación">
+  <li *ngFor="let p of pasos" class="cts-paso" [ngClass]="'cts-paso--' + p.fase">
+    <div class="cts-paso__cabeza">
+      <span class="cts-paso__numero">
+        <app-icon *ngIf="p.fase === 'hecho'; else numero" icono="check" [tamano]="15"></app-icon>
+        <ng-template #numero>{{ p.numero }}</ng-template>
+      </span>
+      <strong class="cts-paso__titulo">{{ p.titulo }}</strong>
+      <app-icon class="cts-paso__icono" [icono]="p.icono" [tamano]="20"></app-icon>
+    </div>
+    <p class="cts-paso__explicacion">{{ p.explicacion }}</p>
+    <div class="cts-paso__estado">{{ p.estado }}</div>
+    <div class="cts-paso__barra" *ngIf="p.avance !== null"><span [style.width.%]="p.avance"></span></div>
+
+    <div class="cts-paso__accion">
+      <button *ngIf="p.numero === 1" type="button" [ngClass]="p.fase === 'actual' ? 'btn-primary' : 'btn-secondary'" (click)="verPlanillas()"
+        appPista="Abre Planillas en el mes de la gratificación: al generar la planilla, la gratificación y el 9 % se ponen solos.">
+        <app-icon icono="table_chart" [tamano]="16"></app-icon>
+        Ir a las planillas
+      </button>
+      <button *ngIf="p.numero === 2" type="button" [ngClass]="p.fase === 'actual' ? 'btn-primary' : 'btn-secondary'"
+        (click)="elegirSituacion('diferencia')" [disabled]="!datos.resumen.diferencias">
+        <app-icon icono="eye" [tamano]="16"></app-icon>
+        Ver diferencias ({{ datos.resumen.diferencias }})
+      </button>
+      <button *ngIf="p.numero === 3" type="button" [ngClass]="p.fase === 'actual' ? 'btn-primary' : 'btn-secondary'"
+        (click)="entregarPendientes()" [disabled]="entregando || !datos.resumen.pagadas"
+        appPista="Deja la hoja en el expediente de todos los que ya la tienen pagada y sin diferencia. Para solo algunos, márcalos en la tabla.">
+        <app-icon icono="receipt_long" [tamano]="16"></app-icon>
+        {{ entregando ? 'Entregando…' : 'Entregar hojas' }}
+      </button>
+    </div>
+  </li>
+</ol>
+
+<!-- ── Las personas del semestre ── -->
+<div class="cts-situaciones" role="tablist" aria-label="Situación" *ngIf="datos">
+  <button type="button" class="chip-filtro" role="tab" *ngFor="let c of chips"
+    [class.chip-filtro--activo]="situacion === c.valor" [attr.aria-selected]="situacion === c.valor"
+    (click)="elegirSituacion(c.valor)">
+    {{ c.texto }}
+    <span class="chip-filtro__cuenta">{{ c.cuenta }}</span>
+  </button>
+</div>
+
+<app-data-table
+  entidad="este trabajador"
+  [seleccionable]="true"
+  (cambioSeleccion)="marcados = $event"
+  [columnas]="columnas"
+  [datos]="filasVisibles"
+  [cargando]="cargando"
+  [camposBusqueda]="['dni', 'nombre', 'cargo']"
+  placeholderBusqueda="Buscar por DNI, nombre o cargo…"
+  [acciones]="[]"
+  [accionesPersonalizadas]="acciones"
+  [filasPorPagina]="15"
+  [mensajeVacio]="mensajeVacio"
+  (accionPersonalizada)="alAccionar($event)"
+>
+  <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="aplicarFiltro()"></app-orden>
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros" (cambio)="aplicarFiltro()"></app-filtros>
+
+  <ng-template appCelda="nombre" let-f>
+    <strong>{{ f.nombre }}</strong>
+    <div class="form-ayuda">
+      DNI {{ f.dni }}<ng-container *ngIf="f.cargo"> · {{ f.cargo }}</ng-container>
+      <span class="status-badge status-badge-secondary renta-fila__cesado" *ngIf="f.estado !== 'activo'">Cesado</span>
+    </div>
+  </ng-template>
+
+  <ng-template appCelda="meses" let-f>
+    <ng-container *ngIf="f.aplica; else sinMeses">
+      <span>{{ f.meses }} de 6</span>
+      <div class="form-ayuda" *ngIf="f.trunca">Trunca: se paga en {{ mesDePago(f) }}</div>
+    </ng-container>
+    <ng-template #sinMeses><span class="form-ayuda">{{ f.motivo }}</span></ng-template>
+  </ng-template>
+
+  <ng-template appCelda="gratificacion" let-f>
+    <ng-container *ngIf="f.aplica; else guion">
+      <strong class="celda-monto">S/ {{ f.total | number: '1.2-2' }}</strong>
+      <div class="form-ayuda celda-monto">{{ f.gratificacion | number: '1.2-2' }} + 9 % {{ f.bonificacion_extraordinaria | number: '1.2-2' }}</div>
+    </ng-container>
+  </ng-template>
+
+  <ng-template appCelda="pagado_total" let-f>
+    <ng-container *ngIf="f.planilla_id; else sinPlanilla">
+      <span class="celda-monto">S/ {{ f.pagado_total | number: '1.2-2' }}</span>
+      <div class="form-ayuda texto-aviso" *ngIf="f.estado_grati === 'diferencia'">
+        {{ f.diferencia > 0 ? 'De más' : 'De menos' }}: S/ {{ (f.diferencia < 0 ? -f.diferencia : f.diferencia) | number: '1.2-2' }}
+      </div>
+      <div class="form-ayuda" *ngIf="f.planilla_del_plame">Importada del PLAME</div>
+    </ng-container>
+    <ng-template #sinPlanilla><span class="form-ayuda">{{ f.aplica ? 'Sin planilla todavía' : '—' }}</span></ng-template>
+  </ng-template>
+
+  <ng-template #guion><span class="form-ayuda">—</span></ng-template>
+</app-data-table>
+
+<details class="section-panel renta-ayuda" *ngIf="datos">
+  <summary>¿Qué es la gratificación y cómo se calcula?</summary>
+  <ul class="ajuste-detalle">
+    <li><strong>Qué es:</strong> un sueldo extra dos veces al año, por Fiestas Patrias (julio) y por Navidad (diciembre). Ley 27735.</li>
+    <li><strong>Cuándo:</strong> la de julio paga el semestre de enero a junio y vence el 15 de julio; la de diciembre, de julio a diciembre, hasta el 15 de diciembre. Se paga en la planilla de ese mes y sale en la boleta.</li>
+    <li><strong>Cuánto:</strong> (sueldo + asignación familiar + bonificación por cargo) ÷ 6 × los meses completos del semestre. Entrar el primer día hábil del mes cuenta el mes entero.</li>
+    <li><strong>Bonificación extraordinaria (Ley 30334):</strong> el 9 % de la gratificación, lo que el colegio habría aportado a EsSalud. La gratificación no paga ONP, AFP ni EsSalud; sí entra en la Renta de 5ta.</li>
+    <li><strong>Trunca:</strong> quien deja el colegio a mitad del semestre cobra por los meses completos que trabajó, en la planilla del mes de su cese.</li>
+    <li><strong>No corresponde:</strong> a prácticas ni a jornadas de menos de cuatro horas (se marca en Tipos de Contrato), ni a quien no completó ningún mes.</li>
+  </ul>
+</details>
+
+<app-barra-seleccion [cantidad]="marcados.length" singular="trabajador marcado" plural="trabajadores marcados"
+  [resumen]="resumenMarcados" [total]="null" [ocupado]="entregando" (soltar)="soltarMarcados()">
+  <button type="button" class="barra-seleccion__boton" (click)="entregar(marcados)" [disabled]="entregando"
+    appPista="Deja la hoja de gratificación en el expediente de los marcados que ya la tienen pagada.">
+    <app-icon icono="receipt_long" [tamano]="16"></app-icon>
+    Entregar hoja
+  </button>
+</app-barra-seleccion>
+
+<!-- El cálculo de una persona, sin salir de la lista. -->
+<app-panel-lateral
+  [(visible)]="panelAbierto"
+  icono="regalo"
+  [titulo]="detalle?.nombre ?? 'Gratificación'"
+  [subtitulo]="detalle ? 'DNI ' + detalle.dni + (detalle.cargo ? ' · ' + detalle.cargo : '') : ''"
+>
+  <ng-container *ngIf="detalle as d">
+    <dl class="detalle-lista">
+      <dt>Situación</dt>
+      <dd><span class="status-badge" [ngClass]="'status-badge-' + estado(d).tono">{{ estado(d).texto }}</span></dd>
+      <dt>Ingreso</dt>
+      <dd>{{ fecha(d.fecha_ingreso) }}</dd>
+      <ng-container *ngIf="d.fecha_cese"><dt>Cese</dt><dd>{{ fecha(d.fecha_cese) }}</dd></ng-container>
+      <ng-container *ngIf="!d.aplica"><dt>Por qué no</dt><dd>{{ d.motivo }}</dd></ng-container>
+    </dl>
+
+    <h3 class="detalle-subtitulo">Ingresos mensuales · {{ rangoSemestre }}</h3>
+    <div class="cts-mapa" *ngIf="!cargandoHistorial; else cargandoMapa">
+      <div class="cts-mapa__mes" *ngFor="let b of barras" [appPista]="b.pista" [class.cts-mapa__mes--cierre]="b.mes.es_pago">
+        <span class="cts-mapa__etiqueta">{{ b.etiqueta }} <small>{{ b.mes.anio }}</small></span>
+        <div class="cts-mapa__pista">
+          <span class="cts-mapa__barra" *ngIf="b.mes.situacion === 'planilla'" [style.width.%]="b.ancho"></span>
+          <span class="cts-mapa__vacio" *ngIf="b.mes.situacion !== 'planilla'">
+            {{ b.mes.situacion === 'sin_planilla' ? 'Sin planilla en el sistema' : 'No trabajaba' }}
+          </span>
+        </div>
+        <span class="cts-mapa__monto">{{ b.mes.situacion === 'planilla' ? (b.mes.ingresos | number: '1.2-2') : '—' }}</span>
+        <span class="cts-mapa__marcas">
+          <span class="cts-marca cts-marca--grati" *ngIf="b.mes.es_pago" title="En este mes se paga la gratificación">Pago</span>
+        </span>
+      </div>
+      <p class="form-ayuda cts-mapa__nota">Sueldo más bonificaciones de cada mes, en soles, según su planilla.</p>
+    </div>
+    <ng-template #cargandoMapa><p class="form-ayuda">Cargando sus meses…</p></ng-template>
+
+    <ng-container *ngIf="d.aplica">
+      <h3 class="detalle-subtitulo">Remuneración computable</h3>
+      <p class="form-ayuda">
+        La vigente en {{ mesDePago(d) }}{{ d.remuneracion_fuente === 'planilla' ? ': de su planilla de ese mes.' : ': de su ficha, porque ese mes aún no tiene planilla.' }}
+      </p>
+      <dl class="detalle-lista">
+        <dt>Sueldo</dt><dd>S/ {{ d.sueldo | number: '1.2-2' }}</dd>
+        <dt>Asignación familiar</dt><dd>S/ {{ d.asignacion_familiar | number: '1.2-2' }}</dd>
+        <dt>Bonificación por cargo</dt><dd>S/ {{ d.bonificacion_cargo | number: '1.2-2' }}</dd>
+        <dt>Total</dt><dd><strong>S/ {{ d.remuneracion_computable | number: '1.2-2' }}</strong></dd>
+      </dl>
+
+      <h3 class="detalle-subtitulo">Cálculo de la gratificación{{ d.trunca ? ' trunca' : '' }}</h3>
+      <dl class="detalle-lista">
+        <dt>Meses completos</dt><dd>{{ d.meses }} de 6</dd>
+        <dt>Gratificación</dt><dd>S/ {{ d.remuneracion_computable | number: '1.2-2' }} ÷ 6 × {{ d.meses }} = S/ {{ d.gratificacion | number: '1.2-2' }}</dd>
+        <dt>Bonificación 9 %</dt><dd>S/ {{ d.bonificacion_extraordinaria | number: '1.2-2' }}</dd>
+        <dt>Le corresponde</dt><dd><strong>S/ {{ d.total | number: '1.2-2' }}</strong></dd>
+      </dl>
+    </ng-container>
+
+    <h3 class="detalle-subtitulo">En su planilla de {{ mesDePago(d) }}</h3>
+    <dl class="detalle-lista" *ngIf="d.planilla_id; else sinPlanillaDetalle">
+      <dt>Gratificación</dt><dd>S/ {{ d.pagado_gratificacion | number: '1.2-2' }}</dd>
+      <dt>Bonificación 9 %</dt><dd>S/ {{ d.pagado_bonificacion | number: '1.2-2' }}</dd>
+      <dt>Total pagado</dt><dd><strong>S/ {{ d.pagado_total | number: '1.2-2' }}</strong></dd>
+    </dl>
+    <ng-template #sinPlanillaDetalle><p class="form-ayuda">Ese mes todavía no tiene planilla.</p></ng-template>
+    <p class="form-nota form-nota--aviso" *ngIf="d.estado_grati === 'diferencia'">
+      Su planilla pagó S/ {{ d.pagado_total | number: '1.2-2' }} y por ley le corresponden S/ {{ d.total | number: '1.2-2' }}
+      ({{ d.diferencia > 0 ? 'de más' : 'de menos' }} S/ {{ (d.diferencia < 0 ? -d.diferencia : d.diferencia) | number: '1.2-2' }}).
+      <ng-container *ngIf="d.planilla_del_plame">Es una planilla importada del PLAME: se pagó así antes del sistema.</ng-container>
+      <ng-container *ngIf="!d.planilla_del_plame">Si la planilla sigue abierta, al recalcularla se pone el monto correcto.</ng-container>
+    </p>
+  </ng-container>
+
+  <div panelPie *ngIf="detalle as d">
+    <button type="button" class="btn-secondary" (click)="panelAbierto = false">Cerrar</button>
+    <button type="button" class="btn-secondary" *ngIf="d.aplica" (click)="bajarHoja(d)">
+      <app-icon icono="download" [tamano]="16"></app-icon>
+      Hoja de gratificación
+    </button>
+    <button type="button" class="btn-primary" *ngIf="d.estado_grati === 'pagada' && !d.documento_id" (click)="entregar([d])">
+      <app-icon icono="receipt_long" [tamano]="16"></app-icon>
+      Entregar hoja
+    </button>
+  </div>
+</app-panel-lateral>

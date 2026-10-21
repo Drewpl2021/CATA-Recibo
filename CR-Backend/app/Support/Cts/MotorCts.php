@@ -178,13 +178,35 @@ class MotorCts
         $calculo = $this->calcular($empleado, $anio, $periodo);
         $cierre = Carbon::parse($calculo['hasta'] ?? $semestre['hasta']);
 
+        $meses = array_map(fn (array $m) => $m + [
+            'es_cierre'        => $m['mes'] === (int) $cierre->month && $m['anio'] === (int) $cierre->year,
+            'es_gratificacion' => $m['mes'] === $semestre['grati_mes'] && $m['anio'] === $semestre['grati_anio'],
+        ], $this->mesAMes($empleado, $semestre['desde'], $semestre['hasta']));
+
+        return [
+            'anio'     => $anio,
+            'periodo'  => $periodo,
+            'empleado' => ['id' => $empleado->id, 'dni' => $empleado->dni, 'nombre' => trim("{$empleado->apellido} {$empleado->nombre}")],
+            'calculo'  => $calculo,
+            'meses'    => $meses,
+        ];
+    }
+
+    /**
+     * Lo que ganó mes por mes entre dos fechas, de sus planillas: la
+     * situación de cada mes (con planilla, sin planilla en el sistema o no
+     * trabajaba), el sueldo, cada concepto con su tipo y los totales. Lo
+     * usan la CTS y la gratificación, cada una con sus propias marcas.
+     */
+    public function mesAMes(Empleado $empleado, Carbon $desde, Carbon $hasta): array
+    {
         $planillas = Planilla::with('payrollDetalles.paymentConcept')
             ->where('empleado_id', $empleado->id)->where('estado_registro', 'activo')
-            ->whereIn('anio', [$semestre['desde']->year, $semestre['hasta']->year])->get()
+            ->whereIn('anio', array_unique([$desde->year, $hasta->year]))->get()
             ->keyBy(fn ($p) => $p->anio . '-' . $p->mes);
 
         $meses = [];
-        for ($cursor = $semestre['desde']->copy(); $cursor->lte($semestre['hasta']); $cursor->addMonth()) {
+        for ($cursor = $desde->copy()->startOfMonth(); $cursor->lte($hasta); $cursor->addMonth()) {
             $mes = (int) $cursor->month;
             $anioMes = (int) $cursor->year;
             $planilla = $planillas->get($anioMes . '-' . $mes);
@@ -201,27 +223,19 @@ class MotorCts
             $sueldo = $planilla ? round((float) $planilla->sueldo_base, 2) : 0.0;
 
             $meses[] = [
-                'mes'              => $mes,
-                'anio'             => $anioMes,
-                'situacion'        => $planilla ? 'planilla' : ($trabajo ? 'sin_planilla' : 'no_trabajaba'),
-                'sueldo_base'      => $sueldo,
-                'conceptos'        => $conceptos,
-                'ingresos'         => round($sueldo + $suma('bonificacion'), 2),
-                'descuentos'       => round($suma('descuento') + $suma('adelanto'), 2),
-                'aportes'          => $suma('aportacion'),
-                'neto'             => $planilla ? round((float) $planilla->total, 2) : 0.0,
-                'es_cierre'        => $mes === (int) $cierre->month && $anioMes === (int) $cierre->year,
-                'es_gratificacion' => $mes === $semestre['grati_mes'] && $anioMes === $semestre['grati_anio'],
+                'mes'         => $mes,
+                'anio'        => $anioMes,
+                'situacion'   => $planilla ? 'planilla' : ($trabajo ? 'sin_planilla' : 'no_trabajaba'),
+                'sueldo_base' => $sueldo,
+                'conceptos'   => $conceptos,
+                'ingresos'    => round($sueldo + $suma('bonificacion'), 2),
+                'descuentos'  => round($suma('descuento') + $suma('adelanto'), 2),
+                'aportes'     => $suma('aportacion'),
+                'neto'        => $planilla ? round((float) $planilla->total, 2) : 0.0,
             ];
         }
 
-        return [
-            'anio'     => $anio,
-            'periodo'  => $periodo,
-            'empleado' => ['id' => $empleado->id, 'dni' => $empleado->dni, 'nombre' => trim("{$empleado->apellido} {$empleado->nombre}")],
-            'calculo'  => $calculo,
-            'meses'    => $meses,
-        ];
+        return $meses;
     }
 
     /**
@@ -236,7 +250,7 @@ class MotorCts
      *
      * @return array{sueldo: float, asignacion: float, cargo: float, fuente: string}
      */
-    private function remuneracionAlCierre(Empleado $empleado, int $mes, int $anio): array
+    public function remuneracionAlCierre(Empleado $empleado, int $mes, int $anio): array
     {
         $planilla = Planilla::with('payrollDetalles.paymentConcept')
             ->where('empleado_id', $empleado->id)->where('mes', $mes)->where('anio', $anio)
@@ -290,6 +304,6 @@ class MotorCts
             return ['monto' => 0.0, 'fuente' => null];
         }
 
-        return ['monto' => $calculada['monto_base'] + $calculada['asignacion_familiar'], 'fuente' => 'calculada'];
+        return ['monto' => $calculada['gratificacion'], 'fuente' => 'calculada'];
     }
 }

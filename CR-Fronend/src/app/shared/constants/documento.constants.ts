@@ -5,6 +5,7 @@ export const TIPO_DOCUMENTO_OPCIONES: readonly Opcion[] = [
   { label: 'Boleta', value: 'boleta' },
   { label: 'Contrato', value: 'contrato' },
   { label: 'CTS', value: 'cts' },
+  { label: 'Gratificación', value: 'gratificacion' },
   { label: 'Vacaciones truncas', value: 'vacaciones_truncas' },
   { label: 'Comprobante de transferencia', value: 'comprobante_transferencia' },
   { label: 'Hoja de vida', value: 'hoja_de_vida' },
