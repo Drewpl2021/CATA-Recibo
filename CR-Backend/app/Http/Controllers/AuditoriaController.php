@@ -41,4 +41,17 @@ class AuditoriaController extends Controller
 
         return $this->responderListado($request, $query, ['descripcion', 'usuario_nombre']);
     }
+
+    /**
+     * GET /audit-log/{id} — el «Ver más»: el registro contado en palabras,
+     * quién era la persona, sobre qué fue, qué más le pasó a ese registro y
+     * qué más hizo esa persona en esos minutos (ver DetalleDeAuditoria).
+     */
+    public function show(int $id)
+    {
+        return response()->json([
+            'success' => true,
+            'data'    => \App\Support\DetalleDeAuditoria::de(Auditoria::findOrFail($id)),
+        ]);
+    }
 }

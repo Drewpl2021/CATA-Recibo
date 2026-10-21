@@ -2,22 +2,15 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+import { Router } from '@angular/router';
 import { AuditoriaService, ToastService } from '../../../core/services';
-import { RegistroAuditoria } from '../../../core/models';
+import { DetalleAuditoria, RegistroAuditoria } from '../../../core/models';
 import { fechaHoraLegible, mensajeErrorApi } from '../../../core/utils';
 import { AccionFila, DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
-import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { PanelLateralComponent } from '../../../shared/components/panel-lateral/panel-lateral.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-
-/** Un cambio ya desarmado, para pintar "campo: antes → después" cada uno en su línea. */
-interface CambioLegible {
-  campo: string;
-  antes: string;
-  despues: string;
-  /** Lo que no es un par antes/después (una aplicación en bloque) no tiene flecha. */
-  esPar: boolean;
-}
 
 /**
  * Auditoría: quién cambió qué, y cuándo.
@@ -34,12 +27,13 @@ import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/f
 @Component({
   selector: 'app-auditoria-list',
   standalone: true,
-  imports: [FiltrosComponent, CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent],
+  imports: [FiltrosComponent, CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, PanelLateralComponent, IconComponent],
   templateUrl: './auditoria-list.component.html',
 })
 export class AuditoriaListComponent implements OnInit {
   private auditoriaService = inject(AuditoriaService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   registros: RegistroAuditoria[] = [];
   cargando = false;
@@ -71,7 +65,7 @@ export class AuditoriaListComponent implements OnInit {
     },
     {
       clave: 'accion', etiqueta: 'Acción', tipo: 'opciones', vacio: 'Todas',
-      opciones: ['creó', 'cambió', 'borró', 'aplicó', 'agregó', 'quitó', 'firmó'].map((a) => ({ valor: a, etiqueta: this.etiquetaAccion(a) })),
+      opciones: ['creó', 'cambió', 'borró', 'aplicó', 'importó', 'recalculó', 'agregó', 'quitó', 'firmó'].map((a) => ({ valor: a, etiqueta: this.etiquetaAccion(a) })),
     },
     { clave: 'desde', claveHasta: 'hasta', etiqueta: 'Cuándo', tipo: 'fecha', ancho: 'doble' },
   ];
@@ -106,47 +100,61 @@ export class AuditoriaListComponent implements OnInit {
     { id: 'ver_mas', titulo: 'Ver todo lo que pasó', icono: 'description', etiqueta: 'Ver más' },
   ];
 
-  // ── El detalle ──
-  modalDetalle = false;
-  registroVisto: RegistroAuditoria | null = null;
+  // ── El detalle («Ver más») ──
+  /**
+   * Un panel a la derecha, no un modal: se sigue viendo la lista, y desde el
+   * historial se salta a otro registro sin cerrar nada. El detalle lo arma el
+   * backend (DetalleDeAuditoria): campos en palabras, montos en soles, ids
+   * por su nombre, quién era la persona y lo que pasó alrededor.
+   */
+  panelAbierto = false;
+  detalle: DetalleAuditoria | null = null;
+  cargandoDetalle = false;
+  /** Los registros por los que se fue pasando, para «Volver». */
+  private recorridos: number[] = [];
 
   verMas(fila: RegistroAuditoria): void {
-    this.registroVisto = fila;
-    this.modalDetalle = true;
+    this.recorridos = [];
+    this.abrirDetalle(fila.id);
   }
 
-  cerrarDetalle(): void {
-    this.modalDetalle = false;
+  /** Otro registro desde el historial o los cercanos, sin cerrar el panel. */
+  irARegistro(id: number): void {
+    if (this.detalle) this.recorridos.push(this.detalle.registro.id);
+    this.abrirDetalle(id);
+  }
+
+  volverAlAnterior(): void {
+    const anterior = this.recorridos.pop();
+    if (anterior !== undefined) this.abrirDetalle(anterior);
+  }
+
+  get hayAnterior(): boolean {
+    return this.recorridos.length > 0;
+  }
+
+  private abrirDetalle(id: number): void {
+    this.panelAbierto = true;
+    this.cargandoDetalle = true;
+    this.auditoriaService.detalle(id).subscribe({
+      next: (res) => {
+        this.cargandoDetalle = false;
+        if (res.success) this.detalle = res.data;
+      },
+      error: (err) => {
+        this.cargandoDetalle = false;
+        this.toastService.error('No se pudo abrir', mensajeErrorApi(err, 'Intenta de nuevo en un momento.'));
+      },
+    });
+  }
+
+  abrirEnElSistema(enlace: string): void {
+    this.panelAbierto = false;
+    this.router.navigateByUrl(enlace);
   }
 
   etiquetaEntidad(entidad: string): string {
     return this.entidades.find((e) => e.valor === entidad)?.etiqueta ?? entidad;
-  }
-
-  /**
-   * Los mismos cambios de resumirCambios(), pero uno por línea en vez de
-   * amontonados con punto y coma — para el modal de detalle, no para la
-   * columna de la tabla, que sí necesita quedarse en una sola línea.
-   */
-  cambiosLegibles(fila: RegistroAuditoria | null): CambioLegible[] {
-    const cambios = fila?.cambios;
-    if (!cambios) return [];
-
-    const legible = (valor: unknown): string => {
-      if (valor === null || valor === undefined || valor === '') return 'vacío';
-      if (typeof valor === 'boolean') return valor ? 'sí' : 'no';
-      return String(valor);
-    };
-
-    return Object.entries(cambios).map(([campo, valor]) => {
-      const esPar = Array.isArray(valor) && valor.length === 2;
-      return {
-        campo: campo.replace(/_/g, ' '),
-        antes: esPar ? legible((valor as unknown[])[0]) : '',
-        despues: esPar ? legible((valor as unknown[])[1]) : legible(valor),
-        esPar,
-      };
-    });
   }
 
   fechaCompleta(valor: string | null | undefined): string {
@@ -211,6 +219,7 @@ export class AuditoriaListComponent implements OnInit {
     const etiquetas: Record<string, string> = {
       'creó': 'Alta', 'cambió': 'Cambio', 'borró': 'Baja', 'aplicó': 'Aplicó',
       'agregó': 'Agregó', 'quitó': 'Quitó', 'firmó': 'Firma digital',
+      'importó': 'Importó', 'recalculó': 'Recalculó',
     };
     return etiquetas[accion] ?? accion;
   }
@@ -218,7 +227,7 @@ export class AuditoriaListComponent implements OnInit {
   colorAccion(accion: string): 'success' | 'warning' | 'info' | 'secondary' {
     if (accion === 'creó' || accion === 'agregó') return 'success';
     if (accion === 'borró' || accion === 'quitó') return 'secondary';
-    if (accion === 'aplicó') return 'warning';
+    if (accion === 'aplicó' || accion === 'importó' || accion === 'recalculó') return 'warning';
     return 'info';
   }
 
@@ -232,16 +241,21 @@ export class AuditoriaListComponent implements OnInit {
     const cambios = fila.cambios;
     if (!cambios || !Object.keys(cambios).length) return '—';
 
+    // Lo anidado (los nuevos de una importación) se lee «activos: 1, cesados: 0», nunca [object Object].
     const legible = (valor: unknown): string => {
       if (valor === null || valor === undefined || valor === '') return 'vacío';
       if (typeof valor === 'boolean') return valor ? 'sí' : 'no';
+      if (Array.isArray(valor)) return valor.map(legible).join(', ') || 'ninguno';
+      if (typeof valor === 'object') {
+        return Object.entries(valor as Record<string, unknown>).map(([k, v]) => `${k.replace(/_/g, ' ')}: ${legible(v)}`).join(', ');
+      }
       return String(valor);
     };
 
     return Object.entries(cambios)
       .map(([campo, valor]) => {
         const nombre = campo.replace(/_/g, ' ');
-        return Array.isArray(valor) && valor.length === 2
+        return fila.accion === 'cambió' && Array.isArray(valor) && valor.length === 2
           ? `${nombre}: ${legible(valor[0])} → ${legible(valor[1])}`
           : `${nombre}: ${legible(valor)}`;
       })

@@ -27,61 +27,122 @@
     (cambio)="alFiltrar()"></app-filtros>
 </app-data-table>
 
-<!-- El detalle de un registro: la columna "Antes → después" de la tabla
-     amontona los cambios en una sola línea con punto y coma, que para un
-     cambio con muchos campos a la vez (una edición grande de la ficha, una
-     aplicación en bloque) se vuelve ilegible. Acá cada campo va en su
-     propia línea. La contraseña sigue oculta —eso lo hace el backend,
-     nunca llega el valor de verdad— pero todo lo demás se ve completo. -->
-<app-form-modal
-  [(visible)]="modalDetalle"
-  titulo="Qué pasó"
-  [ocultarBotonesPorDefecto]="true"
-  (cancelar)="cerrarDetalle()"
+<!-- «Ver más»: el registro contado en palabras, con todo lo que lo rodea.
+     Es un panel y no un modal: la lista se sigue viendo, y desde el
+     historial se salta a otro registro sin cerrar nada. -->
+<app-panel-lateral
+  [(visible)]="panelAbierto"
+  icono="clock"
+  ancho="560px"
+  [titulo]="detalle ? etiquetaAccion(detalle.registro.accion) + ' · ' + detalle.sobre.entidad : 'Registro de auditoría'"
+  [subtitulo]="detalle ? fechaCompleta(detalle.registro.created_at) : ''"
 >
-  <div class="form-fields" *ngIf="registroVisto as r">
-    <div class="rejilla-campos">
-      <div class="form-group">
-        <label>Cuándo</label>
-        <p class="form-nota">{{ fechaCompleta(r.created_at) }}</p>
-      </div>
-      <div class="form-group">
-        <label>Quién</label>
-        <p class="form-nota">
-          {{ r.usuario_nombre || '—' }}
-          <span class="form-ayuda" *ngIf="r.ip"> · desde {{ r.ip }}</span>
-        </p>
-      </div>
-      <div class="form-group">
-        <label>Acción</label>
-        <p class="form-nota">
-          <span class="status-badge" [ngClass]="'status-badge-' + colorAccion(r.accion)">{{ etiquetaAccion(r.accion) }}</span>
-        </p>
-      </div>
-      <div class="form-group">
-        <label>Sobre</label>
-        <p class="form-nota">{{ etiquetaEntidad(r.entidad) }}</p>
-      </div>
-    </div>
+  <p class="form-ayuda" *ngIf="cargandoDetalle && !detalle">Cargando el registro…</p>
 
-    <div class="form-group">
-      <label>Qué pasó</label>
-      <p class="form-nota">{{ r.descripcion }}</p>
-    </div>
+  <ng-container *ngIf="detalle as d">
+    <button type="button" class="btn-secondary auditoria-volver" *ngIf="hayAnterior" (click)="volverAlAnterior()">
+      <app-icon icono="arrow_left" [tamano]="15"></app-icon>
+      Volver al registro anterior
+    </button>
 
-    <div class="form-group" *ngIf="cambiosLegibles(r).length">
-      <label>Los cambios, uno por uno</label>
-      <ul class="lista-contratos">
-        <li class="lista-contratos__item" *ngFor="let c of cambiosLegibles(r)">
-          <strong>{{ c.campo }}</strong>
-          <span *ngIf="c.esPar">{{ c.antes }} → {{ c.despues }}</span>
-          <span *ngIf="!c.esPar">{{ c.despues }}</span>
-        </li>
-      </ul>
-    </div>
-
-    <p class="form-nota" *ngIf="!cambiosLegibles(r).length">
-      Esta acción no lleva campos de antes/después —fue un alta o una baja, no un cambio.
+    <h3 class="detalle-subtitulo">Qué pasó</h3>
+    <p class="auditoria-descripcion">
+      <span class="status-badge" [ngClass]="'status-badge-' + colorAccion(d.registro.accion)">{{ etiquetaAccion(d.registro.accion) }}</span>
+      {{ d.registro.descripcion }}
     </p>
-  </div>
-</app-form-modal>
+    <dl class="detalle-lista">
+      <dt>Cuándo</dt>
+      <dd>{{ fechaCompleta(d.registro.created_at) }}</dd>
+      <dt>N° de registro</dt>
+      <dd>{{ d.registro.id }}</dd>
+    </dl>
+
+    <h3 class="detalle-subtitulo">Quién lo hizo</h3>
+    <dl class="detalle-lista">
+      <dt>Persona</dt>
+      <dd>
+        {{ d.quien.nombre || '—' }}
+        <span class="status-badge status-badge-secondary" *ngIf="d.quien.sigue_activo === false">Ya no tiene acceso</span>
+      </dd>
+      <ng-container *ngIf="d.quien.rol"><dt>Rol</dt><dd>{{ d.quien.rol }}</dd></ng-container>
+      <ng-container *ngIf="d.quien.correo"><dt>Correo</dt><dd>{{ d.quien.correo }}</dd></ng-container>
+      <dt>Desde</dt>
+      <dd>
+        {{ d.quien.navegador || 'Navegador no anotado' }}
+        <div class="form-ayuda" *ngIf="d.quien.ip">IP {{ d.quien.ip }}</div>
+        <div class="form-ayuda" *ngIf="!d.quien.navegador">Los registros anteriores al 21/10/2026 no guardan el navegador.</div>
+      </dd>
+    </dl>
+
+    <h3 class="detalle-subtitulo">Sobre qué</h3>
+    <dl class="detalle-lista">
+      <dt>Tipo</dt>
+      <dd>{{ d.sobre.entidad }}</dd>
+      <ng-container *ngIf="d.sobre.nombre"><dt>Registro</dt><dd>{{ d.sobre.nombre }}</dd></ng-container>
+    </dl>
+    <p class="form-nota form-nota--aviso" *ngIf="d.sobre.ya_no_existe">
+      Ese registro ya no existe en el sistema: se borró después.
+    </p>
+    <button type="button" class="btn-secondary auditoria-volver" *ngIf="d.sobre.enlace" (click)="abrirEnElSistema(d.sobre.enlace)">
+      <app-icon icono="arrow_right" [tamano]="15"></app-icon>
+      {{ d.sobre.nombre ? 'Abrir: ' + d.sobre.entidad : 'Ir a: ' + d.sobre.entidad }}
+    </button>
+
+    <ng-container *ngIf="d.campos.length">
+      <h3 class="detalle-subtitulo">
+        {{ d.es_alta_o_baja ? (d.registro.accion === 'creó' ? 'Datos con que se registró' : 'Cómo estaba al borrarse') : 'Qué cambió, dato por dato' }}
+      </h3>
+      <table class="auditoria-campos">
+        <thead>
+          <tr>
+            <th>Dato</th>
+            <th *ngIf="d.registro.accion === 'cambió'">Antes</th>
+            <th>{{ d.registro.accion === 'cambió' ? 'Después' : 'Valor' }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of d.campos">
+            <td>{{ c.etiqueta }}</td>
+            <td *ngIf="d.registro.accion === 'cambió'" class="auditoria-campos__antes">{{ c.antes ?? '—' }}</td>
+            <td class="auditoria-campos__despues">{{ c.despues }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+    <p class="form-nota" *ngIf="!d.campos.length">
+      {{ d.es_alta_o_baja
+        ? 'Este registro es anterior al 21/10/2026: entonces las altas y bajas no guardaban sus datos.'
+        : 'Esta acción no lleva datos de antes y después.' }}
+    </p>
+
+    <ng-container *ngIf="d.historial.length">
+      <h3 class="detalle-subtitulo">Historial de este registro</h3>
+      <p class="form-ayuda">Todo lo demás que se le hizo, lo más reciente primero. Pulsa uno para verlo.</p>
+      <ol class="rastro">
+        <li class="rastro__paso auditoria-paso" *ngFor="let h of d.historial" (click)="irARegistro(h.id)"
+          (keydown.enter)="irARegistro(h.id)" tabindex="0" role="button">
+          <span class="rastro__marca"><app-icon icono="clock" [tamano]="14"></app-icon></span>
+          <span class="rastro__texto">
+            <strong>{{ h.descripcion }}</strong>
+            <span>{{ etiquetaAccion(h.accion) }} · {{ h.usuario_nombre || '—' }} · {{ fechaCompleta(h.created_at) }}</span>
+          </span>
+        </li>
+      </ol>
+    </ng-container>
+
+    <ng-container *ngIf="d.cercanos.length">
+      <h3 class="detalle-subtitulo">Lo que hizo {{ d.quien.nombre || 'esa persona' }} en esos minutos</h3>
+      <p class="form-ayuda">Quince minutos antes y después: una importación o un cierre de mes suelen ser varias acciones juntas.</p>
+      <ol class="rastro">
+        <li class="rastro__paso auditoria-paso" *ngFor="let h of d.cercanos" (click)="irARegistro(h.id)"
+          (keydown.enter)="irARegistro(h.id)" tabindex="0" role="button">
+          <span class="rastro__marca"><app-icon icono="clock" [tamano]="14"></app-icon></span>
+          <span class="rastro__texto">
+            <strong>{{ h.descripcion }}</strong>
+            <span>{{ etiquetaAccion(h.accion) }} · {{ etiquetaEntidad(h.entidad) }} · {{ fechaCompleta(h.created_at) }}</span>
+          </span>
+        </li>
+      </ol>
+    </ng-container>
+  </ng-container>
+</app-panel-lateral>

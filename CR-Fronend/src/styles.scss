@@ -9053,3 +9053,47 @@ textarea.form-control {
 .importacion-pie .btn-secondary,
 .importacion-pie .btn-primary { display: inline-flex; align-items: center; gap: 6px; }
 .importacion-pie > .form-ayuda { align-self: center; }
+
+/* ══ Auditoría: el «Ver más» ═════════════════════════════════════════ */
+
+.auditoria-descripcion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.auditoria-volver { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0; }
+
+/* Los datos del registro: dato | antes | después, una fila por campo. */
+.auditoria-campos { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+
+.auditoria-campos th {
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.auditoria-campos td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.auditoria-campos td:first-child { width: 38%; color: var(--text-soft); font-weight: 600; }
+.auditoria-campos__antes { color: var(--text-muted); text-decoration: line-through; }
+.auditoria-campos__despues { color: var(--heading); font-weight: 600; }
+
+/* Cada paso del historial se abre. */
+.auditoria-paso { padding-left: 6px; padding-right: 6px; border-radius: var(--radius-sm); cursor: pointer; }
+.auditoria-paso:hover { background-color: var(--surface-hover); }
+.auditoria-paso:focus-visible { outline: 2px solid var(--brand-500); outline-offset: -2px; }

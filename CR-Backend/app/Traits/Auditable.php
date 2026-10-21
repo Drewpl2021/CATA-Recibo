@@ -32,6 +32,22 @@ trait Auditable
     {
         $cambios = null;
 
+        // Un alta o una baja se anotaban solo con el nombre: «Dio de alta:
+        // Ana Quispe», y el detalle no tenía nada que enseñar. Ahora guardan
+        // con qué datos se registró (o cómo estaba al borrarse): los mismos
+        // campos vigilados, sin los secretos ni los vacíos.
+        if ($accion === 'creó' || $accion === 'borró') {
+            $secretos = $this->camposSecretos ?? [];
+            $cambios = [];
+            foreach ($this->camposAuditables ?? [] as $campo) {
+                $valor = $this->getAttribute($campo);
+                if (in_array($campo, $secretos, true) || $valor === null || $valor === '') {
+                    continue;
+                }
+                $cambios[$campo] = $valor instanceof \DateTimeInterface ? $valor->format('Y-m-d') : $valor;
+            }
+        }
+
         if ($accion === 'cambió') {
             $cambios = [];
             $vigilados = $this->camposAuditables ?? [];
@@ -69,7 +85,7 @@ trait Auditable
     /** "el sueldo, el AFP y la cuenta" a partir de los nombres de columna. */
     private function enumerarCampos(array $campos): string
     {
-        $legibles = array_map(fn ($c) => str_replace('_', ' ', $c), $campos);
+        $legibles = array_map(fn ($c) => \App\Support\DetalleDeAuditoria::campoEnFrase($c), $campos);
 
         if (count($legibles) === 1) {
             return $legibles[0];

@@ -65,6 +65,10 @@ class Auditoria extends Model
                 'descripcion'    => mb_substr($descripcion, 0, 255),
                 'cambios'        => $cambios ?: null,
                 'ip'             => request()?->ip(),
+                // Desde la consola no hay navegador: Laravel pone «Symfony».
+                'navegador'      => app()->runningInConsole() && ! app()->runningUnitTests()
+                    ? null
+                    : (mb_substr((string) request()?->userAgent(), 0, 255) ?: null),
             ]);
         } catch (Throwable $e) {
             report($e);

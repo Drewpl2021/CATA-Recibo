@@ -330,6 +330,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // La auditoría: quién cambió qué. Solo lectura, y solo Admin —es
         // justamente donde se ve lo que hizo RR.HH.—.
         Route::get('audit-log', [AuditoriaController::class, 'index']);
+        Route::get('audit-log/{id}', [AuditoriaController::class, 'show'])->whereNumber('id');
 
 
         Route::apiResource('roles', RolController::class)->only(['store', 'update', 'destroy']);
