@@ -88,6 +88,7 @@
 >
   <!-- El embudo, como en Planillas: situación, dato del mes, sede, área,
        cargo y estado. El Excel baja con estos mismos filtros. -->
+  <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="aplicarFiltro()"></app-orden>
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
     (cambio)="aplicarFiltro()"></app-filtros>
 

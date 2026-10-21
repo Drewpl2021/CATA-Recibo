@@ -60,6 +60,16 @@ class ExpedienteController extends Controller
             default               => null,
         };
 
+        // El botón «Ordenar»: sin él, por apellidos de la A a la Z.
+        $this->aplicarOrden($request, $query, [
+            'apellido_desc'    => fn (Builder $q) => $q->orderByDesc('empleados.apellido')->orderByDesc('empleados.nombre'),
+            'nombre'           => fn (Builder $q) => $q->orderBy('empleados.nombre')->orderBy('empleados.apellido'),
+            'nombre_desc'      => fn (Builder $q) => $q->orderByDesc('empleados.nombre')->orderByDesc('empleados.apellido'),
+            'documentos_desc'  => fn (Builder $q) => $q->orderByDesc('documentos_count'),
+            'por_firmar_desc'  => fn (Builder $q) => $q->orderByDesc('boletas_por_firmar'),
+            'ingreso'          => fn (Builder $q) => $q->orderBy('empleados.fecha_ingreso'),
+        ]);
+
         return $this->responderListado(
             $request,
             $query,

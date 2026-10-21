@@ -17,6 +17,7 @@ import { BarraSeleccionComponent, resumirMarcados } from '../../../shared/compon
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { OrdenComponent, OpcionOrden } from '../../../shared/components/orden/orden.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
 
@@ -96,7 +97,7 @@ interface ChipSituacion {
   standalone: true,
   imports: [
     PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective,
-    FiltrosComponent, FormModalComponent, PanelLateralComponent, BarraSeleccionComponent,
+    FiltrosComponent, OrdenComponent, FormModalComponent, PanelLateralComponent, BarraSeleccionComponent,
   ],
   templateUrl: './cts-list.component.html',
 })
@@ -287,13 +288,43 @@ export class CtsListComponent implements OnInit {
     this.camposFiltro = [...this.camposFiltro];
   }
 
+  /**
+   * El botón «Ordenar». Esta lista llega entera del servidor y se filtra
+   * acá, así que se ordena acá también, sobre todas las filas que pasan el
+   * filtro (no solo las de la página que se ve).
+   */
+  orden = '';
+  readonly opcionesDeOrden: OpcionOrden[] = [
+    { valor: 'apellido', etiqueta: 'Apellidos de la A a la Z' },
+    { valor: 'apellido_desc', etiqueta: 'Apellidos de la Z a la A' },
+    { valor: 'nombre', etiqueta: 'Nombres de la A a la Z' },
+    { valor: 'nombre_desc', etiqueta: 'Nombres de la Z a la A' },
+    { valor: 'monto_desc', etiqueta: 'CTS de mayor a menor' },
+    { valor: 'monto', etiqueta: 'CTS de menor a mayor' },
+    { valor: 'ingreso', etiqueta: 'Más antiguos en el colegio' },
+  ];
+
+  private comparar(a: FilaCts, b: FilaCts): number {
+    const texto = (x: string, y: string) => (x ?? '').localeCompare(y ?? '', 'es', { sensitivity: 'base' });
+    switch (this.orden) {
+      case 'apellido_desc': return texto(b.apellido, a.apellido) || texto(b.nombres, a.nombres);
+      case 'nombre': return texto(a.nombres, b.nombres) || texto(a.apellido, b.apellido);
+      case 'nombre_desc': return texto(b.nombres, a.nombres) || texto(b.apellido, a.apellido);
+      case 'monto_desc': return b.monto - a.monto;
+      case 'monto': return a.monto - b.monto;
+      case 'ingreso': return texto(a.fecha_ingreso, b.fecha_ingreso);
+      default: return texto(a.apellido, b.apellido) || texto(a.nombres, b.nombres);
+    }
+  }
+
   aplicarFiltro(): void {
     const v = this.filtros;
     this.filasVisibles = (this.datos?.filas ?? []).filter((f) =>
       (!this.situacion || f.estado_cts === this.situacion)
       && (!v['sede_id'] || f.sede_id === v['sede_id'])
       && (!v['area_id'] || f.area_id === v['area_id'])
-      && (!v['cargo_id'] || f.cargo_id === v['cargo_id']));
+      && (!v['cargo_id'] || f.cargo_id === v['cargo_id']))
+      .sort((a, b) => this.comparar(a, b));
   }
 
   get mensajeVacio(): string {

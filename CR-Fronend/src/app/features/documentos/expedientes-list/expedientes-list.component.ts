@@ -40,11 +40,12 @@ interface ChipExpediente {
  * vida, quién no firma y qué contrato está por vencer.
  */
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { OrdenComponent, OpcionOrden } from '../../../shared/components/orden/orden.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 @Component({
   selector: 'app-expedientes-list',
   standalone: true,
-  imports: [FiltrosComponent, CommonModule, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, IconComponent],
+  imports: [FiltrosComponent, OrdenComponent, CommonModule, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, IconComponent],
   templateUrl: './expedientes-list.component.html',
 })
 export class ExpedientesListComponent implements OnInit {
@@ -66,6 +67,18 @@ export class ExpedientesListComponent implements OnInit {
   filtro: FiltroExpedientes = '';
   /** El embudo: la misma pregunta de siempre, «¿a quién le falta qué?». */
   filtros: ValoresFiltro = {};
+
+  /** El botón «Ordenar» ('' = apellidos de la A a la Z). Lo aplica el backend. */
+  orden = '';
+  readonly opcionesDeOrden: OpcionOrden[] = [
+    { valor: 'apellido', etiqueta: 'Apellidos de la A a la Z' },
+    { valor: 'apellido_desc', etiqueta: 'Apellidos de la Z a la A' },
+    { valor: 'nombre', etiqueta: 'Nombres de la A a la Z' },
+    { valor: 'nombre_desc', etiqueta: 'Nombres de la Z a la A' },
+    { valor: 'documentos_desc', etiqueta: 'Más documentos primero' },
+    { valor: 'por_firmar_desc', etiqueta: 'Más boletas por firmar primero' },
+    { valor: 'ingreso', etiqueta: 'Más antiguos en el colegio' },
+  ];
   camposFiltro: CampoFiltro[] = [];
   resumen: ResumenExpedientes = { ...SIN_RESUMEN };
 
@@ -118,7 +131,7 @@ export class ExpedientesListComponent implements OnInit {
 
   cargar(): void {
     // Para devolvérselo al volver (ver EstadoListadoService).
-    this.estadoListados.guardar('expedientes', { busqueda: this.busqueda, pagina: this.pagina, filtro: this.filtro });
+    this.estadoListados.guardar('expedientes', { busqueda: this.busqueda, pagina: this.pagina, filtro: this.filtro, orden: this.orden });
     this.cargando = true;
     this.expedientes
       .paginar({
@@ -126,6 +139,7 @@ export class ExpedientesListComponent implements OnInit {
         size: this.TAMANO_PAGINA,
         search: this.busqueda || undefined,
         filtro: this.filtro || undefined,
+        orden: this.orden || undefined,
       })
       .subscribe({
         next: (res) => {
@@ -148,6 +162,12 @@ export class ExpedientesListComponent implements OnInit {
       clave: 'filtro', etiqueta: 'Mostrar', tipo: 'opciones', vacio: `Todo el personal (${this.resumen.trabajadores})`,
       opciones: this.chips.filter((c) => c.valor).map((c) => ({ valor: c.valor, etiqueta: `${c.etiqueta} (${c.cuenta(this.resumen)})` })),
     }];
+  }
+
+  /** Cambió el orden: de nuevo desde la página 1. */
+  alOrdenar(): void {
+    this.pagina = 0;
+    this.cargar();
   }
 
   alFiltrar(): void {

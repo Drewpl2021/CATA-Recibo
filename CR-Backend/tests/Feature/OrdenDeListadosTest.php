@@ -81,4 +81,17 @@ class OrdenDeListadosTest extends TestCase
 
         $this->assertSame(['Planilla TIC', 'Planilla Docentes', 'Planilla Administrativos'], $nombres);
     }
+
+    public function test_documentos_por_nombres_de_la_z_a_la_a(): void
+    {
+        foreach (['Ana' => 'Quispe', 'Carlos' => 'Apaza', 'Beatriz' => 'Mamani'] as $nombre => $apellido) {
+            $this->crearEmpleado(['nombre' => $nombre, 'apellido' => $apellido]);
+        }
+
+        $nombres = collect($this->actingAs($this->crearUsuario('rrhh'), 'sanctum')
+            ->getJson('/api/employee-files?page=0&size=10&orden=nombre_desc')->assertOk()->json('data.content'))
+            ->pluck('nombre')->all();
+
+        $this->assertSame(['Carlos', 'Beatriz', 'Ana'], $nombres);
+    }
 }

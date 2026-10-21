@@ -1,23 +1,35 @@
-<div class="filtros__caja">
-  <button type="button" class="boton-filtros" [class.boton-filtros--activo]="activo"
-    (click)="alternar($event)" [attr.aria-expanded]="abierto"
-    [attr.aria-label]="'Ordenar la tabla. Ahora: ' + etiquetaActual" [title]="'Ordenado: ' + etiquetaActual">
-    <app-icon icono="ordenar" [tamano]="16"></app-icon>
-    Ordenar
+<div class="filtros">
+
+  <!-- El orden puesto, a la vista y quitable de un clic, como los chips de Filtros. -->
+  <button type="button" class="filtros__chip" *ngIf="activo" (click)="quitar()"
+    [title]="'Quitar el orden «' + etiquetaActual + '»'">
+    {{ etiquetaActual }}
+    <app-icon icono="close" [tamano]="12"></app-icon>
   </button>
 
-  <div class="panel-flotante panel-flotante--orden" *ngIf="abierto" (click)="$event.stopPropagation()" role="dialog"
-    aria-label="Ordenar la tabla" [class.panel-flotante--arriba]="haciaArriba" [style.maxHeight.px]="altoMaximo" [style.right.px]="-corrimiento">
-    <header class="panel-flotante__cabecera">
-      <strong>Ordenar por</strong>
-    </header>
+  <div class="filtros__caja">
+    <button type="button" class="boton-filtros" [class.boton-filtros--activo]="activo"
+      (click)="alternar($event)" [attr.aria-expanded]="abierto"
+      [attr.aria-label]="'Ordenar la tabla. Ahora: ' + etiquetaActual" [title]="'Ordenado: ' + etiquetaActual">
+      <app-icon icono="ordenar" [tamano]="16"></app-icon>
+      Ordenar
+    </button>
 
-    <div class="orden-opciones" role="radiogroup" aria-label="Orden de la tabla">
-      <button type="button" class="orden-opcion" *ngFor="let o of opciones" role="radio"
-        [class.orden-opcion--elegida]="esLaElegida(o)" [attr.aria-checked]="esLaElegida(o)" (click)="elegir(o)">
-        <span>{{ o.etiqueta }}</span>
-        <app-icon *ngIf="esLaElegida(o)" icono="check" [tamano]="16"></app-icon>
-      </button>
+    <div class="panel-flotante panel-flotante--orden" *ngIf="abierto" (click)="$event.stopPropagation()" role="dialog"
+      aria-label="Ordenar la tabla" [class.panel-flotante--arriba]="haciaArriba" [style.maxHeight.px]="altoMaximo"
+      [style.right.px]="-corrimiento">
+      <header class="panel-flotante__cabecera">
+        <strong>Ordenar por</strong>
+        <button type="button" class="panel-flotante__limpiar" *ngIf="activo" (click)="quitar()">Quitar orden</button>
+      </header>
+
+      <div class="orden-opciones" role="radiogroup" aria-label="Orden de la tabla">
+        <button type="button" class="orden-opcion" *ngFor="let o of opciones" role="radio"
+          [class.orden-opcion--elegida]="esLaElegida(o)" [attr.aria-checked]="esLaElegida(o)" (click)="elegir(o)">
+          <span>{{ o.etiqueta }}</span>
+          <app-icon *ngIf="esLaElegida(o)" icono="check" [tamano]="16"></app-icon>
+        </button>
+      </div>
     </div>
   </div>
 </div>

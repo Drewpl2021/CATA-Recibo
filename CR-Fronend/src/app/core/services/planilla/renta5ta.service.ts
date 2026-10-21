@@ -12,6 +12,9 @@ export interface FilaRenta5ta {
   id: string;
   dni: string;
   nombre: string;
+  /** Por separado, para ordenar por apellidos o por nombres. */
+  apellido: string;
+  nombres: string;
   cargo_id: string | null;
   cargo: string | null;
   area_id: string | null;

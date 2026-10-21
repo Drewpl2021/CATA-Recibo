@@ -21,10 +21,13 @@ export class ExpedienteService {
     size: number;
     search?: string;
     filtro?: FiltroExpedientes;
+    /** El botón «Ordenar» (ExpedienteController::index). */
+    orden?: string;
   }): Observable<ApiResponse<Pagina<FilaExpediente> & { resumen: ResumenExpedientes }>> {
     const params: Record<string, string | number> = { page: filtros.page, size: filtros.size };
     if (filtros.search) params['search'] = filtros.search;
     if (filtros.filtro) params['filtro'] = filtros.filtro;
+    if (filtros.orden) params['orden'] = filtros.orden;
 
     return this.http.get<ApiResponse<Pagina<FilaExpediente> & { resumen: ResumenExpedientes }>>(
       `${environment.apiUrl}/${END_POINTS_ACCIONES.expedientes}`,

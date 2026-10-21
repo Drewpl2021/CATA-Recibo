@@ -116,6 +116,9 @@ class CtsController extends Controller
                 'liquidacion_id'     => $guardada?->id,
                 'dni'                => $e->dni,
                 'nombre'             => trim("{$e->apellido} {$e->nombre}"),
+                // Aparte, para el botón «Ordenar» (apellidos o nombres).
+                'apellido'           => $e->apellido,
+                'nombres'            => $e->nombre,
                 'cargo_id'           => $e->cargo_id,
                 'cargo'              => $e->cargo?->nombre,
                 'area_id'            => $e->area_id,

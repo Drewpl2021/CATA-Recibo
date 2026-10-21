@@ -16,6 +16,7 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { SelectorArchivoComponent } from '../../../shared/components/selector-archivo/selector-archivo.component';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { OrdenComponent, OpcionOrden } from '../../../shared/components/orden/orden.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 
 /**
@@ -33,7 +34,7 @@ import { PistaDirective } from '../../../shared/directives/pista.directive';
 @Component({
   selector: 'app-renta5ta-list',
   standalone: true,
-  imports: [PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FiltrosComponent, FormModalComponent, SelectorArchivoComponent],
+  imports: [PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FiltrosComponent, OrdenComponent, FormModalComponent, SelectorArchivoComponent],
   templateUrl: './renta5ta-list.component.html',
 })
 export class Renta5taListComponent implements OnInit {
@@ -220,6 +221,35 @@ export class Renta5taListComponent implements OnInit {
     this.camposFiltro = [...this.camposFiltro];
   }
 
+  /**
+   * El botón «Ordenar». Esta lista llega entera del servidor y se filtra
+   * acá, así que se ordena acá también, sobre todas las filas que pasan el
+   * filtro (no solo las de la página que se ve).
+   */
+  orden = '';
+  readonly opcionesDeOrden: OpcionOrden[] = [
+    { valor: 'apellido', etiqueta: 'Apellidos de la A a la Z' },
+    { valor: 'apellido_desc', etiqueta: 'Apellidos de la Z a la A' },
+    { valor: 'nombre', etiqueta: 'Nombres de la A a la Z' },
+    { valor: 'nombre_desc', etiqueta: 'Nombres de la Z a la A' },
+    { valor: 'impuesto_desc', etiqueta: 'Impuesto del año de mayor a menor' },
+    { valor: 'retenido_desc', etiqueta: 'Retenido de mayor a menor' },
+    { valor: 'por_retener_desc', etiqueta: 'Falta retener de mayor a menor' },
+  ];
+
+  private comparar(a: FilaRenta5ta, b: FilaRenta5ta): number {
+    const texto = (x: string, y: string) => (x ?? '').localeCompare(y ?? '', 'es', { sensitivity: 'base' });
+    switch (this.orden) {
+      case 'apellido_desc': return texto(b.apellido, a.apellido) || texto(b.nombres, a.nombres);
+      case 'nombre': return texto(a.nombres, b.nombres) || texto(a.apellido, b.apellido);
+      case 'nombre_desc': return texto(b.nombres, a.nombres) || texto(b.apellido, a.apellido);
+      case 'impuesto_desc': return b.impuesto_anual - a.impuesto_anual;
+      case 'retenido_desc': return b.retenido - a.retenido;
+      case 'por_retener_desc': return b.por_retener - a.por_retener;
+      default: return texto(a.apellido, b.apellido) || texto(a.nombres, b.nombres);
+    }
+  }
+
   /** Los mismos filtros que aplica el servidor al Excel (Renta5taController::filtrar). */
   aplicarFiltro(): void {
     const v = this.filtros;
@@ -239,7 +269,7 @@ export class Renta5taListComponent implements OnInit {
         && (!v['area_id'] || f.area_id === v['area_id'])
         && (!v['cargo_id'] || f.cargo_id === v['cargo_id'])
         && (!v['estado'] || f.estado === v['estado']);
-    });
+    }).sort((a, b) => this.comparar(a, b));
   }
 
   get hayFiltros(): boolean {

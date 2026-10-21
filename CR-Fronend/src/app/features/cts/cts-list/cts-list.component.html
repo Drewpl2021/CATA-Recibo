@@ -102,6 +102,7 @@
   [mensajeVacio]="mensajeVacio"
   (accionPersonalizada)="alAccionar($event)"
 >
+  <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="aplicarFiltro()"></app-orden>
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros" (cambio)="aplicarFiltro()"></app-filtros>
 
   <ng-template appCelda="nombre" let-f>

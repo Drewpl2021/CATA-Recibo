@@ -27,6 +27,7 @@
   (accionPersonalizada)="abrir($event.fila)"
   [mensajeVacio]="mensajeVacio"
 >
+  <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="alOrdenar()"></app-orden>
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
     (cambio)="alFiltrar()"></app-filtros>
 

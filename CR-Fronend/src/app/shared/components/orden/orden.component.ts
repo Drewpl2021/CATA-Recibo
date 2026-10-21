@@ -79,6 +79,12 @@ export class OrdenComponent {
     this.cambio.emit(valor);
   }
 
+  /** Vuelve al orden de siempre (desde el chip o desde «Quitar orden»). */
+  quitar(): void {
+    const deSiempre = this.opciones[0];
+    if (deSiempre) this.elegir(deSiempre);
+  }
+
   esLaElegida(opcion: OpcionOrden): boolean {
     return (this.valor || this.opciones[0]?.valor) === opcion.valor;
   }
