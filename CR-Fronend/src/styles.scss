@@ -127,6 +127,11 @@
      temas y no hace falta redefinirlo en oscuro. */
   --success-solid: #047857;
   --success-solid-hover: #036249;
+  /* Violeta del botón «Importar PLAME»: entre el azul de crear, el amarillo
+     de importar conceptos y el verde de descargar, se perdía en blanco. Con
+     texto blanco da 7:1; fijo en los dos temas, como el verde. */
+  --importar-solid: #6D28D9;
+  --importar-solid-hover: #5B21B6;
   /* Los tonos macizos de los badges de estado. Van FIJOS en los dos temas,
      igual que el verde de arriba: lo que tiene que contrastar es el texto
      blanco contra la propia píldora, no contra el lienzo, así que un token
@@ -950,6 +955,28 @@ a.migas__paso:hover {
 .btn-exportar:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Importar el PLAME: macizo como los otros tres de Planillas, en violeta. */
+.btn-importar {
+  background-color: var(--importar-solid);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.btn-importar:hover:not(:disabled) {
+  background-color: var(--importar-solid-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-icon-blue {

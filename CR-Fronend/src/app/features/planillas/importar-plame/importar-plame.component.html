@@ -262,7 +262,7 @@
         </button>
         <button type="button" class="btn-primary" [disabled]="!sePuedeAplicar" (click)="aplicar()">
           <span *ngIf="aplicando" class="spinner-small"></span>
-          <app-icon *ngIf="!aplicando" icono="file_up" [tamano]="16"></app-icon>
+          <app-icon *ngIf="!aplicando" icono="upload" [tamano]="16"></app-icon>
           {{ aplicando ? 'Importando…' : 'Importar ' + vista.resumen.trabajadores + ' planilla(s) de ' + vista.resumen.periodo }}
         </button>
       </div>
