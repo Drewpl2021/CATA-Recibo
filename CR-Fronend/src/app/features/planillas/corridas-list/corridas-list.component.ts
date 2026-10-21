@@ -29,6 +29,7 @@ import { FormModalComponent } from '../../../shared/components/form-modal/form-m
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { SelectorEmpleadosComponent } from '../../../shared/components/selector-empleados/selector-empleados.component';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { OrdenComponent, OpcionOrden } from '../../../shared/components/orden/orden.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
@@ -63,7 +64,7 @@ interface ResultadoAgrupar {
   imports: [IconComponent, 
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
-    FiltrosComponent,
+    FiltrosComponent, OrdenComponent,
   ],
   templateUrl: './corridas-list.component.html',
 })
@@ -237,6 +238,17 @@ export class CorridasListComponent implements OnInit {
    */
   filtros: ValoresFiltro = {};
 
+  /** El botón «Ordenar» ('' = el mes más reciente arriba). Lo aplica el backend. */
+  orden = '';
+  readonly opcionesDeOrden: OpcionOrden[] = [
+    { valor: 'recientes', etiqueta: 'Mes más reciente primero' },
+    { valor: 'antiguas', etiqueta: 'Mes más antiguo primero' },
+    { valor: 'nombre', etiqueta: 'Nombre de la A a la Z' },
+    { valor: 'nombre_desc', etiqueta: 'Nombre de la Z a la A' },
+    { valor: 'neto_desc', etiqueta: 'Neto a pagar de mayor a menor' },
+    { valor: 'personas_desc', etiqueta: 'Más trabajadores primero' },
+  ];
+
   camposFiltro: CampoFiltro[] = [
     { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
@@ -300,7 +312,7 @@ export class CorridasListComponent implements OnInit {
 
   cargar(): void {
     // Para devolvérselo al volver (ver EstadoListadoService).
-    this.estadoListados.guardar('planillas', { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, filtroMes: this.filtroMes, filtroAnio: this.filtroAnio });
+    this.estadoListados.guardar('planillas', { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, filtroMes: this.filtroMes, filtroAnio: this.filtroAnio, orden: this.orden });
     this.cargando = true;
     this.corridaService
       .getPagina({
@@ -309,6 +321,7 @@ export class CorridasListComponent implements OnInit {
         search: this.busqueda || undefined,
         mes: this.filtroMes || undefined,
         anio: this.filtroAnio || undefined,
+        orden: this.orden || undefined,
         ...this.filtros,
       })
       .subscribe({

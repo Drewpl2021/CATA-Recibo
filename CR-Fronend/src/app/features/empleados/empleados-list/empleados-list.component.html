@@ -59,6 +59,7 @@
 >
   <!-- El embudo va junto al buscador: el texto encuentra a una persona, los
        filtros contestan "quiénes de Jerusalén con plazo fijo". -->
+  <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="alFiltrar()"></app-orden>
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
     (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogos()"></app-filtros>
 </app-data-table>

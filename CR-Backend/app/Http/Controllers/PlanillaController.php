@@ -32,11 +32,23 @@ class PlanillaController extends Controller
             $relaciones[] = 'documentoBoleta';
         }
 
-        $query = $this->consultaFiltrada($request, $relaciones);
+        $query = $this->consultaFiltrada($request, $relaciones)->orderBy('anio', 'desc')->orderBy('mes', 'desc');
+
+        // El botón «Ordenar». El nombre vive en empleados: se ordena por una
+        // subconsulta, sin join, para no duplicar columnas en el select.
+        $apellido = fn () => Empleado::select('apellido')->whereColumn('empleados.id', 'planilla.empleado_id');
+        $nombre   = fn () => Empleado::select('nombre')->whereColumn('empleados.id', 'planilla.empleado_id');
+        $this->aplicarOrden($request, $query, [
+            'apellido'      => fn (Builder $q) => $q->orderBy($apellido())->orderBy($nombre()),
+            'apellido_desc' => fn (Builder $q) => $q->orderByDesc($apellido())->orderByDesc($nombre()),
+            'neto_desc'     => fn (Builder $q) => $q->orderByDesc('planilla.total'),
+            'neto'          => fn (Builder $q) => $q->orderBy('planilla.total'),
+            'sueldo_desc'   => fn (Builder $q) => $q->orderByDesc('planilla.sueldo_base'),
+        ]);
 
         return $this->responderListado(
             $request,
-            $query->orderBy('anio', 'desc')->orderBy('mes', 'desc'),
+            $query,
             ['empleado.nombre', 'empleado.apellido', 'empleado.dni'],
             // La masa salarial es de TODAS las planillas que pasan el filtro,
             // no de las diez que se están viendo. reorder() quita el ORDER BY,

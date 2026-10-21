@@ -39,6 +39,7 @@ import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/da
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { OrdenComponent, OpcionOrden } from '../../../shared/components/orden/orden.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { BarraSeleccionComponent, resumirMarcados } from '../../../shared/components/barra-seleccion/barra-seleccion.component';
@@ -70,7 +71,7 @@ import {
   imports: [IconComponent, 
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
-    FiltrosComponent, BarraSeleccionComponent, PistaDirective,
+    FiltrosComponent, OrdenComponent, BarraSeleccionComponent, PistaDirective,
   ],
   templateUrl: './planillas-list.component.html',
 })
@@ -412,6 +413,17 @@ export class PlanillasListComponent implements OnInit {
    */
   filtros: ValoresFiltro = {};
 
+  /** El botón «Ordenar» ('' = el de siempre). Lo aplica el backend. */
+  orden = '';
+  readonly opcionesDeOrden: OpcionOrden[] = [
+    { valor: 'defecto', etiqueta: 'Como se generó' },
+    { valor: 'apellido', etiqueta: 'Apellido de la A a la Z' },
+    { valor: 'apellido_desc', etiqueta: 'Apellido de la Z a la A' },
+    { valor: 'neto_desc', etiqueta: 'Neto de mayor a menor' },
+    { valor: 'neto', etiqueta: 'Neto de menor a mayor' },
+    { valor: 'sueldo_desc', etiqueta: 'Sueldo de mayor a menor' },
+  ];
+
   camposFiltro: CampoFiltro[] = [
     { clave: 'sede_id', etiqueta: 'Sede', tipo: 'opciones', vacio: 'Todas', opciones: [] },
     { clave: 'area_id', etiqueta: 'Área', tipo: 'opciones', vacio: 'Todas', opciones: [] },
@@ -494,7 +506,7 @@ export class PlanillasListComponent implements OnInit {
 
   cargar(): void {
     // Para devolvérselo al volver (ver EstadoListadoService).
-    this.estadoListados.guardar(this.claveMemoria, { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, filtroEmpleado: this.filtroEmpleado });
+    this.estadoListados.guardar(this.claveMemoria, { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, filtroEmpleado: this.filtroEmpleado, orden: this.orden });
     this.cargando = true;
     this.planillaService
       .listarPagina({
@@ -507,6 +519,7 @@ export class PlanillasListComponent implements OnInit {
         periodo_id: this.filtroPeriodo || undefined,
         corrida_id: this.corridaId || undefined,
         sin_corrida: this.modoSinAgrupar || undefined,
+        orden: this.orden || undefined,
         ...this.filtros,
       })
       .subscribe({

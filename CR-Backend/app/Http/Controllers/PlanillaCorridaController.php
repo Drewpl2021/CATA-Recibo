@@ -51,6 +51,15 @@ class PlanillaCorridaController extends Controller
 
         $this->filtrarPorElTrabajador($request, $query);
 
+        // El botón «Ordenar»: sin él, el mes más reciente arriba.
+        $this->aplicarOrden($request, $query, [
+            'nombre'        => fn (Builder $q) => $q->orderBy('nombre'),
+            'nombre_desc'   => fn (Builder $q) => $q->orderByDesc('nombre'),
+            'antiguas'      => fn (Builder $q) => $q->orderBy('anio')->orderBy('mes')->orderBy('nombre'),
+            'neto_desc'     => fn (Builder $q) => $q->orderByDesc('masa_salarial'),
+            'personas_desc' => fn (Builder $q) => $q->orderByDesc('personas'),
+        ]);
+
         return $this->responderListado(
             $request,
             $query,

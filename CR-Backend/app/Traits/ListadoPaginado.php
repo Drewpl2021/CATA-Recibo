@@ -181,6 +181,33 @@ trait ListadoPaginado
         $query->whereIn($columna, $request->input('ids'));
     }
 
+    /**
+     * ?orden=: cómo pidió la pantalla que salga la lista (el botón
+     * «Ordenar», al lado de Filtros).
+     *
+     * Va en el servidor y no en el navegador porque la lista viene por
+     * páginas: ordenar en la pantalla dejaría en orden solo las diez que se
+     * ven, y la página 2 seguiría con el orden de antes.
+     *
+     * Cada pantalla dice qué órdenes acepta; una clave que no está se ignora
+     * y queda el orden de siempre (nunca se ordena por una columna que llegó
+     * escrita en la dirección). El id desempata, para que dos sueldos iguales
+     * no se cambien de página entre una carga y otra.
+     *
+     * @param  array<string, callable(Builder): mixed>  $ordenes  clave => cómo ordenar
+     */
+    protected function aplicarOrden(Request $request, Builder $query, array $ordenes): void
+    {
+        $clave = (string) $request->input('orden', '');
+        if (! isset($ordenes[$clave])) {
+            return;
+        }
+
+        $query->reorder();
+        $ordenes[$clave]($query);
+        $query->orderBy($query->getModel()->getQualifiedKeyName());
+    }
+
     protected function conteoPorEstado(Builder $query, string $columna, array $valores): array
     {
         /*

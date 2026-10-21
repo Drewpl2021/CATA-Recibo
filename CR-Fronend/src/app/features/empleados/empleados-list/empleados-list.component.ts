@@ -15,6 +15,7 @@ import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { OrdenComponent, OpcionOrden } from '../../../shared/components/orden/orden.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -33,7 +34,7 @@ import { PistaDirective } from '../../../shared/directives/pista.directive';
 @Component({
   selector: 'app-empleados-list',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, BarraSeleccionComponent, PistaDirective],
+  imports: [IconComponent, CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, FiltrosComponent, OrdenComponent, FormModalComponent, BarraSeleccionComponent, PistaDirective],
   templateUrl: './empleados-list.component.html',
 })
 export class EmpleadosListComponent implements OnInit {
@@ -76,6 +77,18 @@ export class EmpleadosListComponent implements OnInit {
    * plantilla entera para descartar en pantalla.
    */
   filtros: ValoresFiltro = {};
+
+  /** El botón «Ordenar» ('' = lo último registrado arriba). Lo aplica el backend. */
+  orden = '';
+  readonly opcionesDeOrden: OpcionOrden[] = [
+    { valor: 'recientes', etiqueta: 'Registrados más recientes' },
+    { valor: 'apellido', etiqueta: 'Apellido de la A a la Z' },
+    { valor: 'apellido_desc', etiqueta: 'Apellido de la Z a la A' },
+    { valor: 'ingreso', etiqueta: 'Más antiguos en el colegio' },
+    { valor: 'ingreso_desc', etiqueta: 'Ingresaron más recientemente' },
+    { valor: 'sueldo_desc', etiqueta: 'Sueldo de mayor a menor' },
+    { valor: 'sueldo', etiqueta: 'Sueldo de menor a mayor' },
+  ];
 
   camposFiltro: CampoFiltro[] = [
     {
@@ -497,13 +510,14 @@ export class EmpleadosListComponent implements OnInit {
 
   cargar(): void {
     // Para devolvérselo al volver (ver EstadoListadoService).
-    this.estadoListados.guardar('empleados', { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros });
+    this.estadoListados.guardar('empleados', { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, orden: this.orden });
     this.cargando = true;
     this.empleadoService
       .getPagina({
         page: this.pagina,
         size: this.TAMANO_PAGINA,
         search: this.busqueda || undefined,
+        orden: this.orden || undefined,
         ...this.filtros,
       })
       .subscribe({

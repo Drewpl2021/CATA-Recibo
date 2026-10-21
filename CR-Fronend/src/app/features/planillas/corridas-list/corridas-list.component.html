@@ -113,6 +113,7 @@
 >
   <!-- El embudo: sede, área, cargo, contrato y estado del trabajador. Filtra
        la tabla y, con el mismo criterio, el Excel del mes. -->
+  <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="alFiltrar()"></app-orden>
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
     (cambio)="alFiltrar()"></app-filtros>
 </app-data-table>

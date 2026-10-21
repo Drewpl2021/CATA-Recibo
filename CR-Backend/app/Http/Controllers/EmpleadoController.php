@@ -69,6 +69,16 @@ class EmpleadoController extends Controller
         // para la pantalla de boletas, cómo va la del mes.
         $this->aplicarFiltrosDePersonal($request, $ordenado);
 
+        // El botón «Ordenar»: sin él, lo último registrado arriba.
+        $this->aplicarOrden($request, $ordenado, [
+            'apellido'      => fn (Builder $q) => $q->orderBy('empleados.apellido')->orderBy('empleados.nombre'),
+            'apellido_desc' => fn (Builder $q) => $q->orderByDesc('empleados.apellido')->orderByDesc('empleados.nombre'),
+            'ingreso'       => fn (Builder $q) => $q->orderBy('empleados.fecha_ingreso'),
+            'ingreso_desc'  => fn (Builder $q) => $q->orderByDesc('empleados.fecha_ingreso'),
+            'sueldo_desc'   => fn (Builder $q) => $q->orderByDesc('empleados.sueldo_base'),
+            'sueldo'        => fn (Builder $q) => $q->orderBy('empleados.sueldo_base'),
+        ]);
+
         return $this->responderListado(
             $request,
             $ordenado,

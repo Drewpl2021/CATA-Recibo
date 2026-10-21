@@ -3924,6 +3924,46 @@ textarea.form-control {
   bottom: calc(100% + 8px);
 }
 
+/* «Ordenar» (app-orden): el mismo panel de Filtros, angosto y con una
+   lista de opciones; la elegida lleva el visto. */
+.panel-flotante--orden { width: min(280px, calc(100vw - 32px)); }
+
+.orden-opciones {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  overflow-y: auto;
+}
+
+.orden-opcion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.orden-opcion:hover { background-color: var(--surface-hover); }
+.orden-opcion:focus-visible { outline: 2px solid var(--brand-500); outline-offset: -2px; }
+
+.orden-opcion--elegida {
+  background-color: var(--brand-100);
+  color: var(--brand-700);
+  font-weight: 600;
+}
+
+/* En oscuro el azul institucional sobre su fondo translúcido no se lee. */
+.dark-mode .orden-opcion--elegida { color: var(--text); }
+
 .panel-flotante__cabecera {
   flex: 0 0 auto;
   display: flex;

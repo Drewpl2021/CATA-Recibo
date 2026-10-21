@@ -133,6 +133,7 @@
 >
   <!-- El embudo: los filtros que miran al trabajador (sede, área, cargo,
        contrato, estado). Los de arriba son los del periodo. -->
+  <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="alFiltrar()"></app-orden>
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
     (cambio)="alFiltrar()"></app-filtros>
 </app-data-table>
