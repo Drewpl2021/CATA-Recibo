@@ -57,6 +57,49 @@ class BoletaImpresaTest extends TestCase
         $this->assertMatchesRegularExpression('/class="monto">-<\/td>/', $html);
     }
 
+    /** Los datos con que se armó la boleta de marzo de ese trabajador. */
+    private function cabeceraDeMarzo($empleado): array
+    {
+        Storage::fake('local');
+        Mail::fake();
+        $anio = (int) now()->year;
+        $this->actingAs($this->crearUsuario('admin'), 'sanctum')
+            ->postJson('/api/payroll-runs', ['nombre' => 'Planilla General', 'mes' => 3, 'anio' => $anio, 'generar' => true])
+            ->assertCreated();
+
+        $datos = null;
+        View::composer('boleta', function ($vista) use (&$datos) {
+            $datos ??= $vista->getData();
+        });
+        $this->actingAs($this->crearUsuario('admin'), 'sanctum')
+            ->get("/api/payslips/{$empleado->id}/3/{$anio}")
+            ->assertOk();
+
+        return $datos['cabecera'];
+    }
+
+    public function test_la_boleta_dice_los_dias_de_calendario_del_mes_entero(): void
+    {
+        $anio = (int) now()->year;
+        $cabecera = $this->cabeceraDeMarzo($this->crearEmpleado(['sueldo_base' => 2000, 'fecha_ingreso' => '2020-01-01']));
+
+        // Marzo tiene 31 días: eso lee el trabajador, no los ~22 hábiles con que se prorratea.
+        $this->assertSame(31, $cabecera['dias_trabajados']);
+        $this->assertSame(0, $cabecera['dias_vacaciones']);
+        $this->assertSame("01/03/{$anio}", $cabecera['rango_inicio']);
+        $this->assertSame("31/03/{$anio}", $cabecera['rango_fin']);
+    }
+
+    public function test_quien_entro_a_mitad_de_mes_ve_su_tramo_real(): void
+    {
+        $anio = (int) now()->year;
+        $cabecera = $this->cabeceraDeMarzo($this->crearEmpleado(['sueldo_base' => 2000, 'fecha_ingreso' => "{$anio}-03-24"]));
+
+        $this->assertSame(8, $cabecera['dias_trabajados']);
+        $this->assertSame("24/03/{$anio}", $cabecera['rango_inicio']);
+        $this->assertSame("31/03/{$anio}", $cabecera['rango_fin']);
+    }
+
     public function test_el_detalle_de_otros_conceptos_no_se_imprime_y_los_extras_van_debajo(): void
     {
         Storage::fake('local');

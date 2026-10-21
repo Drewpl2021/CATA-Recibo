@@ -920,15 +920,57 @@ trait CalculaConceptosPlanilla
 
         $categoria = $contratoVigente?->tipoContrato?->nombre ?? $empleado->tipoContrato?->nombre ?? '-';
 
-        $reparto = $this->repartoDeDiasDelMes($empleado, $mes, $anio);
+        $dias = $this->diasDeCalendarioDeLaBoleta($empleado, $inicioMes, $finMes);
 
         return [
-            'dias_trabajados'  => $reparto['dias_trabajados'],
-            'dias_vacaciones'  => $reparto['dias_vacaciones'],
+            'dias_trabajados'  => $dias['laborados'],
+            'dias_vacaciones'  => $dias['vacaciones'],
             'fecha_cese'       => $contratoFinalizado?->fecha_fin,
             'categoria'        => $categoria,
-            'rango_inicio'     => $inicioMes->format('d/m/Y'),
-            'rango_fin'        => $finMes->format('d/m/Y'),
+            'rango_inicio'     => $dias['desde']->format('d/m/Y'),
+            'rango_fin'        => $dias['hasta']->format('d/m/Y'),
+        ];
+    }
+
+    /**
+     * Los días que lee el trabajador en su boleta: de CALENDARIO, como en
+     * cualquier boleta del Perú. El mes entero son 30 o 31 (28 en febrero),
+     * y el periodo de pago va del día 1 al último.
+     *
+     * Los días hábiles de repartoDeDiasDelMes() siguen mandando en el
+     * prorrateo del sueldo y en lo que ve RR.HH. al generar la planilla («se
+     * le pagan 16 de 22 días hábiles»), pero en la boleta un «22» hacía creer
+     * al trabajador que le faltaban días (pedido del 2026-10-20).
+     *
+     * Quien entró o cesó a mitad de mes ve su tramo real: ingresó el 24 de
+     * marzo → periodo del 24/03 al 31/03, 8 días. Las vacaciones del tramo
+     * van aparte, también en días de calendario, y laborados + vacaciones =
+     * días del periodo.
+     *
+     * @return array{desde: \Carbon\Carbon, hasta: \Carbon\Carbon, laborados: int, vacaciones: int}
+     */
+    protected function diasDeCalendarioDeLaBoleta($empleado, \Carbon\Carbon $inicioMes, \Carbon\Carbon $finMes): array
+    {
+        $inicioMes = $inicioMes->copy()->startOfDay();
+        $finMes    = $finMes->copy()->startOfDay();
+
+        $ingreso = $empleado->fecha_ingreso ? \Carbon\Carbon::parse($empleado->fecha_ingreso)->startOfDay() : null;
+        // Igual que repartoDeDiasDelMes: el cese solo recorta a quien de verdad cesó.
+        $cese = ($empleado->estado === 'inactivo' && $empleado->fecha_cese)
+            ? \Carbon\Carbon::parse($empleado->fecha_cese)->startOfDay()
+            : null;
+
+        $desde = ($ingreso && $ingreso->gt($inicioMes) && $ingreso->lte($finMes)) ? $ingreso : $inicioMes;
+        $hasta = ($cese && $cese->lt($finMes) && $cese->gte($desde)) ? $cese : $finMes;
+
+        $delPeriodo = (int) $desde->diffInDays($hasta) + 1;
+        $vacaciones = min($delPeriodo, $this->diasDeVacacionesEnElMes($empleado->id, $desde, $hasta));
+
+        return [
+            'desde'      => $desde,
+            'hasta'      => $hasta,
+            'laborados'  => $delPeriodo - $vacaciones,
+            'vacaciones' => $vacaciones,
         ];
     }
 

@@ -1,0 +1,24 @@
+<div class="panel-lateral-fondo" *ngIf="visible" appAlCuerpo
+  (mousedown)="alPresionarEnElFondo($event)" (click)="alSoltarEnElFondo($event)">
+  <aside class="panel-lateral" [style.max-width]="ancho" role="dialog" aria-modal="true" [attr.aria-label]="titulo"
+    (click)="$event.stopPropagation()">
+    <header class="panel-lateral__cabecera">
+      <span class="panel-lateral__icono" *ngIf="icono"><app-icon [icono]="icono" [tamano]="20"></app-icon></span>
+      <div class="panel-lateral__titulos">
+        <h2>{{ titulo }}</h2>
+        <span *ngIf="subtitulo">{{ subtitulo }}</span>
+      </div>
+      <button type="button" class="btn-close" (click)="cerrar()" aria-label="Cerrar">
+        <app-icon icono="close"></app-icon>
+      </button>
+    </header>
+
+    <div class="panel-lateral__cuerpo">
+      <ng-content></ng-content>
+    </div>
+
+    <footer class="panel-lateral__pie">
+      <ng-content select="[panelPie]"></ng-content>
+    </footer>
+  </aside>
+</div>

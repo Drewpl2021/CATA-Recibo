@@ -6516,22 +6516,318 @@ textarea.form-control {
   flex-wrap: wrap;
 }
 
-/* El índice de secciones: los mismos cinco nombres del "De un vistazo" de
-   abajo, pero como atajos. En un expediente largo —boletas de años, varios
-   contratos— sin esto había que acordarse en qué orden bajaban las
-   secciones; con esto se ve la lista entera de un vistazo y se salta
-   directo. Reutiliza .chip-filtro, el mismo chip de los filtros de
-   Documentos del personal: es la misma idea, "a dónde quiero ir". */
-.expediente__indice {
+/* Las pestañas del expediente: una sección a la vez. Antes eran enlaces
+   <a href="#…"> que bajaban por la página, y con el enrutador mandaban al
+   inicio; además, con años de boletas y varios contratos todo quedaba en una
+   sola página larga. Reutiliza .chip-filtro con su cuenta. */
+.expediente__pestanas {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
 }
 
-/* .chip-filtro es de siempre un <button>; acá es un <a href="#...">, que
-   por defecto sale subrayado. */
-.expediente__indice .chip-filtro {
-  text-decoration: none;
+/* Los años de las boletas, dentro de la pestaña Boletas. */
+.expediente__anios {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.expediente__anios-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+
+/* Un contrato en una línea: qué es, entre qué fechas, cómo está y si tiene
+   su contrato firmado. El detalle se abre al costado. */
+.contrato-fila {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 14px;
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface);
+  font-family: inherit;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.contrato-fila:hover {
+  border-color: var(--border-strong);
+  background-color: var(--surface-hover);
+}
+
+.contrato-fila:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+.contrato-fila__texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contrato-fila__texto strong {
+  font-size: 14.5px;
+  color: var(--heading);
+}
+
+/* Las cuatro secciones existen desde el principio y solo se muestran u
+   ocultan: así cambiar de pestaña no rehace la tabla ni sus íconos. La que
+   aparece entra con un fundido corto (la animación se reinicia sola al pasar
+   de display:none a visible), en lugar de saltar de golpe. */
+.expediente-bloque[hidden] {
+  display: none !important;
+}
+
+.expediente-bloque[role="tabpanel"] {
+  animation: seccion-entra 0.22s ease-out;
+}
+
+/* Una sola a la vista: la costura entre secciones (más abajo) ya no aplica.
+   Lleva .expediente delante para ganarle a esa regla, que viene después. */
+.expediente .expediente-bloque[role="tabpanel"] {
+  padding-top: 0;
+  border-top: none;
+}
+
+@keyframes seccion-entra {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expediente-bloque[role="tabpanel"] { animation: none; }
+}
+
+/* Dentro de una sección ya visible, las filas no vuelven a entrar con su
+   fundido al cambiar de año: con trackBy se conservan, y las que sí son
+   nuevas aparecen sin parpadeo de todo el bloque. */
+.expediente-bloque[role="tabpanel"] .data-table tbody tr:not(.fila-esqueleto) {
+  animation: none;
+}
+
+.contrato-fila__texto span {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.contrato-fila__estado {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-size: 12.5px;
+}
+
+.contrato-fila__flecha {
+  color: var(--text-muted);
+}
+
+.expediente-grupo__titulo {
+  margin: 14px 0 2px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   PANEL LATERAL (shared/components/panel-lateral)
+   ============================================
+   Entra desde la derecha con el detalle de algo —un contrato, una boleta—
+   y deja ver la lista de atrás. Misma capa que .modal-overlay; un modal
+   abierto después (el visor, Subir) queda encima por ir más abajo en el
+   <body>.
+   ============================================ */
+.panel-lateral-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(15, 23, 42, 0.45);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.panel-lateral {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: var(--surface);
+  box-shadow: var(--shadow-lg);
+  animation: panel-lateral-entra 0.25s ease-out;
+}
+
+@keyframes panel-lateral-entra {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-lateral { animation: none; }
+}
+
+.panel-lateral__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-lateral__icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background-color: var(--brand-100);
+  color: var(--brand-700);
+}
+
+.panel-lateral__titulos {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-lateral__titulos h2 {
+  margin: 0;
+  font-size: 17px;
+  color: var(--heading);
+}
+
+.panel-lateral__titulos span {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.panel-lateral__cuerpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px;
+}
+
+.panel-lateral__pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.panel-lateral__pie:empty {
+  display: none;
+}
+
+.panel-lateral__pie .documento-fila__quitar {
+  color: var(--danger-text);
+}
+
+/* Lo que la pantalla pone en el pie llega envuelto en su propio <div>. */
+.panel-lateral__pie > * {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Datos del detalle: etiqueta a la izquierda, valor a la derecha. */
+.detalle-lista {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px 14px;
+  margin: 0 0 18px;
+  font-size: 13.5px;
+}
+
+.detalle-lista dt {
+  color: var(--text-muted);
+}
+
+.detalle-lista dd {
+  margin: 0;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.detalle-subtitulo {
+  margin: 18px 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--heading);
+}
+
+/* El rastro de una boleta: cada paso con su fecha, o pendiente. */
+.rastro {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rastro__paso {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.rastro__paso:last-child {
+  border-bottom: none;
+}
+
+.rastro__marca {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.rastro__paso--hecho .rastro__marca {
+  background-color: var(--success-solid);
+  border-color: var(--success-solid);
+  color: #fff;
+}
+
+.rastro__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13.5px;
+}
+
+.rastro__texto span {
+  font-size: 12.5px;
+  color: var(--text-muted);
 }
 
 /* Cada sección empieza con su propia costura arriba —salvo la primera—,
@@ -7085,14 +7381,21 @@ textarea.form-control {
     align-items: stretch;
   }
 
-  /* El desplegable del foquito, casi a lo ancho del teléfono. Sigue
-     colgando del botón (nada de position: fixed: la cabecera tiene
-     ancestros con transform y el panel acabaría a media pantalla). */
+  /* El desplegable del foquito, a lo ancho del teléfono. Colgado del
+     botón no servía: a su derecha están la campana y el perfil, así que
+     «-12px del botón» no es el borde de la pantalla y el panel se salía
+     unos 100 px por la izquierda (el contenedor lo recortaba y parecía
+     congelado). En el celular cuelga de la barra de arriba entera, con
+     12 px a cada lado. Sigue sin position: fixed: la cabecera tiene
+     ancestros con transform y el panel acabaría a media pantalla. */
+  .top-header { position: relative; }
+  .guia-foco { position: static; }
   .guia-foco__panel {
-    width: calc(100vw - 24px);
-    /* Se corre a la derecha de la pantalla, no del botón, para no salirse
-       por el borde. */
-    right: -12px;
+    top: 100%;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    margin-top: 6px;
   }
 
   /* La persona de la ficha: la foto encima del nombre, que de lado no
@@ -8209,3 +8512,460 @@ textarea.form-control {
 .terminos__version a {
   margin-left: 6px;
 }
+
+/* ══ CTS ══════════════════════════════════════════════════════════════
+   Arriba, qué depósito se trabaja (mayo o noviembre, y su límite); debajo,
+   el recorrido en tres pasos con el que toca ahora resaltado; y la tabla
+   con la situación en chips. */
+.cts-deposito {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.cts-deposito__elegir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.cts-deposito__rotulo {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cts-deposito__periodos {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.cts-periodo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 7px 16px;
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  font: inherit;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.cts-periodo strong { font-size: 14px; }
+.cts-periodo span { font-size: 11.5px; color: var(--text-muted); }
+.cts-periodo:hover:not(.cts-periodo--activo) { background: var(--surface-hover); }
+
+.cts-periodo--activo {
+  background: var(--brand-700);
+  color: var(--text-on-brand);
+  box-shadow: var(--shadow-sm);
+}
+
+.cts-periodo--activo span { color: var(--text-on-brand); opacity: .85; }
+
+.cts-deposito__anio { width: auto; min-width: 96px; }
+
+.cts-deposito__datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cts-dato {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+}
+
+.cts-dato span { font-size: 11.5px; color: var(--text-muted); }
+.cts-dato strong { font-size: 15px; color: var(--heading); }
+.cts-dato small { font-size: 11.5px; font-weight: 600; color: var(--text-soft); }
+
+.cts-dato--total { background: var(--brand-100); }
+.cts-dato--total strong { font-size: 17px; color: var(--brand-700); }
+.cts-dato--aviso { background: var(--warning-bg); }
+.cts-dato--aviso small { color: var(--warning-text); }
+.cts-dato--vencido { background: var(--danger-bg); }
+.cts-dato--vencido small { color: var(--danger-text); }
+
+/* El recorrido: tres tarjetas, una por paso. */
+.cts-pasos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.cts-paso {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.cts-paso__cabeza {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cts-paso__numero {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.cts-paso__titulo {
+  flex: 1;
+  font-size: 15px;
+  color: var(--heading);
+}
+
+.cts-paso__icono { color: var(--text-faint); }
+
+.cts-paso__explicacion {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.cts-paso__estado {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cts-paso__barra {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-alt);
+  overflow: hidden;
+}
+
+.cts-paso__barra span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand-600);
+  transition: width .4s ease;
+}
+
+.cts-paso__accion {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.cts-paso__accion button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Lo que toca ahora. */
+.cts-paso--actual {
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px var(--input-focus-shadow), var(--shadow-sm);
+}
+
+.cts-paso--actual .cts-paso__numero {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+  color: var(--text-on-brand);
+}
+
+.cts-paso--actual .cts-paso__icono { color: var(--brand-600); }
+
+.cts-paso--hecho .cts-paso__numero {
+  background: var(--success-solid);
+  border-color: var(--success-solid);
+  color: var(--text-on-brand);
+}
+
+.cts-paso--hecho .cts-paso__icono,
+.cts-paso--hecho .cts-paso__estado { color: var(--success-text); }
+.cts-paso--hecho .cts-paso__barra span { background: var(--success-solid); }
+
+.cts-paso--espera { opacity: .72; }
+
+.cts-situaciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 900px) {
+  .cts-pasos { grid-template-columns: 1fr; }
+  .cts-deposito { flex-direction: column; align-items: stretch; }
+  .cts-deposito__datos { display: grid; grid-template-columns: 1fr 1fr; }
+  .cts-dato { min-width: 0; }
+}
+
+/* ── CTS: el semestre mes por mes en el panel (una sola serie: lo que ganó) ── */
+.cts-mapa__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.cts-mapa__cabecera .detalle-subtitulo { margin: 0; }
+
+.cts-mapa__cabecera .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12.5px;
+}
+
+.cts-mapa {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 10px 0 18px;
+}
+
+.cts-mapa__mes {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) 78px 74px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.cts-mapa__mes:hover { background: var(--surface-hover); }
+.cts-mapa__mes--cierre { background: var(--brand-100); }
+
+.cts-mapa__etiqueta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.cts-mapa__etiqueta small { font-weight: 400; color: var(--text-muted); }
+
+.cts-mapa__pista {
+  position: relative;
+  height: 14px;
+  display: flex;
+  align-items: center;
+}
+
+/* Marca delgada, con el extremo de datos redondeado y anclada a la izquierda. */
+.cts-mapa__barra {
+  display: block;
+  height: 10px;
+  min-width: 2px;
+  border-radius: 0 4px 4px 0;
+  background: var(--brand-600);
+}
+
+.cts-mapa__vacio {
+  width: 100%;
+  padding: 1px 6px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cts-mapa__monto {
+  text-align: right;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.cts-mapa__marcas {
+  display: flex;
+  gap: 4px;
+}
+
+.cts-mapa__nota { margin: 6px 8px 0; }
+
+.cts-marca {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.cts-marca--cierre { background: var(--brand-700); color: var(--text-on-brand); }
+.cts-marca--grati { background: var(--warning-bg); color: var(--warning-text); }
+
+/* ── CTS: el cuadro grande del semestre ── */
+.cts-cuadro__resumen {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.cts-cuadro__leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-bottom: 10px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.cts-cuadro__leyenda > span { display: inline-flex; align-items: center; gap: 6px; }
+
+.cts-cuadro__muestra {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--success-bg);
+  border: 1px solid var(--success-text);
+}
+
+.cts-cuadro__marco {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+}
+
+.cts-cuadro {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cts-cuadro th {
+  padding: 10px 12px;
+  background: var(--table-head-bg);
+  color: var(--table-head-text);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.cts-cuadro th.cts-cuadro__concepto { text-align: left; }
+
+.cts-cuadro th .cts-marca--cierre { background: var(--surface); color: var(--brand-700); }
+
+.cts-cuadro__marcas {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  min-height: 18px;
+  margin-top: 4px;
+}
+
+.cts-cuadro td {
+  padding: 7px 12px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+}
+
+.cts-cuadro td.num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Al desplazar el cuadro de lado (en celular), el concepto queda fijo a la izquierda. */
+.cts-cuadro__concepto {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 230px;
+  text-align: left;
+  background: var(--surface);
+}
+
+.cts-cuadro th.cts-cuadro__concepto { background: var(--table-head-bg); }
+.cts-cuadro__total .cts-cuadro__concepto { background: var(--surface); }
+
+.cts-cuadro__grupo td {
+  padding-top: 12px;
+  background: var(--surface-alt);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cts-cuadro td.cts-cuadro__col--cierre { background: var(--brand-100); }
+
+.cts-cuadro td.cts-cuadro__celda--computable {
+  background: var(--success-bg);
+  color: var(--success-text);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px var(--success-text);
+}
+
+.cts-cuadro__total td {
+  font-weight: 700;
+  color: var(--heading);
+}
+
+.cts-cuadro__total + .cts-cuadro__total td { border-top-style: dashed; }
+
+.cts-cuadro__sin {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+@media (max-width: 900px) {
+  .cts-cuadro__resumen { grid-template-columns: 1fr 1fr; }
+  .cts-cuadro__concepto { min-width: 140px; }
+  .cts-mapa__mes { grid-template-columns: 52px minmax(0, 1fr) 72px; }
+  .cts-mapa__marcas { grid-column: 2 / -1; }
+}
+

@@ -218,6 +218,12 @@ export const routes: Routes = [
         canActivate: [soloRrhhOAdmin],
         loadComponent: () => import('./features/renta5ta/renta5ta-detalle/renta5ta-detalle.component').then(m => m.Renta5taDetalleComponent),
       },
+      // CTS: el cálculo de cada semestre, el depósito y la hoja de liquidación.
+      {
+        path: 'cts',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/cts/cts-list/cts-list.component').then(m => m.CtsListComponent),
+      },
       // ── Sistema de permisos y menús (solo Admin) ──
       {
         path: 'usuarios',

@@ -2,6 +2,7 @@ import { Component, EventEmitter, HostListener, Input, OnChanges, OnDestroy, Out
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
 import { AlCuerpoDirective } from '../../directives/al-cuerpo.directive';
+import { soltarFondo, tomarFondo } from '../../utils/fondo-fijo';
 
 /**
  * Cascarón reciclable para CUALQUIER formulario de crear/editar en modal.
@@ -23,15 +24,6 @@ import { AlCuerpoDirective } from '../../directives/al-cuerpo.directive';
   templateUrl: './form-modal.component.html',
 })
 export class FormModalComponent implements OnChanges, OnDestroy {
-  /**
-   * Cuántos modales hay abiertos a la vez.
-   *
-   * El visor de un documento se abre ENCIMA del expediente, así que al
-   * cerrar el de arriba el fondo no debe soltarse todavía. Por eso se
-   * cuentan en vez de poner y quitar la clase a lo bruto.
-   */
-  private static abiertos = 0;
-
   @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
 
@@ -90,8 +82,7 @@ export class FormModalComponent implements OnChanges, OnDestroy {
     // iba la pantalla de debajo y al cerrar aparecía en otro sitio.
     if (this.visible && !this.fondoTomado) {
       this.fondoTomado = true;
-      FormModalComponent.abiertos++;
-      document.body.classList.add('con-modal');
+      tomarFondo();
     } else if (!this.visible) {
       this.soltarElFondo();
     }
@@ -107,10 +98,6 @@ export class FormModalComponent implements OnChanges, OnDestroy {
     if (!this.fondoTomado) return;
 
     this.fondoTomado = false;
-    FormModalComponent.abiertos = Math.max(0, FormModalComponent.abiertos - 1);
-
-    if (FormModalComponent.abiertos === 0) {
-      document.body.classList.remove('con-modal');
-    }
+    soltarFondo();
   }
 }

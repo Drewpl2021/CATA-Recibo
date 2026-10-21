@@ -69,6 +69,17 @@
     </div>
 
     <div class="form-group">
+      <label class="check-item check-item--bloque">
+        <input type="checkbox" formControlName="genera_cts" />
+        <span>Genera CTS</span>
+      </label>
+      <small class="form-ayuda">
+        Desmárcalo para las prácticas y para jornadas de menos de cuatro horas
+        al día: a quien tenga este tipo no se le calcula CTS.
+      </small>
+    </div>
+
+    <div class="form-group">
       <label for="estado">Estado</label>
       <select id="estado" class="form-control" formControlName="estado">
         <option *ngFor="let op of estadoOpciones" [value]="op.value">{{ op.label }}</option>

@@ -1,0 +1,189 @@
+# Integración continua de CATA-Recibo.
+#
+# En cada cambio comprueba:
+#   1. backend-sqlite   las pruebas del API, rápidas (SQLite en memoria)
+#   2. backend-mysql    las mismas pruebas contra MySQL 8.4 real, que es lo
+#                       que usa el colegio en producción (migraciones y triggers)
+#   3. frontend         pruebas de la interfaz y compilación de producción
+#   4. calidad          sintaxis PHP, validez de composer.json y avisos de
+#                       seguridad de las dependencias
+#   5. docker           que las imágenes construyen y el sistema levanta
+name: Integración continua
+
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend-sqlite:
+    name: Backend · PHPUnit (SQLite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: CR-Backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_sqlite, mbstring, zip, gd, openssl
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - name: PHPUnit
+        env:
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        run: php vendor/bin/phpunit --log-junit ../resultado-phpunit-sqlite.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultado-phpunit-sqlite
+          path: resultado-phpunit-sqlite.xml
+          retention-days: 14
+
+  backend-mysql:
+    name: Backend · PHPUnit (MySQL 8.4)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: raiz
+          MYSQL_DATABASE: cata_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -praiz"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    defaults:
+      run:
+        working-directory: CR-Backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql, mbstring, zip, gd, openssl
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      # MySQL 8 con el registro binario encendido exige SUPER para crear
+      # triggers; el compose del proyecto lo resuelve con esta misma opción.
+      - name: Permitir triggers y procedimientos
+        run: mysql -h127.0.0.1 -uroot -praiz -e "SET GLOBAL log_bin_trust_function_creators = 1;"
+      - name: PHPUnit contra MySQL
+        env:
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USERNAME: root
+          DB_PASSWORD: raiz
+        run: |
+          sed 's#<env name="DB_CONNECTION" value="sqlite"/>#<env name="DB_CONNECTION" value="mysql" force="true"/>#; s#<env name="DB_DATABASE" value=":memory:"/>#<env name="DB_DATABASE" value="cata_test" force="true"/>#' phpunit.xml > phpunit.mysql.xml
+          php vendor/bin/phpunit -c phpunit.mysql.xml --log-junit ../resultado-phpunit-mysql.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultado-phpunit-mysql
+          path: resultado-phpunit-mysql.xml
+          retention-days: 14
+
+  frontend:
+    name: Interfaz · pruebas y compilación
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: CR-Fronend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: CR-Fronend/package-lock.json
+      - run: npm ci
+      - name: Karma (Chrome sin ventana)
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+      - name: Compilación de producción
+        run: npx ng build --configuration production
+      - uses: actions/upload-artifact@v4
+        with:
+          name: interfaz-compilada
+          path: CR-Fronend/dist
+          retention-days: 7
+
+  calidad:
+    name: Calidad y seguridad de dependencias
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, zip, gd
+          coverage: none
+      - name: composer.json válido
+        working-directory: CR-Backend
+        run: composer validate --no-check-publish
+      - name: Sintaxis de todo el PHP
+        working-directory: CR-Backend
+        run: |
+          find app routes database config tests -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+          echo "Sintaxis correcta en $(find app routes database config tests -name '*.php' | wc -l) archivos"
+      - name: Avisos de seguridad de Composer
+        working-directory: CR-Backend
+        run: composer audit --locked
+      # Los avisos de npm se informan pero no frenan el flujo: hoy son avisos
+      # de Angular 19 cuya corrección exige saltar a Angular 21 (ver el
+      # informe). Quedan visibles en el resumen de cada ejecución.
+      - name: Avisos de seguridad de npm
+        working-directory: CR-Fronend
+        continue-on-error: true
+        run: |
+          npm audit --package-lock-only --omit=dev | tee ../aviso-npm.txt || true
+          { echo '### Avisos de seguridad de npm'; echo '```'; tail -n 15 ../aviso-npm.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+  docker:
+    name: Docker · imágenes y arranque
+    runs-on: ubuntu-latest
+    needs: [backend-sqlite, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archivo .env de prueba
+        run: |
+          cp .env.example .env
+          sed -i "s#^APP_KEY=.*#APP_KEY=base64:$(openssl rand -base64 32)#" .env
+          sed -i "s#^DB_PASSWORD=.*#DB_PASSWORD=prueba-ci-$(openssl rand -hex 6)#" .env
+          sed -i "s#^DB_ROOT_PASSWORD=.*#DB_ROOT_PASSWORD=raiz-ci-$(openssl rand -hex 6)#" .env
+          sed -i "s#^PUERTO_HTTP=.*#PUERTO_HTTP=8080#" .env
+      - name: Construir las imágenes
+        run: docker compose build
+      - name: Levantar el sistema
+        run: docker compose up -d
+      - name: Esperar a que responda
+        run: |
+          for i in $(seq 1 60); do
+            codigo=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/terms || true)
+            if [ "$codigo" = "401" ] || [ "$codigo" = "200" ]; then echo "API responde ($codigo)"; break; fi
+            echo "intento $i: $codigo"; sleep 5
+          done
+          [ "$codigo" = "401" ] || [ "$codigo" = "200" ]
+      - name: La interfaz se sirve
+        run: test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/)" = "200"
+      - name: Estado de los servicios
+        if: always()
+        run: docker compose ps
+      - name: Registros si falló
+        if: failure()
+        run: docker compose logs --tail=80
+      - name: Apagar
+        if: always()
+        run: docker compose down -v

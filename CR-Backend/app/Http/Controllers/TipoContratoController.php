@@ -34,6 +34,7 @@ class TipoContratoController extends Controller
             'nombre'              => 'required|string|max:100|unique:tipos_contrato,nombre',
             'requiere_fecha_fin'  => 'sometimes|boolean',
             'permite_vacaciones'  => 'sometimes|boolean',
+            'genera_cts'          => 'sometimes|boolean',
             'estado'              => 'nullable|string|in:activo,inactivo',
         ]);
         $tipo = TipoContrato::create($datos);
@@ -52,6 +53,7 @@ class TipoContratoController extends Controller
             'nombre'              => ['sometimes', 'string', 'max:100', Rule::unique('tipos_contrato', 'nombre')->ignore($id)],
             'requiere_fecha_fin'  => 'sometimes|boolean',
             'permite_vacaciones'  => 'sometimes|boolean',
+            'genera_cts'          => 'sometimes|boolean',
             'estado'              => 'nullable|string|in:activo,inactivo',
         ]);
         $tipo->update($datos);

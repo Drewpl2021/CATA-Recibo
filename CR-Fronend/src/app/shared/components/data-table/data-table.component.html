@@ -58,7 +58,7 @@
             {{ mensajeVacio }}
           </td>
         </tr>
-        <tr *ngFor="let fila of filasEnPantalla; let i = index; trackBy: porFila" [class.fila-marcada]="estaMarcada(fila)">
+        <tr *ngFor="let fila of filasEnPantalla; let i = index; trackBy: seguirFila" [class.fila-marcada]="estaMarcada(fila)">
           <td *ngIf="seleccionable" class="celda-marca">
             <input type="checkbox" [checked]="estaMarcada(fila)" (change)="alternarFila(fila)"
               [attr.aria-label]="'Marcar esta fila'" />
@@ -101,7 +101,7 @@
           </td>
           <td *ngIf="acciones.length || accionesPersonalizadas.length" class="celda-acciones">
             <div class="action-btns">
-              <button *ngFor="let extra of accionesVisibles(fila)"
+              <button *ngFor="let extra of accionesVisibles(fila); trackBy: seguirAccion"
                 class="btn-icon-accion" [ngClass]="'btn-icon-' + (extra.severidad || 'brand')"
                 [class.btn-icon-accion--con-texto]="!!extra.etiqueta"
                 [appPista]="extra.titulo" [attr.aria-label]="extra.titulo"
