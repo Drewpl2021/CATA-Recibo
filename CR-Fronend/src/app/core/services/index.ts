@@ -41,6 +41,7 @@ export * from './planilla/cts.service';
 export * from './sistema/auditoria.service';
 export * from './sistema/ajustes.service';
 export * from './planilla/importacion-conceptos.service';
+export * from './planilla/importacion-plame.service';
 export * from './personal/importacion-empleados.service';
 export * from './personal/expediente.service';
 export * from './personal/documentos-anteriores.service';

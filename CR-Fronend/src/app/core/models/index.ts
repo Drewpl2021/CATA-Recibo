@@ -9,6 +9,7 @@ export * from './dashboard.model';
 export * from './planilla-corrida.model';
 export * from './auditoria.model';
 export * from './importacion-conceptos.model';
+export * from './importacion-plame.model';
 export * from './importacion-empleados.model';
 export * from './expediente.model';
 export * from './documentos-anteriores.model';

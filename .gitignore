@@ -26,6 +26,9 @@ archivos-*.tar.gz
 *.xlsx
 *.csv
 !_test_data/**/*.csv
+# El PLAME de prueba: la forma del PLAME con 24 personas inventadas (DNI
+# 990001xx). Solo ese archivo, por su nombre: cualquier otro .xls sigue fuera.
+!CR-Backend/postman/fixtures/PLAME DE PRUEBA (personal ficticio).xls
 
 # Archivos temporales de Word mientras un documento está abierto
 ~$*

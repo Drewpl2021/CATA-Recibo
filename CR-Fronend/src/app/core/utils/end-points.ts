@@ -165,6 +165,12 @@ export const END_POINTS_ACCIONES = {
     aplicar: 'concept-import/apply',
   },
 
+  /** POST plame-import/{step} — la planilla de un mes desde el PLAME de RR.HH. */
+  importacionPlame: {
+    previsualizar: 'plame-import/preview',
+    aplicar: 'plame-import/apply',
+  },
+
   /** POST employee-import/{step} — altas y cambios desde Excel, y los CVs en lote */
   importacionEmpleados: {
     /** GET — el Excel modelo vacío, con listas desplegables e instrucciones */

@@ -38,7 +38,12 @@ class PlanillaCorrida extends Model
         'periodo_id',
         'estado',
         'observaciones',
+        'origen',
+        'archivo_origen',
     ];
+
+    /** Se cargó desde el PLAME de RR.HH. (ver la migración de `origen`). */
+    public const ORIGEN_PLAME = 'plame';
 
     protected static function boot()
     {
@@ -64,5 +69,11 @@ class PlanillaCorrida extends Model
     public function estaCerrada(): bool
     {
         return $this->estado === 'cerrada';
+    }
+
+    /** Es lo que se pagó y declaró en el PLAME: no se reabre ni se recalcula. */
+    public function vieneDelPlame(): bool
+    {
+        return $this->origen === self::ORIGEN_PLAME;
     }
 }

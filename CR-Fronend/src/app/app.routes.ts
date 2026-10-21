@@ -165,6 +165,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/planillas/importar-conceptos/importar-conceptos.component').then(m => m.ImportarConceptosComponent),
       },
       {
+        // La planilla de un mes que no pasó por el sistema, desde el PLAME de RR.HH.
+        path: 'planillas/importar-plame',
+        canActivate: [soloRrhhOAdmin],
+        loadComponent: () => import('./features/planillas/importar-plame/importar-plame.component').then(m => m.ImportarPlameComponent),
+      },
+      {
         // Segundo nivel: los trabajadores DENTRO de una planilla.
         path: 'planillas/corrida/:id',
         canActivate: [soloRrhhOAdmin],

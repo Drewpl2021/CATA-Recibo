@@ -390,6 +390,16 @@ class PlanillaCorridaController extends Controller
             ], 422);
         }
 
+        // Reabrirla dejaría agregarle gente o recalcularla con el motor del
+        // sistema, y dejaría de ser lo que se pagó.
+        if (($datos['estado'] ?? null) === 'abierta' && $corrida->vieneDelPlame()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta planilla se cargó desde el PLAME: es lo que se pagó y declaró, y no se reabre. '
+                    . 'Si el PLAME tenía un error, corrígelo en el Excel y vuelve a importarlo: la importación nueva reemplaza a esta.',
+            ], 422);
+        }
+
         if (isset($datos['nombre']) && $datos['nombre'] !== $corrida->nombre) {
             $repetida = PlanillaCorrida::where('nombre', $datos['nombre'])
                 ->where('mes', $corrida->mes)

@@ -252,6 +252,10 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('concept-import/recognize',    [\App\Http\Controllers\ImportacionConceptosController::class, 'reconocer']);
         Route::post('concept-import/preview', [\App\Http\Controllers\ImportacionConceptosController::class, 'previsualizar']);
         Route::post('concept-import/apply',       [\App\Http\Controllers\ImportacionConceptosController::class, 'aplicar']);
+
+        // Importar el PLAME de RR.HH.: los meses que no pasaron por el sistema, tal como se pagaron.
+        Route::post('plame-import/preview', [\App\Http\Controllers\ImportacionPlameController::class, 'previsualizar']);
+        Route::post('plame-import/apply',   [\App\Http\Controllers\ImportacionPlameController::class, 'aplicar']);
         // Importar empleados desde Excel (altas y actualizaciones por DNI) y sus
         // hojas de vida en lote, con el DNI en el nombre de cada archivo.
         Route::get('employee-import/template',         [\App\Http\Controllers\ImportacionEmpleadosController::class, 'modelo']);

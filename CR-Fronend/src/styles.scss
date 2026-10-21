@@ -8969,3 +8969,14 @@ textarea.form-control {
   .cts-mapa__marcas { grid-column: 2 / -1; }
 }
 
+/* ══ Importar el PLAME ═══════════════════════════════════════════════ */
+
+/* Activo o cesado, debajo de la situación de quien no estaba en el sistema. */
+.plame-estado { margin-top: 6px; max-width: 220px; }
+
+/* Lo que el PLAME dice distinto de su ficha, o del sistema. */
+.plame-avisos { color: var(--warning-text); font-size: 12.5px; }
+.plame-diferencias { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); }
+.plame-diferencias > li > span:last-of-type { color: var(--warning-text); }
+
+.plame-ver-columnas { margin: 14px 0 8px; }

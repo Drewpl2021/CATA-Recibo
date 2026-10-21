@@ -15,6 +15,9 @@ export interface PlanillaCorrida {
   periodo_id?: string | null;
   estado: 'abierta' | 'cerrada';
   observaciones?: string | null;
+  /** 'plame': se cargó del PLAME de RR.HH. y no se reabre; null: la armó el sistema. */
+  origen?: 'plame' | null;
+  archivo_origen?: string | null;
   periodo?: Periodo | null;
   /** Cuántos trabajadores tiene dentro. */
   personas?: number;

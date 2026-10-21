@@ -165,8 +165,9 @@ export class CorridasListComponent implements OnInit {
     { campo: 'masa_salarial', header: 'Neto a pagar', ancho: '18%', tipo: 'moneda' },
     {
       campo: 'estado', header: 'Estado', ancho: '12%', tipo: 'badge',
-      formatear: (v) => (v === 'cerrada' ? 'Cerrada' : 'Abierta'),
-      badgeSeveridad: (v) => (v === 'cerrada' ? 'secondary' : 'success'),
+      // La del PLAME es lo que se pagó antes del sistema: se dice de dónde vino.
+      formatear: (v, c) => (c.origen === 'plame' ? 'Del PLAME' : v === 'cerrada' ? 'Cerrada' : 'Abierta'),
+      badgeSeveridad: (v, c) => (c.origen === 'plame' ? 'info' : v === 'cerrada' ? 'secondary' : 'success'),
     },
   ];
 
@@ -174,7 +175,7 @@ export class CorridasListComponent implements OnInit {
     { id: 'abrir', titulo: 'Ver los trabajadores de esta planilla', icono: 'people', etiqueta: 'Ver' },
     // Ya pagada: se cierra para que nadie le mueva cifras. Si hay que corregir, se reabre.
     { id: 'cerrar', titulo: 'Cerrar la planilla (ya se pagó)', icono: 'lock', severidad: 'warning', visible: (c) => c.estado !== 'cerrada' },
-    { id: 'reabrir', titulo: 'Abrir la planilla para corregirla', icono: 'rotate_ccw', severidad: 'warning', visible: (c) => c.estado === 'cerrada' },
+    { id: 'reabrir', titulo: 'Abrir la planilla para corregirla', icono: 'rotate_ccw', severidad: 'warning', visible: (c) => c.estado === 'cerrada' && c.origen !== 'plame' },
   ];
 
   ngOnInit(): void {
@@ -358,6 +359,12 @@ export class CorridasListComponent implements OnInit {
    */
   importar(): void {
     this.router.navigate(['/inicio/planillas/importar'], {
+      queryParams: { mes: this.filtroMes || null, anio: this.filtroAnio || null },
+    });
+  }
+
+  importarPlame(): void {
+    this.router.navigate(['/inicio/planillas/importar-plame'], {
       queryParams: { mes: this.filtroMes || null, anio: this.filtroAnio || null },
     });
   }
