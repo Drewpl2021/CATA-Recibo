@@ -3,7 +3,7 @@ import { ProgresoService } from '../../../core/services/sistema/progreso.service
 import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, map, of, switchMap } from 'rxjs';
 
 import {
@@ -75,6 +75,7 @@ export class CorridasListComponent implements OnInit {
 
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private corridaService = inject(PlanillaCorridaService);
   private planillaService = inject(PlanillaService);
   private periodoService = inject(PeriodoService);
@@ -181,6 +182,16 @@ export class CorridasListComponent implements OnInit {
   ngOnInit(): void {
     const recordado = this.estadoListados.leer<Record<string, unknown>>('planillas');
     if (recordado) Object.assign(this, recordado);
+    // Si llega con un mes (desde «Ver las planillas de Mayo 2025» de una
+    // importación), manda ese mes sobre el que se recordaba.
+    const parametros = this.route.snapshot.queryParamMap;
+    const mes = Number(parametros.get('mes'));
+    const anio = Number(parametros.get('anio'));
+    if (mes >= 1 && mes <= 12 && anio >= 2000 && anio <= 2100) {
+      this.filtroMes = mes;
+      this.filtroAnio = anio;
+      this.pagina = 0;
+    }
     this.cargar();
     this.cargarCatalogos();
   }

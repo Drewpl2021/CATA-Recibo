@@ -267,6 +267,26 @@ export class ImportarPlameComponent implements OnInit {
       && !this.desactualizada && !this.aplicando;
   }
 
+  /** Por qué el botón «Importar» está apagado, dicho en palabras; vacío si se puede. */
+  get motivoNoImportar(): string {
+    const v = this.vista;
+    if (!v) return '';
+    if (v.resumen.modo === 'comparar') {
+      return `${v.resumen.periodo} ya tiene planillas del sistema, así que el PLAME solo se compara con ellas. `
+        + 'Para importarlo, pulsa «Cambiar el mes» y elige un mes que no tenga planillas (de enero a julio).';
+    }
+    if (v.resumen.errores > 0) return 'corrige los errores de arriba en el PLAME y vuelve a subirlo.';
+    if (!v.resumen.trabajadores) return 'el PLAME no trae trabajadores.';
+    if (this.desactualizada) return 'cambiaste qué hacer con una columna o con un trabajador: pulsa «Volver a revisar».';
+    return '';
+  }
+
+  /** Vuelve al primer paso con el mismo archivo, para elegir otro mes. */
+  cambiarMes(): void {
+    this.reiniciar();
+    this.paso = 0;
+  }
+
   etiquetaSituacion(s: SituacionPlame): string {
     return ETIQUETA_SITUACION[s] ?? s;
   }

@@ -8980,3 +8980,9 @@ textarea.form-control {
 .plame-diferencias > li > span:last-of-type { color: var(--warning-text); }
 
 .plame-ver-columnas { margin: 14px 0 8px; }
+
+/* Dos grupos en el pie: volver a la izquierda, confirmar a la derecha. */
+.importacion-pie__grupo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.importacion-pie .btn-secondary,
+.importacion-pie .btn-primary { display: inline-flex; align-items: center; gap: 6px; }
+.importacion-pie > .form-ayuda { align-self: center; }

@@ -39,6 +39,14 @@
       ayuda="El .xls de RR.HH., tal como está (.xls o .xlsx, hasta 10 MB). Se lee y no se guarda."
     ></app-selector-archivo>
 
+    <div class="importacion-pie" *ngIf="archivos[0]">
+      <span class="form-ayuda">Archivo elegido: {{ archivos[0].name }}</span>
+      <button type="button" class="btn-primary" [disabled]="revisando" (click)="revisar()">
+        <span *ngIf="revisando" class="spinner-small"></span>
+        {{ revisando ? 'Revisando…' : 'Revisar el PLAME de ' + periodo }}
+      </button>
+    </div>
+
     <div class="form-nota">
       <strong>Qué hace.</strong> Lee la hoja <strong>PLANILLA</strong> y reconoce sus columnas por el título: sueldo,
       asignación familiar, ONP o AFP, 5ta, diezmo, comedor, tardanzas, EsSalud… Las columnas que no son de siempre
@@ -192,8 +200,8 @@
         <select *ngIf="t.situacion === 'nuevo_activo' || t.situacion === 'nuevo_cesado'" class="form-control plame-estado"
           [ngModel]="t.situacion === 'nuevo_cesado' ? 'cesado' : 'activo'" (ngModelChange)="cambiarPersona(t, $event)"
           [attr.aria-label]="'Cómo se registra ' + t.nombre">
-          <option value="activo">Registrar como activo</option>
-          <option value="cesado">Registrar como cesado</option>
+          <option value="activo">Activo</option>
+          <option value="cesado">Cesado</option>
         </select>
       </ng-template>
 
@@ -234,21 +242,30 @@
       </ul>
     </div>
 
-    <div class="form-nota form-nota--aviso" *ngIf="desactualizada">
-      Cambiaste qué hacer con una columna o con un trabajador. Vuelve a revisar para ver cómo queda antes de importar.
+    <!-- Siempre se ve con qué se confirma, y si no se puede, por qué. -->
+    <div class="form-nota form-nota--aviso" *ngIf="motivoNoImportar">
+      <strong>Todavía no se puede importar:</strong> {{ motivoNoImportar }}
     </div>
 
     <div class="importacion-pie">
-      <button type="button" class="btn-secondary" (click)="otroArchivo()">Cambiar de archivo</button>
-      <button *ngIf="desactualizada" type="button" class="btn-primary" [disabled]="revisando" (click)="revisar()">
-        <span *ngIf="revisando" class="spinner-small"></span>
-        {{ revisando ? 'Revisando…' : 'Volver a revisar' }}
-      </button>
-      <button *ngIf="!desactualizada && vista.resumen.modo !== 'comparar'" type="button" class="btn-primary"
-        [disabled]="!sePuedeAplicar" (click)="aplicar()">
-        <span *ngIf="aplicando" class="spinner-small"></span>
-        {{ aplicando ? 'Importando…' : 'Importar ' + vista.resumen.trabajadores + ' planilla(s) de ' + vista.resumen.periodo }}
-      </button>
+      <div class="importacion-pie__grupo">
+        <button type="button" class="btn-secondary" (click)="cambiarMes()">
+          <app-icon icono="arrow_left" [tamano]="16"></app-icon>
+          Cambiar el mes
+        </button>
+        <button type="button" class="btn-secondary" (click)="otroArchivo()">Cambiar de archivo</button>
+      </div>
+      <div class="importacion-pie__grupo">
+        <button *ngIf="desactualizada" type="button" class="btn-secondary" [disabled]="revisando" (click)="revisar()">
+          <span *ngIf="revisando" class="spinner-small"></span>
+          {{ revisando ? 'Revisando…' : 'Volver a revisar' }}
+        </button>
+        <button type="button" class="btn-primary" [disabled]="!sePuedeAplicar" (click)="aplicar()">
+          <span *ngIf="aplicando" class="spinner-small"></span>
+          <app-icon *ngIf="!aplicando" icono="file_up" [tamano]="16"></app-icon>
+          {{ aplicando ? 'Importando…' : 'Importar ' + vista.resumen.trabajadores + ' planilla(s) de ' + vista.resumen.periodo }}
+        </button>
+      </div>
     </div>
   </div>
 
