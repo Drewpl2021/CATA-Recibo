@@ -7,15 +7,15 @@
     </a>
   </header>
 
-  <!-- ══ La portada ══ -->
+  <!-- ══ Portada ══ -->
   <section class="privacidad__portada">
     <span class="privacidad__escudo"><app-icon icono="shield" [tamano]="30"></app-icon></span>
-    <h1>Tu privacidad en CATA-Recibo</h1>
+    <h1>Política de privacidad</h1>
     <p>
-      Tus datos se usan para una sola cosa: tu planilla, tus boletas y tus documentos laborales.
-      Aquí te contamos cuáles tenemos, quién los ve y cómo los cuidamos.
+      Cómo el Colegio Adventista Túpac Amaru trata los datos personales de su personal en CATA-Recibo,
+      el sistema de planillas, boletas y documentos laborales.
     </p>
-    <span class="privacidad__fecha">Actualizado el {{ actualizada }}</span>
+    <span class="privacidad__fecha">Última actualización: {{ actualizada }}</span>
   </section>
 
   <!-- ══ En pocas palabras ══ -->
@@ -30,17 +30,42 @@
   </section>
 
   <nav class="privacidad__indice" aria-label="Contenido">
-    @for (s of secciones; track s.id) {
-      <a [href]="'#' + s.id">{{ s.titulo }}</a>
+    @for (s of secciones; track s.id; let n = $index) {
+      <a [href]="'#' + s.id">{{ n + 1 }}. {{ s.titulo }}</a>
     }
   </nav>
 
   <main class="privacidad__cuerpo">
 
-    <!-- Qué datos -->
+    <!-- 1. Responsable -->
+    <section class="privacidad__seccion" id="responsable">
+      <h2>1. Quién es responsable de tus datos</h2>
+      <p class="privacidad__intro">
+        El responsable del tratamiento y titular del banco de datos de su personal es:
+      </p>
+      <div class="privacidad__contacto">
+        <div>
+          <h3>{{ responsable.nombre }}</h3>
+          <p>RUC {{ responsable.ruc }}</p>
+        </div>
+        <ul>
+          <li><app-icon icono="location_on" [tamano]="17"></app-icon> {{ responsable.domicilio }}</li>
+          <li><app-icon icono="phone" [tamano]="17"></app-icon> Teléfono {{ responsable.telefono }}</li>
+        </ul>
+      </div>
+      <p>
+        Tus datos se guardan en el banco de datos de personal del colegio, que se administra mediante CATA-Recibo.
+        Las empresas que dan servicios técnicos al colegio actúan como encargadas del tratamiento (ver la sección 4).
+      </p>
+    </section>
+
+    <!-- 2. Datos -->
     <section class="privacidad__seccion" id="datos">
-      <h2>Qué datos tenemos</h2>
-      <p class="privacidad__intro">Los que hacen falta para pagarte y llevar tu expediente laboral.</p>
+      <h2>2. Qué datos tratamos</h2>
+      <p class="privacidad__intro">
+        Los que hacen falta para tu relación laboral. Los recibimos de ti, de tu contrato y de lo que se genera
+        mientras trabajas en el colegio.
+      </p>
       <div class="privacidad__rejilla privacidad__rejilla--cuatro">
         @for (d of datos; track $index) {
           <article class="privacidad__ficha">
@@ -54,37 +79,46 @@
           </article>
         }
       </div>
+      <p class="privacidad__aparte">
+        <app-icon icono="info" [tamano]="18"></app-icon>
+        <span>
+          <strong>Datos obligatorios y facultativos.</strong> Los de identificación, laborales y de pago son
+          necesarios: sin ellos no podemos pagarte ni cumplir la ley. La foto de perfil y la formación académica son
+          opcionales. El <strong>descuento del diezmo</strong> es voluntario y solo se aplica con tu autorización,
+          que puedes retirar cuando quieras; como puede revelar tus convicciones religiosas, lo tratamos con
+          especial reserva.
+        </span>
+      </p>
     </section>
 
-    <!-- Para qué -->
-    <section class="privacidad__seccion" id="uso">
-      <h2>Para qué los usamos</h2>
+    <!-- 3. Finalidades -->
+    <section class="privacidad__seccion" id="finalidades">
+      <h2>3. Para qué los usamos y con qué base</h2>
       <div class="privacidad__rejilla privacidad__rejilla--dos">
-        <article class="privacidad__lista privacidad__lista--si">
-          <h3>Sí los usamos para</h3>
-          <ul>
-            @for (u of usosSi; track $index) {
-              <li><app-icon icono="check_circle" [tamano]="18"></app-icon><span>{{ u }}</span></li>
-            }
-          </ul>
-        </article>
-        <article class="privacidad__lista privacidad__lista--no">
-          <h3>Nunca los usamos para</h3>
-          <ul>
-            @for (u of usosNo; track $index) {
-              <li><app-icon icono="circle_x" [tamano]="18"></app-icon><span>{{ u }}</span></li>
-            }
-          </ul>
-        </article>
+        @for (f of finalidades; track $index) {
+          <article class="privacidad__ficha">
+            <h3>{{ f.titulo }}</h3>
+            <p>{{ f.texto }}</p>
+          </article>
+        }
       </div>
+      <p>
+        La base del tratamiento es tu <strong>relación laboral</strong> con el colegio y las
+        <strong>obligaciones legales</strong> que tiene como empleador. Cuando algo depende de tu decisión, como un
+        descuento voluntario, lo hacemos con tu <strong>consentimiento</strong>.
+      </p>
+      <p>
+        <strong>No</strong> usamos tus datos para publicidad, no los vendemos ni los cedemos a terceros para fines
+        comerciales, y no tomamos decisiones sobre ti de forma únicamente automática.
+      </p>
     </section>
 
-    <!-- Quién -->
-    <section class="privacidad__seccion" id="quien">
-      <h2>Quién los ve</h2>
-      <p class="privacidad__intro">Cada cuenta ve solo lo que le toca según su función.</p>
+    <!-- 4. Destinatarios -->
+    <section class="privacidad__seccion" id="destinatarios">
+      <h2>4. Con quién los compartimos</h2>
+      <p class="privacidad__intro">Solo con quien hace falta, y solo lo necesario:</p>
       <ul class="privacidad__quienes">
-        @for (q of quienes; track $index) {
+        @for (q of destinatarios; track $index) {
           <li>
             <span class="privacidad__icono privacidad__icono--chico"><app-icon [icono]="q.icono" [tamano]="18"></app-icon></span>
             <div>
@@ -94,12 +128,30 @@
           </li>
         }
       </ul>
+      <p>
+        Si un proveedor de servicios guarda o procesa información fuera del Perú, el colegio exige que la proteja
+        con un nivel de seguridad adecuado, como pide la ley.
+      </p>
     </section>
 
-    <!-- Cuidado -->
-    <section class="privacidad__seccion" id="cuidado">
-      <h2>Cómo los cuidamos</h2>
-      <div class="privacidad__rejilla privacidad__rejilla--tres">
+    <!-- 5. Conservación -->
+    <section class="privacidad__seccion" id="conservacion">
+      <h2>5. Cuánto tiempo los guardamos</h2>
+      <p>
+        Mientras dure tu relación laboral y, después, durante los plazos que exigen las normas laborales,
+        tributarias y previsionales para conservar planillas, boletas y documentos laborales, o los necesarios para
+        atender un reclamo. Pasado ese tiempo, se eliminan o se anonimizan.
+      </p>
+    </section>
+
+    <!-- 6. Seguridad -->
+    <section class="privacidad__seccion" id="seguridad">
+      <h2>6. Cómo los protegemos</h2>
+      <p class="privacidad__intro">
+        Aplicamos medidas técnicas, organizativas y legales para evitar su pérdida, mal uso o acceso no autorizado.
+        Entre ellas:
+      </p>
+      <div class="privacidad__rejilla privacidad__rejilla--dos">
         @for (c of cuidados; track $index) {
           <article class="privacidad__ficha">
             <span class="privacidad__icono privacidad__icono--chico"><app-icon [icono]="c.icono" [tamano]="18"></app-icon></span>
@@ -108,22 +160,18 @@
           </article>
         }
       </div>
-      <p class="privacidad__aparte">
-        <app-icon icono="clock" [tamano]="18"></app-icon>
-        <span>
-          <strong>Cuánto tiempo los guardamos:</strong> mientras trabajes en el colegio y, después, el tiempo
-          que la ley obliga a conservar planillas y boletas.
-        </span>
+      <p>
+        Ningún sistema es infalible. Si ocurriera un incidente que afecte tus datos, el colegio actuará para
+        contenerlo y te informará cuando corresponda. Tú también ayudas: no compartas tu contraseña y cierra sesión
+        en equipos que no son tuyos.
       </p>
     </section>
 
-    <!-- Derechos -->
+    <!-- 7. Derechos -->
     <section class="privacidad__seccion" id="derechos">
-      <h2>Tus derechos</h2>
-      <p class="privacidad__intro">
-        Te los da la Ley N.° 29733, de Protección de Datos Personales. Puedes pedir:
-      </p>
-      <div class="privacidad__rejilla privacidad__rejilla--cuatro">
+      <h2>7. Tus derechos</h2>
+      <p class="privacidad__intro">La Ley N.° 29733, de Protección de Datos Personales, te reconoce los derechos de:</p>
+      <div class="privacidad__rejilla privacidad__rejilla--tres">
         @for (d of derechos; track $index) {
           <article class="privacidad__derecho">
             <span class="privacidad__icono"><app-icon [icono]="d.icono" [tamano]="20"></app-icon></span>
@@ -132,59 +180,62 @@
           </article>
         }
       </div>
-      <p class="privacidad__aparte">
-        <app-icon icono="mail" [tamano]="18"></app-icon>
-        <span>
-          <strong>Cómo pedirlo:</strong> acércate o escribe a la Jefatura de Recursos Humanos. Si no te
-          responden como corresponde, puedes acudir a la Autoridad Nacional de Protección de Datos Personales.
-        </span>
+      <p>
+        Algunos datos no pueden eliminarse mientras la ley obligue al colegio a conservarlos; en ese caso te lo
+        explicaremos.
       </p>
     </section>
 
-    <!-- Cookies -->
+    <!-- 8. Cómo ejercerlos -->
+    <section class="privacidad__seccion" id="ejercer">
+      <h2>8. Cómo ejercer tus derechos</h2>
+      <p>
+        Presenta tu solicitud por escrito a la <strong>Jefatura de Recursos Humanos</strong>, en
+        {{ responsable.domicilio }}, con tu nombre, una copia de tu DNI y lo que pides. Muchos datos ya los puedes
+        ver y descargar tú mismo en <em>Mi perfil</em> y <em>Mis documentos</em>.
+      </p>
+      <p>
+        Te responderemos dentro de los plazos que fija la ley. Si no recibes respuesta o no estás de acuerdo con
+        ella, puedes presentar un reclamo ante la <strong>Autoridad Nacional de Protección de Datos
+        Personales</strong> del Ministerio de Justicia y Derechos Humanos.
+      </p>
+    </section>
+
+    <!-- 9. Cookies -->
     <section class="privacidad__seccion" id="cookies">
-      <h2>Cookies</h2>
+      <h2>9. Cookies</h2>
       <div class="privacidad__sin-cookies">
         <app-icon icono="check_circle" [tamano]="26"></app-icon>
         <div>
-          <h3>CATA-Recibo no usa cookies</h3>
+          <h3>Sin cookies de publicidad ni de seguimiento</h3>
           <p>
-            Ni propias ni de terceros, ni de publicidad ni de estadísticas. Tampoco usa servicios de Google,
-            redes sociales ni anuncios: tu navegador solo se conecta con el servidor del colegio. Por eso
-            no te pedimos aceptar cookies.
+            CATA-Recibo no usa cookies publicitarias, de analítica ni de redes sociales, y no comparte tu
+            navegación con terceros. Solo guarda en tu navegador lo técnicamente necesario para mantener tu sesión
+            iniciada y recordar tus preferencias, como el modo claro u oscuro. Por eso no te pedimos aceptar cookies.
+          </p>
+          <p>
+            Puedes borrar esos datos desde la configuración de tu navegador; si lo haces, tendrás que volver a
+            iniciar sesión.
           </p>
         </div>
       </div>
-
-      <details class="privacidad__detalle">
-        <summary>¿Y qué guarda tu navegador?</summary>
-        <p>Solo lo indispensable para que el sistema funcione. Nada de esto sirve para seguirte:</p>
-        <ul>
-          @for (n of navegador; track $index) {
-            <li>{{ n }}</li>
-          }
-        </ul>
-      </details>
     </section>
 
-    <!-- Contacto -->
-    <section class="privacidad__contacto">
-      <div>
-        <h2>¿Tienes una duda sobre tus datos?</h2>
-        <p>Escríbele o acércate a la <strong>Jefatura de Recursos Humanos</strong>.</p>
-      </div>
-      <ul>
-        <li><app-icon icono="location_on" [tamano]="17"></app-icon> Jr. Moquegua N.° 852, Juliaca</li>
-        <li><app-icon icono="phone" [tamano]="17"></app-icon> Teléfono 051-325096</li>
-      </ul>
+    <!-- 10. Cambios -->
+    <section class="privacidad__seccion" id="cambios">
+      <h2>10. Cambios a esta política</h2>
+      <p>
+        Podemos actualizar esta política cuando cambie el sistema o la ley. La fecha de la última actualización
+        está al inicio de esta página y, si el cambio es importante, te lo avisaremos en el sistema.
+      </p>
     </section>
 
     <footer class="privacidad__pie">
       <p>
-        Responsable de tus datos: <strong>Asociación Educativa Colegio Adventista Túpac Amaru</strong>,
-        RUC 20156630731. Tratamiento conforme a la Ley N.° 29733 y su Reglamento (D.S. N.° 003-2013-JUS).
+        Esta política se rige por la Ley N.° 29733, Ley de Protección de Datos Personales, y su Reglamento,
+        aprobado por el Decreto Supremo N.° 016-2024-JUS.
       </p>
-      <p>Esta página complementa el Convenio de entrega digital de documentos laborales que aceptas al ingresar al sistema.</p>
+      <p>Complementa el Convenio de entrega digital de documentos laborales que aceptas al ingresar al sistema.</p>
     </footer>
   </main>
 </div>

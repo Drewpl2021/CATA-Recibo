@@ -4,22 +4,26 @@ import { RouterLink } from '@angular/router';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 /**
- * «Privacidad y cookies»: pública (se lee sin iniciar sesión), enlazada desde
- * el inicio de sesión y desde el convenio de entrega digital.
+ * «Política de privacidad»: pública (se lee sin iniciar sesión), enlazada
+ * desde el inicio de sesión y desde el convenio de entrega digital.
  *
- * Escrita para el personal del colegio, no para informáticos: qué datos hay,
- * para qué, quién los ve, cómo se cuidan y qué derechos tienes. Antes tenía
- * una tabla con los nombres internos del almacenamiento del navegador y
- * hablaba de «hash»; eso se leía raro.
+ * Sigue el orden de las políticas de las plataformas educativas grandes
+ * (responsable, datos, finalidades, destinatarios, conservación, seguridad,
+ * derechos, cookies, cambios) y cubre lo que el art. 18 de la Ley 29733 pide
+ * informar: finalidad, destinatarios, banco de datos, identidad y domicilio
+ * del titular y de los encargados, datos obligatorios, transferencias,
+ * consecuencias de no darlos, conservación y cómo ejercer los derechos.
  *
- * Lo que dice tiene que ser verdad del sistema. Lo que guarda el navegador
- * (la lista de «¿Y qué guarda tu navegador?») sale de:
- *   - auth_token, auth_user, auth_retorno: AuthService
- *   - app-theme: ThemeService
- *   - cata-lista:*: EstadoListadoService (se borra al cerrar sesión)
- *   - recarga-por-version-nueva: app.config.ts
- * Si se agrega algo ahí, o un servicio de terceros, se actualiza aquí.
- * Cookies: el servidor no pone ninguna (la sesión va por token, no por cookie).
+ * Discreción: una política pública NO describe cómo está armada la
+ * seguridad. Antes decía cada cuánto se cierra la sesión, cada cuánto hay
+ * copia, cómo se frena a quien prueba claves y qué guarda el navegador con
+ * sus nombres; eso es un mapa para quien quiere atacar. Ahora la seguridad
+ * se describe en general, como lo hacen ellas.
+ *
+ * Lo que dice tiene que ser verdad del sistema: si se agrega un servicio de
+ * terceros (analítica, fuentes externas, un CDN), cambia la sección de
+ * cookies. La firma digital del colegio no se promete hasta que se cargue el
+ * certificado.
  */
 @Component({
   selector: 'app-privacidad',
@@ -28,73 +32,68 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
   templateUrl: './privacidad.component.html',
 })
 export class PrivacidadComponent {
-  readonly actualizada = '9 de octubre de 2026';
+  readonly actualizada = '22 de octubre de 2026';
+
+  readonly responsable = {
+    nombre: 'Asociación Educativa Colegio Adventista Túpac Amaru',
+    ruc: '20156630731',
+    domicilio: 'Jr. Moquegua N.° 852, Juliaca, Puno, Perú',
+    telefono: '051-325096',
+  };
 
   readonly resumen = [
-    { icono: 'receipt_long', titulo: 'Solo para tu trabajo', texto: 'Tus datos sirven para tu planilla, tus boletas y tus documentos laborales. Para nada más.' },
-    { icono: 'eye_off', titulo: 'Tú ves lo tuyo', texto: 'Nadie del personal ve tus datos. Solo Recursos Humanos y la Administración, lo que necesitan para su trabajo.' },
-    { icono: 'shield', titulo: 'Sin cookies ni publicidad', texto: 'No te rastreamos ni compartimos nada con empresas de publicidad o redes sociales.' },
+    { icono: 'receipt_long', titulo: 'Solo para tu relación laboral', texto: 'Usamos tus datos para tu planilla, tus boletas y tu expediente. No para publicidad ni para venderlos.' },
+    { icono: 'eye_off', titulo: 'Acceso según la función', texto: 'Tú ves lo tuyo. Del personal, solo acceden quienes lo necesitan para su trabajo, y únicamente a lo que necesitan.' },
+    { icono: 'shield', titulo: 'Tienes el control', texto: 'Puedes saber qué datos tenemos, corregirlos y ejercer los demás derechos que te da la ley.' },
   ];
 
   readonly secciones = [
-    { id: 'datos', titulo: 'Qué datos tenemos' },
-    { id: 'uso', titulo: 'Para qué los usamos' },
-    { id: 'quien', titulo: 'Quién los ve' },
-    { id: 'cuidado', titulo: 'Cómo los cuidamos' },
+    { id: 'responsable', titulo: 'Quién es responsable' },
+    { id: 'datos', titulo: 'Qué datos tratamos' },
+    { id: 'finalidades', titulo: 'Para qué y con qué base' },
+    { id: 'destinatarios', titulo: 'Con quién los compartimos' },
+    { id: 'conservacion', titulo: 'Cuánto tiempo los guardamos' },
+    { id: 'seguridad', titulo: 'Cómo los protegemos' },
     { id: 'derechos', titulo: 'Tus derechos' },
+    { id: 'ejercer', titulo: 'Cómo ejercerlos' },
     { id: 'cookies', titulo: 'Cookies' },
+    { id: 'cambios', titulo: 'Cambios a esta política' },
   ];
 
   readonly datos = [
-    { icono: 'badge', titulo: 'Quién eres', items: ['DNI, nombres y fecha de nacimiento', 'Teléfono, dirección y correo', 'Tu foto, si la subes'] },
-    { icono: 'domain', titulo: 'Tu trabajo', items: ['Cargo, área y sede', 'Tipo de contrato y sus fechas', 'Fecha de ingreso'] },
-    { icono: 'wallet', titulo: 'Tu pago', items: ['Sueldo, bonos y descuentos', 'Cuenta bancaria', 'Sistema de pensiones (AFP u ONP)'] },
-    { icono: 'folder', titulo: 'Tus documentos', items: ['Boletas de pago', 'Contratos', 'Hoja de vida y otros de tu expediente'] },
+    { icono: 'badge', titulo: 'Identificación y contacto', items: ['Nombres, DNI y fecha de nacimiento', 'Dirección, teléfono y correo', 'Contacto de emergencia', 'Foto de perfil, si decides subirla'] },
+    { icono: 'domain', titulo: 'Datos laborales', items: ['Cargo, área y sede', 'Contratos, fechas de ingreso y cese', 'Vacaciones', 'Formación académica y hoja de vida'] },
+    { icono: 'wallet', titulo: 'Remuneración y pago', items: ['Sueldo, bonificaciones y descuentos', 'Cuenta bancaria y CCI', 'Sistema de pensiones (AFP u ONP) y CUSPP', 'Si tienes hijos, para la asignación familiar'] },
+    { icono: 'folder', titulo: 'Documentos y firma', items: ['Boletas, liquidaciones de CTS y gratificación', 'Contratos y documentos de tu expediente', 'Tu firma y la constancia de que recibiste cada documento'] },
   ];
 
-  readonly usosSi = [
-    'Calcular tu planilla y emitir tus boletas de pago.',
-    'Guardar tus contratos y documentos laborales.',
-    'Cumplir con lo que la ley pide al colegio como empleador (SUNAT, EsSalud, tu AFP u ONP).',
-    'Avisarte por correo cuando tienes una boleta nueva o tu acceso al sistema.',
+  readonly finalidades = [
+    { titulo: 'Gestionar tu relación laboral', texto: 'Calcular tu planilla, pagar tu remuneración y beneficios, y llevar tu expediente.' },
+    { titulo: 'Cumplir obligaciones legales', texto: 'Las laborales, tributarias y previsionales que el colegio tiene como empleador.' },
+    { titulo: 'Entregarte tus documentos', texto: 'Ponerlos a tu disposición en el sistema, recibir tu conformidad y avisarte por correo cuando hay uno nuevo.' },
+    { titulo: 'Darte acceso al sistema', texto: 'Crear tu cuenta y ayudarte a recuperarla si olvidas tu contraseña.' },
   ];
 
-  readonly usosNo = [
-    'Publicidad de ningún tipo.',
-    'Venderlos o prestarlos a otras empresas.',
-    'Cualquier cosa que no tenga que ver con tu trabajo en el colegio.',
-  ];
-
-  readonly quienes = [
-    { icono: 'person', titulo: 'Tú', texto: 'Ves y descargas todo lo tuyo: tus boletas, tus documentos y tus datos.' },
-    { icono: 'people', titulo: 'Recursos Humanos', texto: 'Lo necesario para armar tu planilla, emitir tus boletas y llevar tu expediente.' },
-    { icono: 'admin_panel_settings', titulo: 'Administración', texto: 'Lo necesario para configurar el sistema y controlar que todo esté en orden.' },
-    { icono: 'domain', titulo: 'Entidades del Estado', texto: 'Solo lo que la ley exige y cuando lo exige: SUNAT, EsSalud, tu AFP u ONP.' },
+  readonly destinatarios = [
+    { icono: 'domain', titulo: 'Entidades públicas', texto: 'SUNAT, EsSalud y la ONP, cuando la ley lo exige y solo con lo que exige.' },
+    { icono: 'bank', titulo: 'Entidades financieras y previsionales', texto: 'Tu banco, para depositar tu sueldo y tu CTS, y tu AFP, para tus aportes.' },
+    { icono: 'settings', titulo: 'Proveedores de servicios', texto: 'Empresas que dan al colegio servicios técnicos, como el alojamiento del sistema o el envío de correos. Actúan como encargados: solo por encargo del colegio, bajo contrato y para ese fin.' },
+    { icono: 'shield', titulo: 'Autoridades', texto: 'Jueces u otras autoridades, cuando lo ordenen conforme a ley.' },
   ];
 
   readonly cuidados = [
-    { icono: 'lock', titulo: 'Tu contraseña es solo tuya', texto: 'Nadie puede verla, ni siquiera Recursos Humanos. Si la olvidas, te llega a tu correo un enlace para crear otra.' },
-    { icono: 'clock', titulo: 'La sesión se cierra sola', texto: 'Si dejas el sistema abierto y no lo usas por 2 horas, se cierra. Y si alguien intenta entrar muchas veces con una clave equivocada, se le frena.' },
-    { icono: 'signature', titulo: 'Boletas que no se pueden falsificar', texto: 'Cada boleta lleva la firma digital del colegio y un código QR para comprobar que es auténtica. Si alguien la cambia, la firma deja de valer.' },
-    { icono: 'save', titulo: 'Copia de seguridad cada día', texto: 'Todos los días se guarda una copia de la información y de los documentos, para no perder nada.' },
-    { icono: 'search', titulo: 'Cada cambio queda anotado', texto: 'Si alguien modifica datos importantes, el sistema registra quién fue y cuándo. Ese registro no se puede borrar.' },
-    { icono: 'folder_shared', titulo: 'Documentos bajo llave', texto: 'Tus boletas y documentos no están a la vista en internet: solo se abren para quien tiene derecho a verlos.' },
+    { icono: 'lock', titulo: 'Acceso restringido', texto: 'Cada cuenta entra con su contraseña y ve solo lo que corresponde a su función. Las contraseñas se guardan de forma que nadie pueda leerlas.' },
+    { icono: 'shield', titulo: 'Información protegida', texto: 'La comunicación con el sistema viaja cifrada y los documentos solo se abren para quien tiene derecho a verlos.' },
+    { icono: 'search', titulo: 'Registro de cambios', texto: 'Los cambios en datos importantes quedan registrados, con quién los hizo y cuándo.' },
+    { icono: 'save', titulo: 'Continuidad', texto: 'Contamos con copias de seguridad para que tu información no se pierda.' },
   ];
 
   readonly derechos = [
-    { icono: 'eye', titulo: 'Saber', texto: 'Qué datos tuyos tiene el colegio y para qué los usa.' },
-    { icono: 'edit', titulo: 'Corregir', texto: 'Que se arregle un dato equivocado o se ponga al día uno que cambió.' },
-    { icono: 'trash', titulo: 'Pedir que se borren', texto: 'Cuando ya no hagan falta y la ley no obligue a guardarlos.' },
-    { icono: 'pause_circle', titulo: 'Oponerte', texto: 'A un uso de tus datos que no sea necesario para tu trabajo.' },
-  ];
-
-  /** Lo que guarda el navegador, en palabras (ver la lista técnica arriba). */
-  readonly navegador = [
-    'Que iniciaste sesión, para no pedirte la clave en cada pantalla. Se borra al cerrar sesión o tras 2 horas sin usar el sistema.',
-    'Tu nombre y tu rol, para armar el menú.',
-    'Si prefieres el modo claro o el oscuro.',
-    'Lo que buscaste y filtraste en cada lista, para que al volver la encuentres igual. Se borra al cerrar sesión.',
-    'A qué pantalla volver después de iniciar sesión.',
-    'Una marca para no recargar la página dos veces cuando se actualiza el sistema.',
+    { icono: 'info', titulo: 'Información', texto: 'Saber cómo y para qué tratamos tus datos.' },
+    { icono: 'eye', titulo: 'Acceso', texto: 'Conocer qué datos tuyos tenemos, cómo se obtuvieron y a quién se transfirieron.' },
+    { icono: 'edit', titulo: 'Rectificación', texto: 'Corregir un dato inexacto o ponerlo al día.' },
+    { icono: 'trash', titulo: 'Cancelación', texto: 'Pedir que se eliminen cuando ya no sean necesarios y la ley no obligue a conservarlos.' },
+    { icono: 'pause_circle', titulo: 'Oposición', texto: 'Oponerte a un tratamiento que no sea necesario para tu relación laboral.' },
+    { icono: 'check_circle', titulo: 'Revocar tu consentimiento', texto: 'Retirarlo cuando lo hayas dado, por ejemplo para un descuento voluntario.' },
   ];
 }
