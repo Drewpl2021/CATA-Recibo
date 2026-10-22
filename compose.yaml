@@ -254,6 +254,22 @@ services:
     # No arranca MySQL: la imagen se usa solo por sus herramientas.
     entrypoint: ["bash", "/respaldo/cada-noche.sh"]
 
+  # Bandeja de PRUEBA para los correos (Mailpit): todo lo que el sistema
+  # envía cae aquí y se lee en http://localhost:8025, con su diseño real,
+  # sin salir a internet. Solo arranca si se pide:
+  #
+  #   docker compose --profile correo-pruebas up -d
+  #
+  # y en el .env:  MAIL_MAILER=smtp  MAIL_HOST=mailpit  MAIL_PORT=1025
+  # (sin usuario ni contraseña). Para enviar de verdad, el buzón real.
+  mailpit:
+    image: axllent/mailpit:v1.24.1
+    profiles: ["correo-pruebas"]
+    restart: unless-stopped
+    ports:
+      # Solo desde este equipo: la bandeja trae los enlaces de acceso.
+      - "127.0.0.1:8025:8025"
+
 volumes:
   datos-mysql:
   archivos:
