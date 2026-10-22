@@ -232,7 +232,7 @@ class ImportacionPlameController extends Controller
 
         try {
             $hoja = LectorPlame::leer($request->file('archivo')->getRealPath());
-        } catch (\RuntimeException $e) {
+        } catch (\App\Exceptions\AvisoParaElUsuario $e) {
             $r['errores'][] = $this->aviso(null, null, null, $e->getMessage());
             return $r;
         }

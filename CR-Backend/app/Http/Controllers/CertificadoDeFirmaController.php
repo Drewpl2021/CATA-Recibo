@@ -54,7 +54,7 @@ class CertificadoDeFirmaController extends Controller
         $pfx = (string) file_get_contents($datos['archivo']->getRealPath());
         try {
             $leido = CertificadoDigital::abrir($pfx, $datos['clave']);
-        } catch (\RuntimeException $e) {
+        } catch (\App\Exceptions\AvisoParaElUsuario $e) {
             return $this->error($e->getMessage());
         }
 

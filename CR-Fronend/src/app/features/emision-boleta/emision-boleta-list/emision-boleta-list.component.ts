@@ -1071,8 +1071,7 @@ export class EmisionBoletaListComponent implements OnInit {
         this.recalcularMontosDinamicos();
         this._formularioOriginal = JSON.stringify(this.formulario);
       },
-      error: (err) => {
-        console.error('Error cargando planilla del empleado', err);
+      error: () => {
         // Fallback simple
         this.formulario.remuneracionBasica = empleado.sueldo_base ?? null;
         this.recalcularMontosDinamicos();
@@ -1500,7 +1499,6 @@ export class EmisionBoletaListComponent implements OnInit {
         }
       },
       error: (err) => {
-        console.error('Error guardando planilla', err);
         const msg = err?.error?.message || 'No se pudo guardar los datos de la planilla en el servidor.';
         this.toastService.error('Error al guardar', msg);
       }
@@ -1534,7 +1532,6 @@ export class EmisionBoletaListComponent implements OnInit {
               this.cerrarModal();
             },
             error: (err) => {
-              console.error('Error generando boleta', err);
               const msg = err?.error?.message || `No existe planilla para el mes ${this.nombreMes(mes)} ${anio}.`;
               this.toastService.error('Error al generar', msg);
               this.generandoPDF = false;
@@ -1543,7 +1540,6 @@ export class EmisionBoletaListComponent implements OnInit {
         }
       },
       error: (err) => {
-        console.error('Error al registrar planilla antes de emitir', err);
         const msg = err?.error?.message || 'No se pudo registrar la planilla en la base de datos.';
         this.toastService.error('Error de registro', msg);
         this.generandoPDF = false;
@@ -1613,8 +1609,7 @@ export class EmisionBoletaListComponent implements OnInit {
         // Recargar para que las filas y el aviso del mes queden al día.
         this.cargarEstadoBoletas();
       },
-      error: (err) => {
-        console.error('Error generando masivo', err);
+      error: () => {
         this.toastService.error('Error', 'Hubo un problema al generar las boletas masivamente.');
         this.generandoMasivo = false;
       }

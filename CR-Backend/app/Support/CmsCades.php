@@ -59,7 +59,7 @@ final class CmsCades
         $algoritmoFirma = match ($tipo) {
             OPENSSL_KEYTYPE_RSA => self::seq(self::oid('1.2.840.113549.1.1.1'), "\x05\x00"),
             OPENSSL_KEYTYPE_EC  => self::seq(self::oid('1.2.840.10045.4.3.2')),
-            default             => throw new RuntimeException('El certificado usa un tipo de llave que no se puede usar para firmar.'),
+            default             => throw new \App\Exceptions\AvisoParaElUsuario('El certificado usa un tipo de llave que no se puede usar para firmar.'),
         };
         $sha256 = self::seq(self::oid(self::SHA256));
 

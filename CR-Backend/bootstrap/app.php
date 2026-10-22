@@ -115,6 +115,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 $e instanceof PostTooLargeException => [
                     413, 'El archivo pesa demasiado.',
                 ],
+                // La única excepción escrita para el usuario (ver la clase).
+                $e instanceof \App\Exceptions\AvisoParaElUsuario => [
+                    422, $e->getMessage(),
+                ],
                 default => [
                     500, 'No pudimos completar la operación. Vuelve a intentarlo; si sigue igual, avisa a soporte con el código.',
                 ],

@@ -9,7 +9,7 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use RuntimeException;
+use App\Exceptions\AvisoParaElUsuario;
 
 /**
  * Lee la hoja PLANILLA del PLAME de RR.HH. ("PLANILLA MARZO PLAME 2026 v.3.xls").
@@ -52,7 +52,7 @@ final class LectorPlame
         try {
             $lector = IOFactory::createReaderForFile($ruta);
         } catch (\Throwable) {
-            throw new RuntimeException('El archivo no es un Excel (.xls o .xlsx).');
+            throw new AvisoParaElUsuario('El archivo no es un Excel (.xls o .xlsx).');
         }
         // Sin setReadDataOnly: en un .xls eso deja fuera las celdas
         // combinadas, y sin ellas la columna del monto de la ONP no tiene título.
@@ -60,7 +60,7 @@ final class LectorPlame
 
         $hoja = self::hojaDeLaPlanilla($libro->getAllSheets());
         if (! $hoja) {
-            throw new RuntimeException('No se encontró la hoja de la planilla: ninguna hoja tiene las columnas «APELLIDOS Y NOMBRES» y «DNI».');
+            throw new AvisoParaElUsuario('No se encontró la hoja de la planilla: ninguna hoja tiene las columnas «APELLIDOS Y NOMBRES» y «DNI».');
         }
 
         [$hojaPlanilla, $filaCabecera] = $hoja;
@@ -103,7 +103,7 @@ final class LectorPlame
             }
         }
         if (! $primeraDeDatos) {
-            throw new RuntimeException('La hoja «' . $hojaPlanilla->getTitle() . '» no tiene filas de trabajadores debajo de los títulos.');
+            throw new AvisoParaElUsuario('La hoja «' . $hojaPlanilla->getTitle() . '» no tiene filas de trabajadores debajo de los títulos.');
         }
 
         // ── Las columnas ─────────────────────────────────────────
@@ -150,7 +150,7 @@ final class LectorPlame
 
             $filas[] = ['numero' => $f, 'celdas' => $celdas];
             if (count($filas) > self::MAX_FILAS) {
-                throw new RuntimeException('La hoja tiene más de ' . self::MAX_FILAS . ' filas: no parece un PLAME.');
+                throw new AvisoParaElUsuario('La hoja tiene más de ' . self::MAX_FILAS . ' filas: no parece un PLAME.');
             }
         }
 

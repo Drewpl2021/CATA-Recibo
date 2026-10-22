@@ -79,7 +79,7 @@ class CertificadoFirma extends Model
             substr($crudo, 28), 'aes-256-gcm', self::llave(), OPENSSL_RAW_DATA, substr($crudo, 0, 12), substr($crudo, 12, 16)
         );
         if ($pfx === false) {
-            throw new \RuntimeException('Tu certificado guardado ya no se puede abrir (cambió la instalación del sistema): quítalo y ponlo de nuevo en Ajustes.');
+            throw new \App\Exceptions\AvisoParaElUsuario('Tu certificado guardado ya no se puede abrir (cambió la instalación del sistema): quítalo y ponlo de nuevo en Ajustes.');
         }
 
         return $pfx;
@@ -89,7 +89,7 @@ class CertificadoFirma extends Model
     {
         $base = (string) config('app.key');
         if ($base === '') {
-            throw new \RuntimeException('El servidor no tiene APP_KEY: no se puede guardar el certificado con seguridad. Avisa a soporte.');
+            throw new \RuntimeException('Falta APP_KEY: no se puede cifrar el certificado de firma.');
         }
 
         return hash_hmac('sha256', 'cata-recibo/certificados-de-firma', $base, true);

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\RentaQuintaPrevia;
 use App\Services\CargaRentaQuintaPrevia;
 use Illuminate\Http\Request;
-use RuntimeException;
+use App\Exceptions\AvisoParaElUsuario;
 
 /**
  * Enero y febrero que no pasaron por el sistema, para la Renta de 5ta.
@@ -44,7 +44,7 @@ class RentaQuintaPreviaController extends Controller
                 (int) $datos['anio'],
                 $request->file('archivo')->getClientOriginalName()
             );
-        } catch (RuntimeException $e) {
+        } catch (AvisoParaElUsuario $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 

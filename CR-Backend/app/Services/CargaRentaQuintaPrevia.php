@@ -8,7 +8,7 @@ use App\Models\RentaQuintaPrevia;
 use App\Traits\CalculaConceptosPlanilla;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use RuntimeException;
+use App\Exceptions\AvisoParaElUsuario;
 
 /**
  * Lee enero y febrero del Excel de 5ta de RR.HH. ("Calculo 5ta.xlsx") y los
@@ -121,7 +121,7 @@ class CargaRentaQuintaPrevia
             }
         }
 
-        throw new RuntimeException('El Excel no tiene las columnas MODULAR, PATERNO, Enero, Febrero, IRQ DESCONTADO ENERO e IRQ DESCONTADO FEBRERO en su primera fila.');
+        throw new AvisoParaElUsuario('El Excel no tiene las columnas MODULAR, PATERNO, Enero, Febrero, IRQ DESCONTADO ENERO e IRQ DESCONTADO FEBRERO en su primera fila.');
     }
 
     private function normalizar(string $texto): string

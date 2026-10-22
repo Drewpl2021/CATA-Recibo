@@ -164,7 +164,7 @@ class BoletasFirmadasController extends Controller
         }
         try {
             $llaves = CertificadoDigital::abrir($certificado->archivo(), $datos['clave']);
-        } catch (\RuntimeException $e) {
+        } catch (\App\Exceptions\AvisoParaElUsuario $e) {
             if (str_contains($e->getMessage(), 'clave')) {
                 \Illuminate\Support\Facades\RateLimiter::hit($intentos, 15 * 60);
             }
@@ -198,7 +198,7 @@ class BoletasFirmadasController extends Controller
 
                     $pdf = Storage::disk('local')->get($actual->archivo);
                     if ($pdf === null) {
-                        throw new \RuntimeException('No se encontró su PDF: vuelve a emitirla.');
+                        throw new \App\Exceptions\AvisoParaElUsuario('No se encontró su PDF: vuelve a emitirla.');
                     }
                     $firmado = FirmadorPdf::firmar($pdf, $llaves['certificado'], $llaves['llave'], $llaves['cadena'], [
                         'nombre' => $llaves['nombre'],
@@ -210,7 +210,7 @@ class BoletasFirmadasController extends Controller
                     $firmas = FirmaDigitalPdf::firmas($firmado);
                     $ultima = end($firmas);
                     if (! $firmas || collect($firmas)->contains(fn ($f) => ! $f['valida']) || ! $ultima['cubre_hasta_el_final']) {
-                        throw new \RuntimeException('La firma no salió bien: no se guardó.');
+                        throw new \App\Exceptions\AvisoParaElUsuario('La firma no salió bien: no se guardó.');
                     }
                     $distintas = collect($firmas)->unique(fn ($f) => $f['dni'] ?? $f['nombre'])->values();
                     $estado = $distintas->count() >= $requeridas ? 'completa' : 'parcial';
@@ -241,7 +241,7 @@ class BoletasFirmadasController extends Controller
                 $errores[] = [
                     'trabajador' => $trabajador,
                     'numero'     => $documento->planilla?->numeroDeBoleta(),
-                    'mensaje'    => $e instanceof \RuntimeException ? $e->getMessage() : 'No se pudo firmar: vuelve a intentarlo.',
+                    'mensaje'    => $e instanceof \App\Exceptions\AvisoParaElUsuario ? $e->getMessage() : 'No se pudo firmar: vuelve a intentarlo.',
                 ];
             }
         }

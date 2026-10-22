@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-use RuntimeException;
+use App\Exceptions\AvisoParaElUsuario;
 
 /**
  * Abre un certificado digital en archivo (.pfx / .p12) con su clave y dice
@@ -41,7 +41,7 @@ final class CertificadoDigital
             while (($e = openssl_error_string()) !== false) {
                 $errores .= $e . ' ';
             }
-            throw new RuntimeException(match (true) {
+            throw new AvisoParaElUsuario(match (true) {
                 str_contains($errores, 'mac verify failure'),
                 str_contains($errores, 'bad decrypt') => 'La clave del certificado no es correcta.',
                 str_contains($errores, 'unsupported') => 'El certificado usa un cifrado que este servidor no puede abrir. Avisa a soporte.',
@@ -52,11 +52,11 @@ final class CertificadoDigital
         $certificado = $partes['cert'] ?? '';
         $llaveTexto = $partes['pkey'] ?? '';
         if ($certificado === '' || $llaveTexto === '') {
-            throw new RuntimeException('El archivo no trae la llave privada: así no se puede firmar. Pide a la entidad el certificado completo en .pfx.');
+            throw new AvisoParaElUsuario('El archivo no trae la llave privada: así no se puede firmar. Pide a la entidad el certificado completo en .pfx.');
         }
         $llave = openssl_pkey_get_private($llaveTexto);
         if ($llave === false || ! openssl_x509_check_private_key($certificado, $llave)) {
-            throw new RuntimeException('La llave del archivo no corresponde a su certificado.');
+            throw new AvisoParaElUsuario('La llave del archivo no corresponde a su certificado.');
         }
 
         $info = openssl_x509_parse($certificado) ?: [];
@@ -64,22 +64,22 @@ final class CertificadoDigital
         $emisorDatos = $info['issuer'] ?? [];
 
         if ($sujeto === $emisorDatos) {
-            throw new RuntimeException('Este certificado no lo emitió una entidad de certificación (está hecho en casa o es de prueba): no tiene validez legal.');
+            throw new AvisoParaElUsuario('Este certificado no lo emitió una entidad de certificación (está hecho en casa o es de prueba): no tiene validez legal.');
         }
 
         $usos = (string) ($info['extensions']['keyUsage'] ?? '');
         if ($usos !== '' && ! str_contains($usos, 'Digital Signature') && ! str_contains($usos, 'Non Repudiation')) {
-            throw new RuntimeException('Este certificado no sirve para firmar documentos (es de otro uso, como autenticarse o cifrar). Pide a la entidad uno de firma.');
+            throw new AvisoParaElUsuario('Este certificado no sirve para firmar documentos (es de otro uso, como autenticarse o cifrar). Pide a la entidad uno de firma.');
         }
 
         $desde = isset($info['validFrom_time_t']) ? now()->setTimestamp((int) $info['validFrom_time_t'])->toDateTimeImmutable() : null;
         $hasta = isset($info['validTo_time_t']) ? now()->setTimestamp((int) $info['validTo_time_t'])->toDateTimeImmutable() : null;
         $hoy = now()->toDateTimeImmutable();
         if ($exigirVigente && $hasta && $hasta < $hoy) {
-            throw new RuntimeException('Este certificado venció el ' . $hasta->format('d/m/Y') . '. Renuévalo con la entidad que lo emitió.');
+            throw new AvisoParaElUsuario('Este certificado venció el ' . $hasta->format('d/m/Y') . '. Renuévalo con la entidad que lo emitió.');
         }
         if ($exigirVigente && $desde && $desde > $hoy) {
-            throw new RuntimeException('Este certificado recién vale desde el ' . $desde->format('d/m/Y') . '.');
+            throw new AvisoParaElUsuario('Este certificado recién vale desde el ' . $desde->format('d/m/Y') . '.');
         }
 
         $persona = FirmaDigitalPdf::datosDelFirmante($certificado);

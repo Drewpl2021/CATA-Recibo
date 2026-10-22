@@ -38,7 +38,7 @@ final class AltaDeEmpleado
             'telefono'           => 'required|regex:/^[0-9]+$/|max:15',
             'direccion'          => 'required|string|max:255',
             'fecha_ingreso'      => 'required|date|before_or_equal:today',
-            'estado'             => 'nullable|string|max:20',
+            'estado'             => 'nullable|in:activo,inactivo',
             'sistema_pensiones'  => 'nullable|in:AFP,ONP',
             'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo|required_if:sistema_pensiones,AFP',
             'tipo_comision_afp'  => 'nullable|in:flujo,mixta',

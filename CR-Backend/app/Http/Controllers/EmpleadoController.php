@@ -40,10 +40,12 @@ class EmpleadoController extends Controller
     {
         $request->validate(['formato' => 'nullable|in:completo,selector']);
 
-        $paraSelector = $request->input('formato') === 'selector';
+        // Lo decide el servidor, no la pantalla: quien no maneja Empleados ni
+        // Boletas recibe siempre el formato corto, aunque pida el completo.
+        $paraSelector = $request->input('formato') === 'selector' || ! $this->veFichaCompleta($request);
 
         $query = $paraSelector
-            ? Empleado::query()->select('id', 'nombre', 'apellido', 'dni', 'estado', 'area_id', 'cargo_id', 'sede_id')
+            ? Empleado::query()->select(self::CAMPOS_DE_SELECTOR)
             : Empleado::with('area', 'cargo', 'sede', 'usuario');
 
         /*
@@ -689,7 +691,8 @@ class EmpleadoController extends Controller
         // Las tres cosas nacen juntas o no nace ninguna: un empleado sin usuario
         // no puede entrar, y uno sin contrato queda con el historial en blanco
         // aunque su ficha diga "plazo fijo".
-        $empleado = AltaDeEmpleado::crear($request->all());
+        // Solo lo que tiene regla: nada que llegue de más se cuela a la ficha.
+        $empleado = AltaDeEmpleado::crear($request->only(array_keys(AltaDeEmpleado::reglas())));
 
         // El alta de uno en uno le manda su acceso al momento. La importación
         // desde Excel no: ahí RR.HH. decide cuándo enviarlos (con los marcados).
@@ -742,10 +745,29 @@ class EmpleadoController extends Controller
         return response()->json(['success' => true, 'data' => ['enviados' => $enviados, 'omitidos' => $omitidos]]);
     }
 
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        $empleado = Empleado::with('area', 'cargo', 'sede', 'usuario')->findOrFail($id);
+        $empleado = $this->veFichaCompleta($request)
+            ? Empleado::with('area', 'cargo', 'sede', 'usuario')->findOrFail($id)
+            : Empleado::select(self::CAMPOS_DE_SELECTOR)->with('area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre')->findOrFail($id);
+
         return response()->json(['success' => true, 'data' => $empleado]);
+    }
+
+    /** Lo justo para elegir a una persona: sin sueldo, cuentas, AFP ni datos personales. */
+    private const CAMPOS_DE_SELECTOR = ['id', 'nombre', 'apellido', 'dni', 'estado', 'area_id', 'cargo_id', 'sede_id'];
+
+    /**
+     * La ficha completa (sueldo, cuenta bancaria, CCI, CUSPP, dirección,
+     * teléfonos, nacimiento) es para quien maneja Empleados o emite las
+     * Boletas, que la llevan impresa. La lectura de empleados está abierta a
+     * cualquier módulo de gestión (@gestion) porque muchas pantallas eligen
+     * personas; sin esto, quien solo ve Vacaciones recibía los sueldos y las
+     * cuentas de todo el colegio.
+     */
+    private function veFichaCompleta(Request $request): bool
+    {
+        return (bool) $request->user()?->puede('/empleados', '/boletas');
     }
 
     public function update(Request $request, string $id)
@@ -753,7 +775,7 @@ class EmpleadoController extends Controller
         $empleado = Empleado::findOrFail($id);
         $usuario  = $empleado->usuario;
 
-        $request->validate([
+        $reglas = [
             'dni'                => 'sometimes|string|regex:/^[0-9]{8,9}$/|unique:empleados,dni,'.$id,
             'nombre'             => 'sometimes|string|max:100',
             'apellido'           => 'sometimes|string|max:100',
@@ -762,7 +784,7 @@ class EmpleadoController extends Controller
             'telefono'           => 'nullable|regex:/^[0-9]+$/|max:15',
             'direccion'          => 'nullable|string|max:255',
             'fecha_ingreso'      => 'sometimes|date|before_or_equal:today',
-            'estado'             => 'nullable|string|max:20',
+            'estado'             => 'nullable|in:activo,inactivo',
             'fecha_cese'         => 'nullable|date',
             'sistema_pensiones'  => 'sometimes|nullable|in:AFP,ONP',
             'afp'                => 'nullable|in:Habitat,Integra,Prima,Profuturo',
@@ -790,7 +812,8 @@ class EmpleadoController extends Controller
             'contacto_emergencia_nombre'    => 'nullable|string|max:150',
             'contacto_emergencia_telefono'  => 'nullable|regex:/^[0-9]+$/|max:15',
             'fecha_nacimiento'              => 'nullable|date|before:today',
-        ], [
+        ];
+        $request->validate($reglas, [
             'cci.regex' => 'El CCI son 20 dígitos, sin espacios ni guiones.',
         ]);
 
@@ -822,7 +845,9 @@ class EmpleadoController extends Controller
             ], 403);
         }
 
-        $empleado->update($request->except(['email', 'rol_id']));
+        // Solo los campos con regla (ya limpios de AFP y del cese): el correo
+        // va a la cuenta, no a la ficha.
+        $empleado->update($request->only(array_diff(array_keys($reglas), ['email'])));
 
         // Volver a activo es también volver a entrar: la baja le había
         // apagado la cuenta, y sin esto quedaba activo pero sin poder entrar.
