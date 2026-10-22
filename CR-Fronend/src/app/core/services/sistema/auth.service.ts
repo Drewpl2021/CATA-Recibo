@@ -30,7 +30,12 @@ export class AuthService {
   login(email: string, password: string): Observable<ApiResponse<SesionData>> {
     return this.http
       .post<ApiResponse<SesionData>>(`${this.apiUrl}/${END_POINTS.auth.login}`, { email, password })
-      .pipe(tap((res) => { if (res.success) this.guardarSesion(res.data.user, res.data.token, res.data.debe_cambiar_password === true); }));
+      .pipe(tap((res) => {
+        if (res.success) {
+          const permisos = (res.data as { permisos?: unknown }).permisos;
+          this.guardarSesion({ ...res.data.user, permisos }, res.data.token, res.data.debe_cambiar_password === true);
+        }
+      }));
   }
 
 
@@ -244,13 +249,46 @@ export class AuthService {
     return (this.getUser()?.rol ?? '').toLowerCase();
   }
 
-  esAdminORrhh(): boolean {
-    return ['admin', 'rrhh'].includes(this.getRolNombre());
+  /**
+   * ¿Su rol tiene alguno de esos módulos? Es la misma regla que el servidor
+   * (App\Support\Permisos): «/planillas», o «@gestion» para cualquier módulo
+   * de trabajo (todo menos Mi Espacio). El superadministrador puede todo.
+   */
+  puede(...modulos: string[]): boolean {
+    const permisos = this.getUser()?.permisos;
+    if (!permisos) return this.puedeSegunRolAntiguo(modulos);
+    if (permisos.es_superadmin || permisos.modulos.includes('*')) return true;
+
+    const propios = ['/mis-boletas', '/mis-documentos', '/mis-vacaciones'];
+    return modulos.some((m) =>
+      m === '@gestion' ? permisos.modulos.some((r) => !propios.includes(r)) : permisos.modulos.includes(m)
+    );
   }
 
-  /** A dónde mandar a alguien justo después de loguearse, según su rol. */
+  esSuperadmin(): boolean {
+    return !!this.getUser()?.permisos?.es_superadmin;
+  }
+
+  /**
+   * Una sesión guardada antes de los permisos no los trae: hasta que /me la
+   * ponga al día (al arrancar), vale lo de antes, por el nombre del rol.
+   */
+  private puedeSegunRolAntiguo(modulos: string[]): boolean {
+    const rol = this.getRolNombre();
+    if (rol === 'admin') return true;
+    if (rol !== 'rrhh') return false;
+    const soloAdmin = ['/usuarios', '/roles', '/modulos', '/modulos-padre', '/auditoria'];
+    return modulos.some((m) => !soloAdmin.includes(m));
+  }
+
+  /** Maneja algo más que su propio espacio (antes: «es admin o rrhh»). */
+  esAdminORrhh(): boolean {
+    return this.puede('@gestion');
+  }
+
+  /** A dónde mandar a alguien justo después de loguearse: al panel si lo tiene. */
   rutaInicioSegunRol(): string {
-    return this.esAdminORrhh() ? '/inicio/dashboard' : '/inicio/mis-boletas';
+    return this.puede('/dashboard') ? '/inicio/dashboard' : '/inicio/mis-boletas';
   }
 
   /**

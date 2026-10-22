@@ -58,6 +58,18 @@ class User extends Authenticatable
         return $this->belongsTo(Rol::class, 'rol_id');
     }
 
+    /** ¿Su rol tiene alguno de esos módulos? (ver App\Support\Permisos). */
+    public function puede(string ...$modulos): bool
+    {
+        return \App\Support\Permisos::puede($this, ...$modulos);
+    }
+
+    /** La llave maestra: el rol marcado como superadministrador, no el que se llama «admin». */
+    public function esSuperadmin(): bool
+    {
+        return \App\Support\Permisos::esSuperadmin($this);
+    }
+
     /**
      * true si el correo ya es el institucional.
      *

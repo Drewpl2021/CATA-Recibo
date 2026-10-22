@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
-import { authGuard, guestGuard, roleGuard, sesionGuard } from './auth.guard';
+import { authGuard, guestGuard, permisoGuard, sesionGuard } from './auth.guard';
 import { AuthService } from '../services/sistema/auth.service';
 
 describe('guards de autenticación', () => {
@@ -12,7 +12,7 @@ describe('guards de autenticación', () => {
 
   beforeEach(() => {
     auth = jasmine.createSpyObj<AuthService>('AuthService', [
-      'isLoggedIn', 'debeCambiarPassword', 'debeFirmarTerminos', 'getRolNombre', 'rutaTrasIngresar',
+      'isLoggedIn', 'debeCambiarPassword', 'debeFirmarTerminos', 'getRolNombre', 'puede', 'rutaTrasIngresar',
     ]);
     auth.isLoggedIn.and.returnValue(true);
     auth.debeCambiarPassword.and.returnValue(false);
@@ -82,23 +82,24 @@ describe('guards de autenticación', () => {
     });
   });
 
-  describe('roleGuard', () => {
-    it('deja pasar al rol permitido', () => {
-      auth.getRolNombre.and.returnValue('rrhh');
-      expect(ejecutar(roleGuard(['admin', 'rrhh']))).toBeTrue();
+  describe('permisoGuard', () => {
+    it('deja pasar a quien tiene el módulo, se llame como se llame su rol', () => {
+      auth.puede.and.returnValue(true);
+      expect(ejecutar(permisoGuard('/planillas'))).toBeTrue();
+      expect(auth.puede).toHaveBeenCalledWith('/planillas');
     });
 
-    it('a otro rol lo devuelve a su inicio en vez de una pantalla rota', () => {
-      auth.getRolNombre.and.returnValue('empleado');
+    it('a quien no lo tiene lo devuelve a su inicio en vez de una pantalla rota', () => {
+      auth.puede.and.returnValue(false);
 
-      expect(ejecutar(roleGuard(['admin', 'rrhh']))).toBeFalse();
+      expect(ejecutar(permisoGuard('/planillas'))).toBeFalse();
       expect(router.navigate).toHaveBeenCalledWith(['/inicio/dashboard']);
     });
 
     it('sin sesión va al login', () => {
       auth.isLoggedIn.and.returnValue(false);
 
-      expect(ejecutar(roleGuard(['admin']))).toBeFalse();
+      expect(ejecutar(permisoGuard('/auditoria'))).toBeFalse();
       expect(router.navigate).toHaveBeenCalledWith(['/login']);
     });
   });

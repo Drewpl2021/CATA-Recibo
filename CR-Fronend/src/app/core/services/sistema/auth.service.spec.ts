@@ -83,6 +83,21 @@ describe('AuthService', () => {
     expect(servicio.rutaInicioSegunRol()).toBe('/inicio/mis-boletas');
   });
 
+  it('con permisos manda el módulo, no el nombre del rol', () => {
+    guardar({ rol: 'contabilidad', permisos: { es_superadmin: false, modulos: ['/planillas', '/cts', '/mis-boletas'] } });
+    expect(servicio.puede('/planillas')).toBeTrue();
+    expect(servicio.puede('/auditoria')).toBeFalse();
+    expect(servicio.puede('@gestion')).toBeTrue();
+    expect(servicio.rutaInicioSegunRol()).toBe('/inicio/mis-boletas');
+
+    guardar({ rol: 'empleado', permisos: { es_superadmin: false, modulos: ['/mis-boletas'] } });
+    expect(servicio.puede('@gestion')).toBeFalse();
+
+    guardar({ rol: 'direccion', permisos: { es_superadmin: true, modulos: ['*'] } });
+    expect(servicio.puede('/auditoria')).toBeTrue();
+    expect(servicio.rutaInicioSegunRol()).toBe('/inicio/dashboard');
+  });
+
   it('la contraseña por cambiar tiene prioridad sobre los términos al ingresar', () => {
     guardar({ rol: 'admin', debe_cambiar_password: true, terminos_estado: 'pendiente' });
     expect(servicio.rutaTrasIngresar()).toBe('/cambiar-clave');

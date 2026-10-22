@@ -141,8 +141,8 @@ class PlanillaController extends Controller
             });
         }
 
-        $rolNombre = $request->user()->rol?->nombre;
-        if ($rolNombre !== 'admin') {
+        // Las dadas de baja solo las ve el superadministrador.
+        if (! $request->user()->esSuperadmin()) {
             $query->where('estado_registro', 'activo');
         }
 

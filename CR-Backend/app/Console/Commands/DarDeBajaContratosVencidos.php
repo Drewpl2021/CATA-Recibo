@@ -61,7 +61,7 @@ class DarDeBajaContratosVencidos extends Command
         $cuantos = count($nombres);
         $lista   = implode(', ', array_slice($nombres, 0, 8)) . ($cuantos > 8 ? ' y ' . ($cuantos - 8) . ' más' : '');
 
-        $usuarios = User::whereHas('rol', fn ($q) => $q->whereIn('nombre', ['admin', 'rrhh']))
+        $usuarios = \App\Support\Permisos::usuariosCon('/contratos')
             ->where('estado_registro', 'activo')
             ->get();
 

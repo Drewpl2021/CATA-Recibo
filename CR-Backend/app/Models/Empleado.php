@@ -87,11 +87,11 @@ class Empleado extends Model
      */
     public function cuentaProtegidaPara(?User $quien): bool
     {
-        $rolDeLaCuenta = $this->usuario?->rol?->nombre;
-
-        return $rolDeLaCuenta !== null
-            && $rolDeLaCuenta !== 'empleado'
-            && $quien?->rol?->nombre !== 'admin';
+        // Protegida: una cuenta que maneja algo más que su propio espacio.
+        // Solo el superadministrador le cambia el correo.
+        return $this->usuario !== null
+            && \App\Support\Permisos::puede($this->usuario, \App\Support\Permisos::GESTION)
+            && ! \App\Support\Permisos::esSuperadmin($quien);
     }
 
     /**

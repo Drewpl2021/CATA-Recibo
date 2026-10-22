@@ -1,10 +1,8 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './features/autenticacion/login/login.component';
 import { LayoutComponent } from './layout/layout.component';
-import { authGuard, guestGuard, roleGuard, sesionGuard } from './core/guards/auth.guard';
+import { authGuard, guestGuard, permisoGuard, sesionGuard } from './core/guards/auth.guard';
 
-const soloRrhhOAdmin = roleGuard(['admin', 'rrhh']);
-const soloAdmin = roleGuard(['admin']);
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -63,7 +61,7 @@ export const routes: Routes = [
       // un trabajador que le da clic a "Inicio" entraba al panel entero: la
       // API sí lo rechazaba (rol:admin,rrhh) y no veía cifras, pero la
       // pantalla —sus filtros, sus gráficos vacíos— se llegaba a cargar.
-      { path: 'dashboard', canActivate: [soloRrhhOAdmin], loadComponent: () => import('./features/inicio/dashboard/dashboard-view.component').then(m => m.DashboardViewComponent) },
+      { path: 'dashboard', canActivate: [permisoGuard('/dashboard')], loadComponent: () => import('./features/inicio/dashboard/dashboard-view.component').then(m => m.DashboardViewComponent) },
       { path: 'mis-boletas', loadComponent: () => import('./features/boletas/mis-boletas/mis-boletas.component').then(m => m.MisBoletasComponent) },
       // Mis Documentos: lo que cada quien tiene a su nombre. Para todos.
       { path: 'mis-documentos', loadComponent: () => import('./features/documentos/documentos-list/documentos-list.component').then(m => m.DocumentosListComponent) },
@@ -71,115 +69,115 @@ export const routes: Routes = [
       // "documentos" abría Mis Documentos, y RR.HH. veía archivos sin dueño.
       {
         path: 'documentos',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/documentos')],
         loadComponent: () => import('./features/documentos/expedientes-list/expedientes-list.component').then(m => m.ExpedientesListComponent),
       },
       // Va ANTES de documentos/:empleadoId: si no, "subir-anteriores" se leería como un id.
       {
         path: 'documentos/subir-anteriores',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/documentos')],
         loadComponent: () => import('./features/documentos/subir-anteriores/subir-anteriores.component').then(m => m.SubirAnterioresComponent),
       },
       {
         path: 'documentos/:empleadoId',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/documentos')],
         loadComponent: () => import('./features/documentos/expediente/expediente.component').then(m => m.ExpedienteComponent),
       },
       {
         path: 'historial-boletas',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/boletas', '/documentos')],
         loadComponent: () => import('./features/documentos/historial-boletas/historial-boletas.component').then(m => m.HistorialBoletasComponent),
       },
       // ── Configuración base (catálogos) ──
       {
         path: 'areas',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/areas')],
         loadComponent: () => import('./features/areas/areas-list/areas-list.component').then(m => m.AreasListComponent),
       },
       {
         path: 'cargos',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/cargos')],
         loadComponent: () => import('./features/cargos/cargos-list/cargos-list.component').then(m => m.CargosListComponent),
       },
       {
         path: 'tipos-contrato',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/tipos-contrato')],
         loadComponent: () => import('./features/tipos-contrato/tipos-contrato-list/tipos-contrato-list.component').then(m => m.TiposContratoListComponent),
       },
       {
         path: 'sedes',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/sedes')],
         loadComponent: () => import('./features/sedes/sedes-list/sedes-list.component').then(m => m.SedesListComponent),
       },
       {
         path: 'periodos',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/periodos')],
         loadComponent: () => import('./features/periodos/periodos-list/periodos-list.component').then(m => m.PeriodosListComponent),
       },
       {
         path: 'conceptos-pago',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/conceptos-pago')],
         loadComponent: () => import('./features/conceptos-pago/conceptos-pago-list/conceptos-pago-list.component').then(m => m.ConceptosPagoListComponent),
       },
       {
         path: 'empleados',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/empleados')],
         loadComponent: () => import('./features/empleados/empleados-list/empleados-list.component').then(m => m.EmpleadosListComponent),
       },
       {
         path: 'empleados/nuevo',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/empleados')],
         loadComponent: () => import('./features/empleados/empleado-form/empleado-form.component').then(m => m.EmpleadoFormComponent),
       },
       {
         // Altas y cambios de varios trabajadores desde el Excel de RR.HH.
         path: 'empleados/importar',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/empleados')],
         loadComponent: () => import('./features/empleados/importar-empleados/importar-empleados.component').then(m => m.ImportarEmpleadosComponent),
       },
       {
         path: 'empleados/editar/:id',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/empleados')],
         loadComponent: () => import('./features/empleados/empleado-form/empleado-form.component').then(m => m.EmpleadoFormComponent),
       },
       {
         path: 'empleados/ver/:id',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/empleados')],
         loadComponent: () => import('./features/empleados/empleado-form/empleado-form.component').then(m => m.EmpleadoFormComponent),
       },
       {
         path: 'emision-boleta',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/boletas')],
         loadComponent: () => import('./features/emision-boleta/emision-boleta-list/emision-boleta-list.component').then(m => m.EmisionBoletaListComponent),
       },
       {
         // Primer nivel: las planillas con nombre del mes.
         path: 'planillas',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/planillas')],
         loadComponent: () => import('./features/planillas/corridas-list/corridas-list.component').then(m => m.CorridasListComponent),
       },
       {
         // Cargar conceptos de pago de todo el mes desde el Excel de RR.HH.
         path: 'planillas/importar',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/planillas')],
         loadComponent: () => import('./features/planillas/importar-conceptos/importar-conceptos.component').then(m => m.ImportarConceptosComponent),
       },
       {
         // La planilla de un mes que no pasó por el sistema, desde el PLAME de RR.HH.
         path: 'planillas/importar-plame',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/planillas')],
         loadComponent: () => import('./features/planillas/importar-plame/importar-plame.component').then(m => m.ImportarPlameComponent),
       },
       {
         // Segundo nivel: los trabajadores DENTRO de una planilla.
         path: 'planillas/corrida/:id',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/planillas')],
         loadComponent: () => import('./features/planillas/planillas-list/planillas-list.component').then(m => m.PlanillasListComponent),
       },
       {
         // Las que no están en ninguna planilla con nombre.
         path: 'planillas/sin-agrupar',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/planillas')],
         loadComponent: () => import('./features/planillas/planillas-list/planillas-list.component').then(m => m.PlanillasListComponent),
       },
       /*
@@ -194,12 +192,12 @@ export const routes: Routes = [
        */
       {
         path: 'planillas/detalle/:id',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/planillas')],
         loadComponent: () => import('./features/planillas/planilla-detalle/planilla-detalle.component').then(m => m.PlanillaDetalleComponent),
       },
       {
         path: 'vacaciones',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/vacaciones')],
         loadComponent: () => import('./features/vacaciones/vacaciones-list/vacaciones-list.component').then(m => m.VacacionesListComponent),
       },
       // Las de cada quien: la ve cualquiera con sesión, y el backend recorta
@@ -210,62 +208,62 @@ export const routes: Routes = [
       },
       {
         path: 'contratos',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/contratos')],
         loadComponent: () => import('./features/contratos/contratos-list/contratos-list.component').then(m => m.ContratosListComponent),
       },
       // Renta de 5ta: la lista del año y la hoja de retención de cada trabajador.
       {
         path: 'renta-5ta',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/renta-5ta')],
         loadComponent: () => import('./features/renta5ta/renta5ta-list/renta5ta-list.component').then(m => m.Renta5taListComponent),
       },
       {
         path: 'renta-5ta/:id',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/renta-5ta')],
         loadComponent: () => import('./features/renta5ta/renta5ta-detalle/renta5ta-detalle.component').then(m => m.Renta5taDetalleComponent),
       },
       // CTS: el cálculo de cada semestre, el depósito y la hoja de liquidación.
       {
         path: 'cts',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/cts')],
         loadComponent: () => import('./features/cts/cts-list/cts-list.component').then(m => m.CtsListComponent),
       },
       {
         path: 'gratificaciones',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/gratificaciones')],
         loadComponent: () => import('./features/gratificaciones/gratificaciones-list/gratificaciones-list.component').then(m => m.GratificacionesListComponent),
       },
       // ── Sistema de permisos y menús (solo Admin) ──
       {
         path: 'usuarios',
-        canActivate: [soloAdmin],
+        canActivate: [permisoGuard('/usuarios')],
         loadComponent: () => import('./features/usuarios/usuarios-list/usuarios-list.component').then(m => m.UsuariosListComponent),
       },
       {
         path: 'roles',
-        canActivate: [soloAdmin],
+        canActivate: [permisoGuard('/roles')],
         loadComponent: () => import('./features/roles/roles-list/roles-list.component').then(m => m.RolesListComponent),
       },
       {
         path: 'modulos-padre',
-        canActivate: [soloAdmin],
+        canActivate: [permisoGuard('/modulos-padre')],
         loadComponent: () => import('./features/modulos-padre/modulos-padre-list/modulos-padre-list.component').then(m => m.ModulosPadreListComponent),
       },
       {
         path: 'modulos',
-        canActivate: [soloAdmin],
+        canActivate: [permisoGuard('/modulos')],
         loadComponent: () => import('./features/modulos/modulos-list/modulos-list.component').then(m => m.ModulosListComponent),
       },
       {
         // Quién cambió qué. Solo Admin, igual que la ruta del backend.
         path: 'auditoria',
-        canActivate: [soloAdmin],
+        canActivate: [permisoGuard('/auditoria')],
         loadComponent: () => import('./features/auditoria/auditoria-list/auditoria-list.component').then(m => m.AuditoriaListComponent),
       },
       {
         // Lo que se enciende y apaga sin tocar código. RR.HH. y Admin.
         path: 'ajustes',
-        canActivate: [soloRrhhOAdmin],
+        canActivate: [permisoGuard('/ajustes')],
         loadComponent: () => import('./features/ajustes/ajustes.component').then(m => m.AjustesComponent),
       },
       { path: '**', redirectTo: 'dashboard' }

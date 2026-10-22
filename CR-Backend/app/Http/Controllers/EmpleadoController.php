@@ -539,7 +539,7 @@ class EmpleadoController extends Controller
     public function boletasEnZipConEnlace(Request $request)
     {
         $usuario = \App\Models\User::with('rol:id,nombre')->find($request->query('usuario'));
-        if (! $usuario || $usuario->estado_registro !== 'activo' || ! in_array($usuario->rol?->nombre, ['rrhh', 'admin'], true)) {
+        if (! $usuario || $usuario->estado_registro !== 'activo' || ! $usuario->puede('/boletas')) {
             abort(403, 'Este enlace ya no es válido para tu cuenta.');
         }
 

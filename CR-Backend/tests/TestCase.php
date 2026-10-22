@@ -35,6 +35,7 @@ abstract class TestCase extends BaseTestCase
     /** Una cuenta activa con el rol dado, lista para pasar los middleware. */
     protected function crearUsuario(string $rol = 'admin', array $datos = []): User
     {
+        $this->sembrarRolesYModulos();
         $rolModelo = Rol::firstOrCreate(['nombre' => $rol], ['descripcion' => $rol]);
 
         $user = new User(array_merge([
@@ -52,5 +53,23 @@ abstract class TestCase extends BaseTestCase
         $user->save();
 
         return $user;
+    }
+
+    /**
+     * Los permisos son los módulos de cada rol (App\Support\Permisos): la base
+     * de pruebas arranca como la real, con admin (superadministrador), rrhh y
+     * empleado, y el menú de ModuloSeeder con lo que ve cada uno. Una sola vez
+     * por prueba.
+     */
+    protected function sembrarRolesYModulos(): void
+    {
+        if (\App\Models\Modulo::query()->exists()) {
+            return;
+        }
+        foreach (['admin' => true, 'rrhh' => false, 'empleado' => false] as $nombre => $super) {
+            Rol::firstOrCreate(['nombre' => $nombre], ['descripcion' => $nombre])->forceFill(['es_superadmin' => $super])->save();
+        }
+        $this->seed(\Database\Seeders\ModuloSeeder::class);
+        \App\Support\Permisos::refrescar();
     }
 }

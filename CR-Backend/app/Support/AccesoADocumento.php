@@ -30,7 +30,8 @@ final class AccesoADocumento
 {
     public static function esRrhhOAdmin(?User $usuario): bool
     {
-        return in_array($usuario?->rol?->nombre, ['rrhh', 'admin'], true);
+        // Quien lleva documentos ajenos: el expediente, las boletas o la planilla.
+        return Permisos::puede($usuario, '/documentos', '/boletas', '/planillas');
     }
 
     public static function esSuyo(Documento $documento, ?User $usuario): bool

@@ -124,7 +124,7 @@ class FotoPerfilController extends Controller
         $quien   = $request->user();
 
         $puede = $quien->id === $usuario->id
-            || in_array($quien->rol?->nombre, ['admin', 'rrhh'], true);
+            || $quien->puede(\App\Support\Permisos::GESTION);
 
         if (! $puede) {
             return response()->json([

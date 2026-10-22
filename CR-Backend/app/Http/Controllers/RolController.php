@@ -75,6 +75,7 @@ class RolController extends Controller
         }
 
         $rol->update($datos);
+        \App\Support\Permisos::refrescar();
         return response()->json(['success' => true, 'data' => $rol]);
     }
 
@@ -98,6 +99,7 @@ class RolController extends Controller
         }
 
         $rol->delete();
+        \App\Support\Permisos::refrescar();
         return response()->json(['success' => true, 'data' => ['message' => 'Rol eliminado.']]);
     }
 

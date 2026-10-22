@@ -45,8 +45,8 @@ class DocumentoController extends Controller
             $query->where('tipo', $request->tipo);
         }
 
-        $rolNombre = $request->user()->rol?->nombre;
-        if ($rolNombre !== 'rrhh') {
+        // Los dados de baja los ve quien lleva el expediente.
+        if (! $request->user()->puede('/documentos')) {
             $query->where('estado_registro', 'activo');
         }
 

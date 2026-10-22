@@ -102,7 +102,7 @@ class AvisarPlanillaPendiente extends Command
      */
     private function avisar(string $titulo, string $mensaje): void
     {
-        $usuarios = User::whereHas('rol', fn ($q) => $q->whereIn('nombre', ['admin', 'rrhh']))
+        $usuarios = \App\Support\Permisos::usuariosCon('/planillas')
             ->where('estado_registro', 'activo')
             ->get();
 

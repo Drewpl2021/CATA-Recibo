@@ -92,11 +92,6 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me',      [AuthController::class, 'me']);
 
-    // Las cifras del Panel de Control. Solo admin y RRHH: son datos de toda
-    // la nomina, igual que el modulo que lo muestra en el menu.
-    Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('rol:admin,rrhh');
-    // El mismo panel en Excel, con el filtro puesto.
-    Route::get('/dashboard/export', [DashboardController::class, 'exportar'])->middleware('rol:admin,rrhh');
 
     // Empleado autenticado — sus propios datos
     // Su ficha, para la tarjeta de "Mi perfil". Va acá y no en el grupo de
@@ -155,133 +150,108 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
 
     // Descarga de un Documento ya generado (boleta, contrato, etc.) — el propio
     // empleado dueño del documento, o RRHH/admin sobre cualquiera. La verificación
-    // de propiedad se hace dentro del controller, por eso vive fuera del grupo rol:.
+    // de propiedad se hace dentro del controller, por eso no pide un módulo.
     // Abrirlo en pantalla (siempre) y bajárselo (el suyo, ya firmado).
     Route::get('documents/{id}/view',       [DocumentoController::class, 'ver']);
     Route::get('documents/{id}/download', [DocumentoController::class, 'descargar']);
 
-    // ── Solo RRHH y Administrador ───────────────────────────────
-    Route::middleware('rol:rrhh,admin')->group(function () {
-        // Boleta individual de cualquier empleado — antes vivía fuera de este grupo
-        // y cualquier autenticado (incluido un empleado normal) podía descargar la
-        // boleta de otro con solo cambiar el empleado_id en la URL. El autoservicio
-        // real del empleado es mis-boletas/{mes}/{anio}, que sí valida ownership.
-        Route::get('payslips/{employee_id}/{month}/{year}', [BoletaController::class, 'generar']);
+    // ══ Permisos por módulo ══════════════════════════════════════
+    //
+    // Cada grupo pide el módulo de su pantalla («permiso:/planillas»): entra
+    // quien lo tenga marcado en su rol (Configuración → Roles), o el
+    // superadministrador. Antes se preguntaba por el NOMBRE del rol
+    // («rol:rrhh,admin») y un rol nuevo, como Contabilidad, quedaba fuera
+    // aunque tuviera el módulo en el menú. Ver App\Support\Permisos.
+    //
+    // «@gestion» = cualquier módulo de trabajo (todo menos Mi Espacio): para
+    // lo que leen muchas pantallas, como los catálogos o la lista del personal.
 
-        // Solo lectura: RRHH necesita ver los roles para elegir el rol_id
-        // al crear un empleado o usuario, pero no puede crear/editar/borrar roles
-        // (eso sigue siendo exclusivo de admin, por la escalación de privilegios que ya arreglamos).
-        Route::apiResource('roles', RolController::class)->only(['index', 'show']);
+    // ── Panel de Control ──
+    Route::middleware('permiso:/dashboard')->group(function () {
+        Route::get('/dashboard',        [DashboardController::class, 'index']);
+        Route::get('/dashboard/export', [DashboardController::class, 'exportar']);
+    });
 
-        Route::apiResource('contracts', ContratoController::class);
-
-        Route::apiResource('users', UserController::class)->except(['store']);
-        // RR.HH. le repone la contrasena a quien se quedo fuera. Queda obligado
-        // a cambiarla al entrar, y se le cierran las sesiones abiertas.
-        Route::post('users/{id}/reset-password', [UserController::class, 'restablecerPassword']);
-        // Buscar a la persona por su DNI antes de darla de alta. Va limitada
-        // porque cada consulta que no esté en la base propia se le paga a
-        // Decolecta: sin freno, un script podría vaciar el saldo.
-        Route::get('dni-lookup/{dni}', ConsultaDniController::class)
-            ->middleware('throttle:consulta_dni');
-
+    // ── Empleados ──
+    Route::middleware('permiso:/empleados')->group(function () {
         // La foto de perfil del trabajador, puesta por RR.HH. desde su ficha.
         Route::post('employees/{id}/photo',   [FotoPerfilController::class, 'subirDeEmpleado']);
         Route::delete('employees/{id}/photo', [FotoPerfilController::class, 'quitarDeEmpleado']);
-        // La lista del personal en CSV. Va ANTES del apiResource, igual que
-        // la de planilla: si no, "exportar" entraría por show({id}).
+        // La lista del personal en Excel (los marcados van en el cuerpo).
         Route::get('employees/export',       [EmpleadoController::class, 'exportar']);
-        // Los marcados, en el cuerpo (con cientos no caben en la dirección).
         Route::post('employees/export',      [EmpleadoController::class, 'exportar']);
         // «Enviar acceso por correo» a los marcados.
         Route::post('employees/send-access', [EmpleadoController::class, 'enviarAcceso'])->middleware('throttle:30,1');
-        // Las boletas YA EMITIDAS del mes, todas en un .zip (mismos filtros
-        // de Emisión de Boletas). También antes del apiResource.
-        Route::get('employees/payslips-zip', [EmpleadoController::class, 'boletasEnZip']);
-        Route::match(['get', 'post'], 'employees/payslips-zip/link', [EmpleadoController::class, 'enlaceBoletasEnZip']);
         // Activar o dar de baja a varios marcados en la lista, de una vez.
         Route::post('employees/status', [EmpleadoController::class, 'cambiarEstado']);
-        Route::apiResource('employees',        EmpleadoController::class);
-
-        // La planilla completa en CSV. Va ANTES del apiResource: si no,
-        // "exportar" entraría por show({id}) y devolvería un 404 buscando
-        // una planilla con ese id.
-        Route::get('payrolls/export',        [PlanillaController::class, 'exportar']);
-        Route::post('payrolls/export',       [PlanillaController::class, 'exportar']);
-        // La Renta de 5ta del mes sin guardar nada, para la vista previa de la boleta.
-        Route::get('payrolls/renta-5ta',     [PlanillaController::class, 'rentaQuinta']);
-        Route::apiResource('payrolls',         PlanillaController::class);
-
-        // Las corridas: la planilla con nombre que agrupa a un grupo de gente
-        // ("Planilla TIC — Septiembre 2026"). Las rutas sueltas van ANTES del
-        // apiResource: si no, "sacar" entraría por show({id}) y devolvería un
-        // 404 buscando una corrida con ese id.
-        Route::post('payroll-runs/detach',           [PlanillaCorridaController::class, 'sacar']);
-        Route::post('payroll-runs/{id}/generate',    [PlanillaCorridaController::class, 'generar']);
-        Route::post('payroll-runs/{id}/move',      [PlanillaCorridaController::class, 'mover']);
-        Route::apiResource('payroll-runs', PlanillaCorridaController::class);
-        // Documentos del personal: el expediente de cada trabajador, ordenado
-        // por persona (hoja de vida, contratos, boletas). Ver ExpedienteController.
-        Route::get('employee-files',              [\App\Http\Controllers\ExpedienteController::class, 'index']);
-        Route::get('employee-files/{employeeId}', [\App\Http\Controllers\ExpedienteController::class, 'show']);
-        // Subir un archivo que llega de fuera (hoja de vida, contrato
-        // escaneado). Va ANTES del apiResource: si no, "subir" entraría por
-        // show({id}) y devolvería un 404 buscando un documento con ese id.
-        Route::post('documents/upload',        [DocumentoController::class, 'subir']);
-        Route::apiResource('documents',       DocumentoController::class);
-        Route::apiResource('areas',            AreaController::class);
-        Route::apiResource('positions',           CargoController::class);
-        Route::apiResource('contract-types',      TipoContratoController::class);
-        Route::apiResource('periods',         PeriodoController::class);
-        Route::post('periods/{id}/generate-payroll', [PeriodoController::class, 'generarPlanilla']);
-        Route::apiResource('payment-concepts', PaymentConceptController::class);
-        Route::post('payment-concepts/{id}/apply-to-group', [PaymentConceptController::class, 'aplicarAGrupo']);
-        // Deja las líneas de UNA planilla como diga la pantalla, de una vez.
-        // Va antes del apiResource de planilla por el mismo motivo de siempre:
-        // con un segmento más, no choca con show({id}).
-        Route::post('payrolls/{id}/concepts', [PlanillaController::class, 'sincronizarConceptos']);
-        // Vuelve a leer el sueldo actual de la ficha y lo prorratea de nuevo:
-        // generar la planilla es una foto, y esto es lo único que revela y
-        // repara la foto vieja. Ver PlanillaController::recalcular.
-        Route::put('payrolls/{id}/recalcular', [PlanillaController::class, 'recalcular']);
-        // Importar conceptos desde el Excel de RR.HH.: todas las planillas del
-        // mes de una vez. Tres pasos; el Excel se lee en el navegador y solo
-        // llegan sus celdas. Ver ImportacionConceptosController. "modelo" es
-        // el Excel para llenar, con la gente del mes y una columna por concepto.
-        Route::get('concept-import/template',         [\App\Http\Controllers\ImportacionConceptosController::class, 'modelo']);
-        Route::post('concept-import/recognize',    [\App\Http\Controllers\ImportacionConceptosController::class, 'reconocer']);
-        Route::post('concept-import/preview', [\App\Http\Controllers\ImportacionConceptosController::class, 'previsualizar']);
-        Route::post('concept-import/apply',       [\App\Http\Controllers\ImportacionConceptosController::class, 'aplicar']);
-
-        // Importar el PLAME de RR.HH.: los meses que no pasaron por el sistema, tal como se pagaron.
-        Route::post('plame-import/preview', [\App\Http\Controllers\ImportacionPlameController::class, 'previsualizar']);
-        Route::post('plame-import/apply',   [\App\Http\Controllers\ImportacionPlameController::class, 'aplicar']);
+        Route::apiResource('employees', EmpleadoController::class)->except(['index', 'show']);
         // Importar empleados desde Excel (altas y actualizaciones por DNI) y sus
         // hojas de vida en lote, con el DNI en el nombre de cada archivo.
-        Route::get('employee-import/template',         [\App\Http\Controllers\ImportacionEmpleadosController::class, 'modelo']);
-        Route::post('employee-import/recognize',    [\App\Http\Controllers\ImportacionEmpleadosController::class, 'reconocer']);
-        Route::post('employee-import/preview', [\App\Http\Controllers\ImportacionEmpleadosController::class, 'previsualizar']);
-        Route::post('employee-import/apply',       [\App\Http\Controllers\ImportacionEmpleadosController::class, 'aplicar']);
-        Route::post('employee-import/resume',  [\App\Http\Controllers\ImportacionEmpleadosController::class, 'hojaDeVida']);
-        // Boletas y contratos de antes del sistema, en lote: el navegador lee
-        // cada PDF y aquí se decide de quién es. Ver DocumentosAnterioresController.
-        Route::post('legacy-documents/preview', [\App\Http\Controllers\DocumentosAnterioresController::class, 'previsualizar']);
-        Route::post('legacy-documents',               [\App\Http\Controllers\DocumentosAnterioresController::class, 'subir']);
+        Route::get('employee-import/template',  [\App\Http\Controllers\ImportacionEmpleadosController::class, 'modelo']);
+        Route::post('employee-import/recognize', [\App\Http\Controllers\ImportacionEmpleadosController::class, 'reconocer']);
+        Route::post('employee-import/preview',   [\App\Http\Controllers\ImportacionEmpleadosController::class, 'previsualizar']);
+        Route::post('employee-import/apply',     [\App\Http\Controllers\ImportacionEmpleadosController::class, 'aplicar']);
+        Route::post('employee-import/resume',    [\App\Http\Controllers\ImportacionEmpleadosController::class, 'hojaDeVida']);
+    });
+
+    // Buscar a la persona por su DNI antes de darla de alta (Empleados o
+    // Usuarios). Va limitada: cada consulta fuera de la base propia se le
+    // paga a Decolecta, y sin freno un script podría vaciar el saldo.
+    Route::get('dni-lookup/{dni}', ConsultaDniController::class)
+        ->middleware(['permiso:/empleados,/usuarios', 'throttle:consulta_dni']);
+
+    // ── Contratos (también se crean desde la ficha del empleado) ──
+    Route::middleware('permiso:/contratos,/empleados,/documentos')->group(function () {
+        Route::apiResource('contracts', ContratoController::class);
+    });
+
+    // ── Planillas ──
+    Route::middleware('permiso:/planillas')->group(function () {
+        // La planilla completa en Excel. Va ANTES del apiResource: si no,
+        // "exportar" entraría por show({id}).
+        Route::get('payrolls/export',  [PlanillaController::class, 'exportar']);
+        Route::post('payrolls/export', [PlanillaController::class, 'exportar']);
+        // La Renta de 5ta del mes sin guardar nada, para la vista previa.
+        Route::get('payrolls/renta-5ta', [PlanillaController::class, 'rentaQuinta']);
+        Route::apiResource('payrolls', PlanillaController::class)->except(['index', 'show']);
+        // Las corridas: la planilla con nombre que agrupa a un grupo de gente.
+        // Las rutas sueltas van ANTES del apiResource.
+        Route::post('payroll-runs/detach',        [PlanillaCorridaController::class, 'sacar']);
+        Route::post('payroll-runs/{id}/generate', [PlanillaCorridaController::class, 'generar']);
+        Route::post('payroll-runs/{id}/move',     [PlanillaCorridaController::class, 'mover']);
+        Route::apiResource('payroll-runs', PlanillaCorridaController::class);
+        Route::post('periods/{id}/generate-payroll', [PeriodoController::class, 'generarPlanilla']);
+        // Deja las líneas de UNA planilla como diga la pantalla, de una vez.
+        Route::post('payrolls/{id}/concepts',  [PlanillaController::class, 'sincronizarConceptos']);
+        // Vuelve a leer el sueldo de la ficha y lo prorratea de nuevo.
+        Route::put('payrolls/{id}/recalcular', [PlanillaController::class, 'recalcular']);
         Route::apiResource('payroll-details', PayrollDetalleController::class);
-        Route::apiResource('campuses',            SedeController::class);
+        // Importar conceptos desde el Excel de RR.HH. y el PLAME del mes.
+        Route::get('concept-import/template',   [\App\Http\Controllers\ImportacionConceptosController::class, 'modelo']);
+        Route::post('concept-import/recognize', [\App\Http\Controllers\ImportacionConceptosController::class, 'reconocer']);
+        Route::post('concept-import/preview',   [\App\Http\Controllers\ImportacionConceptosController::class, 'previsualizar']);
+        Route::post('concept-import/apply',     [\App\Http\Controllers\ImportacionConceptosController::class, 'aplicar']);
+        Route::post('plame-import/preview', [\App\Http\Controllers\ImportacionPlameController::class, 'previsualizar']);
+        Route::post('plame-import/apply',   [\App\Http\Controllers\ImportacionPlameController::class, 'aplicar']);
+    });
+    // Las planillas de cada mes también las leen Boletas, la 5ta, la CTS y la gratificación.
+    Route::middleware('permiso:/planillas,/boletas,/renta-5ta,/cts,/gratificaciones,/dashboard')->group(function () {
+        Route::apiResource('payrolls', PlanillaController::class)->only(['index', 'show']);
+    });
+    // Aplicar un concepto a un grupo: desde Planillas o desde Conceptos de Pago.
+    Route::post('payment-concepts/{id}/apply-to-group', [PaymentConceptController::class, 'aplicarAGrupo'])
+        ->middleware('permiso:/planillas,/conceptos-pago');
 
-        // Aprobar o rechazar: solo RR.HH. y Administración.
-        Route::put('vacations/{id}',    [VacacionController::class, 'update']);
-
+    // ── Boletas (emisión, firma digital del colegio y constancia) ──
+    Route::middleware('permiso:/boletas')->group(function () {
         Route::post('payslips/generate-bulk', [BoletaController::class, 'generarMasivo']);
-        // Firma digital del colegio (ReFirma): subir las firmadas, de a una;
-        // anular para volver a emitir; y la constancia de entrega del mes.
+        // Las boletas YA EMITIDAS del mes, todas en un .zip.
+        Route::get('employees/payslips-zip', [EmpleadoController::class, 'boletasEnZip']);
+        Route::match(['get', 'post'], 'employees/payslips-zip/link', [EmpleadoController::class, 'enlaceBoletasEnZip']);
         Route::get('payslips/signed/summary',    [\App\Http\Controllers\BoletasFirmadasController::class, 'resumen']);
         Route::post('payslips/signed/check',     [\App\Http\Controllers\BoletasFirmadasController::class, 'revisar']);
         Route::post('payslips/signed',           [\App\Http\Controllers\BoletasFirmadasController::class, 'guardar']);
-        // «Firmar aquí», con el certificado de quien lo pide, por tandas (con
-        // mil trabajadores son 40 pedidos seguidos). Contra adivinar la clave
-        // hay un límite aparte, dentro del controlador.
+        // «Firmar aquí», con el certificado de quien lo pide, por tandas.
         Route::post('payslips/signed/sign-here', [\App\Http\Controllers\BoletasFirmadasController::class, 'firmarAqui'])
             ->middleware('throttle:120,1');
         // Mi certificado digital para firmar desde el sistema (cada uno el suyo).
@@ -291,58 +261,122 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::delete('my-signing-certificate', [\App\Http\Controllers\CertificadoDeFirmaController::class, 'quitar']);
         Route::post('payslips/{documento}/void', [\App\Http\Controllers\BoletasFirmadasController::class, 'anular'])->whereUuid('documento');
         Route::get('payslips/delivery-record',   [\App\Http\Controllers\BoletasFirmadasController::class, 'constancia']);
+    });
+    // La boleta de cualquier empleado: Boletas, Planillas y su expediente. El
+    // trabajador tiene la suya en my-payslips, que sí comprueba que sea suya.
+    Route::get('payslips/{employee_id}/{month}/{year}', [BoletaController::class, 'generar'])
+        ->middleware('permiso:/boletas,/planillas,/documentos');
 
-        // Ajustes del sistema: RR.HH. y Admin los leen y los cambian (cada
-        // cambio queda en la Auditoría, que sí es solo de Admin).
-        Route::get('settings', [\App\Http\Controllers\ConfiguracionController::class, 'index']);
-        Route::put('settings', [\App\Http\Controllers\ConfiguracionController::class, 'update']);
-        // Enero y febrero de antes del sistema, para la Renta de 5ta (Excel de RR.HH.).
+    // ── Documentos: el expediente de cada trabajador ──
+    Route::middleware('permiso:/documentos')->group(function () {
+        Route::get('employee-files',              [\App\Http\Controllers\ExpedienteController::class, 'index']);
+        Route::get('employee-files/{employeeId}', [\App\Http\Controllers\ExpedienteController::class, 'show']);
+        // Boletas y contratos de antes del sistema, en lote.
+        Route::post('legacy-documents/preview', [\App\Http\Controllers\DocumentosAnterioresController::class, 'previsualizar']);
+        Route::post('legacy-documents',         [\App\Http\Controllers\DocumentosAnterioresController::class, 'subir']);
+    });
+    // Subir y ver documentos: desde el expediente, la ficha del empleado o Contratos.
+    Route::middleware('permiso:/documentos,/empleados,/contratos')->group(function () {
+        // Va ANTES del apiResource: si no, "subir" entraría por show({id}).
+        Route::post('documents/upload', [DocumentoController::class, 'subir']);
+        Route::apiResource('documents', DocumentoController::class);
+    });
+
+    // ── Vacaciones: aprobar o rechazar ──
+    Route::put('vacations/{id}', [VacacionController::class, 'update'])->middleware('permiso:/vacaciones');
+
+    // ── Renta de 5ta (y enero y febrero de antes del sistema, que se cargan en Ajustes) ──
+    Route::middleware('permiso:/renta-5ta')->group(function () {
+        Route::get('income-tax',                    [\App\Http\Controllers\Renta5taController::class, 'index']);
+        Route::get('income-tax/history/template',   [\App\Http\Controllers\Renta5taController::class, 'modeloHistorial']);
+        Route::post('income-tax/history',           [\App\Http\Controllers\Renta5taController::class, 'cargarHistorial']);
+        Route::post('income-tax/recalculate',       [\App\Http\Controllers\Renta5taController::class, 'recalcular']);
+        Route::get('income-tax/export',             [\App\Http\Controllers\Renta5taController::class, 'exportar']);
+        Route::get('income-tax/{empleado}',         [\App\Http\Controllers\Renta5taController::class, 'show'])->whereUuid('empleado');
+        Route::put('income-tax/{empleado}/history', [\App\Http\Controllers\Renta5taController::class, 'guardarHistorial'])->whereUuid('empleado');
+    });
+    Route::middleware('permiso:/renta-5ta,/ajustes')->group(function () {
         Route::get('renta-5ta/previous',  [\App\Http\Controllers\RentaQuintaPreviaController::class, 'index']);
         Route::post('renta-5ta/previous', [\App\Http\Controllers\RentaQuintaPreviaController::class, 'store']);
-        // Los montos de ley por año (UIT, asignación familiar, % de pensión).
-        // Renta de 5ta: la hoja de retención de cada trabajador (método SUNAT),
-        // su historial de los meses antes del sistema, recalcular y exportar.
-        // Las rutas fijas van antes de {empleado}.
-        Route::get('income-tax',                  [\App\Http\Controllers\Renta5taController::class, 'index']);
-        Route::get('income-tax/history/template', [\App\Http\Controllers\Renta5taController::class, 'modeloHistorial']);
-        Route::post('income-tax/history',         [\App\Http\Controllers\Renta5taController::class, 'cargarHistorial']);
-        Route::post('income-tax/recalculate',     [\App\Http\Controllers\Renta5taController::class, 'recalcular']);
-        Route::get('income-tax/export',           [\App\Http\Controllers\Renta5taController::class, 'exportar']);
-        Route::get('income-tax/{empleado}',       [\App\Http\Controllers\Renta5taController::class, 'show'])->whereUuid('empleado');
-        Route::put('income-tax/{empleado}/history', [\App\Http\Controllers\Renta5taController::class, 'guardarHistorial'])->whereUuid('empleado');
-        // CTS: la liquidación de cada semestre (mayo y noviembre), su depósito
-        // y la hoja que queda en el expediente. Las rutas fijas van antes de {liquidacion}.
+    });
+
+    // ── CTS ── (las rutas fijas van antes de {liquidacion})
+    Route::middleware('permiso:/cts')->group(function () {
         Route::get('cts',                          [\App\Http\Controllers\CtsController::class, 'index']);
         Route::post('cts/calculate',               [\App\Http\Controllers\CtsController::class, 'calcular']);
         Route::post('cts/deposit',                 [\App\Http\Controllers\CtsController::class, 'depositar']);
         Route::delete('cts/{liquidacion}/deposit', [\App\Http\Controllers\CtsController::class, 'anularDeposito'])->whereUuid('liquidacion');
         Route::get('cts/{liquidacion}/sheet',      [\App\Http\Controllers\CtsController::class, 'hoja'])->whereUuid('liquidacion');
         Route::get('cts/{empleado}/history',       [\App\Http\Controllers\CtsController::class, 'historial'])->whereUuid('empleado');
+    });
 
-        // Gratificaciones de julio y diciembre: lo que corresponde, lo pagado en planilla y la hoja.
-        Route::get('bonuses',                      [\App\Http\Controllers\GratificacionController::class, 'index']);
-        Route::post('bonuses/deliver',             [\App\Http\Controllers\GratificacionController::class, 'entregar']);
-        Route::get('bonuses/{empleado}/history',   [\App\Http\Controllers\GratificacionController::class, 'historial'])->whereUuid('empleado');
-        Route::get('bonuses/{empleado}/sheet',     [\App\Http\Controllers\GratificacionController::class, 'hoja'])->whereUuid('empleado');
+    // ── Gratificaciones ──
+    Route::middleware('permiso:/gratificaciones')->group(function () {
+        Route::get('bonuses',                    [\App\Http\Controllers\GratificacionController::class, 'index']);
+        Route::post('bonuses/deliver',           [\App\Http\Controllers\GratificacionController::class, 'entregar']);
+        Route::get('bonuses/{empleado}/history', [\App\Http\Controllers\GratificacionController::class, 'historial'])->whereUuid('empleado');
+        Route::get('bonuses/{empleado}/sheet',   [\App\Http\Controllers\GratificacionController::class, 'hoja'])->whereUuid('empleado');
+    });
 
-        Route::get('legal-values',        [\App\Http\Controllers\ValorLegalController::class, 'index']);
-        Route::get('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'show'])->whereNumber('anio');
+    // ── Los catálogos de Configuración: cambiarlos pide su módulo ──
+    Route::apiResource('areas',          AreaController::class)->except(['index', 'show'])->middleware('permiso:/areas');
+    Route::apiResource('positions',      CargoController::class)->except(['index', 'show'])->middleware('permiso:/cargos');
+    Route::apiResource('contract-types', TipoContratoController::class)->except(['index', 'show'])->middleware('permiso:/tipos-contrato');
+    Route::apiResource('campuses',       SedeController::class)->except(['index', 'show'])->middleware('permiso:/sedes');
+    Route::apiResource('periods',        PeriodoController::class)->except(['index', 'show'])->middleware('permiso:/periodos');
+    Route::apiResource('payment-concepts', PaymentConceptController::class)->except(['index', 'show'])->middleware('permiso:/conceptos-pago');
+
+    // ── Ajustes del sistema y montos de ley (cada cambio queda en la Auditoría) ──
+    Route::middleware('permiso:/ajustes')->group(function () {
+        Route::put('settings', [\App\Http\Controllers\ConfiguracionController::class, 'update']);
         Route::post('legal-values',       [\App\Http\Controllers\ValorLegalController::class, 'store']);
         Route::put('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'update'])->whereNumber('anio');
     });
 
-    // ── Solo Administrador: gestión de roles y del sistema de permisos ──
-    Route::middleware('rol:admin')->group(function () {
-        // La auditoría: quién cambió qué. Solo lectura, y solo Admin —es
-        // justamente donde se ve lo que hizo RR.HH.—.
-        Route::get('audit-log', [AuditoriaController::class, 'index']);
+    // ── Usuarios (las cuentas de acceso) ──
+    Route::middleware('permiso:/usuarios,/empleados')->group(function () {
+        Route::apiResource('users', UserController::class)->except(['store']);
+        // Reponerle la contraseña a quien se quedó fuera. Queda obligado a
+        // cambiarla al entrar, y se le cierran las sesiones abiertas.
+        Route::post('users/{id}/reset-password', [UserController::class, 'restablecerPassword']);
+    });
+
+    // ── Auditoría ──
+    Route::middleware('permiso:/auditoria')->group(function () {
+        Route::get('audit-log',      [AuditoriaController::class, 'index']);
         Route::get('audit-log/{id}', [AuditoriaController::class, 'show'])->whereNumber('id');
+    });
 
+    // ── Roles y módulos: el sistema de permisos mismo ──
+    Route::apiResource('roles', RolController::class)->only(['store', 'update', 'destroy'])->middleware('permiso:/roles');
+    Route::middleware('permiso:/modulos,/modulos-padre,/roles')->group(function () {
+        Route::apiResource('module-groups', ModuloPadreController::class)->only(['index', 'show']);
+        Route::apiResource('modules', ModuloController::class)->only(['index', 'show']);
+    });
+    Route::apiResource('module-groups', ModuloPadreController::class)->except(['index', 'show'])->middleware('permiso:/modulos-padre');
+    Route::apiResource('modules', ModuloController::class)->except(['index', 'show'])->middleware('permiso:/modulos');
+    // Qué roles ven un módulo: es dar o quitar permisos.
+    Route::post('modules/{id}/roles', [ModuloController::class, 'asignarRoles'])->middleware('permiso:/modulos,/roles');
 
-        Route::apiResource('roles', RolController::class)->only(['store', 'update', 'destroy']);
-        Route::apiResource('module-groups', ModuloPadreController::class);
-        Route::apiResource('modules', ModuloController::class);
-        Route::post('modules/{id}/roles', [ModuloController::class, 'asignarRoles']);
+    // ── Lo que leen muchas pantallas ── (al final: después de las rutas fijas como employees/export)
+    Route::middleware('permiso:@gestion')->group(function () {
+        // La lista del personal: la usan los buscadores y filtros de casi
+        // todas las pantallas. Cambiarla pide Empleados (más abajo).
+        Route::apiResource('employees', EmpleadoController::class)->only(['index', 'show']);
+        // Los catálogos, para los desplegables. Cambiarlos pide su módulo.
+        Route::apiResource('areas',          AreaController::class)->only(['index', 'show']);
+        Route::apiResource('positions',      CargoController::class)->only(['index', 'show']);
+        Route::apiResource('contract-types', TipoContratoController::class)->only(['index', 'show']);
+        Route::apiResource('campuses',       SedeController::class)->only(['index', 'show']);
+        Route::apiResource('periods',        PeriodoController::class)->only(['index', 'show']);
+        Route::apiResource('payment-concepts', PaymentConceptController::class)->only(['index', 'show']);
+        // Solo lectura: para elegir el rol al crear un empleado o un usuario.
+        // Crear, editar o borrar roles pide el módulo Roles.
+        Route::apiResource('roles', RolController::class)->only(['index', 'show']);
+        // Los ajustes y los montos de ley los consultan la planilla, la 5ta y la CTS.
+        Route::get('settings', [\App\Http\Controllers\ConfiguracionController::class, 'index']);
+        Route::get('legal-values',        [\App\Http\Controllers\ValorLegalController::class, 'index']);
+        Route::get('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'show'])->whereNumber('anio');
     });
 
 });

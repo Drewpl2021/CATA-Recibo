@@ -297,7 +297,9 @@ export class LayoutComponent implements OnInit {
     this.userName = user.name;
     this.userEmail = user.email || '';
     this.userInitials = this.userName.substring(0, 2).toUpperCase();
-    this.userRole = NOMBRE_ROL_LEGIBLE[this.authService.getRolNombre()] ?? 'Empleado';
+    // Un rol creado en Roles (Contabilidad) se muestra con su propio nombre, no como «Empleado».
+    const rol = this.authService.getRolNombre();
+    this.userRole = NOMBRE_ROL_LEGIBLE[rol] ?? (rol ? rol.charAt(0).toUpperCase() + rol.slice(1) : 'Empleado');
     this.cargarFoto();
   }
 
@@ -555,11 +557,12 @@ export class LayoutComponent implements OnInit {
     // Si a este usuario le cambiaron el rol mientras estaba dentro, su copia
     // en localStorage se quedó vieja: se pone al día antes de pintar el menú.
     const rolAntes = this.authService.getRolNombre();
+    const permisosAntes = JSON.stringify(this.authService.getUser()?.permisos ?? null);
     this.authService.refrescarUsuario().subscribe({
       next: () => {
         this.cargarDatosUsuario();
-        // Con otro rol le tocan otros módulos: hay que volver a pedirlos.
-        if (this.authService.getRolNombre() !== rolAntes) {
+        // Con otro rol, o con módulos dados o quitados, cambia el menú: hay que volver a pedirlo.
+        if (this.authService.getRolNombre() !== rolAntes || JSON.stringify(this.authService.getUser()?.permisos ?? null) !== permisosAntes) {
           this.cargarModulos();
         }
       },

@@ -61,11 +61,13 @@ export const guestGuard: CanActivateFn = () => {
 };
 
 /**
- * Factory: guarda una ruta solo para ciertos roles (ej. Áreas/Cargos/Sedes
- * son solo RRHH/Admin). Si el rol no matchea, redirige a su propio inicio
- * en vez de dejarlo en una pantalla rota que le va a rechazar la API.
+ * Factory: la pantalla se abre solo si el rol tiene ese módulo (lo que se
+ * marca en Roles), igual que lo exige el servidor en cada ruta. Antes
+ * preguntaba por el nombre del rol, y un rol nuevo como Contabilidad no
+ * entraba aunque tuviera el módulo. Si no puede, va a su propio inicio en
+ * vez de quedarse en una pantalla que la API le va a rechazar.
  */
-export const roleGuard = (rolesPermitidos: string[]): CanActivateFn => {
+export const permisoGuard = (...modulos: string[]): CanActivateFn => {
   return () => {
     const authService = inject(AuthService);
     const router = inject(Router);
@@ -75,7 +77,7 @@ export const roleGuard = (rolesPermitidos: string[]): CanActivateFn => {
       return false;
     }
 
-    if (rolesPermitidos.includes(authService.getRolNombre())) return true;
+    if (authService.puede(...modulos)) return true;
 
     router.navigate([authService.rutaTrasIngresar()]);
     return false;

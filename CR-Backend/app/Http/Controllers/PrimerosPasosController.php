@@ -35,7 +35,8 @@ class PrimerosPasosController extends Controller
         $usuario = $request->user();
         $rol     = $usuario->rol?->nombre;
 
-        $pasos = $rol === 'empleado'
+        // La guía de RR.HH. es para quien maneja algo más que su propio espacio.
+        $pasos = ! $usuario->puede(\App\Support\Permisos::GESTION)
             ? $this->pasosDelTrabajador($usuario)
             : $this->pasosDeRecursosHumanos($usuario);
 

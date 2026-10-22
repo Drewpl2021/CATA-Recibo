@@ -41,7 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => null);
 
         $middleware->alias([
-            'rol'         => \App\Http\Middleware\CheckRol::class,
+            'permiso'     => \App\Http\Middleware\CheckPermiso::class,
             'sesion'      => \App\Http\Middleware\RenovarSesionActiva::class,
             // Traba la cuenta que todavía usa la contraseña que le dieron.
             'clave_nueva' => \App\Http\Middleware\ExigirCambioPassword::class,

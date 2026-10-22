@@ -69,6 +69,7 @@ class ModuloController extends Controller
         ]);
 
         $modulo->update($datos);
+        \App\Support\Permisos::refrescar();
 
         return response()->json(['success' => true, 'data' => $modulo]);
     }
@@ -77,6 +78,7 @@ class ModuloController extends Controller
     {
         $modulo = Modulo::findOrFail($id);
         $modulo->update(['estado_registro' => 'inactivo']);
+        \App\Support\Permisos::refrescar();
 
         return response()->json(['success' => true, 'data' => ['message' => 'Módulo eliminado correctamente.']]);
     }
@@ -96,6 +98,7 @@ class ModuloController extends Controller
         ]);
 
         $modulo->roles()->sync($request->roles);
+        \App\Support\Permisos::refrescar();
 
         return response()->json([
             'success' => true,

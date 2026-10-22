@@ -77,6 +77,7 @@ class AuthController extends Controller
             'success' => true,
             'data'    => [
                 'user'            => $user->load('rol', 'empleado'),
+                'permisos'        => \App\Support\Permisos::paraPantalla($user),
                 'token'           => $token,
                 'es_institucional'=> $user->es_institucional,
                 // Si viene en true, el frontend manda a cambiar la contraseña
@@ -101,7 +102,7 @@ class AuthController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data'    => $request->user()->load('rol', 'empleado'),
+            'data'    => $request->user()->load('rol', 'empleado')->setAttribute('permisos', \App\Support\Permisos::paraPantalla($request->user())),
         ]);
     }
     public function cambiarPassword(Request $request)

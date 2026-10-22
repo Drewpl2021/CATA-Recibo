@@ -39,8 +39,20 @@ export interface TerminosDeUso {
   esVersionNueva: boolean;
 }
 
+/**
+ * Lo que puede hacer: los módulos de su rol (las rutas del menú, «/planillas»),
+ * o «*» si es superadministrador. Lo manda el backend en el login y en /me
+ * (ver App\Support\Permisos): es lo mismo que exige cada ruta del servidor.
+ */
+export interface PermisosUsuario {
+  es_superadmin: boolean;
+  modulos: string[];
+}
+
 /** Usuario ya normalizado por AuthService (rol siempre string). */
 export interface AuthUser {
+  /** Sus módulos. Falta solo en una sesión guardada antes de que existieran. */
+  permisos?: PermisosUsuario;
   id: number;
   name: string;
   email: string;

@@ -67,6 +67,7 @@ class ModuloPadreController extends Controller
     {
         $moduloPadre = ModuloPadre::findOrFail($id);
         $moduloPadre->update(['estado_registro' => 'inactivo']);
+        \App\Support\Permisos::refrescar();
 
         return response()->json(['success' => true, 'data' => ['message' => 'Módulo padre eliminado correctamente.']]);
     }

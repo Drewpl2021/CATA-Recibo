@@ -21,8 +21,7 @@ class UserController extends Controller
     {
         $query = User::with('rol', 'empleado');
 
-        $rolNombre = $request->user()->rol?->nombre;
-        if ($rolNombre !== 'admin') {
+        if (! $request->user()->esSuperadmin()) {
             $query->where('estado_registro', 'activo');
         }
 
@@ -54,7 +53,8 @@ class UserController extends Controller
             'estado_registro' => 'sometimes|in:activo,inactivo',
         ]);
 
-        $esAdmin = $request->user()->rol?->nombre === 'admin';
+        // Cambiar el rol de alguien es dar permisos: solo el superadministrador.
+        $esAdmin = $request->user()->esSuperadmin();
 
         if ($request->has('rol_id') && !$esAdmin) {
             return response()->json([
@@ -121,7 +121,7 @@ class UserController extends Controller
         // RR.HH. no puede reponerle la contraseña a un Administrador: sería
         // ponérsela él mismo y entrar con esa cuenta. Solo un Administrador
         // repone a otro Administrador.
-        if ($user->rol?->nombre === 'admin' && $quienPide->rol?->nombre !== 'admin') {
+        if ($user->esSuperadmin() && ! $quienPide->esSuperadmin()) {
             return response()->json([
                 'success' => false,
                 'data'    => ['message' => 'Solo un Administrador puede restablecer la contraseña de otro Administrador.'],

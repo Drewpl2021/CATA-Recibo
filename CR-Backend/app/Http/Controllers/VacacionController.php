@@ -78,7 +78,7 @@ class VacacionController extends Controller
 
         // Las dadas de baja solo las ve Administración, como en el resto del
         // sistema.
-        if ($request->user()->rol?->nombre !== 'admin') {
+        if (! $request->user()->esSuperadmin()) {
             $query->where('estado_registro', 'activo');
         }
 
@@ -300,7 +300,7 @@ class VacacionController extends Controller
     /** ¿Este usuario resuelve vacaciones ajenas, o solo pide las suyas? */
     private function resuelveVacaciones(Request $request): bool
     {
-        return in_array($request->user()->rol?->nombre, ['rrhh', 'admin'], true);
+        return $request->user()->puede('/vacaciones');
     }
 
     /**
