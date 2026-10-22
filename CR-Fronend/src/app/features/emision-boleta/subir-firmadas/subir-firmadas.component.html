@@ -6,102 +6,132 @@
   [guardando]="ocupado"
   [ocultarBotonesPorDefecto]="true"
   (cancelar)="cerrar()"
->
+  >
   <!-- Dónde está: tres pasos, con el actual resaltado. -->
   <ol class="pasos-asistente" aria-label="Pasos">
-    <li *ngFor="let p of pasos; let i = index" class="pasos-asistente__paso"
-      [class.pasos-asistente__paso--activo]="pasoActivo(p.id)" [class.pasos-asistente__paso--hecho]="pasoHecho(i)">
-      <span class="pasos-asistente__numero">
-        <app-icon *ngIf="pasoHecho(i); else numero" icono="check" [tamano]="13"></app-icon>
-        <ng-template #numero>{{ i + 1 }}</ng-template>
-      </span>
-      {{ p.etiqueta }}
-    </li>
+    @for (p of pasos; track p.id; let i = $index) {
+      <li class="pasos-asistente__paso"
+        [class.pasos-asistente__paso--activo]="pasoActivo(p.id)" [class.pasos-asistente__paso--hecho]="pasoHecho(i)">
+        <span class="pasos-asistente__numero">
+          @if (pasoHecho(i)) {
+            <app-icon icono="check" [tamano]="13"></app-icon>
+          } @else {
+            {{ i + 1 }}
+          }
+        </span>
+        {{ p.etiqueta }}
+      </li>
+    }
   </ol>
 
   <!-- 1. Elegir -->
-  <div class="form-fields" *ngIf="paso === 'elegir'">
-    <p class="form-nota">
-      Elige los PDF que firmó el colegio en <strong>ReFirma</strong>: abre la carpeta donde quedaron, selecciona todos
-      (<kbd>Ctrl</kbd> + <kbd>A</kbd>) y arrástralos aquí. Primero se revisan, <strong>todavía no se guarda nada</strong>.
-    </p>
-    <app-selector-archivo
-      [extensiones]="['pdf']"
-      [pesoMaximoMb]="12"
-      [multiple]="true"
-      [(archivos)]="archivos"
-      texto="Arrastra aquí los PDF firmados o haz clic para elegirlos"
-      [ayuda]="'Cada archivo con el nombre con que lo bajó el sistema (lleva el DNI). Se necesitan ' + requeridas + ' firma(s) del colegio por boleta para entregarla.'"
-    ></app-selector-archivo>
-  </div>
+  @if (paso === 'elegir') {
+    <div class="form-fields">
+      <p class="form-nota">
+        Elige los PDF que firmó el colegio en <strong>ReFirma</strong>: abre la carpeta donde quedaron, selecciona todos
+        (<kbd>Ctrl</kbd> + <kbd>A</kbd>) y arrástralos aquí. Primero se revisan, <strong>todavía no se guarda nada</strong>.
+      </p>
+      <app-selector-archivo
+        [extensiones]="['pdf']"
+        [pesoMaximoMb]="12"
+        [multiple]="true"
+        [(archivos)]="archivos"
+        texto="Arrastra aquí los PDF firmados o haz clic para elegirlos"
+        [ayuda]="'Cada archivo con el nombre con que lo bajó el sistema (lleva el DNI). Se necesitan ' + requeridas + ' firma(s) del colegio por boleta para entregarla.'"
+      ></app-selector-archivo>
+    </div>
+  }
 
   <!-- 2 y 4. Revisando / Guardando: la barra -->
-  <div class="progreso" *ngIf="paso === 'revisando' || paso === 'guardando'" role="status">
-    <p class="progreso__etapa">
-      {{ paso === 'revisando' ? 'Revisando cada boleta: de quién es, si es la que se emitió y quién la firmó…' : 'Guardando y entregando…' }}
-    </p>
-    <div class="progreso__barra"><span [style.width.%]="porcentaje"></span></div>
-    <div class="progreso__cifras"><span>{{ hechos }} de {{ filas.length }}</span><span>{{ porcentaje }}%</span></div>
-  </div>
+  @if (paso === 'revisando' || paso === 'guardando') {
+    <div class="progreso" role="status">
+      <p class="progreso__etapa">
+        {{ paso === 'revisando' ? 'Revisando cada boleta: de quién es, si es la que se emitió y quién la firmó…' : 'Guardando y entregando…' }}
+      </p>
+      <div class="progreso__barra"><span [style.width.%]="porcentaje"></span></div>
+      <div class="progreso__cifras"><span>{{ hechos }} de {{ filas.length }}</span><span>{{ porcentaje }}%</span></div>
+    </div>
+  }
 
   <!-- 3. Revisión: qué va a pasar con cada una -->
-  <ng-container *ngIf="paso === 'revision'">
+  @if (paso === 'revision') {
     <div class="resumen-masivo">
       <div class="resumen-masivo__dato"><strong>{{ seEntregan }}</strong><span>Se entregan al guardar</span></div>
-      <div class="resumen-masivo__dato" *ngIf="requeridas > 1"><strong>{{ aMedias }}</strong><span>Quedan a medias (falta firma)</span></div>
+      @if (requeridas > 1) {
+        <div class="resumen-masivo__dato"><strong>{{ aMedias }}</strong><span>Quedan a medias (falta firma)</span></div>
+      }
       <div class="resumen-masivo__dato"><strong>{{ conProblema.length }}</strong><span>Con problema (no se guardan)</span></div>
     </div>
-  </ng-container>
+  }
 
   <!-- La lista, en revisión, guardando y al final -->
-  <div class="revision-firmadas" *ngIf="paso !== 'elegir' && paso !== 'revisando'">
-    <div class="revision-firmadas__fila" *ngFor="let f of filas">
-      <div class="revision-firmadas__quien">
-        <strong>{{ f.revision?.trabajador || f.archivo.name }}</strong>
-        <span class="form-ayuda">
-          <ng-container *ngIf="f.revision?.numero">{{ f.revision?.numero }} · </ng-container>
-          <ng-container *ngIf="firmantes(f); else sinFirmantes">Firmó: {{ firmantes(f) }}</ng-container>
-          <ng-template #sinFirmantes>{{ f.archivo.name }}</ng-template>
-        </span>
-        <span class="revision-firmadas__motivo" *ngIf="f.error || (f.revision?.estado !== 'ok' && f.revision?.mensaje)">
-          {{ f.error || f.revision?.mensaje }}
-        </span>
-      </div>
-      <span class="status-badge" [ngClass]="'status-badge-' + etiquetaDe(f).tono">{{ etiquetaDe(f).texto }}</span>
+  @if (paso !== 'elegir' && paso !== 'revisando') {
+    <div class="revision-firmadas">
+      @for (f of filas; track $index) {
+        <div class="revision-firmadas__fila">
+          <div class="revision-firmadas__quien">
+            <strong>{{ f.revision?.trabajador || f.archivo.name }}</strong>
+            <span class="form-ayuda">
+              @if (f.revision?.numero) {
+                {{ f.revision?.numero }} ·
+              }
+              @if (firmantes(f)) {
+                Firmó: {{ firmantes(f) }}
+              } @else {
+                {{ f.archivo.name }}
+              }
+            </span>
+            @if (f.error || (f.revision?.estado !== 'ok' && f.revision?.mensaje)) {
+              <span class="revision-firmadas__motivo">
+                {{ f.error || f.revision?.mensaje }}
+              </span>
+            }
+          </div>
+          <span class="status-badge" [ngClass]="'status-badge-' + etiquetaDe(f).tono">{{ etiquetaDe(f).texto }}</span>
+        </div>
+      }
     </div>
-  </div>
+  }
 
   <!-- 4. Listo -->
-  <div class="form-nota revision-firmadas__final" *ngIf="paso === 'listo'" role="status">
-    <strong>Listo.</strong>
-    {{ guardadasCompletas }} boleta(s) entregada(s): a cada trabajador le llegó el aviso.
-    <ng-container *ngIf="guardadasAMedias"> {{ guardadasAMedias }} quedaron a medias: falta la otra firma.</ng-container>
-    <ng-container *ngIf="noGuardadas.length"> {{ noGuardadas.length }} no se guardaron (mira el motivo arriba).</ng-container>
-  </div>
+  @if (paso === 'listo') {
+    <div class="form-nota revision-firmadas__final" role="status">
+      <strong>Listo.</strong>
+      {{ guardadasCompletas }} boleta(s) entregada(s): a cada trabajador le llegó el aviso.
+      @if (guardadasAMedias) {
+        {{ guardadasAMedias }} quedaron a medias: falta la otra firma.
+      }
+      @if (noGuardadas.length) {
+        {{ noGuardadas.length }} no se guardaron (mira el motivo arriba).
+      }
+    </div>
+  }
 
   <div modalFooter class="asistente-pie">
-    <ng-container [ngSwitch]="paso">
-      <ng-container *ngSwitchCase="'elegir'">
+    @switch (paso) {
+      @case ('elegir') {
         <button class="btn-secondary" type="button" (click)="cerrar()">Cancelar</button>
         <button class="btn-primary" type="button" [disabled]="!archivos.length" (click)="revisar()"
           [appPista]="archivos.length ? 'Revisa cada archivo (de quién es, si es la boleta que se emitió y quién la firmó) sin guardar nada todavía.' : 'Primero elige los PDF firmados.'">
           <app-icon icono="search" [tamano]="16"></app-icon>
           Revisar {{ archivos.length || '' }} archivo(s)
         </button>
-      </ng-container>
-      <ng-container *ngSwitchCase="'revision'">
+      }
+      @case ('revision') {
         <button class="btn-secondary" type="button" (click)="volverAElegir()" appPista="Vuelve a elegir los archivos. No se guarda nada.">Elegir otros</button>
         <button class="btn-primary" type="button" [disabled]="!listas.length" (click)="guardar()"
           [appPista]="listas.length ? 'Guarda las boletas que están bien y se las entrega a cada trabajador. Las que tienen problema no se guardan.' : 'Ninguna boleta está lista para guardar.'">
           <app-icon icono="upload" [tamano]="16"></app-icon>
           Guardar {{ listas.length }} boleta(s)
         </button>
-      </ng-container>
-      <ng-container *ngSwitchCase="'listo'">
+      }
+      @case ('listo') {
         <button class="btn-secondary" type="button" (click)="volverAElegir()" appPista="Sube otro grupo de boletas firmadas.">Subir más</button>
         <button class="btn-primary" type="button" (click)="cerrar()">Cerrar</button>
-      </ng-container>
-      <span *ngSwitchDefault class="form-ayuda">Espera un momento, no cierres esta ventana…</span>
-    </ng-container>
+      }
+      @default {
+        <span class="form-ayuda">Espera un momento, no cierres esta ventana…</span>
+      }
+    }
   </div>
 </app-form-modal>

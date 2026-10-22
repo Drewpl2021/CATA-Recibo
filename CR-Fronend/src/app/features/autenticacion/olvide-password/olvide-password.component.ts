@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services';
 
@@ -17,7 +17,7 @@ import { AuthService } from '../../../core/services';
 @Component({
   selector: 'app-olvide-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './olvide-password.component.html',
   styleUrl: '../acceso.scss',
 })

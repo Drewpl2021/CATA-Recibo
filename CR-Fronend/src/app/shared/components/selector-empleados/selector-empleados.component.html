@@ -2,20 +2,21 @@
   <label>¿A quiénes?</label>
 
   <!-- Todo el personal, o solo algunos -->
-  <div class="opciones-alcance" *ngIf="permiteTodos">
-    <label class="check-item" [class.is-activo]="esTodos">
-      <input type="radio" name="alcance" [checked]="esTodos" (change)="cambiarAlcance('todos')" />
-      <span>Todo el personal activo ({{ empleados.length }})</span>
-    </label>
-
-    <label class="check-item" [class.is-activo]="!esTodos">
-      <input type="radio" name="alcance" [checked]="!esTodos" (change)="cambiarAlcance('elegidos')" />
-      <span>Solo a quienes yo elija</span>
-    </label>
-  </div>
+  @if (permiteTodos) {
+    <div class="opciones-alcance">
+      <label class="check-item" [class.is-activo]="esTodos">
+        <input type="radio" name="alcance" [checked]="esTodos" (change)="cambiarAlcance('todos')" />
+        <span>Todo el personal activo ({{ empleados.length }})</span>
+      </label>
+      <label class="check-item" [class.is-activo]="!esTodos">
+        <input type="radio" name="alcance" [checked]="!esTodos" (change)="cambiarAlcance('elegidos')" />
+        <span>Solo a quienes yo elija</span>
+      </label>
+    </div>
+  }
 </div>
 
-<ng-container *ngIf="!esTodos || !permiteTodos">
+@if (!esTodos || !permiteTodos) {
   <!-- Buscador y filtros. Acotan la lista de verdad: lo que se ve es lo que hay. -->
   <div class="buscador-personas">
     <div class="buscador-personas__campo">
@@ -23,76 +24,91 @@
       <input #campoBusquedaPersonas type="text" class="form-control" [(ngModel)]="busqueda"
         (keydown.escape)="alPulsarEscapeEnBusqueda(campoBusquedaPersonas)"
         placeholder="Busca por nombre, apellido o DNI..." aria-label="Buscar trabajador" />
-      <button *ngIf="busqueda" type="button" class="buscador-personas__campo-clear" title="Borrar búsqueda"
-        aria-label="Borrar búsqueda" (click)="limpiarBusquedaTexto(campoBusquedaPersonas)">
-        <app-icon icono="close" [tamano]="16"></app-icon>
-      </button>
+      @if (busqueda) {
+        <button type="button" class="buscador-personas__campo-clear" title="Borrar búsqueda"
+          aria-label="Borrar búsqueda" (click)="limpiarBusquedaTexto(campoBusquedaPersonas)">
+          <app-icon icono="close" [tamano]="16"></app-icon>
+        </button>
+      }
     </div>
-
     <div class="buscador-personas__filtros">
-      <select class="form-control" [(ngModel)]="filtroArea" *ngIf="areas.length" aria-label="Área">
-        <option value="">Todas las áreas</option>
-        <option *ngFor="let a of areas" [value]="a.id">{{ a.nombre }}</option>
-      </select>
-
-      <select class="form-control" [(ngModel)]="filtroCargo" *ngIf="cargos.length" aria-label="Cargo">
-        <option value="">Todos los cargos</option>
-        <option *ngFor="let c of cargos" [value]="c.id">{{ c.nombre }}</option>
-      </select>
-
-      <select class="form-control" [(ngModel)]="filtroSede" *ngIf="sedes.length" aria-label="Sede">
-        <option value="">Todas las sedes</option>
-        <option *ngFor="let s of sedes" [value]="s.id">{{ s.nombre }}</option>
-      </select>
-
+      @if (areas.length) {
+        <select class="form-control" [(ngModel)]="filtroArea" aria-label="Área">
+          <option value="">Todas las áreas</option>
+          @for (a of areas; track a.id) {
+            <option [value]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+      }
+      @if (cargos.length) {
+        <select class="form-control" [(ngModel)]="filtroCargo" aria-label="Cargo">
+          <option value="">Todos los cargos</option>
+          @for (c of cargos; track c.id) {
+            <option [value]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+      }
+      @if (sedes.length) {
+        <select class="form-control" [(ngModel)]="filtroSede" aria-label="Sede">
+          <option value="">Todas las sedes</option>
+          @for (s of sedes; track s.id) {
+            <option [value]="s.id">{{ s.nombre }}</option>
+          }
+        </select>
+      }
       <button type="button" class="btn-limpiar" [disabled]="!hayFiltros" (click)="limpiarFiltros()">
         <app-icon icono="close" [tamano]="14"></app-icon>
         Limpiar
       </button>
     </div>
   </div>
-
   <!-- Cuántos se ven, cuántos van marcados, y marcar los de la vista de un golpe -->
   <div class="buscador-personas__barra">
     <span class="buscador-personas__cuenta">
       <strong>{{ visibles.length }}</strong> de {{ empleados.length }} en la lista
-      <ng-container *ngIf="cuantosMarcados">
+      @if (cuantosMarcados) {
         · <strong>{{ cuantosMarcados }}</strong> marcado(s)
-      </ng-container>
+      }
     </span>
-
     <span class="buscador-personas__acciones">
       <button type="button" class="enlace-sutil" [disabled]="!visibles.length"
         (click)="alternarVisibles()">
         {{ todosVisiblesMarcados ? 'Desmarcar los de la lista' : 'Marcar los ' + visibles.length + ' de la lista' }}
       </button>
-      <button type="button" class="enlace-sutil" *ngIf="cuantosMarcados" (click)="limpiarSeleccion()">
-        Limpiar selección
-      </button>
+      @if (cuantosMarcados) {
+        <button type="button" class="enlace-sutil" (click)="limpiarSeleccion()">
+          Limpiar selección
+        </button>
+      }
     </span>
   </div>
-
   <!-- Los marcados que el filtro dejó fuera de vista: siguen contando -->
-  <p class="form-ayuda" *ngIf="marcadosOcultos">
-    Hay <strong>{{ marcadosOcultos }}</strong> marcado(s) que este filtro no deja ver.
-    Siguen contando: la operación también les va a caer.
-  </p>
-
+  @if (marcadosOcultos) {
+    <p class="form-ayuda">
+      Hay <strong>{{ marcadosOcultos }}</strong> marcado(s) que este filtro no deja ver.
+      Siguen contando: la operación también les va a caer.
+    </p>
+  }
   <div class="lista-personas">
-    <label class="persona" *ngFor="let e of visibles; trackBy: porId"
-      [class.persona--marcada]="estaMarcado(e.id)">
-      <input type="checkbox" [checked]="estaMarcado(e.id)" (change)="alternar(e.id)" />
-      <span class="persona__datos">
-        <strong>{{ e.apellido }}, {{ e.nombre }}</strong>
-        <small>DNI {{ e.dni }}</small>
-      </span>
-    </label>
-
-    <p class="lista-personas__vacio" *ngIf="!visibles.length && empleados.length">
-      Ningún trabajador coincide con lo que buscaste.
-    </p>
-    <p class="lista-personas__vacio" *ngIf="!empleados.length">
-      No hay trabajadores activos.
-    </p>
+    @for (e of visibles; track porId($index, e)) {
+      <label class="persona"
+        [class.persona--marcada]="estaMarcado(e.id)">
+        <input type="checkbox" [checked]="estaMarcado(e.id)" (change)="alternar(e.id)" />
+        <span class="persona__datos">
+          <strong>{{ e.apellido }}, {{ e.nombre }}</strong>
+          <small>DNI {{ e.dni }}</small>
+        </span>
+      </label>
+    }
+    @if (!visibles.length && empleados.length) {
+      <p class="lista-personas__vacio">
+        Ningún trabajador coincide con lo que buscaste.
+      </p>
+    }
+    @if (!empleados.length) {
+      <p class="lista-personas__vacio">
+        No hay trabajadores activos.
+      </p>
+    }
   </div>
-</ng-container>
+}

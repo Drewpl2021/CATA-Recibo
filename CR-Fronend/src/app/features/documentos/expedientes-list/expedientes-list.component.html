@@ -2,7 +2,7 @@
   icono="folder"
   titulo="Documentos del personal"
   subtitulo="El expediente de cada trabajador: su hoja de vida, sus contratos y sus boletas."
->
+  >
   <button headerActions type="button" class="btn-primary" (click)="subirAnteriores()">
     <app-icon icono="upload" [tamano]="16"></app-icon>
     Subir boletas y contratos anteriores
@@ -26,45 +26,45 @@
   [accionesPersonalizadas]="acciones"
   (accionPersonalizada)="abrir($event.fila)"
   [mensajeVacio]="mensajeVacio"
->
+  >
   <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="alOrdenar()"></app-orden>
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
-    (cambio)="alFiltrar()"></app-filtros>
+  (cambio)="alFiltrar()"></app-filtros>
 
   <ng-template appCelda="apellido" let-f>
     <strong>{{ f.apellido }}, {{ f.nombre }}</strong>
     <div class="form-ayuda">
-      DNI {{ f.dni }}<ng-container *ngIf="f.cargo">, {{ f.cargo.nombre }}</ng-container>
-    </div>
-  </ng-template>
+      DNI {{ f.dni }}@if (f.cargo) {
+      , {{ f.cargo.nombre }}
+    }
+  </div>
+</ng-template>
 
-  <ng-template appCelda="hoja_de_vida_fecha" let-f>
-    <ng-container *ngIf="f.hoja_de_vida_fecha; else faltaHoja">
-      <span class="status-badge status-badge-success">La tiene</span>
-      <div class="form-ayuda">Subida el {{ fecha(f.hoja_de_vida_fecha) }}</div>
-    </ng-container>
-    <ng-template #faltaHoja>
-      <span class="status-badge status-badge-warning">Falta</span>
-    </ng-template>
-  </ng-template>
+<ng-template appCelda="hoja_de_vida_fecha" let-f>
+  @if (f.hoja_de_vida_fecha) {
+    <span class="status-badge status-badge-success">La tiene</span>
+    <div class="form-ayuda">Subida el {{ fecha(f.hoja_de_vida_fecha) }}</div>
+  } @else {
+    <span class="status-badge status-badge-warning">Falta</span>
+  }
+</ng-template>
 
-  <ng-template appCelda="contrato_vigente" let-f>
-    <ng-container *ngIf="f.contrato_vigente as contrato; else sinContrato">
-      <strong>{{ contrato.tipo_contrato?.nombre }}</strong>
-      <div class="form-ayuda" [class.texto-aviso]="porVencer(contrato)">{{ vigencia(contrato) }}</div>
-    </ng-container>
-    <ng-template #sinContrato>
-      <span class="form-ayuda">Sin contrato vigente</span>
-    </ng-template>
-  </ng-template>
+<ng-template appCelda="contrato_vigente" let-f>
+  @if (f.contrato_vigente; as contrato) {
+    <strong>{{ contrato.tipo_contrato?.nombre }}</strong>
+    <div class="form-ayuda" [class.texto-aviso]="porVencer(contrato)">{{ vigencia(contrato) }}</div>
+  } @else {
+    <span class="form-ayuda">Sin contrato vigente</span>
+  }
+</ng-template>
 
-  <ng-template appCelda="documentos_count" let-f>
-    {{ f.documentos_count }}
-  </ng-template>
+<ng-template appCelda="documentos_count" let-f>
+  {{ f.documentos_count }}
+</ng-template>
 
-  <ng-template appCelda="boletas_por_firmar" let-f>
-    <span class="status-badge" [ngClass]="f.boletas_por_firmar ? 'status-badge-warning' : 'status-badge-success'">
-      {{ f.boletas_por_firmar ? f.boletas_por_firmar + ' por firmar' : 'Al día' }}
-    </span>
-  </ng-template>
+<ng-template appCelda="boletas_por_firmar" let-f>
+  <span class="status-badge" [ngClass]="f.boletas_por_firmar ? 'status-badge-warning' : 'status-badge-success'">
+    {{ f.boletas_por_firmar ? f.boletas_por_firmar + ' por firmar' : 'Al día' }}
+  </span>
+</ng-template>
 </app-data-table>

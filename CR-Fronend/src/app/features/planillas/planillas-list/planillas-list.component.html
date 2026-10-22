@@ -2,28 +2,32 @@
   [icono]="modoSinAgrupar ? 'folder_open' : 'table_chart'"
   [titulo]="tituloPantalla"
   [subtitulo]="subtituloPantalla"
->
+  >
   <div headerActions class="acciones-cabecera">
     <button class="btn-secondary" (click)="volver()">
       <app-icon icono="arrow_left" [tamano]="16"></app-icon>
       Volver a Planillas
     </button>
 
-    <button class="btn-primary" *ngIf="corridaId && !estaCerrada" (click)="abrirGenerar()">
-      <app-icon icono="plus" [tamano]="16"></app-icon>
-      Agregar trabajadores
-    </button>
+    @if (corridaId && !estaCerrada) {
+      <button class="btn-primary" (click)="abrirGenerar()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar trabajadores
+      </button>
+    }
 
     <!-- Dorado, no gris: es una acción que mueve dinero de toda la planilla y
-         en gris se perdía entre los demás botones. Usa el par --accent /
-         --on-accent, que está pensado para leerse en claro y en oscuro. -->
-    <button class="btn-warning" *ngIf="corridaId && !estaCerrada" (click)="abrirConcepto()">
-      <app-icon icono="money" [tamano]="16"></app-icon>
-      Aplicar concepto
-    </button>
+    en gris se perdía entre los demás botones. Usa el par --accent /
+    --on-accent, que está pensado para leerse en claro y en oscuro. -->
+    @if (corridaId && !estaCerrada) {
+      <button class="btn-warning" (click)="abrirConcepto()">
+        <app-icon icono="money" [tamano]="16"></app-icon>
+        Aplicar concepto
+      </button>
+    }
 
     <!-- El reporte completo: lo que se ve en pantalla, con una columna por
-         concepto. Dentro de una planilla baja solo la suya. -->
+    concepto. Dentro de una planilla baja solo la suya. -->
     <button class="btn-exportar" (click)="exportar()" [disabled]="exportando">
       <app-icon icono="excel" [tamano]="16"></app-icon>
       {{ exportando ? 'Generando…' : 'Descargar reporte' }}
@@ -32,11 +36,13 @@
 </app-page-header>
 
 <!-- Una planilla cerrada se mira, no se toca. -->
-<div class="form-nota form-nota--alerta" *ngIf="estaCerrada">
-  <strong>Esta planilla está cerrada.</strong>
-  Ya se pagó, así que no se le pueden agregar ni sacar trabajadores. Si necesitas
-  corregir algo, ábrela desde la lista de Planillas.
-</div>
+@if (estaCerrada) {
+  <div class="form-nota form-nota--alerta">
+    <strong>Esta planilla está cerrada.</strong>
+    Ya se pagó, así que no se le pueden agregar ni sacar trabajadores. Si necesitas
+    corregir algo, ábrela desde la lista de Planillas.
+  </div>
+}
 
 <section class="panel-filtros">
   <header class="panel-filtros__cabecera">
@@ -46,15 +52,17 @@
     </div>
 
     <div class="panel-filtros__cifras">
-      <div class="cifra" *ngIf="diasDelMes" title="Días de lunes a viernes del mes: los que se le pagan a quien trabaja el mes entero">
-        <strong>{{ diasDelMes }}</strong>
-        <span>Días a pagar</span>
-      </div>
+      @if (diasDelMes) {
+        <div class="cifra" title="Días de lunes a viernes del mes: los que se le pagan a quien trabaja el mes entero">
+          <strong>{{ diasDelMes }}</strong>
+          <span>Días a pagar</span>
+        </div>
+      }
       <div class="cifra">
         <strong>{{ total | number }}</strong>
         <!-- Dentro de una planilla, sus filas son trabajadores; en la lista
-             suelta, son planillas. Decir "5 planillas" mirando a cinco
-             personas confunde. -->
+        suelta, son planillas. Decir "5 planillas" mirando a cinco
+        personas confunde. -->
         <span>{{ corridaId || modoSinAgrupar ? 'Trabajadores' : 'Planillas' }}</span>
       </div>
       <div class="cifra cifra--destacada">
@@ -65,309 +73,355 @@
   </header>
 
   <div class="panel-filtros__campos">
-    <div class="campo-filtro" *ngIf="!corridaId">
-      <label for="filtroMes">Mes</label>
-      <select id="filtroMes" class="form-control" [(ngModel)]="filtroMes" (ngModelChange)="alFiltrar()">
-        <option [ngValue]="''">Todos</option>
-        <option *ngFor="let m of meses" [ngValue]="m.value">{{ m.label }}</option>
-      </select>
-    </div>
-
-    <div class="campo-filtro campo-filtro--corto" *ngIf="!corridaId">
-      <label for="filtroAnio">Año</label>
-      <input type="number" id="filtroAnio" class="form-control" [(ngModel)]="filtroAnio"
-        (ngModelChange)="alFiltrar()" min="2000" placeholder="Todos" />
-    </div>
-
-    <div class="campo-filtro">
-      <label for="filtroEmpleado">Empleado</label>
-      <select id="filtroEmpleado" class="form-control" [(ngModel)]="filtroEmpleado" (ngModelChange)="alFiltrar()">
-        <option value="">Todos</option>
-        <option *ngFor="let e of empleados" [value]="e.id">{{ e.nombre }} {{ e.apellido }}</option>
-      </select>
-    </div>
-
-    <div class="campo-filtro" *ngIf="!corridaId">
-      <label for="filtroPeriodo">Año escolar</label>
-      <select id="filtroPeriodo" class="form-control" [(ngModel)]="filtroPeriodo" (ngModelChange)="alFiltrar()">
-        <option value="">Todos</option>
-        <option *ngFor="let p of periodos" [value]="p.id">{{ p.nombre }}</option>
-      </select>
-    </div>
-
-    <button type="button" class="btn-limpiar" [disabled]="!hayFiltros" (click)="limpiarFiltros()">
-      <app-icon icono="close" [tamano]="15"></app-icon>
-      Limpiar
-    </button>
-  </div>
-</section>
-
-<!-- Sin la acción "editar": esa pantalla solo dejaba escribir una bonificación
-     y un descuento sueltos, sin nombre ni motivo. Lo que suma o resta va por
-     conceptos, que sí quedan con su etiqueta en la boleta.
-
-     Las casillas de la izquierda solo salen dentro de una planilla abierta:
-     son para marcar a quiénes aplicarles un concepto. -->
-<app-data-table
-  [busquedaInicial]="busqueda"
-  #tablaPlanillas
-  entidad="la planilla"
-  [columnas]="columnas"
-  [seleccionable]="!!corridaId"
-  (cambioSeleccion)="alMarcar($event)"
-  [datos]="planillas"
-  [cargando]="cargando"
-  [numerarFilas]="true"
-  [paginacionServidor]="true"
-  [totalElementos]="total"
-  [pagina]="pagina"
-  (cambioPagina)="irAPagina($event)"
-  (cambioBusqueda)="buscar($event)"
-  [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'empleado.dni']"
-  [acciones]="['eliminar']"
-  [accionesPersonalizadas]="accionesExtra"
-  [filasPorPagina]="TAMANO_PAGINA"
-  [mensajeVacio]="mensajeSinFilas"
-  (eliminarFila)="eliminar($event)"
-  (accionPersonalizada)="alAccionar($event)"
->
-  <!-- El embudo: los filtros que miran al trabajador (sede, área, cargo,
-       contrato, estado). Los de arriba son los del periodo. -->
-  <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="alFiltrar()"></app-orden>
-  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
-    (cambio)="alFiltrar()"></app-filtros>
-</app-data-table>
-
-<!-- Lo que se hace con los marcados, abajo y flotando (como en Empleados). -->
-<app-barra-seleccion [cantidad]="marcados.length" singular="trabajador marcado" plural="trabajadores marcados"
-  [resumen]="resumenMarcados" [total]="total" [ocupado]="exportandoMarcados || sacandoMarcados" [marcandoTodos]="marcandoTodos"
-  (marcarTodos)="marcarTodos()" (soltar)="soltarMarcados()">
-  <button type="button" class="barra-seleccion__boton" (click)="abrirConcepto()" [disabled]="estaCerrada || exportandoMarcados || sacandoMarcados"
-    [appPista]="estaCerrada ? 'La planilla está cerrada: ábrela para agregar conceptos.' : 'Agrega un concepto (bono, descuento…) a los ' + marcados.length + ' marcado(s), en su planilla de este mes.'">
-    <app-icon icono="plus" [tamano]="16"></app-icon>
-    Aplicar concepto
-  </button>
-  <button type="button" class="barra-seleccion__boton" (click)="exportarMarcados()" [disabled]="exportandoMarcados || sacandoMarcados"
-    [appPista]="'Baja en Excel el reporte de la planilla solo con los ' + marcados.length + ' marcado(s), con todos sus conceptos.'">
-    <app-icon icono="excel" [tamano]="16"></app-icon>
-    {{ exportandoMarcados ? 'Exportando…' : 'Exportar' }}
-  </button>
-  <button type="button" class="barra-seleccion__boton" (click)="sacarMarcados()" [disabled]="estaCerrada || exportandoMarcados || sacandoMarcados"
-    [appPista]="estaCerrada ? 'La planilla está cerrada: ábrela para sacar a alguien.' : 'Saca a los marcados de esta planilla y pasan a «Sin agrupar». No borra su pago.'">
-    <app-icon icono="remove_circle" [tamano]="16"></app-icon>
-    {{ sacandoMarcados ? 'Sacando…' : 'Sacar de la planilla' }}
-  </button>
-</app-barra-seleccion>
-
-<!-- ── Generar las planillas del mes ── -->
-<app-form-modal
-  [(visible)]="modalGenerarVisible"
-  [titulo]="tituloModalAgregar"
-  ancho="640px"
-  [guardando]="generando"
-  [textoGuardar]="resultadoGeneracion ? 'Agregar más' : 'Agregar trabajadores'"
-  (guardar)="generar()"
-  (cancelar)="cerrarGenerar()"
->
-  <form [formGroup]="formGenerar" class="form-fields">
-    <p class="form-nota">
-      Se les armará la planilla de
-      <strong>{{ nombreMes(corrida?.mes ?? 0) }} {{ corrida?.anio }}</strong>,
-      que es el mes de esta planilla.
-    </p>
-
-    <app-selector-empleados
-      *ngIf="!resultadoGeneracion"
-      [empleados]="empleadosActivos"
-      [areas]="areas"
-      [cargos]="cargos"
-      [sedes]="sedes"
-      [(alcance)]="alcance"
-      [(seleccion)]="empleadosElegidos"
-    ></app-selector-empleados>
-
-    <p class="form-nota" *ngIf="!resultadoGeneracion">
-      Se creará la planilla para <strong>{{ cuantosAlcanzados }} empleado(s)</strong>,
-      con sus conceptos de ley ya calculados. A quien ya tenga planilla de ese mes
-      se le omite, así que puedes repetirlo sin duplicar nada.
-    </p>
-
-    <!-- Qué pasó con cada empleado -->
-    <ng-container *ngIf="resultadoGeneracion">
-      <div class="resumen-masivo">
-        <div class="resumen-masivo__dato" *ngIf="resultadoGeneracion.resumen.evaluados !== undefined">
-          <strong>{{ resultadoGeneracion.resumen.evaluados }}</strong>
-          <span>Evaluados</span>
-        </div>
-        <div class="resumen-masivo__dato">
-          <strong>{{ resultadoGeneracion.resumen.generadas }}</strong>
-          <span>Generadas</span>
-        </div>
-        <div class="resumen-masivo__dato">
-          <strong>{{ resultadoGeneracion.resumen.omitidas }}</strong>
-          <span>Omitidas</span>
-        </div>
-      </div>
-
-
-    <!-- Se saltó a quienes tienen el contrato vencido: no se les paga un mes
-         de más por olvido. Si siguen trabajando, se incluyen con un clic. -->
-    <div class="form-nota form-nota--accion" *ngIf="vencidos(resultadoGeneracion).length">
-      <div>
-        <strong>{{ vencidos(resultadoGeneracion).length }} con el contrato ya vencido</strong> no se agregaron.
-        Si siguen trabajando, lo mejor es renovar su contrato en su ficha; si no, darlos de baja.
-      </div>
-      <button type="button" class="btn-secondary" (click)="incluirVencidos()" [disabled]="incluyendoVencidos">
-        {{ incluyendoVencidos ? 'Incluyendo…' : 'Incluirlos igual' }}
-      </button>
-    </div>
-
-      <div class="detalle-masivo">
-        <div class="detalle-masivo__fila" *ngFor="let d of resultadoGeneracion.detalle">
-          <span>{{ d.empleado }}</span>
-          <span *ngIf="d.estado === 'generada'" class="status-badge status-badge-success">Generada</span>
-          <span *ngIf="d.estado !== 'generada'" class="detalle-masivo__motivo">{{ d.motivo }}</span>
-        </div>
-      </div>
-    </ng-container>
-  </form>
-</app-form-modal>
-
-<!-- La emisión de boletas se fue de acá: esta pantalla arma la planilla, y
-     emitir es otro trabajo con su propia pantalla (Emisión de Boletas). -->
-
-<!-- ── Meter a alguien en una planilla ── -->
-<app-form-modal
-  [(visible)]="modalMoverVisible"
-  titulo="Meter en una planilla"
-  [guardando]="moviendo"
-  textoGuardar="Mover"
-  (guardar)="confirmarMover()"
-  (cancelar)="cerrarMover()"
->
-  <div class="form-fields">
-    <p class="form-nota">
-      <strong>{{ planillaAMover ? nombreEmpleado(planillaAMover) : '' }}</strong>
-      pasará a la planilla que elijas. Su cálculo no cambia: solo se agrupa.
-    </p>
-
-    <div class="form-group">
-      <label for="destino">Planilla de destino</label>
-      <select id="destino" class="form-control" [(ngModel)]="corridaDestino">
-        <option value="">— Elige una planilla —</option>
-        <option *ngFor="let c of corridasDelMes" [value]="c.id">
-          {{ c.nombre }} ({{ c.personas ?? 0 }} trabajador(es))
-        </option>
-      </select>
-      <small class="form-ayuda" *ngIf="corridasDelMes.length">
-        Solo salen las planillas abiertas del mismo mes.
-      </small>
-      <small class="form-error" *ngIf="!corridasDelMes.length">
-        No hay ninguna planilla abierta de ese mes. Crea una primero desde la
-        pantalla de Planillas.
-      </small>
-    </div>
-  </div>
-</app-form-modal>
-
-<!-- ── Aplicar un concepto ── -->
-<app-form-modal
-  [(visible)]="modalConceptoVisible"
-  [titulo]="tituloModalConcepto"
-  ancho="680px"
-  [guardando]="aplicandoConcepto"
-  [textoGuardar]="resultadoConcepto ? 'Aplicar otro' : 'Aplicar'"
-  (guardar)="aplicarConcepto()"
-  (cancelar)="cerrarConcepto()"
->
-  <div class="form-fields">
-    <ng-container *ngIf="!resultadoConcepto">
-      <div class="form-group">
-        <label for="concepto">Concepto *</label>
-        <select id="concepto" class="form-control" [(ngModel)]="conceptoElegido"
-          (ngModelChange)="alElegirConcepto()">
-          <option value="">— Elige un concepto —</option>
-          <!-- El visto y el número dicen qué conceptos ya tiene esta planilla
-               y a cuánta gente le alcanzaron. -->
-          <optgroup *ngFor="let g of conceptosPorTipo" [label]="g.etiqueta">
-            <option *ngFor="let c of g.conceptos" [value]="c.id">{{ etiquetaConcepto(c) }}</option>
-          </optgroup>
+    @if (!corridaId) {
+      <div class="campo-filtro">
+        <label for="filtroMes">Mes</label>
+        <select id="filtroMes" class="form-control" [(ngModel)]="filtroMes" (ngModelChange)="alFiltrar()">
+          <option [ngValue]="''">Todos</option>
+          @for (m of meses; track m.value) {
+            <option [ngValue]="m.value">{{ m.label }}</option>
+          }
         </select>
-        <small class="form-ayuda" *ngIf="conceptoSeleccionado?.descripcion">
-          {{ conceptoSeleccionado?.descripcion }}
-        </small>
-        <small class="form-ayuda" *ngIf="!conceptoElegido">
-          Salen todos menos los que el sistema calcula solo por trabajador
-          (pensión, EsSalud y Renta de 5ta): esos dependen de la ficha de cada
-          quien y no se aplican en bloque.
-        </small>
+      </div>
+    }
+
+    @if (!corridaId) {
+      <div class="campo-filtro campo-filtro--corto">
+        <label for="filtroAnio">Año</label>
+        <input type="number" id="filtroAnio" class="form-control" [(ngModel)]="filtroAnio"
+          (ngModelChange)="alFiltrar()" min="2000" placeholder="Todos" />
+        </div>
+      }
+
+      <div class="campo-filtro">
+        <label for="filtroEmpleado">Empleado</label>
+        <select id="filtroEmpleado" class="form-control" [(ngModel)]="filtroEmpleado" (ngModelChange)="alFiltrar()">
+          <option value="">Todos</option>
+          @for (e of empleados; track e.id) {
+            <option [value]="e.id">{{ e.nombre }} {{ e.apellido }}</option>
+          }
+        </select>
       </div>
 
-      <div class="form-row" *ngIf="conceptoElegido">
-        <div class="form-group">
-          <label for="conceptoCalculo">¿Cómo se calcula?</label>
-          <select id="conceptoCalculo" class="form-control" [(ngModel)]="conceptoCalculo">
-            <option value="fijo">Monto fijo en soles</option>
-            <option value="porcentaje">Porcentaje del sueldo básico</option>
+      @if (!corridaId) {
+        <div class="campo-filtro">
+          <label for="filtroPeriodo">Año escolar</label>
+          <select id="filtroPeriodo" class="form-control" [(ngModel)]="filtroPeriodo" (ngModelChange)="alFiltrar()">
+            <option value="">Todos</option>
+            @for (p of periodos; track p.id) {
+              <option [value]="p.id">{{ p.nombre }}</option>
+            }
           </select>
         </div>
+      }
 
-        <div class="form-group">
-          <label for="conceptoValor">
-            {{ conceptoCalculo === 'porcentaje' ? 'Porcentaje (%)' : 'Monto (S/)' }} *
-          </label>
-          <input type="number" id="conceptoValor" class="form-control" [(ngModel)]="conceptoValor"
-            min="0" step="0.01" placeholder="0.00" />
-          <small class="form-ayuda" *ngIf="conceptoCalculo === 'porcentaje' && montoPrevisto">
-            Sobre el básico medio de esta planilla serían unos
-            <strong>S/ {{ montoPrevisto | number: '1.2-2' }}</strong>; a cada
-            trabajador se le calcula sobre el suyo.
-          </small>
-          <small class="form-ayuda" *ngIf="conceptoCalculo !== 'porcentaje'">
-            El mismo monto para todos los que alcance.
-          </small>
-        </div>
-      </div>
+      <button type="button" class="btn-limpiar" [disabled]="!hayFiltros" (click)="limpiarFiltros()">
+        <app-icon icono="close" [tamano]="15"></app-icon>
+        Limpiar
+      </button>
+    </div>
+  </section>
 
-      <app-selector-empleados
-        *ngIf="conceptoElegido"
-        [empleados]="empleadosDeLaPlanilla"
-        [areas]="areas"
-        [cargos]="cargos"
-        [sedes]="sedes"
-        [(alcance)]="alcanceConcepto"
-        [(seleccion)]="elegidosConcepto"
-      ></app-selector-empleados>
+  <!-- Sin la acción "editar": esa pantalla solo dejaba escribir una bonificación
+  y un descuento sueltos, sin nombre ni motivo. Lo que suma o resta va por
+  conceptos, que sí quedan con su etiqueta en la boleta.
 
-      <p class="form-nota" *ngIf="conceptoElegido">
-        Se le aplicará a <strong>{{ alcanceDelConcepto }} trabajador(es)</strong>
-        de {{ nombreMes(corrida?.mes ?? 0) }} {{ corrida?.anio }}.
-        A quien ya lo tenga se le actualiza el monto, no se le duplica la línea.
+  Las casillas de la izquierda solo salen dentro de una planilla abierta:
+  son para marcar a quiénes aplicarles un concepto. -->
+  <app-data-table
+    [busquedaInicial]="busqueda"
+    #tablaPlanillas
+    entidad="la planilla"
+    [columnas]="columnas"
+    [seleccionable]="!!corridaId"
+    (cambioSeleccion)="alMarcar($event)"
+    [datos]="planillas"
+    [cargando]="cargando"
+    [numerarFilas]="true"
+    [paginacionServidor]="true"
+    [totalElementos]="total"
+    [pagina]="pagina"
+    (cambioPagina)="irAPagina($event)"
+    (cambioBusqueda)="buscar($event)"
+    [camposBusqueda]="['empleado.nombre', 'empleado.apellido', 'empleado.dni']"
+    [acciones]="['eliminar']"
+    [accionesPersonalizadas]="accionesExtra"
+    [filasPorPagina]="TAMANO_PAGINA"
+    [mensajeVacio]="mensajeSinFilas"
+    (eliminarFila)="eliminar($event)"
+    (accionPersonalizada)="alAccionar($event)"
+    >
+    <!-- El embudo: los filtros que miran al trabajador (sede, área, cargo,
+    contrato, estado). Los de arriba son los del periodo. -->
+    <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="alFiltrar()"></app-orden>
+    <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
+    (cambio)="alFiltrar()"></app-filtros>
+  </app-data-table>
+
+  <!-- Lo que se hace con los marcados, abajo y flotando (como en Empleados). -->
+  <app-barra-seleccion [cantidad]="marcados.length" singular="trabajador marcado" plural="trabajadores marcados"
+    [resumen]="resumenMarcados" [total]="total" [ocupado]="exportandoMarcados || sacandoMarcados" [marcandoTodos]="marcandoTodos"
+    (marcarTodos)="marcarTodos()" (soltar)="soltarMarcados()">
+    <button type="button" class="barra-seleccion__boton" (click)="abrirConcepto()" [disabled]="estaCerrada || exportandoMarcados || sacandoMarcados"
+      [appPista]="estaCerrada ? 'La planilla está cerrada: ábrela para agregar conceptos.' : 'Agrega un concepto (bono, descuento…) a los ' + marcados.length + ' marcado(s), en su planilla de este mes.'">
+      <app-icon icono="plus" [tamano]="16"></app-icon>
+      Aplicar concepto
+    </button>
+    <button type="button" class="barra-seleccion__boton" (click)="exportarMarcados()" [disabled]="exportandoMarcados || sacandoMarcados"
+      [appPista]="'Baja en Excel el reporte de la planilla solo con los ' + marcados.length + ' marcado(s), con todos sus conceptos.'">
+      <app-icon icono="excel" [tamano]="16"></app-icon>
+      {{ exportandoMarcados ? 'Exportando…' : 'Exportar' }}
+    </button>
+    <button type="button" class="barra-seleccion__boton" (click)="sacarMarcados()" [disabled]="estaCerrada || exportandoMarcados || sacandoMarcados"
+      [appPista]="estaCerrada ? 'La planilla está cerrada: ábrela para sacar a alguien.' : 'Saca a los marcados de esta planilla y pasan a «Sin agrupar». No borra su pago.'">
+      <app-icon icono="remove_circle" [tamano]="16"></app-icon>
+      {{ sacandoMarcados ? 'Sacando…' : 'Sacar de la planilla' }}
+    </button>
+  </app-barra-seleccion>
+
+  <!-- ── Generar las planillas del mes ── -->
+  <app-form-modal
+    [(visible)]="modalGenerarVisible"
+    [titulo]="tituloModalAgregar"
+    ancho="640px"
+    [guardando]="generando"
+    [textoGuardar]="resultadoGeneracion ? 'Agregar más' : 'Agregar trabajadores'"
+    (guardar)="generar()"
+    (cancelar)="cerrarGenerar()"
+    >
+    <form [formGroup]="formGenerar" class="form-fields">
+      <p class="form-nota">
+        Se les armará la planilla de
+        <strong>{{ nombreMes(corrida?.mes ?? 0) }} {{ corrida?.anio }}</strong>,
+        que es el mes de esta planilla.
       </p>
-    </ng-container>
 
-    <!-- Qué pasó con cada uno -->
-    <ng-container *ngIf="resultadoConcepto">
-      <div class="resumen-masivo">
-        <div class="resumen-masivo__dato">
-          <strong>{{ resultadoConcepto.resumen.aplicadas }}</strong>
-          <span>Aplicadas</span>
-        </div>
-        <div class="resumen-masivo__dato">
-          <strong>{{ resultadoConcepto.resumen.omitidas }}</strong>
-          <span>Omitidas</span>
-        </div>
-      </div>
+      @if (!resultadoGeneracion) {
+        <app-selector-empleados
+          [empleados]="empleadosActivos"
+          [areas]="areas"
+          [cargos]="cargos"
+          [sedes]="sedes"
+          [(alcance)]="alcance"
+          [(seleccion)]="empleadosElegidos"
+        ></app-selector-empleados>
+      }
 
-      <div class="detalle-masivo">
-        <div class="detalle-masivo__fila" *ngFor="let d of resultadoConcepto.detalle">
-          <span>{{ d.empleado }}</span>
-          <span *ngIf="d.estado === 'aplicada'" class="status-badge status-badge-success">
-            S/ {{ d.monto | number: '1.2-2' }}
-          </span>
-          <span *ngIf="d.estado !== 'aplicada'" class="detalle-masivo__motivo">{{ d.motivo }}</span>
+      @if (!resultadoGeneracion) {
+        <p class="form-nota">
+          Se creará la planilla para <strong>{{ cuantosAlcanzados }} empleado(s)</strong>,
+          con sus conceptos de ley ya calculados. A quien ya tenga planilla de ese mes
+          se le omite, así que puedes repetirlo sin duplicar nada.
+        </p>
+      }
+
+      <!-- Qué pasó con cada empleado -->
+      @if (resultadoGeneracion) {
+        <div class="resumen-masivo">
+          @if (resultadoGeneracion.resumen.evaluados !== undefined) {
+            <div class="resumen-masivo__dato">
+              <strong>{{ resultadoGeneracion.resumen.evaluados }}</strong>
+              <span>Evaluados</span>
+            </div>
+          }
+          <div class="resumen-masivo__dato">
+            <strong>{{ resultadoGeneracion.resumen.generadas }}</strong>
+            <span>Generadas</span>
+          </div>
+          <div class="resumen-masivo__dato">
+            <strong>{{ resultadoGeneracion.resumen.omitidas }}</strong>
+            <span>Omitidas</span>
+          </div>
         </div>
+        <!-- Se saltó a quienes tienen el contrato vencido: no se les paga un mes
+        de más por olvido. Si siguen trabajando, se incluyen con un clic. -->
+        @if (vencidos(resultadoGeneracion).length) {
+          <div class="form-nota form-nota--accion">
+            <div>
+              <strong>{{ vencidos(resultadoGeneracion).length }} con el contrato ya vencido</strong> no se agregaron.
+              Si siguen trabajando, lo mejor es renovar su contrato en su ficha; si no, darlos de baja.
+            </div>
+            <button type="button" class="btn-secondary" (click)="incluirVencidos()" [disabled]="incluyendoVencidos">
+              {{ incluyendoVencidos ? 'Incluyendo…' : 'Incluirlos igual' }}
+            </button>
+          </div>
+        }
+        <div class="detalle-masivo">
+          @for (d of resultadoGeneracion.detalle; track $index) {
+            <div class="detalle-masivo__fila">
+              <span>{{ d.empleado }}</span>
+              @if (d.estado === 'generada') {
+                <span class="status-badge status-badge-success">Generada</span>
+              }
+              @if (d.estado !== 'generada') {
+                <span class="detalle-masivo__motivo">{{ d.motivo }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
+    </form>
+  </app-form-modal>
+
+  <!-- La emisión de boletas se fue de acá: esta pantalla arma la planilla, y
+  emitir es otro trabajo con su propia pantalla (Emisión de Boletas). -->
+
+  <!-- ── Meter a alguien en una planilla ── -->
+  <app-form-modal
+    [(visible)]="modalMoverVisible"
+    titulo="Meter en una planilla"
+    [guardando]="moviendo"
+    textoGuardar="Mover"
+    (guardar)="confirmarMover()"
+    (cancelar)="cerrarMover()"
+    >
+    <div class="form-fields">
+      <p class="form-nota">
+        <strong>{{ planillaAMover ? nombreEmpleado(planillaAMover) : '' }}</strong>
+        pasará a la planilla que elijas. Su cálculo no cambia: solo se agrupa.
+      </p>
+
+      <div class="form-group">
+        <label for="destino">Planilla de destino</label>
+        <select id="destino" class="form-control" [(ngModel)]="corridaDestino">
+          <option value="">— Elige una planilla —</option>
+          @for (c of corridasDelMes; track c.id) {
+            <option [value]="c.id">
+              {{ c.nombre }} ({{ c.personas ?? 0 }} trabajador(es))
+            </option>
+          }
+        </select>
+        @if (corridasDelMes.length) {
+          <small class="form-ayuda">
+            Solo salen las planillas abiertas del mismo mes.
+          </small>
+        }
+        @if (!corridasDelMes.length) {
+          <small class="form-error">
+            No hay ninguna planilla abierta de ese mes. Crea una primero desde la
+            pantalla de Planillas.
+          </small>
+        }
       </div>
-    </ng-container>
-  </div>
-</app-form-modal>
+    </div>
+  </app-form-modal>
+
+  <!-- ── Aplicar un concepto ── -->
+  <app-form-modal
+    [(visible)]="modalConceptoVisible"
+    [titulo]="tituloModalConcepto"
+    ancho="680px"
+    [guardando]="aplicandoConcepto"
+    [textoGuardar]="resultadoConcepto ? 'Aplicar otro' : 'Aplicar'"
+    (guardar)="aplicarConcepto()"
+    (cancelar)="cerrarConcepto()"
+    >
+    <div class="form-fields">
+      @if (!resultadoConcepto) {
+        <div class="form-group">
+          <label for="concepto">Concepto *</label>
+          <select id="concepto" class="form-control" [(ngModel)]="conceptoElegido"
+            (ngModelChange)="alElegirConcepto()">
+            <option value="">— Elige un concepto —</option>
+            <!-- El visto y el número dicen qué conceptos ya tiene esta planilla
+            y a cuánta gente le alcanzaron. -->
+            @for (g of conceptosPorTipo; track $index) {
+              <optgroup [label]="g.etiqueta">
+                @for (c of g.conceptos; track c.id) {
+                  <option [value]="c.id">{{ etiquetaConcepto(c) }}</option>
+                }
+              </optgroup>
+            }
+          </select>
+          @if (conceptoSeleccionado?.descripcion) {
+            <small class="form-ayuda">
+              {{ conceptoSeleccionado?.descripcion }}
+            </small>
+          }
+          @if (!conceptoElegido) {
+            <small class="form-ayuda">
+              Salen todos menos los que el sistema calcula solo por trabajador
+              (pensión, EsSalud y Renta de 5ta): esos dependen de la ficha de cada
+              quien y no se aplican en bloque.
+            </small>
+          }
+        </div>
+        @if (conceptoElegido) {
+          <div class="form-row">
+            <div class="form-group">
+              <label for="conceptoCalculo">¿Cómo se calcula?</label>
+              <select id="conceptoCalculo" class="form-control" [(ngModel)]="conceptoCalculo">
+                <option value="fijo">Monto fijo en soles</option>
+                <option value="porcentaje">Porcentaje del sueldo básico</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="conceptoValor">
+                {{ conceptoCalculo === 'porcentaje' ? 'Porcentaje (%)' : 'Monto (S/)' }} *
+              </label>
+              <input type="number" id="conceptoValor" class="form-control" [(ngModel)]="conceptoValor"
+                min="0" step="0.01" placeholder="0.00" />
+                @if (conceptoCalculo === 'porcentaje' && montoPrevisto) {
+                  <small class="form-ayuda">
+                    Sobre el básico medio de esta planilla serían unos
+                    <strong>S/ {{ montoPrevisto | number: '1.2-2' }}</strong>; a cada
+                    trabajador se le calcula sobre el suyo.
+                  </small>
+                }
+                @if (conceptoCalculo !== 'porcentaje') {
+                  <small class="form-ayuda">
+                    El mismo monto para todos los que alcance.
+                  </small>
+                }
+              </div>
+            </div>
+          }
+          @if (conceptoElegido) {
+            <app-selector-empleados
+              [empleados]="empleadosDeLaPlanilla"
+              [areas]="areas"
+              [cargos]="cargos"
+              [sedes]="sedes"
+              [(alcance)]="alcanceConcepto"
+              [(seleccion)]="elegidosConcepto"
+            ></app-selector-empleados>
+          }
+          @if (conceptoElegido) {
+            <p class="form-nota">
+              Se le aplicará a <strong>{{ alcanceDelConcepto }} trabajador(es)</strong>
+              de {{ nombreMes(corrida?.mes ?? 0) }} {{ corrida?.anio }}.
+              A quien ya lo tenga se le actualiza el monto, no se le duplica la línea.
+            </p>
+          }
+        }
+
+        <!-- Qué pasó con cada uno -->
+        @if (resultadoConcepto) {
+          <div class="resumen-masivo">
+            <div class="resumen-masivo__dato">
+              <strong>{{ resultadoConcepto.resumen.aplicadas }}</strong>
+              <span>Aplicadas</span>
+            </div>
+            <div class="resumen-masivo__dato">
+              <strong>{{ resultadoConcepto.resumen.omitidas }}</strong>
+              <span>Omitidas</span>
+            </div>
+          </div>
+          <div class="detalle-masivo">
+            @for (d of resultadoConcepto.detalle; track $index) {
+              <div class="detalle-masivo__fila">
+                <span>{{ d.empleado }}</span>
+                @if (d.estado === 'aplicada') {
+                  <span class="status-badge status-badge-success">
+                    S/ {{ d.monto | number: '1.2-2' }}
+                  </span>
+                }
+                @if (d.estado !== 'aplicada') {
+                  <span class="detalle-masivo__motivo">{{ d.motivo }}</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </app-form-modal>

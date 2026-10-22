@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -53,12 +53,7 @@ function noFutura(control: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-empleado-form',
   standalone: true,
-  imports: [IconComponent, PistaDirective,
-    CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, WizardComponent,
-    SeccionPersonalesComponent, SeccionLaboralesComponent, SeccionPlanillaComponent,
-    SeccionComplementariosComponent, SeccionAccesoComponent,
-  ],
+  imports: [IconComponent, PistaDirective, ReactiveFormsModule, PageHeaderComponent, WizardComponent, SeccionPersonalesComponent, SeccionLaboralesComponent, SeccionPlanillaComponent, SeccionComplementariosComponent, SeccionAccesoComponent],
   templateUrl: './empleado-form.component.html',
 })
 export class EmpleadoFormComponent implements OnInit, OnDestroy {

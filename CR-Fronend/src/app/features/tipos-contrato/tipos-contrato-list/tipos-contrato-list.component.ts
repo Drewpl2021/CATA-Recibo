@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { TipoContratoService, ToastService, ConfirmService } from '../../../core/services';
@@ -26,10 +26,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 @Component({
   selector: 'app-tipos-contrato-list',
   standalone: true,
-  imports: [IconComponent,
-    CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent,
-  ],
+  imports: [IconComponent, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent],
   templateUrl: './tipos-contrato-list.component.html',
 })
 export class TiposContratoListComponent implements OnInit {

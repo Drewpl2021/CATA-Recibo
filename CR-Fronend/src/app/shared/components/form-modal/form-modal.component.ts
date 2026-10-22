@@ -1,5 +1,5 @@
 import { Component, EventEmitter, HostListener, Input, OnChanges, OnDestroy, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { IconComponent } from '../icon/icon.component';
 import { AlCuerpoDirective } from '../../directives/al-cuerpo.directive';
 import { soltarFondo, tomarFondo } from '../../utils/fondo-fijo';
@@ -20,7 +20,7 @@ import { soltarFondo, tomarFondo } from '../../utils/fondo-fijo';
 @Component({
   selector: 'app-form-modal',
   standalone: true,
-  imports: [IconComponent, CommonModule, AlCuerpoDirective],
+  imports: [IconComponent, AlCuerpoDirective],
   templateUrl: './form-modal.component.html',
 })
 export class FormModalComponent implements OnChanges, OnDestroy {

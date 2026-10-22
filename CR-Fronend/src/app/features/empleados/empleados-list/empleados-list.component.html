@@ -4,7 +4,7 @@
   subtitulo="Personal del colegio. Al dar de alta a uno se le crea su cuenta de acceso."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
->
+  >
   <div headerActions class="acciones-cabecera">
     <button class="btn-primary" (click)="nuevo()">
       <app-icon icono="plus" [tamano]="16"></app-icon>
@@ -25,15 +25,17 @@
 </app-page-header>
 
 <!-- La lista de contratos vencidos: qué hacer con ellos. -->
-<div class="form-nota form-nota--aviso-contrato" *ngIf="viendoVencidos && total > 0 && !cargando" role="status">
-  <strong>{{ total === 1 ? 'Este trabajador sigue activo' : 'Estos ' + total + ' trabajadores siguen activos' }}, pero su contrato ya terminó.</strong>
-  Si sigue trabajando, renueva su contrato en su ficha (botón <em>Editar</em>, nueva fecha de cese).
-  Si ya no trabaja, con la casilla marcada pulsa <em>Dar de baja</em> en la barra de abajo: se le pondrá su fecha de fin de contrato.
-  Mientras tanto, la planilla del mes no se le arma sola.
-</div>
+@if (viendoVencidos && total > 0 && !cargando) {
+  <div class="form-nota form-nota--aviso-contrato" role="status">
+    <strong>{{ total === 1 ? 'Este trabajador sigue activo' : 'Estos ' + total + ' trabajadores siguen activos' }}, pero su contrato ya terminó.</strong>
+    Si sigue trabajando, renueva su contrato en su ficha (botón <em>Editar</em>, nueva fecha de cese).
+    Si ya no trabaja, con la casilla marcada pulsa <em>Dar de baja</em> en la barra de abajo: se le pondrá su fecha de fin de contrato.
+    Mientras tanto, la planilla del mes no se le arma sola.
+  </div>
+}
 
 <!-- Numerada y por fecha de registro: el 1 es siempre el último que se dio
-     de alta, así que al volver de "Nuevo Empleado" se ve arriba del todo. -->
+de alta, así que al volver de "Nuevo Empleado" se ve arriba del todo. -->
 <app-data-table
   #tablaEmpleados
   [busquedaInicial]="busqueda"
@@ -56,16 +58,16 @@
   mensajeVacio="Todavía no hay empleados registrados."
   (editarFila)="editar($event)"
   (accionPersonalizada)="alAccionar($event)"
->
+  >
   <!-- El embudo va junto al buscador: el texto encuentra a una persona, los
-       filtros contestan "quiénes de Jerusalén con plazo fijo". -->
+  filtros contestan "quiénes de Jerusalén con plazo fijo". -->
   <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="alFiltrar()"></app-orden>
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
-    (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogos()"></app-filtros>
+  (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogos()"></app-filtros>
 </app-data-table>
 
 <!-- Dar de baja: con su fecha. No siempre es hoy: a quien se le acabó el
-     contrato el 31/12 y se registra en enero, su cese es el 31/12. -->
+contrato el 31/12 y se registra en enero, su cese es el 31/12. -->
 <app-form-modal
   [(visible)]="bajaVisible"
   [titulo]="tituloBaja"
@@ -73,7 +75,7 @@
   [guardando]="cambiandoEstado"
   (guardar)="confirmarBaja()"
   (cancelar)="bajaVisible = false"
->
+  >
   <div class="form-fields">
     <div class="form-group">
       <label for="fechaBaja">Fecha de cese</label>
@@ -82,17 +84,23 @@
     </div>
 
     <!-- Entre los marcados hay alguien cuyo contrato ya terminó. -->
-    <label class="check-item" *ngIf="vencidosEnBaja.length && bajaEmpleados.length > 1">
-      <input type="checkbox" [(ngModel)]="usarFinDeContrato" />
-      <span *ngIf="vencidosEnBaja.length === 1">
-        A {{ vencidosEnBaja[0].nombre }} {{ vencidosEnBaja[0].apellido }}, que ya se le acabó el contrato, darlo de baja
-        en su fecha de fin ({{ fechaCorta(vencidosEnBaja[0].fecha_cese) }}) y no en la de arriba.
-      </span>
-      <span *ngIf="vencidosEnBaja.length > 1">
-        A los {{ vencidosEnBaja.length }} que ya se les acabó el contrato, darlos de baja en la fecha de fin
-        de cada uno y no en la de arriba.
-      </span>
-    </label>
+    @if (vencidosEnBaja.length && bajaEmpleados.length > 1) {
+      <label class="check-item">
+        <input type="checkbox" [(ngModel)]="usarFinDeContrato" />
+        @if (vencidosEnBaja.length === 1) {
+          <span>
+            A {{ vencidosEnBaja[0].nombre }} {{ vencidosEnBaja[0].apellido }}, que ya se le acabó el contrato, darlo de baja
+            en su fecha de fin ({{ fechaCorta(vencidosEnBaja[0].fecha_cese) }}) y no en la de arriba.
+          </span>
+        }
+        @if (vencidosEnBaja.length > 1) {
+          <span>
+            A los {{ vencidosEnBaja.length }} que ya se les acabó el contrato, darlos de baja en la fecha de fin
+            de cada uno y no en la de arriba.
+          </span>
+        }
+      </label>
+    }
 
     <p class="form-nota">
       Quedarán inactivos desde esa fecha, se cierra su contrato y su cuenta deja de entrar al sistema.
@@ -102,8 +110,8 @@
 </app-form-modal>
 
 <!-- Lo que se hace con los marcados. Flota pegada abajo mientras se baja por
-     la lista, con su propio color: arriba en la página se confundía con
-     "Importar" y "Descargar empleados" y se perdía. -->
+la lista, con su propio color: arriba en la página se confundía con
+"Importar" y "Descargar empleados" y se perdía. -->
 <app-barra-seleccion [cantidad]="marcados.length" singular="trabajador marcado" plural="trabajadores marcados"
   [resumen]="resumenMarcados" [total]="total" [ocupado]="cambiandoEstado || exportandoMarcados || enviandoAcceso" [marcandoTodos]="marcandoTodos"
   (marcarTodos)="marcarTodos()" (soltar)="soltarMarcados()">

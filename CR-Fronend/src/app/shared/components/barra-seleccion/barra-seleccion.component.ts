@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { IconComponent } from '../icon/icon.component';
 import { PistaDirective } from '../../directives/pista.directive';
 
@@ -21,30 +21,34 @@ import { PistaDirective } from '../../directives/pista.directive';
 @Component({
   selector: 'app-barra-seleccion',
   standalone: true,
-  imports: [CommonModule, IconComponent, PistaDirective],
+  imports: [IconComponent, PistaDirective],
   template: `
-    <div class="barra-seleccion" *ngIf="cantidad" role="region" [attr.aria-label]="'Acciones con los ' + plural">
-      <span class="barra-seleccion__cuenta">{{ cantidad }}</span>
-      <div class="barra-seleccion__texto">
-        <strong>{{ cantidad === 1 ? singular : plural }}</strong>
-        <span>{{ resumen }}</span>
-        <!-- Lo marcado se suma página por página; esto marca de una vez a
-             todos los que da el buscador y los filtros de ahora. -->
-        <button *ngIf="total !== null && cantidad < total" type="button" class="barra-seleccion__todos"
-          (click)="marcarTodos.emit()" [disabled]="ocupado || marcandoTodos"
-          [appPista]="'Marca también a los de las demás páginas: los ' + total + ' que salen con el buscador y los filtros de ahora.'">
-          {{ marcandoTodos ? 'Marcando…' : 'Marcar los ' + total + ' de todas las páginas' }}
-        </button>
+    @if (cantidad) {
+      <div class="barra-seleccion" role="region" [attr.aria-label]="'Acciones con los ' + plural">
+        <span class="barra-seleccion__cuenta">{{ cantidad }}</span>
+        <div class="barra-seleccion__texto">
+          <strong>{{ cantidad === 1 ? singular : plural }}</strong>
+          <span>{{ resumen }}</span>
+          <!-- Lo marcado se suma página por página; esto marca de una vez a
+          todos los que da el buscador y los filtros de ahora. -->
+          @if (total !== null && cantidad < total) {
+            <button type="button" class="barra-seleccion__todos"
+              (click)="marcarTodos.emit()" [disabled]="ocupado || marcandoTodos"
+              [appPista]="'Marca también a los de las demás páginas: los ' + total + ' que salen con el buscador y los filtros de ahora.'">
+              {{ marcandoTodos ? 'Marcando…' : 'Marcar los ' + total + ' de todas las páginas' }}
+            </button>
+          }
+        </div>
+        <div class="barra-seleccion__acciones">
+          <ng-content></ng-content>
+          <button type="button" class="barra-seleccion__cerrar" (click)="soltar.emit()" [disabled]="ocupado"
+            appPista="Desmarca a todos. No cambia nada de ellos." aria-label="Quitar la selección">
+            <app-icon icono="close" [tamano]="18"></app-icon>
+          </button>
+        </div>
       </div>
-      <div class="barra-seleccion__acciones">
-        <ng-content></ng-content>
-        <button type="button" class="barra-seleccion__cerrar" (click)="soltar.emit()" [disabled]="ocupado"
-          appPista="Desmarca a todos. No cambia nada de ellos." aria-label="Quitar la selección">
-          <app-icon icono="close" [tamano]="18"></app-icon>
-        </button>
-      </div>
-    </div>
-  `,
+    }
+    `,
 })
 export class BarraSeleccionComponent {
   @Input() cantidad = 0;

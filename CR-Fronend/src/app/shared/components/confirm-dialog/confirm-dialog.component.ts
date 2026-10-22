@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription } from 'rxjs';
 import { ConfirmService, ConfirmRequest } from '../../../core/services';
 import { IconComponent } from '../icon/icon.component';
@@ -7,7 +7,7 @@ import { IconComponent } from '../icon/icon.component';
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
-  imports: [IconComponent, CommonModule],
+  imports: [IconComponent],
   templateUrl: './confirm-dialog.component.html',
 })
 export class ConfirmDialogComponent implements OnInit, OnDestroy {

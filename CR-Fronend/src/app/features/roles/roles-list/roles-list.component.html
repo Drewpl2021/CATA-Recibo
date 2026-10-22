@@ -4,7 +4,7 @@
   subtitulo="Perfiles del sistema. El rol decide qué módulos ve cada usuario y a qué puede entrar."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
->
+  >
   <button headerActions class="btn-primary" (click)="nuevo()">
     <app-icon icono="plus" [tamano]="16"></app-icon>
     Nuevo Rol
@@ -34,32 +34,40 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrarModal()"
->
+  >
   <form [formGroup]="form" class="form-fields">
     <div class="form-group">
       <label for="nombre">Nombre *</label>
       <input type="text" id="nombre" class="form-control" formControlName="nombre" placeholder="Ej. Coordinador"
         [class.is-invalid]="invalido('nombre')" />
-      <small class="form-error" *ngIf="invalido('nombre')">
-        El nombre es obligatorio (máximo 45 caracteres).
-      </small>
-      <small class="form-ayuda" *ngIf="editandoRolDelSistema">
-        Este es el nombre interno de un rol del sistema y no se cambia: es con
-        el que el servidor decide los permisos de cada pantalla. En el sistema
-        se lee como <strong>{{ etiquetaRolEditando }}</strong>.
-      </small>
+      @if (invalido('nombre')) {
+        <small class="form-error">
+          El nombre es obligatorio (máximo 45 caracteres).
+        </small>
+      }
+      @if (editandoRolDelSistema) {
+        <small class="form-ayuda">
+          Este es el nombre interno de un rol del sistema y no se cambia: es con
+          el que el servidor decide los permisos de cada pantalla. En el sistema
+          se lee como <strong>{{ etiquetaRolEditando }}</strong>.
+        </small>
+      }
     </div>
 
     <div class="form-group">
       <label for="descripcion">Descripción</label>
       <textarea id="descripcion" class="form-control" formControlName="descripcion" rows="3"
-        placeholder="Para qué sirve este rol" [class.is-invalid]="invalido('descripcion')"></textarea>
-      <small class="form-error" *ngIf="invalido('descripcion')">Máximo 255 caracteres.</small>
+      placeholder="Para qué sirve este rol" [class.is-invalid]="invalido('descripcion')"></textarea>
+      @if (invalido('descripcion')) {
+        <small class="form-error">Máximo 255 caracteres.</small>
+      }
     </div>
 
-    <p class="form-nota" *ngIf="!rolEditando">
-      Después de crear el rol, entra a <strong>Módulos</strong> para elegir qué
-      ítems del menú verá.
-    </p>
+    @if (!rolEditando) {
+      <p class="form-nota">
+        Después de crear el rol, entra a <strong>Módulos</strong> para elegir qué
+        ítems del menú verá.
+      </p>
+    }
   </form>
 </app-form-modal>

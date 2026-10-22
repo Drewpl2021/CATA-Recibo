@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin, of, switchMap } from 'rxjs';
 
@@ -38,9 +38,12 @@ import { etiquetaRol } from '../../../shared/constants';
   selector: 'app-modulos-list',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent, IconComponent,
-  ],
+    ReactiveFormsModule,
+    PageHeaderComponent,
+    DataTableComponent,
+    FormModalComponent,
+    IconComponent
+],
   templateUrl: './modulos-list.component.html',
 })
 export class ModulosListComponent implements OnInit {

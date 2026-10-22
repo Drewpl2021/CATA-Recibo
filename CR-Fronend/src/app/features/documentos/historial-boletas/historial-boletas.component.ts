@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { DocumentoService, ToastService, EmpleadoService, BoletaService } from '../../../core/services';
 import { Documento, Empleado } from '../../../core/models';
@@ -19,7 +19,7 @@ import { nombreMes } from '../../../shared/constants';
 @Component({
   selector: 'app-historial-boletas',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageHeaderComponent, DataTableComponent],
+  imports: [FormsModule, PageHeaderComponent, DataTableComponent],
   templateUrl: './historial-boletas.component.html',
 })
 export class HistorialBoletasComponent implements OnInit {

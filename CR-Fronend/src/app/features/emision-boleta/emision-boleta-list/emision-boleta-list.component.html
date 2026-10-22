@@ -2,7 +2,7 @@
   icono="receipt"
   titulo="Emisión de Boletas"
   subtitulo="Arma la boleta de cada trabajador del mes, revisa sus conceptos y emítela. El colegio la firma digitalmente y recién entonces le llega."
->
+  >
   <div headerActions class="acciones-cabecera">
     <!-- La firma digital del mes, en su modal: el globito dice cuántas esperan. -->
     <button class="btn-secondary boton-con-cuenta" type="button" (click)="modalFirma = true" pistaLado="abajo"
@@ -12,7 +12,9 @@
       [attr.aria-label]="porFirmar ? 'Firma digital: ' + porFirmar + ' boleta(s) por firmar' : 'Firma digital'">
       <app-icon icono="signature" [tamano]="16"></app-icon>
       Firma digital
-      <span class="boton-con-cuenta__cuenta" *ngIf="porFirmar">{{ porFirmar }}</span>
+      @if (porFirmar) {
+        <span class="boton-con-cuenta__cuenta">{{ porFirmar }}</span>
+      }
     </button>
     <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo" pistaLado="abajo"
       [appPista]="'Emite de una vez la boleta de todos los que tienen planilla en ' + nombreMes(mesGlobal * 1) + ' ' + anioGlobal + ' (las ya emitidas no se repiten). Quedan esperando la firma digital del colegio: al trabajador todavía no le llega nada.'">
@@ -35,7 +37,9 @@
         <span>Días a pagar</span>
       </div>
       <div class="cifra" [title]="sinPlanilla ? 'A ' + sinPlanilla + ' trabajador(es) les falta la planilla del mes' : 'Todos tienen su planilla del mes'">
-        <strong>{{ planillasDelMes }}<small *ngIf="sinPlanilla" class="cifra__resto"> de {{ totalDelColegio }}</small></strong>
+        <strong>{{ planillasDelMes }}@if (sinPlanilla) {
+          <small class="cifra__resto"> de {{ totalDelColegio }}</small>
+        }</strong>
         <span>Con planilla</span>
       </div>
       <div class="cifra">
@@ -59,31 +63,37 @@
     <div class="campo-filtro">
       <label for="mesGlobal">Mes</label>
       <select id="mesGlobal" class="form-control" [(ngModel)]="mesGlobal" (ngModelChange)="onGlobalPeriodChange()">
-        <option *ngFor="let m of mesesDisponibles" [ngValue]="m.num">{{ m.nombre }}</option>
+        @for (m of mesesDisponibles; track $index) {
+          <option [ngValue]="m.num">{{ m.nombre }}</option>
+        }
       </select>
     </div>
 
     <div class="campo-filtro campo-filtro--corto">
       <label for="anioGlobal">Año</label>
       <select id="anioGlobal" class="form-control" [(ngModel)]="anioGlobal" (ngModelChange)="onGlobalPeriodChange()">
-        <option *ngFor="let a of aniosDisponibles" [ngValue]="a">{{ a }}</option>
+        @for (a of aniosDisponibles; track $index) {
+          <option [ngValue]="a">{{ a }}</option>
+        }
       </select>
     </div>
   </div>
 </section>
 
 <!-- El mes está sin empezar: nadie tiene planilla todavía. -->
-<div class="form-nota form-nota--accion" *ngIf="conteoListo && !cargandoEmpleados && totalDelColegio > 0 && planillasDelMes === 0">
-  <div>
-    <strong>Este mes está sin empezar.</strong>
-    No hay ninguna boleta armada para {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}.
-    Puedes armarlas todas de una vez y después corregir las que hagan falta.
+@if (conteoListo && !cargandoEmpleados && totalDelColegio > 0 && planillasDelMes === 0) {
+  <div class="form-nota form-nota--accion">
+    <div>
+      <strong>Este mes está sin empezar.</strong>
+      No hay ninguna boleta armada para {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}.
+      Puedes armarlas todas de una vez y después corregir las que hagan falta.
+    </div>
+    <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo"
+      appPista="Emite la boleta de todos los que ya tienen planilla este mes. Después puedes corregir la de cada uno.">
+      Generar la planilla del mes
+    </button>
   </div>
-  <button class="btn-primary" (click)="emitirTodasLasBoletas()" [disabled]="generandoMasivo"
-    appPista="Emite la boleta de todos los que ya tienen planilla este mes. Después puedes corregir la de cada uno.">
-    Generar la planilla del mes
-  </button>
-</div>
+}
 
 <app-data-table
   #tablaEmision
@@ -105,12 +115,12 @@
   [accionesPersonalizadas]="accionesFila"
   (accionPersonalizada)="alAccionar($event)"
   [mensajeVacio]="mensajeTabla"
->
+  >
 
   <!-- Mientras se emite, la pregunta es "¿a quién le falta?": eso ahora se
-       filtra en vez de buscarse fila por fila. -->
+  filtra en vez de buscarse fila por fila. -->
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
-    (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogos()"></app-filtros>
+  (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogos()"></app-filtros>
 </app-data-table>
 
 <!-- Lo que se hace con los marcados, abajo y flotando (como en Empleados). -->
@@ -132,460 +142,490 @@
 <!-- ============================================================ -->
 <!--  MODAL: FORMULARIO DE EMISIÓN DE BOLETA                      -->
 <!-- ============================================================ -->
-<div class="boleta-modal-overlay" *ngIf="showModal" appAlCuerpo (click)="cerrarModal()">
-  <div class="boleta-modal" (click)="$event.stopPropagation()">
-
-    <!-- HEADER DEL MODAL -->
-    <div class="modal-header">
-      <div class="modal-header-left">
-        <app-icon icono="file"></app-icon>
-        <div>
-          <h2>Emisión de Boleta de Pago</h2>
-          <span class="modal-subtitle">{{ empleadoSeleccionado?.nombre }} {{ empleadoSeleccionado?.apellido }}</span>
+@if (showModal) {
+  <div class="boleta-modal-overlay" appAlCuerpo (click)="cerrarModal()">
+    <div class="boleta-modal" (click)="$event.stopPropagation()">
+      <!-- HEADER DEL MODAL -->
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <app-icon icono="file"></app-icon>
+          <div>
+            <h2>Emisión de Boleta de Pago</h2>
+            <span class="modal-subtitle">{{ empleadoSeleccionado?.nombre }} {{ empleadoSeleccionado?.apellido }}</span>
+          </div>
         </div>
+        <button class="btn-modal-close" (click)="cerrarModal()" appPista="Cerrar" aria-label="Cerrar">
+          <app-icon icono="close" [tamano]="22"></app-icon>
+        </button>
       </div>
-      <button class="btn-modal-close" (click)="cerrarModal()" appPista="Cerrar" aria-label="Cerrar">
-        <app-icon icono="close" [tamano]="22"></app-icon>
-      </button>
-    </div>
-
-    <!-- CUERPO DEL MODAL -->
-    <div class="modal-body">
-
-      <div class="form-nota form-nota--aviso" *ngIf="modoCorrigiendo">
-        <app-icon icono="lock" [tamano]="16"></app-icon>
-        Esta boleta ya se emitió. Los cambios se guardan y el PDF archivado se actualiza,
-        pero no se vuelve a avisar al trabajador ni a "emitirla" de nuevo.
-      </div>
-
-      <!-- === SECCIÓN AZUL: Datos del Empleado (solo lectura) === -->
-      <div class="seccion-datos-empleado">
-        <div class="seccion-titulo azul">
-          <app-icon icono="person" [tamano]="15"></app-icon>
-          Datos del Trabajador
-          <span class="tag-auto">Carga automática del sistema</span>
+      <!-- CUERPO DEL MODAL -->
+      <div class="modal-body">
+        @if (modoCorrigiendo) {
+          <div class="form-nota form-nota--aviso">
+            <app-icon icono="lock" [tamano]="16"></app-icon>
+            Esta boleta ya se emitió. Los cambios se guardan y el PDF archivado se actualiza,
+            pero no se vuelve a avisar al trabajador ni a "emitirla" de nuevo.
+          </div>
+        }
+        <!-- === SECCIÓN AZUL: Datos del Empleado (solo lectura) === -->
+        <div class="seccion-datos-empleado">
+          <div class="seccion-titulo azul">
+            <app-icon icono="person" [tamano]="15"></app-icon>
+            Datos del Trabajador
+            <span class="tag-auto">Carga automática del sistema</span>
+          </div>
+          @if (empleadoSeleccionado) {
+            <div class="datos-grid">
+              <div class="dato-item"><span class="dato-label">Empleado</span><span class="dato-valor">{{ empleadoSeleccionado.nombre }} {{ empleadoSeleccionado.apellido }}</span></div>
+              <div class="dato-item"><span class="dato-label">Fecha de Ingreso</span><span class="dato-valor">{{ empleadoSeleccionado.fecha_ingreso }}</span></div>
+              <div class="dato-item"><span class="dato-label">DNI</span><span class="dato-valor">{{ empleadoSeleccionado.dni }}</span></div>
+              <div class="dato-item"><span class="dato-label">Sistema Pensiones</span><span class="dato-valor">{{ empleadoSeleccionado.sistema_pensiones || '—' }}</span></div>
+              <div class="dato-item"><span class="dato-label">AFP</span><span class="dato-valor">{{ empleadoSeleccionado.afp || '—' }}</span></div>
+              <div class="dato-item"><span class="dato-label">CUSPP</span><span class="dato-valor">{{ empleadoSeleccionado.cuspp || '—' }}</span></div>
+              <div class="dato-item"><span class="dato-label">Cargo</span><span class="dato-valor">{{ empleadoSeleccionado.cargo?.nombre || '—' }}</span></div>
+              <div class="dato-item"><span class="dato-label">Área</span><span class="dato-valor">{{ empleadoSeleccionado.area?.nombre || '—' }}</span></div>
+              <div class="dato-item"><span class="dato-label">Entidad Financiera</span><span class="dato-valor">{{ empleadoSeleccionado.entidad_financiera || '—' }}</span></div>
+              <div class="dato-item"><span class="dato-label">N° de Cuenta</span><span class="dato-valor" style="font-family: monospace; font-size: 12px;">{{ empleadoSeleccionado.numero_cuenta || '—' }}</span></div>
+            </div>
+          }
         </div>
-        <div class="datos-grid" *ngIf="empleadoSeleccionado">
-          <div class="dato-item"><span class="dato-label">Empleado</span><span class="dato-valor">{{ empleadoSeleccionado.nombre }} {{ empleadoSeleccionado.apellido }}</span></div>
-          <div class="dato-item"><span class="dato-label">Fecha de Ingreso</span><span class="dato-valor">{{ empleadoSeleccionado.fecha_ingreso }}</span></div>
-          <div class="dato-item"><span class="dato-label">DNI</span><span class="dato-valor">{{ empleadoSeleccionado.dni }}</span></div>
-          <div class="dato-item"><span class="dato-label">Sistema Pensiones</span><span class="dato-valor">{{ empleadoSeleccionado.sistema_pensiones || '—' }}</span></div>
-          <div class="dato-item"><span class="dato-label">AFP</span><span class="dato-valor">{{ empleadoSeleccionado.afp || '—' }}</span></div>
-          <div class="dato-item"><span class="dato-label">CUSPP</span><span class="dato-valor">{{ empleadoSeleccionado.cuspp || '—' }}</span></div>
-          <div class="dato-item"><span class="dato-label">Cargo</span><span class="dato-valor">{{ empleadoSeleccionado.cargo?.nombre || '—' }}</span></div>
-          <div class="dato-item"><span class="dato-label">Área</span><span class="dato-valor">{{ empleadoSeleccionado.area?.nombre || '—' }}</span></div>
-          <div class="dato-item"><span class="dato-label">Entidad Financiera</span><span class="dato-valor">{{ empleadoSeleccionado.entidad_financiera || '—' }}</span></div>
-          <div class="dato-item"><span class="dato-label">N° de Cuenta</span><span class="dato-valor" style="font-family: monospace; font-size: 12px;">{{ empleadoSeleccionado.numero_cuenta || '—' }}</span></div>
-        </div>
-      </div>
-
-      <!-- Selector de periodo -->
-      <div class="periodo-selector">
-        <div class="form-group-inline">
-          <label>Periodo:</label>
-          <span style="font-weight: 600; color: var(--text); padding: 4px 8px; background: var(--surface-hover); border-radius: 4px;">{{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</span>
-        </div>
-      </div>
-
-      <!-- === SECCIÓN ROJA: Ingresos, Descuentos, Aportaciones (editable) === -->
-      <div class="seccion-financiera">
-        <div class="seccion-titulo rojo">
-          <app-icon icono="money" [tamano]="15"></app-icon>
-          Detalle Financiero
-        </div>
-
-        <div class="tabla-financiera">
-          <!-- CABECERAS -->
-          <div class="fin-header fin-col-ingresos">INGRESOS</div>
-          <div class="fin-header fin-col-descuentos">DESCUENTOS</div>
-          <div class="fin-header fin-col-aportaciones">APORTACIONES</div>
-
-          <!-- FILAS -->
-          <div class="fin-col fin-col-ingresos">
-            <div class="fin-fila"><span class="fin-concepto">Remuneración Básica</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.remuneracionBasica" (ngModelChange)="recalcularMontosDinamicos(); programarRenta5ta()" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Bonificación por Cargo</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonificacionCargo" (ngModelChange)="recalcularMontosDinamicos(); programarRenta5ta()" min="0" step="0.01"></div>
-            <!-- Sale de "tiene hijos" en su ficha: a mano se pisaría el valor bueno. -->
-            <div class="fin-fila"><span class="fin-concepto" title="Sale de la ficha del trabajador: se le pone sola si tiene hijos a cargo">Asignación Familiar</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.asignacionFamiliar)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
-            <div class="fin-fila"><span class="fin-concepto">Vacaciones Truncas</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.vacacionesTruncas" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Gratificaciones Fiestas Patrias</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.gratificacionesFiestas" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Bonif. Extraord. Temporal</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonifExtraordTemporal" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Otros Conceptos{{ detalleOtrosIngresos ? ': ' + detalleOtrosIngresos : '' }}</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.otrosConceptosSubsidio" min="0" step="0.01"></div>
-            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraIngreso" title="Otro concepto de su planilla del mes">
-              <span class="fin-concepto">{{ c.nombre }}</span>
-              <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
-              <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
-            </div>
-            <div class="fin-fila"><span class="fin-concepto">Compensación por Tiempo de Serv.</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.compensacionTiempoServicios" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Bonificación</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonificacion" min="0" step="0.01"></div>
-
-          </div>
-
-          <div class="fin-col fin-col-descuentos">
-            <!-- Pensión: la calcula el motor según su sistema y su AFP. A mano
-                 se podría escribir un descuento que no le toca. -->
-            <div class="fin-fila"><span class="fin-concepto" title="Se calcula según su sistema de pensión y su AFP">{{ etiquetaTasa('ONP', ley?.onp, 13) }}</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.onp13)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
-            <div class="fin-fila"><span class="fin-concepto" title="Se calcula según su AFP">SPP: Fondo Pensiones</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.sppFondoPensiones)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
-            <div class="fin-fila"><span class="fin-concepto" title="1.37%, igual para todas las AFP">SPP: Prima de Seguro</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.sppPrimaSeguro)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
-            <div class="fin-fila"><span class="fin-concepto" title="Cambia según cuál sea su AFP">SPP: Comisión</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.sppComision)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
-            <div class="fin-fila"><span class="fin-concepto" title="Como el Excel de RR.HH.: lo que va a ganar en el año (enero y febrero de sus planillas, el resto proyectado, con gratificaciones) menos 7 UIT, por tramos, repartido entre los meses de marzo a diciembre. 0 si no pasa las 7 UIT.">I.R. 5ta Categoría <app-icon icono="info" [tamano]="12" style="color: var(--text-muted); margin-left: 4px;"></app-icon></span><input type="number" class="fin-input" [placeholder]="calculandoRenta ? 'Calculando…' : 'Automático'" [ngModel]="dosDecimales(formulario.ir5taCategoria)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
-            <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Alimentación</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoAlimentacion" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Bazar</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoBazar" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Descuento Autorizado - Diezmo</span><input type="number" class="fin-input" placeholder="—" [ngModel]="dosDecimales(formulario.descuentoAutorizadoDiezmo)" (ngModelChange)="formulario.descuentoAutorizadoDiezmo = $event" min="0" step="0.01"></div>
-            <div class="fin-fila"><span class="fin-concepto">Descuento Otros Conceptos{{ detalleOtrosDescuentos ? ': ' + detalleOtrosDescuentos : '' }}</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoOtros" min="0" step="0.01"></div>
-            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraDescuento" title="Otro concepto de su planilla del mes">
-              <span class="fin-concepto">{{ c.nombre }}</span>
-              <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
-              <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
-            </div>
-            <div class="fin-fila"><span class="fin-concepto">Desc. Pago Escolaridad Mensual</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoEscolaridad" min="0" step="0.01"></div>
-
-
-            <!-- ADELANTO -->
-            <div class="fin-fila adelanto-row">
-              <span class="fin-concepto adelanto-label">ADELANTO</span>
-              <input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.adelanto" min="0" step="0.01">
-            </div>
-            <div class="fin-fila fin-fila--extra adelanto-row" *ngFor="let c of conceptosExtraAdelanto" title="Otro concepto de su planilla del mes">
-              <span class="fin-concepto adelanto-label">{{ c.nombre }}</span>
-              <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
-              <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
-            </div>
-          </div>
-
-          <div class="fin-col fin-col-aportaciones">
-            <!-- Lo paga el colegio sobre la base afecta: no se escribe a mano. -->
-            <div class="fin-fila"><span class="fin-concepto" title="Lo que aporta el colegio sobre su remuneración afecta (nunca sobre menos del sueldo mínimo)">{{ etiquetaTasa('ESSALUD', ley?.essalud, 9) }}</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.essalud9)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
-            <div class="fin-fila"><span class="fin-concepto">SCTR</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sctr" min="0" step="0.01"></div>
-            <div class="fin-fila fin-fila--extra" *ngFor="let c of conceptosExtraAportacion" title="Otro concepto de su planilla del mes">
-              <span class="fin-concepto">{{ c.nombre }}</span>
-              <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
-              <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
-            </div>
-          </div>
-
-          <!-- TOTALES -->
-          <div class="fin-total fin-col-ingresos">
-            <span>TOTAL INGRESOS</span>
-            <strong>S/ {{ totalIngresos | number:'1.2-2' }}</strong>
-          </div>
-          <div class="fin-total fin-col-descuentos">
-            <span>TOTAL DESCUENTOS</span>
-            <strong>S/ {{ totalDescuentos | number:'1.2-2' }}</strong>
-          </div>
-          <div class="fin-total fin-col-aportaciones">
-            <span>TOTAL APORTES</span>
-            <strong>S/ {{ totalAportaciones | number:'1.2-2' }}</strong>
+        <!-- Selector de periodo -->
+        <div class="periodo-selector">
+          <div class="form-group-inline">
+            <label>Periodo:</label>
+            <span style="font-weight: 600; color: var(--text); padding: 4px 8px; background: var(--surface-hover); border-radius: 4px;">{{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</span>
           </div>
         </div>
-
-        <!-- Otro concepto para esta persona este mes (corbata, préstamo, bono...):
-             se guarda en su planilla y sale en la boleta bajo "Otros Conceptos". -->
-        <div class="agregar-concepto">
-          <button type="button" class="btn-secondary" *ngIf="!mostrarAgregarConcepto" (click)="abrirAgregarConcepto()"
-            appPista="Agrega a su boleta un concepto del catálogo que todavía no tiene: un bono, un descuento o un adelanto.">
-            <app-icon icono="plus" [tamano]="15"></app-icon>
-            Agregar otro concepto
+        <!-- === SECCIÓN ROJA: Ingresos, Descuentos, Aportaciones (editable) === -->
+        <div class="seccion-financiera">
+          <div class="seccion-titulo rojo">
+            <app-icon icono="money" [tamano]="15"></app-icon>
+            Detalle Financiero
+          </div>
+          <div class="tabla-financiera">
+            <!-- CABECERAS -->
+            <div class="fin-header fin-col-ingresos">INGRESOS</div>
+            <div class="fin-header fin-col-descuentos">DESCUENTOS</div>
+            <div class="fin-header fin-col-aportaciones">APORTACIONES</div>
+            <!-- FILAS -->
+            <div class="fin-col fin-col-ingresos">
+              <div class="fin-fila"><span class="fin-concepto">Remuneración Básica</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.remuneracionBasica" (ngModelChange)="recalcularMontosDinamicos(); programarRenta5ta()" min="0" step="0.01"></div>
+              <div class="fin-fila"><span class="fin-concepto">Bonificación por Cargo</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonificacionCargo" (ngModelChange)="recalcularMontosDinamicos(); programarRenta5ta()" min="0" step="0.01"></div>
+              <!-- Sale de "tiene hijos" en su ficha: a mano se pisaría el valor bueno. -->
+              <div class="fin-fila"><span class="fin-concepto" title="Sale de la ficha del trabajador: se le pone sola si tiene hijos a cargo">Asignación Familiar</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.asignacionFamiliar)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+              <div class="fin-fila"><span class="fin-concepto">Vacaciones Truncas</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.vacacionesTruncas" min="0" step="0.01"></div>
+              <div class="fin-fila"><span class="fin-concepto">Gratificaciones Fiestas Patrias</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.gratificacionesFiestas" min="0" step="0.01"></div>
+              <div class="fin-fila"><span class="fin-concepto">Bonif. Extraord. Temporal</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonifExtraordTemporal" min="0" step="0.01"></div>
+              <div class="fin-fila"><span class="fin-concepto">Otros Conceptos{{ detalleOtrosIngresos ? ': ' + detalleOtrosIngresos : '' }}</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.otrosConceptosSubsidio" min="0" step="0.01"></div>
+              @for (c of conceptosExtraIngreso; track $index) {
+                <div class="fin-fila fin-fila--extra" title="Otro concepto de su planilla del mes">
+                  <span class="fin-concepto">{{ c.nombre }}</span>
+                  <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
+                  <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
+                </div>
+              }
+              <div class="fin-fila"><span class="fin-concepto">Compensación por Tiempo de Serv.</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.compensacionTiempoServicios" min="0" step="0.01"></div>
+              <div class="fin-fila"><span class="fin-concepto">Bonificación</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.bonificacion" min="0" step="0.01"></div>
+            </div>
+            <div class="fin-col fin-col-descuentos">
+              <!-- Pensión: la calcula el motor según su sistema y su AFP. A mano
+              se podría escribir un descuento que no le toca. -->
+              <div class="fin-fila"><span class="fin-concepto" title="Se calcula según su sistema de pensión y su AFP">{{ etiquetaTasa('ONP', ley?.onp, 13) }}</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.onp13)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+              <div class="fin-fila"><span class="fin-concepto" title="Se calcula según su AFP">SPP: Fondo Pensiones</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.sppFondoPensiones)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+              <div class="fin-fila"><span class="fin-concepto" title="1.37%, igual para todas las AFP">SPP: Prima de Seguro</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.sppPrimaSeguro)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+              <div class="fin-fila"><span class="fin-concepto" title="Cambia según cuál sea su AFP">SPP: Comisión</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.sppComision)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+              <div class="fin-fila"><span class="fin-concepto" title="Como el Excel de RR.HH.: lo que va a ganar en el año (enero y febrero de sus planillas, el resto proyectado, con gratificaciones) menos 7 UIT, por tramos, repartido entre los meses de marzo a diciembre. 0 si no pasa las 7 UIT.">I.R. 5ta Categoría <app-icon icono="info" [tamano]="12" style="color: var(--text-muted); margin-left: 4px;"></app-icon></span><input type="number" class="fin-input" [placeholder]="calculandoRenta ? 'Calculando…' : 'Automático'" [ngModel]="dosDecimales(formulario.ir5taCategoria)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+              <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Alimentación</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoAlimentacion" min="0" step="0.01"></div>
+              <div class="fin-fila"><span class="fin-concepto">Descuento Serv. Bazar</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoBazar" min="0" step="0.01"></div>
+              <div class="fin-fila"><span class="fin-concepto">Descuento Autorizado - Diezmo</span><input type="number" class="fin-input" placeholder="—" [ngModel]="dosDecimales(formulario.descuentoAutorizadoDiezmo)" (ngModelChange)="formulario.descuentoAutorizadoDiezmo = $event" min="0" step="0.01"></div>
+              <div class="fin-fila"><span class="fin-concepto">Descuento Otros Conceptos{{ detalleOtrosDescuentos ? ': ' + detalleOtrosDescuentos : '' }}</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoOtros" min="0" step="0.01"></div>
+              @for (c of conceptosExtraDescuento; track $index) {
+                <div class="fin-fila fin-fila--extra" title="Otro concepto de su planilla del mes">
+                  <span class="fin-concepto">{{ c.nombre }}</span>
+                  <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
+                  <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
+                </div>
+              }
+              <div class="fin-fila"><span class="fin-concepto">Desc. Pago Escolaridad Mensual</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.descuentoEscolaridad" min="0" step="0.01"></div>
+              <!-- ADELANTO -->
+              <div class="fin-fila adelanto-row">
+                <span class="fin-concepto adelanto-label">ADELANTO</span>
+                <input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.adelanto" min="0" step="0.01">
+              </div>
+              @for (c of conceptosExtraAdelanto; track $index) {
+                <div class="fin-fila fin-fila--extra adelanto-row" title="Otro concepto de su planilla del mes">
+                  <span class="fin-concepto adelanto-label">{{ c.nombre }}</span>
+                  <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
+                  <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
+                </div>
+              }
+            </div>
+            <div class="fin-col fin-col-aportaciones">
+              <!-- Lo paga el colegio sobre la base afecta: no se escribe a mano. -->
+              <div class="fin-fila"><span class="fin-concepto" title="Lo que aporta el colegio sobre su remuneración afecta (nunca sobre menos del sueldo mínimo)">{{ etiquetaTasa('ESSALUD', ley?.essalud, 9) }}</span><input type="number" class="fin-input" placeholder="Automático" [ngModel]="dosDecimales(formulario.essalud9)" disabled style="background: var(--surface-alt); color: var(--text-muted); font-style: italic; cursor: not-allowed;"></div>
+              <div class="fin-fila"><span class="fin-concepto">SCTR</span><input type="number" class="fin-input" placeholder="—" [(ngModel)]="formulario.sctr" min="0" step="0.01"></div>
+              @for (c of conceptosExtraAportacion; track $index) {
+                <div class="fin-fila fin-fila--extra" title="Otro concepto de su planilla del mes">
+                  <span class="fin-concepto">{{ c.nombre }}</span>
+                  <input type="text" class="fin-input" [value]="'S/ ' + (c.monto | number:'1.2-2')" disabled>
+                  <button type="button" class="fin-quitar" (click)="quitarConceptoExtra(c)" [attr.aria-label]="'Quitar ' + c.nombre" title="Quitar este concepto">×</button>
+                </div>
+              }
+            </div>
+            <!-- TOTALES -->
+            <div class="fin-total fin-col-ingresos">
+              <span>TOTAL INGRESOS</span>
+              <strong>S/ {{ totalIngresos | number:'1.2-2' }}</strong>
+            </div>
+            <div class="fin-total fin-col-descuentos">
+              <span>TOTAL DESCUENTOS</span>
+              <strong>S/ {{ totalDescuentos | number:'1.2-2' }}</strong>
+            </div>
+            <div class="fin-total fin-col-aportaciones">
+              <span>TOTAL APORTES</span>
+              <strong>S/ {{ totalAportaciones | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+          <!-- Otro concepto para esta persona este mes (corbata, préstamo, bono...):
+          se guarda en su planilla y sale en la boleta bajo "Otros Conceptos". -->
+          <div class="agregar-concepto">
+            @if (!mostrarAgregarConcepto) {
+              <button type="button" class="btn-secondary" (click)="abrirAgregarConcepto()"
+                appPista="Agrega a su boleta un concepto del catálogo que todavía no tiene: un bono, un descuento o un adelanto.">
+                <app-icon icono="plus" [tamano]="15"></app-icon>
+                Agregar otro concepto
+              </button>
+            }
+            @if (mostrarAgregarConcepto) {
+              <div class="form-fields">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="nuevoConcepto">Concepto</label>
+                    <select id="nuevoConcepto" class="form-control" [(ngModel)]="nuevoConcepto.id">
+                      <option value="">— Elige el concepto —</option>
+                      @for (c of catalogoParaAgregar; track c.id) {
+                        <option [value]="c.id">{{ tipoLegible(c.tipo) }} · {{ c.nombre }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="nuevoMonto">Monto (S/)</label>
+                    <input id="nuevoMonto" type="number" class="form-control" min="0" step="0.01" placeholder="0.00" [(ngModel)]="nuevoConcepto.monto">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="nuevoDetalle">Detalle (opcional, nota interna: no sale en la boleta)</label>
+                  <input id="nuevoDetalle" type="text" class="form-control" maxlength="120" placeholder="Ej. Cobro de corbata" [(ngModel)]="nuevoConcepto.detalle">
+                </div>
+                <p class="form-ayuda">
+                  Se guarda en su planilla de este mes y sale en la boleta debajo de «Otros Conceptos».
+                  Si es para varios trabajadores, usa «Aplicar concepto» en la planilla o «Importar conceptos».
+                </p>
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                  <button type="button" class="btn-secondary" (click)="mostrarAgregarConcepto = false">Cancelar</button>
+                  <button type="button" class="btn-primary" [disabled]="guardandoConcepto" (click)="guardarNuevoConcepto()"
+                    appPista="Lo agrega a su planilla de este mes y recalcula su neto a pagar.">
+                    {{ guardandoConcepto ? 'Agregando…' : 'Agregar a su planilla' }}
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+          <!-- NETO A PAGAR -->
+          <div class="neto-a-pagar">
+            <span class="neto-label">TOTAL NETO A PAGAR</span>
+            <span class="neto-valor">S/ {{ totalNetoPagar | number:'1.2-2' }}</span>
+            <span class="neto-moneda">Soles</span>
+          </div>
+        </div>
+        <!-- === SECCIÓN AMARILLA: Firmas y Emisión === -->
+        <div class="seccion-firmas">
+          <div class="seccion-titulo amarillo">
+            <app-icon icono="shield" [tamano]="15"></app-icon>
+            Firma y entrega
+          </div>
+          <!-- Como el PDF de verdad: solo la firma digital del colegio. El
+          trabajador no firma sobre la boleta: da su conformidad aparte. -->
+          <div class="firmas-content">
+            <div class="firma-bloque">
+              <div class="firma-linea"></div>
+              <p class="firma-titulo">Firma digital del empleador</p>
+              <p class="firma-subtitulo">Colegio Adventista Túpac Amaru · en ReFirma, con el DNIe</p>
+            </div>
+          </div>
+          <p class="firma-nota">
+            {{ formulario.ciudad }}, {{ formulario.fechaEmision }}. Al recibirla, {{ empleadoSeleccionado?.nombre }}
+            da su conformidad con su contraseña.
+          </p>
+        </div>
+      </div><!-- fin modal-body -->
+      <!-- FOOTER CON BOTONES -->
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+        <!-- Corrigiendo una boleta que ya salió: solo guardar el monto y
+        refrescar el PDF archivado. Nada de "Emitir": esa boleta ya se
+        avisó una vez, y no toca avisar dos. -->
+        @if (modoCorrigiendo) {
+          <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF"
+            appPista="Guarda la corrección y vuelve a generar su boleta con los montos nuevos. Sigue esperando la firma digital del colegio.">
+            <app-icon icono="save" [tamano]="16"></app-icon>
+            {{ generandoPDF ? 'Guardando...' : 'Guardar cambios y actualizar PDF' }}
           </button>
-
-          <div class="form-fields" *ngIf="mostrarAgregarConcepto">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="nuevoConcepto">Concepto</label>
-                <select id="nuevoConcepto" class="form-control" [(ngModel)]="nuevoConcepto.id">
-                  <option value="">— Elige el concepto —</option>
-                  <option *ngFor="let c of catalogoParaAgregar" [value]="c.id">{{ tipoLegible(c.tipo) }} · {{ c.nombre }}</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="nuevoMonto">Monto (S/)</label>
-                <input id="nuevoMonto" type="number" class="form-control" min="0" step="0.01" placeholder="0.00" [(ngModel)]="nuevoConcepto.monto">
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="nuevoDetalle">Detalle (opcional, nota interna: no sale en la boleta)</label>
-              <input id="nuevoDetalle" type="text" class="form-control" maxlength="120" placeholder="Ej. Cobro de corbata" [(ngModel)]="nuevoConcepto.detalle">
-            </div>
-            <p class="form-ayuda">
-              Se guarda en su planilla de este mes y sale en la boleta debajo de «Otros Conceptos».
-              Si es para varios trabajadores, usa «Aplicar concepto» en la planilla o «Importar conceptos».
-            </p>
-            <div style="display: flex; gap: 8px; justify-content: flex-end;">
-              <button type="button" class="btn-secondary" (click)="mostrarAgregarConcepto = false">Cancelar</button>
-              <button type="button" class="btn-primary" [disabled]="guardandoConcepto" (click)="guardarNuevoConcepto()"
-              appPista="Lo agrega a su planilla de este mes y recalcula su neto a pagar.">
-                {{ guardandoConcepto ? 'Agregando…' : 'Agregar a su planilla' }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- NETO A PAGAR -->
-        <div class="neto-a-pagar">
-          <span class="neto-label">TOTAL NETO A PAGAR</span>
-          <span class="neto-valor">S/ {{ totalNetoPagar | number:'1.2-2' }}</span>
-          <span class="neto-moneda">Soles</span>
-        </div>
+        } @else {
+          <button class="btn-borrador" (click)="guardarBorrador()"
+            appPista="Guarda los conceptos en su planilla sin emitir la boleta: la puedes seguir corrigiendo.">
+            <app-icon icono="save" [tamano]="16"></app-icon>
+            Guardar Borrador
+          </button>
+          <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF"
+            appPista="Emite su boleta con estos conceptos. Queda esperando la firma digital del colegio; al trabajador le llega cuando se suba firmada.">
+            <app-icon icono="check" [tamano]="16"></app-icon>
+            {{ generandoPDF ? 'Generando PDF...' : 'Emitir Boleta Oficial' }}
+          </button>
+        }
       </div>
-
-      <!-- === SECCIÓN AMARILLA: Firmas y Emisión === -->
-      <div class="seccion-firmas">
-        <div class="seccion-titulo amarillo">
-          <app-icon icono="shield" [tamano]="15"></app-icon>
-          Firma y entrega
-        </div>
-        <!-- Como el PDF de verdad: solo la firma digital del colegio. El
-             trabajador no firma sobre la boleta: da su conformidad aparte. -->
-        <div class="firmas-content">
-          <div class="firma-bloque">
-            <div class="firma-linea"></div>
-            <p class="firma-titulo">Firma digital del empleador</p>
-            <p class="firma-subtitulo">Colegio Adventista Túpac Amaru · en ReFirma, con el DNIe</p>
-          </div>
-        </div>
-        <p class="firma-nota">
-          {{ formulario.ciudad }}, {{ formulario.fechaEmision }}. Al recibirla, {{ empleadoSeleccionado?.nombre }}
-          da su conformidad con su contraseña.
-        </p>
-      </div>
-
-    </div><!-- fin modal-body -->
-
-    <!-- FOOTER CON BOTONES -->
-    <div class="modal-footer">
-      <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
-
-      <!-- Corrigiendo una boleta que ya salió: solo guardar el monto y
-           refrescar el PDF archivado. Nada de "Emitir": esa boleta ya se
-           avisó una vez, y no toca avisar dos. -->
-      <ng-container *ngIf="modoCorrigiendo; else botonesDeEmision">
-        <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF"
-          appPista="Guarda la corrección y vuelve a generar su boleta con los montos nuevos. Sigue esperando la firma digital del colegio.">
-          <app-icon icono="save" [tamano]="16"></app-icon>
-          {{ generandoPDF ? 'Guardando...' : 'Guardar cambios y actualizar PDF' }}
-        </button>
-      </ng-container>
-
-      <ng-template #botonesDeEmision>
-        <button class="btn-borrador" (click)="guardarBorrador()"
-          appPista="Guarda los conceptos en su planilla sin emitir la boleta: la puedes seguir corrigiendo.">
-          <app-icon icono="save" [tamano]="16"></app-icon>
-          Guardar Borrador
-        </button>
-        <button class="btn-emitir-final" (click)="emitirBoleta()" [disabled]="generandoPDF"
-          appPista="Emite su boleta con estos conceptos. Queda esperando la firma digital del colegio; al trabajador le llega cuando se suba firmada.">
-          <app-icon icono="check" [tamano]="16"></app-icon>
-          {{ generandoPDF ? 'Generando PDF...' : 'Emitir Boleta Oficial' }}
-        </button>
-      </ng-template>
-    </div>
-
-  </div><!-- fin boleta-modal -->
-</div><!-- fin overlay -->
-
-<!-- Pide la clave de RR.HH./Admin antes de reabrir una boleta ya emitida -->
-<app-form-modal
-  [visible]="showPasswordModal"
-  titulo="Boleta ya emitida"
-  textoGuardar="Desbloquear y editar"
-  [guardando]="verificandoPassword"
-  (guardar)="confirmarDesbloqueo()"
-  (cancelar)="cerrarPasswordModal()"
->
-  <div class="form-fields">
-    <p class="form-nota">
-      Ya se emitió la boleta de <strong>{{ empleadoADesbloquear?.nombre }} {{ empleadoADesbloquear?.apellido }}</strong>
-      de {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}. Para corregirla de todos modos
-      (un aumento, un dato que salió mal), pon tu contraseña.
-    </p>
-    <div class="form-group">
-      <label for="passwordDesbloqueo">Tu contraseña</label>
-      <input id="passwordDesbloqueo" type="password" class="form-control" [(ngModel)]="passwordDesbloqueo"
-        placeholder="Tu contraseña" autocomplete="current-password" (keyup.enter)="confirmarDesbloqueo()" />
-      <small class="form-error" *ngIf="passwordErrorMsg">{{ passwordErrorMsg }}</small>
-    </div>
+    </div><!-- fin boleta-modal -->
   </div>
-</app-form-modal>
+  }<!-- fin overlay -->
 
-<!-- Subir las boletas firmadas por el colegio en ReFirma. -->
-<app-subir-firmadas
-  [(visible)]="modalSubirFirmadas"
-  [mes]="mesGlobal * 1"
-  [anio]="anioGlobal * 1"
-  [requeridas]="resumenFirma?.requeridas ?? 1"
-  (guardadas)="alGuardarFirmadas()"
-></app-subir-firmadas>
-
-<!-- La firma digital del mes, paso a paso, con lo que hay en cada uno. -->
-<app-form-modal
-  [(visible)]="modalFirma"
-  [titulo]="'Firma digital · ' + nombreMes(mesGlobal * 1) + ' ' + anioGlobal"
-  ancho="680px"
-  [ocultarBotonesPorDefecto]="true"
-  (cancelar)="modalFirma = false"
->
-  <p class="form-ayuda pasos-firma__intro">
-    Cada boleta le llega al trabajador recién cuando tiene
-    {{ (resumenFirma?.requeridas ?? 1) === 2 ? 'las 2 firmas' : 'la firma' }} digital del colegio. Él da su conformidad
-    con su contraseña.
-  </p>
-
-  <ol class="pasos-firma" *ngIf="resumenFirma as r">
-    <li class="pasos-firma__paso" [class.pasos-firma__paso--hecho]="r.emitidas > 0 && r.emitidas >= planillasDelMes">
-      <span class="pasos-firma__numero">1</span>
-      <div class="pasos-firma__texto">
-        <strong>Emitir las boletas</strong>
-        <span>{{ r.emitidas }} emitida(s) de {{ planillasDelMes }} con planilla.</span>
+  <!-- Pide la clave de RR.HH./Admin antes de reabrir una boleta ya emitida -->
+  <app-form-modal
+    [visible]="showPasswordModal"
+    titulo="Boleta ya emitida"
+    textoGuardar="Desbloquear y editar"
+    [guardando]="verificandoPassword"
+    (guardar)="confirmarDesbloqueo()"
+    (cancelar)="cerrarPasswordModal()"
+    >
+    <div class="form-fields">
+      <p class="form-nota">
+        Ya se emitió la boleta de <strong>{{ empleadoADesbloquear?.nombre }} {{ empleadoADesbloquear?.apellido }}</strong>
+        de {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}. Para corregirla de todos modos
+        (un aumento, un dato que salió mal), pon tu contraseña.
+      </p>
+      <div class="form-group">
+        <label for="passwordDesbloqueo">Tu contraseña</label>
+        <input id="passwordDesbloqueo" type="password" class="form-control" [(ngModel)]="passwordDesbloqueo"
+          placeholder="Tu contraseña" autocomplete="current-password" (keyup.enter)="confirmarDesbloqueo()" />
+          @if (passwordErrorMsg) {
+            <small class="form-error">{{ passwordErrorMsg }}</small>
+          }
+        </div>
       </div>
-      <button class="btn-secondary" type="button" *ngIf="r.emitidas < planillasDelMes" (click)="emitirDesdeFirma()" [disabled]="generandoMasivo"
-        [appPista]="'Emite las ' + (planillasDelMes - r.emitidas) + ' boleta(s) que faltan del mes.'">
-        Emitir
-      </button>
-    </li>
+    </app-form-modal>
 
-    <!-- Firmar: aquí con el certificado de quien mira, o con el .zip y ReFirma. Se pueden mezclar. -->
-    <li class="pasos-firma__paso pasos-firma__paso--formas" [class.pasos-firma__paso--pendiente]="porFirmar > 0">
-      <span class="pasos-firma__numero">2</span>
-      <div class="pasos-firma__texto">
-        <strong>Firmarlas</strong>
-        <span>
-          {{ porFirmar }} esperan la firma<ng-container *ngIf="r.a_medias"> ({{ r.a_medias }} con una firma de dos)</ng-container>.
-          {{ r.requeridas === 2 ? 'Cada persona firma de la forma que prefiera.' : 'De una de estas dos formas:' }}
-        </span>
+    <!-- Subir las boletas firmadas por el colegio en ReFirma. -->
+    <app-subir-firmadas
+      [(visible)]="modalSubirFirmadas"
+      [mes]="mesGlobal * 1"
+      [anio]="anioGlobal * 1"
+      [requeridas]="resumenFirma?.requeridas ?? 1"
+      (guardadas)="alGuardarFirmadas()"
+    ></app-subir-firmadas>
 
-        <div class="formas-firma">
-          <div class="forma-firma">
-            <div class="forma-firma__texto">
-              <strong>Aquí, con tu certificado</strong>
-              <span *ngIf="r.mi_certificado as c">
-                Como {{ c.nombre }}.
-                {{ c.vencido ? 'Tu certificado venció: renuévalo en Ajustes.' : c.por_firmar + ' esperan tu firma.' }}
+    <!-- La firma digital del mes, paso a paso, con lo que hay en cada uno. -->
+    <app-form-modal
+      [(visible)]="modalFirma"
+      [titulo]="'Firma digital · ' + nombreMes(mesGlobal * 1) + ' ' + anioGlobal"
+      ancho="680px"
+      [ocultarBotonesPorDefecto]="true"
+      (cancelar)="modalFirma = false"
+      >
+      <p class="form-ayuda pasos-firma__intro">
+        Cada boleta le llega al trabajador recién cuando tiene
+        {{ (resumenFirma?.requeridas ?? 1) === 2 ? 'las 2 firmas' : 'la firma' }} digital del colegio. Él da su conformidad
+        con su contraseña.
+      </p>
+
+      @if (resumenFirma; as r) {
+        <ol class="pasos-firma">
+          <li class="pasos-firma__paso" [class.pasos-firma__paso--hecho]="r.emitidas > 0 && r.emitidas >= planillasDelMes">
+            <span class="pasos-firma__numero">1</span>
+            <div class="pasos-firma__texto">
+              <strong>Emitir las boletas</strong>
+              <span>{{ r.emitidas }} emitida(s) de {{ planillasDelMes }} con planilla.</span>
+            </div>
+            @if (r.emitidas < planillasDelMes) {
+              <button class="btn-secondary" type="button" (click)="emitirDesdeFirma()" [disabled]="generandoMasivo"
+                [appPista]="'Emite las ' + (planillasDelMes - r.emitidas) + ' boleta(s) que faltan del mes.'">
+                Emitir
+              </button>
+            }
+          </li>
+          <!-- Firmar: aquí con el certificado de quien mira, o con el .zip y ReFirma. Se pueden mezclar. -->
+          <li class="pasos-firma__paso pasos-firma__paso--formas" [class.pasos-firma__paso--pendiente]="porFirmar > 0">
+            <span class="pasos-firma__numero">2</span>
+            <div class="pasos-firma__texto">
+              <strong>Firmarlas</strong>
+              <span>
+                {{ porFirmar }} esperan la firma@if (r.a_medias) {
+                ({{ r.a_medias }} con una firma de dos)
+                }.
+                {{ r.requeridas === 2 ? 'Cada persona firma de la forma que prefiera.' : 'De una de estas dos formas:' }}
               </span>
-              <span *ngIf="!r.mi_certificado">Pon tu certificado (.pfx) en Ajustes y firma todas con un botón.</span>
+              <div class="formas-firma">
+                <div class="forma-firma">
+                  <div class="forma-firma__texto">
+                    <strong>Aquí, con tu certificado</strong>
+                    @if (r.mi_certificado; as c) {
+                      <span>
+                        Como {{ c.nombre }}.
+                        {{ c.vencido ? 'Tu certificado venció: renuévalo en Ajustes.' : c.por_firmar + ' esperan tu firma.' }}
+                      </span>
+                    }
+                    @if (!r.mi_certificado) {
+                      <span>Pon tu certificado (.pfx) en Ajustes y firma todas con un botón.</span>
+                    }
+                  </div>
+                  <div class="forma-firma__botones">
+                    @if (r.mi_certificado) {
+                      <button class="btn-primary" type="button" (click)="abrirFirmarAqui()" [disabled]="!puedeFirmarAqui"
+                        [appPista]="pistaFirmarAqui">
+                        <app-icon icono="signature" [tamano]="15"></app-icon>
+                        Firmar aquí
+                      </button>
+                    }
+                    @if (!r.mi_certificado) {
+                      <a class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }"
+                        (click)="modalFirma = false"
+                        appPista="Abre Ajustes → Boletas para poner tu certificado digital (.pfx o .p12). Después firmas desde aquí.">
+                        Poner mi certificado
+                      </a>
+                    }
+                  </div>
+                </div>
+                <div class="forma-firma">
+                  <div class="forma-firma__texto">
+                    <strong>Con el DNIe en ReFirma</strong>
+                    <span>Baja el .zip, fírmalas en ReFirma{{ r.requeridas === 2 ? ' (la segunda persona, sobre los mismos archivos)' : '' }} y súbelas firmadas.</span>
+                  </div>
+                  <div class="forma-firma__botones">
+                    <button class="btn-secondary" type="button" (click)="descargarParaFirmar()" [disabled]="descargandoParaFirmar || porFirmar === 0"
+                      [appPista]="porFirmar ? 'Baja en un .zip solo las ' + porFirmar + ' boleta(s) que esperan la firma, para abrirlas en ReFirma.' : 'Este mes no hay boletas esperando la firma.'">
+                      <app-icon icono="download" [tamano]="15"></app-icon>
+                      {{ descargandoParaFirmar ? 'Juntando…' : 'Descargar .zip' }}
+                    </button>
+                    <button class="btn-secondary" type="button" (click)="abrirSubirFirmadas()"
+                      appPista="Elige los PDF que devolvió ReFirma. Se revisa cada uno antes de guardar, y al guardar se le entrega al trabajador.">
+                      <app-icon icono="upload" [tamano]="15"></app-icon>
+                      Subir firmadas
+                    </button>
+                    <a class="forma-firma__guia" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }" (click)="modalFirma = false"
+                    appPista="Abre en Ajustes la guía para preparar la computadora de quien firma: DNIe, lector de tarjetas y ReFirma.">Ver la guía</a>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="forma-firma__botones">
-              <button *ngIf="r.mi_certificado" class="btn-primary" type="button" (click)="abrirFirmarAqui()" [disabled]="!puedeFirmarAqui"
-                [appPista]="pistaFirmarAqui">
-                <app-icon icono="signature" [tamano]="15"></app-icon>
-                Firmar aquí
-              </button>
-              <a *ngIf="!r.mi_certificado" class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }"
-                (click)="modalFirma = false"
-                appPista="Abre Ajustes → Boletas para poner tu certificado digital (.pfx o .p12). Después firmas desde aquí.">
-                Poner mi certificado
-              </a>
+          </li>
+          <li class="pasos-firma__paso" [class.pasos-firma__paso--hecho]="r.entregadas > 0 && porFirmar === 0">
+            <span class="pasos-firma__numero">3</span>
+            <div class="pasos-firma__texto">
+              <strong>Entregadas</strong>
+              <span>{{ r.entregadas }} entregada(s), {{ r.conformidad }} con la conformidad del trabajador.</span>
             </div>
-          </div>
+            <button class="btn-secondary" type="button" (click)="descargarConstancia()" [disabled]="descargandoConstancia"
+              appPista="Excel del mes con cada boleta: quién la firmó por el colegio, cuándo se entregó, cuándo la abrió el trabajador y cuándo dio su conformidad.">
+              <app-icon icono="excel" [tamano]="15"></app-icon>
+              {{ descargandoConstancia ? 'Armando…' : 'Constancia' }}
+            </button>
+          </li>
+        </ol>
+      }
 
-          <div class="forma-firma">
-            <div class="forma-firma__texto">
-              <strong>Con el DNIe en ReFirma</strong>
-              <span>Baja el .zip, fírmalas en ReFirma{{ r.requeridas === 2 ? ' (la segunda persona, sobre los mismos archivos)' : '' }} y súbelas firmadas.</span>
-            </div>
-            <div class="forma-firma__botones">
-              <button class="btn-secondary" type="button" (click)="descargarParaFirmar()" [disabled]="descargandoParaFirmar || porFirmar === 0"
-                [appPista]="porFirmar ? 'Baja en un .zip solo las ' + porFirmar + ' boleta(s) que esperan la firma, para abrirlas en ReFirma.' : 'Este mes no hay boletas esperando la firma.'">
-                <app-icon icono="download" [tamano]="15"></app-icon>
-                {{ descargandoParaFirmar ? 'Juntando…' : 'Descargar .zip' }}
-              </button>
-              <button class="btn-secondary" type="button" (click)="abrirSubirFirmadas()"
-                appPista="Elige los PDF que devolvió ReFirma. Se revisa cada uno antes de guardar, y al guardar se le entrega al trabajador.">
-                <app-icon icono="upload" [tamano]="15"></app-icon>
-                Subir firmadas
-              </button>
-              <a class="forma-firma__guia" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }" (click)="modalFirma = false"
-                appPista="Abre en Ajustes la guía para preparar la computadora de quien firma: DNIe, lector de tarjetas y ReFirma.">Ver la guía</a>
-            </div>
+      <div modalFooter class="asistente-pie asistente-pie--extremos">
+        <!-- Todas las emitidas del mes, con los filtros de la tabla: firmadas o no. -->
+        <button class="btn-secondary" type="button" (click)="descargarEmitidasEnZip()" [disabled]="descargandoZip"
+          appPista="Baja en un .zip todas las boletas emitidas del mes, firmadas o no (las que ves con los filtros de la tabla).">
+          <app-icon icono="download" [tamano]="15"></app-icon>
+          {{ descargandoZip ? 'Juntando…' : 'Descargar todas (.zip)' }}
+        </button>
+        <button class="btn-primary" type="button" (click)="modalFirma = false">Cerrar</button>
+      </div>
+    </app-form-modal>
+
+    <!-- «Firmar aquí»: confirma cuántas y como quién, y pide la clave del certificado (no se guarda). -->
+    <app-form-modal [(visible)]="modalFirmarAqui" titulo="Firmar aquí" ancho="520px" [ocultarBotonesPorDefecto]="true"
+      (cancelar)="cerrarFirmarAqui()">
+      @if (!resultadoFirmarAqui && !firmandoAqui && resumenFirma?.mi_certificado; as c) {
+        <p class="firmar-aqui__resumen">
+          Vas a firmar <strong>{{ c.por_firmar }} boleta{{ c.por_firmar === 1 ? '' : 's' }} de {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</strong>
+          como <strong>{{ c.nombre }}</strong>@if (c.dni) {
+          (DNI {{ c.dni }})
+          }.
+        </p>
+        <p class="form-ayuda">
+          {{ (resumenFirma?.requeridas ?? 1) === 2
+          ? 'Las que ya tienen la otra firma le llegan al trabajador al momento; las demás esperan la segunda.'
+          : 'Cada una le llega al trabajador apenas queda firmada.' }}
+          La firma va dentro del PDF, igual que con ReFirma.
+        </p>
+        <div class="form-group">
+          <label for="clave_firmar_aqui">Clave de tu certificado</label>
+          <input type="password" id="clave_firmar_aqui" class="form-control" autocomplete="off" [(ngModel)]="claveFirmarAqui"
+            [disabled]="firmandoAqui" (keydown.enter)="firmarAqui()" aria-describedby="ayuda_clave_firmar" />
+            <small class="form-ayuda" id="ayuda_clave_firmar">La misma que pusiste al subir tu certificado. No se guarda.</small>
           </div>
+        }
+
+        <!-- Firmando, por tandas: cuántas lleva. -->
+        @if (firmandoAqui && avanceFirma; as a) {
+          <div class="progreso" role="status">
+            <p class="progreso__etapa">
+              {{ a.total ? 'Firmando las boletas con tu certificado…' : 'Abriendo tu certificado…' }}
+            </p>
+            <div class="progreso__barra"><span [style.width.%]="porcentajeFirma"></span></div>
+            <div class="progreso__cifras"><span>{{ a.hechas }} de {{ a.total || '…' }}</span><span>{{ porcentajeFirma }}%</span></div>
+          </div>
+        }
+
+        <!-- Si alguna no se pudo o se detuvo, se dice; si todo salió bien, el modal ya se cerró. -->
+        @if (resultadoFirmarAqui; as res) {
+          <p class="firmar-aqui__resumen">
+            Se firmaron <strong>{{ res.firmadas }}</strong>:
+            {{ res.entregadas }} ya le llegaron al trabajador@if (res.a_medias) {
+            , {{ res.a_medias }} esperan la otra firma
+            }.
+          </p>
+          @if (res.detenida && res.quedan > 0) {
+            <p class="form-nota">
+              Se detuvo antes de terminar: quedan {{ res.quedan }} por firmar. Lo firmado ya quedó firmado; para seguir, vuelve a «Firmar aquí».
+            </p>
+          }
+          @if (res.errores.length) {
+            <p class="form-nota">{{ res.errores.length }} no se pudieron firmar. Revisa el motivo y vuelve a intentarlo:</p>
+          }
+          @if (res.errores.length) {
+            <ul class="firmar-aqui__errores">
+              @for (e of res.errores; track $index) {
+                <li>
+                  <strong>{{ e.trabajador }}</strong>@if (e.numero) {
+                  ({{ e.numero }})
+                  }: {{ e.mensaje }}
+                </li>
+              }
+            </ul>
+          }
+        }
+
+        <div modalFooter class="asistente-pie">
+          @if (firmandoAqui) {
+            <button type="button" class="btn-secondary" (click)="detenerFirmarAqui()"
+              appPista="Termina la tanda que está firmando y se detiene. Lo ya firmado queda firmado y entregado.">
+              Detener
+            </button>
+          }
+          @if (!resultadoFirmarAqui) {
+            @if (!firmandoAqui) {
+              <button type="button" class="btn-secondary" (click)="cerrarFirmarAqui()">Cancelar</button>
+            }
+            <button type="button" class="btn-primary" (click)="firmarAqui()" [disabled]="firmandoAqui || !claveFirmarAqui"
+              [appPista]="claveFirmarAqui ? 'Firma ahora las ' + (resumenFirma?.mi_certificado?.por_firmar ?? 0) + ' boleta(s) con tu certificado.' : 'Escribe la clave de tu certificado.'">
+              <app-icon icono="signature" [tamano]="15"></app-icon>
+              {{ firmandoAqui ? 'Firmando…' : 'Firmar ' + (resumenFirma?.mi_certificado?.por_firmar ?? 0) }}
+            </button>
+          }
+          @if (resultadoFirmarAqui) {
+            <button type="button" class="btn-primary" (click)="cerrarFirmarAqui()">Cerrar</button>
+          }
         </div>
-      </div>
-    </li>
-
-    <li class="pasos-firma__paso" [class.pasos-firma__paso--hecho]="r.entregadas > 0 && porFirmar === 0">
-      <span class="pasos-firma__numero">3</span>
-      <div class="pasos-firma__texto">
-        <strong>Entregadas</strong>
-        <span>{{ r.entregadas }} entregada(s), {{ r.conformidad }} con la conformidad del trabajador.</span>
-      </div>
-      <button class="btn-secondary" type="button" (click)="descargarConstancia()" [disabled]="descargandoConstancia"
-        appPista="Excel del mes con cada boleta: quién la firmó por el colegio, cuándo se entregó, cuándo la abrió el trabajador y cuándo dio su conformidad.">
-        <app-icon icono="excel" [tamano]="15"></app-icon>
-        {{ descargandoConstancia ? 'Armando…' : 'Constancia' }}
-      </button>
-    </li>
-  </ol>
-
-  <div modalFooter class="asistente-pie asistente-pie--extremos">
-    <!-- Todas las emitidas del mes, con los filtros de la tabla: firmadas o no. -->
-    <button class="btn-secondary" type="button" (click)="descargarEmitidasEnZip()" [disabled]="descargandoZip"
-      appPista="Baja en un .zip todas las boletas emitidas del mes, firmadas o no (las que ves con los filtros de la tabla).">
-      <app-icon icono="download" [tamano]="15"></app-icon>
-      {{ descargandoZip ? 'Juntando…' : 'Descargar todas (.zip)' }}
-    </button>
-    <button class="btn-primary" type="button" (click)="modalFirma = false">Cerrar</button>
-  </div>
-</app-form-modal>
-
-<!-- «Firmar aquí»: confirma cuántas y como quién, y pide la clave del certificado (no se guarda). -->
-<app-form-modal [(visible)]="modalFirmarAqui" titulo="Firmar aquí" ancho="520px" [ocultarBotonesPorDefecto]="true"
-  (cancelar)="cerrarFirmarAqui()">
-  <ng-container *ngIf="!resultadoFirmarAqui && !firmandoAqui && resumenFirma?.mi_certificado as c">
-    <p class="firmar-aqui__resumen">
-      Vas a firmar <strong>{{ c.por_firmar }} boleta{{ c.por_firmar === 1 ? '' : 's' }} de {{ nombreMes(mesGlobal * 1) }} {{ anioGlobal }}</strong>
-      como <strong>{{ c.nombre }}</strong><ng-container *ngIf="c.dni"> (DNI {{ c.dni }})</ng-container>.
-    </p>
-    <p class="form-ayuda">
-      {{ (resumenFirma?.requeridas ?? 1) === 2
-        ? 'Las que ya tienen la otra firma le llegan al trabajador al momento; las demás esperan la segunda.'
-        : 'Cada una le llega al trabajador apenas queda firmada.' }}
-      La firma va dentro del PDF, igual que con ReFirma.
-    </p>
-    <div class="form-group">
-      <label for="clave_firmar_aqui">Clave de tu certificado</label>
-      <input type="password" id="clave_firmar_aqui" class="form-control" autocomplete="off" [(ngModel)]="claveFirmarAqui"
-        [disabled]="firmandoAqui" (keydown.enter)="firmarAqui()" aria-describedby="ayuda_clave_firmar" />
-      <small class="form-ayuda" id="ayuda_clave_firmar">La misma que pusiste al subir tu certificado. No se guarda.</small>
-    </div>
-  </ng-container>
-
-  <!-- Firmando, por tandas: cuántas lleva. -->
-  <div class="progreso" *ngIf="firmandoAqui && avanceFirma as a" role="status">
-    <p class="progreso__etapa">
-      {{ a.total ? 'Firmando las boletas con tu certificado…' : 'Abriendo tu certificado…' }}
-    </p>
-    <div class="progreso__barra"><span [style.width.%]="porcentajeFirma"></span></div>
-    <div class="progreso__cifras"><span>{{ a.hechas }} de {{ a.total || '…' }}</span><span>{{ porcentajeFirma }}%</span></div>
-  </div>
-
-  <!-- Si alguna no se pudo o se detuvo, se dice; si todo salió bien, el modal ya se cerró. -->
-  <ng-container *ngIf="resultadoFirmarAqui as res">
-    <p class="firmar-aqui__resumen">
-      Se firmaron <strong>{{ res.firmadas }}</strong>:
-      {{ res.entregadas }} ya le llegaron al trabajador<ng-container *ngIf="res.a_medias">, {{ res.a_medias }} esperan la otra firma</ng-container>.
-    </p>
-    <p class="form-nota" *ngIf="res.detenida && res.quedan > 0">
-      Se detuvo antes de terminar: quedan {{ res.quedan }} por firmar. Lo firmado ya quedó firmado; para seguir, vuelve a «Firmar aquí».
-    </p>
-    <p class="form-nota" *ngIf="res.errores.length">{{ res.errores.length }} no se pudieron firmar. Revisa el motivo y vuelve a intentarlo:</p>
-    <ul class="firmar-aqui__errores" *ngIf="res.errores.length">
-      <li *ngFor="let e of res.errores">
-        <strong>{{ e.trabajador }}</strong><ng-container *ngIf="e.numero"> ({{ e.numero }})</ng-container>: {{ e.mensaje }}
-      </li>
-    </ul>
-  </ng-container>
-
-  <div modalFooter class="asistente-pie">
-    <button *ngIf="firmandoAqui" type="button" class="btn-secondary" (click)="detenerFirmarAqui()"
-      appPista="Termina la tanda que está firmando y se detiene. Lo ya firmado queda firmado y entregado.">
-      Detener
-    </button>
-    <ng-container *ngIf="!resultadoFirmarAqui">
-      <button *ngIf="!firmandoAqui" type="button" class="btn-secondary" (click)="cerrarFirmarAqui()">Cancelar</button>
-      <button type="button" class="btn-primary" (click)="firmarAqui()" [disabled]="firmandoAqui || !claveFirmarAqui"
-        [appPista]="claveFirmarAqui ? 'Firma ahora las ' + (resumenFirma?.mi_certificado?.por_firmar ?? 0) + ' boleta(s) con tu certificado.' : 'Escribe la clave de tu certificado.'">
-        <app-icon icono="signature" [tamano]="15"></app-icon>
-        {{ firmandoAqui ? 'Firmando…' : 'Firmar ' + (resumenFirma?.mi_certificado?.por_firmar ?? 0) }}
-      </button>
-    </ng-container>
-    <button *ngIf="resultadoFirmarAqui" type="button" class="btn-primary" (click)="cerrarFirmarAqui()">Cerrar</button>
-  </div>
-</app-form-modal>
+      </app-form-modal>

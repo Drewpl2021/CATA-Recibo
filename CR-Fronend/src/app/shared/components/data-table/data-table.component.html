@@ -1,153 +1,211 @@
 <div class="section-panel">
   <!-- La barra de arriba solo existe si tiene algo dentro: sin buscador y
-       sin botones propios dejaba una franja blanca vacía sobre la tabla. -->
-  <div class="panel-header data-table-toolbar" *ngIf="hayBarraSuperior">
-    <div class="data-table-search" *ngIf="mostrarBuscador && camposBusqueda.length">
-      <app-icon icono="search" [tamano]="18" class="data-table-search-icon"></app-icon>
-      <input #campoBusqueda type="text" class="form-control" [(ngModel)]="busqueda" (ngModelChange)="onBuscar()"
-        (keydown.escape)="alPulsarEscapeEnBuscador(campoBusqueda)"
-        [placeholder]="textoBuscador" [attr.aria-label]="textoBuscador" />
-      <!-- Antes solo se salía borrando letra por letra. La primera vez que se
-           pulsa Escape limpia sin quitar el foco (se puede seguir escribiendo);
-           si ya estaba vacío, Escape suelta el foco: dos formas de "salir"
-           además del botón. -->
-      <button *ngIf="busqueda" type="button" class="data-table-search-clear" title="Borrar búsqueda"
-        aria-label="Borrar búsqueda" (click)="limpiarBusqueda(campoBusqueda)">
-        <app-icon icono="close" [tamano]="16"></app-icon>
-      </button>
-    </div>
-    <div class="data-table-toolbar-actions">
-      <ng-content select="[tableActions]"></ng-content>
-    </div>
-  </div>
+  sin botones propios dejaba una franja blanca vacía sobre la tabla. -->
+  @if (hayBarraSuperior) {
+    <div class="panel-header data-table-toolbar">
+      @if (mostrarBuscador && camposBusqueda.length) {
+        <div class="data-table-search">
+          <app-icon icono="search" [tamano]="18" class="data-table-search-icon"></app-icon>
+          <input #campoBusqueda type="text" class="form-control" [(ngModel)]="busqueda" (ngModelChange)="onBuscar()"
+            (keydown.escape)="alPulsarEscapeEnBuscador(campoBusqueda)"
+            [placeholder]="textoBuscador" [attr.aria-label]="textoBuscador" />
+            <!-- Antes solo se salía borrando letra por letra. La primera vez que se
+            pulsa Escape limpia sin quitar el foco (se puede seguir escribiendo);
+            si ya estaba vacío, Escape suelta el foco: dos formas de "salir"
+            además del botón. -->
+            @if (busqueda) {
+              <button type="button" class="data-table-search-clear" title="Borrar búsqueda"
+                aria-label="Borrar búsqueda" (click)="limpiarBusqueda(campoBusqueda)">
+                <app-icon icono="close" [tamano]="16"></app-icon>
+              </button>
+            }
+          </div>
+        }
+        <div class="data-table-toolbar-actions">
+          <ng-content select="[tableActions]"></ng-content>
+        </div>
+      </div>
+    }
 
-  <div class="table-responsive">
-    <table class="data-table"
-      [class.data-table--refrescando]="cargando && filasEnPantalla.length > 0"
-      [class.data-table--vaciando]="saliendoAVacio">
-      <thead>
-        <tr>
-          <th *ngIf="seleccionable" class="celda-marca">
-            <input type="checkbox" [checked]="todasMarcadas" (change)="alternarTodas()"
-              [attr.aria-label]="'Marcar todas las filas de esta página'" />
-          </th>
-          <th *ngIf="numerarFilas" class="celda-numero">#</th>
-          <th *ngFor="let col of columnas" [style.width]="col.ancho">{{ col.header }}</th>
-          <th *ngIf="acciones.length || accionesPersonalizadas.length" class="celda-acciones"
-            style="width: 1%; white-space: nowrap;">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Mientras llegan las filas se pinta la silueta de la tabla: tantas
-             como vayan a caber, con una celda por columna. La tabla no
-             cambia de alto cuando llegan los datos. -->
-        <tr *ngFor="let f of filasEsqueleto" class="fila-esqueleto">
-          <td *ngIf="seleccionable" class="celda-marca"></td>
-          <td *ngIf="numerarFilas" class="celda-numero">
-            <span class="esqueleto esqueleto--linea" style="width: 16px;"></span>
-          </td>
-          <td *ngFor="let col of columnas">
-            <span class="esqueleto esqueleto--linea" [style.width]="anchoEsqueleto(col)"></span>
-          </td>
-          <td *ngIf="acciones.length || accionesPersonalizadas.length" class="celda-acciones">
-            <span class="esqueleto esqueleto--linea" style="width: 60px;"></span>
-          </td>
-        </tr>
-        <tr *ngIf="!cargando && !saliendoAVacio && filasEnPantalla.length === 0">
-          <td [attr.colspan]="columnas.length + (seleccionable ? 1 : 0) + (numerarFilas ? 1 : 0) + (acciones.length || accionesPersonalizadas.length ? 1 : 0)" class="data-table-empty">
-            {{ mensajeVacio }}
-          </td>
-        </tr>
-        <tr *ngFor="let fila of filasEnPantalla; let i = index; trackBy: seguirFila" [class.fila-marcada]="estaMarcada(fila)">
-          <td *ngIf="seleccionable" class="celda-marca">
-            <input type="checkbox" [checked]="estaMarcada(fila)" (change)="alternarFila(fila)"
-              [attr.aria-label]="'Marcar esta fila'" />
-          </td>
-          <td *ngIf="numerarFilas" class="celda-numero">{{ numeroDeFila(i) }}</td>
-          <td *ngFor="let col of columnas"
-            [attr.data-titulo]="col.header"
-            [class.celda-rompe]="col.romperTexto"
-            [class.celda-monto]="col.tipo === 'moneda'">
-            <ng-container *ngIf="plantillaDe(col) as plantilla; else celdaNormal">
-              <ng-container *ngTemplateOutlet="plantilla; context: { $implicit: fila, indice: i }"></ng-container>
-            </ng-container>
-            <ng-template #celdaNormal>
-            <ng-container [ngSwitch]="col.tipo">
-              <span *ngSwitchCase="'badge'" [ngClass]="claseBadge(fila, col)">
-                {{ valorCelda(fila, col) }}
-              </span>
-              <ng-container *ngSwitchCase="'hito'">
-                <span class="hito" *ngIf="valorCelda(fila, col) as marca; else sinHito">
-                  <span class="hito__marca">
-                    <app-icon icono="check" [tamano]="11"></app-icon>
-                  </span>
-                  <span class="hito__fecha">
-                    {{ marca.split(' ')[0] }}
-                    <span class="hito__hora">{{ marca.split(' ')[1] }}</span>
-                    <span class="hito__detalle" *ngIf="col.hitoDetalle && col.hitoDetalle(fila) as detalle">
-                      {{ detalle }}
-                    </span>
-                  </span>
+    <div class="table-responsive">
+      <table class="data-table"
+        [class.data-table--refrescando]="cargando && filasEnPantalla.length > 0"
+        [class.data-table--vaciando]="saliendoAVacio">
+        <thead>
+          <tr>
+            @if (seleccionable) {
+              <th class="celda-marca">
+                <input type="checkbox" [checked]="todasMarcadas" (change)="alternarTodas()"
+                  [attr.aria-label]="'Marcar todas las filas de esta página'" />
+                </th>
+              }
+              @if (numerarFilas) {
+                <th class="celda-numero">#</th>
+              }
+              @for (col of columnas; track $index) {
+                <th [style.width]="col.ancho">{{ col.header }}</th>
+              }
+              @if (acciones.length || accionesPersonalizadas.length) {
+                <th class="celda-acciones"
+                style="width: 1%; white-space: nowrap;">Acciones</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Mientras llegan las filas se pinta la silueta de la tabla: tantas
+            como vayan a caber, con una celda por columna. La tabla no
+            cambia de alto cuando llegan los datos. -->
+            @for (f of filasEsqueleto; track $index) {
+              <tr class="fila-esqueleto">
+                @if (seleccionable) {
+                  <td class="celda-marca"></td>
+                }
+                @if (numerarFilas) {
+                  <td class="celda-numero">
+                    <span class="esqueleto esqueleto--linea" style="width: 16px;"></span>
+                  </td>
+                }
+                @for (col of columnas; track $index) {
+                  <td>
+                    <span class="esqueleto esqueleto--linea" [style.width]="anchoEsqueleto(col)"></span>
+                  </td>
+                }
+                @if (acciones.length || accionesPersonalizadas.length) {
+                  <td class="celda-acciones">
+                    <span class="esqueleto esqueleto--linea" style="width: 60px;"></span>
+                  </td>
+                }
+              </tr>
+            }
+            @if (!cargando && !saliendoAVacio && filasEnPantalla.length === 0) {
+              <tr>
+                <td [attr.colspan]="columnas.length + (seleccionable ? 1 : 0) + (numerarFilas ? 1 : 0) + (acciones.length || accionesPersonalizadas.length ? 1 : 0)" class="data-table-empty">
+                  {{ mensajeVacio }}
+                </td>
+              </tr>
+            }
+            @for (fila of filasEnPantalla; track seguirFila(i, fila); let i = $index) {
+              <tr [class.fila-marcada]="estaMarcada(fila)">
+                @if (seleccionable) {
+                  <td class="celda-marca">
+                    <input type="checkbox" [checked]="estaMarcada(fila)" (change)="alternarFila(fila)"
+                      [attr.aria-label]="'Marcar esta fila'" />
+                    </td>
+                  }
+                  @if (numerarFilas) {
+                    <td class="celda-numero">{{ numeroDeFila(i) }}</td>
+                  }
+                  @for (col of columnas; track $index) {
+                    <td
+                      [attr.data-titulo]="col.header"
+                      [class.celda-rompe]="col.romperTexto"
+                      [class.celda-monto]="col.tipo === 'moneda'">
+                      @if (plantillaDe(col); as plantilla) {
+                        <ng-container *ngTemplateOutlet="plantilla; context: { $implicit: fila, indice: i }"></ng-container>
+                      } @else {
+                        @switch (col.tipo) {
+                          @case ('badge') {
+                            <span [ngClass]="claseBadge(fila, col)">
+                              {{ valorCelda(fila, col) }}
+                            </span>
+                          }
+                          @case ('hito') {
+                            @if (valorCelda(fila, col); as marca) {
+                              <span class="hito">
+                                <span class="hito__marca">
+                                  <app-icon icono="check" [tamano]="11"></app-icon>
+                                </span>
+                                <span class="hito__fecha">
+                                  {{ marca.split(' ')[0] }}
+                                  <span class="hito__hora">{{ marca.split(' ')[1] }}</span>
+                                  @if (col.hitoDetalle && col.hitoDetalle(fila); as detalle) {
+                                    <span class="hito__detalle">
+                                      {{ detalle }}
+                                    </span>
+                                  }
+                                </span>
+                              </span>
+                            } @else {
+                              <span class="hito--pendiente">—</span>
+                            }
+                          }
+                          @case ('icono') {
+                            <span class="celda-icono">
+                              <app-icon [icono]="valorCelda(fila, col)" [tamano]="20"></app-icon>
+                              <code>{{ valorCelda(fila, col) ?? '—' }}</code>
+                            </span>
+                          }
+                          @default {
+                            {{ valorCelda(fila, col) ?? '—' }}
+                          }
+                        }
+                      }
+                    </td>
+                  }
+                  @if (acciones.length || accionesPersonalizadas.length) {
+                    <td class="celda-acciones">
+                      <div class="action-btns">
+                        @for (extra of accionesVisibles(fila); track seguirAccion($index, extra)) {
+                          <button
+                            class="btn-icon-accion" [ngClass]="'btn-icon-' + (extra.severidad || 'brand')"
+                            [class.btn-icon-accion--con-texto]="!!extra.etiqueta"
+                            [appPista]="extra.titulo" [attr.aria-label]="extra.titulo"
+                            (click)="accionPersonalizada.emit({ accion: extra.id, fila })">
+                            <app-icon [icono]="extra.icono" [tamano]="19"></app-icon>
+                            @if (extra.etiqueta) {
+                              <span>{{ extra.etiqueta }}</span>
+                            }
+                          </button>
+                        }
+                        @if (acciones.includes('ver')) {
+                          <button class="btn-icon-blue"
+                            [appPista]="pistaVer" [attr.aria-label]="pistaVer" (click)="verFila.emit(fila)">
+                            <app-icon icono="eye" [tamano]="19"></app-icon>
+                          </button>
+                        }
+                        @if (acciones.includes('editar')) {
+                          <button class="btn-icon-blue"
+                            [appPista]="pistaEditar" [attr.aria-label]="pistaEditar" (click)="editarFila.emit(fila)">
+                            <app-icon icono="edit" [tamano]="19"></app-icon>
+                          </button>
+                        }
+                        @if (acciones.includes('eliminar')) {
+                          <button class="btn-icon-red"
+                            [appPista]="pistaEliminar" [attr.aria-label]="pistaEliminar" (click)="eliminarFila.emit(fila)">
+                            <app-icon icono="trash" [tamano]="19"></app-icon>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (totalPaginas > 1) {
+          <div class="data-table-pagination">
+            <span class="data-table-pagination-info">{{ mostrandoDesde }}–{{ mostrandoHasta }} de {{ totalRegistros }}</span>
+            <div class="data-table-pagination-btns">
+              <button class="btn-secondary" [disabled]="paginaActual === 1" (click)="irAPagina(paginaActual - 1)">Anterior</button>
+              <span class="data-table-pagination-current">
+                Página
+                <input
+                  type="number"
+                  class="form-control data-table-pagination-input"
+                  [ngModel]="paginaEscrita"
+                  (ngModelChange)="paginaEscrita = $event"
+                  (keydown.enter)="irAPaginaEscrita(paginaEscrita)"
+                  (blur)="irAPaginaEscrita(paginaEscrita)"
+                  min="1"
+                  [max]="totalPaginas"
+                  [attr.aria-label]="'Ir a la página, de ' + totalPaginas + ' en total'"
+                  />
+                  de {{ totalPaginas }}
                 </span>
-                <ng-template #sinHito><span class="hito--pendiente">—</span></ng-template>
-              </ng-container>
-              <span *ngSwitchCase="'icono'" class="celda-icono">
-                <app-icon [icono]="valorCelda(fila, col)" [tamano]="20"></app-icon>
-                <code>{{ valorCelda(fila, col) ?? '—' }}</code>
-              </span>
-              <ng-container *ngSwitchDefault>{{ valorCelda(fila, col) ?? '—' }}</ng-container>
-            </ng-container>
-            </ng-template>
-          </td>
-          <td *ngIf="acciones.length || accionesPersonalizadas.length" class="celda-acciones">
-            <div class="action-btns">
-              <button *ngFor="let extra of accionesVisibles(fila); trackBy: seguirAccion"
-                class="btn-icon-accion" [ngClass]="'btn-icon-' + (extra.severidad || 'brand')"
-                [class.btn-icon-accion--con-texto]="!!extra.etiqueta"
-                [appPista]="extra.titulo" [attr.aria-label]="extra.titulo"
-                (click)="accionPersonalizada.emit({ accion: extra.id, fila })">
-                <app-icon [icono]="extra.icono" [tamano]="19"></app-icon>
-                <span *ngIf="extra.etiqueta">{{ extra.etiqueta }}</span>
-              </button>
-              <button *ngIf="acciones.includes('ver')" class="btn-icon-blue"
-                [appPista]="pistaVer" [attr.aria-label]="pistaVer" (click)="verFila.emit(fila)">
-                <app-icon icono="eye" [tamano]="19"></app-icon>
-              </button>
-              <button *ngIf="acciones.includes('editar')" class="btn-icon-blue"
-                [appPista]="pistaEditar" [attr.aria-label]="pistaEditar" (click)="editarFila.emit(fila)">
-                <app-icon icono="edit" [tamano]="19"></app-icon>
-              </button>
-              <button *ngIf="acciones.includes('eliminar')" class="btn-icon-red"
-                [appPista]="pistaEliminar" [attr.aria-label]="pistaEliminar" (click)="eliminarFila.emit(fila)">
-                <app-icon icono="trash" [tamano]="19"></app-icon>
-              </button>
+                <button class="btn-secondary" [disabled]="paginaActual === totalPaginas" (click)="irAPagina(paginaActual + 1)">Siguiente</button>
+              </div>
             </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="data-table-pagination" *ngIf="totalPaginas > 1">
-    <span class="data-table-pagination-info">{{ mostrandoDesde }}–{{ mostrandoHasta }} de {{ totalRegistros }}</span>
-    <div class="data-table-pagination-btns">
-      <button class="btn-secondary" [disabled]="paginaActual === 1" (click)="irAPagina(paginaActual - 1)">Anterior</button>
-      <span class="data-table-pagination-current">
-        Página
-        <input
-          type="number"
-          class="form-control data-table-pagination-input"
-          [ngModel]="paginaEscrita"
-          (ngModelChange)="paginaEscrita = $event"
-          (keydown.enter)="irAPaginaEscrita(paginaEscrita)"
-          (blur)="irAPaginaEscrita(paginaEscrita)"
-          min="1"
-          [max]="totalPaginas"
-          [attr.aria-label]="'Ir a la página, de ' + totalPaginas + ' en total'"
-        />
-        de {{ totalPaginas }}
-      </span>
-      <button class="btn-secondary" [disabled]="paginaActual === totalPaginas" (click)="irAPagina(paginaActual + 1)">Siguiente</button>
-    </div>
-  </div>
-</div>
+          }
+        </div>

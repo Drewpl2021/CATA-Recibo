@@ -1,5 +1,5 @@
 import { Component, Input, OnChanges, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { getIconPath, resolverIconoModulo } from '../../icons/icon-map';
 
@@ -24,7 +24,7 @@ import { getIconPath, resolverIconoModulo } from '../../icons/icon-map';
 @Component({
   selector: 'app-icon',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   template: `
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { PdfViewerModule } from 'ng2-pdf-viewer';
 
 /**
@@ -16,17 +16,18 @@ import { PdfViewerModule } from 'ng2-pdf-viewer';
 @Component({
   selector: 'app-visor-pdf',
   standalone: true,
-  imports: [CommonModule, PdfViewerModule],
+  imports: [PdfViewerModule],
   template: `
-    <pdf-viewer
-      *ngIf="src"
-      [src]="src"
-      [render-text]="true"
-      [original-size]="false"
-      [fit-to-page]="true"
-      style="display: block; width: 100%; height: 100%;"
-    ></pdf-viewer>
-  `,
+    @if (src) {
+      <pdf-viewer
+        [src]="src"
+        [render-text]="true"
+        [original-size]="false"
+        [fit-to-page]="true"
+        style="display: block; width: 100%; height: 100%;"
+      ></pdf-viewer>
+    }
+    `,
   styles: `
     /* Sin esto el host es "inline" por defecto: el height:100% de adentro
        no tiene contra qué medirse y el visor queda con 0 de alto —

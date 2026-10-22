@@ -20,15 +20,19 @@
 
   <!-- ══ En pocas palabras ══ -->
   <section class="privacidad__resumen" aria-label="En pocas palabras">
-    <article class="privacidad__promesa" *ngFor="let r of resumen">
-      <span class="privacidad__icono"><app-icon [icono]="r.icono" [tamano]="22"></app-icon></span>
-      <h2>{{ r.titulo }}</h2>
-      <p>{{ r.texto }}</p>
-    </article>
+    @for (r of resumen; track $index) {
+      <article class="privacidad__promesa">
+        <span class="privacidad__icono"><app-icon [icono]="r.icono" [tamano]="22"></app-icon></span>
+        <h2>{{ r.titulo }}</h2>
+        <p>{{ r.texto }}</p>
+      </article>
+    }
   </section>
 
   <nav class="privacidad__indice" aria-label="Contenido">
-    <a *ngFor="let s of secciones" [href]="'#' + s.id">{{ s.titulo }}</a>
+    @for (s of secciones; track s.id) {
+      <a [href]="'#' + s.id">{{ s.titulo }}</a>
+    }
   </nav>
 
   <main class="privacidad__cuerpo">
@@ -38,13 +42,17 @@
       <h2>Qué datos tenemos</h2>
       <p class="privacidad__intro">Los que hacen falta para pagarte y llevar tu expediente laboral.</p>
       <div class="privacidad__rejilla privacidad__rejilla--cuatro">
-        <article class="privacidad__ficha" *ngFor="let d of datos">
-          <span class="privacidad__icono privacidad__icono--chico"><app-icon [icono]="d.icono" [tamano]="18"></app-icon></span>
-          <h3>{{ d.titulo }}</h3>
-          <ul>
-            <li *ngFor="let i of d.items">{{ i }}</li>
-          </ul>
-        </article>
+        @for (d of datos; track $index) {
+          <article class="privacidad__ficha">
+            <span class="privacidad__icono privacidad__icono--chico"><app-icon [icono]="d.icono" [tamano]="18"></app-icon></span>
+            <h3>{{ d.titulo }}</h3>
+            <ul>
+              @for (i of d.items; track $index) {
+                <li>{{ i }}</li>
+              }
+            </ul>
+          </article>
+        }
       </div>
     </section>
 
@@ -55,13 +63,17 @@
         <article class="privacidad__lista privacidad__lista--si">
           <h3>Sí los usamos para</h3>
           <ul>
-            <li *ngFor="let u of usosSi"><app-icon icono="check_circle" [tamano]="18"></app-icon><span>{{ u }}</span></li>
+            @for (u of usosSi; track $index) {
+              <li><app-icon icono="check_circle" [tamano]="18"></app-icon><span>{{ u }}</span></li>
+            }
           </ul>
         </article>
         <article class="privacidad__lista privacidad__lista--no">
           <h3>Nunca los usamos para</h3>
           <ul>
-            <li *ngFor="let u of usosNo"><app-icon icono="circle_x" [tamano]="18"></app-icon><span>{{ u }}</span></li>
+            @for (u of usosNo; track $index) {
+              <li><app-icon icono="circle_x" [tamano]="18"></app-icon><span>{{ u }}</span></li>
+            }
           </ul>
         </article>
       </div>
@@ -72,13 +84,15 @@
       <h2>Quién los ve</h2>
       <p class="privacidad__intro">Cada cuenta ve solo lo que le toca según su función.</p>
       <ul class="privacidad__quienes">
-        <li *ngFor="let q of quienes">
-          <span class="privacidad__icono privacidad__icono--chico"><app-icon [icono]="q.icono" [tamano]="18"></app-icon></span>
-          <div>
-            <h3>{{ q.titulo }}</h3>
-            <p>{{ q.texto }}</p>
-          </div>
-        </li>
+        @for (q of quienes; track $index) {
+          <li>
+            <span class="privacidad__icono privacidad__icono--chico"><app-icon [icono]="q.icono" [tamano]="18"></app-icon></span>
+            <div>
+              <h3>{{ q.titulo }}</h3>
+              <p>{{ q.texto }}</p>
+            </div>
+          </li>
+        }
       </ul>
     </section>
 
@@ -86,11 +100,13 @@
     <section class="privacidad__seccion" id="cuidado">
       <h2>Cómo los cuidamos</h2>
       <div class="privacidad__rejilla privacidad__rejilla--tres">
-        <article class="privacidad__ficha" *ngFor="let c of cuidados">
-          <span class="privacidad__icono privacidad__icono--chico"><app-icon [icono]="c.icono" [tamano]="18"></app-icon></span>
-          <h3>{{ c.titulo }}</h3>
-          <p>{{ c.texto }}</p>
-        </article>
+        @for (c of cuidados; track $index) {
+          <article class="privacidad__ficha">
+            <span class="privacidad__icono privacidad__icono--chico"><app-icon [icono]="c.icono" [tamano]="18"></app-icon></span>
+            <h3>{{ c.titulo }}</h3>
+            <p>{{ c.texto }}</p>
+          </article>
+        }
       </div>
       <p class="privacidad__aparte">
         <app-icon icono="clock" [tamano]="18"></app-icon>
@@ -108,11 +124,13 @@
         Te los da la Ley N.° 29733, de Protección de Datos Personales. Puedes pedir:
       </p>
       <div class="privacidad__rejilla privacidad__rejilla--cuatro">
-        <article class="privacidad__derecho" *ngFor="let d of derechos">
-          <span class="privacidad__icono"><app-icon [icono]="d.icono" [tamano]="20"></app-icon></span>
-          <h3>{{ d.titulo }}</h3>
-          <p>{{ d.texto }}</p>
-        </article>
+        @for (d of derechos; track $index) {
+          <article class="privacidad__derecho">
+            <span class="privacidad__icono"><app-icon [icono]="d.icono" [tamano]="20"></app-icon></span>
+            <h3>{{ d.titulo }}</h3>
+            <p>{{ d.texto }}</p>
+          </article>
+        }
       </div>
       <p class="privacidad__aparte">
         <app-icon icono="mail" [tamano]="18"></app-icon>
@@ -142,7 +160,9 @@
         <summary>¿Y qué guarda tu navegador?</summary>
         <p>Solo lo indispensable para que el sistema funcione. Nada de esto sirve para seguirte:</p>
         <ul>
-          <li *ngFor="let n of navegador">{{ n }}</li>
+          @for (n of navegador; track $index) {
+            <li>{{ n }}</li>
+          }
         </ul>
       </details>
     </section>

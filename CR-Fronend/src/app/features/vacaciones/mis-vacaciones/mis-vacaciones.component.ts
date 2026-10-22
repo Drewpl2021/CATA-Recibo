@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { VacacionService, ToastService, ConfirmService, AuthService } from '../../../core/services';
@@ -27,10 +27,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 @Component({
   selector: 'app-mis-vacaciones',
   standalone: true,
-  imports: [IconComponent, 
-    CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent,
-  ],
+  imports: [IconComponent, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent],
   templateUrl: './mis-vacaciones.component.html',
 })
 export class MisVacacionesComponent implements OnInit {

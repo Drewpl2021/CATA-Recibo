@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormGroup } from '@angular/forms';
 import { IconComponent } from '../icon/icon.component';
 import { PasoWizard } from './wizard.models';
@@ -20,7 +20,7 @@ import { PasoWizard } from './wizard.models';
 @Component({
   selector: 'app-wizard',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [IconComponent],
   templateUrl: './wizard.component.html',
 })
 export class WizardComponent {

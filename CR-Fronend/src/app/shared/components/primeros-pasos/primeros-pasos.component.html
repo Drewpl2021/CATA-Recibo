@@ -1,39 +1,43 @@
-<div class="pasos" *ngIf="guia">
-  <header class="pasos__cabecera">
-    <div class="pasos__titulos">
-      <h2 class="pasos__titulo">Primeros pasos</h2>
-      <p class="pasos__intro">{{ intro }}</p>
-    </div>
-    <span class="pasos__cifra">{{ guia.hechos }} de {{ guia.total }} listos</span>
-  </header>
-
-  <div class="pasos__barra" role="progressbar" [attr.aria-valuenow]="guia.hechos"
-    aria-valuemin="0" [attr.aria-valuemax]="guia.total">
-    <span [style.width.%]="avance"></span>
-  </div>
-
-  <ol class="pasos__lista" *ngIf="pendientes.length">
-    <li class="pasos__paso" *ngFor="let paso of pendientes">
-      <span class="pasos__numero" aria-hidden="true">{{ paso.numero }}</span>
-
-      <div class="pasos__texto">
-        <strong>{{ paso.titulo }}</strong>
-        <span>{{ paso.detalle }}</span>
+@if (guia) {
+  <div class="pasos">
+    <header class="pasos__cabecera">
+      <div class="pasos__titulos">
+        <h2 class="pasos__titulo">Primeros pasos</h2>
+        <p class="pasos__intro">{{ intro }}</p>
       </div>
-
-      <button type="button" class="btn-secondary pasos__ir" (click)="irAlPaso(paso)">
-        Ir ahora
-      </button>
-    </li>
-  </ol>
-
-  <!-- Cuando no falta nada el foquito sigue estando, así que tiene que
-       decir algo: enseña que está todo hecho. -->
-  <p class="pasos__listo" *ngIf="!pendientes.length">
-    Ya está todo listo. Cuando haga falta algo nuevo, aparecerá acá.
-  </p>
-
-  <footer class="pasos__pie" *ngIf="pendientes.length && !guia.vista">
-    <button type="button" class="btn-secondary" (click)="noInsistir()">Ya lo tengo</button>
-  </footer>
-</div>
+      <span class="pasos__cifra">{{ guia.hechos }} de {{ guia.total }} listos</span>
+    </header>
+    <div class="pasos__barra" role="progressbar" [attr.aria-valuenow]="guia.hechos"
+      aria-valuemin="0" [attr.aria-valuemax]="guia.total">
+      <span [style.width.%]="avance"></span>
+    </div>
+    @if (pendientes.length) {
+      <ol class="pasos__lista">
+        @for (paso of pendientes; track $index) {
+          <li class="pasos__paso">
+            <span class="pasos__numero" aria-hidden="true">{{ paso.numero }}</span>
+            <div class="pasos__texto">
+              <strong>{{ paso.titulo }}</strong>
+              <span>{{ paso.detalle }}</span>
+            </div>
+            <button type="button" class="btn-secondary pasos__ir" (click)="irAlPaso(paso)">
+              Ir ahora
+            </button>
+          </li>
+        }
+      </ol>
+    }
+    <!-- Cuando no falta nada el foquito sigue estando, así que tiene que
+    decir algo: enseña que está todo hecho. -->
+    @if (!pendientes.length) {
+      <p class="pasos__listo">
+        Ya está todo listo. Cuando haga falta algo nuevo, aparecerá acá.
+      </p>
+    }
+    @if (pendientes.length && !guia.vista) {
+      <footer class="pasos__pie">
+        <button type="button" class="btn-secondary" (click)="noInsistir()">Ya lo tengo</button>
+      </footer>
+    }
+  </div>
+}

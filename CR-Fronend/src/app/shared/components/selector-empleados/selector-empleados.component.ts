@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Area, Cargo, Empleado, Sede } from '../../../core/models';
 import { IconComponent } from '../icon/icon.component';
@@ -29,7 +29,7 @@ export type AlcanceGrupo = 'todos' | 'elegidos';
 @Component({
   selector: 'app-selector-empleados',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule],
+  imports: [IconComponent, FormsModule],
   templateUrl: './selector-empleados.component.html',
 })
 export class SelectorEmpleadosComponent implements OnChanges {

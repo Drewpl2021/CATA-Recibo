@@ -8,139 +8,167 @@
     <div class="form-group">
       <label for="sistema_pensiones">Sistema de pensiones *</label>
       <select id="sistema_pensiones" class="form-control" formControlName="sistema_pensiones">
-        <option *ngFor="let s of sistemas" [value]="s.value">{{ s.label }}</option>
+        @for (s of sistemas; track s.value) {
+          <option [value]="s.value">{{ s.label }}</option>
+        }
       </select>
-      <small class="form-ayuda" *ngIf="!sinPension">
-        ONP descuenta el 13%; en AFP el porcentaje depende de la entidad.
-      </small>
-      <small class="form-ayuda" *ngIf="sinPension && !esHonorarios">
-        No se le descontará pensión en ninguna de sus boletas. Es lo que
-        corresponde al jubilado que ya cobra su pensión y al extranjero
-        acogido a un convenio. EsSalud sí se le sigue aportando.
-      </small>
-      <small class="form-ayuda" *ngIf="pensionLimpiadaPorHonorarios">
-        Se dejó en <strong>ninguno</strong> porque cobra por recibo de
-        honorarios. Puedes cambiarlo si no es el caso.
-      </small>
+      @if (!sinPension) {
+        <small class="form-ayuda">
+          ONP descuenta el 13%; en AFP el porcentaje depende de la entidad.
+        </small>
+      }
+      @if (sinPension && !esHonorarios) {
+        <small class="form-ayuda">
+          No se le descontará pensión en ninguna de sus boletas. Es lo que
+          corresponde al jubilado que ya cobra su pensión y al extranjero
+          acogido a un convenio. EsSalud sí se le sigue aportando.
+        </small>
+      }
+      @if (pensionLimpiadaPorHonorarios) {
+        <small class="form-ayuda">
+          Se dejó en <strong>ninguno</strong> porque cobra por recibo de
+          honorarios. Puedes cambiarlo si no es el caso.
+        </small>
+      }
     </div>
 
     <!-- Solo con AFP: el backend los exige justo en ese caso -->
-    <ng-container *ngIf="esAfp">
+    @if (esAfp) {
       <div class="form-group">
         <label for="afp">AFP *</label>
         <select id="afp" class="form-control" formControlName="afp"
           [class.is-invalid]="invalido('afp')">
           <option value="">— Elige la AFP —</option>
-          <option *ngFor="let a of afps" [value]="a.value">{{ a.label }}</option>
+          @for (a of afps; track a.value) {
+            <option [value]="a.value">{{ a.label }}</option>
+          }
         </select>
-        <small class="form-error" *ngIf="invalido('afp')">{{ error('afp') }}</small>
+        @if (invalido('afp')) {
+          <small class="form-error">{{ error('afp') }}</small>
+        }
       </div>
-
       <div class="form-group">
         <label for="cuspp">CUSPP *</label>
         <input type="text" id="cuspp" class="form-control" formControlName="cuspp"
           maxlength="12" placeholder="12 caracteres, por ejemplo 052281JHPMM4"
           [class.is-invalid]="invalido('cuspp')" />
-        <small class="form-error" *ngIf="invalido('cuspp')">Son 12 caracteres, entre letras y números.</small>
-        <small class="form-ayuda" *ngIf="!invalido('cuspp')">
-          Código único del afiliado al sistema privado.
-        </small>
-      </div>
+          @if (invalido('cuspp')) {
+            <small class="form-error">Son 12 caracteres, entre letras y números.</small>
+          }
+          @if (!invalido('cuspp')) {
+            <small class="form-ayuda">
+              Código único del afiliado al sistema privado.
+            </small>
+          }
+        </div>
+        <div class="form-group">
+          <label for="tipo_comision_afp">Tipo de comisión</label>
+          <select id="tipo_comision_afp" class="form-control" formControlName="tipo_comision_afp">
+            <option value="flujo">Flujo</option>
+            <option value="mixta">Mixta</option>
+          </select>
+          <small class="form-ayuda">
+            "Flujo" es la normal, para quien se afilió de 2013 en adelante. En
+            "Mixta" (afiliados de antes) la AFP cobra su comisión del fondo
+            acumulado, así que no se le descuenta nada de comisión en planilla.
+          </small>
+        </div>
+      }
 
-      <div class="form-group">
-        <label for="tipo_comision_afp">Tipo de comisión</label>
-        <select id="tipo_comision_afp" class="form-control" formControlName="tipo_comision_afp">
-          <option value="flujo">Flujo</option>
-          <option value="mixta">Mixta</option>
-        </select>
-        <small class="form-ayuda">
-          "Flujo" es la normal, para quien se afilió de 2013 en adelante. En
-          "Mixta" (afiliados de antes) la AFP cobra su comisión del fondo
-          acumulado, así que no se le descuenta nada de comisión en planilla.
-        </small>
-      </div>
-    </ng-container>
+      <!-- Opcional: desde cuándo está en su AFP u ONP. Puede quedar vacío. -->
+      @if (!sinPension) {
+        <div class="form-group">
+          <label for="fecha_afiliacion">Fecha de afiliación</label>
+          <input type="date" id="fecha_afiliacion" class="form-control" formControlName="fecha_afiliacion"
+            [max]="hoy" [class.is-invalid]="invalido('fecha_afiliacion')" />
+            @if (invalido('fecha_afiliacion')) {
+              <small class="form-error">No puede ser una fecha que todavía no llega.</small>
+            }
+            @if (!invalido('fecha_afiliacion')) {
+              <small class="form-ayuda">
+                Desde cuándo está en su {{ esAfp ? 'AFP' : 'ONP' }}. Opcional: si no la sabes, déjala vacía.
+              </small>
+            }
+          </div>
+        }
 
-    <!-- Opcional: desde cuándo está en su AFP u ONP. Puede quedar vacío. -->
-    <div class="form-group" *ngIf="!sinPension">
-      <label for="fecha_afiliacion">Fecha de afiliación</label>
-      <input type="date" id="fecha_afiliacion" class="form-control" formControlName="fecha_afiliacion"
-        [max]="hoy" [class.is-invalid]="invalido('fecha_afiliacion')" />
-      <small class="form-error" *ngIf="invalido('fecha_afiliacion')">No puede ser una fecha que todavía no llega.</small>
-      <small class="form-ayuda" *ngIf="!invalido('fecha_afiliacion')">
-        Desde cuándo está en su {{ esAfp ? 'AFP' : 'ONP' }}. Opcional: si no la sabes, déjala vacía.
-      </small>
-    </div>
+        <div class="form-group">
+          <label for="forma_pago">Forma de pago</label>
+          <select id="forma_pago" class="form-control" formControlName="forma_pago"
+            (change)="alCambiarFormaPago()">
+            <option value="">— Sin definir —</option>
+            @for (f of formasPago; track f.value) {
+              <option [value]="f.value">{{ f.label }}</option>
+            }
+          </select>
+          @if (esHonorarios) {
+            <small class="form-ayuda">
+              Cobra por recibo de honorarios: no está en planilla, así que no se le
+              descuenta pensión.
+            </small>
+          }
+        </div>
 
-    <div class="form-group">
-      <label for="forma_pago">Forma de pago</label>
-      <select id="forma_pago" class="form-control" formControlName="forma_pago"
-        (change)="alCambiarFormaPago()">
-        <option value="">— Sin definir —</option>
-        <option *ngFor="let f of formasPago" [value]="f.value">{{ f.label }}</option>
-      </select>
-      <small class="form-ayuda" *ngIf="esHonorarios">
-        Cobra por recibo de honorarios: no está en planilla, así que no se le
-        descuenta pensión.
-      </small>
-    </div>
+        @if (pideDatosBancarios) {
+          <div class="form-group">
+            <label for="entidad_financiera">Banco</label>
+            <input type="text" id="entidad_financiera" class="form-control" list="lista-bancos"
+              formControlName="entidad_financiera" autocomplete="off"
+              placeholder="Elige uno o escríbelo" />
+              <!-- Lista de ayuda, no cerrada: el campo admite cualquier entidad
+              que no esté acá, como una caja municipal o una cooperativa. -->
+              <datalist id="lista-bancos">
+                @for (b of bancos; track $index) {
+                  <option [value]="b"></option>
+                }
+              </datalist>
+              <small class="form-ayuda">
+                Si no aparece en la lista, escríbelo tal cual.
+              </small>
+            </div>
+            <div class="form-group">
+              <label for="numero_cuenta">Número de cuenta</label>
+              <input type="text" id="numero_cuenta" class="form-control"
+                formControlName="numero_cuenta" placeholder="Cuenta de abono del sueldo" />
+              </div>
+              <div class="form-group">
+                <label for="cci">CCI</label>
+                <input type="text" id="cci" class="form-control" formControlName="cci"
+                  inputmode="numeric" maxlength="20" placeholder="20 dígitos"
+                  [class.is-invalid]="invalido('cci')" />
+                  @if (invalido('cci')) {
+                    <small class="form-error">
+                      El CCI son 20 dígitos, sin espacios ni guiones.
+                    </small>
+                  }
+                  @if (!invalido('cci')) {
+                    <small class="form-ayuda">
+                      Código de Cuenta Interbancario. Puede quedar vacío: solo hace falta
+                      para transferirle desde un banco distinto al suyo.
+                    </small>
+                  }
+                </div>
+              }
 
-    <ng-container *ngIf="pideDatosBancarios">
-      <div class="form-group">
-        <label for="entidad_financiera">Banco</label>
-        <input type="text" id="entidad_financiera" class="form-control" list="lista-bancos"
-          formControlName="entidad_financiera" autocomplete="off"
-          placeholder="Elige uno o escríbelo" />
-        <!-- Lista de ayuda, no cerrada: el campo admite cualquier entidad
-             que no esté acá, como una caja municipal o una cooperativa. -->
-        <datalist id="lista-bancos">
-          <option *ngFor="let b of bancos" [value]="b"></option>
-        </datalist>
-        <small class="form-ayuda">
-          Si no aparece en la lista, escríbelo tal cual.
-        </small>
-      </div>
+              <div class="form-group rejilla-campos--completo">
+                <label class="check-item check-item--bloque">
+                  <input type="checkbox" formControlName="tiene_hijos" />
+                  <span>Tiene hijos menores a cargo</span>
+                </label>
+                <small class="form-ayuda">
+                  Da derecho a la Asignación Familiar, que se suma sola a su boleta.
+                </small>
+              </div>
 
-      <div class="form-group">
-        <label for="numero_cuenta">Número de cuenta</label>
-        <input type="text" id="numero_cuenta" class="form-control"
-          formControlName="numero_cuenta" placeholder="Cuenta de abono del sueldo" />
-      </div>
-
-      <div class="form-group">
-        <label for="cci">CCI</label>
-        <input type="text" id="cci" class="form-control" formControlName="cci"
-          inputmode="numeric" maxlength="20" placeholder="20 dígitos"
-          [class.is-invalid]="invalido('cci')" />
-        <small class="form-error" *ngIf="invalido('cci')">
-          El CCI son 20 dígitos, sin espacios ni guiones.
-        </small>
-        <small class="form-ayuda" *ngIf="!invalido('cci')">
-          Código de Cuenta Interbancario. Puede quedar vacío: solo hace falta
-          para transferirle desde un banco distinto al suyo.
-        </small>
-      </div>
-    </ng-container>
-
-    <div class="form-group rejilla-campos--completo">
-      <label class="check-item check-item--bloque">
-        <input type="checkbox" formControlName="tiene_hijos" />
-        <span>Tiene hijos menores a cargo</span>
-      </label>
-      <small class="form-ayuda">
-        Da derecho a la Asignación Familiar, que se suma sola a su boleta.
-      </small>
-    </div>
-
-    <div class="form-group rejilla-campos--completo">
-      <label class="check-item check-item--bloque">
-        <input type="checkbox" formControlName="aplica_diezmo" />
-        <span>Se le descuenta el Diezmo (10% del sueldo)</span>
-      </label>
-      <small class="form-ayuda">
-        Va marcado para todo el personal: así lo pide el colegio. Desmárcalo
-        solo si él mismo no lo autoriza.
-      </small>
-    </div>
-  </div>
-</div>
+              <div class="form-group rejilla-campos--completo">
+                <label class="check-item check-item--bloque">
+                  <input type="checkbox" formControlName="aplica_diezmo" />
+                  <span>Se le descuenta el Diezmo (10% del sueldo)</span>
+                </label>
+                <small class="form-ayuda">
+                  Va marcado para todo el personal: así lo pide el colegio. Desmárcalo
+                  solo si él mismo no lo autoriza.
+                </small>
+              </div>
+            </div>
+          </div>

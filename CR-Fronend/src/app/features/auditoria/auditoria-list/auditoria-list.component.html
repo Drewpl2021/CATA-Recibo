@@ -22,29 +22,32 @@
   [accionesPersonalizadas]="accionesAuditoria"
   (accionPersonalizada)="alAccionar($event)"
   [mensajeVacio]="mensajeVacio"
->
+  >
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
-    (cambio)="alFiltrar()"></app-filtros>
+  (cambio)="alFiltrar()"></app-filtros>
 </app-data-table>
 
 <!-- «Ver más»: el registro contado en palabras, con todo lo que lo rodea.
-     Es un panel y no un modal: la lista se sigue viendo, y desde el
-     historial se salta a otro registro sin cerrar nada. -->
+Es un panel y no un modal: la lista se sigue viendo, y desde el
+historial se salta a otro registro sin cerrar nada. -->
 <app-panel-lateral
   [(visible)]="panelAbierto"
   icono="clock"
   ancho="560px"
   [titulo]="detalle ? etiquetaAccion(detalle.registro.accion) + ' · ' + detalle.sobre.entidad : 'Registro de auditoría'"
   [subtitulo]="detalle ? fechaCompleta(detalle.registro.created_at) : ''"
->
-  <p class="form-ayuda" *ngIf="cargandoDetalle && !detalle">Cargando el registro…</p>
+  >
+  @if (cargandoDetalle && !detalle) {
+    <p class="form-ayuda">Cargando el registro…</p>
+  }
 
-  <ng-container *ngIf="detalle as d">
-    <button type="button" class="btn-secondary auditoria-volver" *ngIf="hayAnterior" (click)="volverAlAnterior()">
-      <app-icon icono="arrow_left" [tamano]="15"></app-icon>
-      Volver al registro anterior
-    </button>
-
+  @if (detalle; as d) {
+    @if (hayAnterior) {
+      <button type="button" class="btn-secondary auditoria-volver" (click)="volverAlAnterior()">
+        <app-icon icono="arrow_left" [tamano]="15"></app-icon>
+        Volver al registro anterior
+      </button>
+    }
     <h3 class="detalle-subtitulo">Qué pasó</h3>
     <p class="auditoria-descripcion">
       <span class="status-badge" [ngClass]="'status-badge-' + colorAccion(d.registro.accion)">{{ etiquetaAccion(d.registro.accion) }}</span>
@@ -56,39 +59,52 @@
       <dt>N° de registro</dt>
       <dd>{{ d.registro.id }}</dd>
     </dl>
-
     <h3 class="detalle-subtitulo">Quién lo hizo</h3>
     <dl class="detalle-lista">
       <dt>Persona</dt>
       <dd>
         {{ d.quien.nombre || '—' }}
-        <span class="status-badge status-badge-secondary" *ngIf="d.quien.sigue_activo === false">Ya no tiene acceso</span>
+        @if (d.quien.sigue_activo === false) {
+          <span class="status-badge status-badge-secondary">Ya no tiene acceso</span>
+        }
       </dd>
-      <ng-container *ngIf="d.quien.rol"><dt>Rol</dt><dd>{{ d.quien.rol }}</dd></ng-container>
-      <ng-container *ngIf="d.quien.correo"><dt>Correo</dt><dd>{{ d.quien.correo }}</dd></ng-container>
+      @if (d.quien.rol) {
+        <dt>Rol</dt><dd>{{ d.quien.rol }}</dd>
+      }
+      @if (d.quien.correo) {
+        <dt>Correo</dt><dd>{{ d.quien.correo }}</dd>
+      }
       <dt>Desde</dt>
       <dd>
         {{ d.quien.navegador || 'Navegador no anotado' }}
-        <div class="form-ayuda" *ngIf="d.quien.ip">IP {{ d.quien.ip }}</div>
-        <div class="form-ayuda" *ngIf="!d.quien.navegador">Los registros anteriores al 21/10/2026 no guardan el navegador.</div>
+        @if (d.quien.ip) {
+          <div class="form-ayuda">IP {{ d.quien.ip }}</div>
+        }
+        @if (!d.quien.navegador) {
+          <div class="form-ayuda">Los registros anteriores al 21/10/2026 no guardan el navegador.</div>
+        }
       </dd>
     </dl>
-
     <h3 class="detalle-subtitulo">Sobre qué</h3>
     <dl class="detalle-lista">
       <dt>Tipo</dt>
       <dd>{{ d.sobre.entidad }}</dd>
-      <ng-container *ngIf="d.sobre.nombre"><dt>Registro</dt><dd>{{ d.sobre.nombre }}</dd></ng-container>
+      @if (d.sobre.nombre) {
+        <dt>Registro</dt><dd>{{ d.sobre.nombre }}</dd>
+      }
     </dl>
-    <p class="form-nota form-nota--aviso" *ngIf="d.sobre.ya_no_existe">
-      Ese registro ya no existe en el sistema: se borró después.
-    </p>
-    <button type="button" class="btn-secondary auditoria-volver" *ngIf="d.sobre.enlace" (click)="abrirEnElSistema(d.sobre.enlace)">
-      <app-icon icono="arrow_right" [tamano]="15"></app-icon>
-      {{ d.sobre.nombre ? 'Abrir: ' + d.sobre.entidad : 'Ir a: ' + d.sobre.entidad }}
-    </button>
-
-    <ng-container *ngIf="d.campos.length">
+    @if (d.sobre.ya_no_existe) {
+      <p class="form-nota form-nota--aviso">
+        Ese registro ya no existe en el sistema: se borró después.
+      </p>
+    }
+    @if (d.sobre.enlace) {
+      <button type="button" class="btn-secondary auditoria-volver" (click)="abrirEnElSistema(d.sobre.enlace)">
+        <app-icon icono="arrow_right" [tamano]="15"></app-icon>
+        {{ d.sobre.nombre ? 'Abrir: ' + d.sobre.entidad : 'Ir a: ' + d.sobre.entidad }}
+      </button>
+    }
+    @if (d.campos.length) {
       <h3 class="detalle-subtitulo">
         {{ d.es_alta_o_baja ? (d.registro.accion === 'creó' ? 'Datos con que se registró' : 'Cómo estaba al borrarse') : 'Qué cambió, dato por dato' }}
       </h3>
@@ -96,53 +112,63 @@
         <thead>
           <tr>
             <th>Dato</th>
-            <th *ngIf="d.registro.accion === 'cambió'">Antes</th>
+            @if (d.registro.accion === 'cambió') {
+              <th>Antes</th>
+            }
             <th>{{ d.registro.accion === 'cambió' ? 'Después' : 'Valor' }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let c of d.campos">
-            <td>{{ c.etiqueta }}</td>
-            <td *ngIf="d.registro.accion === 'cambió'" class="auditoria-campos__antes">{{ c.antes ?? '—' }}</td>
-            <td class="auditoria-campos__despues">{{ c.despues }}</td>
-          </tr>
+          @for (c of d.campos; track $index) {
+            <tr>
+              <td>{{ c.etiqueta }}</td>
+              @if (d.registro.accion === 'cambió') {
+                <td class="auditoria-campos__antes">{{ c.antes ?? '—' }}</td>
+              }
+              <td class="auditoria-campos__despues">{{ c.despues }}</td>
+            </tr>
+          }
         </tbody>
       </table>
-    </ng-container>
-    <p class="form-nota" *ngIf="!d.campos.length">
-      {{ d.es_alta_o_baja
+    }
+    @if (!d.campos.length) {
+      <p class="form-nota">
+        {{ d.es_alta_o_baja
         ? 'Este registro es anterior al 21/10/2026: entonces las altas y bajas no guardaban sus datos.'
         : 'Esta acción no lleva datos de antes y después.' }}
-    </p>
-
-    <ng-container *ngIf="d.historial.length">
+      </p>
+    }
+    @if (d.historial.length) {
       <h3 class="detalle-subtitulo">Historial de este registro</h3>
       <p class="form-ayuda">Todo lo demás que se le hizo, lo más reciente primero. Pulsa uno para verlo.</p>
       <ol class="rastro">
-        <li class="rastro__paso auditoria-paso" *ngFor="let h of d.historial" (click)="irARegistro(h.id)"
-          (keydown.enter)="irARegistro(h.id)" tabindex="0" role="button">
-          <span class="rastro__marca"><app-icon icono="clock" [tamano]="14"></app-icon></span>
-          <span class="rastro__texto">
-            <strong>{{ h.descripcion }}</strong>
-            <span>{{ etiquetaAccion(h.accion) }} · {{ h.usuario_nombre || '—' }} · {{ fechaCompleta(h.created_at) }}</span>
-          </span>
-        </li>
+        @for (h of d.historial; track h.id) {
+          <li class="rastro__paso auditoria-paso" (click)="irARegistro(h.id)"
+            (keydown.enter)="irARegistro(h.id)" tabindex="0" role="button">
+            <span class="rastro__marca"><app-icon icono="clock" [tamano]="14"></app-icon></span>
+            <span class="rastro__texto">
+              <strong>{{ h.descripcion }}</strong>
+              <span>{{ etiquetaAccion(h.accion) }} · {{ h.usuario_nombre || '—' }} · {{ fechaCompleta(h.created_at) }}</span>
+            </span>
+          </li>
+        }
       </ol>
-    </ng-container>
-
-    <ng-container *ngIf="d.cercanos.length">
+    }
+    @if (d.cercanos.length) {
       <h3 class="detalle-subtitulo">Lo que hizo {{ d.quien.nombre || 'esa persona' }} en esos minutos</h3>
       <p class="form-ayuda">Quince minutos antes y después: una importación o un cierre de mes suelen ser varias acciones juntas.</p>
       <ol class="rastro">
-        <li class="rastro__paso auditoria-paso" *ngFor="let h of d.cercanos" (click)="irARegistro(h.id)"
-          (keydown.enter)="irARegistro(h.id)" tabindex="0" role="button">
-          <span class="rastro__marca"><app-icon icono="clock" [tamano]="14"></app-icon></span>
-          <span class="rastro__texto">
-            <strong>{{ h.descripcion }}</strong>
-            <span>{{ etiquetaAccion(h.accion) }} · {{ etiquetaEntidad(h.entidad) }} · {{ fechaCompleta(h.created_at) }}</span>
-          </span>
-        </li>
+        @for (h of d.cercanos; track h.id) {
+          <li class="rastro__paso auditoria-paso" (click)="irARegistro(h.id)"
+            (keydown.enter)="irARegistro(h.id)" tabindex="0" role="button">
+            <span class="rastro__marca"><app-icon icono="clock" [tamano]="14"></app-icon></span>
+            <span class="rastro__texto">
+              <strong>{{ h.descripcion }}</strong>
+              <span>{{ etiquetaAccion(h.accion) }} · {{ etiquetaEntidad(h.entidad) }} · {{ fechaCompleta(h.created_at) }}</span>
+            </span>
+          </li>
+        }
       </ol>
-    </ng-container>
-  </ng-container>
+    }
+  }
 </app-panel-lateral>

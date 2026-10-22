@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule } from '@angular/forms';
 import {
   SISTEMA_PENSIONES_OPCIONES,
@@ -19,7 +19,7 @@ import { SeccionEmpleadoBase } from './seccion-base';
 @Component({
   selector: 'app-seccion-planilla',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './seccion-planilla.component.html',
 })
 export class SeccionPlanillaComponent extends SeccionEmpleadoBase {

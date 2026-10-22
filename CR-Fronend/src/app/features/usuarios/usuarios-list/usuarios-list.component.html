@@ -38,84 +38,97 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrarModal()"
->
+  >
   <form [formGroup]="form" class="form-fields">
     <div class="form-group">
       <label for="name">Nombre *</label>
       <input type="text" id="name" class="form-control" formControlName="name"
         [class.is-invalid]="invalido('name')" />
-      <small class="form-error" *ngIf="invalido('name')">El nombre es obligatorio.</small>
-    </div>
+        @if (invalido('name')) {
+          <small class="form-error">El nombre es obligatorio.</small>
+        }
+      </div>
 
-    <div class="form-group">
-      <label for="email">Correo *</label>
-      <input type="email" id="email" class="form-control" formControlName="email"
-        placeholder="nombre@dominio.com" [class.is-invalid]="invalido('email')" />
-      <small class="form-error" *ngIf="invalido('email')">
-        Escribe un correo válido; es con el que entra al sistema.
-      </small>
-    </div>
+      <div class="form-group">
+        <label for="email">Correo *</label>
+        <input type="email" id="email" class="form-control" formControlName="email"
+          placeholder="nombre@dominio.com" [class.is-invalid]="invalido('email')" />
+          @if (invalido('email')) {
+            <small class="form-error">
+              Escribe un correo válido; es con el que entra al sistema.
+            </small>
+          }
+        </div>
 
-    <div class="form-group">
-      <label for="rol_id">Rol *</label>
-      <select id="rol_id" class="form-control" formControlName="rol_id"
-        [class.is-invalid]="invalido('rol_id')">
-        <option value="">— Elige un rol —</option>
-        <option *ngFor="let r of roles" [value]="r.id">{{ r.nombre }}</option>
-      </select>
-      <small class="form-error" *ngIf="invalido('rol_id')">El usuario necesita un rol.</small>
-      <small class="form-ayuda" *ngIf="!invalido('rol_id')">
-        Decide qué módulos ve y a qué endpoints llega.
-      </small>
-    </div>
+        <div class="form-group">
+          <label for="rol_id">Rol *</label>
+          <select id="rol_id" class="form-control" formControlName="rol_id"
+            [class.is-invalid]="invalido('rol_id')">
+            <option value="">— Elige un rol —</option>
+            @for (r of roles; track r.id) {
+              <option [value]="r.id">{{ r.nombre }}</option>
+            }
+          </select>
+          @if (invalido('rol_id')) {
+            <small class="form-error">El usuario necesita un rol.</small>
+          }
+          @if (!invalido('rol_id')) {
+            <small class="form-ayuda">
+              Decide qué módulos ve y a qué endpoints llega.
+            </small>
+          }
+        </div>
 
-    <div class="form-group">
-      <label for="empleado_id">Empleado vinculado</label>
-      <select id="empleado_id" class="form-control" formControlName="empleado_id">
-        <option value="">— Sin vincular —</option>
-        <option *ngFor="let e of empleados" [value]="e.id">{{ e.nombre }} {{ e.apellido }}</option>
-      </select>
-      <small class="form-ayuda">
-        Sin vincular, la cuenta entra al sistema pero no tiene boletas propias
-        que consultar en "Mi Espacio".
-      </small>
-    </div>
+        <div class="form-group">
+          <label for="empleado_id">Empleado vinculado</label>
+          <select id="empleado_id" class="form-control" formControlName="empleado_id">
+            <option value="">— Sin vincular —</option>
+            @for (e of empleados; track e.id) {
+              <option [value]="e.id">{{ e.nombre }} {{ e.apellido }}</option>
+            }
+          </select>
+          <small class="form-ayuda">
+            Sin vincular, la cuenta entra al sistema pero no tiene boletas propias
+            que consultar en "Mi Espacio".
+          </small>
+        </div>
 
-    <p class="form-nota" *ngIf="usuarioEditando && esMiCuenta(usuarioEditando)">
-      Esta es tu propia cuenta. Si te cambias el rol puedes perder el acceso a
-      esta pantalla.
-    </p>
-  </form>
-</app-form-modal>
+        @if (usuarioEditando && esMiCuenta(usuarioEditando)) {
+          <p class="form-nota">
+            Esta es tu propia cuenta. Si te cambias el rol puedes perder el acceso a
+            esta pantalla.
+          </p>
+        }
+      </form>
+    </app-form-modal>
 
-<!-- La contraseña temporal, para dictársela a quien la pidió. Se ve una sola
-     vez: no queda guardada en ningún lado ni se puede volver a consultar. -->
-<app-form-modal
-  [(visible)]="modalPassword"
-  titulo="Contraseña restablecida"
-  [ocultarBotonesPorDefecto]="true"
-  (cancelar)="cerrarPasswordTemporal()"
->
-  <div class="form-fields" *ngIf="usuarioRestablecido">
-    <p class="form-nota">
-      La cuenta de <strong>{{ usuarioRestablecido.name }}</strong> ya tiene
-      contraseña nueva y sus sesiones quedaron cerradas.
-    </p>
-
-    <div class="form-group">
-      <label>Contraseña temporal</label>
-      <input type="text" class="form-control" [value]="passwordTemporal" readonly
-        style="font-size: 20px; letter-spacing: 2px; text-align: center;" />
-      <small class="form-ayuda">
-        Se generó al azar porque la cuenta no tiene un correo al que enviarle el enlace.
-        Entrégasela en persona: no vas a poder volver a verla.
-      </small>
-    </div>
-
-    <p class="form-ayuda">
-      Al entrar con ella, el sistema no le dejará hacer nada hasta que ponga una suya.
-    </p>
-
-    <button type="button" class="btn-primary" (click)="cerrarPasswordTemporal()">Entendido</button>
-  </div>
-</app-form-modal>
+    <!-- La contraseña temporal, para dictársela a quien la pidió. Se ve una sola
+    vez: no queda guardada en ningún lado ni se puede volver a consultar. -->
+    <app-form-modal
+      [(visible)]="modalPassword"
+      titulo="Contraseña restablecida"
+      [ocultarBotonesPorDefecto]="true"
+      (cancelar)="cerrarPasswordTemporal()"
+      >
+      @if (usuarioRestablecido) {
+        <div class="form-fields">
+          <p class="form-nota">
+            La cuenta de <strong>{{ usuarioRestablecido.name }}</strong> ya tiene
+            contraseña nueva y sus sesiones quedaron cerradas.
+          </p>
+          <div class="form-group">
+            <label>Contraseña temporal</label>
+            <input type="text" class="form-control" [value]="passwordTemporal" readonly
+              style="font-size: 20px; letter-spacing: 2px; text-align: center;" />
+              <small class="form-ayuda">
+                Se generó al azar porque la cuenta no tiene un correo al que enviarle el enlace.
+                Entrégasela en persona: no vas a poder volver a verla.
+              </small>
+            </div>
+            <p class="form-ayuda">
+              Al entrar con ella, el sistema no le dejará hacer nada hasta que ponga una suya.
+            </p>
+            <button type="button" class="btn-primary" (click)="cerrarPasswordTemporal()">Entendido</button>
+          </div>
+        }
+      </app-form-modal>

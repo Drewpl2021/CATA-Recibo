@@ -4,7 +4,7 @@
   subtitulo="Vínculo laboral de cada empleado. Cada uno tiene un solo contrato vigente a la vez."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
->
+  >
   <button headerActions class="btn-primary" (click)="nuevo()">
     <app-icon icono="plus" [tamano]="16"></app-icon>
     Nuevo Contrato
@@ -28,9 +28,9 @@
   (editarFila)="editar($event)"
   (eliminarFila)="eliminar($event)"
   (accionPersonalizada)="alAccionar($event)"
->
+  >
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
-    (cambio)="alFiltrar()"></app-filtros>
+  (cambio)="alFiltrar()"></app-filtros>
 </app-data-table>
 
 <app-form-modal
@@ -40,30 +40,38 @@
   ancho="560px"
   (guardar)="guardar()"
   (cancelar)="cerrarModal()"
->
+  >
   <form [formGroup]="form" class="form-fields">
     <div class="form-group">
       <label for="empleado_id">Empleado *</label>
       <select id="empleado_id" class="form-control" formControlName="empleado_id"
         [class.is-invalid]="invalido('empleado_id')">
         <option value="">— Elige un empleado —</option>
-        <option *ngFor="let e of empleados" [value]="e.id">{{ e.nombre }} {{ e.apellido }}</option>
+        @for (e of empleados; track e.id) {
+          <option [value]="e.id">{{ e.nombre }} {{ e.apellido }}</option>
+        }
       </select>
-      <small class="form-error" *ngIf="invalido('empleado_id')">Elige a quién pertenece el contrato.</small>
+      @if (invalido('empleado_id')) {
+        <small class="form-error">Elige a quién pertenece el contrato.</small>
+      }
     </div>
 
     <!-- Aviso de la renovación automática -->
-    <p class="form-nota form-nota--aviso" *ngIf="contratoQueSeCerrara as anterior">
-      Este empleado ya tiene un contrato vigente desde
-      <strong>{{ anterior.fecha_inicio }}</strong>. Al guardar, ese contrato se
-      cerrará automáticamente y el nuevo pasará a ser el vigente.
-    </p>
+    @if (contratoQueSeCerrara; as anterior) {
+      <p class="form-nota form-nota--aviso">
+        Este empleado ya tiene un contrato vigente desde
+        <strong>{{ anterior.fecha_inicio }}</strong>. Al guardar, ese contrato se
+        cerrará automáticamente y el nuevo pasará a ser el vigente.
+      </p>
+    }
 
     <div class="form-group">
       <label for="tipo_contrato_id">Tipo de contrato *</label>
       <select id="tipo_contrato_id" class="form-control" formControlName="tipo_contrato_id">
         <option value="">— Elige un tipo —</option>
-        <option *ngFor="let t of tiposContrato" [value]="t.id">{{ t.nombre }}</option>
+        @for (t of tiposContrato; track t.id) {
+          <option [value]="t.id">{{ t.nombre }}</option>
+        }
       </select>
     </div>
 
@@ -72,87 +80,106 @@
         <label for="fecha_inicio">Desde *</label>
         <input type="date" id="fecha_inicio" class="form-control" formControlName="fecha_inicio"
           [class.is-invalid]="invalido('fecha_inicio')" />
-        <small class="form-error" *ngIf="invalido('fecha_inicio')">Indica cuándo empieza.</small>
-      </div>
+          @if (invalido('fecha_inicio')) {
+            <small class="form-error">Indica cuándo empieza.</small>
+          }
+        </div>
 
-      <div class="form-group">
-        <label for="fecha_fin">Hasta</label>
-        <input type="date" id="fecha_fin" class="form-control" formControlName="fecha_fin"
-          [class.is-invalid]="rangoInvertido" />
-        <small class="form-error" *ngIf="rangoInvertido">
-          No puede terminar antes de empezar.
-        </small>
-        <small class="form-ayuda" *ngIf="!rangoInvertido">
-          Déjalo vacío si es indeterminado.
-        </small>
-      </div>
-    </div>
-
-    <!-- Solo al editar: el alta siempre nace vigente -->
-    <ng-container *ngIf="contratoEditando">
-      <div class="form-row">
         <div class="form-group">
-          <label for="estado">Estado</label>
-          <select id="estado" class="form-control" formControlName="estado">
-            <option *ngFor="let e of estados" [value]="e.value">{{ e.label }}</option>
-          </select>
+          <label for="fecha_fin">Hasta</label>
+          <input type="date" id="fecha_fin" class="form-control" formControlName="fecha_fin"
+            [class.is-invalid]="rangoInvertido" />
+            @if (rangoInvertido) {
+              <small class="form-error">
+                No puede terminar antes de empezar.
+              </small>
+            }
+            @if (!rangoInvertido) {
+              <small class="form-ayuda">
+                Déjalo vacío si es indeterminado.
+              </small>
+            }
+          </div>
         </div>
 
-        <div class="form-group" *ngIf="pideMotivo">
-          <label for="motivo_fin">Motivo de fin</label>
-          <select id="motivo_fin" class="form-control" formControlName="motivo_fin">
-            <option value="">— Sin especificar —</option>
-            <option *ngFor="let m of motivos" [value]="m.value">{{ m.label }}</option>
-          </select>
+        <!-- Solo al editar: el alta siempre nace vigente -->
+        @if (contratoEditando) {
+          <div class="form-row">
+            <div class="form-group">
+              <label for="estado">Estado</label>
+              <select id="estado" class="form-control" formControlName="estado">
+                @for (e of estados; track e.value) {
+                  <option [value]="e.value">{{ e.label }}</option>
+                }
+              </select>
+            </div>
+            @if (pideMotivo) {
+              <div class="form-group">
+                <label for="motivo_fin">Motivo de fin</label>
+                <select id="motivo_fin" class="form-control" formControlName="motivo_fin">
+                  <option value="">— Sin especificar —</option>
+                  @for (m of motivos; track m.value) {
+                    <option [value]="m.value">{{ m.label }}</option>
+                  }
+                </select>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="form-group">
+          <label for="observaciones">Observaciones</label>
+          <textarea id="observaciones" class="form-control" formControlName="observaciones" rows="2"
+          placeholder="Notas internas sobre este contrato"></textarea>
         </div>
-      </div>
-    </ng-container>
+      </form>
+    </app-form-modal>
 
-    <div class="form-group">
-      <label for="observaciones">Observaciones</label>
-      <textarea id="observaciones" class="form-control" formControlName="observaciones" rows="2"
-        placeholder="Notas internas sobre este contrato"></textarea>
-    </div>
-  </form>
-</app-form-modal>
+    <!-- ── Los documentos de un contrato: verlos, bajarlos y adjuntar otro ── -->
+    <app-form-modal
+      [(visible)]="modalDocsVisible"
+      [titulo]="'Contrato firmado de ' + nombreEmpleado(contratoElegido?.empleado)"
+      ancho="720px"
+      [guardando]="subiendo"
+      textoGuardar="Subir el contrato"
+      (guardar)="subirDocumento()"
+      (cancelar)="cerrarDocumentos()"
+      >
+      <div class="form-fields">
+        @if (cargandoDocs) {
+          <p class="data-table-empty">Cargando…</p>
+        }
 
-<!-- ── Los documentos de un contrato: verlos, bajarlos y adjuntar otro ── -->
-<app-form-modal
-  [(visible)]="modalDocsVisible"
-  [titulo]="'Contrato firmado de ' + nombreEmpleado(contratoElegido?.empleado)"
-  ancho="720px"
-  [guardando]="subiendo"
-  textoGuardar="Subir el contrato"
-  (guardar)="subirDocumento()"
-  (cancelar)="cerrarDocumentos()"
->
-  <div class="form-fields">
-    <p class="data-table-empty" *ngIf="cargandoDocs">Cargando…</p>
+        @if (!cargandoDocs && !documentos.length) {
+          <p class="form-nota">
+            Este contrato todavía no tiene nada adjunto. Sube acá el contrato
+            firmado y escaneado y queda guardado en el expediente del trabajador,
+            en vez de en una carpeta aparte.
+          </p>
+        }
 
-    <p class="form-nota" *ngIf="!cargandoDocs && !documentos.length">
-      Este contrato todavía no tiene nada adjunto. Sube acá el contrato
-      firmado y escaneado y queda guardado en el expediente del trabajador,
-      en vez de en una carpeta aparte.
-    </p>
+        @if (documentos.length) {
+          <div class="detalle-masivo">
+            @for (d of documentos; track $index) {
+              <div class="detalle-masivo__fila">
+                <span>{{ etiqueta(tiposDocumento, d.tipo) }}</span>
+                <button type="button" class="btn-exportar" (click)="descargarDocumento(d)">
+                  <app-icon icono="file_down" [tamano]="16"></app-icon>
+                  Descargar
+                </button>
+              </div>
+            }
+          </div>
+        }
 
-    <div class="detalle-masivo" *ngIf="documentos.length">
-      <div class="detalle-masivo__fila" *ngFor="let d of documentos">
-        <span>{{ etiqueta(tiposDocumento, d.tipo) }}</span>
-        <button type="button" class="btn-exportar" (click)="descargarDocumento(d)">
-          <app-icon icono="file_down" [tamano]="16"></app-icon>
-          Descargar
-        </button>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label for="docContrato">Adjuntar el contrato firmado</label>
-      <input type="file" id="docContrato" class="form-control"
-        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" (change)="alElegirDocumento($event)" />
-      <small class="form-ayuda">
-        PDF, Word o imagen, hasta 5 MB. Se guarda en el disco privado: solo lo
-        ves tú y el propio trabajador.
-      </small>
-    </div>
-  </div>
-</app-form-modal>
+        <div class="form-group">
+          <label for="docContrato">Adjuntar el contrato firmado</label>
+          <input type="file" id="docContrato" class="form-control"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" (change)="alElegirDocumento($event)" />
+            <small class="form-ayuda">
+              PDF, Word o imagen, hasta 5 MB. Se guarda en el disco privado: solo lo
+              ves tú y el propio trabajador.
+            </small>
+          </div>
+        </div>
+      </app-form-modal>

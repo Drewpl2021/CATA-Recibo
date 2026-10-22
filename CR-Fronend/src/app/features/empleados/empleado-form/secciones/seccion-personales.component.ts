@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
@@ -23,7 +23,7 @@ import { mensajeErrorApi } from '../../../../core/utils';
 @Component({
   selector: 'app-seccion-personales',
   standalone: true,
-  imports: [IconComponent, CommonModule, ReactiveFormsModule],
+  imports: [IconComponent, ReactiveFormsModule],
   templateUrl: './seccion-personales.component.html',
 })
 export class SeccionPersonalesComponent extends SeccionEmpleadoBase {

@@ -4,7 +4,7 @@
   subtitulo="Tramos de tiempo de la campaña de planillas. Desde aquí se generan las planillas de todo el personal."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
->
+  >
   <button headerActions class="btn-primary" (click)="nuevo()">
     <app-icon icono="plus" [tamano]="16"></app-icon>
     Nuevo Periodo
@@ -37,15 +37,17 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrarModal()"
->
+  >
   <form [formGroup]="form" class="form-fields">
     <div class="form-group">
       <label for="nombre">Nombre *</label>
       <input type="text" id="nombre" class="form-control" formControlName="nombre"
         placeholder="Ej. Año Escolar 2026" [class.is-invalid]="invalido('nombre')" />
-      <small class="form-error" *ngIf="invalido('nombre')">
-        El nombre es obligatorio (máximo 45 caracteres).
-      </small>
+      @if (invalido('nombre')) {
+        <small class="form-error">
+          El nombre es obligatorio (máximo 45 caracteres).
+        </small>
+      }
     </div>
 
     <div class="form-row">
@@ -53,17 +55,23 @@
         <label for="fecha_inicio">Desde *</label>
         <input type="date" id="fecha_inicio" class="form-control" formControlName="fecha_inicio"
           [class.is-invalid]="invalido('fecha_inicio')" />
-        <small class="form-error" *ngIf="invalido('fecha_inicio')">Indica la fecha de inicio.</small>
+        @if (invalido('fecha_inicio')) {
+          <small class="form-error">Indica la fecha de inicio.</small>
+        }
       </div>
 
       <div class="form-group">
         <label for="fecha_fin">Hasta *</label>
         <input type="date" id="fecha_fin" class="form-control" formControlName="fecha_fin"
           [class.is-invalid]="invalido('fecha_fin') || rangoInvertido" />
-        <small class="form-error" *ngIf="invalido('fecha_fin')">Indica la fecha de fin.</small>
-        <small class="form-error" *ngIf="rangoInvertido">
-          La fecha de fin no puede ser anterior a la de inicio.
-        </small>
+        @if (invalido('fecha_fin')) {
+          <small class="form-error">Indica la fecha de fin.</small>
+        }
+        @if (rangoInvertido) {
+          <small class="form-error">
+            La fecha de fin no puede ser anterior a la de inicio.
+          </small>
+        }
       </div>
     </div>
 
@@ -82,13 +90,15 @@
   [textoGuardar]="resultado ? 'Generar otra vez' : 'Generar'"
   (guardar)="generar()"
   (cancelar)="cerrarGenerar()"
->
+  >
   <form [formGroup]="formGenerar" class="form-fields">
     <div class="form-row">
       <div class="form-group">
         <label for="mes">Mes *</label>
         <select id="mes" class="form-control" formControlName="mes">
-          <option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</option>
+          @for (m of meses; track m.value) {
+            <option [value]="m.value">{{ m.label }}</option>
+          }
         </select>
       </div>
 
@@ -98,30 +108,35 @@
       </div>
     </div>
 
-    <app-selector-empleados
-      *ngIf="!resultado"
-      [empleados]="empleados"
-      [areas]="areas"
-      [cargos]="cargos"
-      [sedes]="sedes"
-      [(alcance)]="alcance"
-      [(seleccion)]="empleadosElegidos"
-    ></app-selector-empleados>
+    @if (!resultado) {
+      <app-selector-empleados
+        [empleados]="empleados"
+        [areas]="areas"
+        [cargos]="cargos"
+        [sedes]="sedes"
+        [(alcance)]="alcance"
+        [(seleccion)]="empleadosElegidos"
+      ></app-selector-empleados>
+    }
 
-    <p class="form-nota" *ngIf="!resultado">
-      Se creará la planilla de ese mes para
-      <strong>{{ cuantosAlcanzados }} empleado(s)</strong>, con sus conceptos
-      automáticos ya calculados. A quien ya tenga planilla de ese mes se le omite,
-      así que puedes repetirlo sin miedo a duplicar.
-    </p>
+    @if (!resultado) {
+      <p class="form-nota">
+        Se creará la planilla de ese mes para
+        <strong>{{ cuantosAlcanzados }} empleado(s)</strong>, con sus conceptos
+        automáticos ya calculados. A quien ya tenga planilla de ese mes se le omite,
+        así que puedes repetirlo sin miedo a duplicar.
+      </p>
+    }
 
     <!-- Qué pasó con cada empleado -->
-    <ng-container *ngIf="resultado">
+    @if (resultado) {
       <div class="resumen-masivo">
-        <div class="resumen-masivo__dato" *ngIf="resultado.resumen.evaluados !== undefined">
-          <strong>{{ resultado.resumen.evaluados }}</strong>
-          <span>Evaluados</span>
-        </div>
+        @if (resultado.resumen.evaluados !== undefined) {
+          <div class="resumen-masivo__dato">
+            <strong>{{ resultado.resumen.evaluados }}</strong>
+            <span>Evaluados</span>
+          </div>
+        }
         <div class="resumen-masivo__dato">
           <strong>{{ resultado.resumen.generadas }}</strong>
           <span>Generadas</span>
@@ -131,14 +146,19 @@
           <span>Omitidas</span>
         </div>
       </div>
-
       <div class="detalle-masivo">
-        <div class="detalle-masivo__fila" *ngFor="let d of resultado.detalle">
-          <span>{{ d.empleado }}</span>
-          <span *ngIf="d.estado === 'generada'" class="status-badge status-badge-success">Generada</span>
-          <span *ngIf="d.estado !== 'generada'" class="detalle-masivo__motivo">{{ d.motivo }}</span>
-        </div>
+        @for (d of resultado.detalle; track $index) {
+          <div class="detalle-masivo__fila">
+            <span>{{ d.empleado }}</span>
+            @if (d.estado === 'generada') {
+              <span class="status-badge status-badge-success">Generada</span>
+            }
+            @if (d.estado !== 'generada') {
+              <span class="detalle-masivo__motivo">{{ d.motivo }}</span>
+            }
+          </div>
+        }
       </div>
-    </ng-container>
+    }
   </form>
 </app-form-modal>

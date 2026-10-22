@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import {
@@ -36,10 +36,7 @@ import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/f
 @Component({
   selector: 'app-vacaciones-list',
   standalone: true,
-  imports: [FiltrosComponent, 
-    CommonModule, ReactiveFormsModule, FormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent, IconComponent,
-  ],
+  imports: [FiltrosComponent, ReactiveFormsModule, FormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent, IconComponent],
   templateUrl: './vacaciones-list.component.html',
 })
 export class VacacionesListComponent implements OnInit {

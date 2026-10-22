@@ -7,116 +7,140 @@
 
 <div class="section-panel section-panel--formulario">
   <!-- La silueta del formulario: la foto, los pasos y los campos, en vez
-       de la palabra "Cargando...". Igual que el menú y el Panel de
-       Control: el hueco ya tiene la forma de lo que va a aparecer. -->
-  <div class="empleado-form-esqueleto" *ngIf="cargando" aria-hidden="true">
-    <div class="ficha-persona">
-      <span class="esqueleto esqueleto--circulo ficha-persona__foto"></span>
-      <div class="ficha-persona__datos" style="flex: 1;">
-        <span class="esqueleto esqueleto--linea esqueleto--media" style="height: 18px;"></span>
-        <span class="esqueleto esqueleto--linea esqueleto--corta" style="margin-bottom: 0;"></span>
-      </div>
-    </div>
-
-    <div class="empleado-form-esqueleto__pasos">
-      <span class="esqueleto" *ngFor="let p of [1, 2, 3, 4, 5]" style="height: 36px;"></span>
-    </div>
-
-    <div class="rejilla-campos">
-      <div class="form-group" *ngFor="let c of [1, 2, 3, 4, 5, 6]">
-        <span class="esqueleto esqueleto--linea esqueleto--corta" style="height: 11px;"></span>
-        <span class="esqueleto" style="height: 38px;"></span>
-      </div>
-    </div>
-  </div>
-  <span class="solo-lectores" *ngIf="cargando" role="status">Cargando los datos del trabajador…</span>
-
-  <ng-container *ngIf="!cargando">
-    <!-- A quién se está mirando, con su foto. RR.HH. y Admin se la pueden
-         poner aquí (también en el alta); se sube al guardar, como el CV. -->
-    <div class="ficha-persona">
-      <span class="avatar ficha-persona__foto">
-        <img *ngIf="fotoUrl" class="avatar__foto" [src]="fotoUrl"
-          [alt]="'Foto de ' + nombreCompleto" />
-        <ng-container *ngIf="!fotoUrl && iniciales">{{ iniciales }}</ng-container>
-        <app-icon *ngIf="!fotoUrl && !iniciales" icono="person" [tamano]="34"></app-icon>
-      </span>
-
-      <div class="ficha-persona__datos">
-        <strong class="ficha-persona__nombre">{{ nombreCompleto || 'Nuevo trabajador' }}</strong>
-        <span class="ficha-persona__resumen" *ngIf="resumenPersona">{{ resumenPersona }}</span>
-        <small class="ficha-persona__nota" *ngIf="notaFoto">{{ notaFoto }}</small>
-
-        <div class="ficha-persona__acciones" *ngIf="puedeCambiarFoto">
-          <!-- El input real se esconde; el botón es su label. -->
-          <input type="file" id="fotoEmpleado" class="perfil-foto__campo"
-            accept="image/jpeg,image/png,image/webp" (change)="alElegirFoto($event)" />
-          <label for="fotoEmpleado" class="btn-secondary">
-            <app-icon icono="camera" [tamano]="16"></app-icon>
-            {{ fotoUrl ? 'Cambiar foto' : 'Subir foto' }}
-          </label>
-          <button type="button" class="btn-secondary" *ngIf="fotoUrl" (click)="quitarFoto()">
-            <app-icon icono="trash" [tamano]="16"></app-icon>
-            Quitar foto
-          </button>
+  de la palabra "Cargando...". Igual que el menú y el Panel de
+  Control: el hueco ya tiene la forma de lo que va a aparecer. -->
+  @if (cargando) {
+    <div class="empleado-form-esqueleto" aria-hidden="true">
+      <div class="ficha-persona">
+        <span class="esqueleto esqueleto--circulo ficha-persona__foto"></span>
+        <div class="ficha-persona__datos" style="flex: 1;">
+          <span class="esqueleto esqueleto--linea esqueleto--media" style="height: 18px;"></span>
+          <span class="esqueleto esqueleto--linea esqueleto--corta" style="margin-bottom: 0;"></span>
         </div>
       </div>
+      <div class="empleado-form-esqueleto__pasos">
+        @for (p of [1, 2, 3, 4, 5]; track $index) {
+          <span class="esqueleto" style="height: 36px;"></span>
+        }
+      </div>
+      <div class="rejilla-campos">
+        @for (c of [1, 2, 3, 4, 5, 6]; track $index) {
+          <div class="form-group">
+            <span class="esqueleto esqueleto--linea esqueleto--corta" style="height: 11px;"></span>
+            <span class="esqueleto" style="height: 38px;"></span>
+          </div>
+        }
+      </div>
     </div>
+  }
+  @if (cargando) {
+    <span class="solo-lectores" role="status">Cargando los datos del trabajador…</span>
+  }
 
-    <app-wizard [pasos]="pasos" [(actual)]="paso" [form]="form" #wizard></app-wizard>
-
-    <form [formGroup]="form" (ngSubmit)="guardar()">
-      <app-seccion-personales *ngIf="pasoActual === 'personales'"
-        [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"></app-seccion-personales>
-
-      <app-seccion-laborales *ngIf="pasoActual === 'laborales'"
-        [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"
-        [areas]="areas" [cargos]="cargos" [sedes]="sedes" [tiposContrato]="tiposContrato"
-        [contratos]="contratos" [cargandoContratos]="cargandoContratos"></app-seccion-laborales>
-
-      <app-seccion-planilla *ngIf="pasoActual === 'planilla'"
-        [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"></app-seccion-planilla>
-
-      <app-seccion-complementarios *ngIf="pasoActual === 'complementarios'"
-        [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"
-        [hojaDeVida]="hojaDeVida"
-        (cvElegido)="cvArchivo = $event"
-        (descargarCv)="descargarHojaDeVida()"></app-seccion-complementarios>
-
-      <app-seccion-acceso *ngIf="pasoActual === 'acceso'"
-        [form]="form" [soloLectura]="soloLectura"
-        [roles]="roles" [esNuevo]="esNuevo"></app-seccion-acceso>
-
-      <div class="form-pie">
-        <button type="button" class="btn-secondary" *ngIf="!wizard.esPrimero"
-          (click)="wizard.anterior()">
-          Anterior
-        </button>
-
-        <div class="form-pie__derecha">
-          <button type="button" class="btn-secondary" (click)="volver()">
-            {{ soloLectura ? 'Cerrar' : 'Cancelar' }}
-          </button>
-
-          <!-- Al editar, el principal es Guardar: Siguiente pasa a secundario. -->
-          <button type="button" [class]="esNuevo || soloLectura ? 'btn-primary' : 'btn-secondary'" *ngIf="!wizard.esUltimo"
-            (click)="wizard.siguiente()">
-            Siguiente
-          </button>
-
-          <!-- Al dar de alta, se registra en el último paso. Al editar, se
-               guarda desde cualquier paso, apenas hay un cambio. -->
-          <button type="submit" class="btn-primary" *ngIf="!soloLectura && (esNuevo ? wizard.esUltimo : true)"
-            [disabled]="guardando || (!esNuevo && !hayCambios)"
+  @if (!cargando) {
+    <!-- A quién se está mirando, con su foto. RR.HH. y Admin se la pueden
+    poner aquí (también en el alta); se sube al guardar, como el CV. -->
+    <div class="ficha-persona">
+      <span class="avatar ficha-persona__foto">
+        @if (fotoUrl) {
+          <img class="avatar__foto" [src]="fotoUrl"
+            [alt]="'Foto de ' + nombreCompleto" />
+        }
+        @if (!fotoUrl && iniciales) {
+          {{ iniciales }}
+        }
+        @if (!fotoUrl && !iniciales) {
+          <app-icon icono="person" [tamano]="34"></app-icon>
+        }
+      </span>
+      <div class="ficha-persona__datos">
+        <strong class="ficha-persona__nombre">{{ nombreCompleto || 'Nuevo trabajador' }}</strong>
+        @if (resumenPersona) {
+          <span class="ficha-persona__resumen">{{ resumenPersona }}</span>
+        }
+        @if (notaFoto) {
+          <small class="ficha-persona__nota">{{ notaFoto }}</small>
+        }
+        @if (puedeCambiarFoto) {
+          <div class="ficha-persona__acciones">
+            <!-- El input real se esconde; el botón es su label. -->
+            <input type="file" id="fotoEmpleado" class="perfil-foto__campo"
+              accept="image/jpeg,image/png,image/webp" (change)="alElegirFoto($event)" />
+              <label for="fotoEmpleado" class="btn-secondary">
+                <app-icon icono="camera" [tamano]="16"></app-icon>
+                {{ fotoUrl ? 'Cambiar foto' : 'Subir foto' }}
+              </label>
+              @if (fotoUrl) {
+                <button type="button" class="btn-secondary" (click)="quitarFoto()">
+                  <app-icon icono="trash" [tamano]="16"></app-icon>
+                  Quitar foto
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+      <app-wizard [pasos]="pasos" [(actual)]="paso" [form]="form" #wizard></app-wizard>
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        @if (pasoActual === 'personales') {
+          <app-seccion-personales
+          [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"></app-seccion-personales>
+        }
+        @if (pasoActual === 'laborales') {
+          <app-seccion-laborales
+            [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"
+            [areas]="areas" [cargos]="cargos" [sedes]="sedes" [tiposContrato]="tiposContrato"
+          [contratos]="contratos" [cargandoContratos]="cargandoContratos"></app-seccion-laborales>
+        }
+        @if (pasoActual === 'planilla') {
+          <app-seccion-planilla
+          [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"></app-seccion-planilla>
+        }
+        @if (pasoActual === 'complementarios') {
+          <app-seccion-complementarios
+            [form]="form" [soloLectura]="soloLectura" [esNuevo]="esNuevo"
+            [hojaDeVida]="hojaDeVida"
+            (cvElegido)="cvArchivo = $event"
+          (descargarCv)="descargarHojaDeVida()"></app-seccion-complementarios>
+        }
+        @if (pasoActual === 'acceso') {
+          <app-seccion-acceso
+            [form]="form" [soloLectura]="soloLectura"
+          [roles]="roles" [esNuevo]="esNuevo"></app-seccion-acceso>
+        }
+        <div class="form-pie">
+          @if (!wizard.esPrimero) {
+            <button type="button" class="btn-secondary"
+              (click)="wizard.anterior()">
+              Anterior
+            </button>
+          }
+          <div class="form-pie__derecha">
+            <button type="button" class="btn-secondary" (click)="volver()">
+              {{ soloLectura ? 'Cerrar' : 'Cancelar' }}
+            </button>
+            <!-- Al editar, el principal es Guardar: Siguiente pasa a secundario. -->
+            @if (!wizard.esUltimo) {
+              <button type="button" [class]="esNuevo || soloLectura ? 'btn-primary' : 'btn-secondary'"
+                (click)="wizard.siguiente()">
+                Siguiente
+              </button>
+            }
+            <!-- Al dar de alta, se registra en el último paso. Al editar, se
+            guarda desde cualquier paso, apenas hay un cambio. -->
+            @if (!soloLectura && (esNuevo ? wizard.esUltimo : true)) {
+              <button type="submit" class="btn-primary"
+                [disabled]="guardando || (!esNuevo && !hayCambios)"
             [appPista]="esNuevo
               ? 'Registra al trabajador, le crea su cuenta y le envía a su correo el enlace para crear su contraseña.'
               : (hayCambios
                   ? 'Guarda los cambios de su ficha ahora, sin recorrer los demás pasos. Si falta algún dato, te lleva al paso que lo tiene.'
                   : 'Todavía no cambiaste nada en su ficha.')">
-            {{ guardando ? 'Guardando…' : (esNuevo ? 'Registrar empleado' : 'Guardar cambios') }}
-          </button>
+                {{ guardando ? 'Guardando…' : (esNuevo ? 'Registrar empleado' : 'Guardar cambios') }}
+              </button>
+            }
+          </div>
         </div>
-      </div>
-    </form>
-  </ng-container>
-</div>
+      </form>
+    }
+  </div>

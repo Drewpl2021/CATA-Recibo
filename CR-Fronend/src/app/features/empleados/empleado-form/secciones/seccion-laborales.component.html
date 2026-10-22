@@ -3,16 +3,20 @@
 
   <div class="rejilla-campos">
     <!-- Área y Cargo van juntos y en ese orden: el área manda, y de ella
-         sale la lista de cargos. -->
+    sale la lista de cargos. -->
     <div class="form-row rejilla-campos--completo">
       <div class="form-group">
         <label for="area_id">Área *</label>
         <select id="area_id" class="form-control" formControlName="area_id"
           (change)="alCambiarArea()" [class.is-invalid]="invalido('area_id')">
           <option value="">— Elige un área —</option>
-          <option *ngFor="let a of areas" [value]="a.id">{{ a.nombre }}</option>
+          @for (a of areas; track a.id) {
+            <option [value]="a.id">{{ a.nombre }}</option>
+          }
         </select>
-        <small class="form-error" *ngIf="invalido('area_id')">{{ error('area_id') }}</small>
+        @if (invalido('area_id')) {
+          <small class="form-error">{{ error('area_id') }}</small>
+        }
       </div>
 
       <div class="form-group">
@@ -20,22 +24,32 @@
         <select id="cargo_id" class="form-control" formControlName="cargo_id"
           [class.is-invalid]="invalido('cargo_id')">
           <option value="">— Elige un cargo —</option>
-          <option *ngFor="let c of cargosDelArea" [value]="c.id">{{ c.nombre }}</option>
+          @for (c of cargosDelArea; track c.id) {
+            <option [value]="c.id">{{ c.nombre }}</option>
+          }
         </select>
 
-        <small class="form-error" *ngIf="invalido('cargo_id')">{{ error('cargo_id') }}</small>
+        @if (invalido('cargo_id')) {
+          <small class="form-error">{{ error('cargo_id') }}</small>
+        }
 
-        <small class="form-ayuda" *ngIf="cargoLimpiadoPorElArea">
-          El cargo que tenías no existe en esa área: elige uno de los de ahora.
-        </small>
+        @if (cargoLimpiadoPorElArea) {
+          <small class="form-ayuda">
+            El cargo que tenías no existe en esa área: elige uno de los de ahora.
+          </small>
+        }
 
-        <small class="form-ayuda" *ngIf="!invalido('cargo_id') && !cargoLimpiadoPorElArea && form.get('area_id')?.value">
-          Solo los cargos de esa área, más los que valen en cualquiera.
-        </small>
+        @if (!invalido('cargo_id') && !cargoLimpiadoPorElArea && form.get('area_id')?.value) {
+          <small class="form-ayuda">
+            Solo los cargos de esa área, más los que valen en cualquiera.
+          </small>
+        }
 
-        <small class="form-ayuda" *ngIf="!form.get('area_id')?.value">
-          Elige primero el área y la lista se acorta sola.
-        </small>
+        @if (!form.get('area_id')?.value) {
+          <small class="form-ayuda">
+            Elige primero el área y la lista se acorta sola.
+          </small>
+        }
       </div>
     </div>
 
@@ -44,132 +58,182 @@
       <select id="sede_id" class="form-control" formControlName="sede_id"
         [class.is-invalid]="invalido('sede_id')">
         <option value="">— Elige una sede —</option>
-        <option *ngFor="let s of sedes" [value]="s.id">{{ s.nombre }}</option>
+        @for (s of sedes; track s.id) {
+          <option [value]="s.id">{{ s.nombre }}</option>
+        }
       </select>
-      <small class="form-error" *ngIf="invalido('sede_id')">{{ error('sede_id') }}</small>
+      @if (invalido('sede_id')) {
+        <small class="form-error">{{ error('sede_id') }}</small>
+      }
     </div>
 
     <div class="form-group">
       <label for="fecha_ingreso">Fecha de ingreso *</label>
       <input type="date" id="fecha_ingreso" class="form-control" formControlName="fecha_ingreso"
         [class.is-invalid]="invalido('fecha_ingreso')" />
-      <small class="form-error" *ngIf="invalido('fecha_ingreso')">{{ error('fecha_ingreso') }}</small>
-    </div>
+        @if (invalido('fecha_ingreso')) {
+          <small class="form-error">{{ error('fecha_ingreso') }}</small>
+        }
+      </div>
 
-    <div class="form-group">
-      <label for="tipo_contrato_id">Tipo de contrato *</label>
-      <select id="tipo_contrato_id" class="form-control" formControlName="tipo_contrato_id"
-        [class.is-invalid]="invalido('tipo_contrato_id')">
-        <option value="">— Elige un tipo —</option>
-        <option *ngFor="let t of tiposContrato" [value]="t.id">{{ t.nombre }}</option>
-      </select>
-      <small class="form-error" *ngIf="invalido('tipo_contrato_id')">{{ error('tipo_contrato_id') }}</small>
-      <small class="form-ayuda" *ngIf="!invalido('tipo_contrato_id') && esNuevo">
-        Con esto se le crea su primer contrato, con fecha de inicio el día de ingreso.
-      </small>
-      <small class="form-ayuda" *ngIf="!invalido('tipo_contrato_id') && !esNuevo && !cambioDeContrato">
-        Es el tipo de su contrato vigente. Cambiarlo acá le abre uno nuevo.
-      </small>
-    </div>
+      <div class="form-group">
+        <label for="tipo_contrato_id">Tipo de contrato *</label>
+        <select id="tipo_contrato_id" class="form-control" formControlName="tipo_contrato_id"
+          [class.is-invalid]="invalido('tipo_contrato_id')">
+          <option value="">— Elige un tipo —</option>
+          @for (t of tiposContrato; track t.id) {
+            <option [value]="t.id">{{ t.nombre }}</option>
+          }
+        </select>
+        @if (invalido('tipo_contrato_id')) {
+          <small class="form-error">{{ error('tipo_contrato_id') }}</small>
+        }
+        @if (!invalido('tipo_contrato_id') && esNuevo) {
+          <small class="form-ayuda">
+            Con esto se le crea su primer contrato, con fecha de inicio el día de ingreso.
+          </small>
+        }
+        @if (!invalido('tipo_contrato_id') && !esNuevo && !cambioDeContrato) {
+          <small class="form-ayuda">
+            Es el tipo de su contrato vigente. Cambiarlo acá le abre uno nuevo.
+          </small>
+        }
+      </div>
 
-    <!-- Cambiar el tipo no es corregir un dato: es firmar otro contrato, y
-         de eso dependen sus vacaciones y lo que dice su boleta. Por eso se
-         avisa antes de guardar y no después. -->
-    <p class="form-nota form-nota--alerta rejilla-campos--completo" *ngIf="cambioDeContrato">
-      Al guardar se cerrará su contrato de
-      <strong>{{ contratoVigente?.tipo_contrato?.nombre }}</strong>
-      y empezará uno de
-      <strong>{{ etiquetaTipoContratoElegido() }}</strong>
-      desde hoy. El anterior queda en su historial, acá abajo.
-    </p>
+      <!-- Cambiar el tipo no es corregir un dato: es firmar otro contrato, y
+      de eso dependen sus vacaciones y lo que dice su boleta. Por eso se
+      avisa antes de guardar y no después. -->
+      @if (cambioDeContrato) {
+        <p class="form-nota form-nota--alerta rejilla-campos--completo">
+          Al guardar se cerrará su contrato de
+          <strong>{{ contratoVigente?.tipo_contrato?.nombre }}</strong>
+          y empezará uno de
+          <strong>{{ etiquetaTipoContratoElegido() }}</strong>
+          desde hoy. El anterior queda en su historial, acá abajo.
+        </p>
+      }
 
-    <!-- Solo los contratos con plazo llevan fecha de término; el indeterminado no. -->
-    <div class="form-group" *ngIf="llevaFechaFin">
-      <label for="fecha_cese">Fecha de término del contrato *</label>
-      <input type="date" id="fecha_cese" class="form-control"
-        formControlName="fecha_cese"
-        [class.is-invalid]="invalido('fecha_cese')" />
-      <small class="form-error" *ngIf="invalido('fecha_cese')">{{ error('fecha_cese') }}</small>
-      <small class="form-ayuda" *ngIf="!invalido('fecha_cese')">
-        Cuándo acaba este contrato. Al renovarlo se crea uno nuevo y este queda cerrado.
-      </small>
-    </div>
+      <!-- Solo los contratos con plazo llevan fecha de término; el indeterminado no. -->
+      @if (llevaFechaFin) {
+        <div class="form-group">
+          <label for="fecha_cese">Fecha de término del contrato *</label>
+          <input type="date" id="fecha_cese" class="form-control"
+            formControlName="fecha_cese"
+            [class.is-invalid]="invalido('fecha_cese')" />
+            @if (invalido('fecha_cese')) {
+              <small class="form-error">{{ error('fecha_cese') }}</small>
+            }
+            @if (!invalido('fecha_cese')) {
+              <small class="form-ayuda">
+                Cuándo acaba este contrato. Al renovarlo se crea uno nuevo y este queda cerrado.
+              </small>
+            }
+          </div>
+        }
 
-    <div class="form-group">
-      <label for="sueldo_base">Sueldo base (S/) *</label>
-      <input type="number" id="sueldo_base" class="form-control" formControlName="sueldo_base"
-        min="0" step="0.01" placeholder="2500.00"
-        [class.is-invalid]="invalido('sueldo_base')" />
-      <small class="form-error" *ngIf="invalido('sueldo_base')">{{ error('sueldo_base') }}</small>
-      <small class="form-ayuda" *ngIf="!invalido('sueldo_base')">
-        Base para calcular su planilla.
-      </small>
-    </div>
+        <div class="form-group">
+          <label for="sueldo_base">Sueldo base (S/) *</label>
+          <input type="number" id="sueldo_base" class="form-control" formControlName="sueldo_base"
+            min="0" step="0.01" placeholder="2500.00"
+            [class.is-invalid]="invalido('sueldo_base')" />
+            @if (invalido('sueldo_base')) {
+              <small class="form-error">{{ error('sueldo_base') }}</small>
+            }
+            @if (!invalido('sueldo_base')) {
+              <small class="form-ayuda">
+                Base para calcular su planilla.
+              </small>
+            }
+          </div>
 
-    <div class="form-group">
-      <label for="bonificacion_cargo">Bonificación por cargo (S/)</label>
-      <input type="number" id="bonificacion_cargo" class="form-control" formControlName="bonificacion_cargo"
-        min="0" step="0.01" placeholder="0.00"
-        [class.is-invalid]="invalido('bonificacion_cargo')" />
-      <small class="form-error" *ngIf="invalido('bonificacion_cargo')">No puede ser negativa.</small>
-      <small class="form-ayuda" *ngIf="!invalido('bonificacion_cargo')">
-        Lo que cobra cada mes por su función (coordinación, jefatura). Cada planilla la trae sola. Vacío si no tiene.
-      </small>
-    </div>
+          <div class="form-group">
+            <label for="bonificacion_cargo">Bonificación por cargo (S/)</label>
+            <input type="number" id="bonificacion_cargo" class="form-control" formControlName="bonificacion_cargo"
+              min="0" step="0.01" placeholder="0.00"
+              [class.is-invalid]="invalido('bonificacion_cargo')" />
+              @if (invalido('bonificacion_cargo')) {
+                <small class="form-error">No puede ser negativa.</small>
+              }
+              @if (!invalido('bonificacion_cargo')) {
+                <small class="form-ayuda">
+                  Lo que cobra cada mes por su función (coordinación, jefatura). Cada planilla la trae sola. Vacío si no tiene.
+                </small>
+              }
+            </div>
 
-    <div class="form-group">
-      <label for="estado">Estado</label>
-      <select id="estado" class="form-control" formControlName="estado"
-        [style.background]="esNuevo ? 'var(--surface-alt)' : null"
-        [style.color]="esNuevo ? 'var(--text-muted)' : null"
-        [style.fontStyle]="esNuevo ? 'italic' : null">
-        <option *ngFor="let e of estados" [value]="e.value">{{ e.label }}</option>
-      </select>
-      <small class="form-ayuda" *ngIf="esNuevo">
-        Todo alta entra activa. Para registrar a alguien que ya cesó, se hace desde el Excel de importar empleados.
-      </small>
-    </div>
-  </div>
-</div>
+            <div class="form-group">
+              <label for="estado">Estado</label>
+              <select id="estado" class="form-control" formControlName="estado"
+                [style.background]="esNuevo ? 'var(--surface-alt)' : null"
+                [style.color]="esNuevo ? 'var(--text-muted)' : null"
+                [style.fontStyle]="esNuevo ? 'italic' : null">
+                @for (e of estados; track e.value) {
+                  <option [value]="e.value">{{ e.label }}</option>
+                }
+              </select>
+              @if (esNuevo) {
+                <small class="form-ayuda">
+                  Todo alta entra activa. Para registrar a alguien que ya cesó, se hace desde el Excel de importar empleados.
+                </small>
+              }
+            </div>
+          </div>
+        </div>
 
-<!-- ── Sus contratos ──────────────────────────────────────────────────
-     Solo en una ficha que ya existe: en un alta todavía no hay ninguno,
-     y el de arriba se crea al guardar. Las renovaciones no se hacen acá
-     porque cambiar el tipo en la ficha NO abre un contrato nuevo: eso se
-     hace en Contratos, que además cierra el anterior. -->
-<div class="seccion-form" *ngIf="!esNuevo">
-  <h3 class="seccion-form__titulo">Sus contratos</h3>
-
-  <ul class="lista-contratos" *ngIf="cargandoContratos" aria-hidden="true">
-    <li class="lista-contratos__item" *ngFor="let c of [1, 2]">
-      <span class="esqueleto" style="width: 76px; height: 20px; border-radius: var(--radius-full);"></span>
-      <span class="esqueleto esqueleto--linea esqueleto--corta" style="margin-bottom: 0;"></span>
-      <span class="esqueleto esqueleto--linea esqueleto--media" style="margin-bottom: 0;"></span>
-    </li>
-  </ul>
-  <span class="solo-lectores" *ngIf="cargandoContratos" role="status">Cargando sus contratos…</span>
-
-  <p class="form-nota" *ngIf="!cargandoContratos && !contratos.length">
-    Este trabajador no tiene ningún contrato registrado. Créaselo desde
-    <strong>Boletas y Finanzas → Contratos</strong>.
-  </p>
-
-  <ul class="lista-contratos" *ngIf="!cargandoContratos && contratos.length">
-    <li class="lista-contratos__item" *ngFor="let c of contratos">
-      <span class="status-badge" [ngClass]="'status-badge-' + (vencido(c) ? 'warning' : severidadEstado(c.estado))">
-        {{ vencido(c) ? 'Vencido' : etiquetaEstadoContrato(c.estado) }}
-      </span>
-      <strong>{{ c.tipo_contrato?.nombre }}</strong>
-      <span class="lista-contratos__fechas">
-        desde {{ fecha(c.fecha_inicio) }}
-        <ng-container *ngIf="c.fecha_fin"> hasta {{ fecha(c.fecha_fin) }}</ng-container>
-        <ng-container *ngIf="!c.fecha_fin"> — sin fecha de término</ng-container>
-      </span>
-    </li>
-  </ul>
-
-  <p class="form-ayuda" *ngIf="!cargandoContratos && contratos.length">
-    Para renovarlo o darlo por terminado ve a <strong>Contratos</strong>: al crear
-    uno nuevo, el vigente se cierra solo.
-  </p>
-</div>
+        <!-- ── Sus contratos ──────────────────────────────────────────────────
+        Solo en una ficha que ya existe: en un alta todavía no hay ninguno,
+        y el de arriba se crea al guardar. Las renovaciones no se hacen acá
+        porque cambiar el tipo en la ficha NO abre un contrato nuevo: eso se
+        hace en Contratos, que además cierra el anterior. -->
+        @if (!esNuevo) {
+          <div class="seccion-form">
+            <h3 class="seccion-form__titulo">Sus contratos</h3>
+            @if (cargandoContratos) {
+              <ul class="lista-contratos" aria-hidden="true">
+                @for (c of [1, 2]; track $index) {
+                  <li class="lista-contratos__item">
+                    <span class="esqueleto" style="width: 76px; height: 20px; border-radius: var(--radius-full);"></span>
+                    <span class="esqueleto esqueleto--linea esqueleto--corta" style="margin-bottom: 0;"></span>
+                    <span class="esqueleto esqueleto--linea esqueleto--media" style="margin-bottom: 0;"></span>
+                  </li>
+                }
+              </ul>
+            }
+            @if (cargandoContratos) {
+              <span class="solo-lectores" role="status">Cargando sus contratos…</span>
+            }
+            @if (!cargandoContratos && !contratos.length) {
+              <p class="form-nota">
+                Este trabajador no tiene ningún contrato registrado. Créaselo desde
+                <strong>Boletas y Finanzas → Contratos</strong>.
+              </p>
+            }
+            @if (!cargandoContratos && contratos.length) {
+              <ul class="lista-contratos">
+                @for (c of contratos; track $index) {
+                  <li class="lista-contratos__item">
+                    <span class="status-badge" [ngClass]="'status-badge-' + (vencido(c) ? 'warning' : severidadEstado(c.estado))">
+                      {{ vencido(c) ? 'Vencido' : etiquetaEstadoContrato(c.estado) }}
+                    </span>
+                    <strong>{{ c.tipo_contrato?.nombre }}</strong>
+                    <span class="lista-contratos__fechas">
+                      desde {{ fecha(c.fecha_inicio) }}
+                      @if (c.fecha_fin) {
+                        hasta {{ fecha(c.fecha_fin) }}
+                      }
+                      @if (!c.fecha_fin) {
+                        — sin fecha de término
+                      }
+                    </span>
+                  </li>
+                }
+              </ul>
+            }
+            @if (!cargandoContratos && contratos.length) {
+              <p class="form-ayuda">
+                Para renovarlo o darlo por terminado ve a <strong>Contratos</strong>: al crear
+                uno nuevo, el vigente se cierra solo.
+              </p>
+            }
+          </div>
+        }

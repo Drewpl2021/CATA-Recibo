@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { GlobalWorkerOptions } from 'pdfjs-dist';
@@ -61,7 +61,7 @@ export interface BoletaRow {
 @Component({
   selector: 'app-mis-boletas',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent, FormModalComponent, AlCuerpoDirective],
+  imports: [IconComponent, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent, FormModalComponent, AlCuerpoDirective],
   templateUrl: './mis-boletas.component.html',
   styleUrl: './mis-boletas.component.scss'
 })

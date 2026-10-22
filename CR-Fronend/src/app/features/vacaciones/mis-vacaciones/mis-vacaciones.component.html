@@ -4,57 +4,65 @@
   subtitulo="Los días que te quedan este año y en qué va cada solicitud que hiciste."
   [cifras]="cifras"
   [cargandoCifras]="!saldo"
->
-  <button headerActions class="btn-primary" (click)="pedir()" *ngIf="!sinEmpleado && puedeSolicitar">
-    <app-icon icono="plus" [tamano]="16"></app-icon>
-    Pedir vacaciones
-  </button>
+  >
+  @if (!sinEmpleado && puedeSolicitar) {
+    <button headerActions class="btn-primary" (click)="pedir()">
+      <app-icon icono="plus" [tamano]="16"></app-icon>
+      Pedir vacaciones
+    </button>
+  }
 </app-page-header>
 
-<p class="form-nota form-nota--alerta" *ngIf="sinEmpleado">
-  Tu cuenta no está vinculada a ninguna ficha de empleado, así que no tiene
-  días de vacaciones. Pídele a Recursos Humanos que la vincule.
-</p>
+@if (sinEmpleado) {
+  <p class="form-nota form-nota--alerta">
+    Tu cuenta no está vinculada a ninguna ficha de empleado, así que no tiene
+    días de vacaciones. Pídele a Recursos Humanos que la vincule.
+  </p>
+}
 
 <!--
-  Su contrato no da derecho a pedir descanso. Se le dice por qué y qué recibe
-  en su lugar, en vez de dejarle un botón que el servidor va a rechazar. La
-  tabla de abajo sigue a la vista: puede tener solicitudes de antes.
+Su contrato no da derecho a pedir descanso. Se le dice por qué y qué recibe
+en su lugar, en vez de dejarle un botón que el servidor va a rechazar. La
+tabla de abajo sigue a la vista: puede tener solicitudes de antes.
 -->
-<p class="form-nota form-nota--alerta" *ngIf="!sinEmpleado && motivoSinVacaciones">
-  {{ motivoSinVacaciones }}
-  Esos días se te pagan en dinero, no se toman como descanso. Si tienes dudas,
-  consúltalo con Recursos Humanos.
-</p>
+@if (!sinEmpleado && motivoSinVacaciones) {
+  <p class="form-nota form-nota--alerta">
+    {{ motivoSinVacaciones }}
+    Esos días se te pagan en dinero, no se toman como descanso. Si tienes dudas,
+    consúltalo con Recursos Humanos.
+  </p>
+}
 
-<app-data-table
-  entidad="mi solicitud"
-  *ngIf="!sinEmpleado"
-  [columnas]="columnas"
-  [datos]="vacaciones"
-  [cargando]="cargando"
-  [paginacionServidor]="true"
-  [totalElementos]="total"
-  [pagina]="pagina"
-  (cambioPagina)="irAPagina($event)"
-  [acciones]="['eliminar']"
-  mensajeVacio="Todavía no has pedido vacaciones."
-  (eliminarFila)="anular($event)"
-></app-data-table>
+@if (!sinEmpleado) {
+  <app-data-table
+    entidad="mi solicitud"
+    [columnas]="columnas"
+    [datos]="vacaciones"
+    [cargando]="cargando"
+    [paginacionServidor]="true"
+    [totalElementos]="total"
+    [pagina]="pagina"
+    (cambioPagina)="irAPagina($event)"
+    [acciones]="['eliminar']"
+    mensajeVacio="Todavía no has pedido vacaciones."
+    (eliminarFila)="anular($event)"
+  ></app-data-table>
+}
 
-<p class="form-nota" style="margin-top: 16px;" *ngIf="!sinEmpleado && puedeSolicitar">
-  <ng-container *ngIf="esProporcional; else anioCompleto">
-    Llevas {{ saldo?.mesesTrabajados }} meses en el colegio, así que por ahora te
-    corresponden {{ saldo?.diasGanados }} días. Al cumplir el año pasas a los 30.
-  </ng-container>
-  <ng-template #anioCompleto>
-    Te corresponden 30 días al año. Los que pides cuentan desde que los
-    solicitas, aunque Recursos Humanos todavía no los haya aprobado.
-  </ng-template>
-  Puedes retirar una solicitud mientras siga <strong>pendiente</strong>; una vez
-  resuelta, habla con Recursos Humanos. Tomar vacaciones <strong>no te descuenta
+@if (!sinEmpleado && puedeSolicitar) {
+  <p class="form-nota" style="margin-top: 16px;">
+    @if (esProporcional) {
+      Llevas {{ saldo?.mesesTrabajados }} meses en el colegio, así que por ahora te
+      corresponden {{ saldo?.diasGanados }} días. Al cumplir el año pasas a los 30.
+    } @else {
+      Te corresponden 30 días al año. Los que pides cuentan desde que los
+      solicitas, aunque Recursos Humanos todavía no los haya aprobado.
+    }
+    Puedes retirar una solicitud mientras siga <strong>pendiente</strong>; una vez
+    resuelta, habla con Recursos Humanos. Tomar vacaciones <strong>no te descuenta
   sueldo</strong>: cobras igual, y en la boleta de ese mes salen contadas aparte.
 </p>
+}
 
 <app-form-modal
   [(visible)]="modalVisible"
@@ -63,42 +71,52 @@
   textoGuardar="Enviar solicitud"
   (guardar)="guardar()"
   (cancelar)="cerrarModal()"
->
+  >
   <form [formGroup]="form" class="form-fields">
-    <p class="form-nota" *ngIf="saldo">
-      Te quedan <strong>{{ saldo.diasDisponibles }}</strong> días este año.
-    </p>
+    @if (saldo) {
+      <p class="form-nota">
+        Te quedan <strong>{{ saldo.diasDisponibles }}</strong> días este año.
+      </p>
+    }
 
     <div class="form-row">
       <div class="form-group">
         <label for="fecha_inicio">Desde *</label>
         <input type="date" id="fecha_inicio" class="form-control" formControlName="fecha_inicio"
           [class.is-invalid]="invalido('fecha_inicio')" />
-        <small class="form-error" *ngIf="invalido('fecha_inicio')">Falta el primer día.</small>
+        @if (invalido('fecha_inicio')) {
+          <small class="form-error">Falta el primer día.</small>
+        }
       </div>
 
       <div class="form-group">
         <label for="fecha_fin">Hasta *</label>
         <input type="date" id="fecha_fin" class="form-control" formControlName="fecha_fin"
           [class.is-invalid]="invalido('fecha_fin')" />
-        <small class="form-error" *ngIf="invalido('fecha_fin')">Falta el último día.</small>
+        @if (invalido('fecha_fin')) {
+          <small class="form-error">Falta el último día.</small>
+        }
       </div>
     </div>
 
-    <div class="form-nota" *ngIf="diasDelFormulario > 0">
-      Son <strong>{{ diasDelFormulario }}</strong> día(s), contando el primero y
-      el último.
-    </div>
+    @if (diasDelFormulario > 0) {
+      <div class="form-nota">
+        Son <strong>{{ diasDelFormulario }}</strong> día(s), contando el primero y
+        el último.
+      </div>
+    }
 
-    <div class="form-nota form-nota--alerta" *ngIf="seExcedeDelSaldo">
-      No te alcanzan: estás pidiendo {{ diasDelFormulario }} y te quedan
-      {{ saldo?.diasDisponibles }}.
-    </div>
+    @if (seExcedeDelSaldo) {
+      <div class="form-nota form-nota--alerta">
+        No te alcanzan: estás pidiendo {{ diasDelFormulario }} y te quedan
+        {{ saldo?.diasDisponibles }}.
+      </div>
+    }
 
     <div class="form-group">
       <label for="motivo">Motivo</label>
       <textarea id="motivo" class="form-control" formControlName="motivo" rows="3"
-        placeholder="Opcional: ayuda a Recursos Humanos a decidir"></textarea>
+      placeholder="Opcional: ayuda a Recursos Humanos a decidir"></textarea>
     </div>
 
     <p class="form-ayuda">

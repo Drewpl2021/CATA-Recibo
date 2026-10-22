@@ -6,7 +6,7 @@
       <label for="dni">DNI *</label>
 
       <!-- El DNI trae los nombres del padrón: menos tecleo y, sobre todo,
-           menos erratas en el nombre que se va a imprimir en las boletas. -->
+      menos erratas en el nombre que se va a imprimir en las boletas. -->
       <div class="campo-con-accion">
         <input type="text" id="dni" class="form-control" formControlName="dni"
           inputmode="numeric" maxlength="9" placeholder="12345678"
@@ -14,74 +14,96 @@
           (keydown.enter)="$event.preventDefault(); buscarPorDni()"
           [class.is-invalid]="invalido('dni')" />
 
-        <button type="button" class="btn-secondary" *ngIf="mostrarBuscador"
-          [disabled]="!puedeBuscar" (click)="buscarPorDni()">
-          <app-icon icono="search" [tamano]="16"></app-icon>
-          {{ buscando ? 'Buscando…' : 'Buscar' }}
-        </button>
-      </div>
-
-      <small class="form-error" *ngIf="invalido('dni')">
-        Son 8 dígitos, sin puntos ni espacios.
-      </small>
-      <small class="form-ayuda" *ngIf="!invalido('dni') && esNuevo">
-        Escribe los 8 dígitos y pulsa Buscar: traemos sus nombres del padrón.
-      </small>
-
-      <!-- Ese DNI ya tiene ficha: mejor saberlo ahora que al guardar -->
-      <div class="form-nota form-nota--aviso form-nota--accion" *ngIf="yaEsEmpleado as ficha">
-        <div>
-          <strong>{{ ficha.nombre }}</strong> ya está registrado con ese DNI
-          ({{ ficha.estado }}). No hace falta darlo de alta otra vez.
+          @if (mostrarBuscador) {
+            <button type="button" class="btn-secondary"
+              [disabled]="!puedeBuscar" (click)="buscarPorDni()">
+              <app-icon icono="search" [tamano]="16"></app-icon>
+              {{ buscando ? 'Buscando…' : 'Buscar' }}
+            </button>
+          }
         </div>
-        <button type="button" class="btn-secondary" (click)="verFichaExistente()">Ver su ficha</button>
+
+        @if (invalido('dni')) {
+          <small class="form-error">
+            Son 8 dígitos, sin puntos ni espacios.
+          </small>
+        }
+        @if (!invalido('dni') && esNuevo) {
+          <small class="form-ayuda">
+            Escribe los 8 dígitos y pulsa Buscar: traemos sus nombres del padrón.
+          </small>
+        }
+
+        <!-- Ese DNI ya tiene ficha: mejor saberlo ahora que al guardar -->
+        @if (yaEsEmpleado; as ficha) {
+          <div class="form-nota form-nota--aviso form-nota--accion">
+            <div>
+              <strong>{{ ficha.nombre }}</strong> ya está registrado con ese DNI
+              ({{ ficha.estado }}). No hace falta darlo de alta otra vez.
+            </div>
+            <button type="button" class="btn-secondary" (click)="verFichaExistente()">Ver su ficha</button>
+          </div>
+        }
+
+        @if (resultado?.encontrado) {
+          <p class="form-ayuda">
+            Datos traídos de <strong>{{ resultado?.fuente }}</strong>. Revísalos: si algo
+            no cuadra, escríbelo tú.
+          </p>
+        }
+
+        @if (resultado && !resultado.encontrado && !yaEsEmpleado) {
+          <p class="form-ayuda">
+            {{ resultado.mensaje }}
+          </p>
+        }
       </div>
 
-      <p class="form-ayuda" *ngIf="resultado?.encontrado">
-        Datos traídos de <strong>{{ resultado?.fuente }}</strong>. Revísalos: si algo
-        no cuadra, escríbelo tú.
-      </p>
+      <div class="form-group">
+        <label for="nombre">Nombres *</label>
+        <input type="text" id="nombre" class="form-control" formControlName="nombre"
+          placeholder="Ej. María Elena" [class.is-invalid]="invalido('nombre')" />
+          @if (invalido('nombre')) {
+            <small class="form-error">{{ error('nombre') }}</small>
+          }
+        </div>
 
-      <p class="form-ayuda" *ngIf="resultado && !resultado.encontrado && !yaEsEmpleado">
-        {{ resultado.mensaje }}
-      </p>
-    </div>
+        <div class="form-group">
+          <label for="apellido">Apellidos *</label>
+          <input type="text" id="apellido" class="form-control" formControlName="apellido"
+            placeholder="Ej. Quispe Mamani" [class.is-invalid]="invalido('apellido')" />
+            @if (invalido('apellido')) {
+              <small class="form-error">{{ error('apellido') }}</small>
+            }
+          </div>
 
-    <div class="form-group">
-      <label for="nombre">Nombres *</label>
-      <input type="text" id="nombre" class="form-control" formControlName="nombre"
-        placeholder="Ej. María Elena" [class.is-invalid]="invalido('nombre')" />
-      <small class="form-error" *ngIf="invalido('nombre')">{{ error('nombre') }}</small>
-    </div>
+          <div class="form-group">
+            <label for="fecha_nacimiento">Fecha de nacimiento *</label>
+            <input type="date" id="fecha_nacimiento" class="form-control" formControlName="fecha_nacimiento"
+              [class.is-invalid]="invalido('fecha_nacimiento')" />
+              @if (invalido('fecha_nacimiento')) {
+                <small class="form-error">{{ error('fecha_nacimiento') }}</small>
+              }
+            </div>
 
-    <div class="form-group">
-      <label for="apellido">Apellidos *</label>
-      <input type="text" id="apellido" class="form-control" formControlName="apellido"
-        placeholder="Ej. Quispe Mamani" [class.is-invalid]="invalido('apellido')" />
-      <small class="form-error" *ngIf="invalido('apellido')">{{ error('apellido') }}</small>
-    </div>
+            <div class="form-group">
+              <label for="telefono">Teléfono *</label>
+              <input type="tel" id="telefono" class="form-control" formControlName="telefono"
+                inputmode="numeric" maxlength="15" placeholder="951234567"
+                [class.is-invalid]="invalido('telefono')" />
+                @if (invalido('telefono')) {
+                  <small class="form-error">Solo números, hasta 15 dígitos.</small>
+                }
+              </div>
 
-    <div class="form-group">
-      <label for="fecha_nacimiento">Fecha de nacimiento *</label>
-      <input type="date" id="fecha_nacimiento" class="form-control" formControlName="fecha_nacimiento"
-        [class.is-invalid]="invalido('fecha_nacimiento')" />
-      <small class="form-error" *ngIf="invalido('fecha_nacimiento')">{{ error('fecha_nacimiento') }}</small>
-    </div>
-
-    <div class="form-group">
-      <label for="telefono">Teléfono *</label>
-      <input type="tel" id="telefono" class="form-control" formControlName="telefono"
-        inputmode="numeric" maxlength="15" placeholder="951234567"
-        [class.is-invalid]="invalido('telefono')" />
-      <small class="form-error" *ngIf="invalido('telefono')">Solo números, hasta 15 dígitos.</small>
-    </div>
-
-    <div class="form-group rejilla-campos--completo">
-      <label for="direccion">Dirección *</label>
-      <input type="text" id="direccion" class="form-control" formControlName="direccion"
-        placeholder="Ej. Jr. Moquegua N° 852 — Juliaca"
-        [class.is-invalid]="invalido('direccion')" />
-      <small class="form-error" *ngIf="invalido('direccion')">{{ error('direccion') }}</small>
-    </div>
-  </div>
-</div>
+              <div class="form-group rejilla-campos--completo">
+                <label for="direccion">Dirección *</label>
+                <input type="text" id="direccion" class="form-control" formControlName="direccion"
+                  placeholder="Ej. Jr. Moquegua N° 852 — Juliaca"
+                  [class.is-invalid]="invalido('direccion')" />
+                  @if (invalido('direccion')) {
+                    <small class="form-error">{{ error('direccion') }}</small>
+                  }
+                </div>
+              </div>
+            </div>

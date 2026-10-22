@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services';
 import { claveConLetrasYNumeros } from '../../../core/utils';
@@ -15,7 +15,7 @@ import { claveConLetrasYNumeros } from '../../../core/utils';
 @Component({
   selector: 'app-restablecer-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './restablecer-password.component.html',
   styleUrl: '../acceso.scss',
 })

@@ -1,12 +1,16 @@
 <div class="seccion-form" [formGroup]="form">
   <h2 class="seccion-form__titulo">Cuenta de acceso</h2>
-  <p class="seccion-form__ayuda" *ngIf="esNuevo">
-    Al guardar se le creará su cuenta para entrar al sistema.
-  </p>
-  <p class="seccion-form__ayuda" *ngIf="!esNuevo">
-    Su cuenta ya existe. Desde aquí solo se corrige el correo; el rol se
-    cambia en <strong>Usuarios</strong>.
-  </p>
+  @if (esNuevo) {
+    <p class="seccion-form__ayuda">
+      Al guardar se le creará su cuenta para entrar al sistema.
+    </p>
+  }
+  @if (!esNuevo) {
+    <p class="seccion-form__ayuda">
+      Su cuenta ya existe. Desde aquí solo se corrige el correo; el rol se
+      cambia en <strong>Usuarios</strong>.
+    </p>
+  }
 
   <div class="rejilla-campos">
     <div class="form-group">
@@ -14,30 +18,42 @@
       <input type="email" id="email" class="form-control" formControlName="email"
         placeholder="nombre@dominio.com"
         [class.is-invalid]="invalido('email')" />
-      <small class="form-error" *ngIf="invalido('email')">{{ error('email') }}</small>
-      <small class="form-ayuda" *ngIf="!invalido('email')">
-        Con este correo iniciará sesión. Si todavía no tiene el institucional,
-        pon uno provisional y cámbialo después.
-      </small>
+        @if (invalido('email')) {
+          <small class="form-error">{{ error('email') }}</small>
+        }
+        @if (!invalido('email')) {
+          <small class="form-ayuda">
+            Con este correo iniciará sesión. Si todavía no tiene el institucional,
+            pon uno provisional y cámbialo después.
+          </small>
+        }
+      </div>
+
+      <!-- El rol no se elige al dar de alta: todos entran como empleado. -->
+      @if (esNuevo) {
+        <div class="form-group">
+          <label for="rol_fijo">Rol</label>
+          <input type="text" id="rol_fijo" class="form-control" value="Empleado" readonly />
+          @if (!hayRolEmpleado) {
+            <small class="form-error">
+              No existe el rol «empleado». Pídele a un Administrador que lo cree en Configuración → Roles.
+            </small>
+          }
+          @if (hayRolEmpleado) {
+            <small class="form-ayuda">
+              Todo trabajador nuevo entra como <strong>empleado</strong>. Si debe ser de RR.HH. o
+              Administrador, un Administrador le cambia el rol después desde <strong>Usuarios</strong>.
+            </small>
+          }
+        </div>
+      }
     </div>
 
-    <!-- El rol no se elige al dar de alta: todos entran como empleado. -->
-    <div class="form-group" *ngIf="esNuevo">
-      <label for="rol_fijo">Rol</label>
-      <input type="text" id="rol_fijo" class="form-control" value="Empleado" readonly />
-      <small class="form-error" *ngIf="!hayRolEmpleado">
-        No existe el rol «empleado». Pídele a un Administrador que lo cree en Configuración → Roles.
-      </small>
-      <small class="form-ayuda" *ngIf="hayRolEmpleado">
-        Todo trabajador nuevo entra como <strong>empleado</strong>. Si debe ser de RR.HH. o
-        Administrador, un Administrador le cambia el rol después desde <strong>Usuarios</strong>.
-      </small>
-    </div>
+    <!-- Lo que RR.HH. debe comunicarle al trabajador -->
+    @if (esNuevo) {
+      <p class="form-nota form-nota--aviso">
+        Al registrarlo le llegará a este correo un <strong>enlace personal para crear su contraseña</strong>
+        (vence en 72 horas). Revisa que esté bien escrito.
+      </p>
+    }
   </div>
-
-  <!-- Lo que RR.HH. debe comunicarle al trabajador -->
-  <p class="form-nota form-nota--aviso" *ngIf="esNuevo">
-    Al registrarlo le llegará a este correo un <strong>enlace personal para crear su contraseña</strong>
-    (vence en 72 horas). Revisa que esté bien escrito.
-  </p>
-</div>

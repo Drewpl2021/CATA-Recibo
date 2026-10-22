@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { SedeService, ToastService, ConfirmService } from '../../../core/services';
@@ -19,10 +19,7 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 @Component({
   selector: 'app-sedes-list',
   standalone: true,
-  imports: [IconComponent, 
-    CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent,
-  ],
+  imports: [IconComponent, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent],
   templateUrl: './sedes-list.component.html',
 })
 export class SedesListComponent implements OnInit {

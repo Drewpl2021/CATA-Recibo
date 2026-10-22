@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import {
@@ -48,10 +48,7 @@ import { forkJoin } from 'rxjs';
 @Component({
   selector: 'app-periodos-list',
   standalone: true,
-  imports: [IconComponent, 
-    CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
-  ],
+  imports: [IconComponent, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent],
   templateUrl: './periodos-list.component.html',
 })
 export class PeriodosListComponent implements OnInit {

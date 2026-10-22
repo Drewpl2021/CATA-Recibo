@@ -5,7 +5,7 @@
   (dragover)="alArrastrar($event)"
   (dragleave)="arrastrando = false"
   (drop)="alSoltar($event)"
->
+  >
   <input
     type="file"
     class="solo-lectores"
@@ -13,21 +13,29 @@
     [multiple]="multiple"
     [disabled]="deshabilitado || ocupado"
     (change)="alElegir($event)"
-  />
+    />
   <app-icon icono="description" [tamano]="36"></app-icon>
   <strong>{{ ocupado ? textoOcupado : texto }}</strong>
-  <span *ngIf="ayuda">{{ ayuda }}</span>
+  @if (ayuda) {
+    <span>{{ ayuda }}</span>
+  }
 </label>
 
-<small class="form-error" *ngIf="error">{{ error }}</small>
+@if (error) {
+  <small class="form-error">{{ error }}</small>
+}
 
-<ul class="lista-archivos" *ngIf="mostrarLista && archivos.length">
-  <li *ngFor="let archivo of archivos">
-    <app-icon icono="description" [tamano]="18"></app-icon>
-    <span class="lista-archivos__nombre">{{ archivo.name }}</span>
-    <span class="lista-archivos__peso">{{ peso(archivo) }}</span>
-    <button type="button" class="btn-secondary" (click)="quitar(archivo)" [disabled]="deshabilitado || ocupado">
-      Quitar
-    </button>
-  </li>
-</ul>
+@if (mostrarLista && archivos.length) {
+  <ul class="lista-archivos">
+    @for (archivo of archivos; track $index) {
+      <li>
+        <app-icon icono="description" [tamano]="18"></app-icon>
+        <span class="lista-archivos__nombre">{{ archivo.name }}</span>
+        <span class="lista-archivos__peso">{{ peso(archivo) }}</span>
+        <button type="button" class="btn-secondary" (click)="quitar(archivo)" [disabled]="deshabilitado || ocupado">
+          Quitar
+        </button>
+      </li>
+    }
+  </ul>
+}

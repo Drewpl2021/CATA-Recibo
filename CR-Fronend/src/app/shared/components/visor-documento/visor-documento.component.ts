@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { DocumentoService, ToastService } from '../../../core/services';
 import { Documento } from '../../../core/models';
 import {
@@ -26,7 +26,7 @@ import { VisorPdfComponent } from '../visor-pdf/visor-pdf.component';
 @Component({
   selector: 'app-visor-documento',
   standalone: true,
-  imports: [CommonModule, FormModalComponent, VisorPdfComponent],
+  imports: [FormModalComponent, VisorPdfComponent],
   templateUrl: './visor-documento.component.html',
 })
 export class VisorDocumentoComponent implements OnChanges, OnDestroy {

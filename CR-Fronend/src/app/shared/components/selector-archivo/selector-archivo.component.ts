@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { IconComponent } from '../icon/icon.component';
 
 /** "Hoja de Vida.PDF" → "pdf" */
@@ -28,7 +28,7 @@ function extensionDe(nombre: string): string {
 @Component({
   selector: 'app-selector-archivo',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [IconComponent],
   templateUrl: './selector-archivo.component.html',
 })
 export class SelectorArchivoComponent {

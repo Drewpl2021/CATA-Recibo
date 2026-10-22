@@ -11,26 +11,32 @@
 
       <p class="acceso__invitacion">Hola{{ nombre ? ', ' + nombre : '' }}</p>
 
-      <p class="acceso__motivo" *ngIf="paso === 'terminos'">
-        Lee y acepta el convenio de entrega digital. Tu aceptación queda
-        registrada en tu cuenta, con la fecha.
-      </p>
+      @if (paso === 'terminos') {
+        <p class="acceso__motivo">
+          Lee y acepta el convenio de entrega digital. Tu aceptación queda
+          registrada en tu cuenta, con la fecha.
+        </p>
+      }
 
-      <p class="acceso__motivo" *ngIf="paso === 'clave'">
-        Elige una contraseña que solo conozcas tú y que no uses en ningún
-        otro sitio.
-      </p>
+      @if (paso === 'clave') {
+        <p class="acceso__motivo">
+          Elige una contraseña que solo conozcas tú y que no uses en ningún
+          otro sitio.
+        </p>
+      }
 
       <!-- Los dos pasos, para saber por dónde va -->
       <!-- Los dos pasos. Quien vino solo a firmar no tiene segundo paso. -->
-      <ol class="acceso__pasos" aria-label="Pasos" *ngIf="!soloTerminos">
-        <li [class.acceso__pasos--hecho]="paso === 'clave'"
-          [class.acceso__pasos--actual]="paso === 'terminos'">
-          Aceptar los términos
-        </li>
-        <li [class.acceso__pasos--actual]="paso === 'clave'">Poner tu contraseña</li>
-      </ol>
-    
+      @if (!soloTerminos) {
+        <ol class="acceso__pasos" aria-label="Pasos">
+          <li [class.acceso__pasos--hecho]="paso === 'clave'"
+            [class.acceso__pasos--actual]="paso === 'terminos'">
+            Aceptar los términos
+          </li>
+          <li [class.acceso__pasos--actual]="paso === 'clave'">Poner tu contraseña</li>
+        </ol>
+      }
+
       <!-- La costura picada, como el talón de una boleta. Ver acceso.scss. -->
       <svg class="acceso__picado" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" stroke-linecap="round" stroke-linejoin="round">
         <path d="M 0,-54 A 97.5,101.5 0 0 1 0,154" vector-effect="non-scaling-stroke" />
@@ -41,54 +47,64 @@
       <h1 class="acceso__titulo">
         {{ paso === 'terminos' ? (terminos?.titulo || 'Términos de uso') : 'Cambia tu contraseña' }}
       </h1>
-      <p class="acceso__intro" *ngIf="paso === 'terminos'">
-        {{ terminos?.resumen }}
-      </p>
-      <p class="acceso__intro" *ngIf="paso === 'clave'">
-        Por seguridad, establece una contraseña personal antes de continuar.
-      </p>
+      @if (paso === 'terminos') {
+        <p class="acceso__intro">
+          {{ terminos?.resumen }}
+        </p>
+      }
+      @if (paso === 'clave') {
+        <p class="acceso__intro">
+          Por seguridad, establece una contraseña personal antes de continuar.
+        </p>
+      }
 
-      <div class="auth-alert auth-alert-error" *ngIf="errorMsg" role="alert">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
-        </svg>
-        {{ errorMsg }}
-      </div>
+      @if (errorMsg) {
+        <div class="auth-alert auth-alert-error" role="alert">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+          </svg>
+          {{ errorMsg }}
+        </div>
+      }
 
       <!-- ══ Paso 1: los términos ══════════════════════════════════ -->
-      <ng-container *ngIf="paso === 'terminos'">
-        <div class="terminos" *ngIf="cargandoTerminos" aria-hidden="true">
-          <span class="esqueleto esqueleto--titulo"></span>
-          <span class="esqueleto esqueleto--linea"></span>
-          <span class="esqueleto esqueleto--linea"></span>
-          <span class="esqueleto esqueleto--linea esqueleto--media"></span>
-          <span class="esqueleto esqueleto--titulo" style="margin-top: 16px;"></span>
-          <span class="esqueleto esqueleto--linea"></span>
-          <span class="esqueleto esqueleto--linea esqueleto--corta"></span>
-        </div>
-        <span class="solo-lectores" *ngIf="cargandoTerminos" role="status">Cargando el documento…</span>
-
-        <ng-container *ngIf="!cargandoTerminos && terminos as doc">
-          <p class="terminos__aviso" *ngIf="doc.esVersionNueva">
-            El convenio cambió desde la última vez que lo aceptaste
-            (aceptaste la versión {{ doc.versionFirmada }}). Léelo otra vez.
-          </p>
-
+      @if (paso === 'terminos') {
+        @if (cargandoTerminos) {
+          <div class="terminos" aria-hidden="true">
+            <span class="esqueleto esqueleto--titulo"></span>
+            <span class="esqueleto esqueleto--linea"></span>
+            <span class="esqueleto esqueleto--linea"></span>
+            <span class="esqueleto esqueleto--linea esqueleto--media"></span>
+            <span class="esqueleto esqueleto--titulo" style="margin-top: 16px;"></span>
+            <span class="esqueleto esqueleto--linea"></span>
+            <span class="esqueleto esqueleto--linea esqueleto--corta"></span>
+          </div>
+        }
+        @if (cargandoTerminos) {
+          <span class="solo-lectores" role="status">Cargando el documento…</span>
+        }
+        @if (!cargandoTerminos && terminos; as doc) {
+          @if (doc.esVersionNueva) {
+            <p class="terminos__aviso">
+              El convenio cambió desde la última vez que lo aceptaste
+              (aceptaste la versión {{ doc.versionFirmada }}). Léelo otra vez.
+            </p>
+          }
           <!-- Se desplaza dentro de su caja: el documento entero empujaría
-               el botón de aceptar fuera de la pantalla. -->
+          el botón de aceptar fuera de la pantalla. -->
           <div class="terminos" tabindex="0" role="region" aria-label="Términos de uso">
-            <section class="terminos__seccion" *ngFor="let s of doc.secciones">
-              <h2 class="terminos__titulo">{{ s.titulo }}</h2>
-              <p class="terminos__texto">{{ s.texto }}</p>
-            </section>
-
+            @for (s of doc.secciones; track $index) {
+              <section class="terminos__seccion">
+                <h2 class="terminos__titulo">{{ s.titulo }}</h2>
+                <p class="terminos__texto">{{ s.texto }}</p>
+              </section>
+            }
             <p class="terminos__version">
               Versión {{ doc.version }} — Asociación Educativa Colegio Adventista
               "Túpac Amaru", Juliaca.
               <a routerLink="/privacidad" target="_blank" rel="noopener">Privacidad y cookies</a>
             </p>
           </div>
-
           <label class="terminos__acepto">
             <input type="checkbox" [(ngModel)]="aceptaTerminos" [ngModelOptions]="{ standalone: true }" />
             <span>
@@ -96,102 +112,118 @@
               firmarlo en papel.
             </span>
           </label>
-
           <button type="button" class="btn-primary acceso__enviar"
             [disabled]="firmando || !aceptaTerminos" (click)="firmar()">
-            <span *ngIf="firmando" class="spinner-small"></span>
+            @if (firmando) {
+              <span class="spinner-small"></span>
+            }
             {{ firmando ? 'Registrando…' : 'Aceptar y continuar' }}
           </button>
-        </ng-container>
-      </ng-container>
+        }
+      }
 
       <!-- ══ Paso 2: la contraseña ═════════════════════════════════ -->
-      <form [formGroup]="form" (ngSubmit)="guardar()" *ngIf="paso === 'clave'">
-        <div class="campo">
-          <label class="campo__etiqueta" for="password_actual">Contraseña actual</label>
-          <div class="campo__control">
-            <span class="campo__icono" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-            </span>
-            <input
-              type="password"
-              id="password_actual"
-              formControlName="password_actual"
-              placeholder=""
-              [class.is-invalid]="actualVacia"
-              autocomplete="current-password"
-            />
+      @if (paso === 'clave') {
+        <form [formGroup]="form" (ngSubmit)="guardar()">
+          <div class="campo">
+            <label class="campo__etiqueta" for="password_actual">Contraseña actual</label>
+            <div class="campo__control">
+              <span class="campo__icono" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
+              <input
+                type="password"
+                id="password_actual"
+                formControlName="password_actual"
+                placeholder=""
+                [class.is-invalid]="actualVacia"
+                autocomplete="current-password"
+                />
+              </div>
+              <small class="form-ayuda">La contraseña con la que acabas de ingresar.</small>
+              @if (actualVacia) {
+                <small class="form-error">Escribe la contraseña con la que entraste.</small>
+              }
+            </div>
+            <div class="campo campo--con-ojo">
+              <label class="campo__etiqueta" for="password_nuevo">Contraseña nueva</label>
+              <div class="campo__control">
+                <span class="campo__icono" aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </span>
+                <input
+                  [type]="verPassword ? 'text' : 'password'"
+                  id="password_nuevo"
+                  formControlName="password_nuevo"
+                  placeholder=""
+                  [class.is-invalid]="nuevaCorta"
+                  autocomplete="new-password"
+                  />
+                  <button type="button" class="campo__ojo" (click)="togglePassword()"
+                    [attr.aria-label]="verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                    @if (!verPassword) {
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2.1 12.3a1 1 0 0 1 0-.7 10.8 10.8 0 0 1 19.9 0 1 1 0 0 1 0 .7 10.8 10.8 0 0 1-19.9 0"/><circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    }
+                    @if (verPassword) {
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.7 5.1a10.7 10.7 0 0 1 11.2 6.5 1 1 0 0 1 0 .7 10.7 10.7 0 0 1-1.4 2.5"/><path d="M14.1 14.2a3 3 0 0 1-4.2-4.3"/><path d="M17.5 17.5A10.7 10.7 0 0 1 2.1 12.3a1 1 0 0 1 0-.7 10.7 10.7 0 0 1 4.4-5.1"/><path d="m2 2 20 20"/>
+                      </svg>
+                    }
+                  </button>
+                </div>
+                <small class="form-ayuda">Mínimo 8 caracteres, con letras y números. No uses datos personales.</small>
+                @if (nuevaCorta) {
+                  <small class="form-error">Necesita al menos 8 caracteres.</small>
+                }
+                @if (claveDebil) {
+                  <small class="form-error">Tiene que llevar letras y números, no solo unos u otros.</small>
+                }
+              </div>
+              <div class="campo">
+                <label class="campo__etiqueta" for="password_nuevo_confirmation">Repite la contraseña nueva</label>
+                <div class="campo__control">
+                  <span class="campo__icono" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  </span>
+                  <input
+                    [type]="verPassword ? 'text' : 'password'"
+                    id="password_nuevo_confirmation"
+                    formControlName="password_nuevo_confirmation"
+                    placeholder=""
+                    [class.is-invalid]="noCoinciden"
+                    autocomplete="new-password"
+                    />
+                  </div>
+                  @if (noCoinciden) {
+                    <small class="form-error">Las dos contraseñas no son iguales.</small>
+                  }
+                </div>
+                <button type="submit" class="btn-primary acceso__enviar" [disabled]="guardando">
+                  @if (guardando) {
+                    <span class="spinner-small"></span>
+                  }
+                  {{ guardando ? 'Guardando…' : 'Guardar y continuar' }}
+                </button>
+              </form>
+            }
+
+            <div class="acceso__pie">
+              @if (paso === 'clave' && firmadosAntes) {
+                <p>
+                  Términos aceptados. <button type="button" class="enlace" (click)="verTerminos()">Volver a leerlos</button>.
+                </p>
+              }
+              <p>¿Prefieres hacerlo después? <button type="button" class="enlace" (click)="salir()">Cerrar sesión</button>.</p>
+            </div>
           </div>
-          <small class="form-ayuda">La contraseña con la que acabas de ingresar.</small>
-          <small class="form-error" *ngIf="actualVacia">Escribe la contraseña con la que entraste.</small>
+
         </div>
-
-        <div class="campo campo--con-ojo">
-          <label class="campo__etiqueta" for="password_nuevo">Contraseña nueva</label>
-          <div class="campo__control">
-            <span class="campo__icono" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-            </span>
-            <input
-              [type]="verPassword ? 'text' : 'password'"
-              id="password_nuevo"
-              formControlName="password_nuevo"
-              placeholder=""
-              [class.is-invalid]="nuevaCorta"
-              autocomplete="new-password"
-            />
-            <button type="button" class="campo__ojo" (click)="togglePassword()"
-              [attr.aria-label]="verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
-              <svg *ngIf="!verPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2.1 12.3a1 1 0 0 1 0-.7 10.8 10.8 0 0 1 19.9 0 1 1 0 0 1 0 .7 10.8 10.8 0 0 1-19.9 0"/><circle cx="12" cy="12" r="3"/>
-              </svg>
-              <svg *ngIf="verPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10.7 5.1a10.7 10.7 0 0 1 11.2 6.5 1 1 0 0 1 0 .7 10.7 10.7 0 0 1-1.4 2.5"/><path d="M14.1 14.2a3 3 0 0 1-4.2-4.3"/><path d="M17.5 17.5A10.7 10.7 0 0 1 2.1 12.3a1 1 0 0 1 0-.7 10.7 10.7 0 0 1 4.4-5.1"/><path d="m2 2 20 20"/>
-              </svg>
-            </button>
-          </div>
-          <small class="form-ayuda">Mínimo 8 caracteres, con letras y números. No uses datos personales.</small>
-          <small class="form-error" *ngIf="nuevaCorta">Necesita al menos 8 caracteres.</small>
-          <small class="form-error" *ngIf="claveDebil">Tiene que llevar letras y números, no solo unos u otros.</small>
-        </div>
-
-        <div class="campo">
-          <label class="campo__etiqueta" for="password_nuevo_confirmation">Repite la contraseña nueva</label>
-          <div class="campo__control">
-            <span class="campo__icono" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-            </span>
-            <input
-              [type]="verPassword ? 'text' : 'password'"
-              id="password_nuevo_confirmation"
-              formControlName="password_nuevo_confirmation"
-              placeholder=""
-              [class.is-invalid]="noCoinciden"
-              autocomplete="new-password"
-            />
-          </div>
-          <small class="form-error" *ngIf="noCoinciden">Las dos contraseñas no son iguales.</small>
-        </div>
-
-        <button type="submit" class="btn-primary acceso__enviar" [disabled]="guardando">
-          <span *ngIf="guardando" class="spinner-small"></span>
-          {{ guardando ? 'Guardando…' : 'Guardar y continuar' }}
-        </button>
-      </form>
-
-      <div class="acceso__pie">
-        <p *ngIf="paso === 'clave' && firmadosAntes">
-          Términos aceptados. <button type="button" class="enlace" (click)="verTerminos()">Volver a leerlos</button>.
-        </p>
-        <p>¿Prefieres hacerlo después? <button type="button" class="enlace" (click)="salir()">Cerrar sesión</button>.</p>
       </div>
-    </div>
-
-  </div>
-</div>

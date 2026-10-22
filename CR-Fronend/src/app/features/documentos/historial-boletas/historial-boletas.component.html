@@ -11,9 +11,11 @@
       <select id="filtroEmpleado" class="form-control" [(ngModel)]="empleadoId"
         (ngModelChange)="alCambiarEmpleado()">
         <option value="" disabled>Elige un trabajador...</option>
-        <option *ngFor="let emp of empleados" [value]="emp.id">
-          {{ emp.nombre }} {{ emp.apellido }} — DNI {{ emp.dni }}
-        </option>
+        @for (emp of empleados; track emp.id) {
+          <option [value]="emp.id">
+            {{ emp.nombre }} {{ emp.apellido }} — DNI {{ emp.dni }}
+          </option>
+        }
       </select>
     </div>
   </div>

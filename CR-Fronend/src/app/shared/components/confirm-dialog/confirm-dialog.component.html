@@ -1,26 +1,31 @@
-<div class="modal-overlay modal-overlay--confirmar" *ngIf="request as r" (click)="cancelar()">
-  <div class="modal-card" (click)="$event.stopPropagation()">
-    <!--
+@if (request; as r) {
+  <div class="modal-overlay modal-overlay--confirmar" (click)="cancelar()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <!--
       El tacho SOLO con variante:'danger', puesto a propósito. Antes era al
       revés (todo lo que no dijera 'default' salía con el tacho), y como
       'variante' es opcional, la pantalla que se olvidaba de escribirlo
       —"Sacar de esta planilla", "Recalcular sueldo"— heredaba el tacho rojo
       sin querer, en acciones que no borran nada. Con lo neutro como
       default, olvidarse de la variante sale seguro y no da miedo de más.
-    -->
-    <div class="modal-icon-danger" *ngIf="r.options.variante === 'danger'">
-      <app-icon [icono]="r.options.icono || 'trash'" [tamano]="32"></app-icon>
-    </div>
-
-    <div class="modal-icon-brand" *ngIf="r.options.variante !== 'danger'">
-      <app-icon [icono]="r.options.icono || 'check_circle'" [tamano]="32"></app-icon>
-    </div>
-    <h3>{{ r.options.titulo }}</h3>
-    <p>{{ r.options.mensaje }}</p>
-    <div class="modal-actions">
-      <button class="btn-secondary-modal" (click)="cancelar()">{{ r.options.cancelarTexto ?? 'Cancelar' }}</button>
-      <button [class]="r.options.variante === 'danger' ? 'btn-danger-modal' : 'btn-primary'"
+      -->
+      @if (r.options.variante === 'danger') {
+        <div class="modal-icon-danger">
+          <app-icon [icono]="r.options.icono || 'trash'" [tamano]="32"></app-icon>
+        </div>
+      }
+      @if (r.options.variante !== 'danger') {
+        <div class="modal-icon-brand">
+          <app-icon [icono]="r.options.icono || 'check_circle'" [tamano]="32"></app-icon>
+        </div>
+      }
+      <h3>{{ r.options.titulo }}</h3>
+      <p>{{ r.options.mensaje }}</p>
+      <div class="modal-actions">
+        <button class="btn-secondary-modal" (click)="cancelar()">{{ r.options.cancelarTexto ?? 'Cancelar' }}</button>
+        <button [class]="r.options.variante === 'danger' ? 'btn-danger-modal' : 'btn-primary'"
         (click)="aceptar()">{{ r.options.aceptarTexto ?? 'Confirmar' }}</button>
+      </div>
     </div>
   </div>
-</div>
+}

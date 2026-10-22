@@ -2,46 +2,57 @@
   icono="folder_shared"
   [titulo]="expediente ? 'Expediente de ' + nombreCompleto : 'Expediente'"
   [subtitulo]="subtitulo"
->
+  >
   <button headerActions type="button" class="btn-secondary" (click)="volver()">
     <app-icon icono="arrow_left" [tamano]="16"></app-icon>
     Volver a Documentos
   </button>
-  <button headerActions type="button" class="btn-secondary" *ngIf="expediente" (click)="verFicha()">
-    Ver su ficha
-  </button>
-  <button headerActions type="button" class="btn-primary" *ngIf="expediente" (click)="abrirSubir()">
-    <app-icon icono="upload" [tamano]="16"></app-icon>
-    Subir documento
-  </button>
+  @if (expediente) {
+    <button headerActions type="button" class="btn-secondary" (click)="verFicha()">
+      Ver su ficha
+    </button>
+  }
+  @if (expediente) {
+    <button headerActions type="button" class="btn-primary" (click)="abrirSubir()">
+      <app-icon icono="upload" [tamano]="16"></app-icon>
+      Subir documento
+    </button>
+  }
 </app-page-header>
 
-<section class="section-panel section-panel--formulario" *ngIf="!expediente">
-  <p class="expediente-vacio">{{ cargando ? 'Abriendo el expediente…' : 'No se pudo abrir este expediente.' }}</p>
-</section>
+@if (!expediente) {
+  <section class="section-panel section-panel--formulario">
+    <p class="expediente-vacio">{{ cargando ? 'Abriendo el expediente…' : 'No se pudo abrir este expediente.' }}</p>
+  </section>
+}
 
-<div class="expediente" *ngIf="expediente as e">
-
-  <!-- Quién es: junta lo que antes vivía repartido —el cargo y la sede
-       salían en el subtítulo de la cabecera, la antigüedad no salía en
-       ningún lado— en una sola ficha, la misma que usa Editar empleado. -->
-  <div class="ficha-persona expediente__ficha">
-    <span class="avatar ficha-persona__foto">{{ iniciales }}</span>
-    <div class="ficha-persona__datos">
-      <div class="expediente__ficha-linea">
-        <strong class="ficha-persona__nombre">{{ nombreCompleto }}</strong>
-        <span class="status-badge" [ngClass]="e.empleado.estado === 'inactivo' ? 'status-badge-secondary' : 'status-badge-success'">
-          {{ e.empleado.estado === 'inactivo' ? 'De baja' : 'Activo' }}
-        </span>
-      </div>
-      <span class="ficha-persona__resumen" *ngIf="puesto">{{ puesto }}</span>
-      <span class="ficha-persona__nota expediente__ficha-meta">
-        DNI {{ e.empleado.dni }}<ng-container *ngIf="antiguedadTexto"> · {{ antiguedadTexto }}</ng-container>
-        <ng-container *ngIf="e.empleado.estado === 'inactivo' && e.empleado.fecha_cese"> · cesó el {{ fecha(e.empleado.fecha_cese) }}</ng-container>
+@if (expediente; as e) {
+  <div class="expediente">
+    <!-- Quién es: junta lo que antes vivía repartido —el cargo y la sede
+    salían en el subtítulo de la cabecera, la antigüedad no salía en
+    ningún lado— en una sola ficha, la misma que usa Editar empleado. -->
+    <div class="ficha-persona expediente__ficha">
+      <span class="avatar ficha-persona__foto">{{ iniciales }}</span>
+      <div class="ficha-persona__datos">
+        <div class="expediente__ficha-linea">
+          <strong class="ficha-persona__nombre">{{ nombreCompleto }}</strong>
+          <span class="status-badge" [ngClass]="e.empleado.estado === 'inactivo' ? 'status-badge-secondary' : 'status-badge-success'">
+            {{ e.empleado.estado === 'inactivo' ? 'De baja' : 'Activo' }}
+          </span>
+        </div>
+        @if (puesto) {
+          <span class="ficha-persona__resumen">{{ puesto }}</span>
+        }
+        <span class="ficha-persona__nota expediente__ficha-meta">
+          DNI {{ e.empleado.dni }}@if (antiguedadTexto) {
+          · {{ antiguedadTexto }}
+        }
+        @if (e.empleado.estado === 'inactivo' && e.empleado.fecha_cese) {
+          · cesó el {{ fecha(e.empleado.fecha_cese) }}
+        }
       </span>
     </div>
   </div>
-
   <!-- De un vistazo -->
   <div class="resumen-masivo expediente__resumen">
     <div class="resumen-masivo__dato">
@@ -61,19 +72,19 @@
       <span>Documentos subidos</span>
     </div>
   </div>
-
   <!-- Una sección a la vez. La elegida queda en la dirección (?seccion=…),
-       así Volver del navegador y recargar la dejan donde estaba. -->
+  así Volver del navegador y recargar la dejan donde estaba. -->
   <div class="expediente__pestanas" role="tablist" aria-label="Secciones del expediente">
-    <button type="button" class="chip-filtro" role="tab" *ngFor="let p of pestanas"
-      [class.chip-filtro--activo]="seccion === p.id" [attr.aria-selected]="seccion === p.id"
-      (click)="elegirSeccion(p.id)">
-      <app-icon [icono]="p.icono" [tamano]="15"></app-icon>
-      {{ p.titulo }}
-      <span class="chip-filtro__cuenta">{{ cuenta(p.id) }}</span>
-    </button>
+    @for (p of pestanas; track p.id) {
+      <button type="button" class="chip-filtro" role="tab"
+        [class.chip-filtro--activo]="seccion === p.id" [attr.aria-selected]="seccion === p.id"
+        (click)="elegirSeccion(p.id)">
+        <app-icon [icono]="p.icono" [tamano]="15"></app-icon>
+        {{ p.titulo }}
+        <span class="chip-filtro__cuenta">{{ cuenta(p.id) }}</span>
+      </button>
+    }
   </div>
-
   <!-- ══ Hoja de vida ══════════════════════════════════════════ -->
   <section class="expediente-bloque" [hidden]="seccion !== 'documentos'" role="tabpanel">
     <header class="expediente-bloque__cabecera">
@@ -87,34 +98,31 @@
         Subir un documento
       </button>
     </header>
-
     <div class="section-panel expediente-bloque__panel">
-      <ng-container *ngIf="e.hoja_de_vida as hoja">
+      @if (e.hoja_de_vida; as hoja) {
         <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: hoja, titulo: 'Hoja de vida vigente', puedeQuitar: false }"></ng-container>
-      </ng-container>
-
+      }
       <!-- Su foto, la copia de su DNI y sus certificados. -->
-      <ng-container *ngFor="let doc of otrosPersonales">
+      @for (doc of otrosPersonales; track $index) {
         <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: doc, titulo: '', puedeQuitar: true }"></ng-container>
-      </ng-container>
-
-      <ng-container *ngIf="!e.hoja_de_vida && !otrosPersonales.length">
+      }
+      @if (!e.hoja_de_vida && !otrosPersonales.length) {
         <p class="expediente-vacio">
           Todavía no ha traído ningún documento. Puede subirlos él mismo desde Mis Documentos.
         </p>
-      </ng-container>
-
-      <details class="expediente-historial" *ngIf="e.hojas_anteriores.length">
-        <summary>
-          {{ e.hojas_anteriores.length === 1 ? 'Ver la hoja de vida que reemplazó' : 'Ver las ' + e.hojas_anteriores.length + ' hojas de vida que reemplazó' }}
-        </summary>
-        <ng-container *ngFor="let anterior of e.hojas_anteriores">
-          <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: anterior, titulo: 'Hoja de vida reemplazada', puedeQuitar: false }"></ng-container>
-        </ng-container>
-      </details>
+      }
+      @if (e.hojas_anteriores.length) {
+        <details class="expediente-historial">
+          <summary>
+            {{ e.hojas_anteriores.length === 1 ? 'Ver la hoja de vida que reemplazó' : 'Ver las ' + e.hojas_anteriores.length + ' hojas de vida que reemplazó' }}
+          </summary>
+          @for (anterior of e.hojas_anteriores; track $index) {
+            <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: anterior, titulo: 'Hoja de vida reemplazada', puedeQuitar: false }"></ng-container>
+          }
+        </details>
+      }
     </div>
   </section>
-
   <!-- ══ Contratos ═════════════════════════════════════════════ -->
   <section class="expediente-bloque" [hidden]="seccion !== 'contratos'" role="tabpanel">
     <header class="expediente-bloque__cabecera">
@@ -125,33 +133,32 @@
       </div>
       <button type="button" class="btn-secondary" (click)="irAContratos()">Ir a Contratos</button>
     </header>
-
     <div class="section-panel expediente-bloque__panel">
-      <p class="expediente-vacio" *ngIf="!e.contratos.length && !e.contratos_anteriores.length">
-        No tiene contratos registrados. Se crean desde la pantalla de Contratos.
-      </p>
-
-      <ng-container *ngIf="contratoVigente as c">
+      @if (!e.contratos.length && !e.contratos_anteriores.length) {
+        <p class="expediente-vacio">
+          No tiene contratos registrados. Se crean desde la pantalla de Contratos.
+        </p>
+      }
+      @if (contratoVigente; as c) {
         <h3 class="expediente-grupo__titulo">Vigente</h3>
         <ng-container *ngTemplateOutlet="filaContrato; context: { $implicit: c }"></ng-container>
-      </ng-container>
-
-      <ng-container *ngIf="contratosPasados.length">
+      }
+      @if (contratosPasados.length) {
         <h3 class="expediente-grupo__titulo">Anteriores ({{ contratosPasados.length }})</h3>
-        <ng-container *ngFor="let c of contratosPasados">
+        @for (c of contratosPasados; track $index) {
           <ng-container *ngTemplateOutlet="filaContrato; context: { $implicit: c }"></ng-container>
-        </ng-container>
-      </ng-container>
-
-      <div class="expediente-anteriores" *ngIf="e.contratos_anteriores.length">
-        <h3 class="expediente-anteriores__titulo">Contratos de antes del sistema</h3>
-        <ng-container *ngFor="let d of e.contratos_anteriores">
-          <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: d, titulo: '', puedeQuitar: true }"></ng-container>
-        </ng-container>
-      </div>
+        }
+      }
+      @if (e.contratos_anteriores.length) {
+        <div class="expediente-anteriores">
+          <h3 class="expediente-anteriores__titulo">Contratos de antes del sistema</h3>
+          @for (d of e.contratos_anteriores; track $index) {
+            <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: d, titulo: '', puedeQuitar: true }"></ng-container>
+          }
+        </div>
+      }
     </div>
   </section>
-
   <!-- ══ Boletas ═══════════════════════════════════════════════ -->
   <section class="expediente-bloque" [hidden]="seccion !== 'boletas'" role="tabpanel">
     <header class="expediente-bloque__cabecera">
@@ -165,34 +172,37 @@
         Subir boletas anteriores
       </button>
     </header>
-
     <!-- Tiene planilla de esos meses, pero nadie emitió la boleta. Sin esto
-         el expediente decía "todavía no tiene boletas" y parecía que el
-         sistema se las había perdido. -->
-    <div class="form-nota form-nota--accion" *ngIf="e.boletas_sin_emitir?.length">
-      <div>
-        <strong>{{ e.boletas_sin_emitir.length }} mes(es) con planilla y sin boleta emitida:</strong>
-        {{ mesesSinEmitir }}. La boleta sale de la planilla, así que hasta que se emita no
-        aparece acá.
+    el expediente decía "todavía no tiene boletas" y parecía que el
+    sistema se las había perdido. -->
+    @if (e.boletas_sin_emitir.length) {
+      <div class="form-nota form-nota--accion">
+        <div>
+          <strong>{{ e.boletas_sin_emitir.length }} mes(es) con planilla y sin boleta emitida:</strong>
+          {{ mesesSinEmitir }}. La boleta sale de la planilla, así que hasta que se emita no
+          aparece acá.
+        </div>
+        <button type="button" class="btn-primary" (click)="irAEmitir()">Ir a emitir</button>
       </div>
-      <button type="button" class="btn-primary" (click)="irAEmitir()">Ir a emitir</button>
-    </div>
-
+    }
     <!-- Cada año aparte: con varios años de boletas, una sola tabla de doce
-         por página escondía el mes que se buscaba. -->
-    <div class="expediente__anios" *ngIf="aniosBoletas.length > 1">
-      <span class="expediente__anios-titulo">Año</span>
-      <button type="button" class="chip-filtro" *ngFor="let a of aniosBoletas"
-        [class.chip-filtro--activo]="anioBoletas === a" (click)="elegirAnio(a)">
-        {{ a }}
-        <span class="chip-filtro__cuenta">{{ boletasPorAnio.get(a) }}</span>
-      </button>
-      <button type="button" class="chip-filtro" [class.chip-filtro--activo]="anioBoletas === null" (click)="elegirAnio(null)">
-        Todas
-        <span class="chip-filtro__cuenta">{{ e.boletas.length }}</span>
-      </button>
-    </div>
-
+    por página escondía el mes que se buscaba. -->
+    @if (aniosBoletas.length > 1) {
+      <div class="expediente__anios">
+        <span class="expediente__anios-titulo">Año</span>
+        @for (a of aniosBoletas; track $index) {
+          <button type="button" class="chip-filtro"
+            [class.chip-filtro--activo]="anioBoletas === a" (click)="elegirAnio(a)">
+            {{ a }}
+            <span class="chip-filtro__cuenta">{{ boletasPorAnio.get(a) }}</span>
+          </button>
+        }
+        <button type="button" class="chip-filtro" [class.chip-filtro--activo]="anioBoletas === null" (click)="elegirAnio(null)">
+          Todas
+          <span class="chip-filtro__cuenta">{{ e.boletas.length }}</span>
+        </button>
+      </div>
+    }
     <app-data-table
       entidad="esta boleta"
       [columnas]="columnasBoletas"
@@ -205,7 +215,6 @@
       mensajeVacio="Todavía no tiene boletas emitidas."
     ></app-data-table>
   </section>
-
   <!-- ══ Otros documentos ══════════════════════════════════════ -->
   <section class="expediente-bloque" [hidden]="seccion !== 'otros'" role="tabpanel">
     <header class="expediente-bloque__cabecera">
@@ -219,7 +228,6 @@
         Subir otro documento
       </button>
     </header>
-
     <app-data-table
       entidad="este documento"
       [columnas]="columnasOtros"
@@ -233,6 +241,7 @@
     ></app-data-table>
   </section>
 </div>
+}
 
 <!-- Una fila de documento: la hoja de vida y lo adjuntado a un contrato. -->
 <ng-template #filaDocumento let-doc let-titulo="titulo" let-puedeQuitar="puedeQuitar">
@@ -243,9 +252,13 @@
       <span>Subido el {{ fecha(doc.created_at) }}, en {{ formato(doc) }}</span>
     </div>
     <div class="documento-fila__acciones">
-      <button type="button" class="btn-secondary" *ngIf="sePuedeVer(doc)" (click)="ver(doc)">Ver</button>
+      @if (sePuedeVer(doc)) {
+        <button type="button" class="btn-secondary" (click)="ver(doc)">Ver</button>
+      }
       <button type="button" class="btn-secondary" (click)="descargar(doc)">Descargar</button>
-      <button type="button" class="btn-secondary documento-fila__quitar" *ngIf="puedeQuitar" (click)="quitar(doc)">Quitar</button>
+      @if (puedeQuitar) {
+        <button type="button" class="btn-secondary documento-fila__quitar" (click)="quitar(doc)">Quitar</button>
+      }
     </div>
   </div>
 </ng-template>
@@ -261,7 +274,9 @@
     </span>
     <span class="contrato-fila__estado">
       <span class="status-badge" [ngClass]="'status-badge-' + severidadContrato(c.estado)">{{ estadoContrato(c.estado) }}</span>
-      <span class="texto-aviso" *ngIf="avisoVencimiento(c) as aviso">{{ aviso }}</span>
+      @if (avisoVencimiento(c); as aviso) {
+        <span class="texto-aviso">{{ aviso }}</span>
+      }
     </span>
     <app-icon class="contrato-fila__flecha" icono="chevron_right" [tamano]="18"></app-icon>
   </button>
@@ -274,8 +289,8 @@
   icono="badge"
   [titulo]="contratoAbierto?.tipo_contrato?.nombre ?? 'Contrato'"
   [subtitulo]="contratoAbierto ? vigencia(contratoAbierto) : ''"
->
-  <ng-container *ngIf="contratoAbierto as c">
+  >
+  @if (contratoAbierto; as c) {
     <dl class="detalle-lista">
       <dt>Estado</dt>
       <dd><span class="status-badge" [ngClass]="'status-badge-' + severidadContrato(c.estado)">{{ estadoContrato(c.estado) }}</span></dd>
@@ -283,34 +298,37 @@
       <dd>{{ fechaDia(c.fecha_inicio) }}</dd>
       <dt>Fin</dt>
       <dd>{{ c.fecha_fin ? fechaDia(c.fecha_fin) : 'Sin fecha de fin' }}</dd>
-      <ng-container *ngIf="avisoVencimiento(c) as aviso">
+      @if (avisoVencimiento(c); as aviso) {
         <dt>Vencimiento</dt>
         <dd class="texto-aviso">{{ aviso }}</dd>
-      </ng-container>
-      <ng-container *ngIf="c.motivo_fin">
+      }
+      @if (c.motivo_fin) {
         <dt>Motivo de fin</dt>
         <dd>{{ motivoFin(c.motivo_fin) }}</dd>
-      </ng-container>
-      <ng-container *ngIf="c.observaciones">
+      }
+      @if (c.observaciones) {
         <dt>Observaciones</dt>
         <dd>{{ c.observaciones }}</dd>
-      </ng-container>
+      }
     </dl>
-
     <h3 class="detalle-subtitulo">Documentos adjuntos</h3>
-    <p class="expediente-vacio" *ngIf="!c.documentos.length">Todavía no tiene el contrato firmado adjunto.</p>
-    <ng-container *ngFor="let d of c.documentos">
+    @if (!c.documentos.length) {
+      <p class="expediente-vacio">Todavía no tiene el contrato firmado adjunto.</p>
+    }
+    @for (d of c.documentos; track $index) {
       <ng-container *ngTemplateOutlet="filaDocumento; context: { $implicit: d, titulo: '', puedeQuitar: true }"></ng-container>
-    </ng-container>
-  </ng-container>
+    }
+  }
 
-  <div panelPie *ngIf="contratoAbierto as c">
-    <button type="button" class="btn-secondary" (click)="contratoAbierto = null">Cerrar</button>
-    <button type="button" class="btn-primary" (click)="abrirSubir('contrato', c.id)">
-      <app-icon icono="upload" [tamano]="15"></app-icon>
-      {{ c.documentos.length ? 'Adjuntar otro documento' : 'Adjuntar contrato firmado' }}
-    </button>
-  </div>
+  @if (contratoAbierto; as c) {
+    <div panelPie>
+      <button type="button" class="btn-secondary" (click)="contratoAbierto = null">Cerrar</button>
+      <button type="button" class="btn-primary" (click)="abrirSubir('contrato', c.id)">
+        <app-icon icono="upload" [tamano]="15"></app-icon>
+        {{ c.documentos.length ? 'Adjuntar otro documento' : 'Adjuntar contrato firmado' }}
+      </button>
+    </div>
+  }
 </app-panel-lateral>
 
 <!-- Recorrido de una boleta, al costado -->
@@ -320,25 +338,35 @@
   icono="receipt"
   [titulo]="boletaAbierta ? 'Boleta de ' + mesDeBoleta(boletaAbierta) : 'Boleta'"
   [subtitulo]="boletaAbierta ? estadoFirma(boletaAbierta) : ''"
->
-  <ng-container *ngIf="boletaAbierta as b">
+  >
+  @if (boletaAbierta; as b) {
     <h3 class="detalle-subtitulo">Su recorrido</h3>
     <ol class="rastro">
-      <li class="rastro__paso" *ngFor="let paso of rastroAbierto" [class.rastro__paso--hecho]="!!paso.fecha">
-        <span class="rastro__marca"><app-icon [icono]="paso.fecha ? 'check' : 'clock'" [tamano]="15"></app-icon></span>
-        <span class="rastro__texto">
-          <strong>{{ paso.titulo }}</strong>
-          <span>{{ paso.fecha ? fecha(paso.fecha) : 'Pendiente' }}<ng-container *ngIf="paso.detalle"> · {{ paso.detalle }}</ng-container></span>
-        </span>
-      </li>
+      @for (paso of rastroAbierto; track $index) {
+        <li class="rastro__paso" [class.rastro__paso--hecho]="!!paso.fecha">
+          <span class="rastro__marca"><app-icon [icono]="paso.fecha ? 'check' : 'clock'" [tamano]="15"></app-icon></span>
+          <span class="rastro__texto">
+            <strong>{{ paso.titulo }}</strong>
+            <span>{{ paso.fecha ? fecha(paso.fecha) : 'Pendiente' }}@if (paso.detalle) {
+              · {{ paso.detalle }}
+            }</span>
+          </span>
+        </li>
+      }
     </ol>
-  </ng-container>
+  }
 
-  <div panelPie *ngIf="boletaAbierta as b">
-    <button type="button" class="btn-secondary documento-fila__quitar" *ngIf="esAnterior(b)" (click)="quitar(b)">Quitar</button>
-    <button type="button" class="btn-secondary" (click)="descargar(b)">Descargar</button>
-    <button type="button" class="btn-primary" *ngIf="sePuedeVer(b)" (click)="ver(b)">Ver la boleta</button>
-  </div>
+  @if (boletaAbierta; as b) {
+    <div panelPie>
+      @if (esAnterior(b)) {
+        <button type="button" class="btn-secondary documento-fila__quitar" (click)="quitar(b)">Quitar</button>
+      }
+      <button type="button" class="btn-secondary" (click)="descargar(b)">Descargar</button>
+      @if (sePuedeVer(b)) {
+        <button type="button" class="btn-primary" (click)="ver(b)">Ver la boleta</button>
+      }
+    </div>
+  }
 </app-panel-lateral>
 
 <!-- Subir un documento al expediente -->
@@ -350,39 +378,45 @@
   [guardando]="subiendo"
   (guardar)="subir()"
   (cancelar)="cerrarSubir()"
->
-  <div class="form-fields" *ngIf="expediente as e">
-    <p class="form-nota">Se guarda en el expediente de <strong>{{ nombreCompleto }}</strong>.</p>
-
-    <div class="form-group">
-      <label for="tipo_documento">Qué documento es</label>
-      <select id="tipo_documento" class="form-control" [(ngModel)]="tipoASubir">
-        <option *ngFor="let t of tiposSubibles" [value]="t.value">{{ t.label }}</option>
-      </select>
+  >
+  @if (expediente; as e) {
+    <div class="form-fields">
+      <p class="form-nota">Se guarda en el expediente de <strong>{{ nombreCompleto }}</strong>.</p>
+      <div class="form-group">
+        <label for="tipo_documento">Qué documento es</label>
+        <select id="tipo_documento" class="form-control" [(ngModel)]="tipoASubir">
+          @for (t of tiposSubibles; track t.value) {
+            <option [value]="t.value">{{ t.label }}</option>
+          }
+        </select>
+      </div>
+      @if (tipoASubir === 'contrato' && e.contratos.length) {
+        <div class="form-group">
+          <label for="contrato_documento">De qué contrato</label>
+          <select id="contrato_documento" class="form-control" [(ngModel)]="contratoASubir">
+            <option value="">De ninguno en particular</option>
+            @for (c of e.contratos; track c.id) {
+              <option [value]="c.id">{{ etiquetaContrato(c) }}</option>
+            }
+          </select>
+        </div>
+      }
+      <app-selector-archivo
+        [extensiones]="['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']"
+        [pesoMaximoMb]="5"
+        [(archivos)]="archivos"
+        [ocupado]="subiendo"
+        textoOcupado="Subiendo…"
+        texto="Arrastra aquí el archivo o haz clic para elegirlo"
+        ayuda="PDF, Word o imagen, hasta 5 MB."
+      ></app-selector-archivo>
+      @if (tipoASubir === 'hoja_de_vida' && e.hoja_de_vida) {
+        <p class="form-nota form-nota--aviso">
+          Reemplaza la hoja de vida que tiene ahora. La anterior queda guardada en su historial.
+        </p>
+      }
     </div>
-
-    <div class="form-group" *ngIf="tipoASubir === 'contrato' && e.contratos.length">
-      <label for="contrato_documento">De qué contrato</label>
-      <select id="contrato_documento" class="form-control" [(ngModel)]="contratoASubir">
-        <option value="">De ninguno en particular</option>
-        <option *ngFor="let c of e.contratos" [value]="c.id">{{ etiquetaContrato(c) }}</option>
-      </select>
-    </div>
-
-    <app-selector-archivo
-      [extensiones]="['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']"
-      [pesoMaximoMb]="5"
-      [(archivos)]="archivos"
-      [ocupado]="subiendo"
-      textoOcupado="Subiendo…"
-      texto="Arrastra aquí el archivo o haz clic para elegirlo"
-      ayuda="PDF, Word o imagen, hasta 5 MB."
-    ></app-selector-archivo>
-
-    <p class="form-nota form-nota--aviso" *ngIf="tipoASubir === 'hoja_de_vida' && e.hoja_de_vida">
-      Reemplaza la hoja de vida que tiene ahora. La anterior queda guardada en su historial.
-    </p>
-  </div>
+  }
 </app-form-modal>
 
 <app-visor-documento [(documento)]="docAbierto" [persona]="nombreCompleto"></app-visor-documento>

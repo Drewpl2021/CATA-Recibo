@@ -1,5 +1,5 @@
 import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 
 import { CampoFiltro, ValoresFiltro } from './filtros.models';
@@ -30,7 +30,7 @@ import { IconComponent } from '../icon/icon.component';
 @Component({
   selector: 'app-filtros',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule],
+  imports: [IconComponent, FormsModule],
   templateUrl: './filtros.component.html',
 })
 export class FiltrosComponent {

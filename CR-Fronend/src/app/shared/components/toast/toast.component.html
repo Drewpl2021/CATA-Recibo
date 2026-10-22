@@ -1,15 +1,29 @@
-<div class="toast-container toast-enter" *ngIf="toast" [ngClass]="toast.type">
-  <div class="toast-icon">
-    <app-icon icono="check_circle" [tamano]="24" *ngIf="toast.type === 'success'"></app-icon>
-    <app-icon icono="circle_x" [tamano]="24" *ngIf="toast.type === 'error'"></app-icon>
-    <app-icon icono="info" [tamano]="24" *ngIf="toast.type === 'info'"></app-icon>
-    <app-icon icono="warning" [tamano]="24" *ngIf="toast.type === 'warning'"></app-icon>
+@if (toast) {
+  <div class="toast-container toast-enter" [ngClass]="toast.type">
+    <div class="toast-icon">
+      @if (toast.type === 'success') {
+        <app-icon icono="check_circle" [tamano]="24"></app-icon>
+      }
+      @if (toast.type === 'error') {
+        <app-icon icono="circle_x" [tamano]="24"></app-icon>
+      }
+      @if (toast.type === 'info') {
+        <app-icon icono="info" [tamano]="24"></app-icon>
+      }
+      @if (toast.type === 'warning') {
+        <app-icon icono="warning" [tamano]="24"></app-icon>
+      }
+    </div>
+    <div class="toast-content">
+      @if (toast.title) {
+        <h4 class="toast-title">{{ toast.title }}</h4>
+      }
+      @if (toast.message) {
+        <p class="toast-message">{{ toast.message }}</p>
+      }
+    </div>
+    <button class="toast-close" (click)="close()">
+      <app-icon icono="close" [tamano]="18"></app-icon>
+    </button>
   </div>
-  <div class="toast-content">
-    <h4 class="toast-title" *ngIf="toast.title">{{ toast.title }}</h4>
-    <p class="toast-message" *ngIf="toast.message">{{ toast.message }}</p>
-  </div>
-  <button class="toast-close" (click)="close()">
-    <app-icon icono="close" [tamano]="18"></app-icon>
-  </button>
-</div>
+}

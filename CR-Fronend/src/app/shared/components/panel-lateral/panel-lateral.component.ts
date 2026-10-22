@@ -1,5 +1,5 @@
 import { Component, EventEmitter, HostListener, Input, OnChanges, OnDestroy, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { IconComponent } from '../icon/icon.component';
 import { AlCuerpoDirective } from '../../directives/al-cuerpo.directive';
 import { soltarFondo, tomarFondo } from '../../utils/fondo-fijo';
@@ -22,7 +22,7 @@ import { soltarFondo, tomarFondo } from '../../utils/fondo-fijo';
 @Component({
   selector: 'app-panel-lateral',
   standalone: true,
-  imports: [CommonModule, IconComponent, AlCuerpoDirective],
+  imports: [IconComponent, AlCuerpoDirective],
   templateUrl: './panel-lateral.component.html',
 })
 export class PanelLateralComponent implements OnChanges, OnDestroy {

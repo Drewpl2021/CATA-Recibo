@@ -4,28 +4,35 @@
   </div>
 
   <ol class="wizard__pasos">
-    <li *ngFor="let paso of pasos; let i = index" class="wizard__paso">
-      <button
-        type="button"
-        class="wizard__boton"
-        [class.is-actual]="i === actual"
-        [class.is-completado]="completado(i)"
-        [class.is-error]="tieneErrores(i)"
-        [attr.aria-current]="i === actual ? 'step' : null"
-        (click)="irA(i)"
-      >
-        <span class="wizard__circulo">
-          <app-icon *ngIf="paso.icono && !completado(i) && !tieneErrores(i)"
-            [icono]="paso.icono" [tamano]="18"></app-icon>
-
-          <app-icon icono="check" [tamano]="16" *ngIf="completado(i)"></app-icon>
-
-          <app-icon icono="alert_circle" [tamano]="16" *ngIf="tieneErrores(i)"></app-icon>
-
-          <span *ngIf="!paso.icono && !completado(i) && !tieneErrores(i)">{{ i + 1 }}</span>
-        </span>
-        <span class="wizard__titulo">{{ paso.titulo }}</span>
-      </button>
-    </li>
+    @for (paso of pasos; track $index; let i = $index) {
+      <li class="wizard__paso">
+        <button
+          type="button"
+          class="wizard__boton"
+          [class.is-actual]="i === actual"
+          [class.is-completado]="completado(i)"
+          [class.is-error]="tieneErrores(i)"
+          [attr.aria-current]="i === actual ? 'step' : null"
+          (click)="irA(i)"
+          >
+          <span class="wizard__circulo">
+            @if (paso.icono && !completado(i) && !tieneErrores(i)) {
+              <app-icon
+              [icono]="paso.icono" [tamano]="18"></app-icon>
+            }
+            @if (completado(i)) {
+              <app-icon icono="check" [tamano]="16"></app-icon>
+            }
+            @if (tieneErrores(i)) {
+              <app-icon icono="alert_circle" [tamano]="16"></app-icon>
+            }
+            @if (!paso.icono && !completado(i) && !tieneErrores(i)) {
+              <span>{{ i + 1 }}</span>
+            }
+          </span>
+          <span class="wizard__titulo">{{ paso.titulo }}</span>
+        </button>
+      </li>
+    }
   </ol>
 </nav>

@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { RolService, ToastService, ConfirmService } from '../../../core/services';
@@ -25,10 +25,7 @@ import { esRolDelSistema, etiquetaRol } from '../../../shared/constants';
 @Component({
   selector: 'app-roles-list',
   standalone: true,
-  imports: [IconComponent, 
-    CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent,
-  ],
+  imports: [IconComponent, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent],
   templateUrl: './roles-list.component.html',
 })
 export class RolesListComponent implements OnInit {

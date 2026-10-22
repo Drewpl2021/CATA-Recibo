@@ -4,7 +4,7 @@
   subtitulo="Solicitudes de todo el personal. Acá se aprueban o se rechazan."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
->
+  >
   <button headerActions class="btn-primary" (click)="nueva()">
     <app-icon icono="plus" [tamano]="16"></app-icon>
     Registrar solicitud
@@ -27,9 +27,9 @@
   [mensajeVacio]="mensajeVacio"
   (eliminarFila)="eliminar($event)"
   (accionPersonalizada)="alAccionar($event)"
->
+  >
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
-    (cambio)="alFiltrar()"></app-filtros>
+  (cambio)="alFiltrar()"></app-filtros>
 </app-data-table>
 
 <p class="form-nota" style="margin-top: 16px;">
@@ -62,90 +62,109 @@
   textoGuardar="Registrar"
   (guardar)="guardar()"
   (cancelar)="cerrarModal()"
->
+  >
   <form [formGroup]="form" class="form-fields">
     <div class="form-group">
       <label for="empleado_id">Empleado *</label>
       <select id="empleado_id" class="form-control" formControlName="empleado_id"
         (change)="alElegirEmpleado()" [class.is-invalid]="invalido('empleado_id')">
         <option value="">Elige al trabajador</option>
-        <option *ngFor="let e of empleados" [value]="e.id">
-          {{ e.nombre }} {{ e.apellido }} — {{ e.dni }}
-        </option>
+        @for (e of empleados; track e.id) {
+          <option [value]="e.id">
+            {{ e.nombre }} {{ e.apellido }} — {{ e.dni }}
+          </option>
+        }
       </select>
-      <small class="form-error" *ngIf="invalido('empleado_id')">Elige de quién es la solicitud.</small>
+      @if (invalido('empleado_id')) {
+        <small class="form-error">Elige de quién es la solicitud.</small>
+      }
     </div>
 
     <!-- Su contrato no da derecho a descanso: se avisa al elegirlo. -->
-    <div class="form-nota form-nota--alerta" *ngIf="elegidoSinDerecho">
-      {{ saldoElegido?.motivo }}
-    </div>
+    @if (elegidoSinDerecho) {
+      <div class="form-nota form-nota--alerta">
+        {{ saldoElegido?.motivo }}
+      </div>
+    }
 
-    <div class="form-nota" *ngIf="saldoElegido && !elegidoSinDerecho">
-      Le quedan <strong>{{ saldoElegido.diasDisponibles }}</strong> de
-      {{ saldoElegido.diasGanados }} días este año
-      <span *ngIf="saldoElegido.mesesTrabajados < 12">
-        (lleva {{ saldoElegido.mesesTrabajados }} meses en el colegio, todavía no cumple el año).
-      </span>
-    </div>
+    @if (saldoElegido && !elegidoSinDerecho) {
+      <div class="form-nota">
+        Le quedan <strong>{{ saldoElegido.diasDisponibles }}</strong> de
+        {{ saldoElegido.diasGanados }} días este año
+        @if (saldoElegido.mesesTrabajados < 12) {
+          <span>
+            (lleva {{ saldoElegido.mesesTrabajados }} meses en el colegio, todavía no cumple el año).
+          </span>
+        }
+      </div>
+    }
 
     <div class="form-row">
       <div class="form-group">
         <label for="fecha_inicio">Desde *</label>
         <input type="date" id="fecha_inicio" class="form-control" formControlName="fecha_inicio"
           [class.is-invalid]="invalido('fecha_inicio')" />
-        <small class="form-error" *ngIf="invalido('fecha_inicio')">Falta la fecha de inicio.</small>
-      </div>
+          @if (invalido('fecha_inicio')) {
+            <small class="form-error">Falta la fecha de inicio.</small>
+          }
+        </div>
 
-      <div class="form-group">
-        <label for="fecha_fin">Hasta *</label>
-        <input type="date" id="fecha_fin" class="form-control" formControlName="fecha_fin"
-          [class.is-invalid]="invalido('fecha_fin')" />
-        <small class="form-error" *ngIf="invalido('fecha_fin')">Falta la fecha de fin.</small>
-      </div>
-    </div>
+        <div class="form-group">
+          <label for="fecha_fin">Hasta *</label>
+          <input type="date" id="fecha_fin" class="form-control" formControlName="fecha_fin"
+            [class.is-invalid]="invalido('fecha_fin')" />
+            @if (invalido('fecha_fin')) {
+              <small class="form-error">Falta la fecha de fin.</small>
+            }
+          </div>
+        </div>
 
-    <div class="form-nota" *ngIf="diasDelFormulario > 0">
-      Son <strong>{{ diasDelFormulario }}</strong> día(s) de calendario, contando
-      el primero y el último.
-    </div>
+        @if (diasDelFormulario > 0) {
+          <div class="form-nota">
+            Son <strong>{{ diasDelFormulario }}</strong> día(s) de calendario, contando
+            el primero y el último.
+          </div>
+        }
 
-    <div class="form-nota form-nota--alerta" *ngIf="seExcedeDelSaldo">
-      No alcanzan: pide {{ diasDelFormulario }} y le quedan
-      {{ saldoElegido?.diasDisponibles }}.
-    </div>
+        @if (seExcedeDelSaldo) {
+          <div class="form-nota form-nota--alerta">
+            No alcanzan: pide {{ diasDelFormulario }} y le quedan
+            {{ saldoElegido?.diasDisponibles }}.
+          </div>
+        }
 
-    <div class="form-group">
-      <label for="motivo">Motivo</label>
-      <textarea id="motivo" class="form-control" formControlName="motivo" rows="3"
-        placeholder="Opcional: por qué pide estos días"></textarea>
-    </div>
-  </form>
-</app-form-modal>
+        <div class="form-group">
+          <label for="motivo">Motivo</label>
+          <textarea id="motivo" class="form-control" formControlName="motivo" rows="3"
+          placeholder="Opcional: por qué pide estos días"></textarea>
+        </div>
+      </form>
+    </app-form-modal>
 
-<!-- Rechazar: se pide el motivo, que es lo que verá el trabajador -->
-<app-form-modal
-  [(visible)]="modalRechazo"
-  titulo="Rechazar solicitud"
-  [guardando]="guardando"
-  textoGuardar="Rechazar"
-  (guardar)="confirmarRechazo()"
-  (cancelar)="cerrarRechazo()"
->
-  <div class="form-fields" *ngIf="rechazando">
-    <p class="form-nota">
-      {{ nombreEmpleado(rechazando) }} pidió {{ rechazando.dias_solicitados }} día(s).
-      Verá lo que escribas acá en su pantalla de Mis Vacaciones.
-    </p>
-
-    <div class="form-group">
-      <label for="motivo_rechazo">¿Por qué se rechaza?</label>
-      <textarea id="motivo_rechazo" class="form-control" rows="3" [(ngModel)]="motivoRechazo"
-        [ngModelOptions]="{ standalone: true }"
-        placeholder="Ej. Esas fechas coinciden con la semana de exámenes."></textarea>
-      <small class="form-ayuda">
-        Sin motivo, al trabajador le aparece solo "Rechazada" y tendrá que venir a preguntar.
-      </small>
-    </div>
-  </div>
-</app-form-modal>
+    <!-- Rechazar: se pide el motivo, que es lo que verá el trabajador -->
+    <app-form-modal
+      [(visible)]="modalRechazo"
+      titulo="Rechazar solicitud"
+      [guardando]="guardando"
+      textoGuardar="Rechazar"
+      (guardar)="confirmarRechazo()"
+      (cancelar)="cerrarRechazo()"
+      >
+      @if (rechazando) {
+        <div class="form-fields">
+          <p class="form-nota">
+            {{ nombreEmpleado(rechazando) }} pidió {{ rechazando.dias_solicitados }} día(s).
+            Verá lo que escribas acá en su pantalla de Mis Vacaciones.
+          </p>
+          <div class="form-group">
+            <label for="motivo_rechazo">¿Por qué se rechaza?</label>
+            <textarea id="motivo_rechazo" class="form-control" rows="3" [(ngModel)]="motivoRechazo"
+              [ngModelOptions]="{ standalone: true }"
+            placeholder="Ej. Esas fechas coinciden con la semana de exámenes."></textarea>
+            <small class="form-ayuda">
+              Sin motivo, al trabajador le aparece solo "Rechazada" y tendrá que venir a preguntar.
+            </small>
+          </div>
+        </div>
+      }
+    </app-form-modal>

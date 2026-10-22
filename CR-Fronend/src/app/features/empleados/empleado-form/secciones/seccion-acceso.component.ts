@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule } from '@angular/forms';
 import { Rol } from '../../../../core/models';
 import { SeccionEmpleadoBase } from './seccion-base';
@@ -18,7 +18,7 @@ import { SeccionEmpleadoBase } from './seccion-base';
 @Component({
   selector: 'app-seccion-acceso',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './seccion-acceso.component.html',
 })
 export class SeccionAccesoComponent extends SeccionEmpleadoBase {

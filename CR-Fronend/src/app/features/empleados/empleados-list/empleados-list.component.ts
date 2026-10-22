@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
@@ -34,7 +34,7 @@ import { PistaDirective } from '../../../shared/directives/pista.directive';
 @Component({
   selector: 'app-empleados-list',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, FiltrosComponent, OrdenComponent, FormModalComponent, BarraSeleccionComponent, PistaDirective],
+  imports: [IconComponent, FormsModule, PageHeaderComponent, DataTableComponent, FiltrosComponent, OrdenComponent, FormModalComponent, BarraSeleccionComponent, PistaDirective],
   templateUrl: './empleados-list.component.html',
 })
 export class EmpleadosListComponent implements OnInit {

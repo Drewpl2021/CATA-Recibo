@@ -3,7 +3,7 @@
   <aside class="sidebar" [class.sidebar-open]="sidebarVisible" [class.sidebar-hidden]="!sidebarVisible">
     <div class="sidebar-header">
       <!-- La marca CATA, sola y al centro (la misma imagen de la marca de
-           agua, en blanco sobre el azul de la barra). -->
+      agua, en blanco sobre el azul de la barra). -->
       <a class="marca-lateral" routerLink="/inicio/dashboard"
         appPista="Ir al Panel de Control" pistaLado="abajo" aria-label="CATA, Colegio Adventista Túpac Amaru: ir al Panel de Control">
         <img class="marca-lateral__cata" src="logo-cata.png" alt="CATA" />
@@ -13,51 +13,59 @@
     <nav class="nav-menu">
 
       <!-- Mientras llega el menú se pinta su silueta: tres grupos con sus
-           ítems. Así la barra no salta de vacía a llena, y se ve que hay
-           algo en camino sin tener que leer "Cargando...". -->
-      <div class="menu-esqueleto" *ngIf="cargandoModulos" aria-hidden="true">
-        <div class="menu-esqueleto__grupo" *ngFor="let g of [1, 2, 3]">
-          <div class="menu-esqueleto__padre">
-            <span class="esqueleto esqueleto--circulo" style="width: 20px; height: 20px;"></span>
-            <span class="esqueleto esqueleto--linea" style="width: 55%; margin: 0;"></span>
-          </div>
-          <div class="menu-esqueleto__hijo" *ngFor="let h of [1, 2]">
-            <span class="esqueleto esqueleto--linea" style="width: 70%; margin: 0;"></span>
-          </div>
+      ítems. Así la barra no salta de vacía a llena, y se ve que hay
+      algo en camino sin tener que leer "Cargando...". -->
+      @if (cargandoModulos) {
+        <div class="menu-esqueleto" aria-hidden="true">
+          @for (g of [1, 2, 3]; track $index) {
+            <div class="menu-esqueleto__grupo">
+              <div class="menu-esqueleto__padre">
+                <span class="esqueleto esqueleto--circulo" style="width: 20px; height: 20px;"></span>
+                <span class="esqueleto esqueleto--linea" style="width: 55%; margin: 0;"></span>
+              </div>
+              @for (h of [1, 2]; track $index) {
+                <div class="menu-esqueleto__hijo">
+                  <span class="esqueleto esqueleto--linea" style="width: 70%; margin: 0;"></span>
+                </div>
+              }
+            </div>
+          }
         </div>
-      </div>
-      <span class="solo-lectores" *ngIf="cargandoModulos" role="status">Cargando el menú…</span>
+      }
+      @if (cargandoModulos) {
+        <span class="solo-lectores" role="status">Cargando el menú…</span>
+      }
 
       <!-- Módulos dinámicos del backend -->
-      <ng-container *ngFor="let padre of modulosPadre">
-
+      @for (padre of modulosPadre; track padre.id) {
         <!-- Cabecera del grupo (módulo padre) -->
         <a class="nav-item nav-group-header" (click)="toggleGroup(padre.id)">
           <app-icon [nombreModulo]="padre.nombre" [icono]="padre.icono" [tamano]="22"></app-icon>
           {{ padre.nombre }}
           <app-icon icono="chevron_down" [tamano]="16" style="margin-left: auto; transition: transform 0.25s;" [style.transform]="isGroupOpen(padre.id) ? 'rotate(180deg)' : 'rotate(0)'"></app-icon>
         </a>
-
         <!-- Hijos del grupo -->
-        <div *ngIf="isGroupOpen(padre.id)" class="nav-submenu">
-          <a
-            *ngFor="let modulo of padre.modulos"
-            class="nav-item nav-child"
-            [class.active]="esRutaActiva(modulo.ruta)"
-            [routerLink]="getRouterLink(modulo.ruta)"
-            (click)="setActive(modulo.ruta)">
-            <app-icon [nombreModulo]="modulo.nombre" [icono]="modulo.icono" [tamano]="20"></app-icon>
-            {{ modulo.nombre }}
-          </a>
-        </div>
-
-      </ng-container>
+        @if (isGroupOpen(padre.id)) {
+          <div class="nav-submenu">
+            @for (modulo of padre.modulos; track modulo.id) {
+              <a
+                class="nav-item nav-child"
+                [class.active]="esRutaActiva(modulo.ruta)"
+                [routerLink]="getRouterLink(modulo.ruta)"
+                (click)="setActive(modulo.ruta)">
+                <app-icon [nombreModulo]="modulo.nombre" [icono]="modulo.icono" [tamano]="20"></app-icon>
+                {{ modulo.nombre }}
+              </a>
+            }
+          </div>
+        }
+      }
 
     </nav>
 
     <!-- Cerrar sesión va fuera del menú, no dentro: el menú se desplaza
-         cuando hay muchos módulos, y esto tiene que seguir a la vista sin
-         que haya que bajar hasta el final para encontrarlo. -->
+    cuando hay muchos módulos, y esto tiene que seguir a la vista sin
+    que haya que bajar hasta el final para encontrarlo. -->
     <div class="nav-pie">
       <a class="nav-item" (click)="logout()">
         <app-icon icono="logout" [tamano]="22"></app-icon>
@@ -67,10 +75,12 @@
   </aside>
 
   <!-- El fondo de detrás del menú. Solo se ve en móvil, donde el menú
-       tapa la pantalla: sin él no había forma de cerrarlo, porque la
-       hamburguesa queda justo debajo del propio menú. -->
-  <div class="sidebar-fondo" *ngIf="sidebarVisible" (click)="cerrarMenuDesdeElFondo()"
+  tapa la pantalla: sin él no había forma de cerrarlo, porque la
+  hamburguesa queda justo debajo del propio menú. -->
+  @if (sidebarVisible) {
+    <div class="sidebar-fondo" (click)="cerrarMenuDesdeElFondo()"
     aria-hidden="true"></div>
+  }
 
   <!-- Main Area -->
   <div class="main-wrapper">
@@ -91,15 +101,18 @@
 
         <!-- Dónde estás. Los nombres son los mismos del menú lateral. -->
         <nav class="migas" aria-label="Dónde estás">
-          <ng-container *ngFor="let miga of migas; let primero = first; let ultimo = last">
-            <app-icon icono="chevron_right" [tamano]="15" *ngIf="!primero" class="migas__flecha" [class.migas__flecha--grupo]="miga.grupo"></app-icon>
-            <a *ngIf="miga.enlace && !ultimo; else soloTexto" class="migas__paso"
+          @for (miga of migas; track $index; let primero = $first; let ultimo = $last) {
+            @if (!primero) {
+              <app-icon icono="chevron_right" [tamano]="15" class="migas__flecha" [class.migas__flecha--grupo]="miga.grupo"></app-icon>
+            }
+            @if (miga.enlace && !ultimo) {
+              <a class="migas__paso"
               [class.migas__paso--grupo]="miga.grupo" [routerLink]="miga.enlace">{{ miga.etiqueta }}</a>
-            <ng-template #soloTexto>
+            } @else {
               <span class="migas__paso" [class.migas__paso--grupo]="miga.grupo"
-                [class.migas__paso--actual]="ultimo" [attr.aria-current]="ultimo ? 'page' : null">{{ miga.etiqueta }}</span>
-            </ng-template>
-          </ng-container>
+              [class.migas__paso--actual]="ultimo" [attr.aria-current]="ultimo ? 'page' : null">{{ miga.etiqueta }}</span>
+            }
+          }
         </nav>
       </div>
 
@@ -109,14 +122,18 @@
           [appPista]="themeService.isDarkMode() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
           pistaLado="abajo"
           [attr.aria-label]="themeService.isDarkMode() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
-          <app-icon icono="moon" [tamano]="22" *ngIf="!themeService.isDarkMode()"></app-icon>
-          <app-icon icono="sun" [tamano]="22" *ngIf="themeService.isDarkMode()"></app-icon>
+          @if (!themeService.isDarkMode()) {
+            <app-icon icono="moon" [tamano]="22"></app-icon>
+          }
+          @if (themeService.isDarkMode()) {
+            <app-icon icono="sun" [tamano]="22"></app-icon>
+          }
         </button>
 
         <!-- ── Primeros pasos ──────────────────────────────────────
-             Detrás de un foquito: está siempre a mano y no ocupa sitio en
-             ninguna pantalla. El globito cuenta los que faltan y se apaga
-             cuando pulsa "Ya lo tengo". -->
+        Detrás de un foquito: está siempre a mano y no ocupa sitio en
+        ninguna pantalla. El globito cuenta los que faltan y se apaga
+        cuando pulsa "Ya lo tengo". -->
         <div class="guia-foco">
           <button class="icon-btn" (click)="toggleGuia()" style="position: relative;"
             [appPista]="pasosPendientes > 0
@@ -128,12 +145,16 @@
               ? 'Primeros pasos, ' + pasosPendientes + ' por hacer'
               : 'Primeros pasos'">
             <app-icon icono="lightbulb" [tamano]="22"></app-icon>
-            <span class="badge" *ngIf="pasosPendientes > 0">{{ pasosPendientes }}</span>
+            @if (pasosPendientes > 0) {
+              <span class="badge">{{ pasosPendientes }}</span>
+            }
           </button>
 
-          <div class="guia-foco__panel" *ngIf="mostrarGuia" role="dialog" aria-label="Primeros pasos">
-            <app-primeros-pasos (cerrar)="cerrarGuia()"></app-primeros-pasos>
-          </div>
+          @if (mostrarGuia) {
+            <div class="guia-foco__panel" role="dialog" aria-label="Primeros pasos">
+              <app-primeros-pasos (cerrar)="cerrarGuia()"></app-primeros-pasos>
+            </div>
+          }
         </div>
 
         <button class="icon-btn" (click)="toggleNotifications()" style="position: relative;"
@@ -141,353 +162,393 @@
           pistaLado="abajo"
           [attr.aria-label]="noLeidas > 0 ? 'Avisos, ' + noLeidas + ' sin leer' : 'Avisos'">
           <app-icon icono="bell" [tamano]="22"></app-icon>
-          <span class="badge" *ngIf="noLeidas > 0">{{ noLeidas }}</span>
+          @if (noLeidas > 0) {
+            <span class="badge">{{ noLeidas }}</span>
+          }
         </button>
 
         <!-- Modal Mi Perfil (Movido aquí junto al de notificaciones) -->
-        <div class="modal-overlay" *ngIf="showProfileModal"
-          (mousedown)="alPresionarEnElFondo($event)"
-          (click)="seCierraDesdeElFondo($event) && closeProfile()">
-          <div class="modal-container" (click)="$event.stopPropagation()" style="max-width: 760px;">
-            <div class="modal-header modal-header--marca">
-              <h2>Mi perfil</h2>
-              <button class="btn-close" (click)="closeProfile()" aria-label="Cerrar">
-                <app-icon icono="close" [tamano]="24"></app-icon>
-              </button>
-            </div>
-            <div class="modal-body" style="padding: 24px;">
-              <div class="perfil-rejilla">
-
-                <!-- Columna izquierda: la foto y qué hacer con ella -->
-                <div class="perfil-foto">
-                  <div class="avatar perfil-foto__marco">
-                    <img *ngIf="fotoUrl" class="avatar__foto" [src]="fotoUrl"
-                      [alt]="'Foto de ' + userName" />
-                    <ng-container *ngIf="!fotoUrl">{{ userInitials }}</ng-container>
+        @if (showProfileModal) {
+          <div class="modal-overlay"
+            (mousedown)="alPresionarEnElFondo($event)"
+            (click)="seCierraDesdeElFondo($event) && closeProfile()">
+            <div class="modal-container" (click)="$event.stopPropagation()" style="max-width: 760px;">
+              <div class="modal-header modal-header--marca">
+                <h2>Mi perfil</h2>
+                <button class="btn-close" (click)="closeProfile()" aria-label="Cerrar">
+                  <app-icon icono="close" [tamano]="24"></app-icon>
+                </button>
+              </div>
+              <div class="modal-body" style="padding: 24px;">
+                <div class="perfil-rejilla">
+                  <!-- Columna izquierda: la foto y qué hacer con ella -->
+                  <div class="perfil-foto">
+                    <div class="avatar perfil-foto__marco">
+                      @if (fotoUrl) {
+                        <img class="avatar__foto" [src]="fotoUrl"
+                          [alt]="'Foto de ' + userName" />
+                      }
+                      @if (!fotoUrl) {
+                        {{ userInitials }}
+                      }
+                    </div>
+                    <div class="perfil-foto__acciones">
+                      <!-- El input real se esconde; el botón es su label. -->
+                      <input type="file" id="fotoPerfil" class="perfil-foto__campo"
+                        accept="image/jpeg,image/png,image/webp"
+                        [disabled]="subiendoFoto" (change)="alElegirFoto($event)" />
+                        <label for="fotoPerfil" class="btn-primary" style="padding: 8px 16px;">
+                          <app-icon icono="camera" [tamano]="16"></app-icon>
+                          {{ subiendoFoto ? 'Subiendo…' : (fotoUrl ? 'Cambiar foto' : 'Subir foto') }}
+                        </label>
+                        @if (fotoUrl && !subiendoFoto) {
+                          <button type="button" class="btn-secondary" style="padding: 8px 16px;"
+                            (click)="quitarFoto()">
+                            Quitar
+                          </button>
+                        }
+                      </div>
+                      <small class="form-ayuda">
+                        JPG, PNG o WEBP, hasta 4 MB.
+                      </small>
+                    </div>
+                    <!-- Columna derecha: quién es y sus datos -->
+                    <div>
+                      <h3 style="margin: 0; font-size: 1.3rem; color: var(--text);">{{ userName }}</h3>
+                      <!-- El cargo va acá arriba y no repetido abajo: es la línea
+                      que dice quién es, no un dato más de la lista. -->
+                      <span style="color: var(--text-muted); font-size: 0.9rem;">{{ empleadoData?.cargo?.nombre || userRole }}</span>
+                      <!-- Los datos de su ficha de trabajador. -->
+                      @if (empleadoData) {
+                        <div class="perfil-datos" style="margin-top: 20px;">
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">DNI</span>
+                            <span class="perfil-dato__valor">{{ empleadoData.dni || '-' }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Área</span>
+                            <span class="perfil-dato__valor">{{ empleadoData.area?.nombre || '-' }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Sede</span>
+                            <span class="perfil-dato__valor">{{ empleadoData.sede?.nombre || '-' }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Tipo de contrato</span>
+                            <span class="perfil-dato__valor">{{ tipoDeContrato }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Fecha de ingreso</span>
+                            <span class="perfil-dato__valor">{{ (empleadoData && empleadoData.fecha_ingreso) ? 'Desde ' + getMesNombre(+empleadoData.fecha_ingreso.split('-')[1]) + ' ' + empleadoData.fecha_ingreso.split('-')[0] : '-' }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Nivel de estudios</span>
+                            <span class="perfil-dato__valor">{{ nivelDeEstudios }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Teléfono</span>
+                            <span class="perfil-dato__valor">{{ empleadoData.telefono || '-' }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Correo</span>
+                            <span class="perfil-dato__valor">{{ userEmail }}</span>
+                          </div>
+                        </div>
+                      }
+                      <!-- Las cuentas de Administración y de RR.HH. no tienen
+                      ficha de trabajador: son para operar el sistema, no
+                      personas en planilla. Antes su perfil salía con un
+                      guion en cada fila; ahora enseña lo que sí hay. -->
+                      @if (!empleadoData) {
+                        <div class="perfil-datos" style="margin-top: 20px;">
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Rol</span>
+                            <span class="perfil-dato__valor">{{ userRole || '—' }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Correo</span>
+                            <span class="perfil-dato__valor">{{ userEmail }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Estado de la cuenta</span>
+                            <span class="perfil-dato__valor">
+                              {{ cuentaData?.estado === 'inactivo' ? 'Desactivada' : 'Activa' }}
+                            </span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Cuenta creada</span>
+                            <span class="perfil-dato__valor">{{ fechaDeCuenta(cuentaData?.creada_en) }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Términos de uso</span>
+                            <span class="perfil-dato__valor">
+                              {{ cuentaData?.terminos_estado === 'firmado'
+                              ? 'Firmados el ' + fechaDeCuenta(cuentaData?.terminos_en)
+                              : 'Pendientes de firmar' }}
+                            </span>
+                          </div>
+                        </div>
+                      }
+                      @if (!empleadoData && cuentaData) {
+                        <p class="form-ayuda" style="margin-top: 16px;">
+                          Esta cuenta es para manejar el sistema, así que no tiene ficha de
+                          trabajador ni boletas. Si además cobras por planilla, pídele a
+                          Recursos Humanos que te dé de alta como trabajador.
+                        </p>
+                      }
+                    </div>
                   </div>
-
-                  <div class="perfil-foto__acciones">
-                    <!-- El input real se esconde; el botón es su label. -->
-                    <input type="file" id="fotoPerfil" class="perfil-foto__campo"
-                      accept="image/jpeg,image/png,image/webp"
-                      [disabled]="subiendoFoto" (change)="alElegirFoto($event)" />
-                    <label for="fotoPerfil" class="btn-primary" style="padding: 8px 16px;">
-                      <app-icon icono="camera" [tamano]="16"></app-icon>
-                      {{ subiendoFoto ? 'Subiendo…' : (fotoUrl ? 'Cambiar foto' : 'Subir foto') }}
-                    </label>
-
-                    <button type="button" class="btn-secondary" style="padding: 8px 16px;"
-                      *ngIf="fotoUrl && !subiendoFoto" (click)="quitarFoto()">
-                      Quitar
-                    </button>
-                  </div>
-
-                  <small class="form-ayuda">
-                    JPG, PNG o WEBP, hasta 4 MB.
-                  </small>
                 </div>
+              </div>
+            </div>
+          }
 
-                <!-- Columna derecha: quién es y sus datos -->
-                <div>
-                  <h3 style="margin: 0; font-size: 1.3rem; color: var(--text);">{{ userName }}</h3>
-                  <!-- El cargo va acá arriba y no repetido abajo: es la línea
-                       que dice quién es, no un dato más de la lista. -->
-                  <span style="color: var(--text-muted); font-size: 0.9rem;">{{ empleadoData?.cargo?.nombre || userRole }}</span>
+          <div class="user-profile-container" style="position: relative;">
+            <div class="user-profile" (click)="toggleUserMenu()" style="cursor: pointer;">
+              <div class="avatar">
+                @if (fotoUrl) {
+                  <img class="avatar__foto" [src]="fotoUrl" [alt]="'Foto de ' + userName" />
+                }
+                @if (!fotoUrl) {
+                  {{ userInitials }}
+                }
+              </div>
+              <div class="user-info">
+                <span class="user-name">{{ userName }}</span>
+                <span class="user-role">{{ userRole }}</span>
+              </div>
+            </div>
 
-                  <!-- Los datos de su ficha de trabajador. -->
-                  <div class="perfil-datos" style="margin-top: 20px;" *ngIf="empleadoData">
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">DNI</span>
-                      <span class="perfil-dato__valor">{{ empleadoData.dni || '-' }}</span>
-                    </div>
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Área</span>
-                      <span class="perfil-dato__valor">{{ empleadoData.area?.nombre || '-' }}</span>
-                    </div>
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Sede</span>
-                      <span class="perfil-dato__valor">{{ empleadoData.sede?.nombre || '-' }}</span>
-                    </div>
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Tipo de contrato</span>
-                      <span class="perfil-dato__valor">{{ tipoDeContrato }}</span>
-                    </div>
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Fecha de ingreso</span>
-                      <span class="perfil-dato__valor">{{ (empleadoData && empleadoData.fecha_ingreso) ? 'Desde ' + getMesNombre(+empleadoData.fecha_ingreso.split('-')[1]) + ' ' + empleadoData.fecha_ingreso.split('-')[0] : '-' }}</span>
-                    </div>
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Nivel de estudios</span>
-                      <span class="perfil-dato__valor">{{ nivelDeEstudios }}</span>
-                    </div>
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Teléfono</span>
-                      <span class="perfil-dato__valor">{{ empleadoData.telefono || '-' }}</span>
-                    </div>
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Correo</span>
-                      <span class="perfil-dato__valor">{{ userEmail }}</span>
-                    </div>
+            <!-- User Dropdown Menu -->
+            @if (showUserMenu) {
+              <div class="user-dropdown-menu" style="position: absolute; top: 100%; right: 0; margin-top: 10px; width: 320px; background: var(--surface); color: var(--text-soft); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid var(--border); z-index: 1000; overflow: hidden; font-family: 'Inter', sans-serif;">
+                <!-- Header Dropdown -->
+                <div style="display: flex; align-items: center; padding: 20px; background: var(--surface-alt); border-bottom: 1px solid var(--border); gap: 16px;">
+                  <div class="avatar" style="width: 48px; height: 48px; font-size: 1.2rem;">
+                    @if (fotoUrl) {
+                      <img class="avatar__foto" [src]="fotoUrl" [alt]="'Foto de ' + userName" />
+                    }
+                    @if (!fotoUrl) {
+                      {{ userInitials }}
+                    }
                   </div>
-
-                  <!-- Las cuentas de Administración y de RR.HH. no tienen
-                       ficha de trabajador: son para operar el sistema, no
-                       personas en planilla. Antes su perfil salía con un
-                       guion en cada fila; ahora enseña lo que sí hay. -->
-                  <div class="perfil-datos" style="margin-top: 20px;" *ngIf="!empleadoData">
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Rol</span>
-                      <span class="perfil-dato__valor">{{ userRole || '—' }}</span>
-                    </div>
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Correo</span>
-                      <span class="perfil-dato__valor">{{ userEmail }}</span>
-                    </div>
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Estado de la cuenta</span>
-                      <span class="perfil-dato__valor">
-                        {{ cuentaData?.estado === 'inactivo' ? 'Desactivada' : 'Activa' }}
-                      </span>
-                    </div>
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Cuenta creada</span>
-                      <span class="perfil-dato__valor">{{ fechaDeCuenta(cuentaData?.creada_en) }}</span>
-                    </div>
-                    <div class="perfil-dato">
-                      <span class="perfil-dato__etiqueta">Términos de uso</span>
-                      <span class="perfil-dato__valor">
-                        {{ cuentaData?.terminos_estado === 'firmado'
-                            ? 'Firmados el ' + fechaDeCuenta(cuentaData?.terminos_en)
-                            : 'Pendientes de firmar' }}
-                      </span>
-                    </div>
+                  <div style="display: flex; flex-direction: column;">
+                    <span style="font-weight: 600; font-size: 16px; color: var(--text);">{{ userName }}</span>
+                    <span style="font-size: 13px; color: var(--text-muted);">{{ userEmail }}</span>
                   </div>
-
-                  <p class="form-ayuda" style="margin-top: 16px;" *ngIf="!empleadoData && cuentaData">
-                    Esta cuenta es para manejar el sistema, así que no tiene ficha de
-                    trabajador ni boletas. Si además cobras por planilla, pídele a
-                    Recursos Humanos que te dé de alta como trabajador.
-                  </p>
+                </div>
+                <!-- Body Dropdown -->
+                <div style="padding: 16px 20px;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: var(--text-muted); font-size: 14px;">Rol</span>
+                    <span style="font-weight: 600; font-size: 14px; color: var(--text-soft);">{{ userRole }}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="color: var(--text-muted); font-size: 14px;">Estado</span>
+                    <span class="status-badge" [ngClass]="perfilDadoDeBaja ? 'status-badge-secondary' : 'status-badge-success'">{{ estadoDelPerfil }}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 12px;">
+                    <span style="color: var(--text-muted); font-size: 14px;">Último acceso</span>
+                    <span style="font-size: 14px; color: var(--text-soft);">Reciente</span>
+                  </div>
+                  <!-- Menu Items -->
+                  <a (click)="openProfile()" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer; transition: color 0.2s;">
+                    <app-icon icono="person" [tamano]="18"></app-icon>
+                    Ver mi perfil
+                  </a>
+                  <a (click)="abrirGuia()" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer; transition: color 0.2s;">
+                    <app-icon icono="clipboard_check" [tamano]="18"></app-icon>
+                    Primeros pasos
+                  </a>
+                  <a (click)="openPassword()" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer; transition: color 0.2s;">
+                    <app-icon icono="lock" [tamano]="18"></app-icon>
+                    Cambiar contraseña
+                  </a>
+                  <a style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer;">
+                    <app-icon icono="settings" [tamano]="18"></app-icon>
+                    Configuración
+                  </a>
+                  <a (click)="toggleNotifications()" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer;">
+                    <app-icon icono="bell" [tamano]="18"></app-icon>
+                    Notificaciones
+                  </a>
+                  <a (click)="logout()" style="display: flex; align-items: center; gap: 12px; padding: 16px 0 4px; color: var(--danger-text); text-decoration: none; cursor: pointer; border-top: 1px solid var(--border); margin-top: 8px;">
+                    <app-icon icono="logout" [tamano]="18"></app-icon>
+                    Cerrar sesión
+                  </a>
                 </div>
               </div>
-            </div>
+            }
           </div>
         </div>
 
-        <div class="user-profile-container" style="position: relative;">
-          <div class="user-profile" (click)="toggleUserMenu()" style="cursor: pointer;">
-            <div class="avatar">
-              <img *ngIf="fotoUrl" class="avatar__foto" [src]="fotoUrl" [alt]="'Foto de ' + userName" />
-              <ng-container *ngIf="!fotoUrl">{{ userInitials }}</ng-container>
-            </div>
-            <div class="user-info">
-              <span class="user-name">{{ userName }}</span>
-              <span class="user-role">{{ userRole }}</span>
-            </div>
-          </div>
+      </header>
 
-          <!-- User Dropdown Menu -->
-          <div *ngIf="showUserMenu" class="user-dropdown-menu" style="position: absolute; top: 100%; right: 0; margin-top: 10px; width: 320px; background: var(--surface); color: var(--text-soft); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid var(--border); z-index: 1000; overflow: hidden; font-family: 'Inter', sans-serif;">
-            
-            <!-- Header Dropdown -->
-            <div style="display: flex; align-items: center; padding: 20px; background: var(--surface-alt); border-bottom: 1px solid var(--border); gap: 16px;">
-              <div class="avatar" style="width: 48px; height: 48px; font-size: 1.2rem;">
-                <img *ngIf="fotoUrl" class="avatar__foto" [src]="fotoUrl" [alt]="'Foto de ' + userName" />
-                <ng-container *ngIf="!fotoUrl">{{ userInitials }}</ng-container>
-              </div>
-              <div style="display: flex; flex-direction: column;">
-                <span style="font-weight: 600; font-size: 16px; color: var(--text);">{{ userName }}</span>
-                <span style="font-size: 13px; color: var(--text-muted);">{{ userEmail }}</span>
-              </div>
-            </div>
+      <!-- Se está cambiando de pantalla. Una barra fina, no un cartel: la
+      espera es corta y tapar el contenido sería peor. -->
+      @if (navegando) {
+        <div class="barra-navegacion" role="status" aria-label="Abriendo la pantalla"></div>
+      }
 
-            <!-- Body Dropdown -->
-            <div style="padding: 16px 20px;">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: var(--text-muted); font-size: 14px;">Rol</span>
-                <span style="font-weight: 600; font-size: 14px; color: var(--text-soft);">{{ userRole }}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: var(--text-muted); font-size: 14px;">Estado</span>
-                <span class="status-badge" [ngClass]="perfilDadoDeBaja ? 'status-badge-secondary' : 'status-badge-success'">{{ estadoDelPerfil }}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 12px;">
-                <span style="color: var(--text-muted); font-size: 14px;">Último acceso</span>
-                <span style="font-size: 14px; color: var(--text-soft);">Reciente</span>
-              </div>
-
-              <!-- Menu Items -->
-              <a (click)="openProfile()" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer; transition: color 0.2s;">
-                <app-icon icono="person" [tamano]="18"></app-icon>
-                Ver mi perfil
-              </a>
-              <a (click)="abrirGuia()" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer; transition: color 0.2s;">
-                <app-icon icono="clipboard_check" [tamano]="18"></app-icon>
-                Primeros pasos
-              </a>
-              <a (click)="openPassword()" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer; transition: color 0.2s;">
-                <app-icon icono="lock" [tamano]="18"></app-icon>
-                Cambiar contraseña
-              </a>
-              <a style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer;">
-                <app-icon icono="settings" [tamano]="18"></app-icon>
-                Configuración
-              </a>
-              <a (click)="toggleNotifications()" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer;">
-                <app-icon icono="bell" [tamano]="18"></app-icon>
-                Notificaciones
-              </a>
-              <a (click)="logout()" style="display: flex; align-items: center; gap: 12px; padding: 16px 0 4px; color: var(--danger-text); text-decoration: none; cursor: pointer; border-top: 1px solid var(--border); margin-top: 8px;">
-                <app-icon icono="logout" [tamano]="18"></app-icon>
-                Cerrar sesión
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </header>
-
-    <!-- Se está cambiando de pantalla. Una barra fina, no un cartel: la
-         espera es corta y tapar el contenido sería peor. -->
-    <div class="barra-navegacion" *ngIf="navegando" role="status" aria-label="Abriendo la pantalla"></div>
-
-    <main class="content-area">
-      <router-outlet />
-    </main>
-  </div>
-</div>
-
-<!-- MODALS ROOT -->
-<div class="modals-root">
-
-
-  <!-- ── Avisos del trabajador ────────────────────────────────────────
-       Va acá abajo, fuera de la cabecera, para que el fondo oscuro cubra
-       toda la pantalla.
-
-       Los avisos vienen guardados del backend con su fecha, no de contar
-       documentos sin firmar: así el historial se mantiene aunque la boleta
-       ya esté firmada, y se puede paginar. -->
-  <div class="modal-overlay" *ngIf="showNotifications"
-    (mousedown)="alPresionarEnElFondo($event)"
-    (click)="seCierraDesdeElFondo($event) && cerrarNotificaciones()">
-    <div class="modal-container avisos" (click)="$event.stopPropagation()">
-      <div class="modal-header modal-header--marca">
-        <div class="avisos__titulo">
-          <app-icon icono="bell" [tamano]="22"></app-icon>
-          <h2>Avisos</h2>
-          <span class="avisos__pendientes" *ngIf="noLeidas > 0">{{ noLeidas }} sin leer</span>
-        </div>
-        <button class="btn-close" (click)="cerrarNotificaciones()" aria-label="Cerrar">
-          <app-icon icono="close" [tamano]="24"></app-icon>
-        </button>
-      </div>
-
-      <div class="modal-body avisos__cuerpo">
-        <p class="avisos__vacio" *ngIf="cargandoAvisos">Cargando tus avisos…</p>
-
-        <p class="avisos__vacio" *ngIf="!cargandoAvisos && !avisos.length">
-          Todavía no tienes avisos. Cuando salga tu boleta del mes te avisamos por acá.
-        </p>
-
-        <article class="aviso" *ngFor="let a of avisos" [class.aviso--nuevo]="!a.leida">
-          <span class="aviso__icono">
-            <app-icon [icono]="iconoAviso(a)" [tamano]="20"></app-icon>
-          </span>
-
-          <div class="aviso__texto">
-            <p class="aviso__titulo">{{ a.titulo }}</p>
-            <p class="aviso__mensaje">{{ a.mensaje }}</p>
-            <p class="aviso__fecha">{{ fechaAviso(a.created_at) }}</p>
-          </div>
-
-          <button type="button" class="aviso__accion" (click)="abrirAviso(a, $event)">
-            {{ textoAccionAviso(a) }}
-          </button>
-        </article>
-      </div>
-
-      <div class="modal-footer avisos__pie" *ngIf="totalPaginasAvisos > 1 || noLeidas > 0">
-        <button type="button" class="btn-secondary" *ngIf="noLeidas > 0" (click)="marcarTodasLeidas()">
-          Marcar todo como leído
-        </button>
-
-        <div class="avisos__paginado" *ngIf="totalPaginasAvisos > 1">
-          <button type="button" class="btn-secondary" [disabled]="paginaAvisos === 0"
-            (click)="cambiarPaginaAvisos(paginaAvisos - 1)">Anterior</button>
-          <span>{{ paginaAvisos + 1 }} / {{ totalPaginasAvisos }}</span>
-          <button type="button" class="btn-secondary" [disabled]="paginaAvisos + 1 >= totalPaginasAvisos"
-            (click)="cambiarPaginaAvisos(paginaAvisos + 1)">Siguiente</button>
-        </div>
-      </div>
+      <main class="content-area">
+        <router-outlet />
+      </main>
     </div>
   </div>
 
-  <!-- Cambiar la contraseña desde el menú del usuario. Mismas reglas que la
-       pantalla de primer ingreso, y los errores debajo de cada campo. -->
-  <app-form-modal
-    [visible]="showPasswordModal"
-    titulo="Cambiar contraseña"
-    textoGuardar="Cambiar contraseña"
-    ancho="460px"
-    [cabeceraMarca]="true"
-    [guardando]="changingPassword"
-    (guardar)="submitPasswordChange()"
-    (cancelar)="closePassword()"
-  >
-    <div class="form-fields">
-      <div class="form-group">
-        <label for="password_actual_menu">Contraseña actual</label>
-        <input id="password_actual_menu" type="password" class="form-control" [(ngModel)]="currentPassword"
-          placeholder="La que usas para entrar" autocomplete="current-password" />
-        <small class="form-error" *ngIf="faltaPasswordActual">Escribe la contraseña con la que entras.</small>
-        <small class="form-error" *ngIf="errorPasswordActual">{{ errorPasswordActual }}</small>
-      </div>
+  <!-- MODALS ROOT -->
+  <div class="modals-root">
 
-      <div class="form-group">
-        <label for="password_nuevo_menu">Contraseña nueva</label>
-        <input id="password_nuevo_menu" type="password" class="form-control" [(ngModel)]="newPassword"
-          placeholder="Contraseña nueva" autocomplete="new-password" />
-        <small class="form-ayuda">Mínimo 8 caracteres, con letras y números. No uses datos personales.</small>
-        <small class="form-error" *ngIf="passwordNuevaCorta">Necesita al menos 8 caracteres.</small>
-        <small class="form-error" *ngIf="passwordDebil">Tiene que llevar letras y números, no solo unos u otros.</small>
-        <small class="form-error" *ngIf="errorPasswordNuevo">{{ errorPasswordNuevo }}</small>
-      </div>
 
-      <div class="form-group">
-        <label for="password_confirmacion_menu">Repite la contraseña nueva</label>
-        <input id="password_confirmacion_menu" type="password" class="form-control" [(ngModel)]="newPasswordConfirm"
-          placeholder="Repite la contraseña nueva" autocomplete="new-password" (keyup.enter)="submitPasswordChange()" />
-        <small class="form-error" *ngIf="passwordsNoCoinciden">Las dos contraseñas no son iguales.</small>
-      </div>
+    <!-- ── Avisos del trabajador ────────────────────────────────────────
+    Va acá abajo, fuera de la cabecera, para que el fondo oscuro cubra
+    toda la pantalla.
 
-      <p class="form-nota">
-        Al cambiarla se cierran tus sesiones abiertas en otros equipos. En este sigues dentro.
-      </p>
-    </div>
-  </app-form-modal>
-
-  <!-- Firmar una boleta desde la campana -->
-  <app-form-modal
-    [visible]="showSignModal"
-    titulo="Firmar boleta"
-    textoGuardar="Firmar boleta"
-    [guardando]="firmandoDoc"
-    (guardar)="confirmarFirmaRapidaModal()"
-    (cancelar)="closeSignModal()"
-  >
-    <div class="form-fields">
-      <p class="form-nota">
-        Para firmar la boleta de <strong>{{ getMesNombre(boletaAFirmar?.planilla?.mes) }} {{ boletaAFirmar?.planilla?.anio }}</strong>,
-        escribe la contraseña con la que entras al sistema.
-      </p>
-      <div class="form-group">
-        <label for="password_firma_rapida">Contraseña</label>
-        <input id="password_firma_rapida" type="password" class="form-control" [(ngModel)]="passwordFirma"
-          placeholder="Tu contraseña" autocomplete="current-password" (keyup.enter)="confirmarFirmaRapidaModal()" />
-        <small class="form-error" *ngIf="signErrorMsg">{{ signErrorMsg }}</small>
+    Los avisos vienen guardados del backend con su fecha, no de contar
+    documentos sin firmar: así el historial se mantiene aunque la boleta
+    ya esté firmada, y se puede paginar. -->
+    @if (showNotifications) {
+      <div class="modal-overlay"
+        (mousedown)="alPresionarEnElFondo($event)"
+        (click)="seCierraDesdeElFondo($event) && cerrarNotificaciones()">
+        <div class="modal-container avisos" (click)="$event.stopPropagation()">
+          <div class="modal-header modal-header--marca">
+            <div class="avisos__titulo">
+              <app-icon icono="bell" [tamano]="22"></app-icon>
+              <h2>Avisos</h2>
+              @if (noLeidas > 0) {
+                <span class="avisos__pendientes">{{ noLeidas }} sin leer</span>
+              }
+            </div>
+            <button class="btn-close" (click)="cerrarNotificaciones()" aria-label="Cerrar">
+              <app-icon icono="close" [tamano]="24"></app-icon>
+            </button>
+          </div>
+          <div class="modal-body avisos__cuerpo">
+            @if (cargandoAvisos) {
+              <p class="avisos__vacio">Cargando tus avisos…</p>
+            }
+            @if (!cargandoAvisos && !avisos.length) {
+              <p class="avisos__vacio">
+                Todavía no tienes avisos. Cuando salga tu boleta del mes te avisamos por acá.
+              </p>
+            }
+            @for (a of avisos; track a.id) {
+              <article class="aviso" [class.aviso--nuevo]="!a.leida">
+                <span class="aviso__icono">
+                  <app-icon [icono]="iconoAviso(a)" [tamano]="20"></app-icon>
+                </span>
+                <div class="aviso__texto">
+                  <p class="aviso__titulo">{{ a.titulo }}</p>
+                  <p class="aviso__mensaje">{{ a.mensaje }}</p>
+                  <p class="aviso__fecha">{{ fechaAviso(a.created_at) }}</p>
+                </div>
+                <button type="button" class="aviso__accion" (click)="abrirAviso(a, $event)">
+                  {{ textoAccionAviso(a) }}
+                </button>
+              </article>
+            }
+          </div>
+          @if (totalPaginasAvisos > 1 || noLeidas > 0) {
+            <div class="modal-footer avisos__pie">
+              @if (noLeidas > 0) {
+                <button type="button" class="btn-secondary" (click)="marcarTodasLeidas()">
+                  Marcar todo como leído
+                </button>
+              }
+              @if (totalPaginasAvisos > 1) {
+                <div class="avisos__paginado">
+                  <button type="button" class="btn-secondary" [disabled]="paginaAvisos === 0"
+                  (click)="cambiarPaginaAvisos(paginaAvisos - 1)">Anterior</button>
+                  <span>{{ paginaAvisos + 1 }} / {{ totalPaginasAvisos }}</span>
+                  <button type="button" class="btn-secondary" [disabled]="paginaAvisos + 1 >= totalPaginasAvisos"
+                  (click)="cambiarPaginaAvisos(paginaAvisos + 1)">Siguiente</button>
+                </div>
+              }
+            </div>
+          }
+        </div>
       </div>
-    </div>
-  </app-form-modal>
-</div>
+    }
+
+    <!-- Cambiar la contraseña desde el menú del usuario. Mismas reglas que la
+    pantalla de primer ingreso, y los errores debajo de cada campo. -->
+    <app-form-modal
+      [visible]="showPasswordModal"
+      titulo="Cambiar contraseña"
+      textoGuardar="Cambiar contraseña"
+      ancho="460px"
+      [cabeceraMarca]="true"
+      [guardando]="changingPassword"
+      (guardar)="submitPasswordChange()"
+      (cancelar)="closePassword()"
+      >
+      <div class="form-fields">
+        <div class="form-group">
+          <label for="password_actual_menu">Contraseña actual</label>
+          <input id="password_actual_menu" type="password" class="form-control" [(ngModel)]="currentPassword"
+            placeholder="La que usas para entrar" autocomplete="current-password" />
+            @if (faltaPasswordActual) {
+              <small class="form-error">Escribe la contraseña con la que entras.</small>
+            }
+            @if (errorPasswordActual) {
+              <small class="form-error">{{ errorPasswordActual }}</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="password_nuevo_menu">Contraseña nueva</label>
+            <input id="password_nuevo_menu" type="password" class="form-control" [(ngModel)]="newPassword"
+              placeholder="Contraseña nueva" autocomplete="new-password" />
+              <small class="form-ayuda">Mínimo 8 caracteres, con letras y números. No uses datos personales.</small>
+              @if (passwordNuevaCorta) {
+                <small class="form-error">Necesita al menos 8 caracteres.</small>
+              }
+              @if (passwordDebil) {
+                <small class="form-error">Tiene que llevar letras y números, no solo unos u otros.</small>
+              }
+              @if (errorPasswordNuevo) {
+                <small class="form-error">{{ errorPasswordNuevo }}</small>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="password_confirmacion_menu">Repite la contraseña nueva</label>
+              <input id="password_confirmacion_menu" type="password" class="form-control" [(ngModel)]="newPasswordConfirm"
+                placeholder="Repite la contraseña nueva" autocomplete="new-password" (keyup.enter)="submitPasswordChange()" />
+                @if (passwordsNoCoinciden) {
+                  <small class="form-error">Las dos contraseñas no son iguales.</small>
+                }
+              </div>
+
+              <p class="form-nota">
+                Al cambiarla se cierran tus sesiones abiertas en otros equipos. En este sigues dentro.
+              </p>
+            </div>
+          </app-form-modal>
+
+          <!-- Firmar una boleta desde la campana -->
+          <app-form-modal
+            [visible]="showSignModal"
+            titulo="Firmar boleta"
+            textoGuardar="Firmar boleta"
+            [guardando]="firmandoDoc"
+            (guardar)="confirmarFirmaRapidaModal()"
+            (cancelar)="closeSignModal()"
+            >
+            <div class="form-fields">
+              <p class="form-nota">
+                Para firmar la boleta de <strong>{{ getMesNombre(boletaAFirmar?.planilla?.mes) }} {{ boletaAFirmar?.planilla?.anio }}</strong>,
+                escribe la contraseña con la que entras al sistema.
+              </p>
+              <div class="form-group">
+                <label for="password_firma_rapida">Contraseña</label>
+                <input id="password_firma_rapida" type="password" class="form-control" [(ngModel)]="passwordFirma"
+                  placeholder="Tu contraseña" autocomplete="current-password" (keyup.enter)="confirmarFirmaRapidaModal()" />
+                  @if (signErrorMsg) {
+                    <small class="form-error">{{ signErrorMsg }}</small>
+                  }
+                </div>
+              </div>
+            </app-form-modal>
+          </div>

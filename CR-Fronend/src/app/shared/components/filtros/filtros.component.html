@@ -1,16 +1,20 @@
 <div class="filtros">
 
   <!-- Lo que está puesto, a la vista y quitable de un clic. Un embudo con un
-       puntito no explica por qué la tabla tiene ocho filas. -->
-  <button type="button" class="filtros__chip" *ngFor="let c of chipsVisibles; trackBy: porClave"
-    (click)="quitar(c.clave)" [title]="'Quitar «' + c.texto + '»'">
-    {{ c.texto }}
-    <app-icon icono="close" [tamano]="12"></app-icon>
-  </button>
+  puntito no explica por qué la tabla tiene ocho filas. -->
+  @for (c of chipsVisibles; track porClave($index, c)) {
+    <button type="button" class="filtros__chip"
+      (click)="quitar(c.clave)" [title]="'Quitar «' + c.texto + '»'">
+      {{ c.texto }}
+      <app-icon icono="close" [tamano]="12"></app-icon>
+    </button>
+  }
 
-  <span class="filtros__mas" *ngIf="chipsDeMas" [title]="'Hay ' + chipsDeMas + ' filtro(s) más puestos'">
-    +{{ chipsDeMas }}
-  </span>
+  @if (chipsDeMas) {
+    <span class="filtros__mas" [title]="'Hay ' + chipsDeMas + ' filtro(s) más puestos'">
+      +{{ chipsDeMas }}
+    </span>
+  }
 
   <div class="filtros__caja">
     <button type="button" class="boton-filtros" [class.boton-filtros--activo]="cuantosActivos"
@@ -18,65 +22,73 @@
       [attr.aria-label]="cuantosActivos ? cuantosActivos + ' filtros puestos' : 'Filtrar la tabla'">
       <app-icon icono="filter" [tamano]="16"></app-icon>
       Filtros
-      <span class="boton-filtros__cuenta" *ngIf="cuantosActivos">{{ cuantosActivos }}</span>
+      @if (cuantosActivos) {
+        <span class="boton-filtros__cuenta">{{ cuantosActivos }}</span>
+      }
     </button>
 
-    <div class="panel-flotante" *ngIf="abierto" (click)="$event.stopPropagation()" role="dialog"
-      aria-label="Filtros de la tabla"
-      [class.panel-flotante--arriba]="haciaArriba" [style.maxHeight.px]="altoMaximo">
-      <header class="panel-flotante__cabecera">
-        <strong>Filtrar</strong>
-        <button type="button" class="panel-flotante__limpiar" *ngIf="cuantosActivos" (click)="limpiar()">
-          Limpiar todo
-        </button>
-      </header>
-
-      <div class="panel-flotante__campos">
-        <div class="campo-flotante" *ngFor="let campo of campos"
-          [class.campo-flotante--doble]="campo.ancho === 'doble' || campo.tipo === 'fecha'">
-
-          <!-- Una lista: sede, área, cargo, tipo de contrato… -->
-          <ng-container *ngIf="campo.tipo === 'opciones'">
-            <label class="campo-flotante__etiqueta" [attr.for]="'filtro-' + campo.clave">
-              {{ campo.etiqueta }}
-            </label>
-            <select class="form-control" [id]="'filtro-' + campo.clave"
-              [ngModel]="valorDe(campo.clave)" [ngModelOptions]="{ standalone: true }"
-              (ngModelChange)="poner(campo.clave, $event)">
-              <option value="">{{ campo.vacio || 'Todos' }}</option>
-              <option *ngFor="let o of campo.opciones" [value]="o.valor">{{ o.etiqueta }}</option>
-            </select>
-          </ng-container>
-
-          <!-- Un tramo de fechas: desde y hasta -->
-          <ng-container *ngIf="campo.tipo === 'fecha'">
-            <span class="campo-flotante__etiqueta">{{ campo.etiqueta }}</span>
-            <div class="campo-flotante__tramo">
-              <input type="date" class="form-control" [attr.aria-label]="campo.etiqueta + ' desde'"
-                [ngModel]="valorDe(campo.clave)" [ngModelOptions]="{ standalone: true }"
-                (ngModelChange)="poner(campo.clave, $event)" />
-              <span class="campo-flotante__hasta">hasta</span>
-              <input type="date" class="form-control" [attr.aria-label]="campo.etiqueta + ' hasta'"
-                [ngModel]="valorDe(campo.claveHasta)" [ngModelOptions]="{ standalone: true }"
-                (ngModelChange)="poner(campo.claveHasta!, $event)" />
+    @if (abierto) {
+      <div class="panel-flotante" (click)="$event.stopPropagation()" role="dialog"
+        aria-label="Filtros de la tabla"
+        [class.panel-flotante--arriba]="haciaArriba" [style.maxHeight.px]="altoMaximo">
+        <header class="panel-flotante__cabecera">
+          <strong>Filtrar</strong>
+          @if (cuantosActivos) {
+            <button type="button" class="panel-flotante__limpiar" (click)="limpiar()">
+              Limpiar todo
+            </button>
+          }
+        </header>
+        <div class="panel-flotante__campos">
+          @for (campo of campos; track campo.clave) {
+            <div class="campo-flotante"
+              [class.campo-flotante--doble]="campo.ancho === 'doble' || campo.tipo === 'fecha'">
+              <!-- Una lista: sede, área, cargo, tipo de contrato… -->
+              @if (campo.tipo === 'opciones') {
+                <label class="campo-flotante__etiqueta" [attr.for]="'filtro-' + campo.clave">
+                  {{ campo.etiqueta }}
+                </label>
+                <select class="form-control" [id]="'filtro-' + campo.clave"
+                  [ngModel]="valorDe(campo.clave)" [ngModelOptions]="{ standalone: true }"
+                  (ngModelChange)="poner(campo.clave, $event)">
+                  <option value="">{{ campo.vacio || 'Todos' }}</option>
+                  @for (o of campo.opciones; track o.valor) {
+                    <option [value]="o.valor">{{ o.etiqueta }}</option>
+                  }
+                </select>
+              }
+              <!-- Un tramo de fechas: desde y hasta -->
+              @if (campo.tipo === 'fecha') {
+                <span class="campo-flotante__etiqueta">{{ campo.etiqueta }}</span>
+                <div class="campo-flotante__tramo">
+                  <input type="date" class="form-control" [attr.aria-label]="campo.etiqueta + ' desde'"
+                    [ngModel]="valorDe(campo.clave)" [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="poner(campo.clave, $event)" />
+                    <span class="campo-flotante__hasta">hasta</span>
+                    <input type="date" class="form-control" [attr.aria-label]="campo.etiqueta + ' hasta'"
+                      [ngModel]="valorDe(campo.claveHasta)" [ngModelOptions]="{ standalone: true }"
+                      (ngModelChange)="poner(campo.claveHasta!, $event)" />
+                    </div>
+                  }
+                  <!-- Una casilla: "solo los que…" -->
+                  @if (campo.tipo === 'si-no') {
+                    <label class="campo-flotante__casilla">
+                      <input type="checkbox" [checked]="estaMarcado(campo.clave)"
+                        (change)="alternarMarca(campo.clave, $any($event.target).checked)" />
+                        <span>{{ campo.etiqueta }}</span>
+                      </label>
+                    }
+                    @if (campo.ayuda) {
+                      <small class="campo-flotante__ayuda">{{ campo.ayuda }}</small>
+                    }
+                  </div>
+                }
+              </div>
+              <footer class="panel-flotante__pie">
+                <span class="panel-flotante__nota">Se aplica al momento.</span>
+                <button type="button" class="btn-secondary" (click)="abierto = false">Listo</button>
+              </footer>
             </div>
-          </ng-container>
-
-          <!-- Una casilla: "solo los que…" -->
-          <label class="campo-flotante__casilla" *ngIf="campo.tipo === 'si-no'">
-            <input type="checkbox" [checked]="estaMarcado(campo.clave)"
-              (change)="alternarMarca(campo.clave, $any($event.target).checked)" />
-            <span>{{ campo.etiqueta }}</span>
-          </label>
-
-          <small class="campo-flotante__ayuda" *ngIf="campo.ayuda">{{ campo.ayuda }}</small>
+          }
         </div>
       </div>
-
-      <footer class="panel-flotante__pie">
-        <span class="panel-flotante__nota">Se aplica al momento.</span>
-        <button type="button" class="btn-secondary" (click)="abierto = false">Listo</button>
-      </footer>
-    </div>
-  </div>
-</div>

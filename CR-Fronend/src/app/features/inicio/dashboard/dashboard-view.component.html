@@ -20,7 +20,7 @@
           <app-icon icono="date_range" [tamano]="15"></app-icon>
           {{ nombreMes(filtroMes) }} {{ filtroAnio }}
           <app-icon icono="chevron_down" [tamano]="13" class="filtro-periodo__flecha"
-            [class.filtro-periodo__flecha--abierta]="calendarioAbierto"></app-icon>
+          [class.filtro-periodo__flecha--abierta]="calendarioAbierto"></app-icon>
         </button>
 
         <button type="button" class="filtro-periodo__paso" (click)="moverMes(1)"
@@ -28,49 +28,61 @@
           <app-icon icono="chevron_right" [tamano]="17"></app-icon>
         </button>
 
-        <div class="selector-mes" *ngIf="calendarioAbierto" (click)="$event.stopPropagation()">
-          <div class="selector-mes__anio">
-            <button type="button" (click)="moverAnioDelCalendario(-1)" aria-label="Año anterior">
-              <app-icon icono="chevron_left" [tamano]="14"></app-icon>
-            </button>
-            {{ anioDelCalendario }}
-            <button type="button" (click)="moverAnioDelCalendario(1)" aria-label="Año siguiente">
-              <app-icon icono="chevron_right" [tamano]="14"></app-icon>
-            </button>
+        @if (calendarioAbierto) {
+          <div class="selector-mes" (click)="$event.stopPropagation()">
+            <div class="selector-mes__anio">
+              <button type="button" (click)="moverAnioDelCalendario(-1)" aria-label="Año anterior">
+                <app-icon icono="chevron_left" [tamano]="14"></app-icon>
+              </button>
+              {{ anioDelCalendario }}
+              <button type="button" (click)="moverAnioDelCalendario(1)" aria-label="Año siguiente">
+                <app-icon icono="chevron_right" [tamano]="14"></app-icon>
+              </button>
+            </div>
+            <div class="selector-mes__meses">
+              @for (m of meses; track m.value) {
+                <button type="button" class="selector-mes__mes"
+                  [class.selector-mes__mes--elegido]="esMesElegido(m.value)"
+                  [class.selector-mes__mes--hoy]="esMesDeHoy(m.value)"
+                  (click)="elegirMes(m.value)">
+                  {{ m.label.slice(0, 3) }}
+                </button>
+              }
+            </div>
           </div>
-          <div class="selector-mes__meses">
-            <button type="button" class="selector-mes__mes" *ngFor="let m of meses"
-              [class.selector-mes__mes--elegido]="esMesElegido(m.value)"
-              [class.selector-mes__mes--hoy]="esMesDeHoy(m.value)"
-              (click)="elegirMes(m.value)">
-              {{ m.label.slice(0, 3) }}
-            </button>
-          </div>
-        </div>
+        }
       </div>
 
       <!-- Sede: con pocas se ven todas; con más, desplegable -->
-      <div class="segmentado" *ngIf="sedes.length && sedes.length <= 3" role="group" aria-label="Sede">
-        <button type="button" class="segmentado__opcion" [class.segmentado__opcion--activa]="!filtroSede"
-          (click)="elegirSede('')" appPista="Ver las cifras de todas las sedes juntas">
-          <app-icon icono="view_module" [tamano]="14"></app-icon>
-          Todas
-        </button>
-        <button type="button" class="segmentado__opcion" *ngFor="let s of sedes"
-          [class.segmentado__opcion--activa]="filtroSede === s.id" (click)="elegirSede(s.id)"
-          [appPista]="'Ver solo ' + s.nombre">
-          <app-icon icono="location_on" [tamano]="14"></app-icon>
-          {{ s.nombre }}
-        </button>
-      </div>
+      @if (sedes.length && sedes.length <= 3) {
+        <div class="segmentado" role="group" aria-label="Sede">
+          <button type="button" class="segmentado__opcion" [class.segmentado__opcion--activa]="!filtroSede"
+            (click)="elegirSede('')" appPista="Ver las cifras de todas las sedes juntas">
+            <app-icon icono="view_module" [tamano]="14"></app-icon>
+            Todas
+          </button>
+          @for (s of sedes; track s.id) {
+            <button type="button" class="segmentado__opcion"
+              [class.segmentado__opcion--activa]="filtroSede === s.id" (click)="elegirSede(s.id)"
+              [appPista]="'Ver solo ' + s.nombre">
+              <app-icon icono="location_on" [tamano]="14"></app-icon>
+              {{ s.nombre }}
+            </button>
+          }
+        </div>
+      }
 
-      <div class="filtro-select" *ngIf="sedes.length > 3">
-        <app-icon icono="location_on" [tamano]="15"></app-icon>
-        <select [(ngModel)]="filtroSede" (ngModelChange)="alFiltrar()" aria-label="Sede">
-          <option value="">Todas las sedes</option>
-          <option *ngFor="let s of sedes" [value]="s.id">{{ s.nombre }}</option>
-        </select>
-      </div>
+      @if (sedes.length > 3) {
+        <div class="filtro-select">
+          <app-icon icono="location_on" [tamano]="15"></app-icon>
+          <select [(ngModel)]="filtroSede" (ngModelChange)="alFiltrar()" aria-label="Sede">
+            <option value="">Todas las sedes</option>
+            @for (s of sedes; track s.id) {
+              <option [value]="s.id">{{ s.nombre }}</option>
+            }
+          </select>
+        </div>
+      }
 
       <button type="button" class="btn-exportar btn-exportar--compacto" (click)="exportar()"
         [disabled]="exportando || cargando"
@@ -79,16 +91,18 @@
         {{ exportando ? 'Generando…' : 'Exportar' }}
       </button>
 
-      <button type="button" class="chip-filtro" *ngIf="hayFiltros" (click)="limpiarFiltros()"
-        appPista="Volver al mes en curso y a todas las sedes">
-        <app-icon icono="rotate_ccw" [tamano]="14"></app-icon>
-        Este mes
-      </button>
+      @if (hayFiltros) {
+        <button type="button" class="chip-filtro" (click)="limpiarFiltros()"
+          appPista="Volver al mes en curso y a todas las sedes">
+          <app-icon icono="rotate_ccw" [tamano]="14"></app-icon>
+          Este mes
+        </button>
+      }
     </div>
   </div>
 
   <!-- ══ Primera carga: la silueta del panel ══════════════════════════ -->
-  <ng-container *ngIf="!hayDatos">
+  @if (!hayDatos) {
     <div class="cargando-caja cargando-caja--linea" role="status">
       <span class="cargador cargador--chico"></span>
       Trayendo las cifras del mes…
@@ -98,58 +112,70 @@
       <span class="esqueleto esqueleto--bloque panel-esqueleto"></span>
       <span class="esqueleto esqueleto--bloque panel-esqueleto"></span>
     </div>
-  </ng-container>
+  }
 
-  <ng-container *ngIf="hayDatos">
-
+  @if (hayDatos) {
     <!-- ══ Lo que hay que hacer: antes que los números ═══════════════ -->
-    <section class="pendientes" *ngIf="pendientesConTrabajo.length">
-      <h2 class="pendientes__titulo">Pendientes de {{ loQueSeVe }}</h2>
-      <div class="pendientes__lista pendientes__lista--fila">
-        <button type="button" class="pendiente" *ngFor="let p of pendientesConTrabajo" (click)="irAResolver(p)"
-          appPista="Ir a donde se resuelve">
-          <strong class="pendiente__cuantos">{{ p.cuantos }}</strong>
-          <span class="pendiente__texto">{{ p.texto }}</span>
-          <app-icon icono="arrow_right" [tamano]="16" class="pendiente__flecha"></app-icon>
-        </button>
-      </div>
-    </section>
-
+    @if (pendientesConTrabajo.length) {
+      <section class="pendientes">
+        <h2 class="pendientes__titulo">Pendientes de {{ loQueSeVe }}</h2>
+        <div class="pendientes__lista pendientes__lista--fila">
+          @for (p of pendientesConTrabajo; track $index) {
+            <button type="button" class="pendiente" (click)="irAResolver(p)"
+              appPista="Ir a donde se resuelve">
+              <strong class="pendiente__cuantos">{{ p.cuantos }}</strong>
+              <span class="pendiente__texto">{{ p.texto }}</span>
+              <app-icon icono="arrow_right" [tamano]="16" class="pendiente__flecha"></app-icon>
+            </button>
+          }
+        </div>
+      </section>
+    }
     <!-- ══ El mes en el azul del colegio ══════════════════════════════
-         La nómina (sube contando al llegar), los doce meses del año (cada
-         barra lleva a su mes) y el anillo de las boletas firmadas. -->
+    La nómina (sube contando al llegar), los doce meses del año (cada
+    barra lleva a su mes) y el anillo de las boletas firmadas. -->
     <section class="banda-mes" aria-label="Resumen del mes">
       <div class="banda-mes__nomina">
         <h2 class="banda-mes__titulo">Total de la planilla de {{ loQueSeVe }}</h2>
         <p class="banda-mes__cifra"><span class="banda-mes__moneda">S/</span>{{ enSolesRedondo(nominaMostrada, true) }}<span class="banda-mes__centimos">.{{ centimos(nominaMostrada) }}</span></p>
-        <p class="banda-mes__cambio" *ngIf="variacion !== null">
-          <app-icon [icono]="variacion >= 0 ? 'trending_up' : 'trending_down'" [tamano]="15"></app-icon>
-          {{ variacionAbs }} % {{ variacion >= 0 ? 'más' : 'menos' }} que en {{ nombreMesAnterior }}
-        </p>
-        <p class="banda-mes__cambio" *ngIf="variacion === null && nomina">Sin planillas el mes anterior para comparar.</p>
-        <p class="banda-mes__cambio" *ngIf="!nomina">Todavía no hay planillas en este mes.</p>
-        <p class="banda-mes__detalle" *ngIf="nomina">
-          {{ planillas }} planillas, {{ enSoles(promedio) }} de neto por persona
-        </p>
+        @if (variacion !== null) {
+          <p class="banda-mes__cambio">
+            <app-icon [icono]="variacion >= 0 ? 'trending_up' : 'trending_down'" [tamano]="15"></app-icon>
+            {{ variacionAbs }} % {{ variacion >= 0 ? 'más' : 'menos' }} que en {{ nombreMesAnterior }}
+          </p>
+        }
+        @if (variacion === null && nomina) {
+          <p class="banda-mes__cambio">Sin planillas el mes anterior para comparar.</p>
+        }
+        @if (!nomina) {
+          <p class="banda-mes__cambio">Todavía no hay planillas en este mes.</p>
+        }
+        @if (nomina) {
+          <p class="banda-mes__detalle">
+            {{ planillas }} planillas, {{ enSoles(promedio) }} de neto por persona
+          </p>
+        }
       </div>
-
       <div class="banda-mes__anio" role="group" [attr.aria-label]="'Nómina de cada mes de ' + filtroAnio">
-        <button type="button" class="banda-mes__mes" *ngFor="let m of mesesDelAnio; trackBy: trackPorMes"
-          [class.banda-mes__mes--elegido]="m.mes === filtroMes" (click)="irAMes(m.mes)"
-          [appPista]="pistaMes(m)" pistaLado="abajo"
-          [attr.aria-label]="pistaMes(m)" [attr.aria-current]="m.mes === filtroMes ? 'true' : null">
-          <span class="banda-mes__pista"><span class="banda-mes__barra" [style.height.%]="m.alto"></span></span>
-          <span class="banda-mes__etiqueta">{{ m.etiqueta }}</span>
-        </button>
+        @for (m of mesesDelAnio; track trackPorMes($index, m)) {
+          <button type="button" class="banda-mes__mes"
+            [class.banda-mes__mes--elegido]="m.mes === filtroMes" (click)="irAMes(m.mes)"
+            [appPista]="pistaMes(m)" pistaLado="abajo"
+            [attr.aria-label]="pistaMes(m)" [attr.aria-current]="m.mes === filtroMes ? 'true' : null">
+            <span class="banda-mes__pista"><span class="banda-mes__barra" [style.height.%]="m.alto"></span></span>
+            <span class="banda-mes__etiqueta">{{ m.etiqueta }}</span>
+          </button>
+        }
       </div>
-
       <div class="banda-mes__boletas">
         <div class="anillo" role="img" [attr.aria-label]="describirBoletas()">
           <svg viewBox="0 0 128 128" class="anillo__svg" aria-hidden="true">
             <circle cx="64" cy="64" r="54" class="anillo__pista"></circle>
-            <circle *ngFor="let a of arcos; trackBy: trackPorClase" cx="64" cy="64" r="54" class="anillo__arco" [ngClass]="a.clase"
-              [attr.stroke-dasharray]="a.largo + ' ' + circunferencia"
+            @for (a of arcos; track trackPorClase($index, a)) {
+              <circle cx="64" cy="64" r="54" class="anillo__arco" [ngClass]="a.clase"
+                [attr.stroke-dasharray]="a.largo + ' ' + circunferencia"
               [attr.stroke-dashoffset]="-a.inicio"></circle>
+            }
           </svg>
           <div class="anillo__centro">
             <strong>{{ porcentajeFirmadas }}%</strong>
@@ -160,11 +186,12 @@
           <li><i class="anillo__punto anillo__arco--firmadas"></i><strong>{{ boletas.firmadas }}</strong> firmadas</li>
           <li><i class="anillo__punto anillo__arco--vistas"></i><strong>{{ boletas.vistas }}</strong> vistas</li>
           <li><i class="anillo__punto anillo__arco--sin-abrir"></i><strong>{{ boletas.sinAbrir }}</strong> sin abrir</li>
-          <li *ngIf="boletas.sinEmitir"><i class="anillo__punto"></i><strong>{{ boletas.sinEmitir }}</strong> sin emitir</li>
+          @if (boletas.sinEmitir) {
+            <li><i class="anillo__punto"></i><strong>{{ boletas.sinEmitir }}</strong> sin emitir</li>
+          }
         </ul>
       </div>
     </section>
-
     <!-- ══ Cuatro cifras, cada una con su mini gráfico ═════════════════ -->
     <div class="indicadores">
       <article class="indicador">
@@ -174,10 +201,11 @@
           <p class="indicador__valor">{{ activos }}</p>
           <p class="indicador__nota">{{ altas ? '+' + altas + ' entraron este mes' : 'Nadie entró este mes' }}</p>
         </div>
-        <apx-chart class="indicador__chispa" *ngIf="totalAltas" [series]="chispaAltasSeries" [chart]="chispaAltasChart"
+        @if (totalAltas) {
+          <apx-chart class="indicador__chispa" [series]="chispaAltasSeries" [chart]="chispaAltasChart"
           [colors]="chispaAltasColores" [plotOptions]="chispaAltasPlot" [tooltip]="chispaTooltip"></apx-chart>
+        }
       </article>
-
       <article class="indicador">
         <span class="indicador__icono"><app-icon icono="wallet" [tamano]="20"></app-icon></span>
         <div class="indicador__texto">
@@ -185,10 +213,11 @@
           <p class="indicador__valor">{{ enSoles(acumulado) }}</p>
           <p class="indicador__nota">De enero a {{ nombreMes(filtroMes).toLowerCase() }} de {{ filtroAnio }}</p>
         </div>
-        <apx-chart class="indicador__chispa" *ngIf="acumulado" [series]="chispaNominaSeries" [chart]="chispaNominaChart"
+        @if (acumulado) {
+          <apx-chart class="indicador__chispa" [series]="chispaNominaSeries" [chart]="chispaNominaChart"
           [colors]="chispaNominaColores" [stroke]="chispaStroke" [fill]="chispaFill" [tooltip]="chispaTooltip"></apx-chart>
+        }
       </article>
-
       <article class="indicador">
         <span class="indicador__icono indicador__icono--dorado"><app-icon icono="money" [tamano]="20"></app-icon></span>
         <div class="indicador__texto">
@@ -196,13 +225,14 @@
           <p class="indicador__valor">{{ enSoles(nomina + aportes) }}</p>
           <p class="indicador__nota">Con {{ enSoles(aportes) }} de aportes del colegio</p>
         </div>
-        <div class="indicador__reparto" *ngIf="nomina" role="img"
-          [attr.aria-label]="'Aportes: ' + parteAportes.toFixed(0) + ' % del costo'">
-          <span class="indicador__reparto-neto" [style.width.%]="100 - parteAportes"></span>
-          <span class="indicador__reparto-aportes" [style.width.%]="parteAportes"></span>
-        </div>
+        @if (nomina) {
+          <div class="indicador__reparto" role="img"
+            [attr.aria-label]="'Aportes: ' + parteAportes.toFixed(0) + ' % del costo'">
+            <span class="indicador__reparto-neto" [style.width.%]="100 - parteAportes"></span>
+            <span class="indicador__reparto-aportes" [style.width.%]="parteAportes"></span>
+          </div>
+        }
       </article>
-
       <article class="indicador">
         <span class="indicador__icono" [class.indicador__icono--alerta]="porVencer > 0" [class.indicador__icono--bien]="!porVencer">
           <app-icon [icono]="porVencer ? 'warning' : 'calendar_check'" [tamano]="20"></app-icon>
@@ -214,7 +244,6 @@
         </div>
       </article>
     </div>
-
     <!-- ══ El año y los cumpleaños ════════════════════════════════════ -->
     <div class="panel-fila panel-fila--8-4">
       <article class="tarjeta-grafico">
@@ -223,231 +252,291 @@
             <h3 class="tarjeta-grafico__titulo">Lo que se pagó cada mes</h3>
             <p class="tarjeta-grafico__nota">La línea azul es {{ filtroAnio }} y la punteada, {{ filtroAnio - 1 }}. El punto dorado es el mes que estás viendo.</p>
           </div>
-          <div class="dato-lateral" *ngIf="acumulado && acumuladoAnterior">
-            <span>Contra el año pasado</span>
-            <strong>{{ diferenciaAcumulada() }}</strong>
-          </div>
+          @if (acumulado && acumuladoAnterior) {
+            <div class="dato-lateral">
+              <span>Contra el año pasado</span>
+              <strong>{{ diferenciaAcumulada() }}</strong>
+            </div>
+          }
         </header>
-        <apx-chart *ngIf="hayValores(tendenciaSeries)"
-          [series]="tendenciaSeries" [chart]="tendenciaChart" [colors]="tendenciaColores"
-          [stroke]="tendenciaStroke" [fill]="tendenciaFill" [markers]="tendenciaMarkers"
-          [xaxis]="tendenciaXaxis" [yaxis]="tendenciaYaxis" [legend]="tendenciaLeyenda"
-          [tooltip]="tendenciaTooltip" [grid]="rejilla"
-          [dataLabels]="sinEtiquetas">
-        </apx-chart>
-        <p class="card-vacio" *ngIf="!hayValores(tendenciaSeries)">
-          No hay planillas en {{ filtroAnio }} ni en {{ filtroAnio - 1 }}. Cuando generes la del mes, aparece aquí.
-        </p>
+        @if (hayValores(tendenciaSeries)) {
+          <apx-chart
+            [series]="tendenciaSeries" [chart]="tendenciaChart" [colors]="tendenciaColores"
+            [stroke]="tendenciaStroke" [fill]="tendenciaFill" [markers]="tendenciaMarkers"
+            [xaxis]="tendenciaXaxis" [yaxis]="tendenciaYaxis" [legend]="tendenciaLeyenda"
+            [tooltip]="tendenciaTooltip" [grid]="rejilla"
+            [dataLabels]="sinEtiquetas">
+          </apx-chart>
+        }
+        @if (!hayValores(tendenciaSeries)) {
+          <p class="card-vacio">
+            No hay planillas en {{ filtroAnio }} ni en {{ filtroAnio - 1 }}. Cuando generes la del mes, aparece aquí.
+          </p>
+        }
       </article>
-
       <!-- Los cumpleaños, en un calendario: se ve de un vistazo quién y cuándo -->
       <article class="tarjeta-grafico cumple">
         <header class="cumple__cabeza">
           <span class="cumple__torta"><app-icon icono="cake" [tamano]="22"></app-icon></span>
           <div>
             <h3 class="cumple__titulo">Cumpleaños de {{ nombreMes(filtroMes).toLowerCase() }}</h3>
-            <p class="cumple__resumen" *ngIf="cumpleanos.length">
-              {{ cumpleanos.length }} {{ cumpleanos.length === 1 ? 'persona' : 'personas' }}<ng-container
-                *ngIf="cumpleanosPorVenir && cumpleanosPorVenir < cumpleanos.length">, faltan {{ cumpleanosPorVenir }}</ng-container>
+            @if (cumpleanos.length) {
+              <p class="cumple__resumen">
+                {{ cumpleanos.length }} {{ cumpleanos.length === 1 ? 'persona' : 'personas' }}@if (cumpleanosPorVenir && cumpleanosPorVenir < cumpleanos.length) {
+                , faltan {{ cumpleanosPorVenir }}
+              }
             </p>
-            <p class="cumple__resumen" *ngIf="!cumpleanos.length">Nadie del personal activo cumple este mes.</p>
-          </div>
-        </header>
-
-        <div class="cumple__hoy" *ngFor="let c of cumpleanosHoy">
+          }
+          @if (!cumpleanos.length) {
+            <p class="cumple__resumen">Nadie del personal activo cumple este mes.</p>
+          }
+        </div>
+      </header>
+      @for (c of cumpleanosHoy; track $index) {
+        <div class="cumple__hoy">
           <span class="cumple__iniciales cumple__iniciales--grande avatar--dorado">{{ iniciales(c.nombre) }}</span>
           <span class="cumple__hoy-texto">
             <small>Hoy cumple</small>
             <strong>{{ c.nombre }}</strong>
-            <small *ngIf="c.edad > 0">{{ c.edad }} años, {{ c.cargo }}</small>
+            @if (c.edad > 0) {
+              <small>{{ c.edad }} años, {{ c.cargo }}</small>
+            }
           </span>
         </div>
-        <p class="cumple__proximo" *ngIf="proximoCumple as p">
+      }
+      @if (proximoCumple; as p) {
+        <p class="cumple__proximo">
           <strong>{{ p.dias === 1 ? 'Mañana' : 'En ' + p.dias + ' días' }}</strong> cumple {{ p.persona.nombre }}
         </p>
-
-        <div class="calendario" [attr.aria-label]="'Calendario de ' + nombreMes(filtroMes)">
-          <div class="calendario__fila calendario__fila--dias" aria-hidden="true">
-            <span *ngFor="let d of diasSemana">{{ d }}</span>
-          </div>
-          <div class="calendario__fila" *ngFor="let semana of semanas">
-            <ng-container *ngFor="let dia of semana">
-              <span class="calendario__dia calendario__dia--vacio" *ngIf="!dia.dia"></span>
-              <span class="calendario__dia" *ngIf="dia.dia && !dia.cumple.length"
-                [class.calendario__dia--hoy]="dia.esHoy" [class.calendario__dia--paso]="dia.yaPaso">{{ dia.dia }}</span>
-              <button type="button" class="calendario__dia calendario__dia--cumple" *ngIf="dia.dia && dia.cumple.length"
-                (click)="elegirDia(dia)" [appPista]="pistaDia(dia)"
-                [class.calendario__dia--hoy]="dia.esHoy" [class.calendario__dia--paso]="dia.yaPaso"
-                [class.calendario__dia--elegido]="diaElegido === dia.dia"
-                [attr.aria-pressed]="diaElegido === dia.dia"
-                [attr.aria-label]="dia.dia + ': ' + pistaDia(dia)">
-                {{ dia.dia }}
-                <span class="calendario__cuantos" *ngIf="dia.cumple.length > 1">{{ dia.cumple.length }}</span>
-              </button>
-            </ng-container>
-          </div>
+      }
+      <div class="calendario" [attr.aria-label]="'Calendario de ' + nombreMes(filtroMes)">
+        <div class="calendario__fila calendario__fila--dias" aria-hidden="true">
+          @for (d of diasSemana; track $index) {
+            <span>{{ d }}</span>
+          }
         </div>
-
-        <ul class="cumple__lista" *ngIf="cumpleanos.length">
-          <li class="cumple__persona" *ngFor="let c of cumpleanosVisibles"
-            [class.cumple__persona--paso]="c.ya_paso && !c.es_hoy">
-            <span class="cumple__iniciales" [ngClass]="c.es_hoy ? 'avatar--dorado' : colorDe(c.nombre)">{{ iniciales(c.nombre) }}</span>
-            <span class="cumple__quien">
-              <strong>{{ c.nombre }}</strong>
-              <small>{{ c.cargo }}{{ c.area && c.area !== '—' ? ', ' + c.area : '' }}</small>
-            </span>
-            <span class="cumple__cuando">
-              {{ diaEnPalabras(c.dia) }}
-              <small *ngIf="c.edad > 0">{{ c.edad }} años</small>
-            </span>
-          </li>
+        @for (semana of semanas; track $index) {
+          <div class="calendario__fila">
+            @for (dia of semana; track $index) {
+              @if (!dia.dia) {
+                <span class="calendario__dia calendario__dia--vacio"></span>
+              }
+              @if (dia.dia && !dia.cumple.length) {
+                <span class="calendario__dia"
+                [class.calendario__dia--hoy]="dia.esHoy" [class.calendario__dia--paso]="dia.yaPaso">{{ dia.dia }}</span>
+              }
+              @if (dia.dia && dia.cumple.length) {
+                <button type="button" class="calendario__dia calendario__dia--cumple"
+                  (click)="elegirDia(dia)" [appPista]="pistaDia(dia)"
+                  [class.calendario__dia--hoy]="dia.esHoy" [class.calendario__dia--paso]="dia.yaPaso"
+                  [class.calendario__dia--elegido]="diaElegido === dia.dia"
+                  [attr.aria-pressed]="diaElegido === dia.dia"
+                  [attr.aria-label]="dia.dia + ': ' + pistaDia(dia)">
+                  {{ dia.dia }}
+                  @if (dia.cumple.length > 1) {
+                    <span class="calendario__cuantos">{{ dia.cumple.length }}</span>
+                  }
+                </button>
+              }
+            }
+          </div>
+        }
+      </div>
+      @if (cumpleanos.length) {
+        <ul class="cumple__lista">
+          @for (c of cumpleanosVisibles; track $index) {
+            <li class="cumple__persona"
+              [class.cumple__persona--paso]="c.ya_paso && !c.es_hoy">
+              <span class="cumple__iniciales" [ngClass]="c.es_hoy ? 'avatar--dorado' : colorDe(c.nombre)">{{ iniciales(c.nombre) }}</span>
+              <span class="cumple__quien">
+                <strong>{{ c.nombre }}</strong>
+                <small>{{ c.cargo }}{{ c.area && c.area !== '—' ? ', ' + c.area : '' }}</small>
+              </span>
+              <span class="cumple__cuando">
+                {{ diaEnPalabras(c.dia) }}
+                @if (c.edad > 0) {
+                  <small>{{ c.edad }} años</small>
+                }
+              </span>
+            </li>
+          }
         </ul>
-      </article>
-    </div>
-
-    <!-- ══ La plata del mes ═══════════════════════════════════════════ -->
-    <div class="panel-fila panel-fila--5-7">
-      <article class="tarjeta-grafico grafico--etiquetas-fuera">
-        <header class="tarjeta-grafico__cabeza">
-          <div>
-            <h3 class="tarjeta-grafico__titulo">Cómo se forma el pago del mes</h3>
-            <p class="tarjeta-grafico__nota">Sueldos y bonos, menos descuentos, es lo que recibe el personal. Con los aportes del colegio sale el costo total.</p>
-          </div>
-        </header>
-        <ol class="barras-monto" *ngIf="pago.length">
-          <li class="barras-monto__fila" *ngFor="let f of pago; trackBy: trackPorEtiqueta"
-            [class.barras-monto__fila--total]="f.total">
-            <span class="barras-monto__nombre">{{ f.etiqueta }}</span>
-            <strong class="barras-monto__monto">{{ f.signo ? f.signo + ' ' : '' }}{{ enSoles(f.monto) }}</strong>
-            <span class="barras-monto__pista">
-              <span class="barras-monto__barra" [ngClass]="'barras-monto__barra--' + f.color" [style.width.%]="f.ancho"></span>
-            </span>
-          </li>
+      }
+    </article>
+  </div>
+  <!-- ══ La plata del mes ═══════════════════════════════════════════ -->
+  <div class="panel-fila panel-fila--5-7">
+    <article class="tarjeta-grafico grafico--etiquetas-fuera">
+      <header class="tarjeta-grafico__cabeza">
+        <div>
+          <h3 class="tarjeta-grafico__titulo">Cómo se forma el pago del mes</h3>
+          <p class="tarjeta-grafico__nota">Sueldos y bonos, menos descuentos, es lo que recibe el personal. Con los aportes del colegio sale el costo total.</p>
+        </div>
+      </header>
+      @if (pago.length) {
+        <ol class="barras-monto">
+          @for (f of pago; track trackPorEtiqueta($index, f)) {
+            <li class="barras-monto__fila"
+              [class.barras-monto__fila--total]="f.total">
+              <span class="barras-monto__nombre">{{ f.etiqueta }}</span>
+              <strong class="barras-monto__monto">{{ f.signo ? f.signo + ' ' : '' }}{{ enSoles(f.monto) }}</strong>
+              <span class="barras-monto__pista">
+                <span class="barras-monto__barra" [ngClass]="'barras-monto__barra--' + f.color" [style.width.%]="f.ancho"></span>
+              </span>
+            </li>
+          }
         </ol>
-        <p class="card-vacio" *ngIf="!pago.length">Este mes todavía no tiene planillas.</p>
-      </article>
-
-      <article class="tarjeta-grafico grafico--mapa">
-        <header class="tarjeta-grafico__cabeza">
-          <div>
-            <h3 class="tarjeta-grafico__titulo">Cuánto se paga en cada área</h3>
-            <p class="tarjeta-grafico__nota">Mientras más grande el bloque, más se paga en esa área. Pasa el cursor para ver a cuántas personas.</p>
-          </div>
-        </header>
-        <apx-chart *ngIf="hayValores(areaSeries)"
+      }
+      @if (!pago.length) {
+        <p class="card-vacio">Este mes todavía no tiene planillas.</p>
+      }
+    </article>
+    <article class="tarjeta-grafico grafico--mapa">
+      <header class="tarjeta-grafico__cabeza">
+        <div>
+          <h3 class="tarjeta-grafico__titulo">Cuánto se paga en cada área</h3>
+          <p class="tarjeta-grafico__nota">Mientras más grande el bloque, más se paga en esa área. Pasa el cursor para ver a cuántas personas.</p>
+        </div>
+      </header>
+      @if (hayValores(areaSeries)) {
+        <apx-chart
           [series]="areaSeries" [chart]="areaChart" [plotOptions]="areaPlot" [colors]="areaColores"
           [dataLabels]="areaEtiquetas" [tooltip]="areaTooltip" [legend]="sinLeyenda">
         </apx-chart>
-        <p class="card-vacio" *ngIf="!hayValores(areaSeries)">Este mes todavía no tiene planillas.</p>
-      </article>
+      }
+      @if (!hayValores(areaSeries)) {
+        <p class="card-vacio">Este mes todavía no tiene planillas.</p>
+      }
+    </article>
+  </div>
+  <!-- ══ Cómo es el personal: tres donas ════════════════════════════ -->
+  <section class="tarjeta-grafico">
+    <header class="tarjeta-grafico__cabeza">
+      <div>
+        <h3 class="tarjeta-grafico__titulo">Nuestro personal</h3>
+        <p class="tarjeta-grafico__nota">{{ activos }} {{ activos === 1 ? 'persona activa' : 'personas activas' }}</p>
+      </div>
+    </header>
+    <div class="donas">
+      @for (d of donas; track trackPorTitulo($index, d)) {
+        <div class="donas__una">
+          <h4 class="donas__titulo">{{ d.titulo }}</h4>
+          @if (d.total) {
+            <apx-chart
+              [series]="d.series" [labels]="d.etiquetas" [chart]="donaChart" [colors]="donaColores"
+              [legend]="donaLeyenda" [stroke]="donaStroke" [dataLabels]="donaEtiquetas" [plotOptions]="donaPlot">
+            </apx-chart>
+          }
+          @if (!d.total) {
+            <p class="card-vacio">Sin datos en esta sede.</p>
+          }
+        </div>
+      }
     </div>
-
-    <!-- ══ Cómo es el personal: tres donas ════════════════════════════ -->
-    <section class="tarjeta-grafico">
+  </section>
+  <!-- ══ Edades, conceptos y contratos ══════════════════════════════ -->
+  <div class="panel-fila panel-fila--tres">
+    <article class="tarjeta-grafico grafico--etiquetas-fuera">
       <header class="tarjeta-grafico__cabeza">
         <div>
-          <h3 class="tarjeta-grafico__titulo">Nuestro personal</h3>
-          <p class="tarjeta-grafico__nota">{{ activos }} {{ activos === 1 ? 'persona activa' : 'personas activas' }}</p>
+          <h3 class="tarjeta-grafico__titulo">{{ vistaPersonal === 'edad' ? 'Edades del personal' : 'Años trabajando en el colegio' }}</h3>
+          <p class="tarjeta-grafico__nota">Del personal activo</p>
+        </div>
+        <div class="segmentado segmentado--chico" role="group" aria-label="Qué mostrar">
+          <button type="button" class="segmentado__opcion" [class.segmentado__opcion--activa]="vistaPersonal === 'edad'"
+          (click)="cambiarVistaPersonal('edad')" appPista="Agrupar por edad">Edad</button>
+          <button type="button" class="segmentado__opcion" [class.segmentado__opcion--activa]="vistaPersonal === 'antiguedad'"
+          (click)="cambiarVistaPersonal('antiguedad')" appPista="Agrupar por años en el colegio">Antigüedad</button>
         </div>
       </header>
-      <div class="donas">
-        <div class="donas__una" *ngFor="let d of donas; trackBy: trackPorTitulo">
-          <h4 class="donas__titulo">{{ d.titulo }}</h4>
-          <apx-chart *ngIf="d.total"
-            [series]="d.series" [labels]="d.etiquetas" [chart]="donaChart" [colors]="donaColores"
-            [legend]="donaLeyenda" [stroke]="donaStroke" [dataLabels]="donaEtiquetas" [plotOptions]="donaPlot">
-          </apx-chart>
-          <p class="card-vacio" *ngIf="!d.total">Sin datos en esta sede.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ══ Edades, conceptos y contratos ══════════════════════════════ -->
-    <div class="panel-fila panel-fila--tres">
-      <article class="tarjeta-grafico grafico--etiquetas-fuera">
-        <header class="tarjeta-grafico__cabeza">
-          <div>
-            <h3 class="tarjeta-grafico__titulo">{{ vistaPersonal === 'edad' ? 'Edades del personal' : 'Años trabajando en el colegio' }}</h3>
-            <p class="tarjeta-grafico__nota">Del personal activo</p>
-          </div>
-          <div class="segmentado segmentado--chico" role="group" aria-label="Qué mostrar">
-            <button type="button" class="segmentado__opcion" [class.segmentado__opcion--activa]="vistaPersonal === 'edad'"
-              (click)="cambiarVistaPersonal('edad')" appPista="Agrupar por edad">Edad</button>
-            <button type="button" class="segmentado__opcion" [class.segmentado__opcion--activa]="vistaPersonal === 'antiguedad'"
-              (click)="cambiarVistaPersonal('antiguedad')" appPista="Agrupar por años en el colegio">Antigüedad</button>
-          </div>
-        </header>
-        <apx-chart *ngIf="hayPersonal"
+      @if (hayPersonal) {
+        <apx-chart
           [series]="personalSeries" [chart]="personalChart" [plotOptions]="personalPlot"
           [xaxis]="personalXaxis" [yaxis]="personalYaxis" [colors]="personalColores"
           [dataLabels]="personalEtiquetas" [legend]="sinLeyenda" [grid]="rejilla">
         </apx-chart>
-        <p class="card-vacio" *ngIf="!hayPersonal">Faltan las fechas de nacimiento e ingreso en las fichas.</p>
-      </article>
-
-      <article class="tarjeta-grafico grafico--etiquetas-fuera">
-        <header class="tarjeta-grafico__cabeza">
-          <div>
-            <h3 class="tarjeta-grafico__titulo">Otros pagos y descuentos del mes</h3>
-            <p class="tarjeta-grafico__nota">Los más grandes, sin contar pensión, EsSalud ni renta de quinta</p>
-          </div>
-        </header>
-        <ol class="barras-monto" *ngIf="conceptos.length">
-          <li class="barras-monto__fila" *ngFor="let f of conceptos; trackBy: trackPorEtiqueta">
-            <span class="barras-monto__nombre">{{ f.etiqueta }}</span>
-            <strong class="barras-monto__monto">{{ enSoles(f.monto) }}</strong>
-            <span class="barras-monto__pista">
-              <span class="barras-monto__barra barras-monto__barra--concepto" [style.width.%]="f.ancho"></span>
-            </span>
-          </li>
+      }
+      @if (!hayPersonal) {
+        <p class="card-vacio">Faltan las fechas de nacimiento e ingreso en las fichas.</p>
+      }
+    </article>
+    <article class="tarjeta-grafico grafico--etiquetas-fuera">
+      <header class="tarjeta-grafico__cabeza">
+        <div>
+          <h3 class="tarjeta-grafico__titulo">Otros pagos y descuentos del mes</h3>
+          <p class="tarjeta-grafico__nota">Los más grandes, sin contar pensión, EsSalud ni renta de quinta</p>
+        </div>
+      </header>
+      @if (conceptos.length) {
+        <ol class="barras-monto">
+          @for (f of conceptos; track trackPorEtiqueta($index, f)) {
+            <li class="barras-monto__fila">
+              <span class="barras-monto__nombre">{{ f.etiqueta }}</span>
+              <strong class="barras-monto__monto">{{ enSoles(f.monto) }}</strong>
+              <span class="barras-monto__pista">
+                <span class="barras-monto__barra barras-monto__barra--concepto" [style.width.%]="f.ancho"></span>
+              </span>
+            </li>
+          }
         </ol>
-        <p class="card-vacio" *ngIf="!conceptos.length">
+      }
+      @if (!conceptos.length) {
+        <p class="card-vacio">
           Este mes no se aplicó ningún concepto además de los de ley.
         </p>
-      </article>
-
-      <article class="tarjeta-grafico">
-        <header class="tarjeta-grafico__cabeza">
-          <div>
-            <h3 class="tarjeta-grafico__titulo">Contratos que se acaban pronto</h3>
-            <p class="tarjeta-grafico__nota">Los más cercanos de los próximos 60 días</p>
-          </div>
-          <button type="button" class="tarjeta-grafico__accion" (click)="irAContratos()"
-            appPista="Abrir la lista completa de contratos">Ver todos</button>
-        </header>
-        <ul class="vence" *ngIf="vencimientos.length">
-          <li class="vence__fila" *ngFor="let v of vencimientos" [ngClass]="'vence__fila--' + v.urgencia">
-            <span class="vence__quien">
-              <strong>{{ v.nombre }}</strong>
-              <small>{{ v.cargo }}</small>
-            </span>
-            <span class="vence__cuando">
-              <strong>{{ cuandoVence(v.dias) }}</strong>
-              <small>{{ fechaVence(v.fecha) }}</small>
-            </span>
-          </li>
-        </ul>
-        <div class="card-vacio card-vacio--bien" *ngIf="!vencimientos.length">
-          <app-icon icono="calendar_check" [tamano]="34"></app-icon>
-          Ningún contrato vence en los próximos 60 días.
-        </div>
-      </article>
-    </div>
-
-    <!-- ══ Quién entra, quién se va ═══════════════════════════════════ -->
+      }
+    </article>
     <article class="tarjeta-grafico">
       <header class="tarjeta-grafico__cabeza">
         <div>
-          <h3 class="tarjeta-grafico__titulo">Quién entró y quién se fue en {{ filtroAnio }}</h3>
-          <p class="tarjeta-grafico__nota">Entraron {{ totalAltas }} y se fueron {{ totalBajas }}.</p>
+          <h3 class="tarjeta-grafico__titulo">Contratos que se acaban pronto</h3>
+          <p class="tarjeta-grafico__nota">Los más cercanos de los próximos 60 días</p>
         </div>
+        <button type="button" class="tarjeta-grafico__accion" (click)="irAContratos()"
+        appPista="Abrir la lista completa de contratos">Ver todos</button>
       </header>
-      <apx-chart *ngIf="totalAltas || totalBajas"
+      @if (vencimientos.length) {
+        <ul class="vence">
+          @for (v of vencimientos; track $index) {
+            <li class="vence__fila" [ngClass]="'vence__fila--' + v.urgencia">
+              <span class="vence__quien">
+                <strong>{{ v.nombre }}</strong>
+                <small>{{ v.cargo }}</small>
+              </span>
+              <span class="vence__cuando">
+                <strong>{{ cuandoVence(v.dias) }}</strong>
+                <small>{{ fechaVence(v.fecha) }}</small>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+      @if (!vencimientos.length) {
+        <div class="card-vacio card-vacio--bien">
+          <app-icon icono="calendar_check" [tamano]="34"></app-icon>
+          Ningún contrato vence en los próximos 60 días.
+        </div>
+      }
+    </article>
+  </div>
+  <!-- ══ Quién entra, quién se va ═══════════════════════════════════ -->
+  <article class="tarjeta-grafico">
+    <header class="tarjeta-grafico__cabeza">
+      <div>
+        <h3 class="tarjeta-grafico__titulo">Quién entró y quién se fue en {{ filtroAnio }}</h3>
+        <p class="tarjeta-grafico__nota">Entraron {{ totalAltas }} y se fueron {{ totalBajas }}.</p>
+      </div>
+    </header>
+    @if (totalAltas || totalBajas) {
+      <apx-chart
         [series]="movimientoSeries" [chart]="movimientoChart" [plotOptions]="movimientoPlot"
         [xaxis]="movimientoXaxis" [yaxis]="movimientoYaxis" [colors]="movimientoColores"
         [tooltip]="movimientoTooltip" [legend]="movimientoLeyenda" [dataLabels]="movimientoEtiquetas" [grid]="rejilla">
       </apx-chart>
-      <p class="card-vacio" *ngIf="!totalAltas && !totalBajas">Nadie entró ni salió en {{ filtroAnio }}.</p>
-    </article>
-  </ng-container>
+    }
+    @if (!totalAltas && !totalBajas) {
+      <p class="card-vacio">Nadie entró ni salió en {{ filtroAnio }}.</p>
+    }
+  </article>
+}
 </div>

@@ -11,81 +11,107 @@
   <div class="cts-deposito__elegir">
     <span class="cts-deposito__rotulo">Depósito</span>
     <div class="cts-deposito__periodos" role="tablist" aria-label="Depósito del año">
-      <button type="button" class="cts-periodo" role="tab" *ngFor="let p of periodos"
-        [class.cts-periodo--activo]="periodo === p.valor" [attr.aria-selected]="periodo === p.valor"
-        [disabled]="cargando" (click)="elegirPeriodo(p.valor)">
-        <strong>{{ p.titulo }}</strong>
-        <span>cubre {{ p.detalle }}</span>
-      </button>
+      @for (p of periodos; track p.valor) {
+        <button type="button" class="cts-periodo" role="tab"
+          [class.cts-periodo--activo]="periodo === p.valor" [attr.aria-selected]="periodo === p.valor"
+          [disabled]="cargando" (click)="elegirPeriodo(p.valor)">
+          <strong>{{ p.titulo }}</strong>
+          <span>cubre {{ p.detalle }}</span>
+        </button>
+      }
     </div>
     <select id="anioCts" class="form-control cts-deposito__anio" aria-label="Año" [(ngModel)]="anio" (ngModelChange)="cargar()" [disabled]="cargando">
-      <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
+      @for (a of anios; track $index) {
+        <option [ngValue]="a">{{ a }}</option>
+      }
     </select>
   </div>
 
-  <div class="cts-deposito__datos" *ngIf="datos">
-    <div class="cts-dato" [class.cts-dato--aviso]="diasParaLimite >= 0 && diasParaLimite <= 15 && porDepositar > 0"
-      [class.cts-dato--vencido]="diasParaLimite < 0 && porDepositar > 0">
-      <span>Depositar hasta el</span>
-      <strong>{{ fecha(datos.limite) }}</strong>
-      <small *ngIf="porDepositar > 0">
-        {{ diasParaLimite > 0 ? 'faltan ' + diasParaLimite + ' día(s)' : diasParaLimite === 0 ? 'es hoy' : 'venció hace ' + -diasParaLimite + ' día(s)' }}
-      </small>
+  @if (datos) {
+    <div class="cts-deposito__datos">
+      <div class="cts-dato" [class.cts-dato--aviso]="diasParaLimite >= 0 && diasParaLimite <= 15 && porDepositar > 0"
+        [class.cts-dato--vencido]="diasParaLimite < 0 && porDepositar > 0">
+        <span>Depositar hasta el</span>
+        <strong>{{ fecha(datos.limite) }}</strong>
+        @if (porDepositar > 0) {
+          <small>
+            {{ diasParaLimite > 0 ? 'faltan ' + diasParaLimite + ' día(s)' : diasParaLimite === 0 ? 'es hoy' : 'venció hace ' + -diasParaLimite + ' día(s)' }}
+          </small>
+        }
+      </div>
+      <div class="cts-dato cts-dato--total">
+        <span>Total del semestre</span>
+        <strong>S/ {{ datos.resumen.total | number: '1.2-2' }}</strong>
+        <small>{{ datos.resumen.con_derecho }} trabajador(es) con CTS</small>
+      </div>
     </div>
-    <div class="cts-dato cts-dato--total">
-      <span>Total del semestre</span>
-      <strong>S/ {{ datos.resumen.total | number: '1.2-2' }}</strong>
-      <small>{{ datos.resumen.con_derecho }} trabajador(es) con CTS</small>
-    </div>
-  </div>
+  }
 </section>
 
 <!-- ── El recorrido del depósito: lo que toca ahora, resaltado ── -->
-<ol class="cts-pasos" *ngIf="datos" aria-label="Pasos del depósito">
-  <li *ngFor="let p of pasos" class="cts-paso" [ngClass]="'cts-paso--' + p.fase">
-    <div class="cts-paso__cabeza">
-      <span class="cts-paso__numero">
-        <app-icon *ngIf="p.fase === 'hecho'; else numero" icono="check" [tamano]="15"></app-icon>
-        <ng-template #numero>{{ p.numero }}</ng-template>
-      </span>
-      <strong class="cts-paso__titulo">{{ p.titulo }}</strong>
-      <app-icon class="cts-paso__icono" [icono]="p.icono" [tamano]="20"></app-icon>
-    </div>
-    <p class="cts-paso__explicacion">{{ p.explicacion }}</p>
-    <div class="cts-paso__estado">{{ p.estado }}</div>
-    <div class="cts-paso__barra" *ngIf="p.avance !== null"><span [style.width.%]="p.avance"></span></div>
-
-    <div class="cts-paso__accion">
-      <button *ngIf="p.numero === 1" type="button" [ngClass]="p.fase === 'actual' ? 'btn-primary' : 'btn-secondary'"
-        (click)="calcular()" [disabled]="calculando || cargando || !datos.resumen.con_derecho"
-        appPista="Guarda la CTS del semestre de todo el personal con derecho. Las ya depositadas no se tocan.">
-        <app-icon icono="refresh" [tamano]="16"></app-icon>
-        {{ calculando ? 'Calculando…' : p.fase === 'hecho' ? 'Volver a calcular' : 'Calcular CTS' }}
-      </button>
-      <button *ngIf="p.numero === 2 && p.fase !== 'hecho'" type="button" [ngClass]="p.fase === 'actual' ? 'btn-primary' : 'btn-secondary'"
-        (click)="depositarPendientes()" [disabled]="depositando || !datos.resumen.calculadas"
-        appPista="Registra el depósito de todos los que tienen su CTS calculada. Para solo algunos, márcalos en la tabla.">
-        <app-icon icono="check_circle" [tamano]="16"></app-icon>
-        Registrar depósito ({{ datos.resumen.calculadas }})
-      </button>
-      <button *ngIf="p.numero === 3" type="button" class="btn-secondary" (click)="elegirSituacion('depositada')"
-        [disabled]="!datos.resumen.depositadas">
-        <app-icon icono="eye" [tamano]="16"></app-icon>
-        Ver depositadas
-      </button>
-    </div>
-  </li>
-</ol>
+@if (datos) {
+  <ol class="cts-pasos" aria-label="Pasos del depósito">
+    @for (p of pasos; track $index) {
+      <li class="cts-paso" [ngClass]="'cts-paso--' + p.fase">
+        <div class="cts-paso__cabeza">
+          <span class="cts-paso__numero">
+            @if (p.fase === 'hecho') {
+              <app-icon icono="check" [tamano]="15"></app-icon>
+            } @else {
+              {{ p.numero }}
+            }
+          </span>
+          <strong class="cts-paso__titulo">{{ p.titulo }}</strong>
+          <app-icon class="cts-paso__icono" [icono]="p.icono" [tamano]="20"></app-icon>
+        </div>
+        <p class="cts-paso__explicacion">{{ p.explicacion }}</p>
+        <div class="cts-paso__estado">{{ p.estado }}</div>
+        @if (p.avance !== null) {
+          <div class="cts-paso__barra"><span [style.width.%]="p.avance"></span></div>
+        }
+        <div class="cts-paso__accion">
+          @if (p.numero === 1) {
+            <button type="button" [ngClass]="p.fase === 'actual' ? 'btn-primary' : 'btn-secondary'"
+              (click)="calcular()" [disabled]="calculando || cargando || !datos.resumen.con_derecho"
+              appPista="Guarda la CTS del semestre de todo el personal con derecho. Las ya depositadas no se tocan.">
+              <app-icon icono="refresh" [tamano]="16"></app-icon>
+              {{ calculando ? 'Calculando…' : p.fase === 'hecho' ? 'Volver a calcular' : 'Calcular CTS' }}
+            </button>
+          }
+          @if (p.numero === 2 && p.fase !== 'hecho') {
+            <button type="button" [ngClass]="p.fase === 'actual' ? 'btn-primary' : 'btn-secondary'"
+              (click)="depositarPendientes()" [disabled]="depositando || !datos.resumen.calculadas"
+              appPista="Registra el depósito de todos los que tienen su CTS calculada. Para solo algunos, márcalos en la tabla.">
+              <app-icon icono="check_circle" [tamano]="16"></app-icon>
+              Registrar depósito ({{ datos.resumen.calculadas }})
+            </button>
+          }
+          @if (p.numero === 3) {
+            <button type="button" class="btn-secondary" (click)="elegirSituacion('depositada')"
+              [disabled]="!datos.resumen.depositadas">
+              <app-icon icono="eye" [tamano]="16"></app-icon>
+              Ver depositadas
+            </button>
+          }
+        </div>
+      </li>
+    }
+  </ol>
+}
 
 <!-- ── Las personas del semestre ── -->
-<div class="cts-situaciones" role="tablist" aria-label="Situación" *ngIf="datos">
-  <button type="button" class="chip-filtro" role="tab" *ngFor="let c of chips"
-    [class.chip-filtro--activo]="situacion === c.valor" [attr.aria-selected]="situacion === c.valor"
-    (click)="elegirSituacion(c.valor)">
-    {{ c.texto }}
-    <span class="chip-filtro__cuenta">{{ c.cuenta }}</span>
-  </button>
-</div>
+@if (datos) {
+  <div class="cts-situaciones" role="tablist" aria-label="Situación">
+    @for (c of chips; track c.valor) {
+      <button type="button" class="chip-filtro" role="tab"
+        [class.chip-filtro--activo]="situacion === c.valor" [attr.aria-selected]="situacion === c.valor"
+        (click)="elegirSituacion(c.valor)">
+        {{ c.texto }}
+        <span class="chip-filtro__cuenta">{{ c.cuenta }}</span>
+      </button>
+    }
+  </div>
+}
 
 <app-data-table
   entidad="este trabajador"
@@ -101,56 +127,70 @@
   [filasPorPagina]="15"
   [mensajeVacio]="mensajeVacio"
   (accionPersonalizada)="alAccionar($event)"
->
+  >
   <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="aplicarFiltro()"></app-orden>
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros" (cambio)="aplicarFiltro()"></app-filtros>
 
   <ng-template appCelda="nombre" let-f>
     <strong>{{ f.nombre }}</strong>
     <div class="form-ayuda">
-      DNI {{ f.dni }}<ng-container *ngIf="f.cargo"> · {{ f.cargo }}</ng-container>
-      <span class="status-badge status-badge-secondary renta-fila__cesado" *ngIf="f.estado !== 'activo'">Cesado</span>
-    </div>
-  </ng-template>
+      DNI {{ f.dni }}@if (f.cargo) {
+      · {{ f.cargo }}
+    }
+    @if (f.estado !== 'activo') {
+      <span class="status-badge status-badge-secondary renta-fila__cesado">Cesado</span>
+    }
+  </div>
+</ng-template>
 
-  <ng-template appCelda="meses" let-f>
-    <ng-container *ngIf="f.aplica; else sinTiempo">
-      <span>{{ tiempo(f) }}</span>
-      <div class="form-ayuda">{{ fecha(f.desde) }} – {{ fecha(f.hasta) }}</div>
-    </ng-container>
-    <ng-template #sinTiempo><span class="form-ayuda">{{ f.motivo }}</span></ng-template>
-  </ng-template>
+<ng-template appCelda="meses" let-f>
+  @if (f.aplica) {
+    <span>{{ tiempo(f) }}</span>
+    <div class="form-ayuda">{{ fecha(f.desde) }} – {{ fecha(f.hasta) }}</div>
+  } @else {
+    <span class="form-ayuda">{{ f.motivo }}</span>
+  }
+</ng-template>
 
-  <ng-template appCelda="remuneracion_computable" let-f>
-    <ng-container *ngIf="f.aplica; else guion">
-      <span class="celda-monto">S/ {{ f.remuneracion_computable | number: '1.2-2' }}</span>
-      <div class="form-ayuda celda-monto">1/6 grati {{ f.sexto_gratificacion | number: '1.2-2' }}</div>
-    </ng-container>
-  </ng-template>
+<ng-template appCelda="remuneracion_computable" let-f>
+  @if (f.aplica) {
+    <span class="celda-monto">S/ {{ f.remuneracion_computable | number: '1.2-2' }}</span>
+    <div class="form-ayuda celda-monto">1/6 grati {{ f.sexto_gratificacion | number: '1.2-2' }}</div>
+  } @else {
+    <span class="form-ayuda">—</span>
+  }
+</ng-template>
 
-  <ng-template appCelda="monto" let-f>
-    <ng-container *ngIf="f.aplica; else guion">
-      <strong class="celda-monto">S/ {{ f.monto | number: '1.2-2' }}</strong>
-      <div class="form-ayuda texto-aviso" *ngIf="f.desactualizada">Desactualizada</div>
-      <div class="form-ayuda" *ngIf="f.fecha_deposito">Depositada el {{ fecha(f.fecha_deposito) }}</div>
-    </ng-container>
-  </ng-template>
+<ng-template appCelda="monto" let-f>
+  @if (f.aplica) {
+    <strong class="celda-monto">S/ {{ f.monto | number: '1.2-2' }}</strong>
+    @if (f.desactualizada) {
+      <div class="form-ayuda texto-aviso">Desactualizada</div>
+    }
+    @if (f.fecha_deposito) {
+      <div class="form-ayuda">Depositada el {{ fecha(f.fecha_deposito) }}</div>
+    }
+  } @else {
+    <span class="form-ayuda">—</span>
+  }
+</ng-template>
 
-  <ng-template #guion><span class="form-ayuda">—</span></ng-template>
 </app-data-table>
 
-<details class="section-panel renta-ayuda" *ngIf="datos">
-  <summary>¿Qué es la CTS y cómo se calcula?</summary>
-  <ul class="ajuste-detalle">
-    <li><strong>Qué es:</strong> un ahorro que el colegio le guarda a cada trabajador en una cuenta CTS a su nombre, para que tenga con qué vivir si deja de trabajar. Es como medio sueldo cada semestre.</li>
-    <li><strong>Dos depósitos al año:</strong> hasta el 15 de mayo, por noviembre a abril; y hasta el 15 de noviembre, por mayo a octubre. Se deposita en la cuenta CTS que eligió el trabajador.</li>
-    <li><strong>Remuneración computable:</strong> sueldo + asignación familiar + bonificación por cargo de su planilla de abril u octubre (el cierre del semestre, o el mes en que cesó), más un sexto de la gratificación del semestre (la de diciembre para mayo, la de julio para noviembre). Si alguno de esos meses no tiene planilla en el sistema, se toma su ficha.</li>
-    <li><strong>CTS:</strong> la remuneración computable ÷ 12 por cada mes completo, más ÷ 360 por cada día suelto (quien entró o cesó a mitad del semestre).</li>
-    <li><strong>Sin CTS:</strong> las prácticas y los tipos de contrato marcados sin CTS en Tipos de Contrato, y quien no llega a un mes de servicio.</li>
-    <li>La CTS no paga ONP, AFP, EsSalud ni Renta de 5ta: va completa a la cuenta.</li>
-    <li>Marca a quienes ya se les depositó y usa <strong>Registrar depósito</strong>: su hoja de liquidación queda en su expediente y la ve en Mis Documentos. Una CTS depositada ya no se recalcula.</li>
-  </ul>
-</details>
+@if (datos) {
+  <details class="section-panel renta-ayuda">
+    <summary>¿Qué es la CTS y cómo se calcula?</summary>
+    <ul class="ajuste-detalle">
+      <li><strong>Qué es:</strong> un ahorro que el colegio le guarda a cada trabajador en una cuenta CTS a su nombre, para que tenga con qué vivir si deja de trabajar. Es como medio sueldo cada semestre.</li>
+      <li><strong>Dos depósitos al año:</strong> hasta el 15 de mayo, por noviembre a abril; y hasta el 15 de noviembre, por mayo a octubre. Se deposita en la cuenta CTS que eligió el trabajador.</li>
+      <li><strong>Remuneración computable:</strong> sueldo + asignación familiar + bonificación por cargo de su planilla de abril u octubre (el cierre del semestre, o el mes en que cesó), más un sexto de la gratificación del semestre (la de diciembre para mayo, la de julio para noviembre). Si alguno de esos meses no tiene planilla en el sistema, se toma su ficha.</li>
+      <li><strong>CTS:</strong> la remuneración computable ÷ 12 por cada mes completo, más ÷ 360 por cada día suelto (quien entró o cesó a mitad del semestre).</li>
+      <li><strong>Sin CTS:</strong> las prácticas y los tipos de contrato marcados sin CTS en Tipos de Contrato, y quien no llega a un mes de servicio.</li>
+      <li>La CTS no paga ONP, AFP, EsSalud ni Renta de 5ta: va completa a la cuenta.</li>
+      <li>Marca a quienes ya se les depositó y usa <strong>Registrar depósito</strong>: su hoja de liquidación queda en su expediente y la ve en Mis Documentos. Una CTS depositada ya no se recalcula.</li>
+    </ul>
+  </details>
+}
 
 <!-- Lo que se hace con los marcados, abajo y flotando (como en Empleados). -->
 <app-barra-seleccion [cantidad]="marcados.length" singular="trabajador marcado" plural="trabajadores marcados"
@@ -171,7 +211,7 @@
   (guardar)="registrarDeposito()"
   (cancelar)="modalDeposito = false"
   ancho="520px"
->
+  >
   <div class="form-fields">
     <p class="form-nota">
       {{ aDepositar.length === 1 ? aDepositar[0].nombre : aDepositar.length + ' trabajadores' }}
@@ -185,7 +225,7 @@
       <label for="fechaDeposito">Fecha del depósito *</label>
       <input type="date" id="fechaDeposito" class="form-control" [(ngModel)]="deposito.fecha" />
     </div>
-    <ng-container *ngIf="aDepositar.length === 1; else variasCuentas">
+    @if (aDepositar.length === 1) {
       <div class="form-group">
         <label for="entidadCts">Entidad depositaria</label>
         <input type="text" id="entidadCts" class="form-control" [(ngModel)]="deposito.entidad" maxlength="100" />
@@ -195,10 +235,9 @@
         <input type="text" id="cuentaCts" class="form-control" [(ngModel)]="deposito.cuenta" maxlength="50" />
         <small class="form-ayuda">Se propone la cuenta de su ficha; cámbiala si su CTS va a otra.</small>
       </div>
-    </ng-container>
-    <ng-template #variasCuentas>
+    } @else {
       <p class="form-ayuda">A cada uno se le anota la entidad y la cuenta de su ficha.</p>
-    </ng-template>
+    }
   </div>
 </app-form-modal>
 
@@ -208,25 +247,24 @@
   icono="money_safe"
   [titulo]="detalle?.nombre ?? 'CTS'"
   [subtitulo]="detalle ? 'DNI ' + detalle.dni + (detalle.cargo ? ' · ' + detalle.cargo : '') : ''"
->
-  <ng-container *ngIf="detalle as d">
+  >
+  @if (detalle; as d) {
     <dl class="detalle-lista">
       <dt>Situación</dt>
       <dd><span class="status-badge" [ngClass]="'status-badge-' + estado(d).tono">{{ estado(d).texto }}</span></dd>
       <dt>Ingreso</dt>
       <dd>{{ fecha(d.fecha_ingreso) }}</dd>
-      <ng-container *ngIf="d.aplica">
+      @if (d.aplica) {
         <dt>Periodo</dt>
         <dd>{{ fecha(d.desde) }} – {{ fecha(d.hasta) }}</dd>
         <dt>Tiempo</dt>
         <dd>{{ tiempo(d) }}</dd>
-      </ng-container>
-      <ng-container *ngIf="!d.aplica">
+      }
+      @if (!d.aplica) {
         <dt>Por qué no</dt>
         <dd>{{ d.motivo }}</dd>
-      </ng-container>
+      }
     </dl>
-
     <!-- El semestre mes por mes, de sus planillas: de dónde sale la CTS. -->
     <div class="cts-mapa__cabecera">
       <h3 class="detalle-subtitulo">Ingresos mensuales · {{ rangoSemestre }}</h3>
@@ -236,44 +274,64 @@
         Detalle por concepto
       </button>
     </div>
-
-    <div class="cts-mapa" *ngIf="!cargandoHistorial; else cargandoMapa">
-      <div class="cts-mapa__mes" *ngFor="let b of barras" [appPista]="b.pista" [class.cts-mapa__mes--cierre]="b.mes.es_cierre">
-        <span class="cts-mapa__etiqueta">{{ b.etiqueta }} <small>{{ b.mes.anio }}</small></span>
-        <div class="cts-mapa__pista">
-          <span class="cts-mapa__barra" *ngIf="b.mes.situacion === 'planilla'" [style.width.%]="b.ancho"></span>
-          <span class="cts-mapa__vacio" *ngIf="b.mes.situacion !== 'planilla'">
-            {{ b.mes.situacion === 'sin_planilla' ? 'Sin planilla en el sistema' : 'Aún no trabajaba' }}
-          </span>
-        </div>
-        <span class="cts-mapa__monto">{{ b.mes.situacion === 'planilla' ? (b.mes.ingresos | number: '1.2-2') : '—' }}</span>
-        <span class="cts-mapa__marcas">
-          <span class="cts-marca cts-marca--cierre" *ngIf="b.mes.es_cierre" title="De este mes sale el sueldo, la asignación y la bonificación">Cierre</span>
-          <span class="cts-marca cts-marca--grati" *ngIf="b.mes.es_gratificacion" title="De este mes sale la gratificación">Grati</span>
-        </span>
-      </div>
-      <p class="form-ayuda cts-mapa__nota">Sueldo más bonificaciones de cada mes, en soles, según su planilla.</p>
-    </div>
-    <ng-template #cargandoMapa>
+    @if (!cargandoHistorial) {
       <div class="cts-mapa">
-        <div class="cts-mapa__mes" *ngFor="let _ of [1, 2, 3, 4, 5, 6]">
-          <span class="esqueleto esqueleto--linea" style="width: 48px;"></span>
-          <span class="esqueleto esqueleto--linea" style="width: 100%;"></span>
-        </div>
+        @for (b of barras; track $index) {
+          <div class="cts-mapa__mes" [appPista]="b.pista" [class.cts-mapa__mes--cierre]="b.mes.es_cierre">
+            <span class="cts-mapa__etiqueta">{{ b.etiqueta }} <small>{{ b.mes.anio }}</small></span>
+            <div class="cts-mapa__pista">
+              @if (b.mes.situacion === 'planilla') {
+                <span class="cts-mapa__barra" [style.width.%]="b.ancho"></span>
+              }
+              @if (b.mes.situacion !== 'planilla') {
+                <span class="cts-mapa__vacio">
+                  {{ b.mes.situacion === 'sin_planilla' ? 'Sin planilla en el sistema' : 'Aún no trabajaba' }}
+                </span>
+              }
+            </div>
+            <span class="cts-mapa__monto">{{ b.mes.situacion === 'planilla' ? (b.mes.ingresos | number: '1.2-2') : '—' }}</span>
+            <span class="cts-mapa__marcas">
+              @if (b.mes.es_cierre) {
+                <span class="cts-marca cts-marca--cierre" title="De este mes sale el sueldo, la asignación y la bonificación">Cierre</span>
+              }
+              @if (b.mes.es_gratificacion) {
+                <span class="cts-marca cts-marca--grati" title="De este mes sale la gratificación">Grati</span>
+              }
+            </span>
+          </div>
+        }
+        <p class="form-ayuda cts-mapa__nota">Sueldo más bonificaciones de cada mes, en soles, según su planilla.</p>
       </div>
-    </ng-template>
-
-    <ng-container *ngIf="d.aplica">
+    } @else {
+      <div class="cts-mapa">
+        @for (_ of [1, 2, 3, 4, 5, 6]; track $index) {
+          <div class="cts-mapa__mes">
+            <span class="esqueleto esqueleto--linea" style="width: 48px;"></span>
+            <span class="esqueleto esqueleto--linea" style="width: 100%;"></span>
+          </div>
+        }
+      </div>
+    }
+    @if (d.aplica) {
       <h3 class="detalle-subtitulo">Remuneración computable para la CTS</h3>
-      <p class="form-nota form-nota--aviso" *ngIf="d.desactualizada">
-        Algo cambió desde que se calculó (su planilla o su ficha). Vuelve a calcular antes de depositar.
-      </p>
+      @if (d.desactualizada) {
+        <p class="form-nota form-nota--aviso">
+          Algo cambió desde que se calculó (su planilla o su ficha). Vuelve a calcular antes de depositar.
+        </p>
+      }
       <p class="form-ayuda">
-        La vigente en {{ mesDeCierre(d) }}<ng-container [ngSwitch]="d.remuneracion_fuente">
-          <ng-container *ngSwitchCase="'planilla'">: tomada de su planilla de ese mes.</ng-container>
-          <ng-container *ngSwitchCase="'ficha'">: tomada de su ficha, porque ese mes aún no tiene planilla.</ng-container>
-          <ng-container *ngSwitchDefault>.</ng-container>
-        </ng-container>
+        La vigente en {{ mesDeCierre(d) }}
+        @switch (d.remuneracion_fuente) {
+          @case ('planilla') {
+            : tomada de su planilla de ese mes.
+          }
+          @case ('ficha') {
+            : tomada de su ficha, porque ese mes aún no tiene planilla.
+          }
+          @default {
+            .
+          }
+        }
       </p>
       <dl class="detalle-lista">
         <dt>Sueldo</dt><dd>S/ {{ d.sueldo | number: '1.2-2' }}</dd>
@@ -283,55 +341,62 @@
         <dd>
           S/ {{ d.sexto_gratificacion | number: '1.2-2' }}
           <div class="form-ayuda">
-            <ng-container *ngIf="d.gratificacion_fuente; else sinGrati">
+            @if (d.gratificacion_fuente) {
               Gratificación de {{ mesGratificacion }}: S/ {{ d.gratificacion | number: '1.2-2' }} ÷ 6
               ({{ d.gratificacion_fuente === 'planilla' ? 'de su planilla' : 'calculada con su ficha' }})
-            </ng-container>
-            <ng-template #sinGrati>No recibió gratificación de {{ mesGratificacion }}.</ng-template>
+            } @else {
+              No recibió gratificación de {{ mesGratificacion }}.
+            }
           </div>
         </dd>
         <dt>Total</dt><dd><strong>S/ {{ d.remuneracion_computable | number: '1.2-2' }}</strong></dd>
       </dl>
-
       <h3 class="detalle-subtitulo">Cálculo de la CTS</h3>
       <dl class="detalle-lista">
-        <ng-container *ngIf="d.meses">
+        @if (d.meses) {
           <dt>Por {{ d.meses }} mes(es)</dt>
           <dd>S/ {{ d.remuneracion_computable | number: '1.2-2' }} ÷ 12 × {{ d.meses }}</dd>
-        </ng-container>
-        <ng-container *ngIf="d.dias">
+        }
+        @if (d.dias) {
           <dt>Por {{ d.dias }} día(s)</dt>
           <dd>S/ {{ d.remuneracion_computable | number: '1.2-2' }} ÷ 360 × {{ d.dias }}</dd>
-        </ng-container>
+        }
         <dt>CTS</dt><dd><strong>S/ {{ d.monto | number: '1.2-2' }}</strong></dd>
       </dl>
-
-      <ng-container *ngIf="d.estado_cts === 'depositada'">
+      @if (d.estado_cts === 'depositada') {
         <h3 class="detalle-subtitulo">Datos del depósito</h3>
         <dl class="detalle-lista">
           <dt>Fecha</dt><dd>{{ fecha(d.fecha_deposito) }}</dd>
           <dt>Entidad</dt><dd>{{ d.entidad_financiera || '—' }}</dd>
           <dt>Cuenta</dt><dd>{{ d.numero_cuenta || '—' }}</dd>
         </dl>
-      </ng-container>
-    </ng-container>
-  </ng-container>
+      }
+    }
+  }
 
-  <div panelPie *ngIf="detalle as d">
-    <button type="button" class="btn-secondary" (click)="panelAbierto = false">Cerrar</button>
-    <button type="button" class="btn-secondary" *ngIf="d.liquidacion_id" (click)="bajarHoja(d)">
-      <app-icon icono="download" [tamano]="16"></app-icon>
-      Hoja de liquidación
-    </button>
-    <button type="button" class="btn-primary" *ngIf="d.estado_cts === 'calculada'" (click)="abrirDeposito([d])">
-      <app-icon icono="check_circle" [tamano]="16"></app-icon>
-      Registrar depósito
-    </button>
-    <button type="button" class="btn-secondary" *ngIf="d.estado_cts === 'depositada'" (click)="anularDeposito(d)">
-      <app-icon icono="rotate_ccw" [tamano]="16"></app-icon>
-      Anular depósito
-    </button>
-  </div>
+  @if (detalle; as d) {
+    <div panelPie>
+      <button type="button" class="btn-secondary" (click)="panelAbierto = false">Cerrar</button>
+      @if (d.liquidacion_id) {
+        <button type="button" class="btn-secondary" (click)="bajarHoja(d)">
+          <app-icon icono="download" [tamano]="16"></app-icon>
+          Hoja de liquidación
+        </button>
+      }
+      @if (d.estado_cts === 'calculada') {
+        <button type="button" class="btn-primary" (click)="abrirDeposito([d])">
+          <app-icon icono="check_circle" [tamano]="16"></app-icon>
+          Registrar depósito
+        </button>
+      }
+      @if (d.estado_cts === 'depositada') {
+        <button type="button" class="btn-secondary" (click)="anularDeposito(d)">
+          <app-icon icono="rotate_ccw" [tamano]="16"></app-icon>
+          Anular depósito
+        </button>
+      }
+    </div>
+  }
 </app-panel-lateral>
 
 <!-- El historial en grande: cada concepto de cada mes, con lo que entra en la CTS resaltado. -->
@@ -341,8 +406,8 @@
   ancho="1080px"
   [ocultarBotonesPorDefecto]="true"
   (cancelar)="modalHistorial = false"
->
-  <ng-container *ngIf="historial && detalle as d">
+  >
+  @if (historial && detalle; as d) {
     <div class="cts-cuadro__resumen">
       <div class="cts-dato">
         <span>DNI</span>
@@ -361,54 +426,68 @@
         <strong>S/ {{ d.monto | number: '1.2-2' }}</strong>
       </div>
     </div>
-
     <div class="cts-cuadro__leyenda">
       <span><i class="cts-cuadro__muestra"></i> Entra en la CTS</span>
       <span><span class="cts-marca cts-marca--cierre">Cierre</span> de este mes salen el sueldo, la asignación y la bonificación</span>
       <span><span class="cts-marca cts-marca--grati">Grati</span> de este mes sale la gratificación</span>
     </div>
-
     <div class="cts-cuadro__marco">
       <table class="cts-cuadro">
         <thead>
           <tr>
             <th class="cts-cuadro__concepto">Concepto</th>
-            <th *ngFor="let m of historial.meses; let i = index" [class.cts-cuadro__col--cierre]="m.es_cierre">
-              {{ mesesCuadro[i] }}
-              <div class="cts-cuadro__marcas">
-                <span class="cts-marca cts-marca--cierre" *ngIf="m.es_cierre">Cierre</span>
-                <span class="cts-marca cts-marca--grati" *ngIf="m.es_gratificacion">Grati</span>
-              </div>
-            </th>
+            @for (m of historial.meses; track $index; let i = $index) {
+              <th [class.cts-cuadro__col--cierre]="m.es_cierre">
+                {{ mesesCuadro[i] }}
+                <div class="cts-cuadro__marcas">
+                  @if (m.es_cierre) {
+                    <span class="cts-marca cts-marca--cierre">Cierre</span>
+                  }
+                  @if (m.es_gratificacion) {
+                    <span class="cts-marca cts-marca--grati">Grati</span>
+                  }
+                </div>
+              </th>
+            }
           </tr>
         </thead>
-        <tbody *ngFor="let g of gruposHistorial">
-          <tr class="cts-cuadro__grupo"><td [attr.colspan]="historial.meses.length + 1">{{ g.titulo }}</td></tr>
-          <tr *ngFor="let f of g.filas">
-            <td class="cts-cuadro__concepto">{{ f.nombre }}</td>
-            <td *ngFor="let v of f.montos; let i = index" class="num"
-              [class.cts-cuadro__celda--computable]="f.computable[i]" [class.cts-cuadro__col--cierre]="historial.meses[i].es_cierre">
-              {{ v === null ? (historial.meses[i].situacion === 'planilla' ? '-' : '') : (v | number: '1.2-2') }}
-            </td>
-          </tr>
-        </tbody>
+        @for (g of gruposHistorial; track $index) {
+          <tbody>
+            <tr class="cts-cuadro__grupo"><td [attr.colspan]="historial.meses.length + 1">{{ g.titulo }}</td></tr>
+            @for (f of g.filas; track $index) {
+              <tr>
+                <td class="cts-cuadro__concepto">{{ f.nombre }}</td>
+                @for (v of f.montos; track $index; let i = $index) {
+                  <td class="num"
+                    [class.cts-cuadro__celda--computable]="f.computable[i]" [class.cts-cuadro__col--cierre]="historial.meses[i].es_cierre">
+                    {{ v === null ? (historial.meses[i].situacion === 'planilla' ? '-' : '') : (v | number: '1.2-2') }}
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        }
         <tbody>
-          <tr class="cts-cuadro__total" *ngFor="let f of totalesHistorial">
-            <td class="cts-cuadro__concepto">{{ f.nombre }}</td>
-            <td *ngFor="let v of f.montos; let i = index" class="num" [class.cts-cuadro__col--cierre]="historial.meses[i].es_cierre">
-              <ng-container *ngIf="v !== null; else sinPlanilla">{{ v | number: '1.2-2' }}</ng-container>
-              <ng-template #sinPlanilla>
-                <span class="cts-cuadro__sin">{{ historial.meses[i].situacion === 'sin_planilla' ? 'Sin planilla' : 'No trabajaba' }}</span>
-              </ng-template>
-            </td>
-          </tr>
+          @for (f of totalesHistorial; track $index) {
+            <tr class="cts-cuadro__total">
+              <td class="cts-cuadro__concepto">{{ f.nombre }}</td>
+              @for (v of f.montos; track $index; let i = $index) {
+                <td class="num" [class.cts-cuadro__col--cierre]="historial.meses[i].es_cierre">
+                  @if (v !== null) {
+                    {{ v | number: '1.2-2' }}
+                  } @else {
+                    <span class="cts-cuadro__sin">{{ historial.meses[i].situacion === 'sin_planilla' ? 'Sin planilla' : 'No trabajaba' }}</span>
+                  }
+                </td>
+              }
+            </tr>
+          }
         </tbody>
       </table>
     </div>
-
     <p class="form-ayuda">
       Los montos salen de su planilla de cada mes. Los meses «Sin planilla» se pagaron fuera del sistema: para esos, la CTS
       toma los datos de su ficha.
     </p>
-  </ng-container>
+  }
 </app-form-modal>

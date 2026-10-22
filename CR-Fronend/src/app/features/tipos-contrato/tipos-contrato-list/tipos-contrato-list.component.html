@@ -4,7 +4,7 @@
   subtitulo="Las categorías de contrato del colegio: cuáles piden fecha de fin y cuáles dan derecho a vacaciones reales."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
->
+  >
   <button headerActions class="btn-primary" (click)="nuevo()">
     <app-icon icono="plus" [tamano]="16"></app-icon>
     Nuevo Tipo de Contrato
@@ -35,15 +35,17 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrarModal()"
->
+  >
   <form [formGroup]="form" class="form-fields">
     <div class="form-group">
       <label for="nombre">Nombre *</label>
       <input type="text" id="nombre" class="form-control" formControlName="nombre" placeholder="Ej. Contratado"
         [class.is-invalid]="invalido('nombre')" />
-      <small class="form-error" *ngIf="invalido('nombre')">
-        El nombre es obligatorio (máximo 100 caracteres).
-      </small>
+      @if (invalido('nombre')) {
+        <small class="form-error">
+          El nombre es obligatorio (máximo 100 caracteres).
+        </small>
+      }
     </div>
 
     <div class="form-group">
@@ -93,7 +95,9 @@
     <div class="form-group">
       <label for="estado">Estado</label>
       <select id="estado" class="form-control" formControlName="estado">
-        <option *ngFor="let op of estadoOpciones" [value]="op.value">{{ op.label }}</option>
+        @for (op of estadoOpciones; track op.value) {
+          <option [value]="op.value">{{ op.label }}</option>
+        }
       </select>
     </div>
   </form>

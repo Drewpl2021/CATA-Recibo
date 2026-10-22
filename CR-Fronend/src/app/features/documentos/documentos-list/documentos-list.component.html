@@ -4,7 +4,7 @@
   subtitulo="Tus boletas y tus documentos. Acá los revisas, das tu conformidad y subes los tuyos: tu hoja de vida, tu foto, la copia de tu DNI o un certificado."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
->
+  >
   <button headerActions type="button" class="btn-primary" (click)="abrirSubirCv()">
     <app-icon icono="upload" [tamano]="16"></app-icon>
     Subir un documento
@@ -39,7 +39,7 @@
   [guardando]="firmando"
   (guardar)="confirmarFirma()"
   (cancelar)="cerrarFirmar()"
->
+  >
   <div class="form-fields">
     <p class="form-nota">
       Vas a dar tu conformidad a <strong>{{ nombreDe(docAFirmar) }}</strong>: confirmas que lo recibiste.
@@ -49,57 +49,59 @@
       <label for="password_firma">Contraseña</label>
       <input id="password_firma" type="password" class="form-control" [(ngModel)]="passwordFirma"
         (keyup.enter)="confirmarFirma()" autocomplete="current-password" placeholder="Tu contraseña" />
+      </div>
     </div>
-  </div>
-</app-form-modal>
+  </app-form-modal>
 
-<!-- Subir uno de sus documentos -->
-<app-form-modal
-  [(visible)]="modalCv"
-  titulo="Subir un documento"
-  textoGuardar="Guardar"
-  ancho="560px"
-  [guardando]="subiendoCv"
-  (guardar)="subirCv()"
-  (cancelar)="cerrarSubirCv()"
->
-  <div class="form-fields">
-    <div class="form-group">
-      <label for="tipoPropio">¿Qué estás subiendo? *</label>
-      <select id="tipoPropio" class="form-control" [(ngModel)]="tipoASubir" name="tipoPropio">
-        <option *ngFor="let t of tiposPropios" [value]="t.value">{{ t.label }}</option>
-      </select>
-      <small class="form-ayuda">
-        Tus boletas y tus contratos no se suben acá: los emite el colegio y te llegan solos.
-      </small>
+  <!-- Subir uno de sus documentos -->
+  <app-form-modal
+    [(visible)]="modalCv"
+    titulo="Subir un documento"
+    textoGuardar="Guardar"
+    ancho="560px"
+    [guardando]="subiendoCv"
+    (guardar)="subirCv()"
+    (cancelar)="cerrarSubirCv()"
+    >
+    <div class="form-fields">
+      <div class="form-group">
+        <label for="tipoPropio">¿Qué estás subiendo? *</label>
+        <select id="tipoPropio" class="form-control" [(ngModel)]="tipoASubir" name="tipoPropio">
+          @for (t of tiposPropios; track t.value) {
+            <option [value]="t.value">{{ t.label }}</option>
+          }
+        </select>
+        <small class="form-ayuda">
+          Tus boletas y tus contratos no se suben acá: los emite el colegio y te llegan solos.
+        </small>
+      </div>
+
+      <app-selector-archivo
+        [extensiones]="['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']"
+        [pesoMaximoMb]="5"
+        [(archivos)]="cv"
+        [ocupado]="subiendoCv"
+        textoOcupado="Subiendo…"
+        [texto]="'Arrastra aquí tu ' + nombreTipoASubir.toLowerCase() + ' o haz clic para elegirlo'"
+        ayuda="PDF, Word o imagen, hasta 5 MB."
+      ></app-selector-archivo>
+
+      <p class="form-nota">
+        Se guarda en tu expediente, donde lo ve Recursos Humanos.
+        @if (tipoASubir === 'hoja_de_vida' || tipoASubir === 'foto') {
+          Si ya tenías {{ tipoASubir === 'foto' ? 'una foto' : 'una hoja de vida' }},
+          esta la reemplaza y la anterior queda en el historial.
+        }
+        @if (tipoASubir === 'certificado' || tipoASubir === 'dni' || tipoASubir === 'otro') {
+          Puedes subir varios: no se reemplazan entre ellos.
+        }
+      </p>
     </div>
+  </app-form-modal>
 
-    <app-selector-archivo
-      [extensiones]="['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']"
-      [pesoMaximoMb]="5"
-      [(archivos)]="cv"
-      [ocupado]="subiendoCv"
-      textoOcupado="Subiendo…"
-      [texto]="'Arrastra aquí tu ' + nombreTipoASubir.toLowerCase() + ' o haz clic para elegirlo'"
-      ayuda="PDF, Word o imagen, hasta 5 MB."
-    ></app-selector-archivo>
-
-    <p class="form-nota">
-      Se guarda en tu expediente, donde lo ve Recursos Humanos.
-      <ng-container *ngIf="tipoASubir === 'hoja_de_vida' || tipoASubir === 'foto'">
-        Si ya tenías {{ tipoASubir === 'foto' ? 'una foto' : 'una hoja de vida' }},
-        esta la reemplaza y la anterior queda en el historial.
-      </ng-container>
-      <ng-container *ngIf="tipoASubir === 'certificado' || tipoASubir === 'dni' || tipoASubir === 'otro'">
-        Puedes subir varios: no se reemplazan entre ellos.
-      </ng-container>
-    </p>
-  </div>
-</app-form-modal>
-
-<!-- Ver un PDF (el visor compartido con el expediente de RR.HH.) -->
-<app-visor-documento
-  [documento]="docAbierto"
-  (documentoChange)="alCerrarVisor($event)"
-  [puedeDescargar]="docAbierto ? puedeDescargar(docAbierto) : true"
-></app-visor-documento>
+  <!-- Ver un PDF (el visor compartido con el expediente de RR.HH.) -->
+  <app-visor-documento
+    [documento]="docAbierto"
+    (documentoChange)="alCerrarVisor($event)"
+    [puedeDescargar]="docAbierto ? puedeDescargar(docAbierto) : true"
+  ></app-visor-documento>

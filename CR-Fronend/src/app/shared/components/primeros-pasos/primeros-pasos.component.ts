@@ -1,5 +1,5 @@
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 
 import { PrimerosPasosService } from '../../../core/services';
@@ -21,7 +21,7 @@ import { PasoGuia, PrimerosPasos } from '../../../core/models';
 @Component({
   selector: 'app-primeros-pasos',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './primeros-pasos.component.html',
 })
 export class PrimerosPasosComponent implements OnInit {
@@ -34,15 +34,21 @@ export class PrimerosPasosComponent implements OnInit {
   guia: PrimerosPasos | null = null;
 
   ngOnInit(): void {
-    this.servicio.estado$.subscribe((estado) => (this.guia = estado));
+    this.servicio.estado$.subscribe((estado) => {
+      this.guia = estado;
+      this.pendientes = this.pasosQueFaltan();
+    });
   }
 
   /**
    * Los pasos que faltan, con el número que les toca en la guía completa:
    * así el cuarto sigue siendo el cuarto aunque los tres de antes ya estén
-   * hechos, y se entiende que van en ese orden.
+   * hechos, y se entiende que van en ese orden. Se arma cuando llega la guía
+   * y se guarda: como getter eran pasos nuevos en cada vuelta.
    */
-  get pendientes(): (PasoGuia & { numero: number })[] {
+  pendientes: (PasoGuia & { numero: number })[] = [];
+
+  private pasosQueFaltan(): (PasoGuia & { numero: number })[] {
     return (this.guia?.pasos ?? [])
       .map((paso, i) => ({ ...paso, numero: i + 1 }))
       .filter((paso) => !paso.hecho);

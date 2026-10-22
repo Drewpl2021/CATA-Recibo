@@ -12,16 +12,20 @@
       <label for="anioBoletas">Año</label>
       <select id="anioBoletas" class="form-control" [(ngModel)]="anioElegido"
         (ngModelChange)="alCambiarAnio()">
-        <option *ngFor="let a of anios" [ngValue]="a">{{ a }}</option>
+        @for (a of anios; track $index) {
+          <option [ngValue]="a">{{ a }}</option>
+        }
       </select>
     </div>
   </div>
 </section>
 
-<div class="alert-error" *ngIf="errorMsg">
-  <app-icon icono="alert_circle" [tamano]="16"></app-icon>
-  {{ errorMsg }}
-</div>
+@if (errorMsg) {
+  <div class="alert-error">
+    <app-icon icono="alert_circle" [tamano]="16"></app-icon>
+    {{ errorMsg }}
+  </div>
+}
 
 <app-data-table
   entidad="esta boleta"
@@ -42,29 +46,36 @@
 ></app-data-table>
 
 <!-- Visor de la boleta en PDF -->
-<div class="pdf-modal-overlay" *ngIf="showPdfModal" appAlCuerpo (click)="closePdfModal()">
-  <div class="pdf-modal-container" (click)="$event.stopPropagation()">
-    <div class="pdf-modal-header">
-      <h3>{{ pdfBoletaName }}</h3>
-      <div style="display: flex; gap: 12px; align-items: center;">
-        <span class="form-ayuda" *ngIf="!boletaAbierta?.firmado && !boletaAbierta?.enPapel">Fírmala y podrás descargarla.</span>
-        <span class="form-ayuda" *ngIf="boletaAbierta?.enPapel">De registro: ya la firmaste en papel.</span>
-        <button class="btn-primary" *ngIf="boletaAbierta?.firmado || boletaAbierta?.enPapel" (click)="descargarPdfDirecto()">
-          <app-icon icono="download" [tamano]="16"></app-icon>
-          Descargar
-        </button>
-        <button class="btn-close" (click)="closePdfModal()" aria-label="Cerrar">
-          <app-icon icono="close" [tamano]="24"></app-icon>
-        </button>
+@if (showPdfModal) {
+  <div class="pdf-modal-overlay" appAlCuerpo (click)="closePdfModal()">
+    <div class="pdf-modal-container" (click)="$event.stopPropagation()">
+      <div class="pdf-modal-header">
+        <h3>{{ pdfBoletaName }}</h3>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          @if (!boletaAbierta?.firmado && !boletaAbierta?.enPapel) {
+            <span class="form-ayuda">Fírmala y podrás descargarla.</span>
+          }
+          @if (boletaAbierta?.enPapel) {
+            <span class="form-ayuda">De registro: ya la firmaste en papel.</span>
+          }
+          @if (boletaAbierta?.firmado || boletaAbierta?.enPapel) {
+            <button class="btn-primary" (click)="descargarPdfDirecto()">
+              <app-icon icono="download" [tamano]="16"></app-icon>
+              Descargar
+            </button>
+          }
+          <button class="btn-close" (click)="closePdfModal()" aria-label="Cerrar">
+            <app-icon icono="close" [tamano]="24"></app-icon>
+          </button>
+        </div>
       </div>
-    </div>
-    <div class="pdf-modal-body">
-      <!-- El visor (pdf.js, medio mega) se descarga en el momento en que se
-           abre este modal, no al entrar a la pantalla. Quien solo mire la
-           lista o descargue el archivo no lo trae nunca. -->
-      @defer (when showPdfModal) {
+      <div class="pdf-modal-body">
+        <!-- El visor (pdf.js, medio mega) se descarga en el momento en que se
+        abre este modal, no al entrar a la pantalla. Quien solo mire la
+        lista o descargue el archivo no lo trae nunca. -->
+        @defer (when showPdfModal) {
         <app-visor-pdf [src]="pdfUrl"></app-visor-pdf>
-      } @placeholder {
+        } @placeholder {
         <div class="cargando-caja">
           <span class="cargador"></span>
           <span>Abriendo la boleta…</span>
@@ -73,6 +84,7 @@
     </div>
   </div>
 </div>
+}
 
 <!-- La conformidad de la boleta, con la contraseña de la cuenta -->
 <app-form-modal
@@ -82,24 +94,27 @@
   [guardando]="isSigning"
   (guardar)="confirmarFirma()"
   (cancelar)="closeSignModal()"
->
+  >
   <div class="form-fields">
-    <p class="form-nota" *ngIf="boletaAFirmar?.firmadaPorElColegio; else notaFirma">
-      Tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong> ya viene firmada
-      digitalmente por el colegio. Para confirmar que la recibiste, escribe la contraseña con la que entras
-      al sistema. Queda registrado con la fecha y la hora; tu boleta no cambia.
-    </p>
-    <ng-template #notaFirma>
+    @if (boletaAFirmar?.firmadaPorElColegio) {
+      <p class="form-nota">
+        Tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong> ya viene firmada
+        digitalmente por el colegio. Para confirmar que la recibiste, escribe la contraseña con la que entras
+        al sistema. Queda registrado con la fecha y la hora; tu boleta no cambia.
+      </p>
+    } @else {
       <p class="form-nota">
         Para confirmar que recibiste tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong>,
         escribe la contraseña con la que entras al sistema. Queda registrado con la fecha y la hora.
       </p>
-    </ng-template>
+    }
     <div class="form-group">
       <label for="passwordFirma">Contraseña</label>
       <input id="passwordFirma" type="password" class="form-control" [(ngModel)]="signPassword"
         placeholder="Tu contraseña" autocomplete="current-password" (keyup.enter)="confirmarFirma()" />
-      <small class="form-error" *ngIf="signErrorMsg">{{ signErrorMsg }}</small>
+        @if (signErrorMsg) {
+          <small class="form-error">{{ signErrorMsg }}</small>
+        }
+      </div>
     </div>
-  </div>
-</app-form-modal>
+  </app-form-modal>

@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 
@@ -34,9 +34,11 @@ import { etiquetaRol, ROL_ADMIN } from '../../../shared/constants';
   selector: 'app-usuarios-list',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent,
-  ],
+    ReactiveFormsModule,
+    PageHeaderComponent,
+    DataTableComponent,
+    FormModalComponent
+],
   templateUrl: './usuarios-list.component.html',
 })
 export class UsuariosListComponent implements OnInit {

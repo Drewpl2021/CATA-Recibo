@@ -4,28 +4,38 @@
   ancho="960px"
   [ocultarBotonesPorDefecto]="true"
   (cancelar)="cerrar()"
->
+  >
   <div class="visor-documento">
     @defer (when visible) {
-      <app-visor-pdf *ngIf="modo === 'pdf'" [src]="url"></app-visor-pdf>
+    @if (modo === 'pdf') {
+      <app-visor-pdf [src]="url"></app-visor-pdf>
+    }
 
-      <!-- Una foto, la copia del DNI, un certificado escaneado. -->
-      <img *ngIf="modo === 'imagen'" class="visor-documento__imagen" [src]="url"
+    <!-- Una foto, la copia del DNI, un certificado escaneado. -->
+    @if (modo === 'imagen') {
+      <img class="visor-documento__imagen" [src]="url"
         [alt]="nombreDocumento(documento)" />
+    }
 
-      <!-- Word: el navegador no lo muestra, y decirlo es mejor que bajarlo
-           sin avisar. -->
-      <p class="form-nota" *ngIf="documento && modo === 'no-se-puede'">
+    <!-- Word: el navegador no lo muestra, y decirlo es mejor que bajarlo
+    sin avisar. -->
+    @if (documento && modo === 'no-se-puede') {
+      <p class="form-nota">
         Este archivo es de {{ formato(documento) }} y no se puede ver desde acá.
         Descárgalo para abrirlo en tu computadora.
       </p>
-    } @placeholder {
-      <p class="form-nota">Abriendo el documento…</p>
     }
-  </div>
-  <div modalFooter class="acciones-modal">
-    <span class="form-ayuda" *ngIf="!puedeDescargar">Fírmalo y podrás descargarlo.</span>
-    <button type="button" class="btn-secondary" (click)="cerrar()">Cerrar</button>
-    <button type="button" class="btn-primary" *ngIf="puedeDescargar" (click)="descargar()">Descargar</button>
-  </div>
+    } @placeholder {
+    <p class="form-nota">Abriendo el documento…</p>
+  }
+</div>
+<div modalFooter class="acciones-modal">
+  @if (!puedeDescargar) {
+    <span class="form-ayuda">Fírmalo y podrás descargarlo.</span>
+  }
+  <button type="button" class="btn-secondary" (click)="cerrar()">Cerrar</button>
+  @if (puedeDescargar) {
+    <button type="button" class="btn-primary" (click)="descargar()">Descargar</button>
+  }
+</div>
 </app-form-modal>

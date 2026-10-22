@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule } from '@angular/forms';
 import { NIVEL_ESTUDIOS_OPCIONES } from '../../../../shared/constants';
 import { Documento } from '../../../../core/models';
@@ -11,7 +11,7 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 @Component({
   selector: 'app-seccion-complementarios',
   standalone: true,
-  imports: [IconComponent, CommonModule, ReactiveFormsModule, SelectorArchivoComponent],
+  imports: [IconComponent, ReactiveFormsModule, SelectorArchivoComponent],
   templateUrl: './seccion-complementarios.component.html',
 })
 export class SeccionComplementariosComponent extends SeccionEmpleadoBase {

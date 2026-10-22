@@ -1,5 +1,5 @@
 import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 import { IconComponent } from '../icon/icon.component';
 
@@ -26,7 +26,7 @@ export interface OpcionOrden {
 @Component({
   selector: 'app-orden',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [IconComponent],
   templateUrl: './orden.component.html',
 })
 export class OrdenComponent {

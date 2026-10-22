@@ -4,7 +4,7 @@
   subtitulo="Locales del colegio donde puede estar asignado un empleado."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
->
+  >
   <button headerActions class="btn-primary" (click)="nueva()">
     <app-icon icono="plus" [tamano]="16"></app-icon>
     Nueva Sede
@@ -34,22 +34,26 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrarModal()"
->
+  >
   <form [formGroup]="form" class="form-fields">
     <div class="form-group">
       <label for="nombre">Nombre *</label>
       <input type="text" id="nombre" class="form-control" formControlName="nombre" placeholder="Ej. CATA"
         [class.is-invalid]="invalido('nombre')" />
-      <small class="form-error" *ngIf="invalido('nombre')">
-        El nombre es obligatorio (máximo 100 caracteres).
-      </small>
+      @if (invalido('nombre')) {
+        <small class="form-error">
+          El nombre es obligatorio (máximo 100 caracteres).
+        </small>
+      }
     </div>
 
     <div class="form-group">
       <label for="direccion">Dirección</label>
       <input type="text" id="direccion" class="form-control" formControlName="direccion"
         placeholder="Ej. Jr. Moquegua N° 852" [class.is-invalid]="invalido('direccion')" />
-      <small class="form-error" *ngIf="invalido('direccion')">Máximo 255 caracteres.</small>
+      @if (invalido('direccion')) {
+        <small class="form-error">Máximo 255 caracteres.</small>
+      }
     </div>
 
     <div class="form-row">
@@ -57,13 +61,17 @@
         <label for="telefono">Teléfono</label>
         <input type="tel" id="telefono" class="form-control" formControlName="telefono"
           placeholder="Ej. 951234567" [class.is-invalid]="invalido('telefono')" />
-        <small class="form-error" *ngIf="invalido('telefono')">Máximo 15 caracteres.</small>
+        @if (invalido('telefono')) {
+          <small class="form-error">Máximo 15 caracteres.</small>
+        }
       </div>
 
       <div class="form-group">
         <label for="estado">Estado</label>
         <select id="estado" class="form-control" formControlName="estado">
-          <option *ngFor="let op of estadoOpciones" [value]="op.value">{{ op.label }}</option>
+          @for (op of estadoOpciones; track op.value) {
+            <option [value]="op.value">{{ op.label }}</option>
+          }
         </select>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 
@@ -41,10 +41,7 @@ import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/f
 @Component({
   selector: 'app-contratos-list',
   standalone: true,
-  imports: [FiltrosComponent, IconComponent, 
-    CommonModule, FormsModule, ReactiveFormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent,
-  ],
+  imports: [FiltrosComponent, IconComponent, FormsModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent],
   templateUrl: './contratos-list.component.html',
 })
 export class ContratosListComponent implements OnInit {

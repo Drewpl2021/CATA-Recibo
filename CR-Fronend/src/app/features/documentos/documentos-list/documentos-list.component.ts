@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { AuthService, DocumentoService, MisDocumentosService, ToastService } from '../../../core/services';
 import { Documento } from '../../../core/models';
@@ -39,10 +39,15 @@ import { TIPO_DOCUMENTO_PROPIO } from '../../../shared/constants';
   selector: 'app-documentos-list',
   standalone: true,
   imports: [
-    CommonModule, FormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorArchivoComponent, VisorDocumentoComponent,
-    IconComponent, PistaDirective,
-  ],
+    FormsModule,
+    PageHeaderComponent,
+    DataTableComponent,
+    FormModalComponent,
+    SelectorArchivoComponent,
+    VisorDocumentoComponent,
+    IconComponent,
+    PistaDirective
+],
   templateUrl: './documentos-list.component.html',
 })
 export class DocumentosListComponent implements OnInit {

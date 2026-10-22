@@ -244,7 +244,10 @@ export class PlanillaDetalleComponent implements OnInit {
           this.totalResta = Number(detalles.data.restanDelSueldo ?? 0);
           this.totalAportaciones = Number(detalles.data.aportaciones ?? 0);
         }
-        if (conceptos.success) this.conceptos = conceptos.data;
+        if (conceptos.success) {
+          this.conceptos = conceptos.data;
+          this.conceptosPorTipo = this.agruparConceptos();
+        }
         this.cargando = false;
       },
       error: (err) => {
@@ -354,7 +357,9 @@ export class PlanillaDetalleComponent implements OnInit {
    * Familiar) se quedan fuera a propósito: el sistema ya se los puso al armar
    * la planilla, y ofrecerlos otra vez solo sirve para duplicarlos a mano.
    */
-  get conceptosPorTipo(): { etiqueta: string; conceptos: PaymentConcept[] }[] {
+  conceptosPorTipo: { etiqueta: string; conceptos: PaymentConcept[] }[] = [];
+
+  private agruparConceptos(): { etiqueta: string; conceptos: PaymentConcept[] }[] {
     const grupos = [
       { tipo: 'bonificacion', etiqueta: 'Ingresos' },
       { tipo: 'descuento', etiqueta: 'Descuentos' },

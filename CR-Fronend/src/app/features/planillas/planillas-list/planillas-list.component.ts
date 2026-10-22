@@ -741,7 +741,10 @@ export class PlanillasListComponent implements OnInit {
     if (this.conceptos.length) return;
     this.conceptoService.getAll().subscribe({
       next: (res) => {
-        if (res.success) this.conceptos = res.data;
+        if (res.success) {
+          this.conceptos = res.data;
+          this.conceptosPorTipo = this.agruparConceptos();
+        }
       },
       error: () => this.toastService.error('Error', 'No se pudo cargar el catálogo de conceptos.'),
     });
@@ -766,12 +769,17 @@ export class PlanillasListComponent implements OnInit {
    * alimentación... justo los que se aplican a un grupo en la vida real. El
    * monto se pide en el momento.
    */
-  get conceptosAplicables(): PaymentConcept[] {
+  private conceptosAplicables(): PaymentConcept[] {
     return this.conceptos.filter((c) => !c.calculo_especial);
   }
 
-  /** Agrupados por tipo, que es como los tiene la boleta. */
-  get conceptosPorTipo(): { tipo: string; etiqueta: string; conceptos: PaymentConcept[] }[] {
+  /**
+   * Agrupados por tipo, que es como los tiene la boleta. Se arma al llegar el
+   * catálogo y se guarda: como getter devolvía grupos nuevos en cada vuelta.
+   */
+  conceptosPorTipo: { tipo: string; etiqueta: string; conceptos: PaymentConcept[] }[] = [];
+
+  private agruparConceptos(): { tipo: string; etiqueta: string; conceptos: PaymentConcept[] }[] {
     const grupos = [
       { tipo: 'bonificacion', etiqueta: 'Ingresos' },
       { tipo: 'descuento', etiqueta: 'Descuentos' },
@@ -779,7 +787,7 @@ export class PlanillasListComponent implements OnInit {
       { tipo: 'adelanto', etiqueta: 'Adelantos' },
     ];
     return grupos
-      .map((g) => ({ ...g, conceptos: this.conceptosAplicables.filter((c) => c.tipo === g.tipo) }))
+      .map((g) => ({ ...g, conceptos: this.conceptosAplicables().filter((c) => c.tipo === g.tipo) }))
       .filter((g) => g.conceptos.length > 0);
   }
 

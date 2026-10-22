@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ModuloPadreService, ToastService, ConfirmService } from '../../../core/services';
@@ -25,9 +25,12 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
   selector: 'app-modulos-padre-list',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent, IconComponent,
-  ],
+    ReactiveFormsModule,
+    PageHeaderComponent,
+    DataTableComponent,
+    FormModalComponent,
+    IconComponent
+],
   templateUrl: './modulos-padre-list.component.html',
 })
 export class ModulosPadreListComponent implements OnInit {

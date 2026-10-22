@@ -9,7 +9,9 @@
       <label for="nivel_estudios">Nivel de estudios</label>
       <select id="nivel_estudios" class="form-control" formControlName="nivel_estudios">
         <option value="">— Sin especificar —</option>
-        <option *ngFor="let n of niveles" [value]="n.value">{{ n.label }}</option>
+        @for (n of niveles; track n.value) {
+          <option [value]="n.value">{{ n.label }}</option>
+        }
       </select>
     </div>
 
@@ -29,45 +31,60 @@
       <label>Hoja de vida (CV)</label>
 
       <!-- La que ya está en su expediente -->
-      <div class="form-nota form-nota--accion" *ngIf="hojaDeVida && !archivo">
-        <div><strong>Ya tiene una hoja de vida guardada.</strong></div>
-        <button type="button" class="btn-exportar" (click)="descargarCv.emit()">
-          <app-icon icono="file_down" [tamano]="16"></app-icon>
-          Descargar CV
-        </button>
-      </div>
+      @if (hojaDeVida && !archivo) {
+        <div class="form-nota form-nota--accion">
+          <div><strong>Ya tiene una hoja de vida guardada.</strong></div>
+          <button type="button" class="btn-exportar" (click)="descargarCv.emit()">
+            <app-icon icono="file_down" [tamano]="16"></app-icon>
+            Descargar CV
+          </button>
+        </div>
+      }
 
-      <app-selector-archivo
-        *ngIf="!soloLectura"
-        [extensiones]="['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']"
-        [pesoMaximoMb]="5"
-        [archivos]="cv"
-        (archivosChange)="alCambiarCv($event)"
-        [texto]="hojaDeVida ? 'Arrastra aquí la nueva hoja de vida o haz clic para elegirla' : 'Arrastra aquí la hoja de vida o haz clic para elegirla'"
-        ayuda="PDF, Word o imagen, hasta 5 MB."
-      ></app-selector-archivo>
+      @if (!soloLectura) {
+        <app-selector-archivo
+          [extensiones]="['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']"
+          [pesoMaximoMb]="5"
+          [archivos]="cv"
+          (archivosChange)="alCambiarCv($event)"
+          [texto]="hojaDeVida ? 'Arrastra aquí la nueva hoja de vida o haz clic para elegirla' : 'Arrastra aquí la hoja de vida o haz clic para elegirla'"
+          ayuda="PDF, Word o imagen, hasta 5 MB."
+        ></app-selector-archivo>
+      }
 
-      <small class="form-ayuda" *ngIf="!soloLectura">
-        Se guarda en el expediente del trabajador<ng-container *ngIf="archivo"> al guardar<ng-container *ngIf="hojaDeVida"> y reemplaza a la que ya tiene</ng-container></ng-container><ng-container *ngIf="esNuevo && !archivo">, al terminar el registro</ng-container>.
+      @if (!soloLectura) {
+        <small class="form-ayuda">
+          Se guarda en el expediente del trabajador@if (archivo) {
+          al guardar@if (hojaDeVida) {
+          y reemplaza a la que ya tiene
+        }
+        }@if (esNuevo && !archivo) {
+        , al terminar el registro
+        }.
         El trabajador también puede subirla desde Mis Documentos.
       </small>
-      <small class="form-ayuda" *ngIf="soloLectura && !hojaDeVida">Todavía no tiene hoja de vida.</small>
-    </div>
+    }
+    @if (soloLectura && !hojaDeVida) {
+      <small class="form-ayuda">Todavía no tiene hoja de vida.</small>
+    }
+  </div>
 
-    <div class="form-group">
-      <label for="contacto_emergencia_nombre">Nombre del contacto de emergencia</label>
-      <input type="text" id="contacto_emergencia_nombre" class="form-control"
-        formControlName="contacto_emergencia_nombre" placeholder="Nombre de un familiar" />
-    </div>
+  <div class="form-group">
+    <label for="contacto_emergencia_nombre">Nombre del contacto de emergencia</label>
+    <input type="text" id="contacto_emergencia_nombre" class="form-control"
+      formControlName="contacto_emergencia_nombre" placeholder="Nombre de un familiar" />
+  </div>
 
-    <div class="form-group">
-      <label for="contacto_emergencia_telefono">Teléfono del contacto de emergencia</label>
-      <input type="tel" id="contacto_emergencia_telefono" class="form-control"
-        formControlName="contacto_emergencia_telefono" inputmode="numeric" maxlength="15"
-        placeholder="951234567" [class.is-invalid]="invalido('contacto_emergencia_telefono')" />
-      <small class="form-error" *ngIf="invalido('contacto_emergencia_telefono')">
+  <div class="form-group">
+    <label for="contacto_emergencia_telefono">Teléfono del contacto de emergencia</label>
+    <input type="tel" id="contacto_emergencia_telefono" class="form-control"
+      formControlName="contacto_emergencia_telefono" inputmode="numeric" maxlength="15"
+      placeholder="951234567" [class.is-invalid]="invalido('contacto_emergencia_telefono')" />
+    @if (invalido('contacto_emergencia_telefono')) {
+      <small class="form-error">
         Solo números, hasta 15 dígitos.
       </small>
-    </div>
+    }
   </div>
+</div>
 </div>

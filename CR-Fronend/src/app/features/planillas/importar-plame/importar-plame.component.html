@@ -2,7 +2,7 @@
   icono="table_chart"
   titulo="Importar el PLAME del mes"
   subtitulo="Carga la planilla de un mes que no pasó por el sistema, tal como se pagó y declaró."
->
+  >
   <button headerActions type="button" class="btn-secondary" (click)="verPlanillas()">
     <app-icon icono="arrow_left" [tamano]="16"></app-icon>
     Volver a Planillas
@@ -13,277 +13,334 @@
   <app-wizard [pasos]="pasos" [(actual)]="paso" [form]="avance"></app-wizard>
 
   <!-- ══ Paso 1: el PLAME ════════════════════════════════════════ -->
-  <div *ngIf="pasos[paso].id === 'archivo'" class="form-fields">
-    <div class="rejilla-campos">
-      <div class="form-group">
-        <label for="mes">Mes del PLAME</label>
-        <select id="mes" class="form-control" [(ngModel)]="mes" (ngModelChange)="alCambiarPeriodo()">
-          <option *ngFor="let m of meses" [ngValue]="m.value">{{ m.label }}</option>
-        </select>
+  @if (pasos[paso].id === 'archivo') {
+    <div class="form-fields">
+      <div class="rejilla-campos">
+        <div class="form-group">
+          <label for="mes">Mes del PLAME</label>
+          <select id="mes" class="form-control" [(ngModel)]="mes" (ngModelChange)="alCambiarPeriodo()">
+            @for (m of meses; track m.value) {
+              <option [ngValue]="m.value">{{ m.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="anio">Año</label>
+          <input id="anio" type="number" class="form-control" [(ngModel)]="anio" (ngModelChange)="alCambiarPeriodo()" min="2000" max="2100" />
+        </div>
       </div>
-      <div class="form-group">
-        <label for="anio">Año</label>
-        <input id="anio" type="number" class="form-control" [(ngModel)]="anio" (ngModelChange)="alCambiarPeriodo()" min="2000" max="2100" />
+      <app-selector-archivo
+        [extensiones]="['xls', 'xlsx']"
+        [pesoMaximoMb]="10"
+        [archivos]="archivos"
+        (archivosChange)="alElegirArchivo($event)"
+        [ocupado]="revisando"
+        [mostrarLista]="false"
+        textoOcupado="Revisando el PLAME…"
+        [texto]="archivos[0] ? archivos[0].name : 'Arrastra aquí el PLAME de ' + periodo + ' o haz clic para elegirlo'"
+        ayuda="El .xls de RR.HH., tal como está (.xls o .xlsx, hasta 10 MB). Se lee y no se guarda."
+      ></app-selector-archivo>
+      @if (archivos[0]) {
+        <div class="importacion-pie">
+          <span class="form-ayuda">Archivo elegido: {{ archivos[0].name }}</span>
+          <button type="button" class="btn-primary" [disabled]="revisando" (click)="revisar()">
+            @if (revisando) {
+              <span class="spinner-small"></span>
+            }
+            {{ revisando ? 'Revisando…' : 'Revisar el PLAME de ' + periodo }}
+          </button>
+        </div>
+      }
+      <div class="form-nota">
+        <strong>Qué hace.</strong> Lee la hoja <strong>PLANILLA</strong> y reconoce sus columnas por el título: sueldo,
+        asignación familiar, ONP o AFP, 5ta, diezmo, comedor, tardanzas, EsSalud… Las columnas que no son de siempre
+        (un curso, las corbatas) se juntan en <strong>«Otros Conceptos»</strong> con su nombre en el detalle. Cada fila
+        tiene que <strong>cuadrar</strong> con su remuneración neta; si una no cuadra, no se guarda nada.
+      </div>
+      <div class="form-nota">
+        <strong>Si el mes ya tiene planillas del sistema</strong> (de agosto en adelante), el PLAME solo se compara con
+        ellas: verás las diferencias trabajador por trabajador, sin cambiar nada.
       </div>
     </div>
-
-    <app-selector-archivo
-      [extensiones]="['xls', 'xlsx']"
-      [pesoMaximoMb]="10"
-      [archivos]="archivos"
-      (archivosChange)="alElegirArchivo($event)"
-      [ocupado]="revisando"
-      [mostrarLista]="false"
-      textoOcupado="Revisando el PLAME…"
-      [texto]="archivos[0] ? archivos[0].name : 'Arrastra aquí el PLAME de ' + periodo + ' o haz clic para elegirlo'"
-      ayuda="El .xls de RR.HH., tal como está (.xls o .xlsx, hasta 10 MB). Se lee y no se guarda."
-    ></app-selector-archivo>
-
-    <div class="importacion-pie" *ngIf="archivos[0]">
-      <span class="form-ayuda">Archivo elegido: {{ archivos[0].name }}</span>
-      <button type="button" class="btn-primary" [disabled]="revisando" (click)="revisar()">
-        <span *ngIf="revisando" class="spinner-small"></span>
-        {{ revisando ? 'Revisando…' : 'Revisar el PLAME de ' + periodo }}
-      </button>
-    </div>
-
-    <div class="form-nota">
-      <strong>Qué hace.</strong> Lee la hoja <strong>PLANILLA</strong> y reconoce sus columnas por el título: sueldo,
-      asignación familiar, ONP o AFP, 5ta, diezmo, comedor, tardanzas, EsSalud… Las columnas que no son de siempre
-      (un curso, las corbatas) se juntan en <strong>«Otros Conceptos»</strong> con su nombre en el detalle. Cada fila
-      tiene que <strong>cuadrar</strong> con su remuneración neta; si una no cuadra, no se guarda nada.
-    </div>
-    <div class="form-nota">
-      <strong>Si el mes ya tiene planillas del sistema</strong> (de agosto en adelante), el PLAME solo se compara con
-      ellas: verás las diferencias trabajador por trabajador, sin cambiar nada.
-    </div>
-  </div>
+  }
 
   <!-- ══ Paso 2: revisar ═════════════════════════════════════════ -->
-  <div *ngIf="pasos[paso].id === 'revision' && vista">
-    <div class="form-nota" [ngSwitch]="vista.resumen.modo">
-      <span *ngSwitchCase="'crear'">
-        <strong>{{ vista.resumen.periodo }} no tiene planillas en el sistema.</strong> Se crearán con lo que trae el
-        PLAME y quedarán cerradas.
-      </span>
-      <span *ngSwitchCase="'reemplazar'">
-        <strong>{{ vista.resumen.periodo }} ya se había importado del PLAME.</strong> Si importas este archivo,
-        reemplaza a la importación anterior.
-      </span>
-      <span *ngSwitchCase="'comparar'">
-        <strong>{{ vista.resumen.periodo }} ya tiene planillas del sistema.</strong> El PLAME solo se compara: abajo
-        están las diferencias, trabajador por trabajador. No se cambia nada.
-      </span>
-      Hoja leída: «{{ vista.resumen.hoja }}» de {{ vista.resumen.archivo }}.
-    </div>
-
-    <div class="resumen-masivo">
-      <div class="resumen-masivo__dato">
-        <strong>{{ vista.resumen.trabajadores }}</strong>
-        <span>Trabajadores en el PLAME</span>
+  @if (pasos[paso].id === 'revision' && vista) {
+    <div>
+      <div class="form-nota">
+        @switch (vista.resumen.modo) {
+          @case ('crear') {
+            <span>
+              <strong>{{ vista.resumen.periodo }} no tiene planillas en el sistema.</strong> Se crearán con lo que trae el
+              PLAME y quedarán cerradas.
+            </span>
+          }
+          @case ('reemplazar') {
+            <span>
+              <strong>{{ vista.resumen.periodo }} ya se había importado del PLAME.</strong> Si importas este archivo,
+              reemplaza a la importación anterior.
+            </span>
+          }
+          @case ('comparar') {
+            <span>
+              <strong>{{ vista.resumen.periodo }} ya tiene planillas del sistema.</strong> El PLAME solo se compara: abajo
+              están las diferencias, trabajador por trabajador. No se cambia nada.
+            </span>
+          }
+        }
+        Hoja leída: «{{ vista.resumen.hoja }}» de {{ vista.resumen.archivo }}.
       </div>
-      <div class="resumen-masivo__dato">
-        <strong>S/ {{ vista.resumen.neto_total | number: '1.2-2' }}</strong>
-        <span>Neto total del mes</span>
+      <div class="resumen-masivo">
+        <div class="resumen-masivo__dato">
+          <strong>{{ vista.resumen.trabajadores }}</strong>
+          <span>Trabajadores en el PLAME</span>
+        </div>
+        <div class="resumen-masivo__dato">
+          <strong>S/ {{ vista.resumen.neto_total | number: '1.2-2' }}</strong>
+          <span>Neto total del mes</span>
+        </div>
+        @if (vista.resumen.modo !== 'comparar') {
+          <div class="resumen-masivo__dato">
+            <strong>{{ vista.resumen.nuevos_activos + vista.resumen.nuevos_cesados }}</strong>
+            <span>No estaban en el sistema</span>
+          </div>
+        }
+        @if (vista.resumen.modo === 'comparar') {
+          <div class="resumen-masivo__dato">
+            <strong>{{ vista.resumen.con_diferencias }}</strong>
+            <span>Distintos del sistema</span>
+          </div>
+        }
+        <div class="resumen-masivo__dato">
+          <strong>{{ vista.resumen.errores }}</strong>
+          <span>Errores</span>
+        </div>
       </div>
-      <div class="resumen-masivo__dato" *ngIf="vista.resumen.modo !== 'comparar'">
-        <strong>{{ vista.resumen.nuevos_activos + vista.resumen.nuevos_cesados }}</strong>
-        <span>No estaban en el sistema</span>
+      @if (vista.errores.length) {
+        <div class="form-nota form-nota--alerta">
+          <strong>No se puede importar todavía.</strong> Corrige esto en el PLAME y vuelve a subirlo. Mientras haya un
+          solo error no se guarda nada.
+          <ul class="importacion-avisos">
+            @for (e of vista.errores; track $index) {
+              <li>
+                <strong>{{ ubicacion(e) }}:</strong> {{ e.mensaje }}
+              </li>
+            }
+          </ul>
+        </div>
+      }
+      @if (vista.advertencias.length) {
+        <div class="form-nota form-nota--aviso">
+          <strong>Conviene saber:</strong>
+          <ul class="importacion-avisos">
+            @for (a of vista.advertencias; track $index) {
+              <li>{{ a.mensaje }}</li>
+            }
+          </ul>
+        </div>
+      }
+      <!-- Las columnas que no son de siempre: RR.HH. decide a dónde van. -->
+      @if (columnasEditables.length) {
+        <h3 class="detalle-subtitulo">Columnas de este mes que no son de siempre</h3>
+        <app-data-table
+          [columnas]="columnasDeEditables"
+          [datos]="columnasEditables"
+          [acciones]="[]"
+          [filasPorPagina]="50"
+          [mostrarBuscador]="false"
+          mensajeVacio="Todas las columnas son las de siempre."
+          >
+          <ng-template appCelda="titulo" let-c>
+            <strong>{{ c.titulo || '(sin título)' }}</strong>
+            <div class="form-ayuda">Columna {{ c.letra }}</div>
+          </ng-template>
+          <ng-template appCelda="concepto_id" let-c>
+            <select class="form-control" [ngModel]="decisionDe(c)" (ngModelChange)="cambiarColumna(c, $event)"
+              [attr.aria-label]="'A dónde va la columna ' + c.titulo">
+              <option value="otros_ingresos">Otros Conceptos (ingreso), con su nombre en el detalle</option>
+              <option value="otros_descuentos">Otros Conceptos (descuento), con su nombre en el detalle</option>
+              <option value="ignorar">No importar esta columna</option>
+              <optgroup label="Un concepto del catálogo">
+                @for (k of catalogo; track k.id) {
+                  <option [value]="k.id">{{ k.nombre }}</option>
+                }
+              </optgroup>
+            </select>
+          </ng-template>
+        </app-data-table>
+      }
+      <button type="button" class="btn-secondary plame-ver-columnas" (click)="verTodasLasColumnas = !verTodasLasColumnas">
+        {{ verTodasLasColumnas ? 'Ocultar' : 'Ver' }} las {{ columnasDeSiempre.length }} columnas de siempre y cómo se leyeron
+      </button>
+      @if (verTodasLasColumnas) {
+        <app-data-table
+          [columnas]="columnasDeSiempreTabla"
+          [datos]="columnasDeSiempre"
+          [acciones]="[]"
+          [filasPorPagina]="60"
+          [mostrarBuscador]="false"
+          >
+          <ng-template appCelda="titulo" let-c>
+            <strong>{{ c.titulo }}</strong>
+            <div class="form-ayuda">Columna {{ c.letra }}@if (c.grupo) {
+              <span> · {{ c.grupo }}</span>
+            }</div>
+          </ng-template>
+          <ng-template appCelda="estado" let-c>
+            <span class="status-badge" [ngClass]="c.estado === 'falta' ? 'status-badge-danger' : c.estado === 'reconocida' ? 'status-badge-success' : 'status-badge-secondary'">
+              {{ etiquetaEstadoColumna(c) }}
+            </span>
+          </ng-template>
+        </app-data-table>
+      }
+      <!-- Los trabajadores -->
+      <h3 class="detalle-subtitulo">Planilla de {{ vista.resumen.periodo }} según el PLAME</h3>
+      <div class="chips-filtro" role="tablist" aria-label="Qué trabajadores ver">
+        @for (c of chips; track c.valor) {
+          <button type="button" class="chip-filtro" role="tab"
+            [class.chip-filtro--activo]="filtro === c.valor" [attr.aria-selected]="filtro === c.valor"
+            (click)="elegirFiltro(c.valor)">
+            {{ c.texto }}
+            <span class="chip-filtro__cuenta">{{ c.cuenta }}</span>
+          </button>
+        }
       </div>
-      <div class="resumen-masivo__dato" *ngIf="vista.resumen.modo === 'comparar'">
-        <strong>{{ vista.resumen.con_diferencias }}</strong>
-        <span>Distintos del sistema</span>
-      </div>
-      <div class="resumen-masivo__dato">
-        <strong>{{ vista.resumen.errores }}</strong>
-        <span>Errores</span>
-      </div>
-    </div>
-
-    <div class="form-nota form-nota--alerta" *ngIf="vista.errores.length">
-      <strong>No se puede importar todavía.</strong> Corrige esto en el PLAME y vuelve a subirlo. Mientras haya un
-      solo error no se guarda nada.
-      <ul class="importacion-avisos">
-        <li *ngFor="let e of vista.errores">
-          <strong>{{ ubicacion(e) }}:</strong> {{ e.mensaje }}
-        </li>
-      </ul>
-    </div>
-
-    <div class="form-nota form-nota--aviso" *ngIf="vista.advertencias.length">
-      <strong>Conviene saber:</strong>
-      <ul class="importacion-avisos">
-        <li *ngFor="let a of vista.advertencias">{{ a.mensaje }}</li>
-      </ul>
-    </div>
-
-    <!-- Las columnas que no son de siempre: RR.HH. decide a dónde van. -->
-    <ng-container *ngIf="columnasEditables.length">
-      <h3 class="detalle-subtitulo">Columnas de este mes que no son de siempre</h3>
       <app-data-table
-        [columnas]="columnasDeEditables"
-        [datos]="columnasEditables"
+        entidad="este trabajador"
+        [columnas]="columnasDeTrabajadores"
+        [datos]="trabajadoresVisibles"
         [acciones]="[]"
-        [filasPorPagina]="50"
-        [mostrarBuscador]="false"
-        mensajeVacio="Todas las columnas son las de siempre."
-      >
-        <ng-template appCelda="titulo" let-c>
-          <strong>{{ c.titulo || '(sin título)' }}</strong>
-          <div class="form-ayuda">Columna {{ c.letra }}</div>
+        [filasPorPagina]="25"
+        [camposBusqueda]="['nombre', 'dni']"
+        mensajeVacio="Nadie en este grupo."
+        >
+        <ng-template appCelda="nombre" let-t>
+          <strong>{{ t.nombre }}</strong>
+          <div class="form-ayuda">DNI {{ t.dni }}, fila {{ t.fila }} del PLAME</div>
         </ng-template>
-        <ng-template appCelda="concepto_id" let-c>
-          <select class="form-control" [ngModel]="decisionDe(c)" (ngModelChange)="cambiarColumna(c, $event)"
-            [attr.aria-label]="'A dónde va la columna ' + c.titulo">
-            <option value="otros_ingresos">Otros Conceptos (ingreso), con su nombre en el detalle</option>
-            <option value="otros_descuentos">Otros Conceptos (descuento), con su nombre en el detalle</option>
-            <option value="ignorar">No importar esta columna</option>
-            <optgroup label="Un concepto del catálogo">
-              <option *ngFor="let k of catalogo" [value]="k.id">{{ k.nombre }}</option>
-            </optgroup>
-          </select>
+        <ng-template appCelda="situacion" let-t>
+          <span class="status-badge" [ngClass]="'status-badge-' + severidadSituacion(t.situacion)">
+            {{ etiquetaSituacion(t.situacion) }}
+          </span>
+          @if (t.situacion === 'nuevo_activo' || t.situacion === 'nuevo_cesado') {
+            <select class="form-control plame-estado"
+              [ngModel]="t.situacion === 'nuevo_cesado' ? 'cesado' : 'activo'" (ngModelChange)="cambiarPersona(t, $event)"
+              [attr.aria-label]="'Cómo se registra ' + t.nombre">
+              <option value="activo">Activo</option>
+              <option value="cesado">Cesado</option>
+            </select>
+          }
+        </ng-template>
+        <ng-template appCelda="lineas" let-t>
+          <ul class="importacion-cambios">
+            <li>
+              <span class="importacion-cambios__concepto">Sueldo básico</span>
+              <span>S/ {{ t.sueldo | number: '1.2-2' }}</span>
+            </li>
+            @for (l of t.lineas; track $index) {
+              <li>
+                <span class="importacion-cambios__concepto">{{ l.concepto }}</span>
+                <span>{{ l.tipo === 'bonificacion' ? '+' : l.tipo === 'aportacion' ? '' : '−' }} S/ {{ l.monto | number: '1.2-2' }}</span>
+                @if (l.descripcion) {
+                  <small>{{ l.descripcion }}</small>
+                }
+              </li>
+            }
+          </ul>
+          @if (t.avisos.length) {
+            <ul class="importacion-avisos plame-avisos">
+              @for (a of t.avisos; track $index) {
+                <li>{{ a }}</li>
+              }
+            </ul>
+          }
+          @if (t.diferencias.length) {
+            <ul class="importacion-cambios plame-diferencias">
+              @for (d of t.diferencias; track $index) {
+                <li>
+                  <span class="importacion-cambios__concepto">{{ d.concepto }}</span>
+                  <span>PLAME S/ {{ d.plame | number: '1.2-2' }} · sistema S/ {{ d.sistema | number: '1.2-2' }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </ng-template>
+        <ng-template appCelda="neto" let-t>
+          <strong>S/ {{ t.neto | number: '1.2-2' }}</strong>
+          @if (t.neto_plame !== null) {
+            <div class="form-ayuda">Cuadra con el PLAME</div>
+          }
+          @if (t.neto_sistema !== null) {
+            <div class="form-ayuda">Sistema: S/ {{ t.neto_sistema | number: '1.2-2' }}</div>
+          }
         </ng-template>
       </app-data-table>
-    </ng-container>
-
-    <button type="button" class="btn-secondary plame-ver-columnas" (click)="verTodasLasColumnas = !verTodasLasColumnas">
-      {{ verTodasLasColumnas ? 'Ocultar' : 'Ver' }} las {{ columnasDeSiempre.length }} columnas de siempre y cómo se leyeron
-    </button>
-    <app-data-table
-      *ngIf="verTodasLasColumnas"
-      [columnas]="columnasDeSiempreTabla"
-      [datos]="columnasDeSiempre"
-      [acciones]="[]"
-      [filasPorPagina]="60"
-      [mostrarBuscador]="false"
-    >
-      <ng-template appCelda="titulo" let-c>
-        <strong>{{ c.titulo }}</strong>
-        <div class="form-ayuda">Columna {{ c.letra }}<span *ngIf="c.grupo"> · {{ c.grupo }}</span></div>
-      </ng-template>
-      <ng-template appCelda="estado" let-c>
-        <span class="status-badge" [ngClass]="c.estado === 'falta' ? 'status-badge-danger' : c.estado === 'reconocida' ? 'status-badge-success' : 'status-badge-secondary'">
-          {{ etiquetaEstadoColumna(c) }}
-        </span>
-      </ng-template>
-    </app-data-table>
-
-    <!-- Los trabajadores -->
-    <h3 class="detalle-subtitulo">Planilla de {{ vista.resumen.periodo }} según el PLAME</h3>
-    <div class="chips-filtro" role="tablist" aria-label="Qué trabajadores ver">
-      <button type="button" class="chip-filtro" role="tab" *ngFor="let c of chips"
-        [class.chip-filtro--activo]="filtro === c.valor" [attr.aria-selected]="filtro === c.valor"
-        (click)="elegirFiltro(c.valor)">
-        {{ c.texto }}
-        <span class="chip-filtro__cuenta">{{ c.cuenta }}</span>
-      </button>
-    </div>
-
-    <app-data-table
-      entidad="este trabajador"
-      [columnas]="columnasDeTrabajadores"
-      [datos]="trabajadoresVisibles"
-      [acciones]="[]"
-      [filasPorPagina]="25"
-      [camposBusqueda]="['nombre', 'dni']"
-      mensajeVacio="Nadie en este grupo."
-    >
-      <ng-template appCelda="nombre" let-t>
-        <strong>{{ t.nombre }}</strong>
-        <div class="form-ayuda">DNI {{ t.dni }}, fila {{ t.fila }} del PLAME</div>
-      </ng-template>
-
-      <ng-template appCelda="situacion" let-t>
-        <span class="status-badge" [ngClass]="'status-badge-' + severidadSituacion(t.situacion)">
-          {{ etiquetaSituacion(t.situacion) }}
-        </span>
-        <select *ngIf="t.situacion === 'nuevo_activo' || t.situacion === 'nuevo_cesado'" class="form-control plame-estado"
-          [ngModel]="t.situacion === 'nuevo_cesado' ? 'cesado' : 'activo'" (ngModelChange)="cambiarPersona(t, $event)"
-          [attr.aria-label]="'Cómo se registra ' + t.nombre">
-          <option value="activo">Activo</option>
-          <option value="cesado">Cesado</option>
-        </select>
-      </ng-template>
-
-      <ng-template appCelda="lineas" let-t>
-        <ul class="importacion-cambios">
-          <li>
-            <span class="importacion-cambios__concepto">Sueldo básico</span>
-            <span>S/ {{ t.sueldo | number: '1.2-2' }}</span>
-          </li>
-          <li *ngFor="let l of t.lineas">
-            <span class="importacion-cambios__concepto">{{ l.concepto }}</span>
-            <span>{{ l.tipo === 'bonificacion' ? '+' : l.tipo === 'aportacion' ? '' : '−' }} S/ {{ l.monto | number: '1.2-2' }}</span>
-            <small *ngIf="l.descripcion">{{ l.descripcion }}</small>
-          </li>
-        </ul>
-        <ul class="importacion-avisos plame-avisos" *ngIf="t.avisos.length">
-          <li *ngFor="let a of t.avisos">{{ a }}</li>
-        </ul>
-        <ul class="importacion-cambios plame-diferencias" *ngIf="t.diferencias.length">
-          <li *ngFor="let d of t.diferencias">
-            <span class="importacion-cambios__concepto">{{ d.concepto }}</span>
-            <span>PLAME S/ {{ d.plame | number: '1.2-2' }} · sistema S/ {{ d.sistema | number: '1.2-2' }}</span>
-          </li>
-        </ul>
-      </ng-template>
-
-      <ng-template appCelda="neto" let-t>
-        <strong>S/ {{ t.neto | number: '1.2-2' }}</strong>
-        <div class="form-ayuda" *ngIf="t.neto_plame !== null">Cuadra con el PLAME</div>
-        <div class="form-ayuda" *ngIf="t.neto_sistema !== null">Sistema: S/ {{ t.neto_sistema | number: '1.2-2' }}</div>
-      </ng-template>
-    </app-data-table>
-
-    <div class="form-nota form-nota--aviso" *ngIf="vista.solo_en_sistema.length">
-      <strong>Tienen planilla en el sistema pero no están en el PLAME ({{ vista.solo_en_sistema.length }}):</strong>
-      <ul class="importacion-avisos">
-        <li *ngFor="let s of vista.solo_en_sistema">{{ s.nombre }} (DNI {{ s.dni }}), neto en el sistema S/ {{ s.neto_sistema | number: '1.2-2' }}</li>
-      </ul>
-    </div>
-
-    <!-- Siempre se ve con qué se confirma, y si no se puede, por qué. -->
-    <div class="form-nota form-nota--aviso" *ngIf="motivoNoImportar">
-      <strong>Todavía no se puede importar:</strong> {{ motivoNoImportar }}
-    </div>
-
-    <div class="importacion-pie">
-      <div class="importacion-pie__grupo">
-        <button type="button" class="btn-secondary" (click)="cambiarMes()">
-          <app-icon icono="arrow_left" [tamano]="16"></app-icon>
-          Cambiar el mes
-        </button>
-        <button type="button" class="btn-secondary" (click)="otroArchivo()">Cambiar de archivo</button>
-      </div>
-      <div class="importacion-pie__grupo">
-        <button *ngIf="desactualizada" type="button" class="btn-secondary" [disabled]="revisando" (click)="revisar()">
-          <span *ngIf="revisando" class="spinner-small"></span>
-          {{ revisando ? 'Revisando…' : 'Volver a revisar' }}
-        </button>
-        <button type="button" class="btn-primary" [disabled]="!sePuedeAplicar" (click)="aplicar()">
-          <span *ngIf="aplicando" class="spinner-small"></span>
-          <app-icon *ngIf="!aplicando" icono="upload" [tamano]="16"></app-icon>
-          {{ aplicando ? 'Importando…' : 'Importar ' + vista.resumen.trabajadores + ' planilla(s) de ' + vista.resumen.periodo }}
-        </button>
+      @if (vista.solo_en_sistema.length) {
+        <div class="form-nota form-nota--aviso">
+          <strong>Tienen planilla en el sistema pero no están en el PLAME ({{ vista.solo_en_sistema.length }}):</strong>
+          <ul class="importacion-avisos">
+            @for (s of vista.solo_en_sistema; track $index) {
+              <li>{{ s.nombre }} (DNI {{ s.dni }}), neto en el sistema S/ {{ s.neto_sistema | number: '1.2-2' }}</li>
+            }
+          </ul>
+        </div>
+      }
+      <!-- Siempre se ve con qué se confirma, y si no se puede, por qué. -->
+      @if (motivoNoImportar) {
+        <div class="form-nota form-nota--aviso">
+          <strong>Todavía no se puede importar:</strong> {{ motivoNoImportar }}
+        </div>
+      }
+      <div class="importacion-pie">
+        <div class="importacion-pie__grupo">
+          <button type="button" class="btn-secondary" (click)="cambiarMes()">
+            <app-icon icono="arrow_left" [tamano]="16"></app-icon>
+            Cambiar el mes
+          </button>
+          <button type="button" class="btn-secondary" (click)="otroArchivo()">Cambiar de archivo</button>
+        </div>
+        <div class="importacion-pie__grupo">
+          @if (desactualizada) {
+            <button type="button" class="btn-secondary" [disabled]="revisando" (click)="revisar()">
+              @if (revisando) {
+                <span class="spinner-small"></span>
+              }
+              {{ revisando ? 'Revisando…' : 'Volver a revisar' }}
+            </button>
+          }
+          <button type="button" class="btn-primary" [disabled]="!sePuedeAplicar" (click)="aplicar()">
+            @if (aplicando) {
+              <span class="spinner-small"></span>
+            }
+            @if (!aplicando) {
+              <app-icon icono="upload" [tamano]="16"></app-icon>
+            }
+            {{ aplicando ? 'Importando…' : 'Importar ' + vista.resumen.trabajadores + ' planilla(s) de ' + vista.resumen.periodo }}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
+  }
 
   <!-- ══ Paso 3: listo ═══════════════════════════════════════════ -->
-  <div *ngIf="pasos[paso].id === 'listo' && resultado" class="importacion-listo">
-    <app-icon icono="check_circle" [tamano]="52"></app-icon>
-    <h2>{{ resultado.mensaje }}</h2>
-    <p>
-      La planilla de {{ resultado.resumen.periodo }} quedó cerrada y marcada «PLAME». Si el PLAME tenía un error,
-      corrígelo en el Excel y vuelve a importarlo: la importación nueva reemplaza a esta.
-    </p>
-    <p *ngIf="resultado.resumen.nuevos_activos">
-      Completa en Empleados el correo, el teléfono, la sede y el área de los {{ resultado.resumen.nuevos_activos }}
-      trabajador(es) nuevos activos.
-    </p>
-    <div class="importacion-pie importacion-pie--centrado">
-      <button type="button" class="btn-secondary" (click)="otroArchivo()">Importar otro mes</button>
-      <button type="button" class="btn-primary" (click)="verPlanillas()">Ver las planillas de {{ periodo }}</button>
+  @if (pasos[paso].id === 'listo' && resultado) {
+    <div class="importacion-listo">
+      <app-icon icono="check_circle" [tamano]="52"></app-icon>
+      <h2>{{ resultado.mensaje }}</h2>
+      <p>
+        La planilla de {{ resultado.resumen.periodo }} quedó cerrada y marcada «PLAME». Si el PLAME tenía un error,
+        corrígelo en el Excel y vuelve a importarlo: la importación nueva reemplaza a esta.
+      </p>
+      @if (resultado.resumen.nuevos_activos) {
+        <p>
+          Completa en Empleados el correo, el teléfono, la sede y el área de los {{ resultado.resumen.nuevos_activos }}
+          trabajador(es) nuevos activos.
+        </p>
+      }
+      <div class="importacion-pie importacion-pie--centrado">
+        <button type="button" class="btn-secondary" (click)="otroArchivo()">Importar otro mes</button>
+        <button type="button" class="btn-primary" (click)="verPlanillas()">Ver las planillas de {{ periodo }}</button>
+      </div>
     </div>
-  </div>
+  }
 </section>

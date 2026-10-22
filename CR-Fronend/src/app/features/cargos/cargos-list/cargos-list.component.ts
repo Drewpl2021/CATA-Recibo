@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AreaService, CargoService, ToastService, ConfirmService } from '../../../core/services';
@@ -21,10 +21,7 @@ import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/f
 @Component({
   selector: 'app-cargos-list',
   standalone: true,
-  imports: [IconComponent,
-    CommonModule, ReactiveFormsModule, FormsModule,
-    PageHeaderComponent, DataTableComponent, FormModalComponent, FiltrosComponent,
-  ],
+  imports: [IconComponent, ReactiveFormsModule, FormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent, FiltrosComponent],
   templateUrl: './cargos-list.component.html',
 })
 export class CargosListComponent implements OnInit {
