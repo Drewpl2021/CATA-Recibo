@@ -237,7 +237,7 @@
     $monto = fn (float $v) => abs($v) < 0.005 ? '-' : number_format($v, 2);
 
     // Datos institucionales fijos (no hay un módulo de "datos del colegio" en el sistema).
-    $colegioRuc = '20156630733';
+    $colegioRuc = config('institucion.ruc');
     $colegioDireccion = 'Jr. Moquegua N° 852';
     $ciudadFirma = 'Juliaca';
 @endphp

@@ -22,4 +22,13 @@
 
 return [
     'dominio_correo' => env('INSTITUCION_DOMINIO_CORREO'),
+
+    /*
+    | El RUC que imprimen la boleta, la hoja de CTS y la de gratificación.
+    | Es público (sale en cada boleta) y estaba escrito a mano en cada
+    | plantilla: tres de ellas llevaban 20156630733, que ni siquiera pasa el
+    | dígito verificador de SUNAT. Ahora hay un solo sitio, y una prueba
+    | (RucDelColegioTest) comprueba el dígito.
+    */
+    'ruc' => env('INSTITUCION_RUC', '20156630731'),
 ];

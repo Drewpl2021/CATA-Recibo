@@ -56,7 +56,7 @@
 <body>
 @php
     $colegioNombre    = 'Asociación Educativa Colegio Adventista Túpac Amaru';
-    $colegioRuc       = '20156630733';
+    $colegioRuc       = config('institucion.ruc');
     $colegioDireccion = 'Jr. Moquegua N° 852, Juliaca';
 
     $meses   = \App\Support\Meses::NOMBRES;
