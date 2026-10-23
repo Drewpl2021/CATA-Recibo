@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { FirmaDelColegio, GeneracionMasivaBoletas, Planilla } from '../../models';
-import { ApiResponse, END_POINTS, END_POINTS_ACCIONES } from '../../utils';
+import { ApiResponse, END_POINTS, END_POINTS_ACCIONES, bajarPorEnlaceFirmado } from '../../utils';
 import { environment } from '../../../../environments/environment';
 
 /** Generación y descarga de boletas en PDF (no es un CRUD, por eso no hereda). */
@@ -56,12 +56,7 @@ export class BoletaService {
     return pedido
       .pipe(
         map((res) => {
-          // El servidor lo firma relativo (/api/...): se arma con la misma
-          // base de la API para que valga en desarrollo y en el colegio.
-          const enlace = document.createElement('a');
-          enlace.href = `${this.apiUrl}${res.data.url.replace(/^\/api/, '')}`;
-          enlace.rel = 'noopener';
-          enlace.click();
+          bajarPorEnlaceFirmado(res.data.url);
           return res.data.cantidad;
         })
       );

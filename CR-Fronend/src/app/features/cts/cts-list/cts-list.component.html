@@ -4,7 +4,13 @@
   subtitulo="Lo que el colegio deposita a cada trabajador dos veces al año por su tiempo de servicios."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
-></app-page-header>
+>
+  <button headerActions type="button" class="btn-secondary" (click)="bajarHojasEnZip()" [disabled]="bajandoZip || cargando"
+    appPista="Todas las hojas de CTS de este periodo en un solo archivo .zip, para imprimirlas o archivarlas.">
+    <app-icon icono="download" [tamano]="16"></app-icon>
+    {{ bajandoZip ? 'Preparando…' : 'Descargar hojas (.zip)' }}
+  </button>
+</app-page-header>
 
 <!-- ── Qué depósito se está trabajando ── -->
 <section class="cts-deposito">
@@ -199,6 +205,11 @@
     appPista="Registra el depósito de los marcados que tengan su CTS calculada. Su hoja de liquidación queda en el expediente.">
     <app-icon icono="check_circle" [tamano]="16"></app-icon>
     Registrar depósito
+  </button>
+  <button type="button" class="barra-seleccion__boton" (click)="bajarHojasEnZip(marcados)" [disabled]="bajandoZip"
+    appPista="Las hojas de CTS de los marcados en un .zip.">
+    <app-icon icono="download" [tamano]="16"></app-icon>
+    Descargar hojas
   </button>
 </app-barra-seleccion>
 

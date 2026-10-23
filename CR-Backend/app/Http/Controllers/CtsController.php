@@ -29,6 +29,8 @@ use Illuminate\Validation\Rule;
  */
 class CtsController extends Controller
 {
+    use \App\Traits\DescargaEnZip;
+
     /** El año y el periodo pedidos; sin ellos, el próximo depósito. */
     private function periodoPedido(Request $request): array
     {
@@ -300,6 +302,66 @@ class CtsController extends Controller
         return response()->json(['success' => true, 'data' => (new MotorCts())->historial(
             Empleado::findOrFail($empleado), (int) $datos['anio'], $datos['periodo'],
         )]);
+    }
+
+    /**
+     * GET|POST /cts/zip/link — el enlace para bajar en un .zip las hojas de
+     * liquidación del depósito: de los marcados (ids) o de todos los que ya
+     * tienen su CTS calculada o depositada. Quien todavía no se calculó no
+     * tiene hoja.
+     */
+    public function enlaceZip(Request $request)
+    {
+        $request->validate([
+            'anio'    => 'required|integer|min:2000|max:2100',
+            'periodo' => ['required', Rule::in(MotorCts::PERIODOS)],
+            'ids'     => 'nullable|array|max:1000',
+            'ids.*'   => 'uuid',
+        ]);
+        $cantidad = $this->liquidacionesDelZip($request, $this->marcadosDelPedido($request) ?: null)->count();
+        if ($cantidad === 0) {
+            return response()->json(['success' => false, 'message' => 'Todavía no hay hojas de CTS de ese depósito: primero calcula la CTS.'], 404);
+        }
+
+        return $this->enlaceAlZip($request, 'cts.zip', $request->only('anio', 'periodo'), $cantidad);
+    }
+
+    /** GET /cts/zip/download (firmado) — el .zip del enlace de arriba. */
+    public function zipConEnlace(Request $request)
+    {
+        $this->exigirQuienPidioElZip($request, '/cts');
+        $marcados = $this->marcadosDelPedido($request);
+        if ($marcados === false) {
+            abort(410, 'Este enlace venció: vuelve a pedir la descarga desde el sistema.');
+        }
+
+        $liquidaciones = $this->liquidacionesDelZip($request, $marcados);
+        $hojas = [];
+        foreach ($liquidaciones as $l) {
+            $nombre = sprintf('CTS_%s_%d_%s_%s.pdf', $l->periodo, $l->anio, $l->empleado->dni,
+                $this->nombreParaArchivo("{$l->empleado->apellido} {$l->empleado->nombre}"));
+            $hojas[$nombre] = function () use ($l) {
+                $guardada = $l->documento?->archivo;
+
+                return $guardada && Storage::disk('local')->exists($guardada)
+                    ? Storage::disk('local')->get($guardada)
+                    : $this->pdf($l)->output();
+            };
+        }
+
+        return $this->zipDeHojas($hojas, "CTS_{$request->query('periodo')}_{$request->query('anio')}.zip", 'Juntando las hojas de CTS',
+            $this->marcadosSinHoja($marcados, $liquidaciones->pluck('empleado_id')->all(), 'su CTS todavía no se calculó, o no le corresponde.'));
+    }
+
+    private function liquidacionesDelZip(Request $request, ?array $marcados): Collection
+    {
+        return CtsLiquidacion::with('empleado.cargo', 'documento')
+            ->where('anio', (int) $request->input('anio'))
+            ->where('periodo', $request->input('periodo'))
+            ->when($marcados !== null, fn ($q) => $q->whereIn('empleado_id', $marcados))
+            ->get()
+            ->sortBy(fn ($l) => "{$l->empleado->apellido} {$l->empleado->nombre}")
+            ->values();
     }
 
     /** La hoja de liquidación: la guardada en el expediente o, si aún no se depositó, una al vuelo. */

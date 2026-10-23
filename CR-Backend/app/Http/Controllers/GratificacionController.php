@@ -27,6 +27,8 @@ use Illuminate\Validation\Rule;
  */
 class GratificacionController extends Controller
 {
+    use \App\Traits\DescargaEnZip;
+
     /** El año y el periodo pedidos; sin ellos, la próxima gratificación. */
     private function periodoPedido(Request $request): array
     {
@@ -119,6 +121,77 @@ class GratificacionController extends Controller
         return response()->json(['success' => true, 'data' => (new MotorGratificacion())->historial(
             Empleado::findOrFail($empleado), (int) $datos['anio'], $datos['periodo'],
         )]);
+    }
+
+    /**
+     * GET|POST /bonuses/zip/link — el enlace para bajar en un .zip las hojas
+     * de gratificación del periodo: de los marcados (ids) o de todos a los
+     * que les corresponde.
+     */
+    public function enlaceZip(Request $request)
+    {
+        $request->validate([
+            'anio'    => 'required|integer|min:2000|max:2100',
+            'periodo' => ['required', Rule::in(MotorGratificacion::PERIODOS)],
+            'ids'     => 'nullable|array|max:1000',
+            'ids.*'   => 'uuid',
+        ]);
+        $cantidad = count($this->conGratificacion($request, $this->marcadosDelPedido($request) ?: null));
+        if ($cantidad === 0) {
+            return response()->json(['success' => false, 'message' => 'Nadie de la selección tiene gratificación en ese periodo.'], 404);
+        }
+
+        return $this->enlaceAlZip($request, 'gratificaciones.zip', $request->only('anio', 'periodo'), $cantidad);
+    }
+
+    /** GET /bonuses/zip/download (firmado) — el .zip del enlace de arriba. */
+    public function zipConEnlace(Request $request)
+    {
+        $this->exigirQuienPidioElZip($request, '/gratificaciones');
+        $marcados = $this->marcadosDelPedido($request);
+        if ($marcados === false) {
+            abort(410, 'Este enlace venció: vuelve a pedir la descarga desde el sistema.');
+        }
+
+        $anio = (int) $request->query('anio');
+        $periodo = (string) $request->query('periodo');
+        $semestre = MotorGratificacion::semestre($anio, $periodo);
+        // La entregada al expediente es la que vio el trabajador: esa va tal cual.
+        $entregadas = Documento::where('tipo', 'gratificacion')->where('estado_registro', 'activo')->where('periodo_anio', $anio)
+            ->whereBetween('periodo_mes', [$semestre['desde']->month, $semestre['mes_pago']])
+            ->pluck('archivo', 'empleado_id');
+
+        $conGratificacion = $this->conGratificacion($request, $marcados);
+        $hojas = [];
+        foreach ($conGratificacion as [$e, $calculo]) {
+            $nombre = sprintf('Gratificacion_%s_%d_%s_%s.pdf', $periodo, $anio, $e->dni, $this->nombreParaArchivo("{$e->apellido} {$e->nombre}"));
+            $hojas[$nombre] = function () use ($e, $anio, $periodo, $calculo, $entregadas) {
+                $guardada = $entregadas->get($e->id);
+
+                return $guardada && Storage::disk('local')->exists($guardada)
+                    ? Storage::disk('local')->get($guardada)
+                    : $this->pdf($e, $anio, $periodo, $calculo)->output();
+            };
+        }
+
+        return $this->zipDeHojas($hojas, "Gratificaciones_{$periodo}_{$anio}.zip", 'Juntando las hojas de gratificación',
+            $this->marcadosSinHoja($marcados, array_map(fn ($par) => $par[0]->id, $conGratificacion), 'no le corresponde gratificación en este periodo.'));
+    }
+
+    /** [[Empleado, cálculo], …] de quienes tienen gratificación en el periodo, por apellido. */
+    private function conGratificacion(Request $request, ?array $marcados): array
+    {
+        $anio = (int) $request->input('anio');
+        $periodo = (string) $request->input('periodo');
+        $motor = new MotorGratificacion();
+
+        return $this->personalDelSemestre($anio, $periodo)
+            ->when($marcados !== null, fn ($c) => $c->whereIn('id', $marcados))
+            ->sortBy(fn (Empleado $e) => "{$e->apellido} {$e->nombre}")
+            ->map(fn (Empleado $e) => [$e, $motor->calcular($e, $anio, $periodo)])
+            ->filter(fn (array $par) => $par[1]['aplica'])
+            ->values()
+            ->all();
     }
 
     /** La hoja: la que ya está en el expediente o, si no, una al vuelo. */

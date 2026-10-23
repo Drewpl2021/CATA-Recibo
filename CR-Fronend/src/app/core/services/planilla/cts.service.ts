@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../utils';
+import { ApiResponse, bajarPorEnlaceFirmado } from '../../utils';
 
 /** El depósito: mayo cubre noviembre–abril, noviembre cubre mayo–octubre. */
 export type PeriodoCts = 'mayo' | 'noviembre';
@@ -143,5 +143,21 @@ export class CtsService {
   /** La hoja de liquidación en PDF. */
   hoja(liquidacionId: string): Observable<Blob> {
     return this.http.get(`${this.url}/${liquidacionId}/sheet`, { responseType: 'blob' });
+  }
+
+  /**
+   * Las hojas del periodo en un .zip: de los marcados o, sin marcados, de
+   * todos los que tienen hoja. Lo baja el navegador con un enlace firmado.
+   * Devuelve cuántas hojas trae.
+   */
+  bajarHojasEnZip(anio: number, periodo: PeriodoCts, ids?: string[]): Observable<number> {
+    return this.http
+      .post<ApiResponse<{ url: string; cantidad: number }>>(`${this.url}/zip/link`, { anio, periodo, ...(ids?.length ? { ids } : {}) })
+      .pipe(
+        map((res) => {
+          bajarPorEnlaceFirmado(res.data.url);
+          return res.data.cantidad;
+        })
+      );
   }
 }

@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../utils';
+import { ApiResponse, bajarPorEnlaceFirmado } from '../../utils';
 
 /** Julio paga el semestre enero–junio; diciembre, julio–diciembre. */
 export type PeriodoGratificacion = 'julio' | 'diciembre';
@@ -127,5 +127,21 @@ export class GratificacionService {
   /** Deja la hoja en el expediente de cada uno (solo de quien ya la tiene pagada). */
   entregar(anio: number, periodo: PeriodoGratificacion, ids: string[]): Observable<ApiResponse<{ entregadas: number; saltadas: string[]; message: string }>> {
     return this.http.post<ApiResponse<{ entregadas: number; saltadas: string[]; message: string }>>(`${this.url}/deliver`, { anio, periodo, ids });
+  }
+
+  /**
+   * Las hojas del periodo en un .zip: de los marcados o, sin marcados, de
+   * todos los que tienen hoja. Lo baja el navegador con un enlace firmado.
+   * Devuelve cuántas hojas trae.
+   */
+  bajarHojasEnZip(anio: number, periodo: PeriodoGratificacion, ids?: string[]): Observable<number> {
+    return this.http
+      .post<ApiResponse<{ url: string; cantidad: number }>>(`${this.url}/zip/link`, { anio, periodo, ...(ids?.length ? { ids } : {}) })
+      .pipe(
+        map((res) => {
+          bajarPorEnlaceFirmado(res.data.url);
+          return res.data.cantidad;
+        })
+      );
   }
 }

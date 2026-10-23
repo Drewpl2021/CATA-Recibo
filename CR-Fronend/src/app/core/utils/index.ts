@@ -6,3 +6,4 @@ export * from './fecha';
 export * from './clave-segura';
 export * from './guardar-archivo';
 export * from './documentos';
+export * from './descarga-por-enlace';

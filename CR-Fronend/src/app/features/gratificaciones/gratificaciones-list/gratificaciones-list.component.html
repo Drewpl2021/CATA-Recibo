@@ -4,7 +4,13 @@
   subtitulo="La de Fiestas Patrias y la de Navidad: lo que le corresponde a cada uno por ley y lo que tiene su planilla."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
-></app-page-header>
+>
+  <button headerActions type="button" class="btn-secondary" (click)="bajarHojasEnZip()" [disabled]="bajandoZip || cargando"
+    appPista="Todas las hojas de gratificación de este periodo en un solo archivo .zip, para imprimirlas o archivarlas.">
+    <app-icon icono="download" [tamano]="16"></app-icon>
+    {{ bajandoZip ? 'Preparando…' : 'Descargar hojas (.zip)' }}
+  </button>
+</app-page-header>
 
 <!-- ── Qué gratificación se está revisando ── -->
 <section class="cts-deposito">
@@ -200,6 +206,11 @@
     appPista="Deja la hoja de gratificación en el expediente de los marcados que ya la tienen pagada.">
     <app-icon icono="receipt_long" [tamano]="16"></app-icon>
     Entregar hoja
+  </button>
+  <button type="button" class="barra-seleccion__boton" (click)="bajarHojasEnZip(marcados)" [disabled]="bajandoZip"
+    appPista="Las hojas de gratificación de los marcados en un .zip.">
+    <app-icon icono="download" [tamano]="16"></app-icon>
+    Descargar hojas
   </button>
 </app-barra-seleccion>
 

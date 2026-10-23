@@ -66,6 +66,10 @@ Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle
 // firmada por el servidor (ver VerificarBoletaController).
 // El .zip de boletas por enlace firmado (vence en 10 min): lo baja el
 // navegador, sin el token. Ver EmpleadoController::enlaceBoletasEnZip.
+Route::get('/cts/zip/download', [\App\Http\Controllers\CtsController::class, 'zipConEnlace'])
+    ->name('cts.zip')->middleware(['signed:relative', 'throttle:30,1']);
+Route::get('/bonuses/zip/download', [\App\Http\Controllers\GratificacionController::class, 'zipConEnlace'])
+    ->name('gratificaciones.zip')->middleware(['signed:relative', 'throttle:30,1']);
 Route::get('/payslips-zip/download', [EmpleadoController::class, 'boletasEnZipConEnlace'])
     ->name('boletas.zip')->middleware(['signed:relative', 'throttle:30,1']);
 
@@ -306,6 +310,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('cts/calculate',               [\App\Http\Controllers\CtsController::class, 'calcular']);
         Route::post('cts/deposit',                 [\App\Http\Controllers\CtsController::class, 'depositar']);
         Route::delete('cts/{liquidacion}/deposit', [\App\Http\Controllers\CtsController::class, 'anularDeposito'])->whereUuid('liquidacion');
+        Route::match(['get', 'post'], 'cts/zip/link', [\App\Http\Controllers\CtsController::class, 'enlaceZip']);
         Route::get('cts/{liquidacion}/sheet',      [\App\Http\Controllers\CtsController::class, 'hoja'])->whereUuid('liquidacion');
         Route::get('cts/{empleado}/history',       [\App\Http\Controllers\CtsController::class, 'historial'])->whereUuid('empleado');
     });
@@ -315,6 +320,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::get('bonuses',                    [\App\Http\Controllers\GratificacionController::class, 'index']);
         Route::post('bonuses/deliver',           [\App\Http\Controllers\GratificacionController::class, 'entregar']);
         Route::get('bonuses/{empleado}/history', [\App\Http\Controllers\GratificacionController::class, 'historial'])->whereUuid('empleado');
+        Route::match(['get', 'post'], 'bonuses/zip/link', [\App\Http\Controllers\GratificacionController::class, 'enlaceZip']);
         Route::get('bonuses/{empleado}/sheet',   [\App\Http\Controllers\GratificacionController::class, 'hoja'])->whereUuid('empleado');
     });
 

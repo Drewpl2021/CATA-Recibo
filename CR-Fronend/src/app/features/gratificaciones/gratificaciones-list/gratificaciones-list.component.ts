@@ -310,6 +310,27 @@ export class GratificacionesListComponent implements OnInit {
     return resumirMarcados(this.marcados.map((f) => f.nombre));
   }
 
+  bajandoZip = false;
+
+  /**
+   * Las hojas de gratificación en un .zip: de los marcados o, sin marcados, de todo
+   * el periodo. Lo baja el navegador (enlace firmado, como las boletas).
+   */
+  bajarHojasEnZip(filas?: { id: string }[]): void {
+    if (this.bajandoZip || !this.anio || !this.periodo) return;
+    this.bajandoZip = true;
+    this.servicio.bajarHojasEnZip(this.anio, this.periodo, filas?.map((f) => f.id)).subscribe({
+      next: (cantidad) => {
+        this.bajandoZip = false;
+        this.toast.success('Descarga iniciada', `${cantidad} hoja(s) de gratificación en el .zip.`);
+      },
+      error: (err) => {
+        this.bajandoZip = false;
+        this.toast.error('No se descargó', mensajeErrorApi(err, 'No se pudieron juntar las hojas.'));
+      },
+    });
+  }
+
   soltarMarcados(): void {
     this.marcados = [];
     this.tabla?.limpiarSeleccion();
