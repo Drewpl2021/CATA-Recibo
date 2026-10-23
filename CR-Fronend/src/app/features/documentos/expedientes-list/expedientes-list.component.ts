@@ -10,6 +10,7 @@ import { CeldaTablaDirective } from '../../../shared/components/data-table/celda
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 const SIN_RESUMEN: ResumenExpedientes = {
@@ -45,7 +46,7 @@ import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/f
 @Component({
   selector: 'app-expedientes-list',
   standalone: true,
-  imports: [FiltrosComponent, OrdenComponent, CommonModule, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, IconComponent],
+  imports: [FiltrosComponent, OrdenComponent, CommonModule, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, IconComponent, AvatarComponent],
   templateUrl: './expedientes-list.component.html',
 })
 export class ExpedientesListComponent implements OnInit {

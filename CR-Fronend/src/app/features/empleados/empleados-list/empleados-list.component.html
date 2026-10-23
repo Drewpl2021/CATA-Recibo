@@ -64,6 +64,14 @@ de alta, así que al volver de "Nuevo Empleado" se ve arriba del todo. -->
   <app-orden tableActions [opciones]="opcionesDeOrden" [(valor)]="orden" (cambio)="alFiltrar()"></app-orden>
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
   (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogos()"></app-filtros>
+
+  <!-- Su foto al lado del nombre: un clic la abre en grande. -->
+  <ng-template appCelda="nombre" let-e>
+    <div class="celda-persona">
+      <app-avatar [foto]="e.foto" [nombre]="e.nombre + ' ' + e.apellido"></app-avatar>
+      <span class="celda-persona__texto">{{ e.nombre }} {{ e.apellido }}</span>
+    </div>
+  </ng-template>
 </app-data-table>
 
 <!-- Dar de baja: con su fecha. No siempre es hoy: a quien se le acabó el

@@ -33,7 +33,7 @@ class FotoPerfilController extends Controller
 
         $ruta = $this->guardar($request->user(), $request->file('foto'));
 
-        return response()->json(['success' => true, 'data' => ['foto' => $ruta]]);
+        return response()->json(['success' => true, 'data' => ['foto' => User::versionDeFoto($ruta)]]);
     }
 
     /** POST /employees/{id}/photo — RR.HH. o Admin, desde la ficha del trabajador. */
@@ -45,7 +45,7 @@ class FotoPerfilController extends Controller
 
         $ruta = $this->guardar($this->cuentaDelEmpleado($id), $request->file('foto'));
 
-        return response()->json(['success' => true, 'data' => ['foto' => $ruta]]);
+        return response()->json(['success' => true, 'data' => ['foto' => User::versionDeFoto($ruta)]]);
     }
 
     /** DELETE /employees/{id}/photo — vuelve a sus iniciales. */
@@ -80,13 +80,17 @@ class FotoPerfilController extends Controller
     {
 
         // El nombre lo pone el servidor: el del usuario puede traer barras o
-        // tildes, y la fecha evita que el navegador siga enseñando la vieja
-        // desde su caché cuando alguien se la cambia.
+        // tildes. La fecha y un sufijo al azar hacen que cada foto tenga su
+        // propio nombre —con solo la fecha, dos cambios en el mismo segundo
+        // daban el mismo y la pantalla seguía con la vieja—. La extensión
+        // sale del contenido del archivo, no del nombre que trae: una imagen
+        // llamada «cara.php» no se guarda como .php.
         $ruta = sprintf(
-            'fotos-perfil/%d/foto-%s.%s',
+            'fotos-perfil/%d/foto-%s-%s.%s',
             $usuario->id,
             now()->format('Ymd-His'),
-            strtolower($archivo->getClientOriginalExtension())
+            strtolower(\Illuminate\Support\Str::random(6)),
+            $archivo->extension() ?: 'jpg'
         );
 
         // La anterior se borra de verdad. Acá no hay historial que conservar

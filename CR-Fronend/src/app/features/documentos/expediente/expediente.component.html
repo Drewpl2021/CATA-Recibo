@@ -32,7 +32,7 @@
     salían en el subtítulo de la cabecera, la antigüedad no salía en
     ningún lado— en una sola ficha, la misma que usa Editar empleado. -->
     <div class="ficha-persona expediente__ficha">
-      <span class="avatar ficha-persona__foto">{{ iniciales }}</span>
+      <app-avatar class="ficha-persona__foto-boton" [foto]="e.empleado.foto" [nombre]="nombreCompleto" [tamano]="84"></app-avatar>
       <div class="ficha-persona__datos">
         <div class="expediente__ficha-linea">
           <strong class="ficha-persona__nombre">{{ nombreCompleto }}</strong>

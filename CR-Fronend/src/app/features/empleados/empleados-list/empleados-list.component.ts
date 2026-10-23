@@ -21,6 +21,8 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { BarraSeleccionComponent, resumirMarcados } from '../../../shared/components/barra-seleccion/barra-seleccion.component';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
 
 /**
  * Listado del personal (RR.HH. y Admin).
@@ -34,7 +36,7 @@ import { PistaDirective } from '../../../shared/directives/pista.directive';
 @Component({
   selector: 'app-empleados-list',
   standalone: true,
-  imports: [IconComponent, FormsModule, PageHeaderComponent, DataTableComponent, FiltrosComponent, OrdenComponent, FormModalComponent, BarraSeleccionComponent, PistaDirective],
+  imports: [IconComponent, FormsModule, PageHeaderComponent, DataTableComponent, FiltrosComponent, OrdenComponent, FormModalComponent, BarraSeleccionComponent, PistaDirective, AvatarComponent, CeldaTablaDirective],
   templateUrl: './empleados-list.component.html',
 })
 export class EmpleadosListComponent implements OnInit {
@@ -200,7 +202,8 @@ export class EmpleadosListComponent implements OnInit {
     {
       campo: 'nombre',
       header: 'Nombres y apellidos',
-      ancho: '26%',
+      ancho: '28%',
+      // Se pinta con su foto al lado (ver la plantilla); esto queda para la exportación.
       formatear: (_v, fila) => `${fila.nombre ?? ''} ${fila.apellido ?? ''}`.trim(),
     },
     { campo: 'cargo.nombre', header: 'Cargo', ancho: '15%' },

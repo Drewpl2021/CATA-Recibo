@@ -32,12 +32,17 @@
   (cambio)="alFiltrar()"></app-filtros>
 
   <ng-template appCelda="apellido" let-f>
-    <strong>{{ f.apellido }}, {{ f.nombre }}</strong>
-    <div class="form-ayuda">
-      DNI {{ f.dni }}@if (f.cargo) {
-      , {{ f.cargo.nombre }}
-    }
-  </div>
+    <div class="celda-persona">
+      <app-avatar [foto]="f.foto" [nombre]="f.nombre + ' ' + f.apellido" [tamano]="38"></app-avatar>
+      <div class="celda-persona__texto">
+        <strong>{{ f.apellido }}, {{ f.nombre }}</strong>
+        <div class="form-ayuda">
+          DNI {{ f.dni }}@if (f.cargo) {
+          , {{ f.cargo.nombre }}
+        }
+      </div>
+      </div>
+    </div>
 </ng-template>
 
 <ng-template appCelda="hoja_de_vida_fecha" let-f>

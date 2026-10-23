@@ -3,7 +3,7 @@ import { Documento } from './documento.model';
 
 /** Un trabajador en la lista de Documentos del personal (ExpedienteController@index). */
 export interface FilaExpediente
-  extends Pick<Empleado, 'id' | 'dni' | 'nombre' | 'apellido' | 'estado' | 'area' | 'cargo' | 'sede'> {
+  extends Pick<Empleado, 'id' | 'dni' | 'nombre' | 'apellido' | 'estado' | 'area' | 'cargo' | 'sede' | 'foto'> {
   contrato_vigente: Contrato | null;
   documentos_count: number;
   boletas_por_firmar: number;

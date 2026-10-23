@@ -46,7 +46,7 @@ class EmpleadoController extends Controller
 
         $query = $paraSelector
             ? Empleado::query()->select(self::CAMPOS_DE_SELECTOR)
-            : Empleado::with('area', 'cargo', 'sede', 'usuario');
+            : Empleado::with('area', 'cargo', 'sede', 'usuario', 'foto');
 
         /*
          * El listado va por fecha de registro, lo último arriba.

@@ -27,6 +27,7 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { PanelLateralComponent } from '../../../shared/components/panel-lateral/panel-lateral.component';
 import { SelectorArchivoComponent } from '../../../shared/components/selector-archivo/selector-archivo.component';
@@ -58,6 +59,7 @@ interface PasoBoleta {
   selector: 'app-expediente',
   standalone: true,
   imports: [
+    AvatarComponent,
     CommonModule, FormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, IconComponent,
     SelectorArchivoComponent, VisorDocumentoComponent, PanelLateralComponent,
@@ -357,11 +359,6 @@ export class ExpedienteComponent implements OnInit {
    */
   get subtitulo(): string {
     return this.expediente ? '' : (this.cargando ? 'Abriendo el expediente…' : '');
-  }
-
-  get iniciales(): string {
-    const e = this.expediente?.empleado;
-    return e ? `${e.nombre.charAt(0)}${e.apellido.charAt(0)}`.toUpperCase() : '';
   }
 
   /** "Cargo en Área, sede Tal." */

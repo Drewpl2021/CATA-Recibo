@@ -229,6 +229,12 @@ class Empleado extends Model
         return $this->hasOne(User::class, 'empleado_id');
     }
 
+    /** Solo la foto de su cuenta, para las tablas: {usuario_id, version}. */
+    public function foto()
+    {
+        return $this->hasOne(FotoDePerfil::class, 'empleado_id')->select('id', 'empleado_id', 'foto');
+    }
+
     public function contratos()
     {
         return $this->hasMany(Contrato::class);

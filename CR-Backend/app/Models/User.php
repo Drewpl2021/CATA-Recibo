@@ -35,6 +35,27 @@ class User extends Authenticatable
 
     protected $appends = ['es_institucional', 'terminos_estado'];
 
+    /**
+     * Hacia fuera, «foto» no es la ruta del archivo sino una versión opaca:
+     * dice si hay foto y cambia cuando se pone otra (así la pantalla sabe
+     * que su copia en memoria quedó vieja), sin contar cómo se guardan los
+     * archivos en el servidor. La imagen se pide aparte, con permiso.
+     */
+    public function toArray(): array
+    {
+        $datos = parent::toArray();
+        if (array_key_exists('foto', $datos)) {
+            $datos['foto'] = self::versionDeFoto($datos['foto']);
+        }
+
+        return $datos;
+    }
+
+    public static function versionDeFoto(?string $ruta): ?string
+    {
+        return $ruta ? substr(hash('sha256', $ruta), 0, 12) : null;
+    }
+
     protected function casts(): array
     {
         return [

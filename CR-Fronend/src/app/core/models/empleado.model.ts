@@ -1,8 +1,11 @@
 import { Area, Cargo, Sede, TipoContrato } from './configuracion.model';
 import { Usuario } from './usuario.model';
+import { FotoDeCuenta } from '../../shared/components/avatar/avatar.component';
 
 export interface Empleado {
   id: string;
+  /** La foto de su cuenta, para el circulito de las tablas. Sin cuenta, null. */
+  foto?: FotoDeCuenta | null;
   dni: string;
   nombre: string;
   apellido: string;

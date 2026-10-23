@@ -42,7 +42,7 @@ class ExpedienteController extends Controller
         $filtro = $request->input('filtro');
 
         $query = $this->personal($filtro === 'de_baja')
-            ->with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'contratoVigente.tipoContrato'])
+            ->with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'contratoVigente.tipoContrato', 'foto'])
             ->withCount([
                 'documentos as documentos_count'   => fn (Builder $q) => $q->where('estado_registro', 'activo'),
                 'documentos as boletas_por_firmar' => fn (Builder $q) => $this->boletasPorFirmar($q),
@@ -83,7 +83,7 @@ class ExpedienteController extends Controller
     /** GET /expedientes/{empleadoId} — todo lo que hay a nombre de un trabajador. */
     public function show(string $empleadoId)
     {
-        $empleado = Empleado::with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'usuario:id,empleado_id,email'])
+        $empleado = Empleado::with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'usuario:id,empleado_id,email', 'foto'])
             ->findOrFail($empleadoId);
 
         $documentos = Documento::with('planilla:id,mes,anio')

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, catchError, map, of, shareReplay } from 'rxjs';
 import { ApiResponse, END_POINTS_ACCIONES } from '../../utils';
 import { environment } from '../../../../environments/environment';
 
@@ -63,4 +63,27 @@ export class FotoPerfilService {
       responseType: 'blob',
     });
   }
+
+  /**
+   * La foto lista para un <img>, pedida UNA vez por cuenta y versión aunque
+   * salga en varias tablas o en varias filas. La versión cambia cuando se
+   * pone otra foto: entonces se pide la nueva y se suelta la vieja de la
+   * memoria. Si no se puede traer, null, y se ven las iniciales.
+   */
+  urlDe(usuarioId: number | string, version: string): Observable<string | null> {
+    const clave = String(usuarioId);
+    const guardada = this.urls.get(clave);
+    if (guardada?.version === version) return guardada.url$;
+
+    guardada?.url$.subscribe((url) => url && URL.revokeObjectURL(url));
+    const url$ = this.ver(usuarioId).pipe(
+      map((blob) => URL.createObjectURL(blob)),
+      catchError(() => of(null)),
+      shareReplay(1),
+    );
+    this.urls.set(clave, { version, url$ });
+    return url$;
+  }
+
+  private readonly urls = new Map<string, { version: string; url$: Observable<string | null> }>();
 }
