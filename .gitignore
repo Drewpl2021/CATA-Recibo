@@ -32,3 +32,11 @@ archivos-*.tar.gz
 
 # Archivos temporales de Word mientras un documento está abierto
 ~$*
+
+# Certificados digitales y llaves privadas: NUNCA al repositorio (es público).
+# Ver docs/CERTIFICADO-DE-FIRMA.md.
+*.pfx
+*.p12
+*.pem
+*.key
+*.crt
