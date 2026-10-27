@@ -1,0 +1,22 @@
+{
+  "data": {
+    "slug": "evaluacion-docente",
+    "titulo": "Evaluación Docente",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "enlaces",
+        "titulo": null,
+        "enlaces": [
+          {
+            "etiqueta": "Ver la evaluación docente",
+            "url": "https://www.canva.com/design/DAGdsB80oPU/ZVTzyZPsoyn-MOqtHjKjnQ/view",
+            "descripcion": "Documento del colegio publicado como diseño en Canva.",
+            "formato": "canva",
+            "peso": null
+          }
+        ]
+      }
+    ]
+  }
+}

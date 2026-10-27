@@ -1,0 +1,22 @@
+{
+  "data": {
+    "slug": "planes-de-mejora",
+    "titulo": "Planes de Mejora",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "enlaces",
+        "titulo": null,
+        "enlaces": [
+          {
+            "etiqueta": "Ver los planes de mejora",
+            "url": "https://www.canva.com/design/DAGbEJGn1C8/caH94KCRJG8Pkrlj9JZOXQ/view",
+            "descripcion": "Documento del colegio publicado como diseño en Canva.",
+            "formato": "canva",
+            "peso": null
+          }
+        ]
+      }
+    ]
+  }
+}

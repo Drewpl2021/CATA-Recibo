@@ -1,0 +1,109 @@
+{
+  "data": {
+    "slug": "himno",
+    "titulo": "Himno",
+    "bajada": "Himno al CATA",
+    "bloques": [
+      {
+        "tipo": "texto",
+        "titulo": null,
+        "parrafos": [
+          "Con el propósito de promover identidad en la comunidad educativa, se ha creado el himno oficial del Colegio Adventista «Túpac Amaru».",
+          "Inicialmente se ha convocado a concurso de las letras con las directivas precisas de que debe contener y resaltar los valores, principios y el propósito por el cual fue creada esta institución el de redimir.",
+          "El ganador de dicho concurso fue el profesor: Ricardo Apaza Paucar (QEPD), claro está en sus inicios se tuvo que hacer algunas mejoras como son la rima y otros aspectos propios de la poesía.",
+          "Posteriormente en 1987, se convoca a concurso para la música del himno al CATA y en esa oportunidad el ganador de dicho concurso fue el profesor Basilio Chambi Quispe, un docente que estuvo desde los inicios cuando se ha creado el nivel secundario (1982) y como testimonio se tiene el oficio que se hace referencia de los resultados de dicho concurso mencionándose que la composición que más se adapta a los criterios establecidos es la presentada por B.CH.Q y la partitura original con sus dos estrofas quien actualmente vibra de emoción al escuchar cantar acompañada de la banda sinfónica de la institución este himno cuyas letras dicen así:"
+        ],
+        "firma": null
+      },
+      {
+        "tipo": "letra",
+        "titulo": "Himno al CATA",
+        "partes": [
+          {
+            "titulo": "Coro",
+            "versos": [
+              "Entonemos canto de alegría",
+              "cataínos de esperanza",
+              "A Túpac Amaru templo del saber",
+              "Faro de la juventud y cristiandad"
+            ]
+          },
+          {
+            "titulo": "I",
+            "versos": [
+              "Por los siglos y siglos enhiesta",
+              "Impartiendo la ciencia y virtud",
+              "Los aymaras y quechuas te forjaron",
+              "Para ser un fanal del saber",
+              "Practicando la unión fraternal",
+              "Con Cristo en el corazón",
+              "Anunciando el evangelio",
+              "Y redimiendo hasta el fin"
+            ]
+          },
+          {
+            "titulo": "II",
+            "versos": [
+              "Alma mater bendito venimos,",
+              "Con amor esperanza y fe",
+              "De salir de tus aulas triunfantes",
+              "Preparados al fin para bien",
+              "En mi pecho llevo tus colores",
+              "Como la cumbre de Huayna roque",
+              "Adelante vamos CATA",
+              "Eficientes en la labor."
+            ]
+          }
+        ]
+      },
+      {
+        "tipo": "texto",
+        "titulo": "Significado",
+        "parrafos": [
+          "Este himno en el coro evoca identidad, pone de manifiesto que la institución es un templo del saber comparándola con un faro que alumbra en este mundo de tinieblas y cuyo objetivo es impartir conocimientos y valores y por esta razón se debe entonar con alegría.",
+          "La primera estrofa hace mención que los que forjaron la institución fueron humildes hombres y mujeres de habla aymara y quechua con el único propósito de que el evangelio sea predicado en esta parte del Perú, de esta manera cumplir con el lema de «Educar es redimir».",
+          "La segunda estrofa evoca que de las aulas del CATA los estudiantes saldrán a la vida con ganas de triunfar llevando en el corazón los colores azulino, celeste y blanco que identifican a la institución.",
+          "Este himno ha sido instrumentado para que una banda sinfónica interprete, claro está con el permiso y autorización del autor de la música que hoy por hoy sigue apoyando a la institución.",
+          "Cada vez que se entona este himno en las ceremonias internas los corazones de los cataínos laten más fuerte porque se ha convertido en un emblema de la institución.",
+          "Hoy se canta con emoción y júbilo, y las veces que se celebran los aniversarios, tanto estudiantes y exalumnos vibran de emoción y cantan con entusiasmo este himno que identifica a todo cataíno."
+        ],
+        "firma": null
+      },
+      {
+        "tipo": "destacado",
+        "rotulo": "Lema de la institución",
+        "texto": "Servir con fe y sabiduría"
+      },
+      {
+        "tipo": "texto",
+        "titulo": null,
+        "parrafos": [
+          "El lema del Colegio Adventista «Túpac Amaru» ha sido establecida con la finalidad de grabar en la mente y en los corazones de los estudiantes, docentes, padres de familia y con ese propósito cabe indicar que:"
+        ],
+        "firma": null
+      },
+      {
+        "tipo": "lista",
+        "titulo": null,
+        "estilo": "vinetas",
+        "items": [
+          {
+            "titulo": "Servir",
+            "texto": "Significa que el trabajo que se haga siendo estudiantes como docentes debe ser de servicio. Y servir se hace con humildad tal como Jesús nos enseña en su palabra.",
+            "fuente": null
+          },
+          {
+            "titulo": "Con fe",
+            "texto": "Los conocimientos que se adquieran, los valores que se impartan en esta institución deben realizarse con la confianza en Dios, fe y esperanza de que las metas que se tracen se puedan alcanzar con éxito.",
+            "fuente": null
+          },
+          {
+            "titulo": "Y sabiduría",
+            "texto": "Salomón pidió sabiduría de Dios y el mensaje que se quiere plasmar en la mente de los estudiantes es que todas las cosas se hagan diferenciando lo que es el bien y lo que es el mal, actuando y trabajando con prudencia.",
+            "fuente": null
+          }
+        ]
+      }
+    ]
+  }
+}

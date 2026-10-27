@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "id": "c",
+      "nombre": "Central",
+      "direccion": "Jr. Moquegua 852",
+      "referencia": null,
+      "distrito": null,
+      "telefono": null,
+      "nota": null,
+      "foto": null,
+      "mapaUrl": null,
+      "correo": null,
+      "horario": [],
+      "mapaEmbedUrl": null
+    }
+  ]
+}

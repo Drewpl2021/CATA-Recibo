@@ -1,0 +1,67 @@
+{
+  "data": [
+    {
+      "id": "b-matriculas",
+      "categoria": "matricula",
+      "titulo": "Matrículas 2026 abiertas para inicial, primaria y secundaria",
+      "fecha": "2026-01-05",
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/01/4.png",
+        "alt": "",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": true,
+      "ladoAccion": "izquierda",
+      "accion": {
+        "etiqueta": "Ver requisitos",
+        "destino": {
+          "tipo": "pagina",
+          "ruta": "/matricula"
+        }
+      }
+    },
+    {
+      "id": "b-bienvenida",
+      "categoria": "aviso",
+      "titulo": "Bienvenidos de nuevo al colegio",
+      "fecha": "2026-03-02",
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/01/5.png",
+        "alt": "",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": true,
+      "ladoAccion": "derecha",
+      "accion": {
+        "etiqueta": "Contáctanos",
+        "destino": {
+          "tipo": "pagina",
+          "ruta": "/contacto"
+        }
+      }
+    },
+    {
+      "id": "b-lideres",
+      "categoria": "noticia",
+      "titulo": "Líderes que dejan huella",
+      "fecha": null,
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/01/2.png",
+        "alt": "",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": true,
+      "ladoAccion": "izquierda",
+      "accion": null
+    }
+  ]
+}

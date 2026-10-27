@@ -1,0 +1,219 @@
+<div class="form-group" [attr.aria-labelledby]="id + '-titulo'" role="group">
+  <label [id]="id + '-titulo'">{{ etiqueta }}{{ obligatoria ? ' *' : '' }}</label>
+  <small class="form-ayuda" *ngIf="especificacion">
+    {{ especificacion.nombre }}<ng-container *ngIf="especificacion.proporcion">
+      · el portal la muestra en proporción {{ especificacion.proporcion[0] }}:{{ especificacion.proporcion[1] }}</ng-container>
+    <ng-container *ngIf="especificacion.minimo[0]"> · se recomienda al menos {{ especificacion.minimo[0] }}{{ especificacion.minimo[1] ? ' × ' + especificacion.minimo[1] : '' }} px</ng-container>
+    <ng-container *ngIf="especificacion.transparente"> · con fondo transparente (PNG o WebP)</ng-container>.
+  </small>
+
+  <!-- ═══════════ La imagen que ya está ═══════════ -->
+  <ng-container *ngIf="imagen">
+    <!-- Una sola: el marco tiene la proporción con que la recorta el portal. -->
+    <div *ngIf="!comparando" style="max-width: 480px;">
+      <ng-container *ngTemplateOutlet="marco; context: { src: ver(imagen), alt: imagen.alt, conFoco: true }"></ng-container>
+    </div>
+
+    <!-- Al reemplazar: la de antes y la nueva, lado a lado, con el mismo recorte. -->
+    <div class="pw-antes-despues" *ngIf="comparando">
+      <figure>
+        <ng-container *ngTemplateOutlet="marco; context: { src: ver(reemplazando ? imagen : anterior), alt: 'La imagen de antes', conFoco: false }"></ng-container>
+        <figcaption>
+          <strong>Antes</strong>
+          {{ medidas(reemplazando ? imagen : anterior) }}
+        </figcaption>
+      </figure>
+      <figure>
+        <ng-container *ngIf="reemplazando; else despuesSubida">
+          <ng-container *ngTemplateOutlet="marco; context: { src: vistaPrevia, alt: 'La imagen nueva, todavía sin subir', conFoco: false }"></ng-container>
+          <figcaption><strong>Después</strong> {{ vistaPrevia ? 'todavía sin subir' : '' }}</figcaption>
+        </ng-container>
+        <ng-template #despuesSubida>
+          <ng-container *ngTemplateOutlet="marco; context: { src: ver(imagen), alt: imagen.alt, conFoco: true }"></ng-container>
+          <figcaption><strong>Después</strong> {{ medidas(imagen) }}</figcaption>
+        </ng-template>
+      </figure>
+    </div>
+
+    <!-- Recién subida: lo que pasó con ella. -->
+    <p class="form-nota pw-nota-lista" role="status" *ngIf="etapa === 'lista'">
+      <app-icon icono="check_circle" [tamano]="16"></app-icon>
+      <span><strong>Lista.</strong> {{ resultado }} Ya enderezada y sin los datos de la cámara.</span>
+    </p>
+
+    <!-- Después de reemplazar: decidir con las dos a la vista. -->
+    <div class="form-nota form-nota--accion pw-sin-margen" *ngIf="anterior && !reemplazando">
+      <div>Así queda el reemplazo. Si no te convence, vuelve a la anterior: nada cambia en el portal hasta guardar el formulario.</div>
+      <div class="action-btns">
+        <button type="button" class="btn-secondary" (click)="volverALaAnterior()">
+          <app-icon icono="rotate_ccw" [tamano]="14"></app-icon> Volver a la anterior
+        </button>
+        <button type="button" class="btn-secondary" (click)="quedarseConLaNueva()">
+          <app-icon icono="check" [tamano]="14"></app-icon> Quedarme con la nueva
+        </button>
+      </div>
+    </div>
+
+    <small class="form-ayuda" *ngIf="!reemplazando">
+      {{ medidas(imagen) }} ·
+      <ng-container *ngIf="imagen.alt; else decorativaTexto">Texto alternativo: «{{ imagen.alt }}»</ng-container>
+      <ng-template #decorativaTexto>Decorativa: los lectores de pantalla la saltan</ng-template>
+    </small>
+
+    <!-- Punto focal en %, para quien no usa el ratón. -->
+    <ng-container *ngIf="especificacion?.foco && !reemplazando">
+      <div class="form-row">
+        <div class="form-group">
+          <label [for]="id + '-x'">Punto que no se recorta: horizontal (%)</label>
+          <input [id]="id + '-x'" type="number" class="form-control" min="0" max="100"
+            [ngModel]="foco?.x ?? 50" (ngModelChange)="cambiarFocoEn('x', $event)" />
+        </div>
+        <div class="form-group">
+          <label [for]="id + '-y'">Vertical (%)</label>
+          <input [id]="id + '-y'" type="number" class="form-control" min="0" max="100"
+            [ngModel]="foco?.y ?? 50" (ngModelChange)="cambiarFocoEn('y', $event)" />
+        </div>
+      </div>
+      <small class="form-ayuda">
+        Toca la vista previa en lo que no debe cortarse (una cara, un texto). Si el afiche tiene la proporción exacta, se ve completo.
+        <button type="button" class="btn-secondary" (click)="centrar()" [disabled]="!foco">Volver al centro</button>
+      </small>
+    </ng-container>
+
+    <p class="form-nota form-nota--aviso" *ngFor="let aviso of avisos">
+      <app-icon icono="warning" [tamano]="14"></app-icon>
+      {{ aviso }}
+    </p>
+
+    <!-- Cambiar solo el texto alternativo -->
+    <div class="form-fields" *ngIf="editandoAlt">
+      <div class="form-group">
+        <label [for]="id + '-alt-edit'">Texto alternativo</label>
+        <textarea [id]="id + '-alt-edit'" class="form-control" rows="2" maxlength="1000" [(ngModel)]="altEditado"
+          [disabled]="decorativaEditada"></textarea>
+      </div>
+      <label class="check-item">
+        <input type="checkbox" [(ngModel)]="decorativaEditada" />
+        <span>Es decorativa: no aporta información</span>
+      </label>
+    </div>
+
+    <div class="action-btns" *ngIf="!mostrarSubida && !anterior">
+      <ng-container *ngIf="!editandoAlt">
+        <button type="button" class="btn-secondary" (click)="empezarEdicionAlt()">
+          <app-icon icono="edit" [tamano]="14"></app-icon> Texto alternativo
+        </button>
+        <button type="button" class="btn-secondary" (click)="empezarReemplazo()">
+          <app-icon icono="upload" [tamano]="14"></app-icon> Reemplazar
+        </button>
+        <button type="button" class="btn-secondary" (click)="quitar()" *ngIf="!obligatoria">
+          <app-icon icono="trash" [tamano]="14"></app-icon> Quitar
+        </button>
+      </ng-container>
+      <ng-container *ngIf="editandoAlt">
+        <button type="button" class="btn-primary" (click)="guardarAlt()" [disabled]="!decorativaEditada && !altEditado.trim()">Guardar texto</button>
+        <button type="button" class="btn-secondary" (click)="editandoAlt = false">Cancelar</button>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════ Subir una ═══════════ -->
+  <div class="form-fields" *ngIf="mostrarSubida">
+    <app-selector-archivo
+      [extensiones]="['jpg', 'jpeg', 'png', 'webp']"
+      [pesoMaximoMb]="10"
+      [archivos]="archivos"
+      (archivosChange)="alElegirArchivo($event)"
+      [ocupado]="subiendo"
+      textoOcupado="Subiendo la imagen…"
+      ayuda="JPEG, PNG o WebP, hasta 10 MB. Se le quita la ubicación y los demás datos de la cámara."
+    ></app-selector-archivo>
+
+    <!-- La primera vez (sin una de antes): el archivo elegido con el recorte del portal, antes de subirlo. -->
+    <div *ngIf="vistaPrevia && !imagen" style="max-width: 480px;">
+      <ng-container *ngTemplateOutlet="marco; context: { src: vistaPrevia, alt: 'La imagen elegida, todavía sin subir', conFoco: false }"></ng-container>
+      <small class="form-ayuda">Así la recorta el portal. Todavía no está subida.</small>
+    </div>
+
+    <div class="form-group">
+      <label [for]="id + '-alt'">Texto alternativo *</label>
+      <textarea [id]="id + '-alt'" class="form-control" rows="2" maxlength="1000" [(ngModel)]="alt"
+        [disabled]="decorativa || subiendo" [class.is-invalid]="intentoSubir && altFalta" [attr.aria-describedby]="id + '-alt-ayuda'"
+        placeholder="Ej. Alumnos de primaria en el biohuerto de la sede Oasis"></textarea>
+      <small class="form-error" *ngIf="intentoSubir && altFalta">Escribe qué muestra la imagen, o márcala como decorativa.</small>
+      <small class="form-ayuda" [id]="id + '-alt-ayuda'">
+        Lo que muestra y por qué importa, para quien no puede verla. No escribas «foto» ni el nombre del archivo.
+        <ng-container *ngIf="uso === 'banner' || uso === 'banner-movil'"> Si el afiche tiene texto (títulos, fechas, teléfonos), repítelo completo.</ng-container>
+      </small>
+    </div>
+
+    <label class="check-item">
+      <input type="checkbox" [(ngModel)]="decorativa" [disabled]="subiendo" />
+      <span>Es decorativa: no aporta información (los lectores de pantalla la saltan)</span>
+    </label>
+
+    <!-- Por dónde va: la barra del sistema; mientras el backend la prepara, sin cifra. -->
+    <div class="progreso pw-progreso" role="status" *ngIf="subiendo">
+      <p class="progreso__etapa">
+        <ng-container *ngIf="etapa === 'subiendo'"><strong>Subiendo…</strong></ng-container>
+        <ng-container *ngIf="etapa === 'optimizando'"><strong>Optimizando…</strong> la enderezamos, le quitamos los datos de la cámara y la comprimimos.</ng-container>
+      </p>
+      <div class="progreso__barra" [class.progreso__barra--sin-dato]="etapa === 'optimizando'" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+        [attr.aria-valuenow]="etapa === 'subiendo' ? porcentaje : null" [attr.aria-label]="etapa === 'subiendo' ? 'Subiendo la imagen' : 'Optimizando la imagen'">
+        <span [style.width.%]="etapa === 'subiendo' ? porcentaje : 30"></span>
+      </div>
+      <div class="progreso__cifras">
+        <span>{{ etapa === 'subiendo' ? textoDeAvance : 'Ya llegó entera' }}</span>
+        <span *ngIf="etapa === 'subiendo'">{{ porcentaje }}%</span>
+      </div>
+    </div>
+
+    <!-- Por qué no se subió, aquí mismo. -->
+    <div class="form-nota form-nota--alerta form-nota--accion pw-sin-margen" role="alert" *ngIf="error">
+      <div><strong>No se subió la imagen.</strong> {{ error }}</div>
+      <button type="button" class="btn-secondary" (click)="subir()" [disabled]="!archivos.length">
+        <app-icon icono="refresh" [tamano]="14"></app-icon> Reintentar
+      </button>
+    </div>
+
+    <div class="action-btns">
+      <button type="button" class="btn-primary" *ngIf="!subiendo" (click)="subir()" [disabled]="!archivos.length">
+        <app-icon icono="upload" [tamano]="14"></app-icon>
+        Subir imagen
+      </button>
+      <button type="button" class="btn-secondary" *ngIf="subiendo" (click)="cancelarSubida()">
+        Detener la subida
+      </button>
+      <button type="button" class="btn-secondary" *ngIf="imagen && reemplazando && !subiendo" (click)="cancelarReemplazo()">
+        Cancelar el reemplazo
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- El marco, con la proporción con que recorta el portal. En la imagen que se puede ajustar, un toque elige el punto focal. -->
+<ng-template #marco let-src="src" let-alt="alt" let-conFoco="conFoco">
+  <div
+    [style.aspect-ratio]="proporcion"
+    [style.cursor]="conFoco && especificacion?.foco ? 'crosshair' : null"
+    style="position: relative; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-alt);"
+    (click)="conFoco && elegirFoco($event)"
+  >
+    <img
+      *ngIf="src; else sinArchivo"
+      [src]="src"
+      [alt]="alt"
+      [style.object-fit]="proporcion ? 'cover' : 'contain'"
+      [style.object-position]="conFoco ? posicion : null"
+      style="display: block; width: 100%; height: 100%;"
+    />
+    <ng-template #sinArchivo><span class="pw-marco-vacio">Elige el archivo nuevo</span></ng-template>
+    <span
+      *ngIf="conFoco && especificacion?.foco"
+      aria-hidden="true"
+      [style.left]="(foco?.x ?? 50) + '%'"
+      [style.top]="(foco?.y ?? 50) + '%'"
+      style="position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 3px solid var(--surface); border-radius: var(--radius-full); box-shadow: 0 0 0 2px var(--brand-700); pointer-events: none;"
+    ></span>
+  </div>
+</ng-template>

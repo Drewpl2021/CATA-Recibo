@@ -1,0 +1,66 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-academia">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-academia">Academia preuniversitaria</h2>
+      <p class="form-ayuda">Sus textos, las universidades y los ciclos de cada una, con un filtro por universidad en el portal.</p>
+    </div>
+  </header>
+
+  <div class="pw-esqueleto" *ngIf="cargando" role="status">
+    <span class="solo-lectores">Cargando la academia…</span>
+    <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+  </div>
+
+  <!-- Los textos: se leen aquí y se cambian en su modal -->
+  <div class="ajuste-bloque" *ngIf="!cargando">
+    <div class="pw-fila-dato">
+      <div class="pw-dato">
+        <span>Textos de la academia</span>
+        <strong [class.pw-sin-dato]="!guardada">{{ guardada?.titulo || 'Sin textos: la academia no se muestra' }}</strong>
+        <small *ngIf="guardada">{{ guardada.descripcion || 'Sin descripción' }}{{ guardada.aclaracion ? ' · Aviso: ' + guardada.aclaracion : '' }}</small>
+      </div>
+      <button type="button" class="btn-secondary" (click)="abrir()">
+        <app-icon icono="edit" [tamano]="14"></app-icon>
+        Editar textos
+      </button>
+    </div>
+  </div>
+
+  <app-panel-universidades (cambiaron)="alCambiarUniversidades($event)" (verCiclos)="verCiclos($event)"></app-panel-universidades>
+
+  <app-panel-ciclos
+    [universidades]="universidades"
+    [(universidadId)]="universidadElegida"
+    (cambiaron)="recargarUniversidades()"
+  ></app-panel-ciclos>
+</section>
+
+<!-- Los textos de la academia -->
+<app-form-modal
+  [(visible)]="modalVisible"
+  titulo="Textos de la academia"
+  ancho="640px"
+  [guardando]="guardando"
+  textoGuardar="Guardar cambios"
+  (guardar)="guardar()"
+>
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <div class="form-group">
+      <label for="academia-titulo">Título *</label>
+      <input id="academia-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+        placeholder="Ej. Academia preuniversitaria" [class.is-invalid]="invalido('titulo')" />
+      <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 60).</small>
+    </div>
+    <div class="form-group">
+      <label for="academia-descripcion">Descripción</label>
+      <textarea id="academia-descripcion" class="form-control" rows="2" formControlName="descripcion" maxlength="240"></textarea>
+      <small class="form-ayuda">Opcional. Hasta 240 caracteres.</small>
+    </div>
+    <div class="form-group">
+      <label for="academia-aclaracion">Aviso para toda la academia</label>
+      <input id="academia-aclaracion" type="text" class="form-control" formControlName="aclaracion" maxlength="80"
+        placeholder="Ej. Precios y fechas por actualizar" />
+      <small class="form-ayuda">Opcional. Se ve sobre los ciclos; úsalo si algún dato todavía no está confirmado.</small>
+    </div>
+  </form>
+</app-form-modal>

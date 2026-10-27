@@ -1,0 +1,40 @@
+{
+  "data": {
+    "titulo": "Nosotros",
+    "bajada": "Formar ciudadanos íntegros y abnegados para esta vida y la eternidad.",
+    "paginas": [
+      {
+        "slug": "mision-y-vision",
+        "resumen": "Formar ciudadanos íntegros y abnegados para esta vida y la eternidad."
+      },
+      {
+        "slug": "resena-historica",
+        "resumen": "Desde la IASD Villa Hermosa, organizada en 1967 en el Barrio Túpac Amaru."
+      },
+      {
+        "slug": "emblema",
+        "resumen": "Las manos abiertas, la Biblia abierta, la llama encendida y los laureles."
+      },
+      {
+        "slug": "himno",
+        "resumen": "«Entonemos canto de alegría, cataínos de esperanza»."
+      },
+      {
+        "slug": "consejo-directivo",
+        "resumen": "Representa a la Asociación Educativa Colegio Adventista Túpac Amaru."
+      },
+      {
+        "slug": "administracion",
+        "resumen": "Dirección general, administración, direcciones académicas y áreas de apoyo."
+      },
+      {
+        "slug": "personal-docente",
+        "resumen": "Maestras y maestros de inicial, primaria y secundaria."
+      },
+      {
+        "slug": "organigrama",
+        "resumen": "La estructura de la institución."
+      }
+    ]
+  }
+}

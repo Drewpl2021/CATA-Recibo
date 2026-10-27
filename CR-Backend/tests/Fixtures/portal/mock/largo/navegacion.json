@@ -1,0 +1,191 @@
+{
+  "data": {
+    "menu": [
+      {
+        "pagina": "inicio",
+        "etiqueta": "Inicio de prueba con un"
+      },
+      {
+        "pagina": "proyectos",
+        "etiqueta": "Proyectos de prueba con"
+      },
+      {
+        "pagina": "nosotros",
+        "etiqueta": "Nosotros de prueba con u"
+      },
+      {
+        "pagina": "propuesta-educativa",
+        "etiqueta": "Propuesta Educativa de p"
+      },
+      {
+        "pagina": "matricula",
+        "etiqueta": "Matrícula de prueba con"
+      },
+      {
+        "pagina": "logros",
+        "etiqueta": "Logros de prueba con un"
+      },
+      {
+        "pagina": "contacto",
+        "etiqueta": "Contacto de prueba con u"
+      }
+    ],
+    "nosotros": [
+      {
+        "id": "institucion",
+        "titulo": "Institución de prueba con un t",
+        "paginas": [
+          {
+            "slug": "mision-y-vision",
+            "etiqueta": "Misión y Visión"
+          },
+          {
+            "slug": "resena-historica",
+            "etiqueta": "Reseña Histórica"
+          },
+          {
+            "slug": "emblema",
+            "etiqueta": "Emblema"
+          },
+          {
+            "slug": "himno",
+            "etiqueta": "Himno"
+          }
+        ]
+      },
+      {
+        "id": "gobierno",
+        "titulo": "Gobierno y personal de prueba",
+        "paginas": [
+          {
+            "slug": "consejo-directivo",
+            "etiqueta": "Consejo Directivo"
+          },
+          {
+            "slug": "administracion",
+            "etiqueta": "Administración"
+          },
+          {
+            "slug": "personal-docente",
+            "etiqueta": "Personal Docente"
+          },
+          {
+            "slug": "organigrama",
+            "etiqueta": "Organigrama"
+          }
+        ]
+      },
+      {
+        "id": "gestion",
+        "titulo": "Gestión de prueba con un texto",
+        "paginas": [
+          {
+            "slug": "procesos",
+            "etiqueta": "Procesos"
+          },
+          {
+            "slug": "planificacion-anual",
+            "etiqueta": "Planificación Anual"
+          },
+          {
+            "slug": "planes-de-mejora",
+            "etiqueta": "Planes de Mejora"
+          },
+          {
+            "slug": "evaluacion-docente",
+            "etiqueta": "Evaluación Docente"
+          },
+          {
+            "slug": "acreditacion",
+            "etiqueta": "Acreditación"
+          }
+        ]
+      },
+      {
+        "id": "documentos",
+        "titulo": "Documentos de prueba con un te",
+        "paginas": [
+          {
+            "slug": "instrumentos-de-gestion",
+            "etiqueta": "Instrumentos de Gestión de prueba con un"
+          },
+          {
+            "slug": "manual-de-identidad",
+            "etiqueta": "Manual de Identidad de prueba con un tex"
+          },
+          {
+            "slug": "planificador-eva",
+            "etiqueta": "Planificador Inteligente EVA de prueba c"
+          }
+        ]
+      }
+    ],
+    "pie": {
+      "colegio": "El colegio de prueba con un te",
+      "nosotros": "Nosotros de prueba con un text",
+      "contacto": "Contacto de prueba con un text",
+      "redes": "Síguenos de prueba con un text"
+    },
+    "titulos": {
+      "inicio": {
+        "quienesSomos": "Quiénes somos de prueba con un texto largo para comprobar el",
+        "verHistoria": "Conoce nuestra historia de prueb",
+        "emblema": "Lo que dice el emblema de prueba con un texto largo para com",
+        "niveles": "Niveles de prueba con un texto largo para comprobar el ajust",
+        "verPropuesta": "Ver la propuesta educativa de pr",
+        "sedes": "Sedes de prueba con un texto largo para comprobar el ajuste",
+        "sedesVarias": "{n} sedes en San Román de prueba con un texto largo para com",
+        "sedesUna": "Sede de prueba con un texto largo para comprobar el ajuste e",
+        "noticias": "Noticias y comunicados de prueba con un texto largo para com"
+      },
+      "nosotros": {
+        "accion": "Conócenos de prueba con un texto",
+        "rotuloAnio": "Desde de prueba con"
+      },
+      "propuestaEducativa": {
+        "pilares": "Nuestros pilares de prueba con un texto largo para comprobar",
+        "rotuloPilar": "Pilar de prueba con",
+        "niveles": "Por niveles de prueba con un texto largo para comprobar el a",
+        "plataformas": "Plataformas digitales de prueba con un texto largo para comp"
+      },
+      "matricula": {
+        "accionPrincipal": "Solicitar información de prueba",
+        "accionSecundaria": "Ver requisitos de prueba con un",
+        "rotuloAnio": "Matrícula de prueba",
+        "procesos": "Pasos y requisitos de prueba con un texto largo para comprob",
+        "vacantes": "Niveles y vacantes de prueba con un texto largo para comprob",
+        "preguntarGrado": "Preguntar por un grado de prueba",
+        "fechas": "Fechas de prueba con un texto largo para comprobar el ajuste",
+        "preguntas": "Preguntas frecuentes de prueba con un texto largo para compr"
+      },
+      "contacto": {
+        "accionPrincipal": "Solicitar información de prueba",
+        "accionSecundaria": "Ver sedes de prueba con un texto",
+        "rotuloWhatsapp": "WhatsApp de prueba c",
+        "sedes": "Nuestras sedes de prueba con un texto largo para comprobar e",
+        "sedesUna": "Nuestra sede de prueba con un texto largo para comprobar el",
+        "mapa": "Ubícanos de prueba con un texto largo para comprobar el ajus",
+        "redes": "Síguenos de prueba con un texto largo para comprobar el ajus"
+      },
+      "proyectos": {
+        "accion": "Ver proyectos de prueba con un t",
+        "contacto": "Contáctanos de prueba con un tex",
+        "rotulo": "Proyectos de prueba",
+        "rotuloUno": "Proyecto de prueba c",
+        "lista": "Nuestros proyectos de prueba con un texto largo para comprob",
+        "sobre": "Sobre el proyecto de prueba con un texto largo para comproba",
+        "galeria": "Galería de prueba con un texto largo para comprobar el ajust",
+        "otros": "Más proyectos de prueba con un texto largo para comprobar el",
+        "volver": "Todos los proyectos de prueba co",
+        "verTodos": "Ver todos los proyectos de prueb"
+      },
+      "logros": {
+        "accion": "Ver los logros de prueba con un",
+        "rotulo": "Logros de prueba con",
+        "rotuloUno": "Logro de prueba con",
+        "destacados": "Destacados de prueba con un texto largo para comprobar el aj",
+        "todos": "Todos los logros de prueba con un texto largo para comprobar"
+      }
+    }
+  }
+}

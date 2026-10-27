@@ -10,12 +10,16 @@ use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use App\Http\Middleware\CabecerasDelPortal;
+use App\Http\Middleware\CorsDelPortal;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Middleware\RastroDePeticion;
+use App\Support\Portal\ErrorDelPortal;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,8 +27,39 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        // La API pública del portal (cata.edu.pe), en su propio archivo y
+        // con su propio grupo: solo GET, sin token. Ver routes/portal.php.
+        then: function () {
+            Route::middleware('portal')
+                ->prefix('api/portal/v1')
+                ->name('portal.')
+                ->group(base_path('routes/portal.php'));
+
+            // Las imágenes subidas desde el panel. Fuera de /v1 (no son parte
+            // del contrato versionado: su dirección llega dentro de cada
+            // Imagen) y sin el grupo 'portal', que les pondría el max-age=60
+            // del JSON. Su propio freno: una página con muchas fotos no debe
+            // gastar el de la API. Ver MediosController.
+            Route::get('api/portal/medios/{archivo}', [\App\Http\Controllers\Portal\MediosController::class, 'ver'])
+                ->where('archivo', '[a-z0-9][a-z0-9_-]*\.(jpg|jpeg|png|webp|gif)')
+                ->middleware('throttle:portal_medios')
+                ->name('portal.medios');
+
+            // El panel que edita ese contenido, desde la pantalla de RR.HH.
+            // La misma cadena que las rutas protegidas de routes/api.php, más
+            // la puerta del portal. Ver routes/portal-panel.php.
+            // Entra quien tenga el módulo «Portal Web» en su rol (Roles), como
+            // el resto del sistema: no por el nombre del rol.
+            Route::middleware(['api', 'auth:sanctum', 'sesion', 'clave_nueva', 'terminos', 'permiso:/portal-web'])
+                ->prefix('api/web-portal')
+                ->name('panel-portal.')
+                ->group(base_path('routes/portal-panel.php'));
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Primero de todos: es la capa de más afuera, así que es la última
+        // en tocar las respuestas del portal. Ver CorsDelPortal.
+        $middleware->prepend(CorsDelPortal::class);
         $middleware->append(CorsMiddleware::class);
         // Le pone un código a cada petición para poder seguirla en el registro.
         $middleware->append(RastroDePeticion::class);
@@ -48,6 +83,13 @@ return Application::configure(basePath: dirname(__DIR__))
             // Traba a quien todavía no firmó los términos de uso.
             'terminos'    => \App\Http\Middleware\ExigirTerminos::class,
         ]);
+
+        // Lo que llevan todas las rutas del portal. No incluye el grupo
+        // 'api' ni nada de sesión: no hay usuario que reconocer.
+        $middleware->group('portal', [
+            'throttle:portal',
+            CabecerasDelPortal::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         /*
@@ -69,6 +111,13 @@ return Application::configure(basePath: dirname(__DIR__))
          * los que le permiten corregir.
          */
         $exceptions->render(function (Throwable $e, Request $peticion) {
+            // El portal tiene su propio formato de error, fijado en su
+            // contrato. Va antes que todo, incluido el 422 de abajo: allí un
+            // parámetro inválido es 400.
+            if ($peticion->is('api/portal', 'api/portal/*')) {
+                return ErrorDelPortal::responder($e, $peticion);
+            }
+
             // Las pantallas web (hoy solo el enlace de recuperación) siguen
             // con el comportamiento de siempre.
             if (! $peticion->is('api/*') && ! $peticion->expectsJson()) {

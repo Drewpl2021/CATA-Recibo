@@ -1,0 +1,82 @@
+{
+  "data": [
+    {
+      "id": "nuevos",
+      "nombre": "Estudiantes nuevos",
+      "resumen": "Para quienes postulan a CATA por primera vez.",
+      "listas": [
+        {
+          "titulo": "Requisitos para solicitar una vacante",
+          "items": [
+            "Tener la edad cumplida al 31 de marzo, según disposición del Minedu.",
+            "Solicitar la vacante con el Formulario Único de Trámite (FUT), que se adquiere en caja.",
+            "Copia del DNI del estudiante y del padre de familia.",
+            "Informe de progreso del estudiante del año anterior.",
+            "De ser el caso, se pedirá una evaluación psicopedagógica con la psicóloga de la institución."
+          ]
+        },
+        {
+          "titulo": "Documentos para la matrícula",
+          "items": [
+            "Ficha de datos para la matrícula, completada por el padre de familia.",
+            "Partida de nacimiento original del estudiante.",
+            "Copia del DNI del estudiante y del padre de familia.",
+            "Informe de progreso del estudiante del año anterior.",
+            "Copia de la ficha de matrícula generada por el SIAGIE, constancia de matrícula e informe de progreso, si el estudiante estudia actualmente en otro centro educativo.",
+            "Constancia de no adeudo, para estudiantes que vienen de instituciones educativas privadas.",
+            "Certificado de buena conducta.",
+            "Resolución directoral de traslado de la institución educativa de procedencia.",
+            "Comprobante del pago por derecho de admisión."
+          ]
+        }
+      ],
+      "pasos": [
+        {
+          "titulo": "Reserva de matrícula",
+          "detalle": "Recibida la solicitud con los requisitos, Dirección General programa una entrevista con los padres de familia y el estudiante. De ser necesario, la institución pedirá una evaluación psicológica."
+        },
+        {
+          "titulo": "Pago de la cuota de ingreso y la matrícula",
+          "detalle": "En la caja de la institución. Si hay otros medios de pago, el colegio los comunicará oficialmente y a tiempo a los padres de familia."
+        },
+        {
+          "titulo": "Constancia de vacante",
+          "detalle": "Secretaría la entrega al padre de familia o apoderado, para pedir los documentos a la institución de origen y hacer la matrícula oficial."
+        },
+        {
+          "titulo": "Firma del contrato",
+          "detalle": "Contrato de prestación de servicios educativos."
+        }
+      ]
+    },
+    {
+      "id": "regulares",
+      "nombre": "Estudiantes regulares",
+      "resumen": "Para quienes ya estudian en CATA y continúan el próximo año.",
+      "listas": [
+        {
+          "titulo": "Requisitos",
+          "items": [
+            "No tener deuda por el servicio de enseñanza con la institución del año anterior.",
+            "No haber sido observado reincidentemente por mala conducta.",
+            "Haber aprobado el año académico anterior."
+          ]
+        }
+      ],
+      "pasos": [
+        {
+          "titulo": "Actualización de datos",
+          "detalle": "En la secretaría de la institución se actualizan los datos de los padres de familia o del apoderado."
+        },
+        {
+          "titulo": "Pago de la matrícula",
+          "detalle": "En la caja de la institución. Si hay otros medios de pago, el colegio los comunicará oficialmente y a tiempo a los padres de familia."
+        },
+        {
+          "titulo": "Firma del contrato",
+          "detalle": "Contrato de prestación de servicios educativos."
+        }
+      ]
+    }
+  ]
+}

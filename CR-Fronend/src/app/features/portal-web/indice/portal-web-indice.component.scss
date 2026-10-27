@@ -1,0 +1,360 @@
+/*
+ * La entrada al panel «Portal Web»: las tarjetas de las páginas. Solo las usa
+ * esta pantalla, por eso no van en compartido/pw-estilos.scss (que se copia en
+ * cada pantalla del módulo).
+ */
+
+.pw-cargando {
+  margin-bottom: 14px;
+}
+
+/* Lo que no se ve en el portal, en una línea sobre las tarjetas. */
+.pw-atencion {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-sm);
+
+  p {
+    margin: 0;
+    color: var(--text-soft);
+  }
+
+  strong {
+    color: var(--text);
+  }
+}
+
+.pw-atencion--bien {
+  border-left-color: var(--success);
+}
+
+.pw-atencion__numero {
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--warning-text);
+  font-variant-numeric: tabular-nums;
+
+  .pw-atencion--bien & {
+    color: var(--success-text);
+  }
+}
+
+.pw-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+  margin-bottom: 18px;
+  font-size: 13.5px;
+  color: var(--text-soft);
+
+  strong {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.pw-leyenda {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.pw-punto {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: var(--success);
+}
+
+.pw-punto--borrador {
+  background-color: var(--brand-500);
+}
+
+.pw-punto--falta {
+  background-color: var(--warning);
+}
+
+.pw-rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  > li {
+    display: flex;
+  }
+}
+
+/* Una tarjeta es un solo enlace, con todo adentro: nada interactivo anidado. */
+.pw-tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 18px 20px 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s, border-color 0.25s;
+
+  /* La línea de marca que crece arriba al pasar el mouse. */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    background: linear-gradient(90deg, var(--brand-700), var(--brand-500));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+a.pw-tarjeta:hover,
+a.pw-tarjeta:focus-visible {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--brand-500) 45%, var(--border));
+  box-shadow: var(--shadow-lg);
+
+  &::before {
+    transform: scaleX(1);
+  }
+
+  .pw-tarjeta__icono {
+    background: linear-gradient(135deg, var(--brand-700), var(--brand-600));
+    color: #fff;
+    box-shadow: var(--shadow-md);
+    transform: rotate(-6deg) scale(1.06);
+  }
+
+  .pw-tarjeta__ir app-icon {
+    transform: translateX(4px);
+  }
+}
+
+a.pw-tarjeta:focus-visible {
+  outline: 3px solid var(--brand-500);
+  outline-offset: 3px;
+}
+
+a.pw-tarjeta:active {
+  transform: translateY(-1px) scale(0.985);
+  box-shadow: var(--shadow-md);
+  transition-duration: 0.08s;
+}
+
+.pw-tarjeta--inactiva {
+  opacity: 0.7;
+}
+
+.pw-tarjeta__cabeza {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  .status-badge {
+    gap: 5px;
+  }
+}
+
+.pw-tarjeta__icono {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md);
+  background-color: var(--brand-100);
+  color: var(--heading);
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pw-tarjeta__nombre {
+  margin: 2px 0 0;
+  font-size: 16.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--heading);
+}
+
+.pw-tarjeta__linea {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.pw-tarjeta__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 4px;
+  font-size: 12.5px;
+  color: var(--text-soft);
+}
+
+.pw-tarjeta__ir {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--heading);
+
+  app-icon {
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+/* Un tramo por parte: verde lista, azul con borradores, ámbar falta. */
+.pw-barra {
+  display: flex;
+  gap: 4px;
+  height: 7px;
+}
+
+.pw-barra__tramo {
+  flex: 1;
+  border-radius: var(--radius-full);
+  background-color: var(--success);
+  transform-origin: left;
+}
+
+.pw-barra__tramo--borrador {
+  background-color: var(--brand-500);
+}
+
+.pw-barra__tramo--falta {
+  background-color: var(--warning);
+}
+
+.pw-tarjeta--esqueleto {
+  min-height: 190px;
+}
+
+.pw-esqueleto-icono {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md);
+}
+
+/* ── Movimiento ── */
+
+@keyframes pw-entra {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+}
+
+@keyframes pw-crece {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes pw-abre {
+  50% {
+    transform: scale(1.03);
+    box-shadow: var(--shadow-lg);
+  }
+
+  100% {
+    transform: scale(1.06);
+    opacity: 0;
+  }
+}
+
+/* «backwards» y no «both»: al terminar, la tarjeta vuelve a sus estilos y el hover responde. */
+.pw-entrando {
+  .pw-tarjeta,
+  .pw-atencion,
+  .pw-resumen {
+    animation: pw-entra 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 55ms + 40ms);
+  }
+
+  .pw-barra__tramo {
+    animation: pw-crece 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 55ms + 260ms + var(--j, 0) * 45ms);
+  }
+}
+
+/* Al abrir una categoría: las demás se van y la elegida crece (dura lo que DURACION_SALIDA). */
+.pw-saliendo {
+  .pw-tarjeta:not(.pw-tarjeta--abriendo),
+  .pw-atencion,
+  .pw-resumen {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+}
+
+.pw-tarjeta--abriendo {
+  z-index: 2;
+  animation: pw-abre 0.32s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-tarjeta,
+  .pw-tarjeta__icono,
+  .pw-tarjeta__ir app-icon {
+    transition-property: box-shadow, border-color, background, color;
+  }
+
+  a.pw-tarjeta:hover,
+  a.pw-tarjeta:focus-visible,
+  a.pw-tarjeta:active {
+    transform: none;
+
+    .pw-tarjeta__icono,
+    .pw-tarjeta__ir app-icon {
+      transform: none;
+    }
+  }
+
+  /* La línea de arriba aparece en vez de crecer. */
+  .pw-tarjeta::before {
+    transform: scaleX(1);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  a.pw-tarjeta:hover::before,
+  a.pw-tarjeta:focus-visible::before {
+    opacity: 1;
+  }
+
+  .pw-entrando .pw-tarjeta,
+  .pw-entrando .pw-atencion,
+  .pw-entrando .pw-resumen,
+  .pw-entrando .pw-barra__tramo,
+  .pw-tarjeta--abriendo {
+    animation: none;
+  }
+}

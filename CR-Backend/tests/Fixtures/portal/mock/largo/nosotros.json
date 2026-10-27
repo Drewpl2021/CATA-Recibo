@@ -1,0 +1,40 @@
+{
+  "data": {
+    "titulo": "Nosotros: conoce la institución, su gestión y sus documentos",
+    "bajada": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+    "paginas": [
+      {
+        "slug": "mision-y-vision",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "slug": "resena-historica",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "slug": "emblema",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "slug": "himno",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "slug": "consejo-directivo",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "slug": "administracion",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "slug": "personal-docente",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      },
+      {
+        "slug": "organigrama",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      }
+    ]
+  }
+}

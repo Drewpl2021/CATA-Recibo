@@ -1,0 +1,106 @@
+{
+  "data": {
+    "slug": "organigrama",
+    "titulo": "Organigrama",
+    "bajada": "La estructura de la institución.",
+    "bloques": [
+      {
+        "tipo": "texto",
+        "titulo": "Datos de prueba",
+        "parrafos": [
+          "Esta estructura es de prueba: se armó solo con los cargos que el colegio publica en Consejo Directivo y Administración, para mostrar cómo se verá el organigrama. El organigrama oficial está publicado como un diseño en Canva, que no se puede leer como texto; el colegio debe enviar su estructura."
+        ],
+        "firma": null
+      },
+      {
+        "tipo": "organigrama",
+        "titulo": "Estructura de prueba",
+        "imagen": null,
+        "enlace": {
+          "etiqueta": "Ver el organigrama publicado en Canva",
+          "url": "https://www.canva.com/design/DAGgVOmdYZE/H-06nqgjCBDwERaxRbq_gw/view",
+          "externo": true
+        },
+        "raiz": {
+          "cargo": "Consejo Directivo",
+          "detalle": "Asociación Educativa Colegio Adventista Túpac Amaru",
+          "hijos": [
+            {
+              "cargo": "Dirección General",
+              "detalle": null,
+              "hijos": [
+                {
+                  "cargo": "Administración",
+                  "detalle": null,
+                  "hijos": [
+                    {
+                      "cargo": "Contabilidad",
+                      "detalle": null,
+                      "hijos": []
+                    },
+                    {
+                      "cargo": "Caja",
+                      "detalle": null,
+                      "hijos": []
+                    },
+                    {
+                      "cargo": "TIC",
+                      "detalle": null,
+                      "hijos": []
+                    },
+                    {
+                      "cargo": "Operaciones",
+                      "detalle": null,
+                      "hijos": []
+                    }
+                  ]
+                },
+                {
+                  "cargo": "Dirección Académica General",
+                  "detalle": null,
+                  "hijos": [
+                    {
+                      "cargo": "Dirección Académica de Inicial y Primaria",
+                      "detalle": null,
+                      "hijos": []
+                    },
+                    {
+                      "cargo": "Dirección Académica de Secundaria",
+                      "detalle": null,
+                      "hijos": []
+                    },
+                    {
+                      "cargo": "Dirección Académica Jerusalén",
+                      "detalle": null,
+                      "hijos": []
+                    }
+                  ]
+                },
+                {
+                  "cargo": "Secretaría General",
+                  "detalle": null,
+                  "hijos": []
+                },
+                {
+                  "cargo": "Gestión de Calidad",
+                  "detalle": null,
+                  "hijos": []
+                },
+                {
+                  "cargo": "Capellanía",
+                  "detalle": null,
+                  "hijos": []
+                },
+                {
+                  "cargo": "Psicología",
+                  "detalle": null,
+                  "hijos": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

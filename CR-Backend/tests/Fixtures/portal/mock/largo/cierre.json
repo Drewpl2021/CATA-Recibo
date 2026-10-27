@@ -1,0 +1,21 @@
+{
+  "data": {
+    "titulo": "¿Quieres conocer el Colegio Adventista Túpac Amaru? de prueb",
+    "acciones": [
+      {
+        "etiqueta": "Conoce el proceso de matrícula 2027",
+        "destino": {
+          "tipo": "pagina",
+          "ruta": "/matricula"
+        }
+      },
+      {
+        "etiqueta": "Escríbenos o visítanos en nuestras sedes",
+        "destino": {
+          "tipo": "pagina",
+          "ruta": "/contacto"
+        }
+      }
+    ]
+  }
+}

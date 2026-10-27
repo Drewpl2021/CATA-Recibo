@@ -38,6 +38,19 @@ return [
             'report' => false,
         ],
 
+        // Las imágenes del portal subidas desde el panel. NO es público por
+        // sí solo: no hay enlace simbólico ni `url`. Se sirven una por una
+        // por /api/portal/medios/{archivo}, y solo las que están registradas
+        // en portal_imagenes (ver MediosController). Vive dentro de
+        // storage/app, así que en Docker entra en el volumen `archivos` y en
+        // su respaldo nocturno.
+        'portal' => [
+            'driver' => 'local',
+            'root' => storage_path('app/portal'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

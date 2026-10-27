@@ -1,0 +1,15 @@
+{
+  "data": {
+    "actualizado": null,
+    "nota": null,
+    "niveles": [
+      {
+        "id": "i",
+        "nivel": "Inicial",
+        "detalle": null,
+        "estado": "disponible",
+        "vacantes": 12
+      }
+    ]
+  }
+}

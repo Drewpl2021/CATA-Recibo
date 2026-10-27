@@ -1,0 +1,102 @@
+{
+  "data": {
+    "menu": [
+      {
+        "pagina": "inicio",
+        "etiqueta": "Inicio"
+      },
+      {
+        "pagina": "proyectos",
+        "etiqueta": "Proyectos"
+      },
+      {
+        "pagina": "nosotros",
+        "etiqueta": "Nosotros"
+      },
+      {
+        "pagina": "propuesta-educativa",
+        "etiqueta": "Propuesta Educativa"
+      },
+      {
+        "pagina": "matricula",
+        "etiqueta": "Matrícula"
+      },
+      {
+        "pagina": "logros",
+        "etiqueta": "Logros"
+      },
+      {
+        "pagina": "contacto",
+        "etiqueta": "Contacto"
+      }
+    ],
+    "nosotros": [],
+    "pie": {
+      "colegio": "El colegio",
+      "nosotros": "Nosotros",
+      "contacto": "Contacto",
+      "redes": "Síguenos"
+    },
+    "titulos": {
+      "inicio": {
+        "quienesSomos": "Quiénes somos",
+        "verHistoria": "Conoce nuestra historia",
+        "emblema": "Lo que dice el emblema",
+        "niveles": "Niveles",
+        "verPropuesta": "Ver la propuesta educativa",
+        "sedes": "Sedes",
+        "sedesVarias": "{n} sedes en San Román",
+        "sedesUna": "Sede",
+        "noticias": "Noticias y comunicados"
+      },
+      "nosotros": {
+        "accion": "Conócenos",
+        "rotuloAnio": "Desde"
+      },
+      "propuestaEducativa": {
+        "pilares": "Nuestros pilares",
+        "rotuloPilar": "Pilar",
+        "niveles": "Por niveles",
+        "plataformas": "Plataformas digitales"
+      },
+      "matricula": {
+        "accionPrincipal": "Solicitar información",
+        "accionSecundaria": "Ver requisitos",
+        "rotuloAnio": "Matrícula",
+        "procesos": "Pasos y requisitos",
+        "vacantes": "Niveles y vacantes",
+        "preguntarGrado": "Preguntar por un grado",
+        "fechas": "Fechas",
+        "preguntas": "Preguntas frecuentes"
+      },
+      "contacto": {
+        "accionPrincipal": "Solicitar información",
+        "accionSecundaria": "Ver sedes",
+        "rotuloWhatsapp": "WhatsApp",
+        "sedes": "Nuestras sedes",
+        "sedesUna": "Nuestra sede",
+        "mapa": "Ubícanos",
+        "redes": "Síguenos"
+      },
+      "proyectos": {
+        "accion": "Ver proyectos",
+        "contacto": "Contáctanos",
+        "rotulo": "Proyectos",
+        "rotuloUno": "Proyecto",
+        "lista": "Nuestros proyectos",
+        "sobre": "Sobre el proyecto",
+        "galeria": "Galería",
+        "otros": "Más proyectos",
+        "volver": "Todos los proyectos",
+        "verTodos": "Ver todos los proyectos"
+      },
+      "logros": {
+        "accion": "Ver los logros",
+        "rotulo": "Logros",
+        "rotuloUno": "Logro",
+        "destacados": "Destacados",
+        "todos": "Todos los logros"
+      }
+    }
+  }
+}

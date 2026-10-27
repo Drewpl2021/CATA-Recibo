@@ -1,0 +1,90 @@
+<app-page-header
+  icono="layers"
+  titulo="Portal Web"
+  subtitulo="El contenido de cata.edu.pe: textos, fotos, noticias y todo lo que muestra cada página. Cada cambio queda en la Auditoría y se ve en el portal en hasta un minuto."
+></app-page-header>
+
+<!-- Cargando: la silueta de las tarjetas. -->
+<ng-container *ngIf="cargando">
+  <p class="form-ayuda pw-cargando" role="status">Trayendo cómo está el portal…</p>
+  <ul class="pw-rejilla" aria-hidden="true">
+    <li *ngFor="let _ of esqueletos">
+      <div class="pw-tarjeta pw-tarjeta--esqueleto">
+        <span class="esqueleto pw-esqueleto-icono"></span>
+        <span class="esqueleto esqueleto--titulo"></span>
+        <span class="esqueleto esqueleto--linea"></span>
+        <span class="esqueleto esqueleto--linea esqueleto--corta"></span>
+      </div>
+    </li>
+  </ul>
+</ng-container>
+
+<div *ngIf="!cargando" [class.pw-entrando]="entrando" [class.pw-saliendo]="abriendo">
+  <!-- Lo que no se ve en el portal. Las tarjetas no se reordenan: quedan siempre en su lugar. -->
+  <ng-container *ngIf="conEstado">
+    <div class="pw-atencion" *ngIf="partesQueFaltan > 0">
+      <span class="pw-atencion__numero">{{ partesQueFaltan }}</span>
+      <p>
+        <strong>{{ partesQueFaltan === 1 ? 'parte no se ve' : 'partes no se ven' }} en el portal</strong>
+        porque {{ partesQueFaltan === 1 ? 'está sin cargar, vacía o solo en borrador' : 'están sin cargar, vacías o solo en borrador' }},
+        en {{ paginasConFaltas === 1 ? 'una página' : paginasConFaltas + ' páginas' }}: las de sello ámbar.
+      </p>
+    </div>
+    <div class="pw-atencion pw-atencion--bien" *ngIf="partesQueFaltan === 0">
+      <span class="pw-atencion__numero"><app-icon icono="check_circle" [tamano]="30"></app-icon></span>
+      <p><strong>Todo el portal está al día.</strong> Cada página tiene su contenido cargado.</p>
+    </div>
+
+    <div class="pw-resumen">
+      <span><strong>{{ paginasCompletas }} de {{ tarjetas.length }}</strong> páginas completas</span>
+      <span><strong>{{ borradores }}</strong> en borrador</span>
+      <span class="pw-leyenda"><span class="pw-punto"></span>Lista</span>
+      <span class="pw-leyenda"><span class="pw-punto pw-punto--borrador"></span>Con borradores</span>
+      <span class="pw-leyenda"><span class="pw-punto pw-punto--falta"></span>Falta: no se ve en el portal</span>
+    </div>
+  </ng-container>
+
+  <ul class="pw-rejilla" aria-label="Páginas del portal">
+    <li *ngFor="let t of tarjetas; let i = index; trackBy: porId" [style.--i]="i">
+      <a *ngIf="t.categoria.disponible; else proximamente" #enlace class="pw-tarjeta"
+        [class.pw-tarjeta--abriendo]="abriendo === t.categoria.id" [attr.href]="t.url" [attr.data-id]="t.categoria.id"
+        [attr.aria-labelledby]="'pw-tarjeta-' + t.categoria.id" [attr.aria-describedby]="'pw-tarjeta-estado-' + t.categoria.id"
+        (click)="abrir($event, t)">
+        <span class="pw-tarjeta__cabeza">
+          <span class="pw-tarjeta__icono"><app-icon [icono]="t.categoria.icono" [tamano]="22"></app-icon></span>
+          <ng-container *ngIf="conEstado">
+            <span class="status-badge status-badge-warning" *ngIf="t.faltan.length">
+              <app-icon icono="warning" [tamano]="13"></app-icon>{{ estadoDe(t) }}
+            </span>
+            <span class="status-badge status-badge-info" *ngIf="!t.faltan.length && t.borradores">{{ estadoDe(t) }}</span>
+            <span class="status-badge status-badge-success" *ngIf="!t.faltan.length && !t.borradores">
+              <app-icon icono="check_circle" [tamano]="13"></app-icon>{{ estadoDe(t) }}
+            </span>
+          </ng-container>
+        </span>
+        <h2 class="pw-tarjeta__nombre" [id]="'pw-tarjeta-' + t.categoria.id">{{ t.categoria.nombre }}</h2>
+        <p class="pw-tarjeta__linea">{{ t.categoria.descripcion }}</p>
+        <span class="pw-barra" *ngIf="conEstado" aria-hidden="true">
+          <span *ngFor="let p of t.tramos; let j = index" [class]="'pw-barra__tramo pw-barra__tramo--' + p.tono"
+            [style.--j]="j" [title]="p.nombre + ': ' + p.texto"></span>
+        </span>
+        <span class="pw-tarjeta__pie">
+          <span>{{ conEstado ? t.listas + ' de ' + t.tramos.length + ' partes listas' : '' }}</span>
+          <span class="pw-tarjeta__ir" aria-hidden="true">Editar <app-icon icono="arrow_right" [tamano]="16"></app-icon></span>
+        </span>
+        <span class="solo-lectores" [id]="'pw-tarjeta-estado-' + t.categoria.id">{{ descripcionDe(t) }}</span>
+      </a>
+
+      <ng-template #proximamente>
+        <div class="pw-tarjeta pw-tarjeta--inactiva">
+          <span class="pw-tarjeta__cabeza">
+            <span class="pw-tarjeta__icono"><app-icon [icono]="t.categoria.icono" [tamano]="22"></app-icon></span>
+            <span class="status-badge status-badge-secondary">Próximamente</span>
+          </span>
+          <h2 class="pw-tarjeta__nombre">{{ t.categoria.nombre }}</h2>
+          <p class="pw-tarjeta__linea">{{ t.categoria.descripcion }}</p>
+        </div>
+      </ng-template>
+    </li>
+  </ul>
+</div>

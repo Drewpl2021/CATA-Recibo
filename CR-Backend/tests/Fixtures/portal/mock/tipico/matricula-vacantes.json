@@ -1,0 +1,29 @@
+{
+  "data": {
+    "actualizado": null,
+    "nota": "Las vacantes dependen de cada grado. Consulta la disponibilidad por WhatsApp o en la secretaría del colegio.",
+    "niveles": [
+      {
+        "id": "inicial",
+        "nivel": "Inicial",
+        "detalle": "3, 4 y 5 años",
+        "estado": "consultar",
+        "vacantes": null
+      },
+      {
+        "id": "primaria",
+        "nivel": "Primaria",
+        "detalle": "1.er a 6.º grado",
+        "estado": "consultar",
+        "vacantes": null
+      },
+      {
+        "id": "secundaria",
+        "nivel": "Secundaria",
+        "detalle": "1.er a 5.º año",
+        "estado": "consultar",
+        "vacantes": null
+      }
+    ]
+  }
+}

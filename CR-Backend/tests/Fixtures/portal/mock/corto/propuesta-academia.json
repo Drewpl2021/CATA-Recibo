@@ -1,0 +1,27 @@
+{
+  "data": {
+    "titulo": "Academia",
+    "descripcion": null,
+    "aclaracion": null,
+    "universidades": [
+      {
+        "id": "u",
+        "nombre": "UNAJ",
+        "ciclos": [
+          {
+            "id": "c",
+            "nombre": "Repaso",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial"
+            ],
+            "precio": null,
+            "precioVirtual": null,
+            "inicio": null,
+            "fin": null
+          }
+        ]
+      }
+    ]
+  }
+}

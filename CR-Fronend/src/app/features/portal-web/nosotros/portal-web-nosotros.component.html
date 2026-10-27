@@ -1,0 +1,102 @@
+<app-page-header
+  icono="people"
+  titulo="Nosotros"
+  subtitulo="El índice de Nosotros, sus subpáginas y el personal docente. Cada cambio queda en la Auditoría y se ve en el portal en hasta un minuto."
+>
+  <button headerActions type="button" class="btn-secondary" (click)="volver()">
+    <app-icon icono="arrow_left" [tamano]="16"></app-icon>
+    Volver a Portal Web
+  </button>
+</app-page-header>
+
+<pw-indice-de-secciones nombre="Nosotros" [secciones]="secciones" [resumenes]="resumenes" [pendientes]="pendientes"
+  [actual]="actual" (actualChange)="elegir($event)">
+
+  <!-- ═══════════ Índice de Nosotros ═══════════ -->
+  <div id="pw-seccion-indice" [hidden]="actual !== 'indice'">
+    <section class="section-panel ajustes-panel" aria-labelledby="titulo-indice-nosotros">
+      <header class="ajustes-panel__cabecera">
+        <div>
+          <h2 id="titulo-indice-nosotros">Índice de Nosotros</h2>
+          <p class="form-ayuda">El título y la frase de arriba de la página Nosotros. La frase de cada tarjeta va con su subpágina.</p>
+        </div>
+        <div class="ajustes-panel__acciones" *ngIf="!cargandoIndice && indiceGuardado">
+          <button type="button" class="btn-primary" (click)="abrirIndice()">
+            <app-icon icono="edit" [tamano]="16"></app-icon>
+            Editar índice
+          </button>
+        </div>
+      </header>
+
+      <div class="pw-esqueleto" *ngIf="cargandoIndice" role="status">
+        <span class="solo-lectores">Cargando el índice…</span>
+        <span class="esqueleto esqueleto--titulo" aria-hidden="true"></span>
+        <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+      </div>
+
+      <div class="card-vacio" *ngIf="!cargandoIndice && !indiceGuardado">
+        <app-icon icono="people" [tamano]="34"></app-icon>
+        El índice de Nosotros no está configurado: el portal muestra «Esta sección del portal todavía no está disponible».
+        <button type="button" class="btn-primary" (click)="abrirIndice()">
+          <app-icon icono="edit" [tamano]="16"></app-icon>
+          Configurar el índice
+        </button>
+      </div>
+
+      <div class="ajuste-bloque" *ngIf="!cargandoIndice && indiceGuardado as c">
+        <dl class="pw-lista-datos">
+          <dt>Título</dt><dd>{{ c.titulo }}</dd>
+          <dt>Frase bajo el título</dt><dd [class.pw-sin-dato]="!c.bajada">{{ c.bajada || 'Sin frase' }}</dd>
+        </dl>
+      </div>
+    </section>
+  </div>
+
+  <!-- ═══════════ Subpáginas ═══════════ -->
+  <div id="pw-seccion-subpaginas" [hidden]="actual !== 'subpaginas'">
+    <app-panel-paginas (resumen)="alResumir('subpaginas', $event)"></app-panel-paginas>
+  </div>
+
+  <!-- ═══════════ Personal Docente ═══════════ -->
+  <div id="pw-seccion-docentes" [hidden]="actual !== 'docentes'">
+    <section class="section-panel ajustes-panel" aria-labelledby="titulo-personal-docente">
+      <header class="ajustes-panel__cabecera">
+        <div>
+          <h2 id="titulo-personal-docente">Personal Docente</h2>
+          <p class="form-ayuda">
+            La lista de la página Personal Docente, agrupada por nivel y con un filtro. El texto de esa página va en su subpágina.
+          </p>
+        </div>
+      </header>
+
+      <app-panel-niveles-docentes (cambiaron)="niveles = $event" (verDocentes)="verDocentes($event)"
+        (resumen)="alResumir('docentes', $event)"></app-panel-niveles-docentes>
+
+      <app-panel-docentes [niveles]="niveles" [(nivelId)]="nivelElegido" (cambiaron)="recargarNiveles()"></app-panel-docentes>
+    </section>
+  </div>
+</pw-indice-de-secciones>
+
+<!-- ═══════════ Modal del índice ═══════════ -->
+<app-form-modal
+  [(visible)]="modalIndice"
+  titulo="Índice de Nosotros"
+  ancho="640px"
+  [guardando]="guardandoIndice"
+  textoGuardar="Guardar cambios"
+  (guardar)="guardarIndice()"
+>
+  <form [formGroup]="indice" class="form-fields" novalidate>
+    <div class="form-group">
+      <label for="nosotros-titulo">Título *</label>
+      <input id="nosotros-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+        placeholder="Ej. Nosotros" [class.is-invalid]="invalidoIndice('titulo')" />
+      <small class="form-error" *ngIf="invalidoIndice('titulo')">Obligatorio (máximo 60).</small>
+    </div>
+    <div class="form-group">
+      <label for="nosotros-bajada">Frase bajo el título</label>
+      <textarea id="nosotros-bajada" class="form-control" rows="3" formControlName="bajada" maxlength="200"></textarea>
+      <small class="form-ayuda">Opcional. Hasta 200 caracteres.</small>
+    </div>
+  </form>
+</app-form-modal>

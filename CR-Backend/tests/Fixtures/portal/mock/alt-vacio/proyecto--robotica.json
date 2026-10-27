@@ -1,0 +1,131 @@
+{
+  "data": {
+    "id": "robotica",
+    "slug": "robotica",
+    "titulo": "Robótica, Impresiones 3D y Computación",
+    "lema": "Tecnología con propósito: creamos, servimos y transformamos.",
+    "resumen": "Impulsa el desarrollo de competencias digitales en los estudiantes, promoviendo el pensamiento lógico, la resolución de problemas y la creatividad tecnológica.",
+    "categoria": "tecnologia",
+    "niveles": [],
+    "estado": null,
+    "fecha": null,
+    "foto": {
+      "url": "https://medios.prueba.cata.edu.pe/proyecto-robotica.svg",
+      "alt": "",
+      "ancho": 1200,
+      "alto": 800
+    },
+    "categoriaNombre": "Tecnología",
+    "descripcion": [
+      "Curso-taller que integra robótica, impresión 3D y computación, donde los estudiantes desarrollan habilidades tecnológicas aplicadas a proyectos con sentido cristiano, fomentando la creatividad, el pensamiento crítico y el servicio a la comunidad."
+    ],
+    "secciones": [
+      {
+        "titulo": "Objetivos",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Desarrollar pensamiento lógico y creativo con tecnología."
+          },
+          {
+            "titulo": null,
+            "texto": "Diseñar y fabricar objetos reales con impresión 3D."
+          },
+          {
+            "titulo": null,
+            "texto": "Construir y programar robots funcionales."
+          },
+          {
+            "titulo": null,
+            "texto": "Impulsar el trabajo en equipo y la innovación."
+          }
+        ]
+      },
+      {
+        "titulo": "Ejes fundamentales",
+        "tipo": "numerada",
+        "items": [
+          {
+            "titulo": "Tecnología creativa",
+            "texto": "Explora herramientas digitales para diseñar, programar y construir soluciones innovadoras."
+          },
+          {
+            "titulo": "Aprendizaje interdisciplinario",
+            "texto": "Integra conocimientos de computación, electrónica, física y diseño en proyectos aplicados."
+          },
+          {
+            "titulo": "Innovación y prototipado",
+            "texto": "Fomenta la creación de ideas y su materialización mediante robótica e impresión 3D."
+          },
+          {
+            "titulo": "Trabajo colaborativo",
+            "texto": "Promueve el desarrollo de proyectos en equipo, fortaleciendo la comunicación y la cooperación."
+          },
+          {
+            "titulo": "Resolución de problemas",
+            "texto": "Desarrolla habilidades para enfrentar desafíos reales con pensamiento crítico y lógico."
+          }
+        ]
+      },
+      {
+        "titulo": "Metodología",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Aprender haciendo: cada clase es un proyecto."
+          },
+          {
+            "titulo": null,
+            "texto": "Del diseño digital a la realidad: creamos, probamos y mejoramos."
+          },
+          {
+            "titulo": null,
+            "texto": "La tecnología se domina con las manos, la mente y el trabajo en equipo."
+          },
+          {
+            "titulo": null,
+            "texto": "Más que teoría: resolvemos problemas reales con soluciones creativas."
+          }
+        ]
+      },
+      {
+        "titulo": "Beneficios",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Desarrollan pensamiento lógico y creatividad tecnológica."
+          },
+          {
+            "titulo": null,
+            "texto": "Aplican su fe al crear soluciones que impactan."
+          },
+          {
+            "titulo": null,
+            "texto": "Descubren talentos y posibles vocaciones en ciencia y tecnología."
+          },
+          {
+            "titulo": null,
+            "texto": "Aprenden a trabajar en equipo con valores cristianos."
+          }
+        ]
+      }
+    ],
+    "galeria": [
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-1.svg",
+        "alt": "",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-2.svg",
+        "alt": "",
+        "ancho": 1200,
+        "alto": 800
+      }
+    ]
+  }
+}

@@ -1,0 +1,267 @@
+<app-page-header
+  icono="trending_up"
+  titulo="Logros"
+  subtitulo="Los logros confirmados del colegio, cada uno con su fuente. Cada cambio queda en la Auditoría y se ve en el portal en hasta un minuto."
+>
+  <button headerActions type="button" class="btn-secondary" (click)="volver()">
+    <app-icon icono="arrow_left" [tamano]="16"></app-icon>
+    Volver a Portal Web
+  </button>
+</app-page-header>
+
+<pw-indice-de-secciones nombre="Logros" [secciones]="secciones" [resumenes]="resumenes" [pendientes]="pendientes"
+  [actual]="actual" (actualChange)="elegir($event)">
+
+  <!-- ═══════════ Cabecera ═══════════ -->
+  <div id="pw-seccion-cabecera" [hidden]="actual !== 'cabecera'">
+    <section class="section-panel ajustes-panel" aria-labelledby="titulo-cabecera">
+      <header class="ajustes-panel__cabecera">
+        <div>
+          <h2 id="titulo-cabecera">Cabecera de la página</h2>
+          <p class="form-ayuda">El título y la frase de arriba de la página Logros.</p>
+        </div>
+        <div class="ajustes-panel__acciones" *ngIf="!cargandoCabecera && cabeceraGuardada">
+          <button type="button" class="btn-primary" (click)="abrirCabecera()">
+            <app-icon icono="edit" [tamano]="16"></app-icon>
+            Editar cabecera
+          </button>
+        </div>
+      </header>
+
+      <div class="pw-esqueleto" *ngIf="cargandoCabecera" role="status">
+        <span class="solo-lectores">Cargando la cabecera…</span>
+        <span class="esqueleto esqueleto--titulo" aria-hidden="true"></span>
+        <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+      </div>
+
+      <div class="card-vacio" *ngIf="!cargandoCabecera && !cabeceraGuardada">
+        <app-icon icono="trending_up" [tamano]="34"></app-icon>
+        La cabecera de Logros no está configurada: el portal muestra «Esta sección del portal todavía no está disponible».
+        <button type="button" class="btn-primary" (click)="abrirCabecera()">
+          <app-icon icono="edit" [tamano]="16"></app-icon>
+          Configurar la cabecera
+        </button>
+      </div>
+
+      <div class="ajuste-bloque" *ngIf="!cargandoCabecera && cabeceraGuardada as c">
+        <dl class="pw-lista-datos">
+          <dt>Título</dt><dd>{{ c.titulo }}</dd>
+          <dt>Frase bajo el título</dt><dd [class.pw-sin-dato]="!c.bajada">{{ c.bajada || 'Sin frase' }}</dd>
+        </dl>
+      </div>
+    </section>
+  </div>
+
+  <!-- ═══════════ Cifras ═══════════ -->
+  <div id="pw-seccion-cifras" [hidden]="actual !== 'cifras'">
+    <app-editor-cifras ambito="logros" vista="tarjetas" dondeSeVen="de la página Logros, bajo la cabecera"
+      (resumen)="alResumir('cifras', $event)"></app-editor-cifras>
+  </div>
+
+  <!-- ═══════════ Logros ═══════════ -->
+  <div id="pw-seccion-logros" [hidden]="actual !== 'logros'">
+    <section class="section-panel ajustes-panel" aria-labelledby="titulo-logros">
+      <header class="ajustes-panel__cabecera">
+        <div>
+          <h2 id="titulo-logros">Logros</h2>
+          <p class="form-ayuda">
+            <strong>Solo logros que el colegio confirmó</strong>, cada uno con su fuente ({{ publicados }} publicados).
+            El portal los agrupa por década y muestra arriba los destacados. Lo nuevo entra en borrador.
+          </p>
+        </div>
+        <div class="ajustes-panel__acciones">
+          <button type="button" class="btn-primary" (click)="nuevo()">
+            <app-icon icono="plus" [tamano]="16"></app-icon>
+            Agregar logro
+          </button>
+        </div>
+      </header>
+
+      <div class="ajuste-bloque">
+        <app-data-table
+          entidad="el logro"
+          [columnas]="columnas"
+          [datos]="logros"
+          [cargando]="cargandoLogros"
+          [camposBusqueda]="['titulo', 'nivel', 'descripcion']"
+          placeholderBusqueda="Buscar un logro…"
+          [numerarFilas]="false"
+          [acciones]="['editar', 'eliminar']"
+          [accionesPersonalizadas]="acciones"
+          mensajeVacio="Todavía no hay logros. El portal dice que se publicarán pronto."
+          (editarFila)="editar($event)"
+          (eliminarFila)="eliminar($event)"
+          (accionPersonalizada)="alAccionar($event)"
+        >
+          <ng-template appCelda="titulo" let-fila>
+            <div class="pw-celda-titulo">
+              <span class="pw-miniatura" aria-hidden="true">
+                <img *ngIf="fila.imagen" [src]="ver(fila.imagen.url)" alt="" loading="lazy" />
+              </span>
+              <span>
+                <strong>{{ fila.titulo }}</strong>
+                <small>
+                  {{ detalle(fila) }}<ng-container *ngIf="!fila.fuente"> · <span class="pw-falta">sin fuente</span></ng-container>
+                </small>
+              </span>
+            </div>
+          </ng-template>
+
+          <ng-template appCelda="orden" let-fila>
+            <div class="action-btns">
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+                [attr.aria-label]="'Subir ' + fila.titulo" title="Subir">
+                <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+                [attr.aria-label]="'Bajar ' + fila.titulo" title="Bajar">
+                <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+              </button>
+            </div>
+          </ng-template>
+        </app-data-table>
+      </div>
+    </section>
+  </div>
+</pw-indice-de-secciones>
+
+<!-- ═══════════ Modal de la cabecera ═══════════ -->
+<app-form-modal
+  [(visible)]="modalCabecera"
+  titulo="Cabecera de Logros"
+  ancho="640px"
+  [guardando]="guardandoCabecera"
+  textoGuardar="Guardar cambios"
+  (guardar)="guardarCabecera()"
+>
+  <form [formGroup]="cabecera" class="form-fields" novalidate>
+    <div class="form-group">
+      <label for="logros-titulo">Título *</label>
+      <input id="logros-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+        placeholder="Ej. Logros" [class.is-invalid]="invalidoCabecera('titulo')" />
+      <small class="form-error" *ngIf="invalidoCabecera('titulo')">El título es obligatorio.</small>
+    </div>
+    <div class="form-group">
+      <label for="logros-bajada">Frase bajo el título</label>
+      <textarea id="logros-bajada" class="form-control" rows="2" formControlName="bajada" maxlength="200"></textarea>
+      <small class="form-ayuda">Opcional. Hasta 200 caracteres.</small>
+    </div>
+  </form>
+</app-form-modal>
+
+<!-- ═══════════ Modal de un logro: en tres pasos ═══════════ -->
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar logro' : 'Agregar logro'"
+  ancho="760px"
+  [guardando]="guardando"
+  [ocultarBotonesPorDefecto]="true"
+  (cancelar)="cerrar()"
+>
+  <pw-cuerpo-desplazable #cuerpo>
+  <app-wizard #wizard [pasos]="pasos" [(actual)]="paso" [form]="form"></app-wizard>
+
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <!-- 1 · El logro -->
+    <div class="seccion-form pw-paso" [hidden]="paso !== 0">
+      <h3 class="seccion-form__titulo">El logro</h3>
+      <div class="rejilla-campos">
+        <div class="form-group rejilla-campos--completo">
+          <label for="logro-titulo">Qué se logró *</label>
+          <textarea id="logro-titulo" class="form-control" rows="2" formControlName="titulo" maxlength="140"
+            placeholder="Ej. Subcampeón del XIX Concurso Nacional de Bandas Sinfónicas Escolares" [class.is-invalid]="invalido('titulo')"></textarea>
+          <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 140).</small>
+        </div>
+        <div class="form-group">
+          <label for="logro-categoria">Categoría *</label>
+          <select id="logro-categoria" class="form-control" formControlName="categoria" [class.is-invalid]="invalido('categoria')">
+            <option value="" disabled>Elige la categoría</option>
+            <option *ngFor="let c of categorias" [value]="c.valor">{{ c.nombre }}</option>
+          </select>
+          <small class="form-error" *ngIf="invalido('categoria')">Elige una categoría.</small>
+        </div>
+        <div class="form-group">
+          <label for="logro-anio">Año</label>
+          <input id="logro-anio" type="number" class="form-control" formControlName="anio" min="1900" [max]="anioActual"
+            placeholder="Ej. 2011" [class.is-invalid]="invalido('anio')" />
+          <small class="form-error" *ngIf="invalido('anio')">Un año entre 1900 y 2100.</small>
+          <small class="form-ayuda" *ngIf="!invalido('anio')">Vacío si no se conoce: no se inventa.</small>
+        </div>
+        <div class="form-group">
+          <label for="logro-nivel">Nivel o grupo</label>
+          <input id="logro-nivel" type="text" class="form-control" formControlName="nivel" maxlength="60" placeholder="Ej. Banda Sinfónica" />
+        </div>
+        <div class="form-group">
+          <label for="logro-estado">Estado</label>
+          <select id="logro-estado" class="form-control" formControlName="estado">
+            <option value="publicado">Publicado</option>
+            <option value="borrador">Borrador</option>
+          </select>
+        </div>
+        <div class="form-group rejilla-campos--completo">
+          <label for="logro-descripcion">Detalle</label>
+          <textarea id="logro-descripcion" class="form-control" rows="2" formControlName="descripcion" maxlength="300"
+            placeholder="Concurso, lugar, organizador."></textarea>
+        </div>
+      </div>
+      <label class="check-item">
+        <input type="checkbox" formControlName="destacado" />
+        <span>Destacado: se muestra también arriba de la página (para los más importantes, como los nacionales).</span>
+      </label>
+    </div>
+
+    <!-- 2 · Fuente -->
+    <div class="seccion-form pw-paso" [hidden]="paso !== 1">
+      <h3 class="seccion-form__titulo">Fuente</h3>
+      <div class="rejilla-campos">
+        <div class="form-group">
+          <label for="logro-fuente">Fuente</label>
+          <input id="logro-fuente" type="text" class="form-control" formControlName="fuenteEtiqueta" maxlength="120"
+            placeholder="Ej. Diario Correo, 18/07/2011" [class.is-invalid]="fuenteSinEtiqueta && form.touched" />
+          <small class="form-error" *ngIf="fuenteSinEtiqueta && form.touched">Con dirección, di también cuál es la fuente.</small>
+          <small class="form-ayuda" *ngIf="!(fuenteSinEtiqueta && form.touched)">De dónde sale el dato. Se muestra al pie del logro.</small>
+        </div>
+        <div class="form-group">
+          <label for="logro-fuente-url">Dirección de la fuente</label>
+          <input id="logro-fuente-url" type="url" class="form-control" formControlName="fuenteUrl" placeholder="https://…"
+            [class.is-invalid]="invalido('fuenteUrl')" />
+          <small class="form-error" *ngIf="invalido('fuenteUrl')">Una dirección que empiece con https://.</small>
+          <small class="form-ayuda" *ngIf="!invalido('fuenteUrl')">Solo si es pública. Vacía si la fuente no tiene enlace.</small>
+        </div>
+        <div class="form-group rejilla-campos--completo">
+          <label for="logro-aclaracion">Aviso sobre un dato incompleto</label>
+          <input id="logro-aclaracion" type="text" class="form-control" formControlName="aclaracion" maxlength="60" placeholder="Ej. Año por confirmar" />
+          <small class="form-ayuda">Se muestra a la vista. No reemplaza el dato: si no se sabe el año, el año va vacío.</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 · Foto -->
+    <div class="seccion-form pw-paso" [hidden]="paso !== 2">
+      <h3 class="seccion-form__titulo">Foto</h3>
+      <app-selector-imagen *ngIf="modalVisible" uso="logro" etiqueta="Foto" [(imagen)]="foto"></app-selector-imagen>
+      <small class="form-ayuda">Opcional. Si muestra estudiantes, hace falta la autorización de sus familias.</small>
+    </div>
+  </form>
+  </pw-cuerpo-desplazable>
+
+  <div modalFooter class="asistente-pie asistente-pie--extremos">
+    <button type="button" class="btn-secondary pw-boton-entero" (click)="wizard.anterior()" [disabled]="guardando" [style.visibility]="paso > 0 ? 'visible' : 'hidden'">
+      <app-icon icono="arrow_left" [tamano]="15"></app-icon>
+      Anterior
+    </button>
+    <div class="asistente-pie">
+      <button type="button" class="btn-secondary" (click)="cerrar()" [disabled]="guardando">Cancelar</button>
+      <button type="button" class="btn-secondary" *ngIf="!wizard.esUltimo && editando" (click)="siguiente()" [disabled]="guardando">
+        Siguiente
+      </button>
+      <button type="button" class="btn-primary" *ngIf="!wizard.esUltimo && !editando" (click)="siguiente()">
+        Siguiente
+        <app-icon icono="arrow_right" [tamano]="15"></app-icon>
+      </button>
+      <button type="button" class="btn-primary" *ngIf="wizard.esUltimo || editando" (click)="guardar()" [disabled]="guardando">
+        {{ guardando ? 'Guardando…' : editando ? 'Guardar cambios' : 'Guardar logro' }}
+      </button>
+    </div>
+  </div>
+</app-form-modal>

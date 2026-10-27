@@ -1,0 +1,64 @@
+{
+  "data": [
+    {
+      "id": "inicial",
+      "nombre": "Inicial",
+      "rango": "3 a 5 años",
+      "descripcion": [
+        "Pasos iniciales para presentar las bases de la construcción del saber. La Educación Infantil es la primera etapa de la Educación Básica y objetiva el desarrollo integral del niño, en sus aspectos físico, afectivo, intelectual, lingüístico y social, en asociación con la familia y la comunidad. Dividido en tres períodos lectivos (del primero al tercero) para niños de 3 a 5 años.",
+        "En este nivel, desarrollamos las capacidades afectivas, motrices, sociales y cognitivas que permiten al niño desenvolverse de manera asertiva."
+      ],
+      "rasgos": [
+        "Ambiente estimulante para los niños"
+      ],
+      "talleres": [],
+      "foto": null
+    },
+    {
+      "id": "primaria",
+      "nombre": "Primaria",
+      "rango": "1.er a 6.º grado",
+      "descripcion": [
+        "Brindamos una Educación Personalizada, con una plana docente altamente capacitado.",
+        "Los preparamos para que sean personas capaces de responder a las exigencias de un mundo globalizado."
+      ],
+      "rasgos": [
+        "Exclusiva plana docente",
+        "Enseñanza especializada en ciencias",
+        "Círculo de estudios",
+        "Formación de valores"
+      ],
+      "talleres": [
+        {
+          "titulo": "Círculo Matemático",
+          "texto": "Con horarios adicionales para estudiantes que tienen afinidad por dicha área desde el tercer grado de primaria."
+        },
+        {
+          "titulo": "Taller de Inglés",
+          "texto": "Para estudiantes que quieren profundizar sus conocimientos de este importante idioma."
+        },
+        {
+          "titulo": "Taller de Oratoria",
+          "texto": "Para mejorar la expresión y lograr mayor confianza en nuestros estudiantes."
+        },
+        {
+          "titulo": "Taller Musical",
+          "texto": "Para estimular aún más el área artística y la creatividad de nuestros estudiantes a través de la música con un departamento musical totalmente equipado."
+        }
+      ],
+      "foto": null
+    },
+    {
+      "id": "secundaria",
+      "nombre": "Secundaria",
+      "rango": "1.er a 5.º año",
+      "descripcion": [
+        "Cuenta con un programa de nivel avanzado para los estudiantes del nivel secundario. A partir del desarrollo de un análisis crítico de la educación, nuestra currícula busca desarrollar personas líderes, con alto potencial académico y formado en valores. Ello orienta nuestra educación secundaria a alumnos egresados con pleno uso de sus potencialidades académicas no solo para ingresar a la universidad sino también para el desarrollo social y cultural de nuestro país.",
+        "Afianzamos el talento creativo y emprendedor de nuestros alumnos, estimulando en ellos la investigación, práctica de valores sociales y conservación del medio ambiente."
+      ],
+      "rasgos": [],
+      "talleres": [],
+      "foto": null
+    }
+  ]
+}

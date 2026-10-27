@@ -1,0 +1,33 @@
+{
+  "data": {
+    "titulo": "Educación adventista en Juliaca desde 1971.",
+    "parrafos": [
+      "El colegio nació de la Iglesia Adventista del Séptimo Día Villa Hermosa, organizada en 1967 en el barrio Túpac Amaru. Sus familias quisieron una escuela para sus hijos, y en 1971 se reconoció el nivel primaria.",
+      "Hoy lo promueve la Asociación Educativa Colegio Adventista Túpac Amaru. Su equipo docente trabaja con la certificadora de calidad SGCE y el colegio mantiene un convenio con la Universidad Peruana Unión."
+    ],
+    "foto": {
+      "url": "https://cata.edu.pe/wp-content/uploads/2025/05/Sin-titulo-1200-x-900-px.png",
+      "alt": "",
+      "ancho": 1200,
+      "alto": 900
+    },
+    "simbolos": [
+      {
+        "nombre": "Las manos abiertas",
+        "significado": "Estar dispuestos a extender la mano a quien más lo necesita."
+      },
+      {
+        "nombre": "La Biblia abierta",
+        "significado": "Enseñar bajo la cosmovisión cristiana basada en la Biblia."
+      },
+      {
+        "nombre": "La llama encendida",
+        "significado": "Mantener viva la luz del Espíritu Santo en la oscuridad."
+      },
+      {
+        "nombre": "Los laureles",
+        "significado": "La riqueza y los recursos naturales del Perú."
+      }
+    ]
+  }
+}

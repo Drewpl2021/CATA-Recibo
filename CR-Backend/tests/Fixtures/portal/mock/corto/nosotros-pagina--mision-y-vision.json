@@ -1,0 +1,14 @@
+{
+  "data": {
+    "slug": "mision-y-vision",
+    "titulo": "Misión",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "destacado",
+        "rotulo": "Misión",
+        "texto": "Educar."
+      }
+    ]
+  }
+}

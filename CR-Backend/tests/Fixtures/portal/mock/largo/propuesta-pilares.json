@@ -1,0 +1,105 @@
+{
+  "data": {
+    "introduccion": {
+      "titulo": "Educación adventista con un título largo para comprobar el ajuste",
+      "parrafos": [
+        "La estructuración de los contenidos es flexible, para que cada docente pueda organizarlos de acuerdo con su realidad y situación, de manera de respetar la organización curricular de la institución educativa. Los libros de texto y otros materiales incluyen el desarrollo de las competencias y habilidades previstas por las políticas educativas de cada país, mientras que animan a los estudiantes a desarrollar el pensamiento creativo, la madurez y la sensibilidad cristiana para tomar las decisiones correctas para su futuro, ya sea que prosigan al nivel superior de enseñanza universitaria o se sumerjan en el mercado de trabajo.",
+        "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+      ]
+    },
+    "cifras": [
+      {
+        "id": "pilares",
+        "valor": 4,
+        "sufijo": null,
+        "etiqueta": "pilares de la propuesta educativa"
+      },
+      {
+        "id": "niveles",
+        "valor": 3,
+        "sufijo": null,
+        "etiqueta": "niveles: inicial, primaria y secundaria"
+      },
+      {
+        "id": "universidades",
+        "valor": 3,
+        "sufijo": null,
+        "etiqueta": "universidades en la academia preuniversitaria"
+      },
+      {
+        "id": "prueba",
+        "valor": 1000,
+        "sufijo": "+",
+        "etiqueta": "cifra de prueba con una etiqueta muy larga para comprobar el ajuste"
+      }
+    ],
+    "pilares": [
+      {
+        "id": "b-learning",
+        "titulo": "Enfoque B-Learning",
+        "texto": "Contamos con docentes mentores con una cultura de evaluación continua a través de nuestro sistema B-Learning que permite el monitoreo del desarrollo de las habilidades a lo largo de la vida estudiantil.",
+        "puntos": []
+      },
+      {
+        "id": "liderazgo",
+        "titulo": "Liderazgo de servicio",
+        "texto": "Nuestro compromiso es formar líderes que no se vendan ni se compren, que sean sinceros y honrados en lo más íntimo de sus almas y que se mantengan de parte de la justicia aunque se desplomen los cielos.",
+        "puntos": []
+      },
+      {
+        "id": "integral",
+        "titulo": "Desarrollo integral",
+        "texto": "Preparar al estudiante para una vida de servicio a través del desarrollo armonioso de las facultades físicas, mentales, espirituales y sociales. Y para lograrlo contamos con un centro de monitoreo de los aprendizajes que Ud. como padre observará a lo largo de los 13 años.",
+        "puntos": [
+          "Espiritual",
+          "Mental",
+          "Físico",
+          "Social"
+        ]
+      },
+      {
+        "id": "experiencias",
+        "titulo": "Modelado en experiencias prácticas",
+        "texto": "El docente mentor guía a los estudiantes en el desarrollo de diversos talleres para la vida, proyectos tecnológicos, proyectos de estilo de vida saludable, proyectos de STEAM y proyectos de emprendimiento logrando vivir experiencias vivenciales para toda la vida.",
+        "puntos": []
+      },
+      {
+        "id": "p0",
+        "titulo": "Pilar de prueba número 1 con un título largo",
+        "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "puntos": [
+          "Punto de prueba uno",
+          "Punto de prueba dos con texto largo",
+          "Tres",
+          "Cuatro",
+          "Cinco"
+        ]
+      },
+      {
+        "id": "p1",
+        "titulo": "Pilar de prueba número 2 con un título largo",
+        "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "puntos": []
+      },
+      {
+        "id": "p2",
+        "titulo": "Pilar de prueba número 3 con un título largo",
+        "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "puntos": [
+          "Punto de prueba uno",
+          "Punto de prueba dos con texto largo",
+          "Tres",
+          "Cuatro",
+          "Cinco"
+        ]
+      },
+      {
+        "id": "p3",
+        "titulo": "Pilar de prueba número 4 con un título largo",
+        "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "puntos": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,274 @@
+{
+  "data": {
+    "id": "p9",
+    "slug": "proyecto-de-prueba-9",
+    "titulo": "Proyecto de prueba número 9 con un título muy largo para comprobar el ajuste en varias líneas",
+    "lema": null,
+    "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+    "categoria": "cat-1",
+    "niveles": [
+      "Inicial"
+    ],
+    "estado": "en-curso",
+    "fecha": "2026-09-15",
+    "foto": {
+      "url": "https://medios.prueba.cata.edu.pe/proyecto-gastronomia.svg",
+      "alt": "Foto de prueba: proyecto escolar",
+      "ancho": 1200,
+      "alto": 800
+    },
+    "categoriaNombre": "Tecnología e innovación",
+    "descripcion": [
+      "El colegio nació de la Iglesia Adventista del Séptimo Día Villa Hermosa, organizada el 13 de mayo de 1967 en el barrio Túpac Amaru de la ciudad de Juliaca. Las familias, los hermanos y hermanas de esta reciente iglesia se preocuparon por la educación de sus hijos y por el avance de la obra adventista, lo que permitió proyectarse a instituir un centro educativo que con los años creció hasta ofrecer los niveles inicial, primaria y secundaria en varias sedes de la provincia de San Román, siempre con una formación integral.",
+      "El colegio nació de la Iglesia Adventista del Séptimo Día Villa Hermosa, organizada el 13 de mayo de 1967 en el barrio Túpac Amaru de la ciudad de Juliaca. Las familias, los hermanos y hermanas de esta reciente iglesia se preocuparon por la educación de sus hijos y por el avance de la obra adventista, lo que permitió proyectarse a instituir un centro educativo que con los años creció hasta ofrecer los niveles inicial, primaria y secundaria en varias sedes de la provincia de San Román, siempre con una formación integral.",
+      "El colegio nació de la Iglesia Adventista del Séptimo Día Villa Hermosa, organizada el 13 de mayo de 1967 en el barrio Túpac Amaru de la ciudad de Juliaca. Las familias, los hermanos y hermanas de esta reciente iglesia se preocuparon por la educación de sus hijos y por el avance de la obra adventista, lo que permitió proyectarse a instituir un centro educativo que con los años creció hasta ofrecer los niveles inicial, primaria y secundaria en varias sedes de la provincia de San Román, siempre con una formación integral.",
+      "El colegio nació de la Iglesia Adventista del Séptimo Día Villa Hermosa, organizada el 13 de mayo de 1967 en el barrio Túpac Amaru de la ciudad de Juliaca. Las familias, los hermanos y hermanas de esta reciente iglesia se preocuparon por la educación de sus hijos y por el avance de la obra adventista, lo que permitió proyectarse a instituir un centro educativo que con los años creció hasta ofrecer los niveles inicial, primaria y secundaria en varias sedes de la provincia de San Román, siempre con una formación integral.",
+      "El colegio nació de la Iglesia Adventista del Séptimo Día Villa Hermosa, organizada el 13 de mayo de 1967 en el barrio Túpac Amaru de la ciudad de Juliaca. Las familias, los hermanos y hermanas de esta reciente iglesia se preocuparon por la educación de sus hijos y por el avance de la obra adventista, lo que permitió proyectarse a instituir un centro educativo que con los años creció hasta ofrecer los niveles inicial, primaria y secundaria en varias sedes de la provincia de San Román, siempre con una formación integral.",
+      "El colegio nació de la Iglesia Adventista del Séptimo Día Villa Hermosa, organizada el 13 de mayo de 1967 en el barrio Túpac Amaru de la ciudad de Juliaca. Las familias, los hermanos y hermanas de esta reciente iglesia se preocuparon por la educación de sus hijos y por el avance de la obra adventista, lo que permitió proyectarse a instituir un centro educativo que con los años creció hasta ofrecer los niveles inicial, primaria y secundaria en varias sedes de la provincia de San Román, siempre con una formación integral."
+    ],
+    "secciones": [
+      {
+        "titulo": "Sección de prueba con viñetas y un título largo",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          }
+        ]
+      },
+      {
+        "titulo": "Sección numerada de prueba",
+        "tipo": "numerada",
+        "items": [
+          {
+            "titulo": "Eje de prueba 1 con título largo",
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": "Eje de prueba 3 con título largo",
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": "Eje de prueba 5 con título largo",
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": "Eje de prueba 7 con título largo",
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": "Eje de prueba 9 con título largo",
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": "Eje de prueba 11 con título largo",
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          },
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          }
+        ]
+      },
+      {
+        "titulo": "Lista de prueba 1",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          }
+        ]
+      },
+      {
+        "titulo": "Lista de prueba 2",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          }
+        ]
+      },
+      {
+        "titulo": "Lista de prueba 3",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          }
+        ]
+      },
+      {
+        "titulo": "Lista de prueba 4",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          }
+        ]
+      },
+      {
+        "titulo": "Lista de prueba 5",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          }
+        ]
+      },
+      {
+        "titulo": "Lista de prueba 6",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas."
+          }
+        ]
+      }
+    ],
+    "galeria": [
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-2.svg",
+        "alt": "Foto de prueba 1 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-1.svg",
+        "alt": "Foto de prueba 2 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-2.svg",
+        "alt": "Foto de prueba 3 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-1.svg",
+        "alt": "Foto de prueba 4 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-2.svg",
+        "alt": "Foto de prueba 5 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-1.svg",
+        "alt": "Foto de prueba 6 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-2.svg",
+        "alt": "Foto de prueba 7 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-1.svg",
+        "alt": "Foto de prueba 8 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-2.svg",
+        "alt": "Foto de prueba 9 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-1.svg",
+        "alt": "Foto de prueba 10 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-2.svg",
+        "alt": "Foto de prueba 11 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      },
+      {
+        "url": "https://medios.prueba.cata.edu.pe/proyecto-galeria-1.svg",
+        "alt": "Foto de prueba 12 de la galería",
+        "ancho": 1200,
+        "alto": 800
+      }
+    ]
+  }
+}

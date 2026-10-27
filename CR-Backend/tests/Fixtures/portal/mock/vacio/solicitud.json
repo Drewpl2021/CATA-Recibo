@@ -1,0 +1,15 @@
+{
+  "data": {
+    "titulo": "Solicitar información",
+    "texto": null,
+    "mensajeWhatsapp": "Hola, soy {nombre}. Quisiera información sobre el colegio para {grado}.",
+    "mensajesPorPagina": [],
+    "etiquetas": {
+      "nombre": "Tu nombre",
+      "grado": "Grado de interés",
+      "gradoEjemplo": "Por ejemplo: 1.er grado de primaria",
+      "gradoElegir": "Elige un grado",
+      "boton": "Escribir por WhatsApp"
+    }
+  }
+}

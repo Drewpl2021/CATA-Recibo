@@ -1,0 +1,17 @@
+{
+  "data": {
+    "slug": "personal-docente",
+    "titulo": "Personal Docente",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "texto",
+        "titulo": "Datos de prueba",
+        "parrafos": [
+          "El colegio aún no ha enviado la lista del personal docente. Los nombres, cargos y fotos de esta página son de prueba y sirven solo para mostrar cómo se verá."
+        ],
+        "firma": null
+      }
+    ]
+  }
+}

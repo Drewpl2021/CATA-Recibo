@@ -1,0 +1,427 @@
+<app-form-modal
+  [visible]="visible"
+  (visibleChange)="$event || alCancelar()"
+  [titulo]="'Contenido de «' + (pagina?.nombre ?? pagina?.titulo ?? '') + '»'"
+  ancho="1100px"
+  [guardando]="guardando"
+  textoGuardar="Guardar el contenido"
+  (guardar)="guardar()"
+  (cancelar)="alCancelar()"
+>
+  <!-- Con su propio scroll: «Cancelar» y «Guardar» del modal quedan siempre a la vista. -->
+  <pw-cuerpo-desplazable #cuerpo>
+  <div class="form-fields">
+    <p class="form-ayuda pw-sin-margen">
+      Los bloques de la página, en el orden en que se ven: elige uno en el índice para editarlo. Sin bloques, el portal dice «El
+      contenido de esta página se publicará pronto». Todos los textos son planos: sin negritas ni enlaces dentro. Las listas de
+      textos se escriben una por línea.
+    </p>
+
+    <div class="pw-esqueleto" *ngIf="cargando" role="status">
+      <span class="solo-lectores">Cargando el contenido…</span>
+      <span class="esqueleto esqueleto--bloque" aria-hidden="true"></span>
+    </div>
+
+    <div class="form-error" role="alert" *ngIf="erroresDeLaPagina.length">
+      <p *ngFor="let e of erroresDeLaPagina">{{ e }}</p>
+    </div>
+
+    <div class="ajustes-layout pw-bloques" *ngIf="!cargando">
+      <!-- Agregar un bloque, y debajo el índice (arriba: con treinta bloques, el botón sigue a la vista) -->
+      <div class="pw-bloques__lado">
+        <div class="seccion-form">
+          <div class="form-group">
+            <label for="tipo-nuevo">Agregar un bloque</label>
+            <select id="tipo-nuevo" class="form-control" [(ngModel)]="tipoNuevo">
+              <option *ngFor="let t of tipos" [value]="t.valor">{{ t.nombre }}</option>
+            </select>
+            <small class="form-ayuda">{{ ayudaDelTipoNuevo }}</small>
+          </div>
+          <button type="button" class="btn-secondary" (click)="agregarBloque()" [disabled]="bloques.length >= maxBloques">
+            <app-icon icono="plus" [tamano]="14"></app-icon> Agregar al final
+          </button>
+          <small class="form-ayuda">{{ bloques.length }} de {{ maxBloques }} bloques.</small>
+        <nav class="ajustes-indice" aria-label="Bloques de la página" *ngIf="bloques.length">
+          <button type="button" *ngFor="let b of bloques; let i = index; trackBy: porClave" class="ajustes-indice__item"
+            [class.ajustes-indice__item--activo]="actual === i" [attr.aria-current]="actual === i ? 'true' : null"
+            [attr.aria-controls]="'bloque-' + b.clave" (click)="elegir(i)">
+            <span class="ajustes-indice__icono"><app-icon [icono]="iconoDe(b.tipo)" [tamano]="18"></app-icon></span>
+            <span class="ajustes-indice__textos">
+              <span class="ajustes-indice__nombre">{{ i + 1 }}. {{ nombreDeTipo[b.tipo] || b.tipo }}</span>
+              <span class="ajustes-indice__estado" [class.ajustes-indice__estado--aviso]="erroresDe(i).length">
+                <app-icon *ngIf="erroresDe(i).length" icono="warning" [tamano]="13"></app-icon>
+                {{ erroresDe(i).length ? 'Por corregir' : resumenDe(b) }}
+              </span>
+            </span>
+          </button>
+        </nav>
+
+        <div class="card-vacio" *ngIf="!bloques.length">
+          <app-icon icono="description" [tamano]="34"></app-icon>
+          Todavía no tiene bloques: agrega el primero.
+        </div>
+
+        </div>
+      </div>
+
+      <!-- El bloque elegido (los demás quedan escondidos, con lo que se haya escrito) -->
+      <div class="pw-detalle">
+        <section class="section-panel ajustes-panel" *ngFor="let b of bloques; let i = index; trackBy: porClave"
+          [hidden]="actual !== i" [id]="'bloque-' + b.clave" [attr.aria-labelledby]="'bloque-titulo-' + b.clave">
+          <header class="ajustes-panel__cabecera">
+            <div>
+              <h3 [id]="'bloque-titulo-' + b.clave">Bloque {{ i + 1 }} · {{ nombreDeTipo[b.tipo] || b.tipo }}</h3>
+              <p class="form-ayuda">{{ ayudaDe(b.tipo) }}</p>
+            </div>
+            <div class="action-btns">
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverBloque(i, -1)" [disabled]="i === 0"
+                [attr.aria-label]="'Subir el bloque ' + (i + 1)" title="Subir">
+                <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverBloque(i, 1)" [disabled]="i === bloques.length - 1"
+                [attr.aria-label]="'Bajar el bloque ' + (i + 1)" title="Bajar">
+                <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+              </button>
+              <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarBloque(i)"
+                [attr.aria-label]="'Quitar el bloque ' + (i + 1)" title="Quitar">
+                <app-icon icono="trash" [tamano]="16"></app-icon>
+              </button>
+            </div>
+          </header>
+
+          <div class="ajuste-bloque">
+            <div class="form-error" role="alert" *ngIf="erroresDe(i).length">
+              <p *ngFor="let e of erroresDe(i)">{{ e }}</p>
+            </div>
+
+            <ng-container [ngSwitch]="b.tipo">
+              <!-- ═════ Texto ═════ -->
+              <ng-container *ngSwitchCase="'texto'">
+                <div class="form-group">
+                  <label [for]="'b-titulo-' + b.clave">Título</label>
+                  <input [id]="'b-titulo-' + b.clave" type="text" class="form-control" [(ngModel)]="b['titulo']" (ngModelChange)="marcarCambio()" />
+                </div>
+                <div class="form-group">
+                  <label [for]="'b-parrafos-' + b.clave">Párrafos, uno por línea *</label>
+                  <textarea [id]="'b-parrafos-' + b.clave" class="form-control" rows="6" [(ngModel)]="b['parrafos']" (ngModelChange)="marcarCambio()"></textarea>
+                  <small class="form-ayuda">De 1 a 20.</small>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label [for]="'b-firma-' + b.clave">Firma</label>
+                    <input [id]="'b-firma-' + b.clave" type="text" class="form-control" [(ngModel)]="b['firmaNombre']" (ngModelChange)="marcarCambio()"
+                      placeholder="Opcional. Ej. La Dirección" />
+                  </div>
+                  <div class="form-group">
+                    <label [for]="'b-firma-detalle-' + b.clave">Detalle de la firma</label>
+                    <input [id]="'b-firma-detalle-' + b.clave" type="text" class="form-control" [(ngModel)]="b['firmaDetalle']" (ngModelChange)="marcarCambio()" />
+                  </div>
+                </div>
+              </ng-container>
+
+              <!-- ═════ Destacado ═════ -->
+              <ng-container *ngSwitchCase="'destacado'">
+                <div class="form-group">
+                  <label [for]="'b-rotulo-' + b.clave">Rótulo *</label>
+                  <input [id]="'b-rotulo-' + b.clave" type="text" class="form-control" [(ngModel)]="b['rotulo']" (ngModelChange)="marcarCambio()" placeholder="Ej. Misión" />
+                </div>
+                <div class="form-group">
+                  <label [for]="'b-texto-' + b.clave">Texto *</label>
+                  <textarea [id]="'b-texto-' + b.clave" class="form-control" rows="3" maxlength="200" [(ngModel)]="b['texto']" (ngModelChange)="marcarCambio()"></textarea>
+                  <small class="form-ayuda">{{ b['texto']?.length ?? 0 }} de 200. Los destacados seguidos van lado a lado.</small>
+                </div>
+              </ng-container>
+
+              <!-- ═════ Lista ═════ -->
+              <ng-container *ngSwitchCase="'lista'">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label [for]="'b-titulo-' + b.clave">Título</label>
+                    <input [id]="'b-titulo-' + b.clave" type="text" class="form-control" [(ngModel)]="b['titulo']" (ngModelChange)="marcarCambio()" />
+                  </div>
+                  <div class="form-group">
+                    <label [for]="'b-estilo-' + b.clave">Cómo se muestra</label>
+                    <select [id]="'b-estilo-' + b.clave" class="form-control" [(ngModel)]="b['estilo']" (ngModelChange)="marcarCambio()">
+                      <option value="vinetas">Viñetas</option>
+                      <option value="tarjetas">Tarjetas (valores, símbolos)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row" *ngFor="let item of b['items']; let j = index">
+                  <div class="form-group">
+                    <label [for]="'b-item-titulo-' + b.clave + '-' + j">Título {{ j + 1 }}</label>
+                    <input [id]="'b-item-titulo-' + b.clave + '-' + j" type="text" class="form-control" [(ngModel)]="item.titulo" (ngModelChange)="marcarCambio()" />
+                  </div>
+                  <div class="form-group">
+                    <label [for]="'b-item-texto-' + b.clave + '-' + j">Texto {{ j + 1 }} *</label>
+                    <textarea [id]="'b-item-texto-' + b.clave + '-' + j" class="form-control" rows="2" [(ngModel)]="item.texto" (ngModelChange)="marcarCambio()"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label [for]="'b-item-fuente-' + b.clave + '-' + j">Fuente</label>
+                    <input [id]="'b-item-fuente-' + b.clave + '-' + j" type="text" class="form-control" [(ngModel)]="item.fuente" (ngModelChange)="marcarCambio()"
+                      placeholder="Ej. La Educación, p. 57" />
+                  </div>
+                  <ng-container *ngTemplateOutlet="botones; context: { lista: b['items'], j: j, que: 'el elemento' }"></ng-container>
+                </div>
+                <div>
+                  <button type="button" class="btn-secondary" (click)="agregar(b['items'], { titulo: '', texto: '', fuente: '' }, 20)" [disabled]="b['items'].length >= 20">
+                    <app-icon icono="plus" [tamano]="14"></app-icon> Agregar elemento
+                  </button>
+                </div>
+              </ng-container>
+
+              <!-- ═════ Línea de tiempo ═════ -->
+              <ng-container *ngSwitchCase="'hitos'">
+                <div class="form-group">
+                  <label [for]="'b-titulo-' + b.clave">Título</label>
+                  <input [id]="'b-titulo-' + b.clave" type="text" class="form-control" [(ngModel)]="b['titulo']" (ngModelChange)="marcarCambio()" />
+                </div>
+                <div class="form-row" *ngFor="let item of b['items']; let j = index">
+                  <div class="form-group">
+                    <label [for]="'b-hito-fecha-' + b.clave + '-' + j">Fecha {{ j + 1 }} *</label>
+                    <input [id]="'b-hito-fecha-' + b.clave + '-' + j" type="text" class="form-control" [(ngModel)]="item.fecha" (ngModelChange)="marcarCambio()"
+                      placeholder="1971, o 13 de mayo de 1967" />
+                  </div>
+                  <div class="form-group">
+                    <label [for]="'b-hito-texto-' + b.clave + '-' + j">Qué pasó *</label>
+                    <textarea [id]="'b-hito-texto-' + b.clave + '-' + j" class="form-control" rows="2" [(ngModel)]="item.texto" (ngModelChange)="marcarCambio()"></textarea>
+                  </div>
+                  <ng-container *ngTemplateOutlet="botones; context: { lista: b['items'], j: j, que: 'el hito' }"></ng-container>
+                </div>
+                <div>
+                  <button type="button" class="btn-secondary" (click)="agregar(b['items'], { fecha: '', texto: '' }, 20)" [disabled]="b['items'].length >= 20">
+                    <app-icon icono="plus" [tamano]="14"></app-icon> Agregar hito
+                  </button>
+                </div>
+              </ng-container>
+
+              <!-- ═════ Imagen ═════ -->
+              <ng-container *ngSwitchCase="'imagen'">
+                <app-selector-imagen uso="contenido" etiqueta="Imagen" [obligatoria]="true" [imagen]="b['imagen']"
+                  (imagenChange)="b['imagen'] = $event; marcarCambio()"></app-selector-imagen>
+                <div class="form-group">
+                  <label [for]="'b-pie-' + b.clave">Pie de imagen</label>
+                  <input [id]="'b-pie-' + b.clave" type="text" class="form-control" [(ngModel)]="b['pie']" (ngModelChange)="marcarCambio()" />
+                </div>
+                <div class="form-group">
+                  <label [for]="'b-transcripcion-' + b.clave">Transcripción, un párrafo por línea</label>
+                  <textarea [id]="'b-transcripcion-' + b.clave" class="form-control" rows="4" [(ngModel)]="b['transcripcion']" (ngModelChange)="marcarCambio()"></textarea>
+                  <small class="form-ayuda">Si la imagen tiene texto (un documento, una partitura), escríbelo aquí: el portal lo ofrece en «Leer la transcripción». Hasta 20.</small>
+                </div>
+              </ng-container>
+
+              <!-- ═════ Personas ═════ -->
+              <ng-container *ngSwitchCase="'personas'">
+                <div class="form-group">
+                  <label [for]="'b-titulo-' + b.clave">Título del área</label>
+                  <input [id]="'b-titulo-' + b.clave" type="text" class="form-control" [(ngModel)]="b['titulo']" (ngModelChange)="marcarCambio()"
+                    placeholder="Opcional. Ej. Administración" />
+                </div>
+                <div class="grupo-montos" *ngFor="let p of b['personas']; let j = index">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label [for]="'b-persona-nombre-' + b.clave + '-' + j">Nombre {{ j + 1 }} *</label>
+                      <input [id]="'b-persona-nombre-' + b.clave + '-' + j" type="text" class="form-control" [(ngModel)]="p.nombre" (ngModelChange)="marcarCambio()" />
+                    </div>
+                    <div class="form-group">
+                      <label [for]="'b-persona-cargo-' + b.clave + '-' + j">Cargo</label>
+                      <input [id]="'b-persona-cargo-' + b.clave + '-' + j" type="text" class="form-control" [(ngModel)]="p.cargo" (ngModelChange)="marcarCambio()" />
+                    </div>
+                    <ng-container *ngTemplateOutlet="botones; context: { lista: b['personas'], j: j, que: 'a la persona' }"></ng-container>
+                  </div>
+                  <app-selector-imagen uso="persona" etiqueta="Foto" [imagen]="p.foto" (imagenChange)="p.foto = $event; marcarCambio()"></app-selector-imagen>
+                </div>
+                <div>
+                  <button type="button" class="btn-secondary" (click)="agregar(b['personas'], nuevaPersona(), 40)" [disabled]="b['personas'].length >= 40">
+                    <app-icon icono="plus" [tamano]="14"></app-icon> Agregar persona
+                  </button>
+                  <small class="form-ayuda">Hasta 40. Sin foto, el portal muestra las iniciales. Para separar áreas, un bloque por área.</small>
+                </div>
+              </ng-container>
+
+              <!-- ═════ Carta ═════ -->
+              <ng-container *ngSwitchCase="'mensaje'">
+                <div class="form-group">
+                  <label [for]="'b-titulo-' + b.clave">Saludo</label>
+                  <input [id]="'b-titulo-' + b.clave" type="text" class="form-control" [(ngModel)]="b['titulo']" (ngModelChange)="marcarCambio()"
+                    placeholder="Opcional. Ej. Querida familia:" />
+                </div>
+                <div class="form-group">
+                  <label [for]="'b-parrafos-' + b.clave">Párrafos, uno por línea *</label>
+                  <textarea [id]="'b-parrafos-' + b.clave" class="form-control" rows="6" [(ngModel)]="b['parrafos']" (ngModelChange)="marcarCambio()"></textarea>
+                  <small class="form-ayuda">De 1 a 12.</small>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label [for]="'b-firma-' + b.clave">Quién la firma *</label>
+                    <input [id]="'b-firma-' + b.clave" type="text" class="form-control" [(ngModel)]="b['firmaNombre']" (ngModelChange)="marcarCambio()" />
+                  </div>
+                  <div class="form-group">
+                    <label [for]="'b-firma-detalle-' + b.clave">Cargo de quien firma</label>
+                    <input [id]="'b-firma-detalle-' + b.clave" type="text" class="form-control" [(ngModel)]="b['firmaDetalle']" (ngModelChange)="marcarCambio()" />
+                  </div>
+                </div>
+                <app-selector-imagen uso="persona" etiqueta="Foto de quien firma" [imagen]="b['foto']" (imagenChange)="b['foto'] = $event; marcarCambio()"></app-selector-imagen>
+              </ng-container>
+
+              <!-- ═════ Letra ═════ -->
+              <ng-container *ngSwitchCase="'letra'">
+                <div class="form-group">
+                  <label [for]="'b-titulo-' + b.clave">Título</label>
+                  <input [id]="'b-titulo-' + b.clave" type="text" class="form-control" [(ngModel)]="b['titulo']" (ngModelChange)="marcarCambio()" />
+                </div>
+                <div class="form-row" *ngFor="let parte of b['partes']; let j = index">
+                  <div class="form-group">
+                    <label [for]="'b-parte-titulo-' + b.clave + '-' + j">Parte {{ j + 1 }}</label>
+                    <input [id]="'b-parte-titulo-' + b.clave + '-' + j" type="text" class="form-control" [(ngModel)]="parte.titulo" (ngModelChange)="marcarCambio()"
+                      placeholder="Ej. Coro, Estrofa 1" />
+                  </div>
+                  <div class="form-group">
+                    <label [for]="'b-parte-versos-' + b.clave + '-' + j">Versos, uno por línea *</label>
+                    <textarea [id]="'b-parte-versos-' + b.clave + '-' + j" class="form-control" rows="5" [(ngModel)]="parte.versos" (ngModelChange)="marcarCambio()"></textarea>
+                    <small class="form-ayuda">De 1 a 16.</small>
+                  </div>
+                  <ng-container *ngTemplateOutlet="botones; context: { lista: b['partes'], j: j, que: 'la parte' }"></ng-container>
+                </div>
+                <div>
+                  <button type="button" class="btn-secondary" (click)="agregar(b['partes'], { titulo: '', versos: '' }, 12)" [disabled]="b['partes'].length >= 12">
+                    <app-icon icono="plus" [tamano]="14"></app-icon> Agregar parte
+                  </button>
+                  <small class="form-ayuda">Una parte llamada «Coro» va arriba, destacada.</small>
+                </div>
+              </ng-container>
+
+              <!-- ═════ Audio ═════ -->
+              <ng-container *ngSwitchCase="'audio'">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label [for]="'b-titulo-' + b.clave">Título *</label>
+                    <input [id]="'b-titulo-' + b.clave" type="text" class="form-control" [(ngModel)]="b['titulo']" (ngModelChange)="marcarCambio()" />
+                  </div>
+                  <div class="form-group">
+                    <label [for]="'b-formato-' + b.clave">Formato *</label>
+                    <select [id]="'b-formato-' + b.clave" class="form-control" [(ngModel)]="b['formato']" (ngModelChange)="marcarCambio()">
+                      <option *ngFor="let f of formatosDeAudio" [value]="f.valor">{{ f.nombre }}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label [for]="'b-url-' + b.clave">Dirección del archivo *</label>
+                  <input [id]="'b-url-' + b.clave" type="url" class="form-control" [(ngModel)]="b['url']" (ngModelChange)="marcarCambio()" placeholder="https://…" />
+                  <small class="form-ayuda">Una dirección https del archivo de audio. El portal nunca lo reproduce solo.</small>
+                </div>
+                <div class="form-group">
+                  <label [for]="'b-descripcion-' + b.clave">Descripción</label>
+                  <input [id]="'b-descripcion-' + b.clave" type="text" class="form-control" [(ngModel)]="b['descripcion']" (ngModelChange)="marcarCambio()" />
+                </div>
+              </ng-container>
+
+              <!-- ═════ Organigrama ═════ -->
+              <ng-container *ngSwitchCase="'organigrama'">
+                <div class="form-group">
+                  <label [for]="'b-titulo-' + b.clave">Título</label>
+                  <input [id]="'b-titulo-' + b.clave" type="text" class="form-control" [(ngModel)]="b['titulo']" (ngModelChange)="marcarCambio()" />
+                </div>
+                <div class="form-group">
+                  <label [for]="'b-arbol-' + b.clave">Cargos *</label>
+                  <textarea [id]="'b-arbol-' + b.clave" class="form-control" rows="8" spellcheck="false" [(ngModel)]="b['arbol']" (ngModelChange)="marcarCambio()"
+                    placeholder="Dirección General — Mg. Ana Pérez&#10;  Subdirección&#10;    Coordinación de Primaria"></textarea>
+                  <small class="form-ayuda">
+                    Un cargo por línea. Dos espacios de sangría por nivel (hasta 5 niveles y 12 cargos debajo de cada uno). El detalle, después
+                    de « — ». La primera línea es el cargo de arriba. El portal siempre lo muestra como lista, también para lectores de pantalla.
+                  </small>
+                </div>
+                <app-selector-imagen uso="contenido" etiqueta="Imagen del organigrama" [imagen]="b['imagen']"
+                  (imagenChange)="b['imagen'] = $event; marcarCambio()"></app-selector-imagen>
+                <label class="check-item">
+                  <input type="checkbox" [(ngModel)]="b['conEnlace']" (ngModelChange)="marcarCambio()" />
+                  <span>Lleva un enlace (por ejemplo, al diseño original)</span>
+                </label>
+                <div class="form-row" *ngIf="b['conEnlace']">
+                  <div class="form-group">
+                    <label [for]="'b-enlace-etiqueta-' + b.clave">Texto del enlace *</label>
+                    <input [id]="'b-enlace-etiqueta-' + b.clave" type="text" class="form-control" [(ngModel)]="b['enlaceEtiqueta']" (ngModelChange)="marcarCambio()" />
+                  </div>
+                  <div class="form-group">
+                    <label [for]="'b-enlace-url-' + b.clave">Dirección *</label>
+                    <input [id]="'b-enlace-url-' + b.clave" type="url" class="form-control" [(ngModel)]="b['enlaceUrl']" (ngModelChange)="marcarCambio()" placeholder="https://…" />
+                  </div>
+                </div>
+              </ng-container>
+
+              <!-- ═════ Documentos ═════ -->
+              <ng-container *ngSwitchCase="'enlaces'">
+                <div class="form-group">
+                  <label [for]="'b-titulo-' + b.clave">Título</label>
+                  <input [id]="'b-titulo-' + b.clave" type="text" class="form-control" [(ngModel)]="b['titulo']" (ngModelChange)="marcarCambio()" />
+                </div>
+                <div class="grupo-montos" *ngFor="let e of b['enlaces']; let j = index">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label [for]="'b-doc-etiqueta-' + b.clave + '-' + j">Documento {{ j + 1 }} *</label>
+                      <input [id]="'b-doc-etiqueta-' + b.clave + '-' + j" type="text" class="form-control" [(ngModel)]="e.etiqueta" (ngModelChange)="marcarCambio()"
+                        placeholder="Ej. Reglamento interno 2026" />
+                    </div>
+                    <div class="form-group">
+                      <label [for]="'b-doc-formato-' + b.clave + '-' + j">Formato *</label>
+                      <select [id]="'b-doc-formato-' + b.clave + '-' + j" class="form-control" [(ngModel)]="e.formato" (ngModelChange)="marcarCambio()">
+                        <option *ngFor="let f of formatosDeDocumento" [value]="f.valor">{{ f.nombre }}</option>
+                      </select>
+                    </div>
+                    <ng-container *ngTemplateOutlet="botones; context: { lista: b['enlaces'], j: j, que: 'el documento' }"></ng-container>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label [for]="'b-doc-url-' + b.clave + '-' + j">Dirección *</label>
+                      <input [id]="'b-doc-url-' + b.clave + '-' + j" type="url" class="form-control" [(ngModel)]="e.url" (ngModelChange)="marcarCambio()" placeholder="https://…" />
+                    </div>
+                    <div class="form-group">
+                      <label [for]="'b-doc-peso-' + b.clave + '-' + j">Peso (KB)</label>
+                      <input [id]="'b-doc-peso-' + b.clave + '-' + j" type="number" min="0" step="0.1" class="form-control" [(ngModel)]="e.pesoKb" (ngModelChange)="marcarCambio()" />
+                      <small class="form-ayuda">Solo si es un archivo. Vacío para páginas y diseños en línea.</small>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label [for]="'b-doc-descripcion-' + b.clave + '-' + j">Descripción</label>
+                    <input [id]="'b-doc-descripcion-' + b.clave + '-' + j" type="text" class="form-control" [(ngModel)]="e.descripcion" (ngModelChange)="marcarCambio()" />
+                  </div>
+                </div>
+                <div>
+                  <button type="button" class="btn-secondary" (click)="agregar(b['enlaces'], { etiqueta: '', url: '', descripcion: '', formato: 'pdf', pesoKb: null }, 30)"
+                    [disabled]="b['enlaces'].length >= 30">
+                    <app-icon icono="plus" [tamano]="14"></app-icon> Agregar documento
+                  </button>
+                  <small class="form-ayuda">Hasta 30. Los PDF deben tener texto seleccionable, no ser escaneos.</small>
+                </div>
+              </ng-container>
+
+              <p class="form-ayuda" *ngSwitchDefault>Este bloque es de un tipo que el panel no conoce: se conserva tal cual.</p>
+            </ng-container>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  </pw-cuerpo-desplazable>
+</app-form-modal>
+
+<!-- Subir, bajar y quitar un elemento de una lista dentro de un bloque -->
+<ng-template #botones let-lista="lista" let-j="j" let-que="que">
+  <div class="form-group">
+    <label>&nbsp;</label>
+    <div class="action-btns">
+      <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(lista, j, -1)" [disabled]="j === 0"
+        [attr.aria-label]="'Subir ' + que + ' ' + (j + 1)" title="Subir">
+        <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+      </button>
+      <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(lista, j, 1)" [disabled]="j === lista.length - 1"
+        [attr.aria-label]="'Bajar ' + que + ' ' + (j + 1)" title="Bajar">
+        <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+      </button>
+      <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitar(lista, j)"
+        [attr.aria-label]="'Quitar ' + que + ' ' + (j + 1)" title="Quitar">
+        <app-icon icono="trash" [tamano]="16"></app-icon>
+      </button>
+    </div>
+  </div>
+</ng-template>

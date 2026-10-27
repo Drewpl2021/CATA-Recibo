@@ -1,0 +1,130 @@
+<div class="ajuste-bloque" id="ciclos-de-la-academia">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h3 class="grupo-montos__titulo">Ciclos</h3>
+      <p class="form-ayuda">
+        De 1 a {{ tope }} por universidad, en este orden. No tienen borrador: se ven cuando se ve su universidad. Los precios y las
+        fechas, solo si están vigentes: vacíos, el portal no los muestra.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevo()" [disabled]="!universidadId || filas.length >= tope">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar ciclo
+      </button>
+    </div>
+  </header>
+
+  <p class="form-ayuda" *ngIf="!universidades.length">Agrega primero una universidad.</p>
+
+  <ng-container *ngIf="universidades.length">
+    <div class="form-group">
+      <label for="ciclos-universidad">Ciclos de</label>
+      <select id="ciclos-universidad" class="form-control" (change)="elegir($any($event.target).value)">
+        <option *ngFor="let u of universidades" [value]="u.id" [selected]="u.id === universidadId">
+          {{ u.nombre }}{{ u.estado === 'borrador' ? ' (borrador)' : '' }}
+        </option>
+      </select>
+    </div>
+
+    <app-data-table
+      entidad="el ciclo"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      mensajeVacio="Esta universidad todavía no tiene ciclos: sin ellos no se puede publicar."
+      (editarFila)="editar($event)"
+      (eliminarFila)="pedirEliminar($event)"
+    >
+      <ng-template appCelda="nombre" let-fila>
+        <div class="pw-celda-titulo">
+          <span>
+            <strong>{{ fila.nombre }}</strong>
+            <small>{{ detalle(fila) }}</small>
+          </span>
+        </div>
+      </ng-template>
+
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nombre" title="Subir">
+            <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+          </button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nombre" title="Bajar">
+            <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+          </button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </ng-container>
+</div>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="(editando ? 'Editar ciclo de ' : 'Agregar ciclo a ') + (universidad?.nombre ?? '')"
+  ancho="720px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="ciclo-nombre">Ciclo *</label>
+        <input id="ciclo-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
+          placeholder="Ej. Verano" [class.is-invalid]="invalido('nombre')" />
+        <small class="form-error" *ngIf="invalido('nombre')">Obligatorio (máximo 40).</small>
+      </div>
+      <div class="form-group">
+        <label for="ciclo-turno">Turno</label>
+        <input id="ciclo-turno" type="text" class="form-control" formControlName="turno" maxlength="40" placeholder="Ej. Mañana" />
+      </div>
+    </div>
+
+    <div class="form-group" role="group" aria-labelledby="ciclo-modalidad">
+      <label id="ciclo-modalidad">Modalidad *</label>
+      <label class="check-item">
+        <input type="checkbox" formControlName="presencial" />
+        <span>Presencial</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" formControlName="virtual" />
+        <span>Virtual</span>
+      </label>
+      <small class="form-error" *ngIf="error('sinModalidad')">Elige al menos una.</small>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="ciclo-precio">{{ form.value.virtual ? 'Precio presencial (S/)' : 'Precio (S/)' }}</label>
+        <input id="ciclo-precio" type="number" class="form-control" formControlName="precio" min="0" max="99999" step="0.01"
+          [class.is-invalid]="invalido('precio')" />
+        <small class="form-error" *ngIf="invalido('precio')">De 0 a 99 999.</small>
+      </div>
+      <div class="form-group" *ngIf="form.value.virtual">
+        <label for="ciclo-precio-virtual">Precio virtual (S/)</label>
+        <input id="ciclo-precio-virtual" type="number" class="form-control" formControlName="precio_virtual" min="0" max="99999" step="0.01"
+          [class.is-invalid]="invalido('precio_virtual')" />
+        <small class="form-error" *ngIf="invalido('precio_virtual')">De 0 a 99 999.</small>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="ciclo-inicio">Inicio</label>
+        <input id="ciclo-inicio" type="date" class="form-control" formControlName="inicio" />
+      </div>
+      <div class="form-group">
+        <label for="ciclo-fin">Fin</label>
+        <input id="ciclo-fin" type="date" class="form-control" formControlName="fin" [class.is-invalid]="error('finAntes')" />
+        <small class="form-error" *ngIf="error('finAntes')">El fin no puede ser antes del inicio.</small>
+      </div>
+    </div>
+    <small class="form-ayuda">Precios y fechas, solo si están vigentes. Vacíos, el portal no los muestra.</small>
+  </form>
+</app-form-modal>

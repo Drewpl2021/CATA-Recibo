@@ -1,0 +1,50 @@
+{
+  "data": {
+    "actualizado": "2026-10-05",
+    "nota": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+    "niveles": [
+      {
+        "id": "inicial",
+        "nivel": "Educación Inicial",
+        "detalle": "Niños y niñas de 3, 4 y 5 años de edad, en la Sede CATA Inicial",
+        "estado": "pocas",
+        "vacantes": 3
+      },
+      {
+        "id": "primaria",
+        "nivel": "Educación Primaria",
+        "detalle": "Del primer al sexto grado, en la Sede Central y en la Sede CATA Jerusalén",
+        "estado": "disponible",
+        "vacantes": 128
+      },
+      {
+        "id": "secundaria",
+        "nivel": "Educación Secundaria",
+        "detalle": "Del primer al quinto año de secundaria, en la Sede Central",
+        "estado": "agotadas",
+        "vacantes": 0
+      },
+      {
+        "id": "inicial-3",
+        "nivel": "Inicial de tres años",
+        "detalle": null,
+        "estado": "consultar",
+        "vacantes": null
+      },
+      {
+        "id": "talleres",
+        "nivel": "Talleres de la Sede CATA Oasis",
+        "detalle": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "estado": "disponible",
+        "vacantes": null
+      },
+      {
+        "id": "otro",
+        "nivel": "Nivel de prueba",
+        "detalle": null,
+        "estado": "disponible",
+        "vacantes": 1000
+      }
+    ]
+  }
+}

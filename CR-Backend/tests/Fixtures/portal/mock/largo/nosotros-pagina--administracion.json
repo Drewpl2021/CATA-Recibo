@@ -1,0 +1,385 @@
+{
+  "data": {
+    "slug": "administracion",
+    "titulo": "Administración",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "personas",
+        "titulo": "Personal administrativo y de apoyo de todas las sedes del colegio",
+        "personas": [
+          {
+            "id": "p0",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p1",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p2",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p3",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p4",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p5",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p6",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p7",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p8",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p9",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p10",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p11",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p12",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p13",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p14",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p15",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p16",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p17",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p18",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p19",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p20",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p21",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p22",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p23",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p24",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p25",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p26",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p27",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p28",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p29",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p30",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p31",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p32",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p33",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p34",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p35",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p36",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          },
+          {
+            "id": "p37",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p38",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2024/08/2.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "p39",
+            "nombre": "Nombre de prueba muy largo Apellido Paterno Apellido Materno",
+            "cargo": "Cargo de prueba con un nombre largo: Dirección Académica de Inicial y Primaria de la Sede Central",
+            "foto": null
+          }
+        ]
+      }
+    ]
+  }
+}

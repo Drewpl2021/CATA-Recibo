@@ -16,6 +16,7 @@
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
+        "opis/json-schema": "^2.4",
         "phpoffice/phpspreadsheet": "^5.10"
     },
     "require-dev": {

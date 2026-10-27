@@ -1,0 +1,253 @@
+{
+  "data": {
+    "titulo": "Proyectos y programas institucionales del colegio",
+    "bajada": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas. Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+    "categorias": [
+      {
+        "id": "cat-1",
+        "nombre": "Tecnología e innovación"
+      },
+      {
+        "id": "cat-2",
+        "nombre": "Alimentación y salud"
+      },
+      {
+        "id": "cat-3",
+        "nombre": "Arte, música y cultura"
+      },
+      {
+        "id": "cat-4",
+        "nombre": "Ciencia y medio ambiente"
+      },
+      {
+        "id": "cat-5",
+        "nombre": "Deporte y recreación"
+      },
+      {
+        "id": "cat-6",
+        "nombre": "Fe y servicio a la comunidad"
+      },
+      {
+        "id": "cat-7",
+        "nombre": "Emprendimiento"
+      },
+      {
+        "id": "cat-8",
+        "nombre": "Lectura y comunicación"
+      }
+    ],
+    "proyectos": [
+      {
+        "id": "p1",
+        "slug": "proyecto-de-prueba-1",
+        "titulo": "Proyecto de prueba número 1 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": "Lema de prueba que ocupa más de una línea en un teléfono para comprobar el ajuste.",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-1",
+        "niveles": [
+          "Inicial"
+        ],
+        "estado": "en-curso",
+        "fecha": "2026-01-15",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/proyecto-gastronomia.svg",
+          "alt": "Foto de prueba: proyecto escolar",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "p2",
+        "slug": "proyecto-de-prueba-2",
+        "titulo": "Proyecto de prueba número 2 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": "Lema de prueba que ocupa más de una línea en un teléfono para comprobar el ajuste.",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-2",
+        "niveles": [
+          "Inicial",
+          "Primaria"
+        ],
+        "estado": "proximo",
+        "fecha": "2026-02-15",
+        "foto": null
+      },
+      {
+        "id": "p3",
+        "slug": "proyecto-de-prueba-3",
+        "titulo": "Proyecto de prueba número 3 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": null,
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-3",
+        "niveles": [
+          "Inicial",
+          "Primaria",
+          "Secundaria"
+        ],
+        "estado": "finalizado",
+        "fecha": "2026-03-15",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/proyecto-gastronomia.svg",
+          "alt": "Foto de prueba: proyecto escolar",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "p4",
+        "slug": "proyecto-de-prueba-4",
+        "titulo": "Proyecto de prueba número 4 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": "Lema de prueba que ocupa más de una línea en un teléfono para comprobar el ajuste.",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-4",
+        "niveles": [],
+        "estado": null,
+        "fecha": "2026-04-15",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/proyecto-robotica.svg",
+          "alt": "Foto de prueba: proyecto escolar",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "p5",
+        "slug": "proyecto-de-prueba-5",
+        "titulo": "Proyecto de prueba número 5 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": "Lema de prueba que ocupa más de una línea en un teléfono para comprobar el ajuste.",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-5",
+        "niveles": [
+          "Inicial"
+        ],
+        "estado": "en-curso",
+        "fecha": null,
+        "foto": null
+      },
+      {
+        "id": "p6",
+        "slug": "proyecto-de-prueba-6",
+        "titulo": "Proyecto de prueba número 6 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": null,
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-6",
+        "niveles": [
+          "Inicial",
+          "Primaria"
+        ],
+        "estado": "proximo",
+        "fecha": "2026-06-15",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/proyecto-robotica.svg",
+          "alt": "Foto de prueba: proyecto escolar",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "p7",
+        "slug": "proyecto-de-prueba-7",
+        "titulo": "Proyecto de prueba número 7 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": "Lema de prueba que ocupa más de una línea en un teléfono para comprobar el ajuste.",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-7",
+        "niveles": [
+          "Inicial",
+          "Primaria",
+          "Secundaria"
+        ],
+        "estado": "finalizado",
+        "fecha": "2026-07-15",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/proyecto-gastronomia.svg",
+          "alt": "Foto de prueba: proyecto escolar",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "p8",
+        "slug": "proyecto-de-prueba-8",
+        "titulo": "Proyecto de prueba número 8 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": "Lema de prueba que ocupa más de una línea en un teléfono para comprobar el ajuste.",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-8",
+        "niveles": [],
+        "estado": null,
+        "fecha": "2026-08-15",
+        "foto": null
+      },
+      {
+        "id": "p9",
+        "slug": "proyecto-de-prueba-9",
+        "titulo": "Proyecto de prueba número 9 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": null,
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-1",
+        "niveles": [
+          "Inicial"
+        ],
+        "estado": "en-curso",
+        "fecha": "2026-09-15",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/proyecto-gastronomia.svg",
+          "alt": "Foto de prueba: proyecto escolar",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "p10",
+        "slug": "proyecto-de-prueba-10",
+        "titulo": "Proyecto de prueba número 10 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": "Lema de prueba que ocupa más de una línea en un teléfono para comprobar el ajuste.",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-2",
+        "niveles": [
+          "Inicial",
+          "Primaria"
+        ],
+        "estado": "proximo",
+        "fecha": null,
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/proyecto-robotica.svg",
+          "alt": "Foto de prueba: proyecto escolar",
+          "ancho": 1200,
+          "alto": 800
+        }
+      },
+      {
+        "id": "p11",
+        "slug": "proyecto-de-prueba-11",
+        "titulo": "Proyecto de prueba número 11 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": "Lema de prueba que ocupa más de una línea en un teléfono para comprobar el ajuste.",
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-3",
+        "niveles": [
+          "Inicial",
+          "Primaria",
+          "Secundaria"
+        ],
+        "estado": "finalizado",
+        "fecha": "2026-02-15",
+        "foto": null
+      },
+      {
+        "id": "p12",
+        "slug": "proyecto-de-prueba-12",
+        "titulo": "Proyecto de prueba número 12 con un título muy largo para comprobar el ajuste en varias líneas",
+        "lema": null,
+        "resumen": "Texto de prueba que llega al máximo recomendado del contrato para comprobar que el bloque se acomoda en varias líneas sin cortarse ni tapar a los demás elementos de la página, incluso en las pantallas más pequeñas.",
+        "categoria": "cat-4",
+        "niveles": [],
+        "estado": null,
+        "fecha": "2026-03-15",
+        "foto": {
+          "url": "https://medios.prueba.cata.edu.pe/proyecto-robotica.svg",
+          "alt": "Foto de prueba: proyecto escolar",
+          "ancho": 1200,
+          "alto": 800
+        }
+      }
+    ]
+  }
+}

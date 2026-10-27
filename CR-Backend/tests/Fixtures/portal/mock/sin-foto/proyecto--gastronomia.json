@@ -1,0 +1,113 @@
+{
+  "data": {
+    "id": "gastronomia",
+    "slug": "gastronomia",
+    "titulo": "Gastronomía e Industrias Alimentarias",
+    "lema": "Cocinamos con propósito: salud, sabor y servicio.",
+    "resumen": "Desarrolla competencias en cocina, nutrición, procesamiento y control de alimentos, fomentando la creatividad, la innovación y el emprendimiento en el sector alimentario.",
+    "categoria": "alimentacion",
+    "niveles": [],
+    "estado": null,
+    "fecha": null,
+    "foto": null,
+    "categoriaNombre": "Alimentación y salud",
+    "descripcion": [
+      "Taller práctico donde los estudiantes desarrollan habilidades culinarias, conocen procesos de la industria alimentaria y promueven una alimentación saludable, integrando creatividad, ciencia y valores cristianos al servicio de la comunidad."
+    ],
+    "secciones": [
+      {
+        "titulo": "Objetivos",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Desarrollar habilidades culinarias aplicando técnicas básicas de cocina saludable."
+          },
+          {
+            "titulo": null,
+            "texto": "Fomentar el conocimiento sobre la producción, conservación y transformación de alimentos."
+          },
+          {
+            "titulo": null,
+            "texto": "Promover hábitos alimenticios equilibrados basados en principios de salud y fe cristiana."
+          },
+          {
+            "titulo": null,
+            "texto": "Valorar la gastronomía como medio de servicio, emprendimiento y expresión cultural."
+          }
+        ]
+      },
+      {
+        "titulo": "Ejes fundamentales",
+        "tipo": "numerada",
+        "items": [
+          {
+            "titulo": "Alimentación saludable",
+            "texto": "Promueve el conocimiento y la práctica de hábitos nutricionales equilibrados y conscientes."
+          },
+          {
+            "titulo": "Técnicas culinarias",
+            "texto": "Desarrolla habilidades prácticas en la preparación, presentación y manipulación de alimentos."
+          },
+          {
+            "titulo": "Industrias alimentarias",
+            "texto": "Introduce procesos básicos de transformación, conservación y envasado de alimentos."
+          },
+          {
+            "titulo": "Cultura y servicio",
+            "texto": "Valora la gastronomía como una expresión cultural y una herramienta para servir a los demás."
+          },
+          {
+            "titulo": "Fe y cuidado del cuerpo",
+            "texto": "Fomenta el respeto por el cuerpo como templo de Dios, eligiendo alimentos que promuevan la salud integral."
+          }
+        ]
+      },
+      {
+        "titulo": "Metodología",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Aprendemos cocinando: teoría que se transforma en sabor y salud."
+          },
+          {
+            "titulo": null,
+            "texto": "Experimentamos, evaluamos y mejoramos cada preparación con propósito."
+          },
+          {
+            "titulo": null,
+            "texto": "Enseñamos a servir a través de la comida, con manos que nutren y corazón cristiano."
+          },
+          {
+            "titulo": null,
+            "texto": "Integramos ciencia, valores y creatividad en cada receta."
+          }
+        ]
+      },
+      {
+        "titulo": "Beneficios",
+        "tipo": "lista",
+        "items": [
+          {
+            "titulo": null,
+            "texto": "Adquieren habilidades prácticas en cocina y manipulación segura de alimentos."
+          },
+          {
+            "titulo": null,
+            "texto": "Desarrollan conciencia sobre una alimentación saludable, responsable y sostenible."
+          },
+          {
+            "titulo": null,
+            "texto": "Fomentan el espíritu emprendedor a través de la elaboración de productos alimenticios."
+          },
+          {
+            "titulo": null,
+            "texto": "Aplican valores cristianos al servir con amor y cuidar el cuerpo como templo de Dios."
+          }
+        ]
+      }
+    ],
+    "galeria": []
+  }
+}

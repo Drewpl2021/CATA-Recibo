@@ -1,0 +1,59 @@
+<div [formGroup]="grupo" class="form-fields">
+  <label class="check-item">
+    <input type="checkbox" formControlName="conBoton" />
+    <span>{{ etiquetaDelCheck }}</span>
+  </label>
+
+  <ng-container *ngIf="grupo.value.conBoton">
+    <div class="form-row">
+      <div class="form-group">
+        <label [for]="idBase + '-etiqueta'">Texto del botón *</label>
+        <input [id]="idBase + '-etiqueta'" type="text" class="form-control" formControlName="etiqueta" maxlength="32"
+          placeholder="Ej. Ver requisitos" [class.is-invalid]="error('etiquetaFalta') || error('etiquetaLarga')" />
+        <small class="form-error" *ngIf="error('etiquetaFalta') || error('etiquetaLarga')">Obligatorio (máximo 32).</small>
+        <small class="form-ayuda" *ngIf="!(error('etiquetaFalta') || error('etiquetaLarga'))">Que diga a dónde lleva, no «clic aquí».</small>
+      </div>
+      <div class="form-group">
+        <label [for]="idBase + '-tipo'">Lleva a</label>
+        <select [id]="idBase + '-tipo'" class="form-control" formControlName="tipo">
+          <option value="pagina">Otra página del portal</option>
+          <option value="seccion">Una sección de Inicio</option>
+          <option value="url">Una dirección web</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" *ngIf="grupo.value.tipo === 'seccion'">
+      <label [for]="idBase + '-seccion'">Sección *</label>
+      <select [id]="idBase + '-seccion'" class="form-control" formControlName="seccion" [class.is-invalid]="error('seccionFalta')">
+        <option value="" disabled>Elige la sección</option>
+        <option *ngFor="let s of secciones" [value]="s.valor">{{ s.nombre }}</option>
+      </select>
+      <small class="form-error" *ngIf="error('seccionFalta')">Elige la sección.</small>
+    </div>
+
+    <div class="form-group" *ngIf="grupo.value.tipo === 'pagina'">
+      <label [for]="idBase + '-ruta'">Página *</label>
+      <input [id]="idBase + '-ruta'" type="text" class="form-control" formControlName="ruta" [attr.list]="idBase + '-paginas'"
+        placeholder="/matricula" [class.is-invalid]="error('rutaMala')" />
+      <datalist [id]="idBase + '-paginas'">
+        <option *ngFor="let p of paginas" [value]="p.ruta">{{ p.nombre }}</option>
+      </datalist>
+      <small class="form-error" *ngIf="error('rutaMala')">Empieza con / y usa solo minúsculas sin tildes, números y guiones: /nosotros/mision-y-vision.</small>
+      <small class="form-ayuda" *ngIf="!error('rutaMala')">Elige una de la lista o escribe otra, como /nosotros/mision-y-vision.</small>
+    </div>
+
+    <ng-container *ngIf="grupo.value.tipo === 'url'">
+      <div class="form-group">
+        <label [for]="idBase + '-url'">Dirección *</label>
+        <input [id]="idBase + '-url'" type="url" class="form-control" formControlName="url" placeholder="https://…"
+          [class.is-invalid]="error('urlMala')" />
+        <small class="form-error" *ngIf="error('urlMala')">Una dirección que empiece con https://.</small>
+      </div>
+      <label class="check-item">
+        <input type="checkbox" formControlName="externo" />
+        <span>Sale del portal: se abre en otra pestaña y se avisa.</span>
+      </label>
+    </ng-container>
+  </ng-container>
+</div>

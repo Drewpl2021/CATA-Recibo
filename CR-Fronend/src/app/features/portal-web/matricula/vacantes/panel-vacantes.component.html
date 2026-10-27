@@ -1,0 +1,150 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-vacantes">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-vacantes">Vacantes</h2>
+      <p class="form-ayuda">
+        La disponibilidad de cada nivel, hasta 6 publicados ({{ publicados }} ahora). <strong>Solo cifras confirmadas:</strong>
+        mientras no las haya, usa «Consultar» y el portal invita a preguntar.
+      </p>
+    </div>
+    <div class="ajustes-panel__acciones">
+      <button type="button" class="btn-primary" (click)="nuevo()">
+        <app-icon icono="plus" [tamano]="16"></app-icon>
+        Agregar nivel
+      </button>
+    </div>
+  </header>
+
+  <div class="pw-esqueleto" *ngIf="cargandoNota" role="status">
+    <span class="solo-lectores">Cargando la nota…</span>
+    <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+  </div>
+
+  <!-- La fecha y la nota: se leen aquí y se cambian en su modal -->
+  <div class="ajuste-bloque" *ngIf="!cargandoNota">
+    <div class="pw-fila-dato">
+      <div class="pw-dato">
+        <span>Actualizado el</span>
+        <strong [class.pw-sin-dato]="!notaGuardada.actualizado">{{ notaGuardada.actualizado ? fechaLarga(notaGuardada.actualizado) : 'Sin fecha: el portal no dice desde cuándo valen' }}</strong>
+        <small>Nota bajo la lista: {{ notaGuardada.nota || 'ninguna' }}</small>
+      </div>
+      <button type="button" class="btn-secondary" (click)="abrirNota()">
+        <app-icon icono="edit" [tamano]="14"></app-icon>
+        Editar fecha y nota
+      </button>
+    </div>
+  </div>
+
+  <div class="ajuste-bloque">
+    <app-data-table
+      entidad="el nivel"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [mostrarBuscador]="false"
+      [numerarFilas]="false"
+      [acciones]="['editar', 'eliminar']"
+      [accionesPersonalizadas]="acciones"
+      mensajeVacio="Todavía no hay vacantes: el portal invita a consultar por WhatsApp."
+      (editarFila)="editar($event)"
+      (eliminarFila)="eliminar($event)"
+      (accionPersonalizada)="alAccionar($event)"
+    >
+      <ng-template appCelda="nivel" let-fila>
+        <div class="pw-celda-titulo">
+          <span>
+            <strong>{{ fila.nivel }}</strong>
+            <small>{{ detalle(fila) }}</small>
+          </span>
+        </div>
+      </ng-template>
+
+      <ng-template appCelda="orden" let-fila>
+        <div class="action-btns">
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, -1)" [disabled]="ordenando || esPrimero(fila)"
+            [attr.aria-label]="'Subir ' + fila.nivel" title="Subir">
+            <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+          </button>
+          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="mover(fila, 1)" [disabled]="ordenando || esUltimo(fila)"
+            [attr.aria-label]="'Bajar ' + fila.nivel" title="Bajar">
+            <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+          </button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </div>
+</section>
+
+<app-form-modal
+  [(visible)]="modalVisible"
+  [titulo]="editando ? 'Editar vacantes del nivel' : 'Agregar nivel'"
+  ancho="640px"
+  [guardando]="guardando"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <form [formGroup]="form" class="form-fields" novalidate>
+    <div class="rejilla-campos">
+      <div class="form-group">
+        <label for="vacante-nivel">Nivel *</label>
+        <input id="vacante-nivel" type="text" class="form-control" formControlName="nivel" maxlength="40"
+          placeholder="Ej. Primaria" [class.is-invalid]="invalido('nivel')" />
+        <small class="form-error" *ngIf="invalido('nivel')">Obligatorio (máximo 40).</small>
+      </div>
+      <div class="form-group">
+        <label for="vacante-detalle">Detalle</label>
+        <input id="vacante-detalle" type="text" class="form-control" formControlName="detalle" maxlength="60" placeholder="Ej. 1.er a 6.º grado" />
+      </div>
+      <div class="form-group">
+        <label for="vacante-disponibilidad">Qué se muestra *</label>
+        <select id="vacante-disponibilidad" class="form-control" formControlName="disponibilidad">
+          <option *ngFor="let d of disponibilidades" [value]="d.valor">{{ d.nombre }}</option>
+        </select>
+        <small class="form-ayuda">{{ disponibilidad(form.controls.disponibilidad.value).ayuda }}</small>
+      </div>
+      <div class="form-group">
+        <label for="vacante-numero">Número de vacantes</label>
+        <input id="vacante-numero" type="number" class="form-control" formControlName="vacantes" min="0" step="1"
+          [class.is-invalid]="invalido('vacantes')" />
+        <small class="form-error" *ngIf="invalido('vacantes')">Un número entero, de 0 en adelante.</small>
+        <small class="form-ayuda" *ngIf="!invalido('vacantes')">
+          {{ form.controls.vacantes.disabled ? 'No se muestra con esta opción.' : 'Opcional: solo si está confirmado.' }}
+        </small>
+      </div>
+      <div class="form-group">
+        <label for="vacante-estado">Estado</label>
+        <select id="vacante-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicado</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </div>
+  </form>
+</app-form-modal>
+
+<!-- La fecha de actualización y la nota -->
+<app-form-modal
+  [(visible)]="modalNota"
+  titulo="Fecha y nota de las vacantes"
+  ancho="640px"
+  [guardando]="guardandoNota"
+  textoGuardar="Guardar cambios"
+  (guardar)="guardarNota()"
+>
+  <form [formGroup]="nota" class="form-fields" novalidate>
+    <div class="form-group">
+      <label for="vacantes-actualizado">Actualizado el</label>
+      <input id="vacantes-actualizado" type="date" class="form-control" formControlName="actualizado" />
+      <small class="form-ayuda">
+        Se muestra «Actualizado el…». Ponla al confirmar las cifras.
+        <button type="button" class="btn-secondary" (click)="ponerHoy()">Poner la de hoy</button>
+      </small>
+    </div>
+    <div class="form-group">
+      <label for="vacantes-nota">Nota bajo la lista</label>
+      <textarea id="vacantes-nota" class="form-control" rows="3" formControlName="nota" maxlength="240"
+        [class.is-invalid]="nota.controls.nota.invalid && nota.controls.nota.touched"></textarea>
+      <small class="form-ayuda">Opcional. Hasta 240 caracteres.</small>
+    </div>
+  </form>
+</app-form-modal>

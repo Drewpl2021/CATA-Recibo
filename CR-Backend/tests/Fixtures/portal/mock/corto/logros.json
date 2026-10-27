@@ -1,0 +1,21 @@
+{
+  "data": {
+    "titulo": "Logros",
+    "bajada": null,
+    "cifras": [],
+    "logros": [
+      {
+        "id": "l1",
+        "titulo": "Reconocimiento",
+        "categoria": "institucional",
+        "anio": null,
+        "nivel": null,
+        "descripcion": null,
+        "foto": null,
+        "destacado": false,
+        "fuente": null,
+        "aclaracion": null
+      }
+    ]
+  }
+}

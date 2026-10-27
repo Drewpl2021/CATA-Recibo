@@ -1,0 +1,13 @@
+{
+  "data": {
+    "titulo": "Contáctanos",
+    "bajada": "Cuatro sedes en San Román. Escríbenos por WhatsApp, llámanos o visítanos.",
+    "figura": {
+      "url": "https://cata.edu.pe/wp-content/uploads/2023/01/CATA-Matricula_Img_2.png",
+      "alt": "Estudiante con el uniforme del colegio, su mochila y un cuaderno de CATA",
+      "ancho": 500,
+      "alto": 1000
+    },
+    "correo": null
+  }
+}

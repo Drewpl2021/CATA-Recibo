@@ -1,0 +1,85 @@
+<app-page-header
+  icono="lightbulb"
+  titulo="Proyectos"
+  subtitulo="Los proyectos del colegio, con su página de detalle y su galería. Cada cambio queda en la Auditoría y se ve en el portal en hasta un minuto."
+>
+  <button headerActions type="button" class="btn-secondary" (click)="volver()">
+    <app-icon icono="arrow_left" [tamano]="16"></app-icon>
+    Volver a Portal Web
+  </button>
+</app-page-header>
+
+<pw-indice-de-secciones nombre="Proyectos" [secciones]="secciones" [resumenes]="resumenes" [pendientes]="pendientes"
+  [actual]="actual" (actualChange)="elegir($event)">
+
+  <!-- ═══════════ Cabecera ═══════════ -->
+  <div id="pw-seccion-cabecera" [hidden]="actual !== 'cabecera'">
+    <section class="section-panel ajustes-panel" aria-labelledby="titulo-cabecera">
+      <header class="ajustes-panel__cabecera">
+        <div>
+          <h2 id="titulo-cabecera">Cabecera de la página</h2>
+          <p class="form-ayuda">El título y la frase de arriba de la página Proyectos.</p>
+        </div>
+        <div class="ajustes-panel__acciones" *ngIf="!cargandoCabecera && cabeceraGuardada">
+          <button type="button" class="btn-primary" (click)="abrirCabecera()">
+            <app-icon icono="edit" [tamano]="16"></app-icon>
+            Editar cabecera
+          </button>
+        </div>
+      </header>
+
+      <div class="pw-esqueleto" *ngIf="cargandoCabecera" role="status">
+        <span class="solo-lectores">Cargando la cabecera…</span>
+        <span class="esqueleto esqueleto--titulo" aria-hidden="true"></span>
+        <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+      </div>
+
+      <div class="card-vacio" *ngIf="!cargandoCabecera && !cabeceraGuardada">
+        <app-icon icono="lightbulb" [tamano]="34"></app-icon>
+        La cabecera de Proyectos no está configurada: el portal muestra «Esta sección del portal todavía no está disponible».
+        <button type="button" class="btn-primary" (click)="abrirCabecera()">
+          <app-icon icono="edit" [tamano]="16"></app-icon>
+          Configurar la cabecera
+        </button>
+      </div>
+
+      <div class="ajuste-bloque" *ngIf="!cargandoCabecera && cabeceraGuardada as c">
+        <dl class="pw-lista-datos">
+          <dt>Título</dt><dd>{{ c.titulo }}</dd>
+          <dt>Frase bajo el título</dt><dd [class.pw-sin-dato]="!c.bajada">{{ c.bajada || 'Sin frase' }}</dd>
+        </dl>
+      </div>
+    </section>
+  </div>
+
+  <div id="pw-seccion-categorias" [hidden]="actual !== 'categorias'">
+    <app-panel-categorias (cambiaron)="categorias = $event" (resumen)="alResumir('categorias', $event)"></app-panel-categorias>
+  </div>
+  <div id="pw-seccion-proyectos" [hidden]="actual !== 'proyectos'">
+    <app-panel-proyectos [categorias]="categorias" (resumen)="alResumir('proyectos', $event)"></app-panel-proyectos>
+  </div>
+</pw-indice-de-secciones>
+
+<!-- ═══════════ Modal de la cabecera ═══════════ -->
+<app-form-modal
+  [(visible)]="modalCabecera"
+  titulo="Cabecera de Proyectos"
+  ancho="640px"
+  [guardando]="guardandoCabecera"
+  textoGuardar="Guardar cambios"
+  (guardar)="guardarCabecera()"
+>
+  <form [formGroup]="cabecera" class="form-fields" novalidate>
+    <div class="form-group">
+      <label for="proyectos-titulo">Título *</label>
+      <input id="proyectos-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+        placeholder="Ej. Proyectos" [class.is-invalid]="invalidoCabecera('titulo')" />
+      <small class="form-error" *ngIf="invalidoCabecera('titulo')">El título es obligatorio.</small>
+    </div>
+    <div class="form-group">
+      <label for="proyectos-bajada">Frase bajo el título</label>
+      <textarea id="proyectos-bajada" class="form-control" rows="3" formControlName="bajada" maxlength="240"></textarea>
+      <small class="form-ayuda">Opcional. Hasta 240 caracteres.</small>
+    </div>
+  </form>
+</app-form-modal>

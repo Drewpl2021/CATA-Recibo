@@ -36,7 +36,8 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: pdo_sqlite, mbstring, zip, gd, openssl
+          # exif, como en docker/php/Dockerfile: el panel del portal endereza con ella las fotos de celular.
+          extensions: pdo_sqlite, mbstring, zip, gd, openssl, exif
           coverage: none
       - run: composer install --no-interaction --prefer-dist
       - name: PHPUnit
@@ -72,7 +73,8 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: pdo_mysql, mbstring, zip, gd, openssl
+          # exif, como en docker/php/Dockerfile: el panel del portal endereza con ella las fotos de celular.
+          extensions: pdo_mysql, mbstring, zip, gd, openssl, exif
           coverage: none
       - run: composer install --no-interaction --prefer-dist
       # MySQL 8 con el registro binario encendido exige SUPER para crear

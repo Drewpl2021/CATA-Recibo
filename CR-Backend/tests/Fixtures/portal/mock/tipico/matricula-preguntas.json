@@ -1,0 +1,39 @@
+{
+  "data": [
+    {
+      "id": "edad",
+      "pregunta": "¿Qué edad debe tener mi hijo o hija para postular?",
+      "respuesta": "Debe tener la edad cumplida al 31 de marzo del año al que postula, según la disposición del Ministerio de Educación (Minedu)."
+    },
+    {
+      "id": "fut",
+      "pregunta": "¿Dónde consigo el FUT para solicitar la vacante?",
+      "respuesta": "El Formulario Único de Trámite (FUT) se adquiere en la caja de la institución."
+    },
+    {
+      "id": "entrevista",
+      "pregunta": "¿Habrá una entrevista o una evaluación?",
+      "respuesta": "Sí. Recibida la solicitud con los requisitos, Dirección General programa una entrevista con los padres de familia y el estudiante. De ser necesario, la psicóloga de la institución hará una evaluación psicopedagógica."
+    },
+    {
+      "id": "pago",
+      "pregunta": "¿Dónde se pagan la cuota de ingreso y la matrícula?",
+      "respuesta": "En la caja de la institución. Si hay otros medios de pago, el colegio los comunicará oficialmente y a tiempo a los padres de familia."
+    },
+    {
+      "id": "traslado",
+      "pregunta": "Viene de un colegio privado, ¿qué documentos adicionales necesito?",
+      "respuesta": "La constancia de no adeudo del colegio de procedencia, además de la resolución directoral de traslado, la ficha de matrícula del SIAGIE, el informe de progreso y el certificado de buena conducta."
+    },
+    {
+      "id": "constancia",
+      "pregunta": "¿Para qué sirve la constancia de vacante?",
+      "respuesta": "Secretaría la entrega al padre de familia o apoderado para pedir los documentos a la institución de origen y completar la matrícula oficial."
+    },
+    {
+      "id": "regulares",
+      "pregunta": "Mi hijo o hija ya estudia en CATA, ¿qué debo hacer?",
+      "respuesta": "Actualizar los datos en secretaría, pagar la matrícula en caja y firmar el contrato de prestación de servicios educativos. Se requiere no tener deuda del año anterior, haber aprobado el año académico y no haber sido observado reincidentemente por mala conducta."
+    }
+  ]
+}

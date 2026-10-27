@@ -1,0 +1,15 @@
+{
+  "data": {
+    "titulo": "Informes",
+    "texto": null,
+    "mensajeWhatsapp": "Hola, soy {nombre}. Me interesa {grado}.",
+    "mensajesPorPagina": [],
+    "etiquetas": {
+      "nombre": "Nombre",
+      "grado": "Grado",
+      "gradoEjemplo": "1.er grado",
+      "gradoElegir": "Elige",
+      "boton": "Enviar"
+    }
+  }
+}

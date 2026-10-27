@@ -1,0 +1,133 @@
+{
+  "data": [
+    {
+      "id": "b-matriculas",
+      "categoria": "matricula",
+      "titulo": "Proceso de matrícula 2027: inscripciones abiertas para inicial, primaria y secundaria en todas las sedes",
+      "fecha": "2026-01-05",
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/01/4.png",
+        "alt": "Afiche: Matrículas abiertas 2026. Inicial, Primaria, Secundaria. Informes por WhatsApp al 986322833, www.cata.edu.pe. Un niño con el uniforme del colegio sonríe a la derecha.",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": false,
+      "ladoAccion": "izquierda",
+      "accion": {
+        "etiqueta": "Conoce todos los requisitos de admisión",
+        "destino": {
+          "tipo": "pagina",
+          "ruta": "/matricula"
+        }
+      }
+    },
+    {
+      "id": "b-bienvenida",
+      "categoria": "aviso",
+      "titulo": "Bienvenidos de nuevo al colegio",
+      "fecha": "2026-03-02",
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/01/5.png",
+        "alt": "Afiche: Bienvenido de nuevo al colegio. El mejor lugar: CATA 2026. Infórmate al 986322833, www.cata.edu.pe. Síguenos en Facebook, Twitter, YouTube e Instagram.",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": true,
+      "ladoAccion": "derecha",
+      "accion": {
+        "etiqueta": "Contáctanos",
+        "destino": {
+          "tipo": "pagina",
+          "ruta": "/contacto"
+        }
+      }
+    },
+    {
+      "id": "b-lideres",
+      "categoria": "noticia",
+      "titulo": "Líderes que dejan huella",
+      "fecha": null,
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/01/2.png",
+        "alt": "Afiche: Líderes que dejan huella. Cuatro estudiantes sonríen en el auditorio del colegio bajo el letrero Bienvenidos. Cita: «La obra de la verdadera educación consiste en desarrollar las facultades físicas, mentales y espirituales del estudiante, preparándolo para el gozo del servicio en este mundo y para un gozo superior en el mundo venidero.» Elena G. White. Facebook: colegiocatajuliaca.",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": true,
+      "ladoAccion": "izquierda",
+      "accion": null
+    },
+    {
+      "id": "b-anio",
+      "categoria": "aviso",
+      "titulo": "Año académico 2026",
+      "fecha": "2026-01-05",
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/12/Banner-CATA.png",
+        "alt": "Banner con las letras CATA, el emblema del colegio, el año 2026 y la dirección www.cata.edu.pe.",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": true,
+      "ladoAccion": "izquierda",
+      "accion": null
+    },
+    {
+      "id": "b-bus",
+      "categoria": "evento",
+      "titulo": "¡Bienvenidos, cataínos! Un líder cataíno en cada hogar",
+      "fecha": "2026-02-20",
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/01/3.png",
+        "alt": "Afiche: ¡Bienvenidos Cataínos! «Un líder cataíno en cada hogar». Bus escolar del colegio con el logo CATA y las palabras Integridad, Abnegación e Innovación. Íconos de Facebook, YouTube y WhatsApp.",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": true,
+      "ladoAccion": "derecha",
+      "accion": null
+    },
+    {
+      "id": "b-prueba",
+      "categoria": "evento",
+      "titulo": "Imagen de prueba panorámica, más ancha que la proporción del carrusel: se recorta en su punto focal",
+      "fecha": "2026-09-28",
+      "imagen": {
+        "url": "https://medios.prueba.cata.edu.pe/panoramica.svg",
+        "alt": "Foto de prueba: imagen panorámica",
+        "ancho": 1200,
+        "alto": 375
+      },
+      "imagenMovil": {
+        "url": "https://medios.prueba.cata.edu.pe/quienes-somos.svg",
+        "alt": "Foto de prueba: versión vertical para móvil",
+        "ancho": 1200,
+        "alto": 1500
+      },
+      "puntoFocal": {
+        "x": 50,
+        "y": 40
+      },
+      "textoEnImagen": false,
+      "ladoAccion": "izquierda",
+      "accion": {
+        "etiqueta": "Ver más",
+        "destino": {
+          "tipo": "url",
+          "url": "https://cata.edu.pe/",
+          "externo": true
+        }
+      }
+    }
+  ]
+}

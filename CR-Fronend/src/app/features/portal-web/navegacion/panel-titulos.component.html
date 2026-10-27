@@ -1,0 +1,69 @@
+<section class="section-panel ajustes-panel" aria-labelledby="titulo-titulos">
+  <header class="ajustes-panel__cabecera">
+    <div>
+      <h2 id="titulo-titulos">Títulos de las páginas</h2>
+      <p class="form-ayuda">
+        Los títulos de sección, botones y rótulos de cada página. Todos son obligatorios. Las cabeceras, los títulos de Nosotros,
+        Proyectos, Logros y Contacto, el de la academia y el del formulario se editan en su propia página.
+      </p>
+    </div>
+  </header>
+
+  <div class="pw-esqueleto" *ngIf="cargando" role="status">
+    <span class="solo-lectores">Cargando los títulos…</span>
+    <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+    <span class="esqueleto esqueleto--linea esqueleto--corta" aria-hidden="true"></span>
+  </div>
+
+  <ng-container *ngIf="!cargando">
+    <div class="ajuste-bloque" *ngFor="let p of paginas">
+      <div class="pw-fila-dato">
+        <h3 class="ajuste-bloque__pregunta pw-sin-margen">
+          {{ p.nombre }}
+          <span class="pw-falta" *ngIf="faltanEn(p)"> · {{ faltanEn(p) === 1 ? '1 sin llenar' : faltanEn(p) + ' sin llenar' }}</span>
+        </h3>
+        <button type="button" class="btn-secondary" (click)="abrir(p)" [attr.aria-label]="'Editar los títulos de ' + p.nombre">
+          <app-icon icono="edit" [tamano]="14"></app-icon>
+          Editar
+        </button>
+      </div>
+      <dl class="pw-lista-datos">
+        <ng-container *ngFor="let c of p.campos">
+          <dt>{{ c.nombre }}</dt>
+          <dd [class.pw-sin-dato]="!valor(p.pagina, c.campo)">{{ valor(p.pagina, c.campo) || 'Sin llenar' }}</dd>
+        </ng-container>
+      </dl>
+    </div>
+  </ng-container>
+</section>
+
+<!-- Los títulos de una página -->
+<app-form-modal
+  [visible]="!!editando"
+  (visibleChange)="$event ? null : cerrar()"
+  [titulo]="'Títulos de ' + (editando?.nombre ?? '')"
+  ancho="720px"
+  [guardando]="guardando"
+  textoGuardar="Guardar cambios"
+  (guardar)="guardar()"
+  (cancelar)="cerrar()"
+>
+  <pw-cuerpo-desplazable #cuerpo>
+  <form [formGroup]="form" class="form-fields" novalidate *ngIf="editando as p">
+    <div [formGroupName]="p.pagina" class="form-fields">
+      <div class="form-group" *ngFor="let c of p.campos">
+        <label [for]="'titulo-' + p.pagina + '-' + c.campo">{{ c.nombre }} *</label>
+        <input [id]="'titulo-' + p.pagina + '-' + c.campo" type="text" class="form-control" [formControlName]="c.campo"
+          [attr.maxlength]="c.maximo" [placeholder]="'Ej. ' + c.ejemplo"
+          [class.is-invalid]="invalido(p.pagina, c.campo)" [attr.aria-describedby]="'ayuda-' + p.pagina + '-' + c.campo" />
+        <small class="form-error" *ngIf="invalido(p.pagina, c.campo)">
+          {{ c.ejemplo.includes(marca) ? 'Obligatorio, con ' + marca + ' donde va el número (máximo ' + c.maximo + ').' : 'Obligatorio (máximo ' + c.maximo + ').' }}
+        </small>
+        <small class="form-ayuda" [id]="'ayuda-' + p.pagina + '-' + c.campo">
+          {{ c.ayuda ? c.ayuda + ' ' : '' }}{{ largo(p.pagina, c.campo) }}/{{ c.maximo }}
+        </small>
+      </div>
+    </div>
+  </form>
+  </pw-cuerpo-desplazable>
+</app-form-modal>

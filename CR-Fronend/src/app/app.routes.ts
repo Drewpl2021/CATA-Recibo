@@ -266,6 +266,14 @@ export const routes: Routes = [
         canActivate: [permisoGuard('/ajustes')],
         loadComponent: () => import('./features/ajustes/ajustes.component').then(m => m.AjustesComponent),
       },
+      {
+        // El contenido del portal del colegio (cata.edu.pe): quien tenga el
+        // módulo «Portal Web», igual que el backend (permiso:/portal-web).
+        // Sus pantallas, en su archivo.
+        path: 'portal-web',
+        canActivate: [permisoGuard('/portal-web')],
+        loadChildren: () => import('./features/portal-web/portal-web.routes').then(m => m.PORTAL_WEB_ROUTES),
+      },
       { path: '**', redirectTo: 'dashboard' }
     ]
   },

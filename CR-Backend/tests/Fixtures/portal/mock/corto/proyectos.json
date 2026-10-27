@@ -1,0 +1,26 @@
+{
+  "data": {
+    "titulo": "Proyectos",
+    "bajada": null,
+    "categorias": [
+      {
+        "id": "c",
+        "nombre": "Ciencia"
+      }
+    ],
+    "proyectos": [
+      {
+        "id": "p",
+        "slug": "huerto",
+        "titulo": "Huerto",
+        "lema": null,
+        "resumen": "Biohuerto escolar.",
+        "categoria": "c",
+        "niveles": [],
+        "estado": null,
+        "fecha": null,
+        "foto": null
+      }
+    ]
+  }
+}

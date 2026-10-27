@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "id": "anios",
+      "valor": 55,
+      "sufijo": null,
+      "etiqueta": "años educando en Juliaca"
+    },
+    {
+      "id": "sedes",
+      "valor": 4,
+      "sufijo": null,
+      "etiqueta": "sedes en San Román"
+    },
+    {
+      "id": "niveles",
+      "valor": 3,
+      "sufijo": null,
+      "etiqueta": "niveles: inicial, primaria y secundaria"
+    }
+  ]
+}

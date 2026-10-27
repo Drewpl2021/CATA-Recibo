@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "id": "anios",
+      "valor": 55,
+      "sufijo": null,
+      "etiqueta": "años formando estudiantes con valores cristianos en la ciudad de Juliaca"
+    },
+    {
+      "id": "sedes",
+      "valor": 4,
+      "sufijo": null,
+      "etiqueta": "sedes en la provincia de San Román, departamento de Puno"
+    },
+    {
+      "id": "niveles",
+      "valor": 3,
+      "sufijo": null,
+      "etiqueta": "niveles educativos completos"
+    },
+    {
+      "id": "convenio",
+      "valor": 1,
+      "sufijo": null,
+      "etiqueta": "convenio con la Universidad Peruana Unión"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "data": [
+    {
+      "id": "cubicol",
+      "nombre": "Cubicol",
+      "descripcion": "La plataforma académica del colegio desde 2026. Reemplaza al iCRM Educativo, que se usó de 2020 a 2025.",
+      "funciones": [
+        {
+          "titulo": "Docentes",
+          "texto": "Por confirmar: qué ofrece Cubicol a docentes."
+        },
+        {
+          "titulo": "Área académica",
+          "texto": "Por confirmar: qué ofrece Cubicol a área académica."
+        },
+        {
+          "titulo": "Padres de familia",
+          "texto": "Por confirmar: qué ofrece Cubicol a padres de familia."
+        },
+        {
+          "titulo": "Estudiantes",
+          "texto": "Por confirmar: qué ofrece Cubicol a estudiantes."
+        }
+      ],
+      "enlace": {
+        "etiqueta": "Entrar a Cubicol",
+        "url": "https://cata.cubicol.pe/principal/login",
+        "externo": true
+      },
+      "aclaracion": "Funciones por confirmar"
+    },
+    {
+      "id": "eva-student",
+      "nombre": "EVA Student",
+      "descripcion": null,
+      "funciones": [],
+      "enlace": null,
+      "aclaracion": "Descripción por confirmar"
+    },
+    {
+      "id": "planificador-eva",
+      "nombre": "Planificador Inteligente EVA",
+      "descripcion": null,
+      "funciones": [],
+      "enlace": {
+        "etiqueta": "Ver el Planificador Inteligente EVA",
+        "url": "https://www.canva.com/design/DAGvTPFEMMM/6r3lFiZV0HneNzyyg7cSxw/view",
+        "externo": true
+      },
+      "aclaracion": "Descripción por confirmar"
+    }
+  ]
+}

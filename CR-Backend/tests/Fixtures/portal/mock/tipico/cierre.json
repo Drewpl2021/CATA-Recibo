@@ -1,0 +1,21 @@
+{
+  "data": {
+    "titulo": "¿Quieres conocer CATA?",
+    "acciones": [
+      {
+        "etiqueta": "Proceso de matrícula",
+        "destino": {
+          "tipo": "pagina",
+          "ruta": "/matricula"
+        }
+      },
+      {
+        "etiqueta": "Contáctanos",
+        "destino": {
+          "tipo": "pagina",
+          "ruta": "/contacto"
+        }
+      }
+    ]
+  }
+}

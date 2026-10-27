@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -30,6 +32,12 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(fn () => Password::min(8)->letters()->numbers());
 
         $this->frenosDeLasPuertasAbiertas();
+
+        // Quién edita el contenido del portal (cata.edu.pe): quien tenga el
+        // módulo «Portal Web» en su rol, la misma regla que las rutas del
+        // panel (permiso:/portal-web). Para que otro rol lo edite, se le marca
+        // el módulo en Roles; no se toca código. Ver routes/portal-panel.php.
+        Gate::define('editar-portal', fn (User $usuario) => \App\Support\Permisos::puede($usuario, '/portal-web'));
     }
 
     /**
@@ -69,5 +77,15 @@ class AppServiceProvider extends ServiceProvider
 
         // El QR de la boleta: público. Sobra para quien lo escanea de verdad.
         RateLimiter::for('verificacion', fn (Request $peticion) => Limit::perMinute(30)->by($peticion->ip()));
+
+        // La API pública del portal: la leen todas las visitas de cata.edu.pe,
+        // así que el techo es alto. Ver config/portal.php.
+        RateLimiter::for('portal', fn (Request $peticion) => Limit::perMinute(config('portal.limite_por_minuto'))
+            ->by($peticion->ip()));
+
+        // Las imágenes del portal: más alto, porque una página trae muchas, y
+        // aparte, para que las fotos no gasten el freno de la API.
+        RateLimiter::for('portal_medios', fn (Request $peticion) => Limit::perMinute(config('portal.limite_medios_por_minuto'))
+            ->by($peticion->ip()));
     }
 }

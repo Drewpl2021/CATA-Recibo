@@ -1,0 +1,117 @@
+{
+  "data": {
+    "titulo": "Academia preuniversitaria",
+    "descripcion": "Ciclos de preparación para el examen de admisión de tres universidades nacionales.",
+    "aclaracion": "Precios y fechas por actualizar",
+    "universidades": [
+      {
+        "id": "una-puno",
+        "nombre": "Universidad Nacional del Altiplano de Puno",
+        "ciclos": [
+          {
+            "id": "una-verano",
+            "nombre": "Verano",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": null,
+            "precioVirtual": null,
+            "inicio": null,
+            "fin": null
+          },
+          {
+            "id": "una-intensivo",
+            "nombre": "Intensivo",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial"
+            ],
+            "precio": null,
+            "precioVirtual": null,
+            "inicio": null,
+            "fin": null
+          },
+          {
+            "id": "una-repaso",
+            "nombre": "Repaso",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": null,
+            "precioVirtual": null,
+            "inicio": null,
+            "fin": null
+          }
+        ]
+      },
+      {
+        "id": "unsa",
+        "nombre": "Universidad Nacional de San Agustín",
+        "ciclos": [
+          {
+            "id": "unsa-repaso",
+            "nombre": "Repaso",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": null,
+            "precioVirtual": null,
+            "inicio": null,
+            "fin": null
+          },
+          {
+            "id": "unsa-verano",
+            "nombre": "Verano",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": null,
+            "precioVirtual": null,
+            "inicio": null,
+            "fin": null
+          },
+          {
+            "id": "unsa-semestral",
+            "nombre": "Repaso semestral",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": null,
+            "precioVirtual": null,
+            "inicio": null,
+            "fin": null
+          }
+        ]
+      },
+      {
+        "id": "unaj",
+        "nombre": "Universidad Nacional de Juliaca",
+        "ciclos": [
+          {
+            "id": "unaj-repaso",
+            "nombre": "Repaso",
+            "turno": "Mañana",
+            "modalidades": [
+              "presencial",
+              "virtual"
+            ],
+            "precio": null,
+            "precioVirtual": null,
+            "inicio": null,
+            "fin": null
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "data": {
+    "slug": "consejo-directivo",
+    "titulo": "Consejo Directivo",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "mensaje",
+        "titulo": "Querida comunidad CATA:",
+        "parrafos": [
+          "Es un honor dirigirme a ustedes como Presidente del Consejo Directivo de esta Institución donde educar es formar para la vida… y para la eternidad. En el Colegio Adventista CATA, nos diferencia una misión clara: formar ciudadanos íntegros y abnegados con principios cristianos, listos para impactar en su entorno y también prepararlos para la graduación celestial.",
+          "Aquí no solo desarrollamos habilidades y conocimientos, educamos el carácter, guiados por principios y valores cristianos. Cada clase y proyecto es una oportunidad para modelar líderes con un propósito de vida, que sean luz en sus hogares y reflejo del amor de Dios en el mundo.",
+          "A nuestros estudiantes: ¡están llamados a brillar con fe y propósito!",
+          "A los padres: gracias por confiar en nuestra propuesta de valor que se refleja en nuestra misión educativa con sentido eterno.",
+          "Y a los docentes: ustedes son los que siembren la semilla cuyos frutos se reflejan en las experiencias de liderazgo y que trascienden en el tiempo.",
+          "En CATA, preparamos para esta vida… y para la vida eterna."
+        ],
+        "firma": {
+          "nombre": "Alfredo Chambi Quispe",
+          "detalle": "Presidente del Consejo Directivo"
+        },
+        "foto": {
+          "url": "https://cata.edu.pe/wp-content/uploads/2025/11/29.png",
+          "alt": "",
+          "ancho": 400,
+          "alto": 400
+        }
+      },
+      {
+        "tipo": "personas",
+        "titulo": "Integrantes",
+        "personas": [
+          {
+            "id": "chambi",
+            "nombre": "Alfredo Chambi Quispe",
+            "cargo": "Presidente",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2025/11/29.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "canazaca",
+            "nombre": "Leonidas Cañazaca Vargas",
+            "cargo": "Vicepresidente",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2025/11/23.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "mamani-flores",
+            "nombre": "Fanny Mariela Mamani Flores",
+            "cargo": "Secretaria",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2025/11/24.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "sonco",
+            "nombre": "Flor Dina Sonco Paricanaza",
+            "cargo": "Tesorera",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2025/11/26.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "cuela",
+            "nombre": "Leoncio Cuela Mamani",
+            "cargo": "Vocal",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2025/11/27.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "huanca",
+            "nombre": "Carlos Huanca Mamani",
+            "cargo": "Vocal",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2025/11/30.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "puma",
+            "nombre": "Ruben Puma Corimanya",
+            "cargo": "Pastor",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2025/11/25.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          },
+          {
+            "id": "sumi",
+            "nombre": "Roger Sumi Huaman",
+            "cargo": "Anciano consejero",
+            "foto": {
+              "url": "https://cata.edu.pe/wp-content/uploads/2025/11/28.png",
+              "alt": "",
+              "ancho": 400,
+              "alto": 400
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

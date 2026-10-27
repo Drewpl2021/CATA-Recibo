@@ -1,0 +1,21 @@
+{
+  "data": {
+    "slug": "consejo-directivo",
+    "titulo": "Consejo",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "personas",
+        "titulo": null,
+        "personas": [
+          {
+            "id": "a",
+            "nombre": "Ana",
+            "cargo": "Vocal",
+            "foto": null
+          }
+        ]
+      }
+    ]
+  }
+}

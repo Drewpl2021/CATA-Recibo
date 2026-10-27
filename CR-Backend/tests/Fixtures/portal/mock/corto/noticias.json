@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "id": "n1",
+      "slug": "aviso",
+      "tipo": "comunicado",
+      "titulo": "Aviso",
+      "resumen": null,
+      "fecha": "2026-10-07",
+      "foto": null,
+      "enlace": null
+    }
+  ],
+  "meta": {
+    "pagina": 1,
+    "limite": 6,
+    "total": 1
+  }
+}

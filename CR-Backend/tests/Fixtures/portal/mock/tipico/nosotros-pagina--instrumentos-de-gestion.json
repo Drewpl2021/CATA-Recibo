@@ -1,0 +1,22 @@
+{
+  "data": {
+    "slug": "instrumentos-de-gestion",
+    "titulo": "Instrumentos de Gestión",
+    "bajada": null,
+    "bloques": [
+      {
+        "tipo": "enlaces",
+        "titulo": null,
+        "enlaces": [
+          {
+            "etiqueta": "Ver los instrumentos de gestión",
+            "url": "https://www.canva.com/design/DAGbKISlFuE/L-LmhAkDLI_VhB8bzRwalQ/view",
+            "descripcion": "Documento del colegio publicado como diseño en Canva.",
+            "formato": "canva",
+            "peso": null
+          }
+        ]
+      }
+    ]
+  }
+}

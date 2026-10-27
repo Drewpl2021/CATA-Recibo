@@ -1,0 +1,67 @@
+{
+  "data": [
+    {
+      "id": "b-matriculas",
+      "categoria": "matricula",
+      "titulo": "Matrículas 2026 abiertas para inicial, primaria y secundaria",
+      "fecha": "2026-01-05",
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/01/4.png",
+        "alt": "Afiche: Matrículas abiertas 2026. Inicial, Primaria, Secundaria. Informes por WhatsApp al 986322833, www.cata.edu.pe. Un niño con el uniforme del colegio sonríe a la derecha.",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": true,
+      "ladoAccion": "izquierda",
+      "accion": {
+        "etiqueta": "Ver requisitos",
+        "destino": {
+          "tipo": "pagina",
+          "ruta": "/matricula"
+        }
+      }
+    },
+    {
+      "id": "b-bienvenida",
+      "categoria": "aviso",
+      "titulo": "Bienvenidos de nuevo al colegio",
+      "fecha": "2026-03-02",
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/01/5.png",
+        "alt": "Afiche: Bienvenido de nuevo al colegio. El mejor lugar: CATA 2026. Infórmate al 986322833, www.cata.edu.pe. Síguenos en Facebook, Twitter, YouTube e Instagram.",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": true,
+      "ladoAccion": "derecha",
+      "accion": {
+        "etiqueta": "Contáctanos",
+        "destino": {
+          "tipo": "pagina",
+          "ruta": "/contacto"
+        }
+      }
+    },
+    {
+      "id": "b-lideres",
+      "categoria": "noticia",
+      "titulo": "Líderes que dejan huella",
+      "fecha": null,
+      "imagen": {
+        "url": "https://cata.edu.pe/wp-content/uploads/2025/01/2.png",
+        "alt": "Afiche: Líderes que dejan huella. Cuatro estudiantes sonríen en el auditorio del colegio bajo el letrero Bienvenidos. Cita: «La obra de la verdadera educación consiste en desarrollar las facultades físicas, mentales y espirituales del estudiante, preparándolo para el gozo del servicio en este mundo y para un gozo superior en el mundo venidero.» Elena G. White. Facebook: colegiocatajuliaca.",
+        "ancho": 1900,
+        "alto": 700
+      },
+      "imagenMovil": null,
+      "puntoFocal": null,
+      "textoEnImagen": true,
+      "ladoAccion": "izquierda",
+      "accion": null
+    }
+  ]
+}
