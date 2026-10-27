@@ -3,9 +3,9 @@
   titulo="CTS"
   subtitulo="Lo que el colegio deposita a cada trabajador dos veces al año por su tiempo de servicios."
   [cifras]="cifras"
-  [cargandoCifras]="cargando"
+  [cargandoCifras]="refrescando"
 >
-  <button headerActions type="button" class="btn-secondary" (click)="bajarHojasEnZip()" [disabled]="bajandoZip || cargando"
+  <button headerActions type="button" class="btn-secondary" (click)="bajarHojasEnZip()" [disabled]="bajandoZip || !datos"
     appPista="Todas las hojas de CTS de este periodo en un solo archivo .zip, para imprimirlas o archivarlas.">
     <app-icon icono="download" [tamano]="16"></app-icon>
     {{ bajandoZip ? 'Preparando…' : 'Descargar hojas (.zip)' }}
@@ -20,13 +20,13 @@
       @for (p of periodos; track p.valor) {
         <button type="button" class="cts-periodo" role="tab"
           [class.cts-periodo--activo]="periodo === p.valor" [attr.aria-selected]="periodo === p.valor"
-          [disabled]="cargando" (click)="elegirPeriodo(p.valor)">
+          (click)="elegirPeriodo(p.valor)">
           <strong>{{ p.titulo }}</strong>
           <span>cubre {{ p.detalle }}</span>
         </button>
       }
     </div>
-    <select id="anioCts" class="form-control cts-deposito__anio" aria-label="Año" [(ngModel)]="anio" (ngModelChange)="cargar()" [disabled]="cargando">
+    <select id="anioCts" class="form-control cts-deposito__anio" aria-label="Año" [(ngModel)]="anio" (ngModelChange)="cargar()">
       @for (a of anios; track $index) {
         <option [ngValue]="a">{{ a }}</option>
       }
@@ -78,7 +78,7 @@
         <div class="cts-paso__accion">
           @if (p.numero === 1) {
             <button type="button" [ngClass]="p.fase === 'actual' ? 'btn-primary' : 'btn-secondary'"
-              (click)="calcular()" [disabled]="calculando || cargando || !datos.resumen.con_derecho"
+              (click)="calcular()" [disabled]="calculando || refrescando || !datos.resumen.con_derecho"
               appPista="Guarda la CTS del semestre de todo el personal con derecho. Las ya depositadas no se tocan.">
               <app-icon icono="refresh" [tamano]="16"></app-icon>
               {{ calculando ? 'Calculando…' : p.fase === 'hecho' ? 'Volver a calcular' : 'Calcular CTS' }}
@@ -125,7 +125,7 @@
   (cambioSeleccion)="marcados = $event"
   [columnas]="columnas"
   [datos]="filasVisibles"
-  [cargando]="cargando"
+  [cargando]="refrescando || (cargando && !datos)"
   [camposBusqueda]="['dni', 'nombre', 'cargo']"
   placeholderBusqueda="Buscar por DNI, nombre o cargo…"
   [acciones]="[]"

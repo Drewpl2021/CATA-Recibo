@@ -3,9 +3,9 @@
   titulo="Gratificaciones"
   subtitulo="La de Fiestas Patrias y la de Navidad: lo que le corresponde a cada uno por ley y lo que tiene su planilla."
   [cifras]="cifras"
-  [cargandoCifras]="cargando"
+  [cargandoCifras]="refrescando"
 >
-  <button headerActions type="button" class="btn-secondary" (click)="bajarHojasEnZip()" [disabled]="bajandoZip || cargando"
+  <button headerActions type="button" class="btn-secondary" (click)="bajarHojasEnZip()" [disabled]="bajandoZip || !datos"
     appPista="Todas las hojas de gratificación de este periodo en un solo archivo .zip, para imprimirlas o archivarlas.">
     <app-icon icono="download" [tamano]="16"></app-icon>
     {{ bajandoZip ? 'Preparando…' : 'Descargar hojas (.zip)' }}
@@ -20,13 +20,13 @@
       @for (p of periodos; track p.valor) {
         <button type="button" class="cts-periodo" role="tab"
           [class.cts-periodo--activo]="periodo === p.valor" [attr.aria-selected]="periodo === p.valor"
-          [disabled]="cargando" (click)="elegirPeriodo(p.valor)">
+          (click)="elegirPeriodo(p.valor)">
           <strong>{{ p.titulo }}</strong>
           <span>{{ p.detalle }}</span>
         </button>
       }
     </div>
-    <select id="anioGrati" class="form-control cts-deposito__anio" aria-label="Año" [(ngModel)]="anio" (ngModelChange)="cargar()" [disabled]="cargando">
+    <select id="anioGrati" class="form-control cts-deposito__anio" aria-label="Año" [(ngModel)]="anio" (ngModelChange)="cargar()">
       @for (a of anios; track $index) {
         <option [ngValue]="a">{{ a }}</option>
       }
@@ -124,7 +124,7 @@
   (cambioSeleccion)="marcados = $event"
   [columnas]="columnas"
   [datos]="filasVisibles"
-  [cargando]="cargando"
+  [cargando]="refrescando || (cargando && !datos)"
   [camposBusqueda]="['dni', 'nombre', 'cargo']"
   placeholderBusqueda="Buscar por DNI, nombre o cargo…"
   [acciones]="[]"

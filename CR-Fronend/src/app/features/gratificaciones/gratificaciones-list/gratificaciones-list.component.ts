@@ -1,7 +1,8 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { ConfirmService, ToastService } from '../../../core/services';
 import {
@@ -72,6 +73,41 @@ export class GratificacionesListComponent implements OnInit {
   private confirmar = inject(ConfirmService);
   private router = inject(Router);
   private ruta = inject(ActivatedRoute);
+  private location = inject(Location);
+
+  /*
+   * Al cambiar de periodo o de año, la pantalla no parpadea. Antes, en el
+   * mismo instante del clic, se desactivaban las pestañas, el año y los
+   * botones (se ponían pálidos), se atenuaban la tabla y las cifras, y la
+   * dirección se cambiaba con router.navigate —que el sistema toma como
+   * «abriendo otra pantalla»—; al llegar los datos, todo volvía de golpe.
+   * Ahora nada se apaga si la respuesta llega rápido (400 ms); si tarda, se
+   * atenúan solo la tabla y las cifras. Un clic nuevo cancela el anterior.
+   */
+  refrescando = false;
+  private esperaRefresco?: ReturnType<typeof setTimeout>;
+  private pedido?: Subscription;
+
+  private empezarCarga(): void {
+    this.cargando = true;
+    clearTimeout(this.esperaRefresco);
+    this.esperaRefresco = setTimeout(() => (this.refrescando = this.cargando), 400);
+    this.pedido?.unsubscribe();
+  }
+
+  private terminarCarga(): void {
+    this.cargando = false;
+    clearTimeout(this.esperaRefresco);
+    this.refrescando = false;
+  }
+
+  /** El periodo en la dirección (para volver o compartir), sin navegar. */
+  private ponerEnLaDireccion(): void {
+    const url = this.router.createUrlTree([], {
+      relativeTo: this.ruta, queryParams: { anio: this.anio, periodo: this.periodo }, queryParamsHandling: 'merge',
+    });
+    this.location.replaceState(url.toString());
+  }
 
   readonly anioActual = new Date().getFullYear();
   readonly anios = [this.anioActual, this.anioActual - 1, this.anioActual - 2];
@@ -139,35 +175,89 @@ export class GratificacionesListComponent implements OnInit {
   }
 
   elegirPeriodo(periodo: PeriodoGratificacion): void {
-    if (this.periodo === periodo || this.cargando) return;
+    if (this.periodo === periodo) return;
     this.periodo = periodo;
     this.cargar();
   }
 
+  /**
+   * Cada periodo que ya se vio queda en memoria: volver a él es instantáneo
+   * (se muestra al momento y se pone al día por detrás, en silencio). Al
+   * abrir la pantalla se deja listo también el otro periodo, para que el
+   * primer clic tampoco espere. Lo que cambia datos (entregar, calcular,
+   * depositar) llama a recargar(), que borra la memoria.
+   */
+  private memoria = new Map<string, ListaGratificacion>();
+
+  private clave(anio: number | null, periodo: PeriodoGratificacion | null): string | null {
+    return anio && periodo ? `${anio}-${periodo}` : null;
+  }
+
   cargar(): void {
-    this.cargando = true;
     this.soltarMarcados();
-    this.servicio.lista(this.anio, this.periodo).subscribe({
+    const clave = this.clave(this.anio, this.periodo);
+    const guardado = clave ? this.memoria.get(clave) : undefined;
+    if (guardado) {
+      // Al momento, sin atenuar nada; luego se pone al día sin que se note.
+      this.pedido?.unsubscribe();
+      this.mostrar(guardado);
+      this.pedido = this.servicio.lista(this.anio, this.periodo).subscribe({
+        next: (res) => {
+          if (!res.success) return;
+          this.memoria.set(this.clave(res.data.anio, res.data.periodo)!, res.data);
+          const sigueAqui = res.data.anio === this.anio && res.data.periodo === this.periodo;
+          if (sigueAqui && JSON.stringify(res.data) !== JSON.stringify(this.datos)) this.mostrar(res.data);
+        },
+        error: () => {},
+      });
+      return;
+    }
+
+    this.empezarCarga();
+    this.pedido = this.servicio.lista(this.anio, this.periodo).subscribe({
       next: (res) => {
-        this.cargando = false;
+        this.terminarCarga();
         if (!res.success) return;
-        this.datos = res.data;
-        this.anio = res.data.anio;
-        this.periodo = res.data.periodo;
-        this.router.navigate([], { queryParams: { anio: this.anio, periodo: this.periodo }, queryParamsHandling: 'merge', replaceUrl: true });
-        this.armarResumen();
-        this.ponerOpcionesDeFiltro();
-        this.aplicarFiltro();
-        if (this.detalle) {
-          this.detalle = this.datos.filas.find((f) => f.id === this.detalle!.id) ?? null;
-          if (!this.detalle) this.panelAbierto = false;
-        }
+        this.memoria.set(this.clave(res.data.anio, res.data.periodo)!, res.data);
+        this.mostrar(res.data);
+        this.precargarElOtro();
       },
       error: (err) => {
-        this.cargando = false;
+        this.terminarCarga();
         this.toast.error('No se cargó', mensajeErrorApi(err, 'No se pudo revisar la gratificación.'));
       },
     });
+  }
+
+  /** Después de entregar, calcular o depositar: los datos de memoria ya no sirven. */
+  recargar(): void {
+    this.memoria.clear();
+    this.cargar();
+  }
+
+  /** Deja listo el otro periodo del año, sin mostrarlo. */
+  private precargarElOtro(): void {
+    const otro: PeriodoGratificacion = this.periodo === 'julio' ? 'diciembre' : 'julio';
+    if (!this.anio || this.memoria.has(this.clave(this.anio, otro)!)) return;
+    const anio = this.anio;
+    this.servicio.lista(anio, otro).subscribe({
+      next: (res) => { if (res.success) this.memoria.set(this.clave(res.data.anio, res.data.periodo)!, res.data); },
+      error: () => {},
+    });
+  }
+
+  private mostrar(datos: ListaGratificacion): void {
+    this.datos = datos;
+    this.anio = datos.anio;
+    this.periodo = datos.periodo;
+    this.ponerEnLaDireccion();
+    this.armarResumen();
+    this.ponerOpcionesDeFiltro();
+    this.aplicarFiltro();
+    if (this.detalle) {
+      this.detalle = this.datos.filas.find((f) => f.id === this.detalle!.id) ?? null;
+      if (!this.detalle) this.panelAbierto = false;
+    }
   }
 
   /** Las cifras, los pasos y los chips: una vez por carga. */
@@ -362,7 +452,7 @@ export class GratificacionesListComponent implements OnInit {
           this.entregando = false;
           if (!res.success) return;
           this.toast.success('Hojas entregadas', res.data.message);
-          this.cargar();
+          this.recargar();
         },
         error: (err) => {
           this.entregando = false;
