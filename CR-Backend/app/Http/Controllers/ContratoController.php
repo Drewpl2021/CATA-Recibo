@@ -32,6 +32,15 @@ class ContratoController extends Controller
             $query->where('tipo_contrato_id', $request->tipo_contrato_id);
         }
 
+        // «Vence en los próximos N días»: los vigentes con fecha de fin en ese
+        // tramo. Es a donde lleva el pendiente del Panel de Control.
+        if ($request->filled('por_vencer')) {
+            $dias = max(1, min(366, (int) $request->por_vencer));
+            $query->where('estado', 'vigente')
+                ->whereNotNull('fecha_fin')
+                ->whereBetween('fecha_fin', [now()->toDateString(), now()->addDays($dias)->toDateString()]);
+        }
+
         if (!$request->has('incluir_inactivos')) {
             $query->where('estado_registro', 'activo');
         }

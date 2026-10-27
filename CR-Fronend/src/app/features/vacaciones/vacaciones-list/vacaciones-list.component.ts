@@ -1,4 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { Location } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -45,6 +47,8 @@ export class VacacionesListComponent implements OnInit {
   private empleadoService = inject(EmpleadoService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
+  private ruta = inject(ActivatedRoute);
+  private location = inject(Location);
 
   vacaciones: Vacacion[] = [];
   empleados: Empleado[] = [];
@@ -160,7 +164,18 @@ export class VacacionesListComponent implements OnInit {
     motivo: [''],
   });
 
+
+  /**
+   * Llega ya filtrada desde un pendiente del Panel de Control. El filtro se
+   * quita de la dirección sin navegar (replaceState): al recargar no se
+   * vuelve a poner, y no se dispara otra navegación que haga parpadear.
+   */
   ngOnInit(): void {
+    const estado = this.ruta.snapshot.queryParamMap.get('estado');
+    if (estado && ['pendiente', 'aprobado', 'rechazado'].includes(estado)) {
+      this.filtros = { ...this.filtros, estado };
+      this.location.replaceState(this.location.path().split('?')[0]);
+    }
     this.cargar();
     this.cargarEmpleados();
   }

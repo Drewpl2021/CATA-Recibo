@@ -84,6 +84,20 @@
         </div>
       }
 
+      <!-- Lo que hay que hacer: un ícono con la cuenta; la lista, en un modal. -->
+      @if (hayDatos) {
+        <button type="button" class="boton-pendientes" (click)="pendientesAbierto = true"
+          [class.boton-pendientes--hay]="totalPendientes > 0"
+          [appPista]="totalPendientes > 0 ? 'Ver lo que está pendiente en ' + loQueSeVe : 'No hay nada pendiente en ' + loQueSeVe"
+          [attr.aria-label]="totalPendientes > 0 ? totalPendientes + ' pendientes' : 'Sin pendientes'">
+          <app-icon [icono]="totalPendientes > 0 ? 'clipboard_check' : 'check_circle'" [tamano]="17"></app-icon>
+          Pendientes
+          @if (totalPendientes > 0) {
+            <span class="boton-pendientes__cuenta">{{ totalPendientes }}</span>
+          }
+        </button>
+      }
+
       <button type="button" class="btn-exportar btn-exportar--compacto" (click)="exportar()"
         [disabled]="exportando || cargando"
         [appPista]="cargando ? 'Espera a que carguen las cifras' : 'Bajar el panel de ' + loQueSeVe + ' en Excel, con sus gráficos'">
@@ -115,22 +129,6 @@
   }
 
   @if (hayDatos) {
-    <!-- ══ Lo que hay que hacer: antes que los números ═══════════════ -->
-    @if (pendientesConTrabajo.length) {
-      <section class="pendientes">
-        <h2 class="pendientes__titulo">Pendientes de {{ loQueSeVe }}</h2>
-        <div class="pendientes__lista pendientes__lista--fila">
-          @for (p of pendientesConTrabajo; track $index) {
-            <button type="button" class="pendiente" (click)="irAResolver(p)"
-              appPista="Ir a donde se resuelve">
-              <strong class="pendiente__cuantos">{{ p.cuantos }}</strong>
-              <span class="pendiente__texto">{{ p.texto }}</span>
-              <app-icon icono="arrow_right" [tamano]="16" class="pendiente__flecha"></app-icon>
-            </button>
-          }
-        </div>
-      </section>
-    }
     <!-- ══ El mes en el azul del colegio ══════════════════════════════
     La nómina (sube contando al llegar), los doce meses del año (cada
     barra lleva a su mes) y el anillo de las boletas firmadas. -->
@@ -281,11 +279,7 @@
           <div>
             <h3 class="cumple__titulo">Cumpleaños de {{ nombreMes(filtroMes).toLowerCase() }}</h3>
             @if (cumpleanos.length) {
-              <p class="cumple__resumen">
-                {{ cumpleanos.length }} {{ cumpleanos.length === 1 ? 'persona' : 'personas' }}@if (cumpleanosPorVenir && cumpleanosPorVenir < cumpleanos.length) {
-                , faltan {{ cumpleanosPorVenir }}
-              }
-            </p>
+              <p class="cumple__resumen">{{ resumenCumpleanos }}</p>
           }
           @if (!cumpleanos.length) {
             <p class="cumple__resumen">Nadie del personal activo cumple este mes.</p>
@@ -539,4 +533,30 @@
     }
   </article>
 }
+
+  <!-- ══ Pendientes, en un modal ═══════════════════════════════════════
+       Antes ocupaban una franja entera encima de los números. Cada uno
+       lleva a la pantalla donde se resuelve, ya filtrada. -->
+  <app-form-modal [(visible)]="pendientesAbierto" [titulo]="'Pendientes de ' + loQueSeVe" ancho="600px"
+    [ocultarBotonesPorDefecto]="true" [cabeceraMarca]="true">
+    @if (pendientesConTrabajo.length) {
+      <p class="pendientes-modal__intro">Cada línea te lleva a la pantalla donde se resuelve, ya filtrada.</p>
+      <div class="pendientes__lista">
+        @for (p of pendientesConTrabajo; track p.clave) {
+          <button type="button" class="pendiente" (click)="irAResolver(p)"
+            appPista="Ir a donde se resuelve">
+            <strong class="pendiente__cuantos">{{ p.cuantos }}</strong>
+            <span class="pendiente__texto">{{ p.texto }}</span>
+            <app-icon icono="arrow_right" [tamano]="16" class="pendiente__flecha"></app-icon>
+          </button>
+        }
+      </div>
+    } @else {
+      <p class="pendientes__vacio">
+        No hay nada pendiente en {{ loQueSeVe }}: las boletas están emitidas y firmadas, no hay vacaciones
+        sin responder y ningún contrato vence pronto.
+      </p>
+    }
+    <button modalFooter type="button" class="btn-secondary" (click)="pendientesAbierto = false">Cerrar</button>
+  </app-form-modal>
 </div>

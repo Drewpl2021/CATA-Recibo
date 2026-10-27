@@ -1,4 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { Location } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -51,6 +53,8 @@ export class ContratosListComponent implements OnInit {
   private tipoContratoService = inject(TipoContratoService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
+  private ruta = inject(ActivatedRoute);
+  private location = inject(Location);
 
   contratos: Contrato[] = [];
   empleados: Empleado[] = [];
@@ -90,6 +94,15 @@ export class ContratosListComponent implements OnInit {
       opciones: ESTADO_CONTRATO_OPCIONES.map((e) => ({ valor: e.value, etiqueta: e.label })),
     },
     { clave: 'tipo_contrato_id', etiqueta: 'Tipo de contrato', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+    {
+      // Los vigentes que se acaban pronto (el pendiente del Panel de Control).
+      clave: 'por_vencer', etiqueta: 'Vence en', tipo: 'opciones', vacio: 'Cualquier fecha',
+      opciones: [
+        { valor: '30', etiqueta: 'Los próximos 30 días' },
+        { valor: '60', etiqueta: 'Los próximos 60 días' },
+        { valor: '90', etiqueta: 'Los próximos 90 días' },
+      ],
+    },
   ];
 
   private ponerOpciones(clave: string, opciones: { valor: string; etiqueta: string }[]): void {
@@ -287,7 +300,18 @@ export class ContratosListComponent implements OnInit {
     return `${tipo} - ${persona}.${extension}`.replace(/[\\/:*?"<>|]/g, '');
   }
 
+
+  /**
+   * Llega ya filtrada desde un pendiente del Panel de Control. El filtro se
+   * quita de la dirección sin navegar (replaceState): al recargar no se
+   * vuelve a poner, y no se dispara otra navegación que haga parpadear.
+   */
   ngOnInit(): void {
+    const porVencer = this.ruta.snapshot.queryParamMap.get('por_vencer');
+    if (porVencer && ['30', '60', '90'].includes(porVencer)) {
+      this.filtros = { ...this.filtros, por_vencer: porVencer };
+      this.location.replaceState(this.location.path().split('?')[0]);
+    }
     this.cargar();
     this.cargarEmpleados();
     this.tipoContratoService.getAll().subscribe({

@@ -21,6 +21,7 @@ import {
 } from 'ng-apexcharts';
 
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { AuthService, DashboardService, SedeService, ToastService } from '../../../core/services';
 import {
@@ -113,7 +114,7 @@ interface Dona {
 @Component({
   selector: 'app-dashboard-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgApexchartsModule, IconComponent, PistaDirective],
+  imports: [CommonModule, FormsModule, NgApexchartsModule, IconComponent, PistaDirective, FormModalComponent],
   templateUrl: './dashboard-view.component.html',
 })
 export class DashboardViewComponent implements OnInit, OnDestroy {
@@ -474,13 +475,18 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
 
   // ════════ Acciones ════════
 
+  /** El modal de pendientes (el botón de la cabecera). */
+  pendientesAbierto = false;
+
   irAResolver(pendiente: PendienteRrhh): void {
-    // Por URL: la ruta puede traer un filtro (?filtro=...) que navigate() codificaría.
+    this.pendientesAbierto = false;
+    // Por URL: la ruta trae su filtro (?estado=pendiente…) que navigate() codificaría.
     this.router.navigateByUrl(pendiente.ruta);
   }
 
+  /** «Ver todos» de la tarjeta: los mismos 60 días que muestra, en Contratos. */
   irAContratos(): void {
-    this.router.navigateByUrl('/inicio/contratos');
+    this.router.navigateByUrl('/inicio/contratos?por_vencer=60');
   }
 
   exportar(): void {
@@ -900,6 +906,13 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     return this.cumpleanos.filter((c) => c.es_hoy);
   }
 
+  /** «6 personas, faltan 1»: armado aquí, sin espacios de la plantilla antes de la coma. */
+  get resumenCumpleanos(): string {
+    const n = this.cumpleanos.length;
+    const faltan = this.cumpleanosPorVenir;
+    return `${n} ${n === 1 ? 'persona' : 'personas'}` + (faltan && faltan < n ? `, faltan ${faltan}` : '');
+  }
+
   get cumpleanosPorVenir(): number {
     return this.cumpleanos.filter((c) => !c.ya_paso).length;
   }
@@ -987,5 +1000,10 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
 
   get pendientesConTrabajo(): PendienteRrhh[] {
     return this.pendientes.filter((p) => p.cuantos > 0);
+  }
+
+  /** Cuántas cosas hay por hacer, para la cuenta del botón. */
+  get totalPendientes(): number {
+    return this.pendientes.reduce((t, p) => t + (p.cuantos > 0 ? p.cuantos : 0), 0);
   }
 }

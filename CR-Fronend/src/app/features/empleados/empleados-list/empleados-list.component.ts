@@ -4,6 +4,7 @@ import { EstadoListadoService } from '../../../core/services/sistema/estado-list
 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { Location } from '@angular/common';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { Router } from '@angular/router';
 
@@ -482,18 +483,24 @@ export class EmpleadosListComponent implements OnInit {
   }
 
   private ruta = inject(ActivatedRoute);
+  private location = inject(Location);
 
   ngOnInit(): void {
     const recordado = this.estadoListados.leer<Record<string, unknown>>('empleados');
     if (recordado) Object.assign(this, recordado);
-    // Desde el Panel de Control ("trabajadores con el contrato ya vencido").
-    if (this.ruta.snapshot.queryParamMap.get('filtro') === 'contrato_vencido') {
-      this.filtros = { contrato_vencido: '1' };
+    // Desde el Panel de Control: «con el contrato ya vencido» o «activos sin
+    // sueldo». Se quita de la dirección sin navegar: al recargar no se vuelve
+    // a marcar, y no se dispara otra navegación que haga parpadear.
+    const desdeElPanel = this.ruta.snapshot.queryParamMap.get('filtro');
+    // (y del aviso «pasaron a inactivo por contrato vencido»: los de baja).
+    if (desdeElPanel === 'contrato_vencido' || desdeElPanel === 'sin_sueldo' || desdeElPanel === 'de_baja') {
+      this.filtros = desdeElPanel === 'contrato_vencido' ? { contrato_vencido: '1' }
+        : desdeElPanel === 'sin_sueldo' ? { sin_sueldo: '1', estado: 'activo' }
+        : { estado: 'inactivo' };
       this.busqueda = '';
       this.pagina = 0;
-      this.marcarAlCargar = true;
-      // Se quita de la dirección: al recargar la página no se vuelve a marcar.
-      this.router.navigate([], { relativeTo: this.ruta, queryParams: {}, replaceUrl: true });
+      this.marcarAlCargar = desdeElPanel === 'contrato_vencido';
+      this.location.replaceState(this.location.path().split('?')[0]);
     }
     // Con filtros recordados, sus opciones hacen falta ya para mostrar los nombres.
     if (Object.keys(this.filtros ?? {}).length) this.cargarCatalogos();

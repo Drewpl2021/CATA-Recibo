@@ -1696,6 +1696,51 @@ td.celda-numero {
   gap: 10px;
 }
 
+/* ── Pendientes del Panel: un botón con la cuenta, la lista en un modal ──
+   Antes eran una franja entera encima de los números. Con algo por hacer
+   el botón toma el ámbar de aviso; sin nada, queda tranquilo. */
+.boton-pendientes {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.boton-pendientes:hover { background-color: var(--surface-hover); color: var(--heading); }
+
+.boton-pendientes--hay {
+  border-color: var(--warning);
+  color: var(--warning-text);
+}
+
+.boton-pendientes__cuenta {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--warning);
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.pendientes-modal__intro {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
 /* La versión de barra del botón verde de descargar: en la cabecera del panel
    va al lado de controles de 36 px, y con el tamaño de tabla se salía. */
 .btn-exportar--compacto {
@@ -1733,44 +1778,13 @@ td.celda-numero {
   .selector-mes { right: auto; left: 0; }
 }
 
-/* Lo que RR.HH. tiene pendiente. Cada línea es trabajo que alguien está
-   esperando, y lleva de un clic a donde se resuelve — por eso son botones
-   y no texto. */
-.pendientes {
-  background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 14px 18px;
-  margin-bottom: 16px;
-}
-
-.pendientes__titulo {
-  margin: 0 0 10px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-}
-
+/* Lo que RR.HH. tiene pendiente (en el modal del Panel). Cada línea es
+   trabajo que alguien está esperando, y lleva de un clic a donde se
+   resuelve — por eso son botones y no texto. */
 .pendientes__lista {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-/* En fila y no apilados: cada pendiente ocupa lo que necesita y caben
-   varios por línea. Apilados, una sola línea empujaba los gráficos casi
-   ochocientos píxeles hacia abajo. */
-.pendientes__lista.pendientes__lista--fila {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: stretch;
-}
-
-.pendientes__lista--fila > .pendiente {
-  flex: 1 1 auto;
-  min-width: 280px;
-  max-width: 460px;
 }
 
 .pendiente {
@@ -1853,7 +1867,6 @@ td.celda-numero {
   transition-delay: .15s;
 }
 
-.panel .pendientes { margin-bottom: 0; }
 
 .dash-header {
   display: flex;
@@ -7535,9 +7548,6 @@ textarea.form-control {
     gap: 6px;
   }
 
-  /* Los pendientes del panel, en columna y a lo ancho. */
-  .pendientes__lista.pendientes__lista--fila { flex-direction: column; }
-  .pendientes__lista .pendiente { flex: 1 1 auto; width: 100%; }
 }
 
 /* ── La tabla, en el celular ────────────────────────────────────────

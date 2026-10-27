@@ -499,7 +499,8 @@ export class LayoutComponent implements OnInit {
     // "Pasaron a inactivo por contrato vencido": a la lista, para renovar
     // y reactivar a quien siga trabajando.
     if (aviso.tipo === 'contratos_vencidos') {
-      this.router.navigate(['/inicio/empleados']);
+      // Ya filtrada en los dados de baja: son a quienes se refiere el aviso.
+      this.router.navigateByUrl('/inicio/empleados?filtro=de_baja');
       return;
     }
 

@@ -274,6 +274,7 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
   ngOnDestroy(): void {
     this.suscripcion?.unsubscribe();
     clearTimeout(this.temporizadorVacio);
+    clearTimeout(this.esperaRefresco);
   }
 
   /**
@@ -289,7 +290,7 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
     // eso era el parpadeo raro, un instante con las barras grises apiladas
     // sobre una tabla que ya se veía bien. Que se note que algo cambió lo
     // hace .data-table--refrescando, sin mover ni una fila de su sitio.
-    if (!this.cargando || this.filaPagina.length > 0) return [];
+    if (!this.cargando || this.filaPagina.length > 0 || this.yaCargoUnaVez) return [];
 
     // Tantas como va a traer la página, no menos: con ocho fijas la tabla
     // crecía dos filas al llegar los datos y la pantalla daba un salto.
@@ -401,7 +402,35 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
 
   seguirAccion = (_indice: number, accion: AccionPersonalizada<T>): string => accion.id;
 
+  /*
+   * Sin parpadeo al cambiar de página, de filtro o al buscar.
+   *
+   * Antes la tabla se empezaba a aclarar en el mismo instante en que pedía
+   * los datos, aunque el servidor contestara en 30 ms, y volvía de golpe:
+   * un parpadeo en cada clic, en todas las pantallas. Ahora se atenúa solo
+   * si la espera pasa de 300 ms (refrescandoVisible). Y el esqueleto es
+   * solo de la primera carga: después, mientras llegan los datos nuevos, se
+   * queda lo que se veía —las filas o el «no hay resultados»—, en vez de
+   * cambiar a diez barras grises (le pasaba a Vacaciones con una sola fila).
+   */
+  refrescandoVisible = false;
+  yaCargoUnaVez = false;
+  private esperaRefresco?: ReturnType<typeof setTimeout>;
+
+  private seguirCargando(antes: boolean): void {
+    clearTimeout(this.esperaRefresco);
+    if (this.cargando) {
+      this.esperaRefresco = setTimeout(() => (this.refrescandoVisible = this.cargando), 300);
+    } else {
+      this.refrescandoVisible = false;
+      // Solo cuando una carga de verdad terminó (de true a false): muchas
+      // pantallas arrancan con cargando = false y lo prenden después.
+      if (antes) this.yaCargoUnaVez = true;
+    }
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['cargando']) this.seguirCargando(!!changes['cargando'].previousValue);
     if (changes['pagina'] && this.paginacionServidor) {
       // La página la manda la pantalla; acá solo se refleja.
       this.establecerPaginaActual(this.pagina + 1);

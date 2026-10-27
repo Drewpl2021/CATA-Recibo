@@ -1,7 +1,7 @@
 import { inject, Component, OnInit, ViewChild } from '@angular/core';
 import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { EstadoListadoService } from '../../../core/services/sistema/estado-listado.service';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AjustesService, AreaService, AuthService, CargoService, PaymentConceptService, PlanillaCorridaService, SedeService, TipoContratoService, ValorLegal } from '../../../core/services';
 import { PaymentConcept } from '../../../core/models';
@@ -17,7 +17,7 @@ import { Observable, of, map, switchMap, forkJoin, EMPTY, expand } from 'rxjs';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { AlCuerpoDirective } from '../../../shared/directives/al-cuerpo.directive';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { BarraSeleccionComponent, resumirMarcados } from '../../../shared/components/barra-seleccion/barra-seleccion.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
@@ -68,6 +68,9 @@ export interface FormularioBoleta {
   styleUrl: './emision-boleta-list.component.scss'
 })
 export class EmisionBoletaListComponent implements OnInit {
+  private ruta = inject(ActivatedRoute);
+  private location = inject(Location);
+
   /** El modal de avance de los procesos largos (ver ProgresoService). */
   private progreso = inject(ProgresoService);
 
@@ -761,6 +764,19 @@ export class EmisionBoletaListComponent implements OnInit {
     this.formulario = this.getFormularioVacio();
     const recordado = this.estadoListados.leer<Record<string, unknown>>('emision-boletas');
     if (recordado) Object.assign(this, recordado);
+    // Desde el Panel de Control («con planilla pero sin boleta»): ese mes, y
+    // solo a quienes les falta. Se quita de la dirección sin navegar.
+    const q = this.ruta.snapshot.queryParamMap;
+    const mes = Number(q.get('mes'));
+    const anio = Number(q.get('anio'));
+    if (mes >= 1 && mes <= 12 && anio >= 2000) {
+      this.mesGlobal = mes;
+      this.anioGlobal = anio;
+      if (q.get('boleta') === 'sin') this.filtros = { planilla: 'con', boleta: 'sin' };
+      this.busqueda = '';
+      this.pagina = 0;
+      this.location.replaceState(this.location.path().split('?')[0]);
+    }
     // Con filtros recordados, sus opciones hacen falta ya para mostrar los nombres.
     if (Object.keys(this.filtros ?? {}).length) this.cargarCatalogos();
     this.cargarEmpleados();

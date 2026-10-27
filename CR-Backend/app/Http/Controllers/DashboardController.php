@@ -813,15 +813,15 @@ class DashboardController extends Controller
             ['clave' => 'contratos_vencidos', 'cuantos' => $contratosVencidos,
              'texto' => 'trabajadores con el contrato ya vencido: renuévalo o dalos de baja', 'ruta' => '/inicio/empleados?filtro=contrato_vencido'],
             ['clave' => 'vacaciones', 'cuantos' => $vacacionesPorAprobar,
-             'texto' => 'solicitudes de vacaciones esperando respuesta', 'ruta' => '/inicio/vacaciones'],
+             'texto' => 'solicitudes de vacaciones esperando respuesta', 'ruta' => '/inicio/vacaciones?estado=pendiente'],
             ['clave' => 'sin_boleta', 'cuantos' => $sinBoleta,
-             'texto' => 'trabajadores con planilla pero sin boleta emitida', 'ruta' => '/inicio/planillas'],
+             'texto' => 'trabajadores con planilla pero sin boleta emitida', 'ruta' => "/inicio/emision-boleta?mes={$mes}&anio={$anio}&boleta=sin"],
             ['clave' => 'sin_firmar', 'cuantos' => $sinFirmar,
              'texto' => 'boletas del mes que el trabajador aún no firma', 'ruta' => '/inicio/documentos?filtro=boletas_por_firmar'],
             ['clave' => 'sin_sueldo', 'cuantos' => $sinSueldo,
-             'texto' => 'trabajadores activos sin sueldo configurado', 'ruta' => '/inicio/empleados'],
+             'texto' => 'trabajadores activos sin sueldo configurado', 'ruta' => '/inicio/empleados?filtro=sin_sueldo'],
             ['clave' => 'contratos', 'cuantos' => $contratosPorVencer,
-             'texto' => 'contratos que vencen en los próximos 30 días', 'ruta' => '/inicio/contratos'],
+             'texto' => 'contratos que vencen en los próximos 30 días', 'ruta' => '/inicio/contratos?por_vencer=30'],
         ];
     }
 

@@ -12,7 +12,7 @@
   </div>
 
   @if (cifras.length) {
-    <div class="cifras-cabecera" [class.cifras-cabecera--refrescando]="cargandoCifras && !mostrarGuion">
+    <div class="cifras-cabecera" [class.cifras-cabecera--refrescando]="refrescandoVisible && !mostrarGuion">
       @for (c of cifras; track porEtiqueta($index, c)) {
         <div class="cifras-cabecera__dato"
           [ngClass]="'cifras-cabecera__dato--' + (c.tono || 'brand')">

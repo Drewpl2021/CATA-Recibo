@@ -29,7 +29,7 @@
 
     <div class="table-responsive">
       <table class="data-table"
-        [class.data-table--refrescando]="cargando && filasEnPantalla.length > 0"
+        [class.data-table--refrescando]="refrescandoVisible"
         [class.data-table--vaciando]="saliendoAVacio">
         <thead>
           <tr>
@@ -77,7 +77,7 @@
                 }
               </tr>
             }
-            @if (!cargando && !saliendoAVacio && filasEnPantalla.length === 0) {
+            @if ((!cargando || yaCargoUnaVez) && !saliendoAVacio && filasEnPantalla.length === 0) {
               <tr>
                 <td [attr.colspan]="columnas.length + (seleccionable ? 1 : 0) + (numerarFilas ? 1 : 0) + (acciones.length || accionesPersonalizadas.length ? 1 : 0)" class="data-table-empty">
                   {{ mensajeVacio }}

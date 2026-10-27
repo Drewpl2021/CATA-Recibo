@@ -61,8 +61,21 @@ export class PageHeaderComponent implements OnChanges {
    */
   private yaHuboCifras = false;
 
+  /**
+   * Las cifras viejas se atenúan solo si la espera pasa de 300 ms: casi
+   * siempre llegan antes, y atenuar y volver en 50 ms era un parpadeo.
+   */
+  refrescandoVisible = false;
+  private esperaRefresco?: ReturnType<typeof setTimeout>;
+
   ngOnChanges(): void {
     if (!this.cargandoCifras && this.cifras.length) this.yaHuboCifras = true;
+    clearTimeout(this.esperaRefresco);
+    if (this.cargandoCifras) {
+      this.esperaRefresco = setTimeout(() => (this.refrescandoVisible = this.cargandoCifras), 300);
+    } else {
+      this.refrescandoVisible = false;
+    }
   }
 
   get mostrarGuion(): boolean {
