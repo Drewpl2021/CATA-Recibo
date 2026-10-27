@@ -18,7 +18,7 @@ class ContratoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Contrato::with('empleado', 'documentos', 'tipoContrato');
+        $query = Contrato::with('empleado.foto', 'documentos', 'tipoContrato');
 
         if ($request->filled('empleado_id')) {
             $query->where('empleado_id', $request->empleado_id);

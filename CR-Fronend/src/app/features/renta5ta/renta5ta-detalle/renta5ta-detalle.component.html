@@ -1,5 +1,6 @@
 <app-page-header
   icono="wallet"
+  [persona]="hoja?.empleado ? { foto: hoja!.empleado!.foto, nombre: hoja!.empleado!.nombre } : null"
   [titulo]="hoja?.empleado ? 'Renta de 5ta · ' + hoja!.empleado!.nombre : 'Renta de 5ta'"
   [subtitulo]="hoja?.empleado ? 'DNI ' + hoja!.empleado!.dni + (hoja!.empleado!.cargo ? ' · ' + hoja!.empleado!.cargo : '') + ' · Hoja de retención de ' + anio : 'Hoja de retención'"
   [cifras]="cifras"

@@ -1,3 +1,4 @@
+import { FotoDeCuenta } from '../../../shared/components/avatar/avatar.component';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
@@ -17,6 +18,8 @@ export type PeriodoGratificacion = 'julio' | 'diciembre';
 export type EstadoGratificacion = 'pagada' | 'diferencia' | 'por_pagar' | 'no_corresponde';
 
 export interface FilaGratificacion {
+  /** Para app-avatar: su foto o, sin foto, sus iniciales. */
+  foto?: FotoDeCuenta | null;
   id: string;
   dni: string;
   nombre: string;

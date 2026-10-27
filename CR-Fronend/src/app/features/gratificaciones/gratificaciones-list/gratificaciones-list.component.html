@@ -137,6 +137,9 @@
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros" (cambio)="aplicarFiltro()"></app-filtros>
 
   <ng-template appCelda="nombre" let-f>
+    <div class="celda-persona">
+      <app-avatar [foto]="f.foto" [nombre]="f.nombre"></app-avatar>
+      <div class="celda-persona__texto">
     <strong>{{ f.nombre }}</strong>
     <div class="form-ayuda">
       DNI {{ f.dni }}@if (f.cargo) {
@@ -146,7 +149,9 @@
       <span class="status-badge status-badge-secondary renta-fila__cesado">Cesado</span>
     }
   </div>
-</ng-template>
+      </div>
+    </div>
+  </ng-template>
 
 <ng-template appCelda="meses" let-f>
   @if (f.aplica) {
@@ -222,6 +227,9 @@
   [subtitulo]="detalle ? 'DNI ' + detalle.dni + (detalle.cargo ? ' · ' + detalle.cargo : '') : ''"
   >
   @if (detalle; as d) {
+    <div class="panel-persona">
+      <app-avatar [foto]="d.foto" [nombre]="d.nombre" [tamano]="64"></app-avatar>
+    </div>
     <dl class="detalle-lista">
       <dt>Situación</dt>
       <dd><span class="status-badge" [ngClass]="'status-badge-' + estado(d).tono">{{ estado(d).texto }}</span></dd>

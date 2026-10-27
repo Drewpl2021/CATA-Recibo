@@ -25,6 +25,12 @@
   >
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
   (cambio)="alFiltrar()"></app-filtros>
+  <ng-template appCelda="usuario_nombre" let-f>
+    <div class="celda-persona">
+      <app-avatar [foto]="f.foto" [nombre]="f.usuario_nombre || 'Sistema'"></app-avatar>
+      <span class="celda-persona__texto">{{ f.usuario_nombre || '—' }}</span>
+    </div>
+  </ng-template>
 </app-data-table>
 
 <!-- «Ver más»: el registro contado en palabras, con todo lo que lo rodea.

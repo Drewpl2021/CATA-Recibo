@@ -65,10 +65,12 @@ import {
  * El sueldo base nunca se edita: sale del empleado. Lo que sí se ajusta son
  * sus conceptos, en la pantalla de detalle.
  */
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
 @Component({
   selector: 'app-planillas-list',
   standalone: true,
-  imports: [IconComponent, 
+  imports: [CeldaTablaDirective, AvatarComponent, IconComponent, 
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
     FiltrosComponent, OrdenComponent, BarraSeleccionComponent, PistaDirective,

@@ -58,10 +58,11 @@ interface BarraMes {
  * Ordenar y Filtros, y el detalle en el panel de la derecha. Las filas y las
  * cifras son propiedades, no getters (ver la regla de las tablas).
  */
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 @Component({
   selector: 'app-gratificaciones-list',
   standalone: true,
-  imports: [
+  imports: [AvatarComponent, 
     PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective,
     FiltrosComponent, OrdenComponent, PanelLateralComponent, BarraSeleccionComponent,
   ],

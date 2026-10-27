@@ -731,6 +731,12 @@ a.migas__paso:hover {
 .celda-persona { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .celda-persona__texto { min-width: 0; }
 
+/* La persona arriba del panel lateral (CTS, Gratificaciones): su foto. */
+.panel-persona { display: flex; justify-content: center; margin: 4px 0 14px; }
+
+/* En la cabecera de una pantalla de una sola persona, en lugar del ícono. */
+.page-header__persona { flex-shrink: 0; }
+
 /* La foto en grande. */
 .visor-foto {
   position: fixed;
@@ -2633,26 +2639,10 @@ td.celda-numero {
 
 .cumple__persona--paso { opacity: 0.55; }
 
-.cumple__iniciales {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.cumple__iniciales--grande { width: 44px; height: 44px; font-size: 14px; }
-
-/* Un color de la paleta por persona: la lista se recorre por caras. */
-.avatar--0 { background-color: var(--brand-700); color: var(--text-on-brand); }
-.avatar--1 { background-color: var(--brand-500); color: var(--text-on-brand); }
-.avatar--2 { background-color: var(--success-solid); color: var(--text-on-brand); }
-.avatar--3 { background-color: var(--brand-100); color: var(--heading); }
-.avatar--dorado { background-color: var(--accent); color: var(--on-accent); }
+/* Las caras de la lista: app-avatar, el mismo de todo el sistema (su foto
+   o sus iniciales). Quien cumple hoy, con un aro dorado. */
+.cumple__avatar { flex-shrink: 0; }
+.cumple__avatar--hoy .avatar { box-shadow: 0 0 0 3px var(--accent); }
 
 .cumple__quien {
   display: flex;

@@ -24,10 +24,12 @@ import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/p
  */
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
 @Component({
   selector: 'app-auditoria-list',
   standalone: true,
-  imports: [FiltrosComponent, CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, PanelLateralComponent, IconComponent],
+  imports: [CeldaTablaDirective, AvatarComponent, FiltrosComponent, CommonModule, FormsModule, PageHeaderComponent, DataTableComponent, PanelLateralComponent, IconComponent],
   templateUrl: './auditoria-list.component.html',
 })
 export class AuditoriaListComponent implements OnInit {

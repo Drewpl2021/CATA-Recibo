@@ -1,8 +1,12 @@
 <header class="page-header">
   <div class="page-header__title">
-    <span class="page-header__icon">
-      <app-icon [nombreModulo]="titulo" [icono]="icono" [tamano]="28"></app-icon>
-    </span>
+    @if (persona) {
+      <app-avatar class="page-header__persona" [foto]="persona.foto" [nombre]="persona.nombre" [tamano]="56"></app-avatar>
+    } @else {
+      <span class="page-header__icon">
+        <app-icon [nombreModulo]="titulo" [icono]="icono" [tamano]="28"></app-icon>
+      </span>
+    }
     <div>
       <h1>{{ titulo }}</h1>
       @if (subtitulo) {

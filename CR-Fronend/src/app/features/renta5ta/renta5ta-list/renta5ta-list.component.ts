@@ -31,10 +31,11 @@ import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/f
  * pantalla lo avisa.
  */
 import { PistaDirective } from '../../../shared/directives/pista.directive';
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 @Component({
   selector: 'app-renta5ta-list',
   standalone: true,
-  imports: [PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FiltrosComponent, OrdenComponent, FormModalComponent, SelectorArchivoComponent],
+  imports: [AvatarComponent, PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FiltrosComponent, OrdenComponent, FormModalComponent, SelectorArchivoComponent],
   templateUrl: './renta5ta-list.component.html',
 })
 export class Renta5taListComponent implements OnInit {

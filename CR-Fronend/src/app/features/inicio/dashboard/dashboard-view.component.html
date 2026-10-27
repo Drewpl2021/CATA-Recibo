@@ -288,7 +288,7 @@
       </header>
       @for (c of cumpleanosHoy; track $index) {
         <div class="cumple__hoy">
-          <span class="cumple__iniciales cumple__iniciales--grande avatar--dorado">{{ iniciales(c.nombre) }}</span>
+          <app-avatar class="cumple__avatar cumple__avatar--hoy" [foto]="c.foto" [nombre]="c.nombre" [tamano]="46"></app-avatar>
           <span class="cumple__hoy-texto">
             <small>Hoy cumple</small>
             <strong>{{ c.nombre }}</strong>
@@ -341,7 +341,7 @@
           @for (c of cumpleanosVisibles; track $index) {
             <li class="cumple__persona"
               [class.cumple__persona--paso]="c.ya_paso && !c.es_hoy">
-              <span class="cumple__iniciales" [ngClass]="c.es_hoy ? 'avatar--dorado' : colorDe(c.nombre)">{{ iniciales(c.nombre) }}</span>
+              <app-avatar class="cumple__avatar" [class.cumple__avatar--hoy]="c.es_hoy" [foto]="c.foto" [nombre]="c.nombre" [tamano]="36"></app-avatar>
               <span class="cumple__quien">
                 <strong>{{ c.nombre }}</strong>
                 <small>{{ c.cargo }}{{ c.area && c.area !== '—' ? ', ' + c.area : '' }}</small>
@@ -493,9 +493,12 @@
         <ul class="vence">
           @for (v of vencimientos; track $index) {
             <li class="vence__fila" [ngClass]="'vence__fila--' + v.urgencia">
-              <span class="vence__quien">
-                <strong>{{ v.nombre }}</strong>
-                <small>{{ v.cargo }}</small>
+              <span class="celda-persona">
+                <app-avatar [foto]="v.foto" [nombre]="v.nombre" [tamano]="32"></app-avatar>
+                <span class="vence__quien">
+                  <strong>{{ v.nombre }}</strong>
+                  <small>{{ v.cargo }}</small>
+                </span>
               </span>
               <span class="vence__cuando">
                 <strong>{{ cuandoVence(v.dias) }}</strong>

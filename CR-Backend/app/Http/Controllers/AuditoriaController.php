@@ -22,7 +22,7 @@ class AuditoriaController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Auditoria::query()->orderByDesc('created_at')->orderByDesc('id');
+        $query = Auditoria::with('foto')->orderByDesc('created_at')->orderByDesc('id');
 
         // La historia de UNA ficha: "todo lo que le pasó a este empleado".
         foreach (['entidad', 'entidad_id', 'user_id', 'accion'] as $filtro) {

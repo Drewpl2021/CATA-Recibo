@@ -54,7 +54,7 @@ class CtsController extends Controller
     {
         $semestre = MotorCts::semestre($anio, $periodo);
 
-        return Empleado::with('cargo:id,nombre', 'area:id,nombre', 'sede:id,nombre')
+        return Empleado::with('cargo:id,nombre', 'area:id,nombre', 'sede:id,nombre', 'foto')
             ->where('fecha_ingreso', '<=', $semestre['hasta']->toDateString())
             ->where(fn ($q) => $q->where('estado', 'activo')
                 ->orWhere('fecha_cese', '>=', $semestre['desde']->toDateString())
@@ -118,6 +118,7 @@ class CtsController extends Controller
                 'liquidacion_id'     => $guardada?->id,
                 'dni'                => $e->dni,
                 'nombre'             => trim("{$e->apellido} {$e->nombre}"),
+                'foto'               => $e->foto,
                 // Aparte, para el botón «Ordenar» (apellidos o nombres).
                 'apellido'           => $e->apellido,
                 'nombres'            => $e->nombre,

@@ -40,10 +40,12 @@ const SEVERIDAD_ESTADO: Record<string, 'success' | 'secondary' | 'info'> = {
  */
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
 @Component({
   selector: 'app-contratos-list',
   standalone: true,
-  imports: [FiltrosComponent, IconComponent, FormsModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent],
+  imports: [CeldaTablaDirective, AvatarComponent, FiltrosComponent, IconComponent, FormsModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent],
   templateUrl: './contratos-list.component.html',
 })
 export class ContratosListComponent implements OnInit {

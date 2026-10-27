@@ -1,3 +1,5 @@
+import { FotoDeCuenta } from '../../shared/components/avatar/avatar.component';
+
 /**
  * Las cifras del Panel de Control, tal como las manda el backend.
  *
@@ -33,6 +35,7 @@ export interface FirmaBoletas {
 
 export interface ContratoPorVencer {
   nombre: string;
+  foto?: FotoDeCuenta | null;
   cargo: string;
   fecha: string;
   /** Días que faltan; negativo si ya venció. */
@@ -63,6 +66,8 @@ export interface MovimientoMes {
 /** Quién cumple años este mes. */
 export interface CumpleanosDelMes {
   nombre: string;
+  /** Para app-avatar: su foto o, sin foto, sus iniciales. */
+  foto?: FotoDeCuenta | null;
   cargo: string;
   area: string;
   sede: string;

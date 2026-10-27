@@ -34,7 +34,7 @@ class Renta5taController extends Controller
     /** El personal del año: los activos y quien tenga planilla o historial ese año. */
     private function personalDelAnio(int $anio)
     {
-        return Empleado::with('cargo:id,nombre', 'area:id,nombre', 'sede:id,nombre')
+        return Empleado::with('cargo:id,nombre', 'area:id,nombre', 'sede:id,nombre', 'foto')
             ->where(fn ($q) => $q->where('estado', 'activo')
                 ->orWhereIn('id', Planilla::where('anio', $anio)->select('empleado_id'))
                 ->orWhereIn('id', RentaQuintaPrevia::where('anio', $anio)->select('empleado_id')))
@@ -118,6 +118,7 @@ class Renta5taController extends Controller
                 'id'                    => $e->id,
                 'dni'                   => $e->dni,
                 'nombre'                => trim("{$e->apellido} {$e->nombre}"),
+                'foto'                  => $e->foto,
                 // Aparte, para el botón «Ordenar» (apellidos o nombres).
                 'apellido'              => $e->apellido,
                 'nombres'               => $e->nombre,
@@ -197,11 +198,11 @@ class Renta5taController extends Controller
     public function show(Request $request, string $empleado)
     {
         $anio = $this->anio($request);
-        $e = Empleado::with('cargo:id,nombre', 'area:id,nombre')->findOrFail($empleado);
+        $e = Empleado::with('cargo:id,nombre', 'area:id,nombre', 'foto')->findOrFail($empleado);
 
         return response()->json(['success' => true, 'data' => [
             'empleado' => [
-                'id' => $e->id, 'dni' => $e->dni, 'nombre' => trim("{$e->nombre} {$e->apellido}"),
+                'id' => $e->id, 'dni' => $e->dni, 'nombre' => trim("{$e->nombre} {$e->apellido}"), 'foto' => $e->foto,
                 'cargo' => $e->cargo?->nombre, 'area' => $e->area?->nombre, 'estado' => $e->estado,
                 'sueldo_base' => (float) $e->sueldo_base, 'fecha_ingreso' => $e->fecha_ingreso,
             ],

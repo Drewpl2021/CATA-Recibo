@@ -27,6 +27,12 @@ class Auditoria extends Model
         ];
     }
 
+    /** Solo la foto de quien lo hizo, para el circulito: {usuario_id, version}. */
+    public function foto()
+    {
+        return $this->belongsTo(FotoDePerfil::class, 'user_id')->select('id', 'foto');
+    }
+
     public function usuario()
     {
         return $this->belongsTo(User::class, 'user_id');

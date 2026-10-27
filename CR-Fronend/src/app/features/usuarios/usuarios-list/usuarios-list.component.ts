@@ -30,10 +30,13 @@ import { etiquetaRol, ROL_ADMIN } from '../../../shared/constants';
  * Dar de baja no borra: desactiva la cuenta y le cierra las sesiones abiertas,
  * y se puede volver a activar.
  */
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
+import { FotoDeCuenta } from '../../../shared/components/avatar/avatar.component';
 @Component({
   selector: 'app-usuarios-list',
   standalone: true,
-  imports: [
+  imports: [CeldaTablaDirective, AvatarComponent, 
     ReactiveFormsModule,
     PageHeaderComponent,
     DataTableComponent,
@@ -393,5 +396,11 @@ export class UsuariosListComponent implements OnInit {
   alAccionar(evento: { accion: string; fila: Usuario }): void {
     if (evento.accion === 'reactivar') this.reactivar(evento.fila);
     if (evento.accion === 'restablecer') this.restablecer(evento.fila);
+  }
+
+  /** La foto de su cuenta para app-avatar (la lista de usuarios trae la versión en «foto»). */
+  fotoDe(u: Usuario): FotoDeCuenta | null {
+    const version = (u as unknown as { foto?: string | null }).foto;
+    return version ? { usuario_id: u.id, version } : null;
   }
 }

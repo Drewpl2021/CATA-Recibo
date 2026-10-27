@@ -1,3 +1,4 @@
+import { FotoDeCuenta } from '../../../shared/components/avatar/avatar.component';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -9,6 +10,8 @@ export type FuenteMes5ta = 'planilla' | 'historial' | 'proyectado' | 'no_trabaja
 
 /** Un trabajador en la lista del módulo: su año y el mes elegido. */
 export interface FilaRenta5ta {
+  /** Para app-avatar: su foto o, sin foto, sus iniciales. */
+  foto?: FotoDeCuenta | null;
   id: string;
   dni: string;
   nombre: string;
@@ -86,7 +89,7 @@ export interface MesRenta5ta {
 export interface HojaRenta5ta {
   anio: number;
   uit: number;
-  empleado?: { id: string; dni: string; nombre: string; cargo: string | null; area: string | null; estado: string; sueldo_base: number; fecha_ingreso: string };
+  empleado?: { id: string; dni: string; nombre: string; foto?: FotoDeCuenta | null; cargo: string | null; area: string | null; estado: string; sueldo_base: number; fecha_ingreso: string };
   meses: MesRenta5ta[];
   resumen: { impuesto_anual: number; retenido: number; por_retener: number; meses_con_dato: number[]; meses_sin_dato: number[] };
   recalculadas?: number;

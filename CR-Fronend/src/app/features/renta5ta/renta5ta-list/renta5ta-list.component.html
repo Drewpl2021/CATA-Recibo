@@ -101,6 +101,9 @@
   (cambio)="aplicarFiltro()"></app-filtros>
 
   <ng-template appCelda="nombre" let-f>
+    <div class="celda-persona">
+      <app-avatar [foto]="f.foto" [nombre]="f.nombre"></app-avatar>
+      <div class="celda-persona__texto">
     <strong>{{ f.nombre }}</strong>
     <div class="form-ayuda">
       DNI {{ f.dni }}@if (f.cargo) {
@@ -110,7 +113,9 @@
       <span class="status-badge status-badge-secondary renta-fila__cesado">Cesado</span>
     }
   </div>
-</ng-template>
+      </div>
+    </div>
+  </ng-template>
 
 <ng-template appCelda="impuesto_anual" let-f>
   @if (f.paga_5ta) {

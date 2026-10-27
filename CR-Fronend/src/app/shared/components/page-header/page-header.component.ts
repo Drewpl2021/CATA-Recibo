@@ -1,3 +1,4 @@
+import { AvatarComponent, FotoDeCuenta } from '../avatar/avatar.component';
 import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../icon/icon.component';
@@ -28,7 +29,7 @@ export interface CifraCabecera {
 @Component({
   selector: 'app-page-header',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent, AvatarComponent],
   templateUrl: './page-header.component.html',
 })
 export class PageHeaderComponent implements OnChanges {
@@ -37,6 +38,12 @@ export class PageHeaderComponent implements OnChanges {
 
   /** Clave del catálogo. Si no se pasa, se deduce del título. */
   @Input() icono = '';
+
+  /**
+   * En una pantalla de una sola persona (la hoja de Renta de 5ta de alguien):
+   * su foto o sus iniciales en lugar del ícono del módulo.
+   */
+  @Input() persona: { foto?: FotoDeCuenta | null; nombre: string } | null = null;
 
   /**
    * Las cifras de la pantalla: cuántos hay en total, cuántos activos,

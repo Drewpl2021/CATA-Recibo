@@ -80,7 +80,7 @@ export interface Vacacion {
   aprobado_por?: string | null;
   aprobado_at?: string | null;
   estado_registro?: string;
-  empleado?: Pick<Empleado, 'id' | 'nombre' | 'apellido' | 'dni'>;
+  empleado?: Pick<Empleado, 'id' | 'nombre' | 'apellido' | 'dni' | 'foto'>;
 }
 
 /**

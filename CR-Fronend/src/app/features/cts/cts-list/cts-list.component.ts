@@ -93,10 +93,11 @@ interface ChipSituacion {
  * rehacen solo al cargar o al filtrar (si no, la tabla vuelve a la página 1
  * y redibuja los íconos en cada ciclo).
  */
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 @Component({
   selector: 'app-cts-list',
   standalone: true,
-  imports: [
+  imports: [AvatarComponent, 
     PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective,
     FiltrosComponent, OrdenComponent, FormModalComponent, PanelLateralComponent, BarraSeleccionComponent,
   ],

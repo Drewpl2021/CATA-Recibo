@@ -31,6 +31,12 @@
   >
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
   (cambio)="alFiltrar()"></app-filtros>
+  <ng-template appCelda="empleado.nombre" let-f>
+    <div class="celda-persona">
+      <app-avatar [foto]="f.empleado?.foto" [nombre]="(f.empleado?.nombre ?? '') + ' ' + (f.empleado?.apellido ?? '')"></app-avatar>
+      <span class="celda-persona__texto">{{ nombreEmpleado(f.empleado) }}</span>
+    </div>
+  </ng-template>
 </app-data-table>
 
 <app-form-modal

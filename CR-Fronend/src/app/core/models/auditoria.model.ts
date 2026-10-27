@@ -1,3 +1,4 @@
+import { FotoDeCuenta } from '../../shared/components/avatar/avatar.component';
 /**
  * Una línea del registro de auditoría: quién hizo qué, y cuándo.
  *
@@ -6,6 +7,8 @@
  * '(oculto)': se sabe QUE cambió, nunca a qué.
  */
 export interface RegistroAuditoria {
+  /** La foto de quien hizo el cambio (app-avatar). */
+  foto?: FotoDeCuenta | null;
   id: number;
   user_id: number | null;
   usuario_nombre: string | null;

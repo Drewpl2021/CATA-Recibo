@@ -111,10 +111,11 @@ interface Dona {
  * la comparación con el año anterior, los cumpleaños en un calendario, de
  * dónde sale el neto, el mapa de lo pagado por área y cómo es el personal.
  */
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 @Component({
   selector: 'app-dashboard-view',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgApexchartsModule, IconComponent, PistaDirective, FormModalComponent],
+  imports: [AvatarComponent, CommonModule, FormsModule, NgApexchartsModule, IconComponent, PistaDirective, FormModalComponent],
   templateUrl: './dashboard-view.component.html',
 })
 export class DashboardViewComponent implements OnInit, OnDestroy {
@@ -924,21 +925,6 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     if (!esEsteMes) return null;
     const persona = this.cumpleanos.find((c) => !c.ya_paso && !c.es_hoy);
     return persona ? { persona, dias: persona.dia - hoy.getDate() } : null;
-  }
-
-  /** "RQ" de Rosa Quispe. */
-  iniciales(nombre: string): string {
-    const partes = nombre.trim().split(/\s+/);
-    return ((partes[0]?.[0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase();
-  }
-
-  /** Un color de la paleta por persona, siempre el mismo para el mismo nombre. */
-  colorDe(nombre: string): string {
-    // Suma simple de las letras: con un hash de multiplicar por 31 casi todos
-    // caían en el mismo color (31 deja el mismo resto entre 4).
-    let h = 0;
-    for (const letra of nombre) h += letra.charCodeAt(0);
-    return 'avatar--' + (h % 4);
   }
 
   /** "Jueves 20". */

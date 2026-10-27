@@ -60,10 +60,12 @@ export interface FormularioBoleta {
   anio: number;
 }
 
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, SubirFirmadasComponent, RouterLink, BarraSeleccionComponent],
+  imports: [CeldaTablaDirective, AvatarComponent, IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, SubirFirmadasComponent, RouterLink, BarraSeleccionComponent],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })

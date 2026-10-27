@@ -713,7 +713,7 @@ class DashboardController extends Controller
     {
         // Los ocho más cercanos: la lista completa está en Contratos, a un clic.
         $contratos = $this->contratosVigentes($sede)
-            ->with('empleado.cargo')
+            ->with('empleado.cargo', 'empleado.foto')
             ->whereNotNull('fecha_fin')
             ->whereBetween('fecha_fin', [$hoy->toDateString(), $hoy->copy()->addDays(60)->toDateString()])
             ->orderBy('fecha_fin')
@@ -725,6 +725,7 @@ class DashboardController extends Controller
 
             return [
                 'nombre'  => trim(($c->empleado->nombre ?? '') . ' ' . ($c->empleado->apellido ?? '')),
+                'foto'    => $c->empleado?->foto,
                 'cargo'   => $c->empleado->cargo->nombre ?? '—',
                 'fecha'   => $c->fecha_fin,
                 'dias'    => (int) $dias,
@@ -839,7 +840,7 @@ class DashboardController extends Controller
         return $this->empleadosActivos($sede)
             ->whereNotNull('fecha_nacimiento')
             ->whereMonth('fecha_nacimiento', $mes)
-            ->with(['cargo:id,nombre', 'area:id,nombre', 'sede:id,nombre'])
+            ->with(['cargo:id,nombre', 'area:id,nombre', 'sede:id,nombre', 'foto'])
             ->get()
             // Por día, aquí y no en SQL: son los de UN mes (una docena) y así
             // no depende de DAY(), que no existe en todas las bases.
@@ -851,6 +852,8 @@ class DashboardController extends Controller
 
                 return [
                     'nombre' => trim($e->nombre . ' ' . $e->apellido),
+                    // Para el circulito (app-avatar): su foto o, sin foto, sus iniciales.
+                    'foto'   => $e->foto,
                     'cargo'  => $e->cargo->nombre ?? '—',
                     'area'   => $e->area->nombre ?? '—',
                     'sede'   => $e->sede->nombre ?? '—',

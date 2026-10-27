@@ -1,3 +1,4 @@
+import { FotoDeCuenta } from '../../../shared/components/avatar/avatar.component';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
@@ -12,6 +13,8 @@ export type EstadoCts = 'por_calcular' | 'calculada' | 'depositada' | 'sin_derec
 
 /** Un trabajador en la lista del semestre, con todo el cálculo (ver MotorCts en el servidor). */
 export interface FilaCts {
+  /** Para app-avatar: su foto o, sin foto, sus iniciales. */
+  foto?: FotoDeCuenta | null;
   id: string;
   liquidacion_id: string | null;
   dni: string;

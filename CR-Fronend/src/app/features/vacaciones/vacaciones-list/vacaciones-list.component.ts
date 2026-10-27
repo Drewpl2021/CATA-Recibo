@@ -35,10 +35,12 @@ type EstadoSolicitud = '' | 'pendiente' | 'aprobado' | 'rechazado';
  */
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
 @Component({
   selector: 'app-vacaciones-list',
   standalone: true,
-  imports: [FiltrosComponent, ReactiveFormsModule, FormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent, IconComponent],
+  imports: [CeldaTablaDirective, AvatarComponent, FiltrosComponent, ReactiveFormsModule, FormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent, IconComponent],
   templateUrl: './vacaciones-list.component.html',
 })
 export class VacacionesListComponent implements OnInit {

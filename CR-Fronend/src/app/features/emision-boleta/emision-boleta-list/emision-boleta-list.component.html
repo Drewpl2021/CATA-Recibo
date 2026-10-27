@@ -121,6 +121,12 @@
   filtra en vez de buscarse fila por fila. -->
   <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros"
   (cambio)="alFiltrar()" (primeraApertura)="cargarCatalogos()"></app-filtros>
+  <ng-template appCelda="nombre" let-f>
+    <div class="celda-persona">
+      <app-avatar [foto]="f.foto" [nombre]="f.nombre + ' ' + f.apellido"></app-avatar>
+      <span class="celda-persona__texto">{{ f.nombre }} {{ f.apellido }}</span>
+    </div>
+  </ng-template>
 </app-data-table>
 
 <!-- Lo que se hace con los marcados, abajo y flotando (como en Empleados). -->

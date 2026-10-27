@@ -48,7 +48,7 @@ class GratificacionController extends Controller
     {
         $semestre = MotorGratificacion::semestre($anio, $periodo);
 
-        return Empleado::with('cargo:id,nombre', 'area:id,nombre', 'sede:id,nombre')
+        return Empleado::with('cargo:id,nombre', 'area:id,nombre', 'sede:id,nombre', 'foto')
             ->where('fecha_ingreso', '<=', $semestre['hasta']->toDateString())
             ->where(fn ($q) => $q->where('estado', 'activo')->orWhere('fecha_cese', '>=', $semestre['desde']->toDateString()))
             ->orderBy('apellido')->orderBy('nombre')->get();
@@ -68,6 +68,7 @@ class GratificacionController extends Controller
             'id'        => $e->id,
             'dni'       => $e->dni,
             'nombre'    => trim("{$e->apellido} {$e->nombre}"),
+            'foto'      => $e->foto,
             'apellido'  => $e->apellido,
             'nombres'   => $e->nombre,
             'cargo_id'  => $e->cargo_id,

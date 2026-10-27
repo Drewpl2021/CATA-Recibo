@@ -23,7 +23,14 @@
   (editarFila)="editar($event)"
   (eliminarFila)="desactivar($event)"
   (accionPersonalizada)="alAccionar($event)"
-></app-data-table>
+>
+  <ng-template appCelda="name" let-f>
+    <div class="celda-persona">
+      <app-avatar [foto]="fotoDe(f)" [nombre]="f.name"></app-avatar>
+      <span class="celda-persona__texto">{{ f.name }}</span>
+    </div>
+  </ng-template>
+</app-data-table>
 
 <p class="form-nota" style="margin-top: 16px;">
   Las cuentas no se crean desde aquí: nacen cuando alguien se registra o cuando

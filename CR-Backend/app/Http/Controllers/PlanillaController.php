@@ -27,7 +27,7 @@ class PlanillaController extends Controller
         // documentoBoleta solo se trae con ?empleado_ids=: es Emisión de
         // Boletas preguntando, para esa página de diez, a quién ya se le
         // armó su boleta — de ahí sale si "Editar" se puede abrir o no.
-        $relaciones = ['empleado', 'corrida'];
+        $relaciones = ['empleado.foto', 'corrida'];
         if ($request->filled('empleado_ids')) {
             $relaciones[] = 'documentoBoleta';
         }

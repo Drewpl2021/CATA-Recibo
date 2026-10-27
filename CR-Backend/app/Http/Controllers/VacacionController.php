@@ -57,7 +57,7 @@ class VacacionController extends Controller
             'anio'        => 'nullable|integer|min:2000',
         ]);
 
-        $query = Vacacion::with('empleado:id,nombre,apellido,dni')
+        $query = Vacacion::with('empleado:id,nombre,apellido,dni', 'empleado.foto')
             ->orderBy('fecha_inicio', 'desc');
 
         if ($this->resuelveVacaciones($request)) {
