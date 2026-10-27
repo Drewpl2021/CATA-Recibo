@@ -27,7 +27,7 @@
       <p>
         <strong>{{ partesQueFaltan === 1 ? 'parte no se ve' : 'partes no se ven' }} en el portal</strong>
         porque {{ partesQueFaltan === 1 ? 'está sin cargar, vacía o solo en borrador' : 'están sin cargar, vacías o solo en borrador' }},
-        en {{ paginasConFaltas === 1 ? 'una página' : paginasConFaltas + ' páginas' }}: las de sello ámbar.
+        en {{ paginasConFaltas === 1 ? 'una página' : paginasConFaltas + ' páginas' }}: las de sello dorado.
       </p>
     </div>
     <div class="pw-atencion pw-atencion--bien" *ngIf="partesQueFaltan === 0">
@@ -53,11 +53,11 @@
         <span class="pw-tarjeta__cabeza">
           <span class="pw-tarjeta__icono"><app-icon [icono]="t.categoria.icono" [tamano]="22"></app-icon></span>
           <ng-container *ngIf="conEstado">
-            <span class="status-badge status-badge-warning" *ngIf="t.faltan.length">
+            <span class="status-badge pw-sello pw-sello--falta" *ngIf="t.faltan.length">
               <app-icon icono="warning" [tamano]="13"></app-icon>{{ estadoDe(t) }}
             </span>
-            <span class="status-badge status-badge-info" *ngIf="!t.faltan.length && t.borradores">{{ estadoDe(t) }}</span>
-            <span class="status-badge status-badge-success" *ngIf="!t.faltan.length && !t.borradores">
+            <span class="status-badge pw-sello pw-sello--borrador" *ngIf="!t.faltan.length && t.borradores">{{ estadoDe(t) }}</span>
+            <span class="status-badge pw-sello pw-sello--lista" *ngIf="!t.faltan.length && !t.borradores">
               <app-icon icono="check_circle" [tamano]="13"></app-icon>{{ estadoDe(t) }}
             </span>
           </ng-container>

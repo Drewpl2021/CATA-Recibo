@@ -4,6 +4,34 @@
  * cada pantalla del módulo).
  */
 
+/*
+ * Los colores institucionales del colegio: azul marino, celeste, blanco y el
+ * dorado solo como acento. Contrastes (WCAG):
+ *   blanco sobre marino 14,1:1 · marino sobre dorado 8,5:1 → cualquier texto
+ *   blanco sobre celeste y celeste sobre blanco 3,6:1      → solo texto grande
+ *                                                            o en negrita, y
+ *                                                            gráficos (barras,
+ *                                                            íconos, bordes)
+ *   dorado sobre blanco 1,7:1                              → nunca texto
+ * En modo oscuro el marino no se distingue del fondo: lo que es marino pasa a
+ * blanco, y el celeste y el dorado se quedan.
+ */
+:host {
+  --pw-marino: #212853;
+  --pw-celeste: #0090cd;
+  --pw-dorado: #ffbd59;
+  --pw-blanco: #ffffff;
+  /* Lo que va en marino: nombres, el «Editar», las partes listas. */
+  --pw-tinta: var(--pw-marino);
+  /* El fondo suave del ícono y del sello de borradores: celeste muy claro. */
+  --pw-celeste-suave: color-mix(in srgb, var(--pw-celeste) 12%, var(--surface));
+}
+
+:host-context(.dark-mode) {
+  --pw-tinta: var(--pw-blanco);
+  --pw-celeste-suave: color-mix(in srgb, var(--pw-celeste) 22%, var(--surface));
+}
+
 .pw-cargando {
   margin-bottom: 14px;
 }
@@ -16,7 +44,7 @@
   margin-bottom: 14px;
   padding: 14px 18px;
   border: 1px solid var(--border);
-  border-left: 4px solid var(--warning);
+  border-left: 4px solid var(--pw-dorado);
   border-radius: var(--radius-md);
   background-color: var(--surface);
   box-shadow: var(--shadow-sm);
@@ -32,7 +60,7 @@
 }
 
 .pw-atencion--bien {
-  border-left-color: var(--success);
+  border-left-color: var(--pw-celeste);
 }
 
 .pw-atencion__numero {
@@ -41,11 +69,12 @@
   font-size: 28px;
   font-weight: 800;
   line-height: 1;
-  color: var(--warning-text);
+  color: var(--pw-tinta);
   font-variant-numeric: tabular-nums;
 
+  /* El ✓ es un gráfico: el celeste alcanza (3,6:1). */
   .pw-atencion--bien & {
-    color: var(--success-text);
+    color: var(--pw-celeste);
   }
 }
 
@@ -69,7 +98,8 @@
   align-items: center;
   gap: 6px;
   font-size: 12.5px;
-  color: var(--text-muted);
+  /* text-soft y no text-muted: a 12,5 px, text-muted no llega al 4,5:1. */
+  color: var(--text-soft);
 }
 
 .pw-punto {
@@ -77,15 +107,17 @@
   height: 9px;
   flex-shrink: 0;
   border-radius: 50%;
-  background-color: var(--success);
+  background-color: var(--pw-tinta);
 }
 
 .pw-punto--borrador {
-  background-color: var(--brand-500);
+  background-color: var(--pw-celeste);
 }
 
+/* El dorado casi no se ve sobre blanco: con un borde marino, el punto se distingue. */
 .pw-punto--falta {
-  background-color: var(--warning);
+  background-color: var(--pw-dorado);
+  box-shadow: inset 0 0 0 1.5px var(--pw-tinta);
 }
 
 .pw-rejilla {
@@ -124,7 +156,7 @@
     position: absolute;
     inset: 0 0 auto;
     height: 3px;
-    background: linear-gradient(90deg, var(--brand-700), var(--brand-500));
+    background-color: var(--pw-dorado);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -134,7 +166,7 @@
 a.pw-tarjeta:hover,
 a.pw-tarjeta:focus-visible {
   transform: translateY(-4px);
-  border-color: color-mix(in srgb, var(--brand-500) 45%, var(--border));
+  border-color: var(--pw-celeste);
   box-shadow: var(--shadow-lg);
 
   &::before {
@@ -142,8 +174,8 @@ a.pw-tarjeta:focus-visible {
   }
 
   .pw-tarjeta__icono {
-    background: linear-gradient(135deg, var(--brand-700), var(--brand-600));
-    color: #fff;
+    background-color: var(--pw-marino);
+    color: var(--pw-blanco);
     box-shadow: var(--shadow-md);
     transform: rotate(-6deg) scale(1.06);
   }
@@ -154,7 +186,7 @@ a.pw-tarjeta:focus-visible {
 }
 
 a.pw-tarjeta:focus-visible {
-  outline: 3px solid var(--brand-500);
+  outline: 3px solid var(--pw-celeste);
   outline-offset: 3px;
 }
 
@@ -173,10 +205,6 @@ a.pw-tarjeta:active {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-
-  .status-badge {
-    gap: 5px;
-  }
 }
 
 .pw-tarjeta__icono {
@@ -187,8 +215,8 @@ a.pw-tarjeta:active {
   width: 46px;
   height: 46px;
   border-radius: var(--radius-md);
-  background-color: var(--brand-100);
-  color: var(--heading);
+  background-color: var(--pw-celeste-suave);
+  color: var(--pw-tinta);
   transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -197,7 +225,7 @@ a.pw-tarjeta:active {
   font-size: 16.5px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--heading);
+  color: var(--pw-tinta);
 }
 
 .pw-tarjeta__linea {
@@ -223,14 +251,16 @@ a.pw-tarjeta:active {
   align-items: center;
   gap: 4px;
   font-weight: 600;
-  color: var(--heading);
+  color: var(--pw-tinta);
 
+  /* La flecha es un gráfico: puede ir en celeste. */
   app-icon {
+    color: var(--pw-celeste);
     transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 }
 
-/* Un tramo por parte: verde lista, azul con borradores, ámbar falta. */
+/* Un tramo por parte: marino lista, celeste con borradores, dorado falta. */
 .pw-barra {
   display: flex;
   gap: 4px;
@@ -240,16 +270,40 @@ a.pw-tarjeta:active {
 .pw-barra__tramo {
   flex: 1;
   border-radius: var(--radius-full);
-  background-color: var(--success);
+  background-color: var(--pw-tinta);
   transform-origin: left;
 }
 
 .pw-barra__tramo--borrador {
-  background-color: var(--brand-500);
+  background-color: var(--pw-celeste);
 }
 
+/* Dorado con borde marino: solo, sobre blanco, no llega al 3:1 de un gráfico. */
 .pw-barra__tramo--falta {
-  background-color: var(--warning);
+  background-color: var(--pw-dorado);
+  box-shadow: inset 0 0 0 1.5px var(--pw-tinta);
+}
+
+/* Los sellos: pendientes en dorado (el acento), completa en marino, borradores en celeste suave. */
+.pw-sello {
+  gap: 5px;
+}
+
+.pw-sello--falta {
+  background-color: var(--pw-dorado);
+  color: var(--pw-marino);
+}
+
+.pw-sello--lista {
+  background-color: var(--pw-marino);
+  color: var(--pw-blanco);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pw-blanco) 25%, transparent);
+}
+
+.pw-sello--borrador {
+  background-color: var(--pw-celeste-suave);
+  color: var(--pw-tinta);
+  box-shadow: inset 0 0 0 1px var(--pw-celeste);
 }
 
 .pw-tarjeta--esqueleto {
