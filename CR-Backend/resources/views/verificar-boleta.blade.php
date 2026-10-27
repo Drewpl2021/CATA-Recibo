@@ -64,7 +64,9 @@
 <body>
 <main class="tarjeta">
     <div class="cabecera">
-        <img src="/logo-colegio.png" alt="">
+        {{-- El escudo va dentro de la página: con «/logo-colegio.png» se buscaba en la raíz
+             del dominio, y en el hosting el sistema está en /rrhh/ (no se veía). --}}
+        <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('logo.png'))) }}" alt="">
         <div>
             <strong>Colegio Adventista Túpac Amaru</strong>
             <span>Verificación de boleta de pago</span>

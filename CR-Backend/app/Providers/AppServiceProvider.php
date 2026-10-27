@@ -38,6 +38,32 @@ class AppServiceProvider extends ServiceProvider
         // panel (permiso:/portal-web). Para que otro rol lo edite, se le marca
         // el módulo en Roles; no se toca código. Ver routes/portal-panel.php.
         Gate::define('editar-portal', fn (User $usuario) => \App\Support\Permisos::puede($usuario, '/portal-web'));
+
+        $this->temporalDeLosPdf();
+    }
+
+    /**
+     * La carpeta temporal de dompdf, dentro de storage/.
+     *
+     * Por defecto usa la del sistema (sys_get_temp_dir()), y en un hosting
+     * compartido PHP no siempre puede escribir ahí (open_basedir, o una /tmp
+     * distinta para la web y para la Terminal donde se corre config:cache).
+     * dompdf necesita esa carpeta para las imágenes con transparencia y las
+     * que van en el HTML (el QR): sin ella, la boleta salía sin el escudo,
+     * sin la marca de agua y con el QR roto, y el texto intacto.
+     * storage/ siempre es escribible: ahí ya escribe Laravel.
+     */
+    private function temporalDeLosPdf(): void
+    {
+        $carpeta = storage_path('app/dompdf');
+        config(['dompdf.options.temp_dir' => $carpeta]);
+
+        // Se crea al armar el primer PDF: el zip del backend no trae storage/.
+        $this->app->resolving('dompdf.options', function () use ($carpeta) {
+            if (! is_dir($carpeta)) {
+                @mkdir($carpeta, 0755, true);
+            }
+        });
     }
 
     /**
