@@ -133,7 +133,9 @@
         <!-- ── Primeros pasos ──────────────────────────────────────
         Detrás de un foquito: está siempre a mano y no ocupa sitio en
         ninguna pantalla. El globito cuenta los que faltan y se apaga
-        cuando pulsa "Ya lo tengo". -->
+        cuando pulsa "Ya lo tengo". Se abre en un modal centrado (abajo,
+        al final): colgado del foquito, con el zoom del navegador puesto
+        se salía de la pantalla. -->
         <div class="guia-foco">
           <button class="icon-btn" (click)="toggleGuia()" style="position: relative;"
             [appPista]="pasosPendientes > 0
@@ -150,11 +152,6 @@
             }
           </button>
 
-          @if (mostrarGuia) {
-            <div class="guia-foco__panel" role="dialog" aria-label="Primeros pasos">
-              <app-primeros-pasos (cerrar)="cerrarGuia()"></app-primeros-pasos>
-            </div>
-          }
         </div>
 
         <button class="icon-btn" (click)="toggleNotifications()" style="position: relative;"
@@ -550,5 +547,13 @@
                   }
                 </div>
               </div>
+            </app-form-modal>
+
+            <!-- Primeros pasos: en un modal centrado y con su propio scroll,
+                 para que con zoom no se pierda (ver el foquito arriba). -->
+            <app-form-modal [(visible)]="mostrarGuia" titulo="Primeros pasos" ancho="560px"
+              [ocultarBotonesPorDefecto]="true" [cabeceraMarca]="true">
+              <app-primeros-pasos [enModal]="true" (cerrar)="cerrarGuia()"></app-primeros-pasos>
+              <button modalFooter type="button" class="btn-secondary" (click)="cerrarGuia()">Cerrar</button>
             </app-form-modal>
           </div>

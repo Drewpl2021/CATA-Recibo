@@ -678,9 +678,6 @@ export class LayoutComponent implements OnInit {
     if (this.showUserMenu && !objetivo.closest('.user-profile-container')) {
       this.showUserMenu = false;
     }
-    if (this.mostrarGuia && !objetivo.closest('.guia-foco')) {
-      this.mostrarGuia = false;
-    }
   }
 
   @HostListener('document:keydown.escape')

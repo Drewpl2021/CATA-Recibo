@@ -5708,26 +5708,12 @@ textarea.form-control {
   display: inline-flex;
 }
 
-/* El desplegable cuelga del botón. Nada de position: fixed: la cabecera
-   tiene ancestros con transform y el panel acabaría a media pantalla. */
-.guia-foco__panel {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 10px;
-  width: min(420px, calc(100vw - 32px));
-  max-height: min(70vh, 560px);
-  overflow-y: auto;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  z-index: 1000;
-}
-
 .pasos {
   padding: 18px 20px;
 }
+
+/* En el modal: el modal ya da el margen; sin esto quedaba doble. */
+.pasos.pasos--en-modal { padding: 0; }
 
 .pasos__cabecera {
   display: flex;
@@ -7513,22 +7499,9 @@ textarea.form-control {
     align-items: stretch;
   }
 
-  /* El desplegable del foquito, a lo ancho del teléfono. Colgado del
-     botón no servía: a su derecha están la campana y el perfil, así que
-     «-12px del botón» no es el borde de la pantalla y el panel se salía
-     unos 100 px por la izquierda (el contenedor lo recortaba y parecía
-     congelado). En el celular cuelga de la barra de arriba entera, con
-     12 px a cada lado. Sigue sin position: fixed: la cabecera tiene
-     ancestros con transform y el panel acabaría a media pantalla. */
+  /* La barra de arriba es la referencia de lo que cuelga de ella en el
+     teléfono. (Primeros pasos ya no cuelga: se abre en un modal.) */
   .top-header { position: relative; }
-  .guia-foco { position: static; }
-  .guia-foco__panel {
-    top: 100%;
-    left: 12px;
-    right: 12px;
-    width: auto;
-    margin-top: 6px;
-  }
 
   /* La persona de la ficha: la foto encima del nombre, que de lado no
      queda ancho para leer el cargo y la sede. */

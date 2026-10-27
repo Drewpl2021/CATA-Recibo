@@ -1,8 +1,10 @@
 @if (guia) {
-  <div class="pasos">
+  <div class="pasos" [class.pasos--en-modal]="enModal">
     <header class="pasos__cabecera">
       <div class="pasos__titulos">
-        <h2 class="pasos__titulo">Primeros pasos</h2>
+        @if (!enModal) {
+          <h2 class="pasos__titulo">Primeros pasos</h2>
+        }
         <p class="pasos__intro">{{ intro }}</p>
       </div>
       <span class="pasos__cifra">{{ guia.hechos }} de {{ guia.total }} listos</span>

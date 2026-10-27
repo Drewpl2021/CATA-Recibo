@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
 import { Router } from '@angular/router';
 
@@ -30,6 +30,9 @@ export class PrimerosPasosComponent implements OnInit {
 
   /** Para que quien lo abrió pueda cerrarlo. */
   @Output() cerrar = new EventEmitter<void>();
+
+  /** Dentro de un modal: el título ya lo pone la cabecera del modal. */
+  @Input() enModal = false;
 
   guia: PrimerosPasos | null = null;
 
