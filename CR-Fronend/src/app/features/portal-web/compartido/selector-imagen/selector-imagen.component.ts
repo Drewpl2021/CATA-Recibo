@@ -10,6 +10,7 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { SelectorArchivoComponent } from '../../../../shared/components/selector-archivo/selector-archivo.component';
 import { ImagenPortal, PuntoFocal, UsoDeImagen } from '../../portal-web.models';
 import { PortalWebService } from '../../portal-web.service';
+import { urlParaVer } from '../panel';
 
 /** Por dónde va la subida: el archivo viajando, el backend preparándola, o ya lista. */
 type EtapaDeSubida = 'subiendo' | 'optimizando' | 'lista';
@@ -140,16 +141,13 @@ export class SelectorImagenComponent implements OnInit, OnDestroy {
 
   /**
    * La dirección para la vista previa del panel. Una imagen subida se pide
-   * por su ruta en este mismo servidor (/api/portal/medios/…): el panel y la
+   * por su ruta en este mismo servidor (api/portal/medios/…): el panel y la
    * ruta de medios viven juntos, así que funciona aunque la dirección pública
    * (la que recibe el portal, siempre https) apunte a otro nombre. Una imagen
-   * de fuera, tal cual.
+   * de fuera, tal cual. Ver urlParaVer().
    */
   ver(imagen: ImagenPortal | null): string {
-    const url = imagen?.url ?? '';
-    const ruta = '/api/portal/medios/';
-    const i = url.indexOf(ruta);
-    return i >= 0 ? url.slice(i) : url;
+    return urlParaVer(imagen?.url);
   }
 
   get posicion(): string {

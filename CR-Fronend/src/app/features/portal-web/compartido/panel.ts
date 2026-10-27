@@ -104,11 +104,15 @@ export function hoyEnLima(): string {
 
 /**
  * La dirección para ver en el panel una imagen subida: su ruta relativa
- * (/api/portal/medios/…), porque el panel y los medios viven en el mismo
+ * (api/portal/medios/…), porque el panel y los medios viven en el mismo
  * servidor. La dirección pública, la del portal, sigue siendo la absoluta.
+ *
+ * Sin barra al principio: así se resuelve contra el <base href>, igual que
+ * environment.apiUrl. Con «/api/…» iba a la raíz del dominio, y en el
+ * hosting el sistema está en /rrhh/ (cata.edu.pe/rrhh/api/…).
  */
 export function urlParaVer(url: string | null | undefined): string {
   const u = url ?? '';
   const i = u.indexOf('/api/portal/medios/');
-  return i >= 0 ? u.slice(i) : u;
+  return i >= 0 ? u.slice(i + 1) : u;
 }
