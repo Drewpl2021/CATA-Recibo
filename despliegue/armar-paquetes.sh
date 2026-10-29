@@ -49,7 +49,11 @@ if [ "$(git -C "$RAIZ" rev-parse --short HEAD)" != "$COMMIT" ] \
   echo "ERROR: CR-Fronend no está limpio en $COMMIT. Haz commit o «git stash» y vuelve a correrlo."
   exit 1
 fi
-( cd "$RAIZ/CR-Fronend" && MSYS_NO_PATHCONV=1 npx ng build --base-href /rrhh/ --output-path "$TMP/angular-build" > "$TMP/ng.log" 2>&1 ) \
+# MSYS_NO_PATHCONV evita que Git Bash convierta /rrhh/ en una ruta de Windows;
+# por eso la carpeta de salida se pasa ya convertida.
+SALIDA_NG="$TMP/angular-build"
+command -v cygpath > /dev/null && SALIDA_NG="$(cygpath -w "$SALIDA_NG")"
+( cd "$RAIZ/CR-Fronend" && MSYS_NO_PATHCONV=1 npx ng build --base-href /rrhh/ --output-path "$SALIDA_NG" > "$TMP/ng.log" 2>&1 ) \
   || { tail -20 "$TMP/ng.log"; echo "ERROR: no compiló."; exit 1; }
 A="$TMP/angular"
 mkdir -p "$A"
