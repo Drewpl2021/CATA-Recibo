@@ -101,7 +101,7 @@ class PortalMediosTest extends TestCase
     public function test_la_url_que_da_la_api_lleva_a_la_imagen(): void
     {
         config(['portal.url_medios' => 'http://localhost/api/portal/medios']);
-        (new ImportadorDeEjemplos(base_path('tests/Fixtures/portal/mock'), 'tipico'))->importar();
+        (new ImportadorDeEjemplos(ImportadorDeEjemplos::carpeta(), 'tipico'))->importar();
         Storage::disk('portal')->put('0199-matriculas.png', base64_decode(self::PNG));
         Imagen::find(Banner::first()->imagen_id)->update(['url_externa' => null, 'ruta' => '0199-matriculas.png']);
 

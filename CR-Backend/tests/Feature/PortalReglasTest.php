@@ -32,7 +32,7 @@ class PortalReglasTest extends TestCase
 
     private function importar(string $escenario = 'tipico'): void
     {
-        (new ImportadorDeEjemplos(base_path('tests/Fixtures/portal/mock'), $escenario))->importar();
+        (new ImportadorDeEjemplos(ImportadorDeEjemplos::carpeta(), $escenario))->importar();
     }
 
     // ───────── Noticias ─────────

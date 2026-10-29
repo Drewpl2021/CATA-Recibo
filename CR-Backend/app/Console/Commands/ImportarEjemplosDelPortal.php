@@ -23,7 +23,7 @@ class ImportarEjemplosDelPortal extends Command
 {
     protected $signature = 'portal:importar
         {escenario=tipico : tipico, corto, largo, sin-foto, alt-vacio o vacio}
-        {--ruta= : Carpeta de los ejemplos (por defecto tests/Fixtures/portal/mock)}
+        {--ruta= : Carpeta de los ejemplos (por defecto resources/portal/ejemplos)}
         {--force : Reemplazar el contenido que ya haya, o cargar en producción}';
 
     protected $description = 'Carga en el módulo Portal un escenario de los ejemplos del contrato';
@@ -31,7 +31,7 @@ class ImportarEjemplosDelPortal extends Command
     public function handle(): int
     {
         $escenario = $this->argument('escenario');
-        $ruta = $this->option('ruta') ?: base_path('tests/Fixtures/portal/mock');
+        $ruta = $this->option('ruta') ?: ImportadorDeEjemplos::carpeta();
 
         if (! $this->option('force')) {
             if (app()->isProduction()) {

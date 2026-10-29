@@ -212,7 +212,7 @@ class PortalPanelImagenesTest extends TestCase
 
     public function test_la_limpieza_solo_borra_lo_suelto_y_viejo(): void
     {
-        (new ImportadorDeEjemplos(base_path('tests/Fixtures/portal/mock'), 'tipico'))->importar();
+        (new ImportadorDeEjemplos(ImportadorDeEjemplos::carpeta(), 'tipico'))->importar();
         $subir = fn (string $alt) => Imagen::find($this->subir([
             'archivo' => ImagenesDePrueba::jpegDeCelular(120, 80, 1), 'uso' => 'sede', 'alt' => $alt,
         ])->json('data.imagen.id'));

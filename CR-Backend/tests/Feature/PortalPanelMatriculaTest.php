@@ -32,7 +32,7 @@ class PortalPanelMatriculaTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        (new ImportadorDeEjemplos(base_path('tests/Fixtures/portal/mock'), 'tipico'))->importar();
+        (new ImportadorDeEjemplos(ImportadorDeEjemplos::carpeta(), 'tipico'))->importar();
         config(['portal.url_medios' => 'https://rrhh.cata.edu.pe/api/portal/medios']);
         $this->actingAs($this->crearUsuario('admin'), 'sanctum');
     }

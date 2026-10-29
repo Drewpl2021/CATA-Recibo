@@ -80,7 +80,7 @@ class PortalEndpointsTest extends TestCase
     /** Los slugs con archivo en el escenario o en `tipico`, como los resuelve el portal. */
     private static function subpaginas(string $escenario): array
     {
-        $raiz = dirname(__DIR__) . '/Fixtures/portal/mock';
+        $raiz = ImportadorDeEjemplos::carpeta();
         $archivos = array_merge(glob("{$raiz}/{$escenario}/nosotros-pagina--*.json"), glob("{$raiz}/tipico/nosotros-pagina--*.json"));
         $slugs = array_unique(array_map(fn ($a) => substr(basename($a, '.json'), strlen('nosotros-pagina--')), $archivos));
         sort($slugs);
@@ -91,7 +91,7 @@ class PortalEndpointsTest extends TestCase
     /** Para el proveedor de casos, que corre antes de que exista la aplicación. */
     private static function datosDelEjemplo(string $escenario, string $archivo): array
     {
-        $raiz = dirname(__DIR__) . '/Fixtures/portal/mock';
+        $raiz = ImportadorDeEjemplos::carpeta();
         $ruta = is_file("{$raiz}/{$escenario}/{$archivo}.json") ? "{$raiz}/{$escenario}/{$archivo}.json" : "{$raiz}/tipico/{$archivo}.json";
 
         return json_decode(file_get_contents($ruta), true)['data'];
@@ -100,7 +100,7 @@ class PortalEndpointsTest extends TestCase
     #[DataProvider('casos')]
     public function test_cumple_el_contrato_y_sale_igual_al_ejemplo(string $ruta, string $esquema, string $archivo, string $escenario): void
     {
-        (new ImportadorDeEjemplos(base_path('tests/Fixtures/portal/mock'), $escenario))->importar();
+        (new ImportadorDeEjemplos(ImportadorDeEjemplos::carpeta(), $escenario))->importar();
 
         $respuesta = $this->getJson('/api/portal' . $ruta)->assertOk();
 

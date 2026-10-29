@@ -49,7 +49,7 @@ class PortalImportadorTest extends TestCase
 
     private function importar(string $escenario = 'tipico', ?string $ruta = null): array
     {
-        return (new ImportadorDeEjemplos($ruta ?? base_path('tests/Fixtures/portal/mock'), $escenario))->importar();
+        return (new ImportadorDeEjemplos($ruta ?? ImportadorDeEjemplos::carpeta(), $escenario))->importar();
     }
 
     #[DataProvider('escenarios')]
@@ -154,7 +154,7 @@ class PortalImportadorTest extends TestCase
         // Un escenario roto: un proyecto que apunta a una categoría que no existe.
         $ruta = storage_path('framework/testing/portal-roto');
         File::deleteDirectory($ruta);
-        File::copyDirectory(base_path('tests/Fixtures/portal/mock/tipico'), "{$ruta}/tipico");
+        File::copyDirectory(ImportadorDeEjemplos::carpeta() . '/tipico', "{$ruta}/tipico");
         $proyectos = json_decode(File::get("{$ruta}/tipico/proyectos.json"), true);
         $proyectos['data']['categorias'] = [];
         File::put("{$ruta}/tipico/proyectos.json", json_encode($proyectos));
@@ -192,6 +192,22 @@ class PortalImportadorTest extends TestCase
 
         $this->artisan('portal:importar')->assertFailed();
         $this->assertSame(0, Banner::count());
+    }
+
+    /**
+     * Los ejemplos viajan con el código a producción: el paquete del hosting
+     * no lleva tests/, y con los ejemplos ahí `portal:importar` fallaba con
+     * «No encuentro los ejemplos».
+     */
+    public function test_los_ejemplos_estan_fuera_de_tests(): void
+    {
+        $carpeta = str_replace('\\', '/', ImportadorDeEjemplos::carpeta());
+
+        $this->assertStringStartsWith(str_replace('\\', '/', resource_path()), $carpeta);
+        $this->assertStringNotContainsString('/tests/', $carpeta);
+        foreach (ImportadorDeEjemplos::ESCENARIOS as $escenario) {
+            $this->assertDirectoryExists("{$carpeta}/{$escenario}");
+        }
     }
 
     public function test_los_cambios_desde_el_panel_quedan_en_la_auditoria(): void

@@ -32,7 +32,8 @@ use RuntimeException;
 
 /**
  * Carga en las tablas del portal un escenario de los ejemplos del contrato
- * (tests/Fixtures/portal/mock): el contenido completo de los 28 endpoints.
+ * (resources/portal/ejemplos, ver carpeta()): el contenido completo de los 28
+ * endpoints.
  *
  * Sirve para las pruebas, para tener contenido al desarrollar y para la
  * demostración. Lee los archivos como el portal: lo que un escenario no trae
@@ -46,6 +47,20 @@ use RuntimeException;
 class ImportadorDeEjemplos
 {
     public const ESCENARIOS = ['tipico', 'corto', 'largo', 'sin-foto', 'alt-vacio', 'vacio'];
+
+    /**
+     * Dónde están los ejemplos: en resources/, junto al esquema del contrato,
+     * porque `portal:importar` los usa también en el servidor. Antes vivían en
+     * tests/Fixtures/portal y el paquete de producción, que no lleva tests/,
+     * llegaba sin ellos.
+     *
+     * Se arma desde esta clase y no con resource_path(): los proveedores de
+     * casos de las pruebas corren antes de que exista la aplicación.
+     */
+    public static function carpeta(): string
+    {
+        return dirname(__DIR__, 3) . '/resources/portal/ejemplos';
+    }
 
     /**
      * Las tablas del portal, de las que dependen a las que son dependidas:
@@ -73,7 +88,7 @@ class ImportadorDeEjemplos
         }
 
         if (! is_dir("{$raiz}/tipico")) {
-            throw new RuntimeException("No encuentro los ejemplos en {$raiz}.");
+            throw new RuntimeException("No encuentro los ejemplos en {$raiz}. Vienen con el código, en resources/portal/ejemplos: revisa que el backend se haya subido completo.");
         }
     }
 

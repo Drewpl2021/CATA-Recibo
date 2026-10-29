@@ -1,6 +1,6 @@
 # Módulo Portal
 
-La API pública de solo lectura que lee el portal del colegio (cata.edu.pe), servida por CR-Backend bajo `/api/portal`. Su contrato vive en el repositorio del portal (`Portal Web/docs/API_CONTRACT.md`, v2.13 desde la etapa 10); una copia del esquema y de los ejemplos está en `CR-Backend/tests/Fixtures/portal/`.
+La API pública de solo lectura que lee el portal del colegio (cata.edu.pe), servida por CR-Backend bajo `/api/portal`. Su contrato vive en el repositorio del portal (`Portal Web/docs/API_CONTRACT.md`, v2.13 desde la etapa 10); una copia del esquema y de los ejemplos está en `CR-Backend/resources/portal/` (en `resources/` y no en `tests/`, porque `portal:importar` los usa también en producción).
 
 ## Etapa 1: la API de solo lectura (hecha)
 

@@ -30,7 +30,7 @@ class PortalPanelPropuestaTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        (new ImportadorDeEjemplos(base_path('tests/Fixtures/portal/mock'), 'tipico'))->importar();
+        (new ImportadorDeEjemplos(ImportadorDeEjemplos::carpeta(), 'tipico'))->importar();
         config(['portal.url_medios' => 'https://rrhh.cata.edu.pe/api/portal/medios']);
         $this->actingAs($this->crearUsuario('admin'), 'sanctum');
     }
@@ -130,7 +130,7 @@ class PortalPanelPropuestaTest extends TestCase
     public function test_el_texto_que_publica_el_colegio_cabe_en_la_introduccion(): void
     {
         // El de cata.edu.pe tiene un párrafo de 629 caracteres: tiene que poder guardarse tal cual.
-        $ejemplo = json_decode(file_get_contents(base_path('tests/Fixtures/portal/mock/tipico/propuesta-pilares.json')), true);
+        $ejemplo = json_decode(file_get_contents(ImportadorDeEjemplos::carpeta() . '/tipico/propuesta-pilares.json'), true);
         $introduccion = $ejemplo['data']['introduccion'];
         $this->assertGreaterThan(600, max(array_map('mb_strlen', $introduccion['parrafos'])));
 

@@ -4,6 +4,7 @@ namespace Tests\Support;
 
 use App\Models\Portal\RedSocial;
 use App\Models\Portal\Seccion;
+use App\Support\Portal\ImportadorDeEjemplos;
 use App\Support\Portal\ValidadorDeContrato;
 use Opis\JsonSchema\Errors\ErrorFormatter;
 use Opis\JsonSchema\Validator;
@@ -11,13 +12,13 @@ use Opis\JsonSchema\Validator;
 /**
  * Lo que comparten las pruebas de la API del portal: leer los mocks del
  * contrato, cargarlos en la base y validar respuestas contra el esquema.
- * Ver tests/Fixtures/portal/README.md.
+ * Ver resources/portal/README.md.
  */
 trait ContratoDelPortal
 {
-    private static function rutaFixtures(string $archivo = ''): string
+    private static function rutaDelEjemplo(string $archivo = ''): string
     {
-        return base_path('tests/Fixtures/portal/' . $archivo);
+        return ImportadorDeEjemplos::carpeta() . '/' . $archivo;
     }
 
     /**
@@ -26,10 +27,10 @@ trait ContratoDelPortal
      */
     protected function ejemplo(string $escenario, string $archivo): array
     {
-        $ruta = self::rutaFixtures("mock/{$escenario}/{$archivo}");
+        $ruta = self::rutaDelEjemplo("{$escenario}/{$archivo}");
 
         if (! is_file($ruta)) {
-            $ruta = self::rutaFixtures("mock/tipico/{$archivo}");
+            $ruta = self::rutaDelEjemplo("tipico/{$archivo}");
         }
 
         return json_decode(file_get_contents($ruta), true, flags: JSON_THROW_ON_ERROR);

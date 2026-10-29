@@ -30,7 +30,7 @@ class PortalPanelBaseTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        (new ImportadorDeEjemplos(base_path('tests/Fixtures/portal/mock'), 'tipico'))->importar();
+        (new ImportadorDeEjemplos(ImportadorDeEjemplos::carpeta(), 'tipico'))->importar();
 
         // Una lista de prueba con la misma cadena que el panel de verdad.
         Route::middleware(['api', 'auth:sanctum', 'sesion', 'clave_nueva', 'terminos', 'can:editar-portal'])

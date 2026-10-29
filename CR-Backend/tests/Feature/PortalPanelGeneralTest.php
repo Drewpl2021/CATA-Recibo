@@ -26,7 +26,7 @@ class PortalPanelGeneralTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        (new ImportadorDeEjemplos(base_path('tests/Fixtures/portal/mock'), 'tipico'))->importar();
+        (new ImportadorDeEjemplos(ImportadorDeEjemplos::carpeta(), 'tipico'))->importar();
         $this->actingAs($this->crearUsuario('admin'), 'sanctum');
     }
 
