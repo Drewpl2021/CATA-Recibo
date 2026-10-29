@@ -1,0 +1,29 @@
+BACKEND DE CATA-RECIBO (Laravel) — backend-rrhh.zip
+====================================================
+
+Va en:    /apps/rrhh_backend   (fuera de public_html)
+Versión:  commit {COMMIT}, armado el {FECHA} con despliegue/armar-paquetes.sh.
+Necesita: PHP 8.3 o más, con GD (y WebP) y exif.
+
+QUÉ TRAE
+- El código de Laravel (app, bootstrap, config, database, lang, public,
+  resources, routes), tal como está en Git en ese commit.
+- resources/portal/ejemplos: el contenido inicial del portal, que usa
+  «php artisan portal:importar» SOLO en una instalación nueva (base vacía).
+- vendor/: las dependencias ya instaladas para producción. No hace falta
+  correr composer en el hosting.
+- servidor/: despues-de-subir.sh, respaldar.sh, crons.txt y env-portal.ejemplo.
+
+QUÉ NO TRAE (A PROPÓSITO)
+- .env, ni nada de storage/ más que sus carpetas vacías: las boletas, los
+  documentos, las fotos del portal y los registros del servidor no se tocan.
+- tests/, postman/ ni ningún dato de la computadora donde se armó: el paquete
+  sale de Git, no de la carpeta de trabajo.
+
+CÓMO SUBIRLO
+1. Respalda la base y /apps/rrhh_backend (ver la guía de despliegue).
+2. Sube el zip a /apps/rrhh_backend y extráelo AHÍ MISMO, aceptando reemplazar.
+3. En la Terminal:  bash ~/apps/rrhh_backend/servidor/despues-de-subir.sh
+
+NUNCA en producción: «php artisan migrate:fresh» (borra toda la base) ni
+«php artisan portal:importar» en una base que ya tiene contenido.

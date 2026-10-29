@@ -1,0 +1,38 @@
+TRABAJOS DE CRON DE CATA-RECIBO (cPanel › Avanzado › Trabajos de cron)
+=====================================================================
+
+Cambia TU_USUARIO por el usuario de cPanel (lo dice la Terminal: echo $HOME).
+Si «php» no es la versión 8.3, usa la ruta completa
+(por ejemplo /opt/cpanel/ea-php83/root/usr/bin/php) en lugar de «php».
+
+Antes de agregar, mira si ya existen: NO los dupliques.
+
+
+1. TAREAS DEL SISTEMA (purgar sesiones vencidas, avisos de planilla, contratos vencidos)
+   Frecuencia: cada minuto      Minuto * · Hora * · Día * · Mes * · Día de la semana *
+
+cd /home/TU_USUARIO/apps/rrhh_backend && php artisan schedule:run >> /dev/null 2>&1
+
+
+2. LOS CORREOS (avisos de boleta, acceso). Solo si QUEUE_CONNECTION=database en el .env.
+   Frecuencia: cada minuto      Minuto * · Hora * · Día * · Mes * · Día de la semana *
+
+cd /home/TU_USUARIO/apps/rrhh_backend && php artisan queue:work --stop-when-empty --tries=3 --max-time=50 >> /dev/null 2>&1
+
+
+3. LIMPIEZA DE IMÁGENES DEL PORTAL (las que ya nadie usa, sueltas hace más de un día)
+   Frecuencia: una vez al día   Minuto 0 · Hora 3 · Día * · Mes * · Día de la semana *
+   Pruébalo antes a mano, sin borrar nada:
+     cd ~/apps/rrhh_backend && php artisan portal:limpiar-imagenes --simular
+
+cd /home/TU_USUARIO/apps/rrhh_backend && php artisan portal:limpiar-imagenes >> storage/logs/limpieza-portal.log 2>&1
+
+
+4. RESPALDO SEMANAL (base de datos, .env y storage/app; guarda los últimos 60 días)
+   Frecuencia: una vez a la semana   Minuto 30 · Hora 2 · Día * · Mes * · Día de la semana 0 (domingo)
+
+bash /home/TU_USUARIO/apps/rrhh_backend/servidor/respaldar.sh >> /home/TU_USUARIO/respaldos/respaldos.log 2>&1
+
+
+La hora del cron es la del servidor de GoDaddy, que puede no ser la de Lima.
+Para estas tareas da igual.

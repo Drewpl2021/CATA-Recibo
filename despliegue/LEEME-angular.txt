@@ -1,0 +1,18 @@
+SISTEMA CATA-RECIBO (Angular) — angular-rrhh.zip
+=================================================
+
+Va en:    /public_html/rrhh   →   https://cata.edu.pe/rrhh/
+Versión:  commit {COMMIT}, armado el {FECHA} con despliegue/armar-paquetes.sh.
+Compilado con base href /rrhh/. La API («api»), el escudo y las fuentes son
+relativos a esa carpeta: no hay que editar nada a mano.
+
+QUÉ TRAE
+- La aplicación ya compilada (index.html, los .js, .css, fuentes e íconos).
+- index.php: el PUENTE al backend. Apache le manda /rrhh/api/… y él carga
+  Laravel desde /apps/rrhh_backend (si está en otra carpeta, cambia $backend).
+- .htaccess: manda /rrhh/api/… al puente y lo demás a Angular.
+
+CÓMO SUBIRLO
+1. Respalda /public_html/rrhh.
+2. Borra los chunk-*.js, main-*.js, polyfills-*.js y styles-*.css viejos.
+3. Sube el zip a /public_html/rrhh y extráelo ahí, aceptando reemplazar.

@@ -1,0 +1,35 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Variables del módulo Portal Web para el .env de PRODUCCIÓN
+# (/apps/rrhh_backend/.env). Este archivo NO se usa solo: copia estas líneas al
+# final del .env y revisa las de la segunda parte.
+# Después de cambiar el .env: php artisan config:cache
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1. Agregar ──
+
+# Quién puede leer la API pública del portal. El portal (https://cata.edu.pe/PW/)
+# está en el mismo dominio que la API, así que basta el dominio. Si un día el
+# portal se publica también en www, súmalo separado por coma.
+PORTAL_ORIGENES=https://cata.edu.pe
+
+# De dónde se sirven las imágenes subidas desde el panel. Tiene que ser https:
+# el portal descarta cualquier dirección http://.
+PORTAL_URL_MEDIOS=https://cata.edu.pe/rrhh/api/portal/medios
+
+# Opcionales: estos son los valores por defecto.
+PORTAL_CACHE_SEGUNDOS=60
+PORTAL_LIMITE_POR_MINUTO=120
+PORTAL_LIMITE_MEDIOS_POR_MINUTO=600
+
+# ── 2. Revisar (ya existen en el .env) ──
+#
+# APP_ENV=production
+# APP_DEBUG=false
+#
+# APP_URL=https://cata.edu.pe/rrhh
+#   Con https. Si ya vale eso, no la toques.
+#
+# FRONTEND_URL=https://cata.edu.pe/rrhh
+#   Con ella se arman los enlaces de los correos (acceso, restablecer contraseña,
+#   aviso de boleta). Si hoy vale https://cata.edu.pe sin /rrhh, esos enlaces no
+#   abren: cámbiala y pruébalo con «¿Olvidaste tu contraseña?».
