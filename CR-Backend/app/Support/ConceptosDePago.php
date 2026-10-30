@@ -101,6 +101,12 @@ final class ConceptosDePago
     public const CTS = 'Compensación por Tiempo de Servicios';
     public const ADELANTO_GRATIFICACION = 'Adelanto de Gratificación';
 
+    /**
+     * Un bono que se entregó por fuera de la planilla: el PLAME lo pone como
+     * ingreso y sale el mismo monto con este adelanto (neto 0).
+     */
+    public const ADELANTO_BONIFICACIONES = 'Adelanto de Bonificaciones';
+
     // ── Las dos bolsas genéricas ──────────────────────────────────
     public const OTROS_INGRESOS      = 'Otros Conceptos (Ingresos)';
     public const OTROS_DESCUENTOS    = 'Otros Conceptos (Descuentos)';

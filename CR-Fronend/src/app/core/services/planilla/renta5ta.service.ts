@@ -44,9 +44,12 @@ export interface FilaRenta5ta {
   situacion: 'diferencias' | 'sin_historial' | 'no_paga' | 'al_dia';
 }
 
+export type MetodoRenta5ta = 'sunat' | 'rrhh';
+
 export interface ListaRenta5ta {
   anio: number;
   mes: number;
+  metodo: MetodoRenta5ta;
   uit: number;
   filas: FilaRenta5ta[];
   resumen: {
@@ -71,6 +74,7 @@ export interface MesRenta5ta {
   meses_que_faltan: number;
   remuneracion_proyectada: number;
   gratificaciones: number;
+  vacaciones_truncas?: number;
   remuneraciones_anteriores: number;
   meses_sin_dato: number[];
   renta_bruta: number;
@@ -88,6 +92,7 @@ export interface MesRenta5ta {
 
 export interface HojaRenta5ta {
   anio: number;
+  metodo: MetodoRenta5ta;
   uit: number;
   empleado?: { id: string; dni: string; nombre: string; foto?: FotoDeCuenta | null; cargo: string | null; area: string | null; estado: string; sueldo_base: number; fecha_ingreso: string };
   meses: MesRenta5ta[];
@@ -104,9 +109,9 @@ export interface CargaHistorial5ta {
 }
 
 /**
- * El módulo «Renta de 5ta»: la retención de cada trabajador con el
- * procedimiento de SUNAT, su historial de los meses antes del sistema,
- * recalcular y exportar.
+ * El módulo «Renta de 5ta»: la retención de cada trabajador con el método
+ * activo (SUNAT o la hoja de RR.HH.), su historial de los meses antes del
+ * sistema, recalcular y exportar.
  */
 @Injectable({ providedIn: 'root' })
 export class Renta5taService {

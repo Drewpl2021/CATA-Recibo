@@ -21,7 +21,7 @@ import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/f
 
 /**
  * Renta de 5ta: cuánto le toca retener a cada trabajador en el año, con el
- * procedimiento de SUNAT, y cuánto se le retuvo ya.
+ * método activo (SUNAT o la hoja de RR.HH.), y cuánto se le retuvo ya.
  *
  * Se mira un año y un mes: el impuesto del año de cada uno y, de ese mes,
  * lo que le correspondía retener frente a lo que se le retuvo de verdad.

@@ -555,10 +555,26 @@ trait CalculaConceptosPlanilla
      */
     protected function renta5taComoElColegio($empleado, float $sueldoBase, int $mes, int $anio, ?float $bonificacionCargo = null): float
     {
+        return $this->desgloseRenta5taComoElColegio($empleado, $sueldoBase, $mes, $anio, $bonificacionCargo)['retencion'];
+    }
+
+    /**
+     * El mismo cálculo con cada parte a la vista: de aquí salen la planilla y
+     * la pantalla de Renta de 5ta (MotorRenta5ta::hoja), para que nunca digan
+     * cosas distintas.
+     *
+     * @param array<int, float> $retenidas lo que se retendrá en los meses que todavía no tienen planilla
+     * @return array{ingreso_mensual:float, meses:int, proyectado:float, gratificaciones:float, vacaciones_truncas:float, anteriores:float, renta_bruta:float, impuesto:float, retenido:float, pendientes:int, retencion:float}
+     */
+    protected function desgloseRenta5taComoElColegio($empleado, float $sueldoBase, int $mes, int $anio, ?float $bonificacionCargo = null, array $retenidas = []): array
+    {
+        $desglose = ['ingreso_mensual' => 0.0, 'meses' => 0, 'proyectado' => 0.0, 'gratificaciones' => 0.0, 'vacaciones_truncas' => 0.0,
+            'anteriores' => 0.0, 'renta_bruta' => 0.0, 'impuesto' => 0.0, 'retenido' => 0.0, 'pendientes' => 1, 'retencion' => 0.00];
+
         $ley = $this->valoresLegales($anio);
         [$desde, $hasta] = $this->mesesTrabajadosDelAnio($empleado, $anio, $mes);
         if ($mes < $desde || $mes > $hasta) {
-            return 0.00;
+            return $desglose;
         }
 
         $planillaDelMes = \App\Models\Planilla::where('empleado_id', $empleado->id)
@@ -602,15 +618,22 @@ trait CalculaConceptosPlanilla
 
         $vacacionesTruncas = $empleado->puedeTomarVacaciones() ? 0.0 : $ingresoMensual / 12 * $mesesMarzoDiciembre;
 
-        $proyeccion = $ingresoMensual * $mesesMarzoDiciembre
-            + $cobradoEneroFebrero
-            + $vacacionesTruncas
-            + $gratificaciones
-            + $this->otrosIngresosDelAnio($empleado->id, $anio, $mes);
+        $anteriores = $cobradoEneroFebrero + $this->otrosIngresosDelAnio($empleado->id, $anio, $mes);
+        $proyeccion = $ingresoMensual * $mesesMarzoDiciembre + $anteriores + $vacacionesTruncas + $gratificaciones;
+
+        $desglose = array_merge($desglose, [
+            'ingreso_mensual'    => $ingresoMensual,
+            'meses'              => $mesesMarzoDiciembre,
+            'proyectado'         => $ingresoMensual * $mesesMarzoDiciembre,
+            'gratificaciones'    => $gratificaciones,
+            'vacaciones_truncas' => $vacacionesTruncas,
+            'anteriores'         => $anteriores,
+            'renta_bruta'        => $proyeccion,
+        ]);
 
         $exento = $ley->uit * 7;
         if ($proyeccion <= $exento) {
-            return 0.00;
+            return $desglose;
         }
 
         $impuestoAnual = $this->aplicarTramosImpuestoRenta($proyeccion - $exento, $ley->uit);
@@ -631,11 +654,16 @@ trait CalculaConceptosPlanilla
             $retenidoAntes += isset($planillas[$k])
                 ? (float) $planillas[$k]->payrollDetalles
                     ->filter(fn ($d) => $d->paymentConcept?->nombre === \App\Support\ConceptosDePago::RENTA_5TA)->sum('monto_calculado')
-                : max(0, $cuota);
+                : ($retenidas[$k] ?? max(0, $cuota));
         }
         $pendientes = max(1, $hasta - max(3, $mes, $desde) + 1);
 
-        return round(max(0, ($impuestoAnual - $retenidoAntes) / $pendientes), self::DECIMALES);
+        return array_merge($desglose, [
+            'impuesto'   => $impuestoAnual,
+            'retenido'   => $retenidoAntes,
+            'pendientes' => $pendientes,
+            'retencion'  => round(max(0, ($impuestoAnual - $retenidoAntes) / $pendientes), self::DECIMALES),
+        ]);
     }
 
     /**
@@ -678,12 +706,21 @@ trait CalculaConceptosPlanilla
      * Las columnas "Aguinaldos y escolaridad" y "Otros" del Excel: lo que cobró
      * de marzo a este mes fuera de lo que ya entra por fórmula (sueldo,
      * asignación, bonificación por cargo, gratificaciones, vacaciones truncas).
+     * Sin lo entregado por fuera de la planilla, que RR.HH. no carga en su hoja
+     * ni le retiene: el bono de junio de 2026 entra y sale como adelanto (neto
+     * 0). Un bono pagado de verdad en la planilla sí cuenta.
      */
     private function otrosIngresosDelAnio($empleadoId, int $anio, int $mesHasta): float
     {
-        return (float) \App\Models\PayrollDetalle::whereHas('planilla', fn ($q) => $q
-                ->where('empleado_id', $empleadoId)->where('anio', $anio)
-                ->whereBetween('mes', [3, $mesHasta]))
+        $delAnio = fn () => \App\Models\PayrollDetalle::whereHas('planilla', fn ($q) => $q
+            ->where('empleado_id', $empleadoId)->where('anio', $anio)
+            ->whereBetween('mes', [3, $mesHasta]));
+
+        $porFuera = (float) $delAnio()
+            ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', \App\Support\ConceptosDePago::ADELANTO_BONIFICACIONES))
+            ->sum('monto_calculado');
+
+        $otros = (float) $delAnio()
             ->whereHas('paymentConcept', fn ($q) => $q
                 ->where('tipo', 'bonificacion')
                 ->whereNotIn('nombre', [
@@ -697,6 +734,8 @@ trait CalculaConceptosPlanilla
                     \App\Support\ConceptosDePago::CTS,
                 ]))
             ->sum('monto_calculado');
+
+        return max(0, $otros - $porFuera);
     }
 
     /**

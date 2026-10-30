@@ -8,6 +8,7 @@ use App\Models\RentaQuintaPrevia;
 use App\Support\LibroExcel;
 use App\Support\Meses;
 use App\Support\Progreso;
+use App\Support\Renta5ta\MetodoRenta5ta;
 use App\Support\Renta5ta\MotorRenta5ta;
 use App\Support\Renta5ta\RecalculoRenta5ta;
 use Illuminate\Http\Request;
@@ -66,6 +67,7 @@ class Renta5taController extends Controller
         return response()->json(['success' => true, 'data' => [
             'anio'      => $anio,
             'mes'       => $mes,
+            'metodo'    => MetodoRenta5ta::comoHojaDeRrhh() ? 'rrhh' : 'sunat',
             'uit'       => (float) \App\Models\ValorLegal::delAnio($anio)->uit,
             'filas'     => $filas,
             'resumen'   => [
@@ -498,6 +500,7 @@ class Renta5taController extends Controller
                 'Nº meses que faltan'            => fn ($m) => $m['meses_que_faltan'],
                 'Remuneración proyectada'        => fn ($m) => $m['remuneracion_proyectada'],
                 'Gratificaciones (con 9%)'       => fn ($m) => $m['gratificaciones'],
+                'Vacaciones truncas'             => fn ($m) => $m['vacaciones_truncas'] ?? 0,
                 'Remuneraciones anteriores'      => fn ($m) => $m['remuneraciones_anteriores'],
                 'Renta bruta anual'              => fn ($m) => $m['renta_bruta'],
                 '(−) 7 UIT'                      => fn ($m) => $m['deduccion'],

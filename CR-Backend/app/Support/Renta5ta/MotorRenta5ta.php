@@ -37,7 +37,9 @@ use App\Traits\CalculaConceptosPlanilla;
  */
 class MotorRenta5ta
 {
-    use CalculaConceptosPlanilla;
+    use CalculaConceptosPlanilla {
+        calcularGratificacion as private gratificacionSinRecordar;
+    }
 
     public const DIVISOR = [1 => 12, 2 => 12, 3 => 12, 4 => 9, 5 => 8, 6 => 8, 7 => 8, 8 => 5, 9 => 4, 10 => 4, 11 => 4, 12 => 1];
 
@@ -65,6 +67,14 @@ class MotorRenta5ta
     private function recordar(string $clave, callable $calculo): mixed
     {
         return array_key_exists($clave, $this->memoria) ? $this->memoria[$clave] : ($this->memoria[$clave] = $calculo());
+    }
+
+    /** La hoja del año pide las mismas dos gratificaciones cada mes. */
+    protected function calcularGratificacion($empleado, $sueldoBase, $mes, $anio): array
+    {
+        return $empleado->exists
+            ? $this->recordar("grati-{$empleado->id}-{$anio}-{$mes}-{$sueldoBase}", fn () => $this->gratificacionSinRecordar($empleado, $sueldoBase, $mes, $anio))
+            : $this->gratificacionSinRecordar($empleado, $sueldoBase, $mes, $anio);
     }
 
     /**
@@ -317,15 +327,23 @@ class MotorRenta5ta
     /**
      * La hoja del año, mes por mes, como la hoja «RETENCION» de la PLAME.
      * En los meses sin dato real, lo retenido es lo que el cálculo da.
+     * Con el método de RR.HH. activo (Ajustes), la hoja dice lo que dice la
+     * planilla: si no, cada mes parecería mal retenido.
      */
     public function hoja(Empleado $empleado, int $anio): array
     {
         $reales = $this->mesesReales($empleado, $anio);
+        $comoRrhh = MetodoRenta5ta::comoHojaDeRrhh();
         $simuladas = [];
+        $retenidas = [];
         $meses = [];
 
         for ($m = 1; $m <= 12; $m++) {
             $fila = $this->retencionDelMes($empleado, $m, $anio, null, null, $reales, $simuladas);
+            if ($comoRrhh && $fila['trabaja']) {
+                $fila = $this->filaComoRrhh($fila, $empleado, $m, $anio, $reales[$m]['sueldo'] ?? (float) $empleado->sueldo_base, $retenidas);
+                $retenidas[$m] = $fila['retencion_real'] ?? $fila['retencion'];
+            }
             $simuladas[$m] = $fila['retencion_real'] ?? $fila['retencion'];
             $meses[$m] = $fila;
         }
@@ -336,6 +354,7 @@ class MotorRenta5ta
 
         return [
             'anio'          => $anio,
+            'metodo'        => $comoRrhh ? 'rrhh' : 'sunat',
             'uit'           => (float) $this->valoresLegales($anio)->uit,
             'meses'         => array_values($meses),
             'resumen'       => [
@@ -347,6 +366,41 @@ class MotorRenta5ta
                 'meses_sin_dato'   => $this->mesesPasadosSinDato($meses, $reales, $anio),
             ],
         ];
+    }
+
+    /**
+     * Un mes de la hoja con el método de RR.HH. Enero y febrero no los calcula
+     * su hoja: los trae escritos, y se toman como se retuvieron. Sin dato, se
+     * quedan con la proyección de SUNAT, igual que la planilla.
+     */
+    private function filaComoRrhh(array $fila, Empleado $empleado, int $mes, int $anio, float $sueldo, array $retenidas): array
+    {
+        if ($mes < 3) {
+            $real = $fila['retencion_real'];
+
+            return $real === null ? $fila
+                : array_merge($fila, ['retencion_ordinaria' => $real, 'retencion_adicional' => 0.0, 'retencion' => $real]);
+        }
+
+        $d = $this->desgloseRenta5taComoElColegio($empleado, $sueldo, $mes, $anio, null, $retenidas);
+
+        return array_merge($fila, [
+            'remuneracion_mensual'      => round($d['ingreso_mensual'], 2),
+            'meses_que_faltan'          => $d['meses'],
+            'remuneracion_proyectada'   => round($d['proyectado'], 2),
+            'gratificaciones'           => round($d['gratificaciones'], 2),
+            'vacaciones_truncas'        => round($d['vacaciones_truncas'], 2),
+            'remuneraciones_anteriores' => round($d['anteriores'], 2),
+            'renta_bruta'               => round($d['renta_bruta'], 2),
+            'renta_neta'                => round(max(0, $d['renta_bruta'] - $fila['deduccion']), 2),
+            'impuesto_anual'            => round($d['impuesto'], 2),
+            'retenido_antes'            => round($d['retenido'], 2),
+            'divisor'                   => $d['pendientes'],
+            'retencion_ordinaria'       => round($d['retencion'], 2),
+            'extraordinario'            => 0.0,
+            'retencion_adicional'       => 0.0,
+            'retencion'                 => round($d['retencion'], 2),
+        ]);
     }
 
     /** Los meses ya pasados (antes del mes en curso) que trabajó y no tienen planilla ni historial. */

@@ -93,8 +93,16 @@
     </div>
   </div>
   <p class="form-ayuda" style="margin-top: 12px;">
-    Procedimiento de SUNAT (Art. 40 del Reglamento de la Ley del Impuesto a la Renta), con la UIT de {{ anio }}
-    (S/ {{ hoja.uit | number: '1.2-2' }}). En rojo, los meses en que lo retenido no es lo que correspondía.
+    @if (hoja.metodo === 'rrhh') {
+      Método de la hoja de RR.HH. (activo en Ajustes): el mismo cálculo de la planilla, con la UIT de {{ anio }}
+      (S/ {{ hoja.uit | number: '1.2-2' }}). Enero y febrero son los que escribió RR.HH. Lo que falta del impuesto
+      se reparte entre los meses que quedan.
+    } @else {
+      Procedimiento de SUNAT (Art. 40 del Reglamento de la Ley del Impuesto a la Renta), con la UIT de {{ anio }}
+      (S/ {{ hoja.uit | number: '1.2-2' }}).
+    }
+    En rojo, los meses en que lo retenido no es lo que correspondía. En «Año», la retención que corresponde suma lo
+    ya retenido y lo que falta retener: así cierra con el impuesto.
   </p>
 }
 

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ToastService } from '../../../core/services';
-import { HojaRenta5ta, MesRenta5ta, Renta5taService } from '../../../core/services/planilla/renta5ta.service';
+import { HojaRenta5ta, MesRenta5ta, MetodoRenta5ta, Renta5taService } from '../../../core/services/planilla/renta5ta.service';
 import { mensajeErrorApi } from '../../../core/utils';
 import { nombreMes } from '../../../shared/constants';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
@@ -56,11 +56,12 @@ export class Renta5taDetalleComponent implements OnInit {
     planilla: 'Sistema', historial: 'Historial', proyectado: 'Estimado', no_trabaja: '—',
   };
 
-  readonly filas: FilaHoja[] = [
+  private readonly filasSunat: FilaHoja[] = [
     { etiqueta: 'Remuneración del mes', valor: (m) => m.remuneracion_mes, ayuda: 'Sueldo, asignación familiar y bonificación por cargo de ese mes' },
     { etiqueta: 'Nº de meses que faltan', valor: (m) => m.meses_que_faltan, ayuda: 'Incluido el mes: con esto se proyecta el resto del año' },
     { etiqueta: 'Remuneración proyectada', valor: (m) => m.remuneracion_proyectada },
     { etiqueta: 'Gratificaciones (con 9%)', valor: (m) => m.gratificaciones, ayuda: 'Las de julio y diciembre que todavía no cobró' },
+    { etiqueta: 'Vacaciones truncas', valor: (m) => m.vacaciones_truncas ?? 0, ayuda: 'Las que cobrará al terminar su contrato' },
     { etiqueta: 'Remuneraciones anteriores', valor: (m) => m.remuneraciones_anteriores, ayuda: 'Lo que ya cobró en el año, de sus planillas o del historial' },
     { etiqueta: 'Renta bruta anual', valor: (m) => m.renta_bruta, destacada: true },
     { etiqueta: '(−) 7 UIT', valor: (m) => m.deduccion },
@@ -70,9 +71,26 @@ export class Renta5taDetalleComponent implements OnInit {
     { etiqueta: 'Divisor', valor: (m) => (m.mes === 12 ? 'Ajuste' : m.divisor), ayuda: 'Enero-marzo 12, abril 9, mayo-julio 8, agosto 5, setiembre-noviembre 4; diciembre regulariza' },
     { etiqueta: 'Retención ordinaria', valor: (m) => m.retencion_ordinaria },
     { etiqueta: 'Retención adicional', valor: (m) => m.retencion_adicional, ayuda: 'Por un ingreso extraordinario del mes (un bono): se retiene entero ese mes' },
-    { etiqueta: 'Retención que corresponde', valor: (m) => m.retencion, total: true, destacada: true },
+    { etiqueta: 'Retención que corresponde', valor: (m) => m.retencion, total: true, destacada: true, ayuda: 'En «Año»: lo ya retenido más lo que falta retener' },
     { etiqueta: 'Retención real', valor: (m) => m.retencion_real, total: true, ayuda: 'Lo que dice su planilla del sistema o el historial cargado' },
   ];
+
+  /** Las mismas filas, con lo que significan en la hoja de RR.HH. */
+  private readonly ayudaRrhh: Record<string, { etiqueta?: string; ayuda: string }> = {
+    'Nº de meses que faltan': { etiqueta: 'Nº de meses de marzo a diciembre', ayuda: 'Los que trabaja de marzo a diciembre: con esto se proyecta el año' },
+    'Gratificaciones (con 9%)': { ayuda: 'Las dos del año, según los meses que trabaja en cada semestre' },
+    'Remuneraciones anteriores': { etiqueta: 'Enero, febrero y otros ingresos', ayuda: 'Enero y febrero de la hoja de RR.HH., más los bonos ya pagados' },
+    'Divisor': { etiqueta: 'Meses pendientes', ayuda: 'Los meses que quedan, incluido este, para repartir lo que falta del impuesto' },
+  };
+
+  filas: FilaHoja[] = this.filasDelMetodo('sunat');
+
+  private filasDelMetodo(metodo: MetodoRenta5ta): FilaHoja[] {
+    if (metodo === 'sunat') return this.filasSunat;
+    return this.filasSunat
+      .filter((f) => f.etiqueta !== 'Retención adicional')
+      .map((f) => ({ ...f, ...this.ayudaRrhh[f.etiqueta] }));
+  }
 
   get cifras(): CifraCabecera[] {
     const r = this.hoja?.resumen;
@@ -98,13 +116,18 @@ export class Renta5taDetalleComponent implements OnInit {
     this.servicio.hoja(this.empleadoId, this.anio).subscribe({
       next: (res) => {
         this.cargando = false;
-        if (res.success) this.hoja = res.data;
+        if (res.success) this.mostrar(res.data);
       },
       error: (err) => {
         this.cargando = false;
         this.toast.error('No se cargó', mensajeErrorApi(err, 'No se pudo armar su hoja de 5ta.'));
       },
     });
+  }
+
+  private mostrar(hoja: HojaRenta5ta): void {
+    this.hoja = hoja;
+    this.filas = this.filasDelMetodo(hoja.metodo);
   }
 
   volver(): void {
@@ -122,13 +145,18 @@ export class Renta5taDetalleComponent implements OnInit {
     const v = fila.valor(m);
     if (v === null || v === undefined) return '—';
     if (typeof v === 'string') return v;
-    if (fila.etiqueta.startsWith('Nº') || fila.etiqueta === 'Divisor') return String(v);
+    if (fila.etiqueta.startsWith('Nº') || fila.etiqueta === 'Divisor' || fila.etiqueta === 'Meses pendientes') return String(v);
     return v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   totalDe(fila: FilaHoja): string {
     if (!fila.total || !this.hoja) return '';
-    const suma = this.hoja.meses.filter((m) => m.trabaja).reduce((s, m) => s + (Number(fila.valor(m)) || 0), 0);
+    // Cada mes recalcula con lo retenido de verdad: sumar lo que correspondía en
+    // meses ya pasados no da nada real. Lo del año es lo retenido más lo que falta.
+    const delAnio = fila.etiqueta === 'Retención que corresponde'
+      ? (m: MesRenta5ta) => m.retencion_real ?? m.retencion
+      : (m: MesRenta5ta) => Number(fila.valor(m)) || 0;
+    const suma = this.hoja.meses.filter((m) => m.trabaja).reduce((s, m) => s + delAnio(m), 0);
     return suma.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
@@ -171,7 +199,7 @@ export class Renta5taDetalleComponent implements OnInit {
       next: (res) => {
         this.guardando = false;
         if (!res.success) return;
-        this.hoja = { ...res.data, empleado: this.hoja?.empleado };
+        this.mostrar({ ...res.data, empleado: this.hoja?.empleado });
         this.modalMes = false;
         this.toast.success(borrar ? 'Mes borrado' : 'Mes guardado',
           `${nombreMes(mes)}: ` + (res.data.recalculadas ? `se recalcularon ${res.data.recalculadas} planilla(s) siguientes.` : 'listo.'));

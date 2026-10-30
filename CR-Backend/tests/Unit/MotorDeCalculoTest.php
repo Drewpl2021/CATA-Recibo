@@ -413,6 +413,62 @@ class MotorDeCalculoTest extends TestCase
         $this->assertEqualsWithDelta(70.41, $this->motor->calcularRenta5taCategoria($e, 4046.50, 0, 11, 2026), 0.02);
     }
 
+    /**
+     * Con el método de RR.HH. activo, la pantalla dice lo mismo que la
+     * planilla: si no, a todos les salían diferencias que no existen.
+     */
+    public function test_la_hoja_de_5ta_usa_el_metodo_activo_y_cierra_con_el_impuesto(): void
+    {
+        $e = $this->crearEmpleado(['sueldo_base' => 4046.50]);
+        $this->registrarRetencion($e, mes: 1, monto: 137.59, cobrado: 3852.50);
+        $this->registrarRetencion($e, mes: 2, monto: 137.59, cobrado: 3852.50);
+        foreach (range(3, 10) as $mes) {
+            $this->registrarRetencion($e, mes: $mes, monto: 120.41, cobrado: 4046.50);
+        }
+
+        $hoja = (new \App\Support\Renta5ta\MotorRenta5ta())->hoja($e, 2026);
+        $meses = collect($hoja['meses'])->keyBy('mes');
+
+        $this->assertSame('rrhh', $hoja['metodo']);
+        $this->assertSame(137.59, $meses[1]['retencion'], 'enero es el que escribió RR.HH.');
+        $this->assertEqualsWithDelta(120.41, $meses[3]['retencion'], 0.01, 'marzo, igual que su hoja');
+        $this->assertEqualsWithDelta(
+            $this->motor->calcularRenta5taCategoria($e, 4046.50, 0, 11, 2026),
+            $meses[11]['retencion'], 0.01, 'noviembre, igual que la planilla'
+        );
+
+        $retenido = $meses->sum(fn ($m) => $m['retencion_real'] ?? $m['retencion']);
+        $this->assertEqualsWithDelta($hoja['resumen']['impuesto_anual'], $retenido, 0.02, 'el año cierra con el impuesto');
+    }
+
+    /**
+     * El bono de junio que se entregó por fuera (ingreso y adelanto, neto 0) no
+     * sube la 5ta de RR.HH.; uno pagado de verdad en la planilla, sí.
+     */
+    public function test_un_bono_entregado_por_fuera_no_sube_la_5ta_de_rrhh(): void
+    {
+        $e = $this->crearEmpleado(['sueldo_base' => 4046.50]);
+        $this->registrarRetencion($e, mes: 1, monto: 137.59, cobrado: 3852.50);
+        $this->registrarRetencion($e, mes: 2, monto: 137.59, cobrado: 3852.50);
+        foreach (range(3, 10) as $mes) {
+            $this->registrarRetencion($e, mes: $mes, monto: 120.41, cobrado: 4046.50);
+        }
+
+        $bono = PayrollDetalle::create([
+            'planilla_id'        => Planilla::where('empleado_id', $e->id)->where('mes', 6)->value('id'),
+            'payment_concept_id' => PaymentConcept::firstOrCreate(['nombre' => 'Bonificaciones'], ['tipo' => 'bonificacion'])->id,
+            'monto_calculado'    => 450,
+        ]);
+        $this->assertEqualsWithDelta(138.41, $this->motor->calcularRenta5taCategoria($e, 4046.50, 0, 11, 2026), 0.03, 'pagado en planilla, cuenta');
+
+        PayrollDetalle::create([
+            'planilla_id'        => $bono->planilla_id,
+            'payment_concept_id' => PaymentConcept::firstOrCreate(['nombre' => ConceptosDePago::ADELANTO_BONIFICACIONES], ['tipo' => 'adelanto'])->id,
+            'monto_calculado'    => 450,
+        ]);
+        $this->assertEqualsWithDelta(120.41, $this->motor->calcularRenta5taCategoria($e, 4046.50, 0, 11, 2026), 0.03, 'por fuera, no cuenta');
+    }
+
     private function registrarRetencion(Empleado $empleado, int $mes, float $monto, float $cobrado = 5000): void
     {
         $concepto = PaymentConcept::firstOrCreate(
