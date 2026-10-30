@@ -83,6 +83,8 @@ final class ColumnasDelPlame
         ['bonificacion por cargo', 'concepto', ConceptosDePago::BONIFICACION_CARGO],
         ['vacaciones truncas', 'concepto', ConceptosDePago::VACACIONES_TRUNCAS],
         ['bonificacion extraordinaria', 'concepto', ConceptosDePago::BONIF_EXTRAORDINARIA],
+        // Errata del PLAME de julio y agosto de 2026: «BOFINICACIÓN EXTRAORDINARIA».
+        ['bofinicacion extraordinaria', 'concepto', ConceptosDePago::BONIF_EXTRAORDINARIA],
         ['bonif extraord', 'concepto', ConceptosDePago::BONIF_EXTRAORDINARIA],
         ['gratificacion', 'concepto', ConceptosDePago::GRATIFICACION],
         ['compensacion por tiempo de servicios', 'concepto', 'Compensación por Tiempo de Servicios'],
@@ -100,8 +102,19 @@ final class ColumnasDelPlame
         ['copias', 'concepto', 'Descuento Serv. Copias'],
         ['bazar', 'concepto', 'Descuento Serv. Bazar'],
         ['tardanza', 'concepto', 'Descuento Autorizado - Tardanzas y Faltas'],
+        // Cada adelanto con su frase: la genérica «adelanto» los juntaba todos
+        // en «Adelanto de Sueldo» (mayo traía el de sueldo Y el de CTS), y
+        // «adelanto de gratificaciones» caía en «gratificacion», que es más larga.
         ['adelanto de bonificacion', 'concepto', 'Adelanto de Bonificaciones'],
+        // Errata del PLAME de junio de 2026: «ADELANTO DE BONOFICACIÓN».
+        ['adelanto de bonoficacion', 'concepto', 'Adelanto de Bonificaciones'],
+        ['adelanto de gratificacion', 'concepto', ConceptosDePago::ADELANTO_GRATIFICACION],
+        ['adelanto de cts', 'concepto', ConceptosDePago::ADELANTO_CTS],
+        ['adelanto de sueldo', 'concepto', 'Adelanto de Sueldo'],
         ['adelanto', 'concepto', 'Adelanto de Sueldo'],
+        // Una bonificación sin apellido (junio: «BONOFICACIÓN», con su errata).
+        ['bonificacion', 'concepto', 'Bonificaciones'],
+        ['bonoficacion', 'concepto', 'Bonificaciones'],
         ['essalud', 'concepto', ConceptosDePago::ESSALUD],
         ['sctr', 'concepto', 'SCTR'],
     ];

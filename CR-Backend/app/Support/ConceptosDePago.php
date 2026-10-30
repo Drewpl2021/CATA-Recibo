@@ -85,6 +85,15 @@ final class ConceptosDePago
      */
     public const VACACIONES_TRUNCAS = 'Vacaciones Truncas';
 
+    /**
+     * Lo que ya se le entregó antes y se resta en el mes en que «se paga»:
+     * en el PLAME de mayo la CTS figura como ingreso y el mismo monto sale
+     * como «ADELANTO DE CTS» (se deposita aparte, en su cuenta CTS); en
+     * julio, la gratificación y su «ADELANTO DE GRATIFICACIONES».
+     */
+    public const ADELANTO_CTS           = 'Adelanto de CTS';
+    public const ADELANTO_GRATIFICACION = 'Adelanto de Gratificación';
+
     // ── Las dos bolsas genéricas ──────────────────────────────────
     public const OTROS_INGRESOS      = 'Otros Conceptos (Ingresos)';
     public const OTROS_DESCUENTOS    = 'Otros Conceptos (Descuentos)';

@@ -170,6 +170,40 @@ class ImportacionPlameTest extends TestCase
      * conceptos que no son de siempre. Sirve para probar el importe a mano
      * en una base de demostración, y esta prueba cuida que siga entrando.
      */
+    /**
+     * Los títulos tal como vienen en los PLAME de mayo a octubre de 2026, con
+     * sus erratas. Antes: mayo mandaba «ADELANTO DE SUELDO» y «ADELANTO DE
+     * CTS» al mismo concepto; julio, la gratificación y su adelanto; junio no
+     * reconocía «BONOFICACIÓN»; y «BOFINICACIÓN EXTRAORDINARIA» se ignoraba.
+     */
+    public function test_cada_adelanto_y_las_erratas_del_plame_van_a_su_concepto(): void
+    {
+        foreach ([ConceptosDePago::ADELANTO_CTS, ConceptosDePago::ADELANTO_GRATIFICACION, 'Adelanto de Bonificaciones', 'Bonificaciones', ConceptosDePago::BONIF_EXTRAORDINARIA] as $nombre) {
+            PaymentConcept::firstOrCreate(['nombre' => $nombre], ['tipo' => str_starts_with($nombre, 'Adelanto') ? 'adelanto' : 'bonificacion']);
+        }
+
+        $titulos = [
+            'ADELANTO DE SUELDO' => 'Adelanto de Sueldo',
+            'ADELANTO DE CTS' => ConceptosDePago::ADELANTO_CTS,
+            'ADELANTO DE SUELDO - CTS o VACACIONES' => 'Adelanto de Sueldo',
+            'ADELANTO DE GRATIFICACIONES - DIEZMO' => ConceptosDePago::ADELANTO_GRATIFICACION,
+            'GRATIFICACIONES' => ConceptosDePago::GRATIFICACION,
+            'ADELANTO DE BONOFICACIÓN' => 'Adelanto de Bonificaciones',
+            'BONOFICACIÓN' => 'Bonificaciones',
+            'BOFINICACIÓN EXTRAORDINARIA' => ConceptosDePago::BONIF_EXTRAORDINARIA,
+        ];
+        $columnas = [];
+        foreach (array_keys($titulos) as $i => $titulo) {
+            $columnas[] = ['indice' => $i, 'letra' => chr(65 + $i), 'titulo' => $titulo, 'grupo' => ''];
+        }
+        $filas = [['numero' => 5, 'celdas' => array_fill(0, count($titulos), 100)]];
+
+        $reconocidas = collect(\App\Support\Plame\ColumnasDelPlame::reconocer($columnas, $filas))->pluck('concepto', 'titulo')->all();
+        foreach ($titulos as $titulo => $concepto) {
+            $this->assertSame($concepto, $reconocidas[$titulo] ?? null, "«{$titulo}» debería ir a «{$concepto}».");
+        }
+    }
+
     public function test_el_plame_de_prueba_del_repositorio_entra_completo(): void
     {
         $ruta = base_path('postman/fixtures/PLAME DE PRUEBA (personal ficticio).xls');

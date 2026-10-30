@@ -195,6 +195,16 @@ class PaymentConceptSeeder extends Seeder
                 'tipo' => 'adelanto', 'calculo' => null, 'valor' => null,
                 'descripcion' => 'Igual que el anterior, pero sobre una bonificación o gratificación que todavía no tocaba pagar.',
             ],
+            [
+                'nombre' => ConceptosDePago::ADELANTO_CTS,
+                'tipo' => 'adelanto', 'calculo' => null, 'valor' => null,
+                'descripcion' => 'La CTS que figura como ingreso en la planilla del mes y se resta del neto porque se deposita aparte, en su cuenta CTS.',
+            ],
+            [
+                'nombre' => ConceptosDePago::ADELANTO_GRATIFICACION,
+                'tipo' => 'adelanto', 'calculo' => null, 'valor' => null,
+                'descripcion' => 'La gratificación que ya se le entregó antes y se resta del neto en la planilla de julio o diciembre, donde figura como ingreso.',
+            ],
         ];
 
         foreach ($conceptos as $concepto) {
