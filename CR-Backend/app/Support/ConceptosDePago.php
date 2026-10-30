@@ -92,6 +92,13 @@ final class ConceptosDePago
      * julio, la gratificación y su «ADELANTO DE GRATIFICACIONES».
      */
     public const ADELANTO_CTS           = 'Adelanto de CTS';
+
+    /**
+     * La CTS cuando figura como ingreso en la planilla (el PLAME de mayo la
+     * pone así). No paga Renta de 5ta: está inafecta (art. 18 inc. c de la
+     * Ley del Impuesto a la Renta). Ver MotorRenta5ta::NO_AFECTOS.
+     */
+    public const CTS = 'Compensación por Tiempo de Servicios';
     public const ADELANTO_GRATIFICACION = 'Adelanto de Gratificación';
 
     // ── Las dos bolsas genéricas ──────────────────────────────────

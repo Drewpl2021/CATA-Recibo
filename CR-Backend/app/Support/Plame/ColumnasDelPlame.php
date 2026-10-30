@@ -87,7 +87,7 @@ final class ColumnasDelPlame
         ['bofinicacion extraordinaria', 'concepto', ConceptosDePago::BONIF_EXTRAORDINARIA],
         ['bonif extraord', 'concepto', ConceptosDePago::BONIF_EXTRAORDINARIA],
         ['gratificacion', 'concepto', ConceptosDePago::GRATIFICACION],
-        ['compensacion por tiempo de servicios', 'concepto', 'Compensación por Tiempo de Servicios'],
+        ['compensacion por tiempo de servicios', 'concepto', ConceptosDePago::CTS],
         ['movilidad', 'concepto', ConceptosDePago::MOVILIDAD],
         ['comision', 'concepto', ConceptosDePago::SPP_COMISION],
         ['prima de seguro', 'concepto', ConceptosDePago::SPP_PRIMA_SEGURO],
@@ -121,7 +121,7 @@ final class ColumnasDelPlame
 
     /** Los títulos que valen enteros (una palabra suelta dentro de otro título no). */
     private const EXACTOS = [
-        'cts' => ['concepto', 'Compensación por Tiempo de Servicios'],
+        'cts' => ['concepto', ConceptosDePago::CTS],
         'afp' => ['dato', 'afp'],
         'vac' => ['informativa', 'dias'],
         'n'   => ['informativa', 'orden'],

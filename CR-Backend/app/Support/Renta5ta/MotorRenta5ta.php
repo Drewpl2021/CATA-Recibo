@@ -51,7 +51,9 @@ class MotorRenta5ta
     private const GRATIFICACIONES = [ConceptosDePago::GRATIFICACION, ConceptosDePago::BONIF_EXTRAORDINARIA];
 
     /** No es remuneración (condición de trabajo): no paga 5ta. */
-    private const NO_AFECTOS = [ConceptosDePago::MOVILIDAD];
+    // La CTS está inafecta (art. 18 de la Ley del IR). Con el PLAME de mayo
+    // entraba como ingreso y subía el impuesto del año de todos.
+    private const NO_AFECTOS = [ConceptosDePago::MOVILIDAD, ConceptosDePago::CTS];
 
     /**
      * Lo ya calculado de cada trabajador y mes (sueldo del mes, proporción,
@@ -63,6 +65,18 @@ class MotorRenta5ta
     private function recordar(string $clave, callable $calculo): mixed
     {
         return array_key_exists($clave, $this->memoria) ? $this->memoria[$clave] : ($this->memoria[$clave] = $calculo());
+    }
+
+    /**
+     * Si ese mes ya está cargado en el sistema (su PLAME o su planilla). Quien
+     * no tiene planilla en un mes cargado no trabajó ese mes: el PLAME de
+     * febrero de 2026 trae a 24 personas, y a los demás no se les puede
+     * estimar un sueldo de febrero que nunca cobraron (la hoja de RR.HH.
+     * también los pone en cero). Un mes que todavía no se cargó sí se estima.
+     */
+    private function mesCargado(int $mes, int $anio): bool
+    {
+        return $this->recordar("cargado-{$anio}-{$mes}", fn () => Planilla::where('anio', $anio)->where('mes', $mes)->exists());
     }
 
     /**
@@ -95,6 +109,8 @@ class MotorRenta5ta
                 'extraordinaria' => $remuneracion - $ordinaria - $gratificacion,
                 'retencion'      => $suma(fn ($d) => $d->paymentConcept->nombre === ConceptosDePago::RENTA_5TA),
                 'sueldo'         => (float) $p->sueldo_base,
+                // Si cobró vacaciones truncas ese mes (la liquidación de un contrato anterior).
+                'truncas'        => $suma(fn ($d) => $d->paymentConcept->nombre === ConceptosDePago::VACACIONES_TRUNCAS),
             ];
         }
 
@@ -146,7 +162,11 @@ class MotorRenta5ta
             'retencion_real' => isset($reales[$mes]) ? round($reales[$mes]['retencion'], 2) : null,
         ];
 
-        if ($mes < $desde || $mes > $hasta) {
+        // Fuera de su contrato, o un mes ya pasado y cargado en el que no tiene
+        // planilla (no trabajó: ver mesCargado). Solo meses ya cerrados: el
+        // mes en curso puede estar a medio generar.
+        $mesCerrado = $anio < (int) now()->year || ($anio === (int) now()->year && $mes < (int) now()->month);
+        if ($mes < $desde || $mes > $hasta || (! isset($reales[$mes]) && $mesCerrado && $this->mesCargado($mes, $anio))) {
             $fila['trabaja'] = false;
             $fila['fuente'] = 'no_trabaja';
 
@@ -209,9 +229,15 @@ class MotorRenta5ta
         // cero bajaría la renta del año— y se avisa que falta ese dato.
         $anteriores = 0.0;
         $sinDato = [];
-        for ($k = max(1, $desde); $k < $mes; $k++) {
+        // Un mes con dato real cuenta aunque sea de antes de su ingreso: quien
+        // reingresó en marzo cobró enero con su contrato anterior, y para la
+        // 5ta va todo lo del año con el mismo empleador. Antes se saltaba ese
+        // sueldo pero sí se restaba su retención, y parecía retenido de más.
+        for ($k = 1; $k < $mes; $k++) {
             if (isset($reales[$k])) {
                 $anteriores += $reales[$k]['remuneracion'];
+            } elseif ($k < $desde || $this->mesCargado($k, $anio)) {
+                continue;
             } else {
                 $sinDato[] = $k;
                 $anteriores += $this->recordar("est-{$empleado->id}-{$anio}-{$k}", fn () => $this->estimadoDelMes($empleado, $k, $anio, $asignacion));
@@ -220,12 +246,36 @@ class MotorRenta5ta
 
         // Y lo retenido en esos meses sin dato: lo que el método habría retenido.
         for ($k = 1; $k < $mes; $k++) {
+            if (! isset($reales[$k]) && ! array_key_exists($k, $simuladas) && $this->mesCargado($k, $anio)) {
+                $simuladas[$k] = 0.0;
+            }
             if (! isset($reales[$k]) && ! array_key_exists($k, $simuladas)) {
                 $simuladas[$k] = $this->retencionDelMes($empleado, $k, $anio, null, null, $reales, $simuladas, $referencia ?? $mes)['retencion'];
             }
         }
 
-        $rentaBruta = $proyectada + $gratificaciones + $anteriores;
+        // Las vacaciones truncas que cobrará al terminar su contrato, si es de
+        // los que no toman vacaciones (contratados) y su contrato termina este
+        // año. La planilla no las pone sola (RR.HH. agrega la línea en el mes
+        // del cese), y sin proyectarlas a varios contratados les salía la renta
+        // justo por debajo de las 7 UIT. Misma fórmula que la hoja de RR.HH.:
+        // lo mensual ÷ 12 × los meses del año que trabaja. Cuando la planilla de
+        // ese mes ya existe, manda lo que de verdad se pagó.
+        $truncas = 0.0;
+        $ceseEsteAnio = $empleado->fecha_cese && (int) substr((string) $empleado->fecha_cese, 0, 4) === $anio;
+        if ($ceseEsteAnio && $hasta >= $mes && ! isset($reales[$hasta]) && ! $empleado->puedeTomarVacaciones()) {
+            // Desde el mes siguiente a sus últimas truncas cobradas: el contratado
+            // que se liquidó en enero y volvió en marzo cobra en diciembre solo
+            // las de marzo a diciembre, no las del año entero.
+            // De los meses ya pasados cuentan los que tienen planilla o historial,
+            // y los que todavía no se cargaron (ver mesCargado); los que vienen, todos.
+            $ultimasTruncas = max([0, ...array_keys(array_filter($reales, fn ($r) => ($r['truncas'] ?? 0) > 0))]);
+            $meses = count(array_filter(range(max($desde, $ultimasTruncas + 1), $hasta),
+                fn ($k) => $k >= $mes || isset($reales[$k]) || ! $this->mesCargado($k, $anio)));
+            $truncas = $mensual / 12 * $meses;
+        }
+
+        $rentaBruta = $proyectada + $gratificaciones + $anteriores + $truncas;
         $exento = $ley->uit * 7;
         $impuesto = $this->aplicarTramosImpuestoRenta(max(0, $rentaBruta - $exento), $ley->uit);
 
@@ -250,6 +300,7 @@ class MotorRenta5ta
             'meses_que_faltan'          => $mesesQueFaltan,
             'remuneracion_proyectada'   => round($proyectada, 2),
             'gratificaciones'           => round($gratificaciones, 2),
+            'vacaciones_truncas'        => round($truncas, 2),
             'remuneraciones_anteriores' => round($anteriores, 2),
             'meses_sin_dato'            => $sinDato,
             'renta_bruta'               => round($rentaBruta, 2),
@@ -303,7 +354,8 @@ class MotorRenta5ta
     {
         $hasta = $anio < (int) now()->year ? 12 : ($anio > (int) now()->year ? 0 : (int) now()->month - 1);
 
-        return array_values(array_filter(range(1, 12), fn ($m) => $m <= $hasta && $meses[$m]['trabaja'] && ! isset($reales[$m])));
+        return array_values(array_filter(range(1, 12),
+            fn ($m) => $m <= $hasta && $meses[$m]['trabaja'] && ! isset($reales[$m]) && ! $this->mesCargado($m, $anio)));
     }
 
     /**

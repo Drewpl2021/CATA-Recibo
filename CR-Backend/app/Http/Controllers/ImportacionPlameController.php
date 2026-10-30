@@ -517,6 +517,11 @@ class ImportacionPlameController extends Controller
      * Registra la renovación: el contrato que seguía se alarga, o se cierra
      * el anterior y se abre el nuevo con el mismo tipo; la ficha toma la
      * fecha de cese nueva y, si su contrato sigue vigente, vuelve a activo.
+     *
+     * Si entre uno y otro hubo un corte (terminó el 31/01 y volvió el 02/03),
+     * es un reingreso: su fecha de ingreso pasa a ser la del contrato nuevo,
+     * porque desde ahí se cuentan la gratificación, la CTS y la 5ta (así lo
+     * hace también la hoja de 5ta de RR.HH.). Contratos seguidos no la tocan.
      */
     private function renovar(Empleado $empleado, array $renovacion): void
     {
@@ -525,6 +530,7 @@ class ImportacionPlameController extends Controller
         $ultimo = $empleado->contratos()->where('estado_registro', 'activo')->orderByDesc('fecha_inicio')->first();
         $finUltimo = $ultimo?->fecha_fin ? substr((string) $ultimo->fecha_fin, 0, 10) : null;
 
+        $reingreso = false;
         if ($ultimo && $finUltimo && $renovacion['inicio'] <= Carbon::parse($finUltimo)->addDay()->toDateString()) {
             // Sin corte entre uno y otro: es el mismo contrato, alargado.
             $ultimo->update([
@@ -535,6 +541,7 @@ class ImportacionPlameController extends Controller
             if ($ultimo && $ultimo->estado === 'vigente') {
                 $ultimo->update(['estado' => 'finalizado', 'motivo_fin' => 'fin_contrato_plazo']);
             }
+            $reingreso = $finUltimo !== null;
             Contrato::create([
                 'empleado_id'      => $empleado->id,
                 'tipo_contrato_id' => $ultimo?->tipo_contrato_id ?? $empleado->tipo_contrato_id,
@@ -545,7 +552,9 @@ class ImportacionPlameController extends Controller
             ]);
         }
 
-        $empleado->update(['fecha_cese' => $renovacion['fin']] + ($renovacion['reactiva'] ? ['estado' => 'activo'] : []));
+        $empleado->update(['fecha_cese' => $renovacion['fin']]
+            + ($renovacion['reactiva'] ? ['estado' => 'activo'] : [])
+            + ($reingreso ? ['fecha_ingreso' => $renovacion['inicio']] : []));
         if ($renovacion['reactiva']) {
             $empleado->devolverAcceso();
         }

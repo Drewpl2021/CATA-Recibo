@@ -131,7 +131,8 @@ class ImportacionPlameTest extends TestCase
         $rosa->refresh();
         $this->assertSame('activo', $rosa->estado);
         $this->assertSame("{$anio}-12-31", substr((string) $rosa->fecha_cese, 0, 10));
-        $this->assertSame('01/03/' . ($anio - 1), \Carbon\Carbon::parse($rosa->fecha_ingreso)->format('d/m/Y'), 'La fecha de ingreso no cambia');
+        // Terminó el 31/12 y volvió el 01/03: hubo un corte, es un reingreso.
+        $this->assertSame('01/03/' . $anio, \Carbon\Carbon::parse($rosa->fecha_ingreso)->format('d/m/Y'), 'Tras un corte, ingresa de nuevo');
         $contratos = $rosa->contratos()->orderBy('fecha_inicio')->get();
         $this->assertCount(2, $contratos);
         $this->assertSame('finalizado', $contratos[0]->estado);
@@ -144,6 +145,25 @@ class ImportacionPlameTest extends TestCase
         ]), mes: 1, anio: $anio)->assertOk();
         $this->assertSame('activo', $rosa->fresh()->estado);
         $this->assertCount(2, $rosa->contratos()->get());
+    }
+
+    public function test_una_renovacion_sin_corte_alarga_el_contrato_y_no_toca_la_fecha_de_ingreso(): void
+    {
+        $anio = (int) now()->year;
+        $this->importar('apply', $this->plame([
+            $this->fila(['dni' => '40000012', 'nombre' => 'QUISPE, LUIS', 'ingreso' => '01/03/' . ($anio - 1), 'cese' => '31/03/' . $anio]),
+        ]), mes: 3, anio: $anio)->assertOk();
+
+        // Abril: el mismo contrato, alargado hasta diciembre (el PLAME repite el ingreso de siempre).
+        $this->importar('apply', $this->plame([
+            $this->fila(['dni' => '40000012', 'nombre' => 'QUISPE, LUIS', 'ingreso' => '01/03/' . ($anio - 1), 'cese' => '31/12/' . $anio]),
+        ]), mes: 4, anio: $anio)->assertOk();
+
+        $luis = Empleado::where('dni', '40000012')->firstOrFail();
+        $this->assertSame('activo', $luis->estado);
+        $this->assertSame('01/03/' . ($anio - 1), \Carbon\Carbon::parse($luis->fecha_ingreso)->format('d/m/Y'));
+        $this->assertCount(1, $luis->contratos()->get());
+        $this->assertSame("{$anio}-12-31", substr((string) $luis->contratos()->first()->fecha_fin, 0, 10));
     }
 
     public function test_rrhh_puede_marcar_como_cesado_a_quien_el_contrato_daba_por_vigente(): void

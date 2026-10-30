@@ -632,6 +632,8 @@ trait CalculaConceptosPlanilla
                     \App\Support\ConceptosDePago::BONIF_EXTRAORDINARIA,
                     \App\Support\ConceptosDePago::VACACIONES_TRUNCAS,
                     \App\Support\ConceptosDePago::MOVILIDAD,
+                    // Inafecta a la 5ta (art. 18 de la Ley del IR).
+                    \App\Support\ConceptosDePago::CTS,
                 ]))
             ->sum('monto_calculado');
     }
@@ -726,6 +728,9 @@ trait CalculaConceptosPlanilla
                     \App\Support\ConceptosDePago::ASIGNACION_FAMILIAR,
                     \App\Support\ConceptosDePago::GRATIFICACION,
                     \App\Support\ConceptosDePago::BONIF_EXTRAORDINARIA,
+                    // Inafecta a la 5ta (art. 18 de la Ley del IR).
+                    \App\Support\ConceptosDePago::CTS,
+                    \App\Support\ConceptosDePago::MOVILIDAD,
                 ]))
             ->sum('monto_calculado');
     }
