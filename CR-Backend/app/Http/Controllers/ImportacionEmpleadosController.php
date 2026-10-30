@@ -165,6 +165,19 @@ class ImportacionEmpleadosController extends Controller
                 }
                 if ($correo !== null && $empleado->usuario) {
                     $empleado->usuario->update(['email' => $correo]);
+                } elseif ($correo !== null) {
+                    // Igual que en un alta (AltaDeEmpleado::crear): una clave
+                    // que nadie conoce; entra con el enlace «Tu acceso a
+                    // CATA-Recibo», que RR.HH. envía cuando decida.
+                    User::create([
+                        'name'                  => $empleado->nombre . ' ' . $empleado->apellido,
+                        'email'                 => $correo,
+                        'password'              => \App\Support\AccesoPorCorreo::claveQueNadieConoce(),
+                        'rol_id'                => $fila['_rol'],
+                        'empleado_id'           => $empleado->id,
+                        'debe_cambiar_password' => true,
+                        'estado_registro'       => $empleado->fresh()->estado === 'inactivo' ? 'inactivo' : 'activo',
+                    ]);
                 }
             }
         });
@@ -404,7 +417,7 @@ class ImportacionEmpleadosController extends Controller
             if (! $existente) {
                 $this->filaDeAlta($r, $numero, $clave, $valores, $catalogos, $rolEmpleado, $reglasAlta, $reglasCesado, $atributos, $correos, $vistosCorreo, $tieneCv);
             } else {
-                $this->filaDeCambio($r, $numero, $clave, $valores, $existente, $catalogos, $reglasCambio, $atributos, $correos, $vistosCorreo, $bloqueadas, $tieneCv);
+                $this->filaDeCambio($r, $numero, $clave, $valores, $existente, $catalogos, $reglasCambio, $atributos, $correos, $vistosCorreo, $bloqueadas, $tieneCv, $rolEmpleado);
             }
         }
 
@@ -522,7 +535,7 @@ class ImportacionEmpleadosController extends Controller
 
     /** Alguien que ya existe: solo lo escrito, y solo lo que de verdad cambia. */
     private function filaDeCambio(array &$r, int $numero, string $dni, array $valores, Empleado $existente, array $catalogos,
-        array $reglas, array $atributos, array $correos, array &$vistosCorreo, array &$bloqueadas, bool $tieneCv): void
+        array $reglas, array $atributos, array $correos, array &$vistosCorreo, array &$bloqueadas, bool $tieneCv, ?string $rolEmpleado = null): void
     {
         foreach (ColumnasDeEmpleado::NO_SE_ACTUALIZAN as $campo) {
             if (array_key_exists($campo, $valores)) {
@@ -590,8 +603,10 @@ class ImportacionEmpleadosController extends Controller
 
         if (isset($campos['email'])) {
             $correo = mb_strtolower($campos['email']);
-            if (! $existente->usuario) {
-                $problemas[] = 'Este trabajador no tiene cuenta de acceso: el correo se le asigna desde Usuarios.';
+            // Sin cuenta (lo registró el PLAME, que no trae correos): el
+            // correo del Excel le crea la suya, como en un alta.
+            if (! $existente->usuario && ! $rolEmpleado) {
+                $problemas[] = 'No existe el rol «empleado» para crearle su cuenta: créalo en Configuración → Roles.';
             } elseif (array_key_exists($correo, $correos) && $correos[$correo] !== $existente->id) {
                 $problemas[] = "El correo {$campos['email']} ya lo usa otra cuenta.";
             } elseif (isset($vistosCorreo[$correo])) {
@@ -623,7 +638,8 @@ class ImportacionEmpleadosController extends Controller
             $queCambia[$atributo] = $nuevo;
             $cambios[] = [
                 'campo'   => $campo,
-                'titulo'  => ColumnasDeEmpleado::CAMPOS[$campo]['titulo'],
+                'titulo'  => ColumnasDeEmpleado::CAMPOS[$campo]['titulo']
+                    . ($atributo === 'email' && ! $existente->usuario ? ' (se crea su cuenta de acceso)' : ''),
                 'antes'   => ColumnasDeEmpleado::mostrar($campo, $actual, $catalogos),
                 'despues' => ColumnasDeEmpleado::mostrar($campo, $nuevo, $catalogos),
             ];
@@ -648,6 +664,7 @@ class ImportacionEmpleadosController extends Controller
             'cambios'   => $cambios,
             '_empleado' => $existente,
             '_campos'   => $queCambia,
+            '_rol'      => $rolEmpleado,
         ];
     }
 

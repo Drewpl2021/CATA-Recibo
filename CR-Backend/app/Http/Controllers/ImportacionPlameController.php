@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Auditoria;
+use App\Models\Contrato;
 use App\Models\Empleado;
 use App\Models\PayrollDetalle;
 use App\Models\Planilla;
@@ -125,6 +126,8 @@ class ImportacionPlameController extends Controller
                 if (! $empleado) {
                     $empleado = AltaDeEmpleado::crear($t['_alta']);
                     $creados[$t['situacion'] === 'nuevo_cesado' ? 'cesados' : 'activos']++;
+                } elseif (isset($t['renovacion'])) {
+                    $this->renovar($empleado, $t['renovacion']);
                 }
                 $empleados[] = $empleado;
 
@@ -413,6 +416,10 @@ class ImportacionPlameController extends Controller
                 if ($ficha->fecha_ingreso && Carbon::parse($ficha->fecha_ingreso)->gt(Carbon::create($anio, $mes, 1)->endOfMonth())) {
                     $trabajador['avisos'][] = 'Su ficha dice que entró el ' . Carbon::parse($ficha->fecha_ingreso)->format('d/m/Y') . ', después de este mes.';
                 }
+                if ($r['modo'] !== 'comparar' && ($renovacion = $this->renovacion($ficha, $celdas, $dato, $anio, $mes))) {
+                    $trabajador['renovacion'] = $renovacion;
+                    $trabajador['avisos'][] = $renovacion['texto'];
+                }
             } elseif ($r['modo'] === 'comparar') {
                 $trabajador['situacion'] = 'sin_ficha';
             } else {
@@ -451,7 +458,14 @@ class ImportacionPlameController extends Controller
             $r['advertencias'][] = $this->aviso(null, null, null,
                 "{$n} trabajador(es) no están en el sistema y su contrato ya terminó: se registran como cesados, para guardar su planilla.");
         }
-        if ($n = $lista->filter(fn ($t) => $t['avisos'] && ! str_starts_with($t['situacion'], 'nuevo'))->count()) {
+        if ($n = $lista->filter(fn ($t) => isset($t['renovacion']))->count()) {
+            $reactivados = $lista->filter(fn ($t) => $t['renovacion']['reactiva'] ?? false)->count();
+            $r['advertencias'][] = $this->aviso(null, null, null,
+                "{$n} trabajador(es) traen en el PLAME un contrato más nuevo que el de su ficha (se les renovó): se registra la renovación con sus fechas"
+                . ($reactivados ? " y {$reactivados} de ellos, que figuraban cesados, vuelven a estar activos." : '.'));
+        }
+        $conDiferencias = fn ($t) => array_diff($t['avisos'], [$t['renovacion']['texto'] ?? null]) && ! str_starts_with($t['situacion'], 'nuevo');
+        if ($n = $lista->filter($conDiferencias)->count()) {
             $r['advertencias'][] = $this->aviso(null, null, null,
                 "{$n} trabajador(es) tienen en el PLAME algo distinto de su ficha (asignación familiar, pensión). No se cambia la ficha: revísalo.");
         }
@@ -461,6 +475,80 @@ class ImportacionPlameController extends Controller
         }
 
         return $r;
+    }
+
+    /**
+     * El PLAME trae un contrato más nuevo que el de la ficha: se le renovó.
+     *
+     * Al importar enero, quien tenía contrato hasta el 31/12/2025 quedaba
+     * registrado como cesado (esa fecha ya pasó), y los meses siguientes no
+     * lo corregían aunque siguiera cobrando: el PLAME de octubre ya traía su
+     * contrato nuevo, del 01/03/2026 al 31/12/2026. Ahora, si cobra en el mes
+     * y su fecha de cese en el PLAME es posterior a la de su ficha, se
+     * registra la renovación. Solo hacia adelante: un PLAME viejo no le
+     * acorta el contrato a nadie.
+     *
+     * @return array{inicio: string, fin: string, reactiva: bool, texto: string}|null
+     */
+    private function renovacion(Empleado $ficha, array $celdas, array $dato, int $anio, int $mes): ?array
+    {
+        $fin = LectorDeCeldas::fecha(isset($dato['fecha_cese']) ? ($celdas[$dato['fecha_cese']] ?? null) : null);
+        $anterior = $ficha->fecha_cese ? substr((string) $ficha->fecha_cese, 0, 10) : null;
+        // Sin fecha en la ficha es indeterminado: no hay nada que renovar.
+        if (! $fin || ! $anterior || $fin <= $anterior || $fin < Carbon::create($anio, $mes, 1)->toDateString()) {
+            return null;
+        }
+
+        $ingreso = LectorDeCeldas::fecha(isset($dato['fecha_ingreso']) ? ($celdas[$dato['fecha_ingreso']] ?? null) : null);
+        $diaSiguiente = Carbon::parse($anterior)->addDay()->toDateString();
+        // El PLAME pone la fecha de inicio del contrato nuevo; si no la trae
+        // (o es la de siempre), el nuevo empieza al día siguiente del anterior.
+        $inicio = $ingreso && $ingreso > $anterior ? $ingreso : $diaSiguiente;
+        $reactiva = $ficha->estado === 'inactivo' && $fin >= now()->toDateString();
+
+        return [
+            'inicio' => $inicio, 'fin' => $fin, 'reactiva' => $reactiva,
+            'texto' => 'Contrato renovado: del ' . Carbon::parse($inicio)->format('d/m/Y') . ' al ' . Carbon::parse($fin)->format('d/m/Y')
+                . ($reactiva ? '; figuraba cesado y vuelve a estar activo.' : '.'),
+        ];
+    }
+
+    /**
+     * Registra la renovación: el contrato que seguía se alarga, o se cierra
+     * el anterior y se abre el nuevo con el mismo tipo; la ficha toma la
+     * fecha de cese nueva y, si su contrato sigue vigente, vuelve a activo.
+     */
+    private function renovar(Empleado $empleado, array $renovacion): void
+    {
+        $hoy = now()->toDateString();
+        $vigente = $renovacion['fin'] >= $hoy;
+        $ultimo = $empleado->contratos()->where('estado_registro', 'activo')->orderByDesc('fecha_inicio')->first();
+        $finUltimo = $ultimo?->fecha_fin ? substr((string) $ultimo->fecha_fin, 0, 10) : null;
+
+        if ($ultimo && $finUltimo && $renovacion['inicio'] <= Carbon::parse($finUltimo)->addDay()->toDateString()) {
+            // Sin corte entre uno y otro: es el mismo contrato, alargado.
+            $ultimo->update([
+                'fecha_fin' => $renovacion['fin'], 'estado' => $vigente ? 'vigente' : 'finalizado',
+                'cerrado_por_baja' => false, 'fin_antes_de_baja' => null,
+            ]);
+        } else {
+            if ($ultimo && $ultimo->estado === 'vigente') {
+                $ultimo->update(['estado' => 'finalizado', 'motivo_fin' => 'fin_contrato_plazo']);
+            }
+            Contrato::create([
+                'empleado_id'      => $empleado->id,
+                'tipo_contrato_id' => $ultimo?->tipo_contrato_id ?? $empleado->tipo_contrato_id,
+                'fecha_inicio'     => $renovacion['inicio'],
+                'fecha_fin'        => $renovacion['fin'],
+                'estado'           => $vigente ? 'vigente' : 'finalizado',
+                'observaciones'    => 'Renovación registrada al importar el PLAME.',
+            ]);
+        }
+
+        $empleado->update(['fecha_cese' => $renovacion['fin']] + ($renovacion['reactiva'] ? ['estado' => 'activo'] : []));
+        if ($renovacion['reactiva']) {
+            $empleado->devolverAcceso();
+        }
     }
 
     /**

@@ -104,6 +104,48 @@ class ImportacionPlameTest extends TestCase
         $this->assertSame(3, Planilla::count());
     }
 
+    /**
+     * Lo que pasó con los PLAME de 2026: enero registró como cesado a quien
+     * tenía contrato hasta el 31/12/2025, aunque cobraba en enero; octubre ya
+     * traía su contrato renovado (01/03 al 31/12/2026). Importar un mes con
+     * el contrato nuevo registra la renovación y lo vuelve a activo.
+     */
+    public function test_un_contrato_renovado_en_el_plame_reactiva_a_quien_figuraba_cesado(): void
+    {
+        $anio = (int) now()->year;
+        $this->importar('apply', $this->plame([
+            $this->fila(['dni' => '40000011', 'nombre' => 'MAMANI, ROSA', 'ingreso' => '01/03/' . ($anio - 1), 'cese' => '31/12/' . ($anio - 1)]),
+        ]), mes: 1, anio: $anio)->assertOk();
+        $rosa = Empleado::where('dni', '40000011')->firstOrFail();
+        $this->assertSame('inactivo', $rosa->estado);
+
+        $revision = $this->importar('preview', $this->plame([
+            $this->fila(['dni' => '40000011', 'nombre' => 'MAMANI, ROSA', 'ingreso' => '01/03/' . $anio, 'cese' => '31/12/' . $anio]),
+        ]), mes: 3, anio: $anio)->assertOk();
+        $this->assertStringContainsString('vuelven a estar activos', collect($revision->json('data.advertencias'))->pluck('mensaje')->implode(' '));
+
+        $this->importar('apply', $this->plame([
+            $this->fila(['dni' => '40000011', 'nombre' => 'MAMANI, ROSA', 'ingreso' => '01/03/' . $anio, 'cese' => '31/12/' . $anio]),
+        ]), mes: 3, anio: $anio)->assertOk();
+
+        $rosa->refresh();
+        $this->assertSame('activo', $rosa->estado);
+        $this->assertSame("{$anio}-12-31", substr((string) $rosa->fecha_cese, 0, 10));
+        $this->assertSame('01/03/' . ($anio - 1), \Carbon\Carbon::parse($rosa->fecha_ingreso)->format('d/m/Y'), 'La fecha de ingreso no cambia');
+        $contratos = $rosa->contratos()->orderBy('fecha_inicio')->get();
+        $this->assertCount(2, $contratos);
+        $this->assertSame('finalizado', $contratos[0]->estado);
+        $this->assertSame('vigente', $contratos[1]->estado);
+        $this->assertSame("{$anio}-03-01", substr((string) $contratos[1]->fecha_inicio, 0, 10));
+
+        // Un PLAME viejo, importado después, no le acorta el contrato.
+        $this->importar('apply', $this->plame([
+            $this->fila(['dni' => '40000011', 'nombre' => 'MAMANI, ROSA', 'ingreso' => '01/03/' . ($anio - 1), 'cese' => '31/12/' . ($anio - 1)]),
+        ]), mes: 1, anio: $anio)->assertOk();
+        $this->assertSame('activo', $rosa->fresh()->estado);
+        $this->assertCount(2, $rosa->contratos()->get());
+    }
+
     public function test_rrhh_puede_marcar_como_cesado_a_quien_el_contrato_daba_por_vigente(): void
     {
         $anio = (int) now()->year;
