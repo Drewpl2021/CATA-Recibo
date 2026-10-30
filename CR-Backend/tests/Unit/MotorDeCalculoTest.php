@@ -373,6 +373,46 @@ class MotorDeCalculoTest extends TestCase
         $this->assertSame(31, $this->motor->repartoDeDiasDelMes($e, 10, 2026)['dias_del_mes']);
     }
 
+    /**
+     * Enero y febrero salen de la hoja de RR.HH. (el historial cargado) aunque
+     * haya planilla: la hoja los escribió a mano —a unos con la CTS de la
+     * liquidación y a otros sin ella— y son los que dieron lo que se retuvo.
+     */
+    public function test_enero_y_febrero_de_la_hoja_de_rrhh_mandan_sobre_la_planilla(): void
+    {
+        $e = $this->crearEmpleado(['sueldo_base' => 4046.50]);
+        $this->registrarRetencion($e, mes: 1, monto: 137.59, cobrado: 9999);   // la planilla dice otra cosa
+        $this->registrarRetencion($e, mes: 2, monto: 137.59, cobrado: 9999);
+        foreach ([1, 2] as $mes) {
+            \App\Models\RentaQuintaPrevia::create(['empleado_id' => $e->id, 'anio' => 2026, 'mes' => $mes, 'remuneracion' => 3852.50, 'retencion' => 137.59]);
+        }
+
+        // Lo mismo que con 3 852.50 en cada mes (ver la prueba de arriba).
+        $this->assertSame(120.41, round($this->motor->calcularRenta5taCategoria($e, 4046.50, 0, 4, 2026), 2));
+    }
+
+    /**
+     * Como las columnas «IRQ DESCONTADO» y «NÚMERO DE MESES PENDIENTE»: lo que
+     * falta del impuesto, menos todo lo ya retenido, entre los meses que
+     * quedan. Con lo calculado retenido, noviembre es la misma cuota; si se
+     * retuvo de más, se descuenta en lo que queda.
+     */
+    public function test_noviembre_resta_todo_lo_retenido_y_reparte_lo_que_falta(): void
+    {
+        $e = $this->crearEmpleado(['sueldo_base' => 4046.50]);
+        $this->registrarRetencion($e, mes: 1, monto: 137.59, cobrado: 3852.50);
+        $this->registrarRetencion($e, mes: 2, monto: 137.59, cobrado: 3852.50);
+        foreach (range(3, 10) as $mes) {
+            $this->registrarRetencion($e, mes: $mes, monto: 120.41, cobrado: 4046.50);
+        }
+        // Recoge el céntimo y medio que dejó redondear cada mes a 120.41.
+        $this->assertEqualsWithDelta(120.41, $this->motor->calcularRenta5taCategoria($e, 4046.50, 0, 11, 2026), 0.02);
+
+        // Si en octubre se le retuvieron 100 de más, noviembre y diciembre los devuelven: 50 menos cada uno.
+        Planilla::where('empleado_id', $e->id)->where('mes', 10)->first()->payrollDetalles()->update(['monto_calculado' => 220.41]);
+        $this->assertEqualsWithDelta(70.41, $this->motor->calcularRenta5taCategoria($e, 4046.50, 0, 11, 2026), 0.02);
+    }
+
     private function registrarRetencion(Empleado $empleado, int $mes, float $monto, float $cobrado = 5000): void
     {
         $concepto = PaymentConcept::firstOrCreate(

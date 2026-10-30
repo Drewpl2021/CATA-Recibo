@@ -223,7 +223,7 @@ trait CalculaConceptosPlanilla
 
         $inicio  = \Carbon\Carbon::create($anio, $mes === 7 ? 1 : 7, 1)->startOfDay();
         $fin     = \Carbon\Carbon::create($anio, $mes === 7 ? 6 : 12, 1)->endOfMonth()->startOfDay();
-        $ingreso = \Carbon\Carbon::parse($empleado->fecha_ingreso)->startOfDay();
+        $ingreso = $this->inicioDelVinculo($empleado, $anio);
         $cese    = $empleado->estado === 'inactivo' && $empleado->fecha_cese
             ? \Carbon\Carbon::parse($empleado->fecha_cese)->startOfDay() : null;
 
@@ -327,6 +327,41 @@ trait CalculaConceptosPlanilla
      * nadie trabaja. Así lo paga el colegio: GATICA QUISPE entró el lunes 2
      * de marzo de 2026 (el 1 fue domingo) y su julio es 4/6, no 3/6.
      */
+    /**
+     * Desde cuándo corre su vínculo actual. Normalmente, su fecha de ingreso.
+     * Pero si este año cobró vacaciones truncas (la liquidación de un contrato)
+     * y después estuvo un mes sin planilla, volvió en el primer mes que cobra
+     * de nuevo: el contratado que se liquida en enero, no trabaja en febrero y
+     * entra en marzo. Así lo cuenta la hoja de RR.HH., y así se le pagó la
+     * gratificación de julio (de marzo a junio, no del semestre entero).
+     */
+    protected function inicioDelVinculo($empleado, int $anio): \Carbon\Carbon
+    {
+        $ingreso = \Carbon\Carbon::parse($empleado->fecha_ingreso)->startOfDay();
+        if (! $empleado->exists) {
+            return $ingreso;
+        }
+
+        $meses = \App\Models\Planilla::where('empleado_id', $empleado->id)->where('anio', $anio)
+            ->where('estado_registro', 'activo')->orderBy('mes')->pluck('mes')->map(fn ($m) => (int) $m)->all();
+        $liquidaciones = \App\Models\Planilla::where('empleado_id', $empleado->id)->where('anio', $anio)
+            ->whereHas('payrollDetalles', fn ($q) => $q->where('monto_calculado', '>', 0)
+                ->whereHas('paymentConcept', fn ($c) => $c->where('nombre', \App\Support\ConceptosDePago::VACACIONES_TRUNCAS)))
+            ->pluck('mes')->map(fn ($m) => (int) $m)->all();
+
+        foreach (array_reverse($liquidaciones) as $liquidado) {
+            $despues = array_values(array_filter($meses, fn ($m) => $m > $liquidado));
+            // Volvió después de al menos un mes sin planilla.
+            if ($despues && $despues[0] > $liquidado + 1) {
+                $vuelta = \Carbon\Carbon::create($anio, $despues[0], 1)->startOfDay();
+
+                return $vuelta->gt($ingreso) ? $vuelta : $ingreso;
+            }
+        }
+
+        return $ingreso;
+    }
+
     protected function mesesCompletos(\Carbon\Carbon $desde, \Carbon\Carbon $hasta): int
     {
         $desde = $desde->copy()->startOfDay();
@@ -536,19 +571,25 @@ trait CalculaConceptosPlanilla
         $ingresoMensual = $sueldoBase + $this->calcularAsignacionFamiliar($empleado, $anio) + $bonificacionCargo;
         $mesesMarzoDiciembre = $hasta - max(3, $desde) + 1;
 
-        // Enero y febrero: lo cobrado de verdad y lo ya retenido, de sus planillas.
+        // Enero y febrero: los MISMOS que puso RR.HH. en su hoja, si se cargó
+        // (Renta de 5ta → historial). Los escribió a mano y no son parejos (a
+        // unos les sumó la CTS de la liquidación y a otros no), pero son los que
+        // dieron lo que se retuvo de verdad: con ellos el cálculo da igual que
+        // en el PLAME. Sin hoja, de sus planillas.
+        $previos = \App\Models\RentaQuintaPrevia::where('empleado_id', $empleado->id)->where('anio', $anio)
+            ->whereIn('mes', [1, 2])->get();
         $eneroFebrero = \App\Models\Planilla::with('payrollDetalles.paymentConcept')
-            ->where('empleado_id', $empleado->id)->where('anio', $anio)->whereIn('mes', [1, 2])->get();
+            ->where('empleado_id', $empleado->id)->where('anio', $anio)->whereIn('mes', [1, 2])
+            ->whereNotIn('mes', $previos->pluck('mes'))->get();
+        // Como la hoja de RR.HH.: sin la movilidad ni la CTS (inafecta), que en
+        // enero o febrero viene en la liquidación del contrato anterior.
         $cobradoEneroFebrero = $eneroFebrero->sum(fn ($p) => (float) $p->sueldo_base
             + $p->payrollDetalles->filter(fn ($d) => $d->paymentConcept?->tipo === 'bonificacion'
-                && $d->paymentConcept->nombre !== \App\Support\ConceptosDePago::MOVILIDAD)->sum('monto_calculado'));
+                && ! in_array($d->paymentConcept->nombre, [\App\Support\ConceptosDePago::MOVILIDAD, \App\Support\ConceptosDePago::CTS], true))
+                ->sum('monto_calculado'));
         $retenidoEneroFebrero = $eneroFebrero->sum(fn ($p) => $p->payrollDetalles
             ->filter(fn ($d) => $d->paymentConcept?->nombre === \App\Support\ConceptosDePago::RENTA_5TA)->sum('monto_calculado'));
 
-        // El mes que no tiene planilla en el sistema (2026: se empezó a usar a
-        // fin de año) se toma de lo cargado del Excel de RR.HH.
-        $previos = \App\Models\RentaQuintaPrevia::where('empleado_id', $empleado->id)->where('anio', $anio)
-            ->whereIn('mes', [1, 2])->whereNotIn('mes', $eneroFebrero->pluck('mes'))->get();
         $cobradoEneroFebrero  += $previos->sum('remuneracion');
         $retenidoEneroFebrero += $previos->sum('retencion');
 
@@ -574,7 +615,27 @@ trait CalculaConceptosPlanilla
 
         $impuestoAnual = $this->aplicarTramosImpuestoRenta($proyeccion - $exento, $ley->uit);
 
-        return round(max(0, ($impuestoAnual - $retenidoEneroFebrero) / $mesesMarzoDiciembre), self::DECIMALES);
+        // Como las columnas «IRQ DESCONTADO» y «NÚMERO DE MESES PENDIENTE» de la
+        // hoja: lo que falta del impuesto, menos TODO lo ya retenido de verdad,
+        // entre los meses que quedan. A quien se le retuvo lo calculado le sale
+        // lo mismo de siempre; a quien se le retuvo de más o de menos, se le
+        // ajusta en los meses que faltan, y diciembre cierra el año.
+        // Un mes sin planilla cuenta con lo que el método habría retenido (la
+        // cuota pareja de marzo a diciembre), como cuando RR.HH. no llena su columna.
+        $cuota = ($impuestoAnual - $retenidoEneroFebrero) / $mesesMarzoDiciembre;
+        $retenidoAntes = $retenidoEneroFebrero;
+        $planillas = \App\Models\Planilla::with('payrollDetalles.paymentConcept')
+            ->where('empleado_id', $empleado->id)->where('anio', $anio)->where('estado_registro', 'activo')
+            ->whereBetween('mes', [3, max(3, $mes - 1)])->get()->keyBy(fn ($p) => (int) $p->mes);
+        for ($k = max(3, $desde); $k < $mes; $k++) {
+            $retenidoAntes += isset($planillas[$k])
+                ? (float) $planillas[$k]->payrollDetalles
+                    ->filter(fn ($d) => $d->paymentConcept?->nombre === \App\Support\ConceptosDePago::RENTA_5TA)->sum('monto_calculado')
+                : max(0, $cuota);
+        }
+        $pendientes = max(1, $hasta - max(3, $mes, $desde) + 1);
+
+        return round(max(0, ($impuestoAnual - $retenidoAntes) / $pendientes), self::DECIMALES);
     }
 
     /**
