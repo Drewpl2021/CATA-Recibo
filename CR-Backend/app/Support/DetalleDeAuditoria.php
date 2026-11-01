@@ -49,7 +49,7 @@ final class DetalleDeAuditoria
         'lineas_nuevas' => 'Conceptos agregados', 'lineas_cambiadas' => 'Montos cambiados', 'lineas_quitadas' => 'Conceptos quitados',
         'conceptos_creados' => 'Conceptos creados', 'altas' => 'Altas', 'actualizaciones' => 'Actualizaciones',
         'areas_nuevas' => 'Áreas nuevas', 'cargos_nuevos' => 'Cargos nuevos', 'monto' => 'Monto', 'periodo' => 'Periodo',
-        'anio' => 'Año', 'mes' => 'Mes', 'fecha_deposito' => 'Fecha de depósito', 'trabajadores' => 'Trabajadores',
+        'anio' => 'Año', 'mes' => 'Mes', 'vigente_desde' => 'Rige desde', 'fecha_deposito' => 'Fecha de depósito', 'trabajadores' => 'Trabajadores',
     ];
 
     private const EN_SOLES = ['sueldo_base', 'bonificacion_cargo', 'neto_total', 'monto', 'uit', 'rmv'];
@@ -136,7 +136,7 @@ final class DetalleDeAuditoria
     }
 
     /** Los campos del registro, uno por línea y ya en palabras. */
-    private static function campos(Auditoria $r): array
+    public static function campos(Auditoria $r): array
     {
         $salida = [];
         foreach ($r->cambios ?? [] as $campo => $valor) {

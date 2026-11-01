@@ -103,7 +103,7 @@ class BoletaController extends Controller
         $pension       = $this->calcularDescuentoPension($empleado, $baseAfecta, $anio, $mes);
         // La gratificación no se calcula acá: en julio y diciembre es una línea
         // de la planilla y sale sola entre los conceptos de ingreso.
-        $essalud       = $this->calcularEssalud($baseAfecta, $anio, $this->proporcionDelMes($empleado, $mes, $anio));
+        $essalud       = $this->calcularEssalud($baseAfecta, $anio, $this->proporcionDelMes($empleado, $mes, $anio), $mes);
         // Recalcula y deja registrada la retención del mes (Art. 40 Reglamento LIR),
         // por si se agregaron bonos u otros ingresos después de crear la planilla.
         $renta5ta      = $this->generarYPersistirRenta5ta($planilla, $empleado);

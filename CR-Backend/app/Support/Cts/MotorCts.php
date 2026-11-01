@@ -260,7 +260,7 @@ class MotorCts
         if (! $planilla || $proporcion <= 0) {
             return [
                 'sueldo'     => round((float) $empleado->sueldo_base, 2),
-                'asignacion' => round($this->calcularAsignacionFamiliar($empleado, $anio), 2),
+                'asignacion' => round($this->calcularAsignacionFamiliar($empleado, $anio, $mes), 2),
                 'cargo'      => round((float) ($empleado->bonificacion_cargo ?? 0), 2),
                 'fuente'     => 'ficha',
             ];

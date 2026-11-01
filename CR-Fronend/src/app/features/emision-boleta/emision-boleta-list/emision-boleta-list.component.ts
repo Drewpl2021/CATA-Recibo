@@ -1030,13 +1030,14 @@ export class EmisionBoletaListComponent implements OnInit {
   private ajustesService = inject(AjustesService);
 
   cargarPlanillaDelEmpleado(empleadoId: string, mes: number, anio: number, empleado: Empleado): void {
-    // Primero los montos de ese año; después, la planilla.
-    if (this.leyPara !== Number(anio)) {
+    // Primero los montos de ese mes (la RMV puede cambiar en el año); después, la planilla.
+    const clave = Number(anio) * 100 + Number(mes);
+    if (this.leyPara !== clave) {
       const seguir = () => {
-        this.leyPara = Number(anio);
+        this.leyPara = clave;
         this.cargarPlanillaDelEmpleado(empleadoId, mes, anio, empleado);
       };
-      this.ajustesService.valoresLegalesDelAnio(Number(anio)).subscribe({
+      this.ajustesService.valoresLegalesDelAnio(Number(anio), Number(mes)).subscribe({
         next: (res) => {
           this.ley = res.success ? res.data : null;
           seguir();
@@ -1118,7 +1119,7 @@ export class EmisionBoletaListComponent implements OnInit {
     const sueldo = this.formulario.remuneracionBasica ?? 0;
     const mes = this.formulario.mes;
 
-    // Asignación Familiar (10% de la RMV de ese año) si tiene hijos
+    // Asignación Familiar (10% de la RMV de ese mes) si tiene hijos
     this.formulario.asignacionFamiliar = this.empleadoSeleccionado.tiene_hijos ? ley.asignacion_familiar : 0.00;
 
     // La misma base que el backend: sueldo + asignación + bonificación por

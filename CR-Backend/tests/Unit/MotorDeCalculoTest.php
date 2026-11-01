@@ -469,6 +469,42 @@ class MotorDeCalculoTest extends TestCase
         $this->assertEqualsWithDelta(120.41, $this->motor->calcularRenta5taCategoria($e, 4046.50, 0, 11, 2026), 0.03, 'por fuera, no cuenta');
     }
 
+    /** La RMV sube en octubre: cada mes usa la suya, y lo anterior no se mueve. */
+    public function test_el_sueldo_minimo_rige_desde_su_mes(): void
+    {
+        $e = $this->crearEmpleado(['tiene_hijos' => 1]);
+
+        $this->assertSame(113.0, $this->motor->calcularAsignacionFamiliar($e, 2026, 9));
+        $this->assertSame(123.0, $this->motor->calcularAsignacionFamiliar($e, 2026, 10));
+        $this->assertSame(123.0, $this->motor->calcularAsignacionFamiliar($e, 2027, 1), 'sigue valiendo el año siguiente');
+
+        $this->assertEqualsWithDelta(101.70, $this->motor->calcularEssalud(600, 2026, 1.0, 9), 0.001);
+        $this->assertEqualsWithDelta(110.70, $this->motor->calcularEssalud(600, 2026, 1.0, 10), 0.001);
+
+        \App\Models\ValorLegal::create(['anio' => 2027, 'rmv' => 1300] + \App\Models\ValorLegal::find(2026)->only(array_diff(\App\Models\ValorLegal::CAMPOS, ['rmv'])));
+        $this->assertSame(130.0, $this->motor->calcularAsignacionFamiliar($e, 2027, 1), 'un año con sus propios montos manda');
+
+        \App\Models\RmvVigencia::create(['vigente_desde' => '2026-11-01', 'monto' => 1300]);
+        $this->assertSame(130.0, $this->motor->calcularAsignacionFamiliar($e, 2026, 12), 'el último cambio que ya rige');
+        $this->assertSame(123.0, $this->motor->calcularAsignacionFamiliar($e, 2026, 10));
+    }
+
+    /** Lo ya cobrado con la asignación vieja no se proyecta con la nueva. */
+    public function test_la_5ta_de_rrhh_no_proyecta_hacia_atras_la_rmv_nueva(): void
+    {
+        $e = $this->crearEmpleado(['sueldo_base' => 4000, 'tiene_hijos' => 1]);
+        foreach ([1, 2] as $mes) {
+            $this->registrarRetencion($e, mes: $mes, monto: 0, cobrado: 4113);
+        }
+
+        $marzo = $this->motor->desgloseRenta5taComoElColegio($e, 4000.0, 3, 2026);
+        $noviembre = $this->motor->desgloseRenta5taComoElColegio($e, 4000.0, 11, 2026);
+
+        $this->assertEqualsWithDelta(4113 * 10, $marzo['proyectado'], 0.01);
+        // Marzo a setiembre con 113; octubre a diciembre con 123.
+        $this->assertEqualsWithDelta(4113 * 7 + 4123 * 3, $noviembre['proyectado'], 0.01);
+    }
+
     private function registrarRetencion(Empleado $empleado, int $mes, float $monto, float $cobrado = 5000): void
     {
         $concepto = PaymentConcept::firstOrCreate(

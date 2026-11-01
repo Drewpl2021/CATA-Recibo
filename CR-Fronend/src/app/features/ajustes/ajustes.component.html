@@ -55,6 +55,11 @@
                     <app-icon icono="plus" [tamano]="16"></app-icon>
                     Agregar año
                   </button>
+                  <button type="button" class="btn-secondary" (click)="abrirHistorial()" [disabled]="guardandoLegal || anioLegal === null"
+                    appPista="Qué sueldo mínimo rigió en el año y quién cambió los montos de ley, y cuándo.">
+                    <app-icon icono="clock" [tamano]="16"></app-icon>
+                    Historial
+                  </button>
                 </div>
               }
             </header>
@@ -97,6 +102,50 @@
                           }
                         </div>
                       </div>
+                    @if ($index === 1) {
+                      <!-- Debajo de EsSalud: de aquí salen su piso y la asignación familiar. -->
+                      <div class="grupo-montos montos-rejilla__ancho vigencias-rmv">
+                        <h3 class="grupo-montos__titulo">Cambios del sueldo mínimo durante el año</h3>
+                        <p class="grupo-montos__descripcion">
+                          Cuando un decreto sube la RMV, regístrala con el mes desde el que rige. Cada planilla usa la de su
+                          propio mes para la asignación familiar y el mínimo de EsSalud: los meses anteriores no se mueven.
+                        </p>
+                        <div class="vigencias-rmv__cuerpo">
+                          <div class="vigencias-rmv__formulario">
+                            <div class="form-group">
+                              <label for="rmv_desde">Rige desde</label>
+                              <input type="month" id="rmv_desde" class="form-control" [(ngModel)]="nuevaVigencia.mes" [disabled]="guardandoVigencia" />
+                            </div>
+                            <div class="form-group">
+                              <label for="rmv_monto">Nuevo sueldo mínimo</label>
+                              <div class="campo-unidad campo-unidad--antes">
+                                <span class="campo-unidad__unidad" aria-hidden="true">S/</span>
+                                <input type="number" id="rmv_monto" class="form-control" min="1" step="0.01" inputmode="decimal"
+                                  [(ngModel)]="nuevaVigencia.monto" [disabled]="guardandoVigencia" />
+                              </div>
+                            </div>
+                            <button type="button" class="btn-secondary" (click)="agregarRmvVigencia()" [disabled]="guardandoVigencia">
+                              <app-icon icono="plus" [tamano]="16"></app-icon>
+                              Registrar cambio
+                            </button>
+                          </div>
+                          @if (rmvVigencias.length) {
+                            <ul class="vigencias-rmv__lista" aria-label="Cambios registrados">
+                              @for (c of rmvVigencias; track c.id) {
+                                <li>
+                                  <span>Desde {{ c.vigente_desde | date: 'MM/yyyy' : 'UTC' }}</span>
+                                  <strong>S/ {{ c.monto | number: '1.2-2' }}</strong>
+                                  <button type="button" class="vigencias-rmv__quitar" (click)="quitarRmvVigencia(c)" [disabled]="guardandoVigencia"
+                                    [attr.aria-label]="'Quitar el cambio desde ' + (c.vigente_desde | date: 'MM/yyyy' : 'UTC')" title="Quitar este cambio">
+                                    <app-icon icono="trash" [tamano]="15"></app-icon>
+                                  </button>
+                                </li>
+                              }
+                            </ul>
+                          }
+                        </div>
+                      </div>
+                    }
                     }
                   </div>
                   <footer class="panel-pie">
@@ -450,6 +499,52 @@
             </small>
           </div>
         </div>
+      </app-form-modal>
+
+      <!-- Lo que rigió en el año y quién cambió los montos: sale de la auditoría. -->
+      <app-form-modal [(visible)]="modalHistorialVisible" [titulo]="'Historial de los montos de ley de ' + anioLegal" ancho="640px"
+        [ocultarBotonesPorDefecto]="true" (cancelar)="modalHistorialVisible = false">
+        @if (cargandoHistorial) {
+          <p class="form-ayuda">Cargando el historial…</p>
+        }
+        @if (historialLegal; as h) {
+          <div class="historial-ley">
+            <h3 class="grupo-montos__titulo">Sueldo mínimo que rigió en {{ h.anio }}</h3>
+            <ul class="historial-ley__tramos">
+              @for (t of h.tramos; track t.desde_mes) {
+                <li>
+                  <span>
+                    {{ nombreMes(t.desde_mes) }}{{ t.hasta_mes !== t.desde_mes ? ' a ' + nombreMes(t.hasta_mes) : '' }}
+                  </span>
+                  <strong>S/ {{ t.rmv | number: '1.2-2' }}</strong>
+                </li>
+              }
+            </ul>
+            <h3 class="grupo-montos__titulo">Cambios registrados</h3>
+            @for (c of h.cambios; track c.id) {
+              <article class="historial-ley__cambio">
+                <header>
+                  <strong>{{ c.descripcion }}</strong>
+                  <small>{{ c.fecha | date: 'dd/MM/yyyy HH:mm' }} · {{ c.usuario }}</small>
+                </header>
+                <ul>
+                  @for (d of c.campos; track d.campo) {
+                    <li>
+                      {{ d.etiqueta }}:
+                      @if (d.es_par) {
+                        {{ d.antes }} → <strong>{{ d.despues }}</strong>
+                      } @else {
+                        <strong>{{ d.despues }}</strong>
+                      }
+                    </li>
+                  }
+                </ul>
+              </article>
+            } @empty {
+              <p class="form-ayuda">Nadie ha cambiado los montos de ley desde esta pantalla todavía.</p>
+            }
+          </div>
+        }
       </app-form-modal>
 
       <!-- Poner (o reemplazar) mi certificado: primero se revisa, después se guarda. -->

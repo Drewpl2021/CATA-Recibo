@@ -136,9 +136,16 @@ trait CalculaConceptosPlanilla
         ];
     }
 
-    protected function calcularAsignacionFamiliar($empleado, ?int $anio = null): float
+    protected function calcularAsignacionFamiliar($empleado, ?int $anio = null, ?int $mes = null): float
     {
-        return $empleado->tiene_hijos ? $this->valoresLegales($anio)->asignacion_familiar : 0.00;
+        if (! $empleado->tiene_hijos) {
+            return 0.00;
+        }
+
+        // Con el mes, la de ese mes: la RMV puede subir a mitad de año.
+        return $mes
+            ? \App\Models\ValorLegal::asignacionFamiliarDelMes($anio ?? (int) now()->year, $mes)
+            : $this->valoresLegales($anio)->asignacion_familiar;
     }
 
     /**
@@ -236,7 +243,7 @@ trait CalculaConceptosPlanilla
 
         $meses = $this->mesesCompletos($ingreso->gt($inicio) ? $ingreso : $inicio, $fin);
 
-        return $this->montosDeGratificacion($empleado, (float) $sueldoBase, $meses, $anio);
+        return $this->montosDeGratificacion($empleado, (float) $sueldoBase, $meses, $anio, $mes);
     }
 
     /**
@@ -278,7 +285,7 @@ trait CalculaConceptosPlanilla
     }
 
     /** Los montos para tantos meses: la gratificación, su bonificación del 9% y el total. */
-    private function montosDeGratificacion($empleado, float $sueldoMensual, int $meses, int $anio): array
+    private function montosDeGratificacion($empleado, float $sueldoMensual, int $meses, int $anio, ?int $mes = null): array
     {
         if ($meses <= 0) {
             return $this->sinGratificacion('No completó ningún mes calendario en el semestre.');
@@ -286,7 +293,7 @@ trait CalculaConceptosPlanilla
 
         $sueldo        = round($sueldoMensual * $meses / 6, 2);
         $cargo         = round((float) ($empleado->bonificacion_cargo ?? 0) * $meses / 6, 2);
-        $asignacion    = round($this->calcularAsignacionFamiliar($empleado, $anio) * $meses / 6, 2);
+        $asignacion    = round($this->calcularAsignacionFamiliar($empleado, $anio, $mes) * $meses / 6, 2);
         $gratificacion = round($sueldo + $cargo + $asignacion, 2);
         // Ley 30334: lo que el colegio habría aportado a EsSalud sobre ella.
         $bonificacion  = round($gratificacion * ($this->valoresLegales($anio)->essalud / 100), 2);
@@ -405,7 +412,7 @@ trait CalculaConceptosPlanilla
      * es la parte de la RMV que le toca: $proporcionDelMes, la misma con que
      * se prorratea su sueldo. Sin remuneración no hay aporte.
      */
-    protected function calcularEssalud($sueldoBase, ?int $anio = null, float $proporcionDelMes = 1.0): float
+    protected function calcularEssalud($sueldoBase, ?int $anio = null, float $proporcionDelMes = 1.0, ?int $mes = null): float
     {
         $sueldoBase = (float) $sueldoBase;
         if ($sueldoBase <= 0) {
@@ -413,7 +420,8 @@ trait CalculaConceptosPlanilla
         }
 
         $ley  = $this->valoresLegales($anio);
-        $base = max($sueldoBase, $ley->rmv * $proporcionDelMes);
+        $rmv  = $mes ? \App\Models\ValorLegal::rmvDelMes($anio ?? (int) now()->year, $mes) : $ley->rmv;
+        $base = max($sueldoBase, $rmv * $proporcionDelMes);
 
         return round($base * ($ley->essalud / 100), self::DECIMALES);
     }
@@ -500,7 +508,7 @@ trait CalculaConceptosPlanilla
         $tramo = self::TRAMOS_RENTA_5TA[$mes] ?? self::TRAMOS_RENTA_5TA[1];
 
         // La Asignación Familiar es remunerativa y también afecta a Renta de 5ta Categoría.
-        $remuneracionOrdinaria = $sueldoBase + $bonificaciones + $this->calcularAsignacionFamiliar($empleado, $anio);
+        $remuneracionOrdinaria = $sueldoBase + $bonificaciones + $this->calcularAsignacionFamiliar($empleado, $anio, $mes);
 
         $gratificacionJulio     = $this->calcularGratificacion($empleado, $sueldoBase, 7, $anio);
         $gratificacionDiciembre = $this->calcularGratificacion($empleado, $sueldoBase, 12, $anio);
@@ -584,8 +592,12 @@ trait CalculaConceptosPlanilla
             ->whereHas('paymentConcept', fn ($q) => $q->where('nombre', \App\Support\ConceptosDePago::BONIFICACION_CARGO))
             ->sum('monto_calculado') : (float) ($empleado->bonificacion_cargo ?? 0);
 
-        $ingresoMensual = $sueldoBase + $this->calcularAsignacionFamiliar($empleado, $anio) + $bonificacionCargo;
+        $asignacion = $this->calcularAsignacionFamiliar($empleado, $anio, $mes);
+        $ingresoMensual = $sueldoBase + $asignacion + $bonificacionCargo;
         $mesesMarzoDiciembre = $hasta - max(3, $desde) + 1;
+        // Si la RMV subió a mitad de año, lo ya cobrado fue con la asignación de
+        // entonces: no se proyecta hacia atrás. Hacia adelante, la de este mes.
+        $asignacionDe = fn (int $k) => $this->calcularAsignacionFamiliar($empleado, $anio, $k) - $asignacion;
 
         // Enero y febrero: los MISMOS que puso RR.HH. en su hoja, si se cargó
         // (Renta de 5ta → historial). Los escribió a mano y no son parejos (a
@@ -613,18 +625,22 @@ trait CalculaConceptosPlanilla
         $gratificaciones = 0.0;
         foreach ([7, 12] as $mesGratificacion) {
             $semestre = $this->calcularGratificacion($empleado, $sueldoBase, $mesGratificacion, $anio);
-            $gratificaciones += $ingresoMensual / 6 * $semestre['meses_trabajados'] * $conBonificacion;
+            $gratificaciones += ($ingresoMensual + $asignacionDe(min($mesGratificacion, $mes))) / 6 * $semestre['meses_trabajados'] * $conBonificacion;
         }
 
         $vacacionesTruncas = $empleado->puedeTomarVacaciones() ? 0.0 : $ingresoMensual / 12 * $mesesMarzoDiciembre;
 
         $anteriores = $cobradoEneroFebrero + $this->otrosIngresosDelAnio($empleado->id, $anio, $mes);
-        $proyeccion = $ingresoMensual * $mesesMarzoDiciembre + $anteriores + $vacacionesTruncas + $gratificaciones;
+        $proyectado = $ingresoMensual * $mesesMarzoDiciembre;
+        for ($k = max(3, $desde); $k < $mes; $k++) {
+            $proyectado += $asignacionDe($k);
+        }
+        $proyeccion = $proyectado + $anteriores + $vacacionesTruncas + $gratificaciones;
 
         $desglose = array_merge($desglose, [
             'ingreso_mensual'    => $ingresoMensual,
             'meses'              => $mesesMarzoDiciembre,
-            'proyectado'         => $ingresoMensual * $mesesMarzoDiciembre,
+            'proyectado'         => $proyectado,
             'gratificaciones'    => $gratificaciones,
             'vacaciones_truncas' => $vacacionesTruncas,
             'anteriores'         => $anteriores,
@@ -929,7 +945,7 @@ trait CalculaConceptosPlanilla
             $this->crearDetalleAutomatico($planilla, \App\Support\ConceptosDePago::BONIFICACION_CARGO, $bonificacionCargo);
         }
         $ley                = $this->valoresLegales($anio);
-        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado, $anio);
+        $asignacionFamiliar = $this->calcularAsignacionFamiliar($empleado, $anio, (int) $planilla->mes);
         // + Bonificación por Cargo y Vacaciones Truncas si ya las tiene la
         // planilla (ver el comentario largo en otrosIngresosAfectosDeLaPlanilla).
         $baseAfecta = $sueldoBase + $asignacionFamiliar + $this->otrosIngresosAfectosDeLaPlanilla($planilla);
@@ -1052,7 +1068,7 @@ trait CalculaConceptosPlanilla
         $this->crearDetalleAutomatico(
             $planilla,
             \App\Support\ConceptosDePago::ESSALUD,
-            $this->calcularEssalud($baseAfecta, $anio, $this->proporcionDelMes($empleado, (int) $planilla->mes, $anio))
+            $this->calcularEssalud($baseAfecta, $anio, $this->proporcionDelMes($empleado, (int) $planilla->mes, $anio), (int) $planilla->mes)
         );
 
         // Conceptos marcados como "fijo para todos" en el catálogo — EXCLUYENDO siempre

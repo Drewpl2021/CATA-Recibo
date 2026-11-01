@@ -145,6 +145,52 @@ class ValoresLegalesTest extends TestCase
         $this->assertNull(ValorLegal::nombreDelAnio(2030));
     }
 
+    public function test_el_sueldo_minimo_se_registra_con_su_vigencia(): void
+    {
+        $this->actingAs($this->crearUsuario('empleado'), 'sanctum')
+            ->postJson('/api/legal-values/minimum-wage', ['vigente_desde' => '2026-11', 'monto' => 1300])->assertForbidden();
+
+        $admin = $this->crearUsuario('admin');
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/legal-values/minimum-wage', ['vigente_desde' => '2026-13', 'monto' => 1300])->assertStatus(422);
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/legal-values/minimum-wage', ['vigente_desde' => '2026-11', 'monto' => 0])->assertStatus(422);
+
+        $id = $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/legal-values/minimum-wage', ['vigente_desde' => '2026-11', 'monto' => 1300])
+            ->assertCreated()->json('data.id');
+
+        $this->actingAs($admin, 'sanctum')->getJson('/api/legal-values/2026?mes=9')->assertJsonPath('data.asignacion_familiar', 113);
+        $this->actingAs($admin, 'sanctum')->getJson('/api/legal-values/2026?mes=10')->assertJsonPath('data.asignacion_familiar', 123);
+        $this->actingAs($admin, 'sanctum')->getJson('/api/legal-values/2026?mes=11')->assertJsonPath('data.asignacion_familiar', 130);
+        $this->actingAs($admin, 'sanctum')->getJson('/api/legal-values/2026?mes=13')->assertStatus(422);
+
+        $this->actingAs($admin, 'sanctum')->deleteJson("/api/legal-values/minimum-wage/{$id}")->assertOk();
+        $this->actingAs($admin, 'sanctum')->getJson('/api/legal-values/2026?mes=11')->assertJsonPath('data.asignacion_familiar', 123);
+    }
+
+    public function test_el_historial_dice_que_minimo_rigio_y_quien_cambio_los_montos(): void
+    {
+        $admin = $this->crearUsuario('admin');
+        $this->actingAs($admin, 'sanctum')->putJson('/api/legal-values/2026', ['uit' => 5600] + ValorLegal::find(2026)->only(array_diff(ValorLegal::CAMPOS, ['uit'])))->assertOk();
+        $this->actingAs($admin, 'sanctum')->postJson('/api/legal-values/minimum-wage', ['vigente_desde' => '2026-12', 'monto' => 1300])->assertCreated();
+
+        $datos = $this->actingAs($admin, 'sanctum')->getJson('/api/legal-values/history?anio=2026')->assertOk()->json('data');
+
+        $this->assertSame([
+            ['desde_mes' => 1, 'hasta_mes' => 9, 'rmv' => 1130],
+            ['desde_mes' => 10, 'hasta_mes' => 11, 'rmv' => 1230],
+            ['desde_mes' => 12, 'hasta_mes' => 12, 'rmv' => 1300],
+        ], $datos['tramos']);
+        $this->assertCount(2, $datos['cambios']);
+        $this->assertSame($admin->name, $datos['cambios'][0]['usuario']);
+        $uit = collect($datos['cambios'][1]['campos'])->firstWhere('campo', 'uit');
+        $this->assertSame(['S/ 5,500.00', 'S/ 5,600.00'], [$uit['antes'], $uit['despues']]);
+
+        $this->actingAs($this->crearUsuario('empleado'), 'sanctum')->getJson('/api/legal-values/history?anio=2026')->assertForbidden();
+        $this->actingAs($admin, 'sanctum')->getJson('/api/legal-values/history')->assertStatus(422);
+    }
+
     public function test_sin_nombre_la_boleta_no_lleva_esa_linea(): void
     {
         ValorLegal::find(2026)->update(['nombre_anio' => '   ']);
@@ -158,7 +204,8 @@ class ValoresLegalesTest extends TestCase
             ->postJson('/api/legal-values', ['anio' => 2027, 'uit' => 5700])
             ->assertCreated()
             ->assertJsonPath('data.uit', 5700)
-            ->assertJsonPath('data.asignacion_familiar', 113)
+            // La RMV con la que terminó 2026, no la con la que empezó.
+            ->assertJsonPath('data.asignacion_familiar', 123)
             ->assertJsonPath('data.asignacion_familiar_pct', 10)
             // El nombre no se copia: el de 2026 no es el de 2027.
             ->assertJsonPath('data.nombre_anio', null);

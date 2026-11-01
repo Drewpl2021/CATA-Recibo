@@ -5094,6 +5094,110 @@ textarea.form-control {
   grid-column: 1 / -1;
 }
 
+/* El modal «Historial» de los montos de ley. */
+.historial-ley__tramos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+}
+
+.historial-ley__tramos li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.historial-ley__tramos strong { color: var(--heading); }
+
+.historial-ley__cambio {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.historial-ley__cambio header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.historial-ley__cambio header small { color: var(--text-muted); }
+
+.historial-ley__cambio ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+}
+
+/* Formulario en una línea y, al lado, lo ya registrado. */
+.vigencias-rmv__cuerpo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 32px;
+}
+
+.vigencias-rmv__formulario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 20px;
+}
+
+.vigencias-rmv__formulario .form-group {
+  width: 190px;
+  margin-bottom: 0;
+}
+
+.vigencias-rmv__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 240px;
+  max-width: 340px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vigencias-rmv__lista li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.vigencias-rmv__lista strong {
+  margin-left: auto;
+  color: var(--heading);
+}
+
+.vigencias-rmv__quitar {
+  display: inline-flex;
+  padding: 4px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.vigencias-rmv__quitar:hover:not(:disabled) {
+  color: var(--danger, #b42318);
+}
+
 .previa-5ta {
   margin-top: 12px;
 }

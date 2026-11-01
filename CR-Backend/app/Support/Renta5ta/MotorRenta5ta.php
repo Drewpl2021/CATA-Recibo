@@ -189,7 +189,7 @@ class MotorRenta5ta
         // faltan y las gratificaciones. Es el sueldo de este mes (el de su
         // planilla, o el que se está escribiendo); si este mes lo trabajó solo
         // en parte (entró a mitad), el de su ficha.
-        $asignacion = $this->calcularAsignacionFamiliar($empleado, $anio);
+        $asignacion = $this->calcularAsignacionFamiliar($empleado, $anio, $mes);
         $sueldoDeEsteMes = $sueldoMes ?? ($real['sueldo'] ?? null);
         $mesCompleto = ! $empleado->exists
             || $this->recordar("prop-{$empleado->id}-{$anio}-{$mes}", fn () => $this->proporcionDelMes($empleado, $mes, $anio)) >= 1;

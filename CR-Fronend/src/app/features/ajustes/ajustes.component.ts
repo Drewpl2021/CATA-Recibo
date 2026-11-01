@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Location } from '@angular/common';
 
-import { AjustesService, AjustesSistema, BoletaService, CamposValorLegal, CargaRentaQuintaPrevia, CertificadoDeFirma, MontoLegal, RentaQuintaPreviaResumen, ToastService, ValorLegal } from '../../core/services';
+import { AjustesService, AjustesSistema, BoletaService, CamposValorLegal, CargaRentaQuintaPrevia, CertificadoDeFirma, HistorialLegal, MontoLegal, RentaQuintaPreviaResumen, RmvVigencia, ToastService, ValorLegal } from '../../core/services';
 import { ConfirmService } from '../../core/services/sistema/confirm.service';
 import { mensajeErrorApi } from '../../core/utils';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { FormModalComponent } from '../../shared/components/form-modal/form-modal.component';
+import { nombreMes } from '../../shared/constants';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { SelectorArchivoComponent } from '../../shared/components/selector-archivo/selector-archivo.component';
 
@@ -114,7 +115,7 @@ export class AjustesComponent implements OnInit {
       titulo: 'Generales',
       campos: [
         { clave: 'uit', etiqueta: 'UIT', unidad: 'S/', ayuda: 'No paga Renta de 5ta quien gana menos de 7 UIT al año.' },
-        { clave: 'rmv', etiqueta: 'Sueldo mínimo (RMV)', unidad: 'S/', ayuda: 'De aquí sale la asignación familiar, y EsSalud nunca se calcula sobre menos que esto.' },
+        { clave: 'rmv', etiqueta: 'Sueldo mínimo (RMV) al empezar el año', unidad: 'S/', ayuda: 'De aquí sale la asignación familiar, y EsSalud nunca se calcula sobre menos que esto. Si sube a mitad de año, regístralo abajo con su vigencia.' },
         { clave: 'asignacion_familiar_pct', etiqueta: 'Asignación familiar', unidad: '%' },
       ],
     },
@@ -162,7 +163,7 @@ export class AjustesComponent implements OnInit {
   ayudaDe(c: CampoLegal): string | undefined {
     if (c.clave === 'asignacion_familiar_pct' && this.edicionLegal) {
       const monto = (Number(this.edicionLegal.rmv) * Number(this.edicionLegal.asignacion_familiar_pct)) / 100;
-      return `Del sueldo mínimo (RMV). Este año sale S/ ${monto.toFixed(2)} a quien tiene hijos.`;
+      return `Del sueldo mínimo (RMV). Al empezar el año sale S/ ${monto.toFixed(2)} a quien tiene hijos.`;
     }
     return c.ayuda;
   }
@@ -175,7 +176,83 @@ export class AjustesComponent implements OnInit {
       || this.gruposLegales.some((g) => g.campos.some((c) => Number(this.edicionLegal![c.clave]) !== Number(guardado[c.clave])));
   }
 
+  // ────────── Historial de los montos de ley ──────────
+
+  modalHistorialVisible = false;
+  historialLegal: HistorialLegal | null = null;
+  cargandoHistorial = false;
+  readonly nombreMes = nombreMes;
+
+  abrirHistorial(): void {
+    if (this.anioLegal === null) return;
+    this.modalHistorialVisible = true;
+    this.historialLegal = null;
+    this.cargandoHistorial = true;
+    this.ajustesService.historialLegal(this.anioLegal).subscribe({
+      next: (res) => {
+        this.cargandoHistorial = false;
+        if (res.success) this.historialLegal = res.data;
+      },
+      error: (err) => {
+        this.cargandoHistorial = false;
+        this.toastService.error('No se cargó', mensajeErrorApi(err, 'No se pudo cargar el historial.'));
+      },
+    });
+  }
+
+  // ────────── Cambios del sueldo mínimo ──────────
+
+  rmvVigencias: RmvVigencia[] = [];
+  nuevaVigencia: { mes: string; monto: number | null } = { mes: '', monto: null };
+  guardandoVigencia = false;
+
+  private cargarRmvVigencias(): void {
+    this.ajustesService.rmvVigencias().subscribe({
+      next: (res) => {
+        if (res.success) this.rmvVigencias = res.data;
+      },
+      error: (err) => this.toastService.error('Error', mensajeErrorApi(err, 'No se pudieron cargar los cambios del sueldo mínimo.')),
+    });
+  }
+
+  agregarRmvVigencia(): void {
+    const { mes, monto } = this.nuevaVigencia;
+    if (!mes || !monto) {
+      this.toastService.error('Faltan datos', 'Escribe el mes desde el que rige y el nuevo sueldo mínimo.');
+      return;
+    }
+    this.guardandoVigencia = true;
+    this.ajustesService.guardarRmvVigencia(mes, Number(monto)).subscribe({
+      next: () => {
+        this.guardandoVigencia = false;
+        this.nuevaVigencia = { mes: '', monto: null };
+        this.toastService.success('Sueldo mínimo registrado', 'Las planillas de ese mes en adelante que se generen o recalculen lo usan.');
+        this.cargarRmvVigencias();
+      },
+      error: (err) => {
+        this.guardandoVigencia = false;
+        this.toastService.error('No se guardó', mensajeErrorApi(err, 'Revisa el mes y el monto.'));
+      },
+    });
+  }
+
+  quitarRmvVigencia(cambio: RmvVigencia): void {
+    this.guardandoVigencia = true;
+    this.ajustesService.quitarRmvVigencia(cambio.id).subscribe({
+      next: () => {
+        this.guardandoVigencia = false;
+        this.toastService.success('Cambio quitado', 'Las planillas ya armadas no cambian hasta que se recalculen.');
+        this.cargarRmvVigencias();
+      },
+      error: (err) => {
+        this.guardandoVigencia = false;
+        this.toastService.error('No se quitó', mensajeErrorApi(err, 'Inténtalo de nuevo.'));
+      },
+    });
+  }
+
   private cargarValoresLegales(elegir?: number): void {
+    this.cargarRmvVigencias();
     this.ajustesService.valoresLegales().subscribe({
       next: (res) => {
         if (!res.success) return;

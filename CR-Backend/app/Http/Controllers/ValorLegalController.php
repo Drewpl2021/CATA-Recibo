@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Auditoria;
 use App\Models\ValorLegal;
+use App\Support\DetalleDeAuditoria;
 use Illuminate\Http\Request;
 
 /**
@@ -21,10 +23,52 @@ class ValorLegalController extends Controller
         ]);
     }
 
-    /** GET /legal-values/{anio} — los que usa ese año (los del último año cargado, si falta). */
-    public function show(int $anio)
+    /**
+     * GET /legal-values/{anio}?mes= — los que usa ese año (los del último año
+     * cargado, si falta). Con mes, con la RMV de ese mes y su asignación.
+     */
+    public function show(Request $request, int $anio)
     {
-        return response()->json(['success' => true, 'data' => ValorLegal::delAnio($anio)]);
+        $mes = $request->validate(['mes' => 'nullable|integer|min:1|max:12'])['mes'] ?? null;
+        $ley = clone ValorLegal::delAnio($anio);
+        if ($mes) {
+            $ley->rmv = ValorLegal::rmvDelMes($anio, (int) $mes);
+        }
+
+        return response()->json(['success' => true, 'data' => $ley]);
+    }
+
+    /**
+     * GET /legal-values/history?anio= — qué sueldo mínimo rigió cada parte de
+     * ese año y quién cambió los montos de ley, y cuándo. Solo quien administra
+     * los ajustes: lleva los nombres de quienes hicieron los cambios.
+     */
+    public function historial(Request $request)
+    {
+        $anio = (int) $request->validate(['anio' => 'required|integer|min:2000|max:2100'])['anio'];
+
+        $tramos = [];
+        foreach (range(1, 12) as $mes) {
+            $rmv = ValorLegal::rmvDelMes($anio, $mes);
+            $ultimo = array_key_last($tramos);
+            if ($ultimo !== null && $tramos[$ultimo]['rmv'] === $rmv) {
+                $tramos[$ultimo]['hasta_mes'] = $mes;
+            } else {
+                $tramos[] = ['desde_mes' => $mes, 'hasta_mes' => $mes, 'rmv' => $rmv];
+            }
+        }
+
+        $cambios = Auditoria::whereIn('entidad', ['montos de ley', 'cambio del sueldo mínimo'])
+            ->orderByDesc('created_at')->orderByDesc('id')->limit(100)->get()
+            ->map(fn (Auditoria $r) => [
+                'id'          => $r->id,
+                'fecha'       => $r->created_at,
+                'usuario'     => $r->usuario_nombre,
+                'descripcion' => $r->descripcion,
+                'campos'      => DetalleDeAuditoria::campos($r),
+            ]);
+
+        return response()->json(['success' => true, 'data' => ['anio' => $anio, 'tramos' => $tramos, 'cambios' => $cambios]]);
     }
 
     /**
@@ -38,7 +82,8 @@ class ValorLegalController extends Controller
         $base = ValorLegal::where('anio', '<', $datos['anio'])->orderByDesc('anio')->first()
             ?? ValorLegal::orderBy('anio')->first();
 
-        $valores = $base ? $base->only(ValorLegal::CAMPOS) : [];
+        // La RMV de cómo terminó ese año: pudo cambiar a mitad (RmvVigencia).
+        $valores = $base ? ['rmv' => ValorLegal::rmvDelMes($base->anio, 12)] + $base->only(ValorLegal::CAMPOS) : [];
         $nuevo = ValorLegal::create(array_merge($valores, $datos));
 
         return response()->json(['success' => true, 'data' => $nuevo->fresh()], 201);

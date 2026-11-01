@@ -41,6 +41,26 @@ export interface ValorLegal {
   comision_profuturo: number;
 }
 
+/** Un cambio del sueldo mínimo: cuánto y desde qué mes (AAAA-MM-01). */
+export interface RmvVigencia {
+  id: number;
+  vigente_desde: string;
+  monto: number;
+}
+
+/** Qué sueldo mínimo rigió cada parte de un año y quién cambió los montos de ley. */
+export interface HistorialLegal {
+  anio: number;
+  tramos: { desde_mes: number; hasta_mes: number; rmv: number }[];
+  cambios: {
+    id: number;
+    fecha: string;
+    usuario: string;
+    descripcion: string;
+    campos: { campo: string; etiqueta: string; antes: string | null; despues: string; es_par: boolean }[];
+  }[];
+}
+
 /** Lo cargado de enero y febrero de un año (antes de usar el sistema). */
 export interface RentaQuintaPreviaResumen {
   anio: number;
@@ -83,9 +103,28 @@ export class AjustesService {
     return this.http.get<ApiResponse<ValorLegal[]>>(this.urlLey);
   }
 
-  /** Los que usa ese año (si no está cargado, los del último año anterior). */
-  valoresLegalesDelAnio(anio: number): Observable<ApiResponse<ValorLegal>> {
-    return this.http.get<ApiResponse<ValorLegal>>(`${this.urlLey}/${anio}`);
+  /** Los que usa ese año (si no está cargado, los del último año anterior). Con mes, con la RMV de ese mes. */
+  valoresLegalesDelAnio(anio: number, mes?: number): Observable<ApiResponse<ValorLegal>> {
+    const params: Record<string, string> = mes ? { mes: String(mes) } : {};
+    return this.http.get<ApiResponse<ValorLegal>>(`${this.urlLey}/${anio}`, { params });
+  }
+
+  historialLegal(anio: number): Observable<ApiResponse<HistorialLegal>> {
+    return this.http.get<ApiResponse<HistorialLegal>>(`${this.urlLey}/history`, { params: { anio: String(anio) } });
+  }
+
+  /** Los cambios del sueldo mínimo, del más reciente al más antiguo. */
+  rmvVigencias(): Observable<ApiResponse<RmvVigencia[]>> {
+    return this.http.get<ApiResponse<RmvVigencia[]>>(`${this.urlLey}/minimum-wage`);
+  }
+
+  /** `vigenteDesde` como AAAA-MM. Si ese mes ya está, se corrige. */
+  guardarRmvVigencia(vigenteDesde: string, monto: number): Observable<ApiResponse<RmvVigencia>> {
+    return this.http.post<ApiResponse<RmvVigencia>>(`${this.urlLey}/minimum-wage`, { vigente_desde: vigenteDesde, monto });
+  }
+
+  quitarRmvVigencia(id: number): Observable<ApiResponse<unknown>> {
+    return this.http.delete<ApiResponse<unknown>>(`${this.urlLey}/minimum-wage/${id}`);
   }
 
   /** Un año nuevo; lo que no se mande se copia del año anterior. */

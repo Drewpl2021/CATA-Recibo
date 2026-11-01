@@ -80,6 +80,28 @@ class ValorLegal extends Model
     }
 
     /**
+     * El sueldo mínimo de ese mes: el del año, o el último cambio con vigencia
+     * (RmvVigencia) que ya rige. Un cambio sigue valiendo los años siguientes,
+     * hasta el primer año que tenga sus propios montos cargados.
+     */
+    public static function rmvDelMes(int $anio, int $mes): float
+    {
+        $ley = self::delAnio($anio);
+        $hasta = sprintf('%04d-%02d-01', $anio, $mes);
+        $desde = sprintf('%04d-01-01', $ley->anio);
+
+        return (float) (RmvVigencia::todas()
+            ->filter(fn ($c) => $c->vigente_desde->toDateString() >= $desde && $c->vigente_desde->toDateString() <= $hasta)
+            ->last()?->monto ?? $ley->rmv);
+    }
+
+    /** La Asignación Familiar de ese mes: sigue a la RMV que rige entonces. */
+    public static function asignacionFamiliarDelMes(int $anio, int $mes): float
+    {
+        return round(self::rmvDelMes($anio, $mes) * self::delAnio($anio)->asignacion_familiar_pct / 100, 2);
+    }
+
+    /**
      * La denominación oficial de ESE año, para la boleta. A diferencia de los
      * montos, no se hereda del año anterior: cada año tiene la suya, y si
      * falta es mejor no imprimir nada que imprimir la del año pasado.

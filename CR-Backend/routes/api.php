@@ -336,6 +336,9 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     Route::middleware('permiso:/ajustes')->group(function () {
         Route::put('settings', [\App\Http\Controllers\ConfiguracionController::class, 'update']);
         Route::post('legal-values',       [\App\Http\Controllers\ValorLegalController::class, 'store']);
+        Route::get('legal-values/history', [\App\Http\Controllers\ValorLegalController::class, 'historial']);
+        Route::post('legal-values/minimum-wage', [\App\Http\Controllers\RmvVigenciaController::class, 'store']);
+        Route::delete('legal-values/minimum-wage/{id}', [\App\Http\Controllers\RmvVigenciaController::class, 'destroy'])->whereNumber('id');
         Route::put('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'update'])->whereNumber('anio');
     });
 
@@ -382,6 +385,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // Los ajustes y los montos de ley los consultan la planilla, la 5ta y la CTS.
         Route::get('settings', [\App\Http\Controllers\ConfiguracionController::class, 'index']);
         Route::get('legal-values',        [\App\Http\Controllers\ValorLegalController::class, 'index']);
+        Route::get('legal-values/minimum-wage', [\App\Http\Controllers\RmvVigenciaController::class, 'index']);
         Route::get('legal-values/{anio}', [\App\Http\Controllers\ValorLegalController::class, 'show'])->whereNumber('anio');
     });
 
