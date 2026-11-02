@@ -6,7 +6,7 @@
 # Uso, desde la Terminal de cPanel:
 #   bash ~/apps/rrhh_backend/servidor/despues-de-subir.sh
 # Si «php» no es la versión 8.3:
-#   PHP=/opt/cpanel/ea-php83/root/usr/bin/php bash ~/apps/rrhh_backend/servidor/despues-de-subir.sh
+#   PHP=/opt/alt/php83/usr/bin/php bash ~/apps/rrhh_backend/servidor/despues-de-subir.sh
 #
 # Se puede correr más de una vez: lo que ya está hecho no se repite.
 
@@ -17,8 +17,8 @@ PHP="${PHP:-php}"
 echo "== Revisando PHP"
 if ! "$PHP" -r 'exit(PHP_VERSION_ID >= 80300 ? 0 : 1);'; then
   echo "ERROR: este php es $("$PHP" -r 'echo PHP_VERSION;'); hace falta 8.3 o más."
-  echo "       Busca el de 8.3 con: ls /opt/cpanel/ea-php*/root/usr/bin/php"
-  echo "       y vuelve a correr así: PHP=/opt/cpanel/ea-php83/root/usr/bin/php bash $0"
+  echo "       En este hosting es /opt/alt/php83/usr/bin/php"
+  echo "       y vuelve a correr así: PHP=/opt/alt/php83/usr/bin/php bash $0"
   exit 1
 fi
 "$PHP" -r 'echo "   PHP ", PHP_VERSION, PHP_EOL;'
