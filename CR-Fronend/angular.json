@@ -38,6 +38,7 @@
               }
             ],
             "styles": [
+              "src/fuentes.scss",
               "src/styles.scss"
             ],
             "scripts": []
