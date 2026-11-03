@@ -14,8 +14,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# Lee una variable del .env (sin comillas).
-valor() { grep -E "^$1=" .env | tail -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"; }
+# Lee una variable del .env (sin comillas). Quita el \r de un .env guardado con
+# saltos de línea de Windows: sin eso, mysqldump recibía el puerto «3306\r» y
+# fallaba con «Legal suffix characters are: K, M, G…».
+valor() {
+  grep -E "^$1=" .env | tail -1 | cut -d= -f2- | tr -d '\r' \
+    | sed -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"
+}
 
 DESTINO="${HOME}/respaldos"
 FECHA="$(date +%F-%H%M)"
@@ -25,12 +30,19 @@ chmod 700 "$DESTINO"
 echo "== Base de datos"
 HOST="$(valor DB_HOST || true)"
 PUERTO="$(valor DB_PORT || true)"
-MYSQL_PWD="$(valor DB_PASSWORD || true)" mysqldump \
+BD="$DESTINO/bd-$FECHA.sql.gz"
+# Si el volcado falla, no queda un .sql.gz vacío que parezca un respaldo.
+if ! MYSQL_PWD="$(valor DB_PASSWORD || true)" mysqldump \
   -h "${HOST:-localhost}" -P "${PUERTO:-3306}" \
   -u "$(valor DB_USERNAME)" \
   --single-transaction --routines --no-tablespaces \
-  "$(valor DB_DATABASE)" | gzip > "$DESTINO/bd-$FECHA.sql.gz"
-echo "   $DESTINO/bd-$FECHA.sql.gz"
+  "$(valor DB_DATABASE)" | gzip > "$BD.parcial"; then
+  rm -f "$BD.parcial"
+  echo "ERROR: no se pudo respaldar la base (ver el mensaje de mysqldump arriba)."
+  exit 1
+fi
+mv "$BD.parcial" "$BD"
+echo "   $BD"
 
 echo "== Archivos (.env y storage/app)"
 tar -czf "$DESTINO/archivos-$FECHA.tar.gz" .env storage/app
