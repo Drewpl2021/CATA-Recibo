@@ -10,7 +10,10 @@ QUÉ TRAE
 - La aplicación ya compilada (index.html, los .js, .css, fuentes e íconos).
 - index.php: el PUENTE al backend. Apache le manda /rrhh/api/… y él carga
   Laravel desde /apps/rrhh_backend (si está en otra carpeta, cambia $backend).
-- .htaccess: manda /rrhh/api/… al puente y lo demás a Angular.
+- .htaccess: manda /rrhh/api/… al puente y lo demás a Angular. Su primera
+  regla, «AddHandler application/x-httpd-alt-php83___lsphp .php», hace que
+  esta carpeta use PHP 8.3: sin ella el hosting usa PHP 8.1 y la API da 500.
+  No la borres al editarlo.
 
 CÓMO SUBIRLO
 1. Respalda /public_html/rrhh.

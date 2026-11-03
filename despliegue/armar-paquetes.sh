@@ -61,6 +61,8 @@ cp -r "$TMP/angular-build/browser/." "$A/"
 cp "$RAIZ/despliegue/rrhh/index.php" "$RAIZ/despliegue/rrhh/.htaccess" "$A/"
 sed -e "s/{COMMIT}/$COMMIT/" -e "s/{FECHA}/$FECHA/" "$RAIZ/despliegue/LEEME-angular.txt" | sed 's/$/\r/' > "$A/LEEME.txt"
 grep -q '<base href="/rrhh/">' "$A/index.html" || { echo "ERROR: el index.html no tiene base /rrhh/."; exit 1; }
+# Sin el AddHandler de PHP 8.3, el hosting sirve /rrhh con PHP 8.1 y la API da 500.
+grep -q '^AddHandler application/x-httpd-alt-php83___lsphp .php' "$A/.htaccess" || { echo "ERROR: el .htaccess no trae el AddHandler de PHP 8.3."; exit 1; }
 rm -f "$SALIDA/angular-rrhh.zip"
 python "$RAIZ/despliegue/comprimir.py" "$A" "$SALIDA/angular-rrhh.zip"
 

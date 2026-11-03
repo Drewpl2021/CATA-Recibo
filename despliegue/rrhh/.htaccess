@@ -2,6 +2,12 @@
 #   /rrhh/api/…  →  index.php (el puente al backend Laravel en /apps/rrhh_backend)
 #   lo demás     →  la aplicación Angular (index.html)
 
+# PHP 8.3 para esta carpeta (el puente carga Laravel, que pide 8.3 o más).
+# Sin esta línea el hosting usa PHP 8.1 y todo /rrhh/api responde 500. La
+# pone cPanel (MultiPHP) en el .htaccess del servidor, y se perdía al
+# reemplazarlo por el del zip: por eso viaja aquí.
+AddHandler application/x-httpd-alt-php83___lsphp .php
+
 Options -MultiViews -Indexes
 
 # La portada de la carpeta es el Angular, no el puente.
