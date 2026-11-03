@@ -65,13 +65,15 @@ class EmpleadoController extends Controller
          */
         $ordenado = $paraSelector
             ? $query->orderBy('apellido')->orderBy('nombre')
-            : $query->orderByDesc('created_at')->orderByDesc('id');
+            // Primero quienes trabajan hoy: importar cesados no debe dejarlos arriba.
+            : $query->orderByRaw("CASE WHEN empleados.estado = 'activo' THEN 0 ELSE 1 END")
+                ->orderByDesc('created_at')->orderByDesc('id');
 
         // Los filtros de la tabla: área, sede, cargo, contrato, pensión y,
         // para la pantalla de boletas, cómo va la del mes.
         $this->aplicarFiltrosDePersonal($request, $ordenado);
 
-        // El botón «Ordenar»: sin él, lo último registrado arriba.
+        // El botón «Ordenar»: sin él, los activos y lo último registrado arriba.
         $this->aplicarOrden($request, $ordenado, [
             'apellido'      => fn (Builder $q) => $q->orderBy('empleados.apellido')->orderBy('empleados.nombre'),
             'apellido_desc' => fn (Builder $q) => $q->orderByDesc('empleados.apellido')->orderByDesc('empleados.nombre'),
