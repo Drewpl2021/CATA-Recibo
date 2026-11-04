@@ -71,6 +71,7 @@ class CtsController extends Controller
 
         return response()->json(['success' => true, 'data' => [
             'anio'    => $anio,
+            'anios'   => \App\Support\AniosConDatos::cts($anio),
             'periodo' => $periodo,
             'desde'   => $semestre['desde']->toDateString(),
             'hasta'   => $semestre['hasta']->toDateString(),

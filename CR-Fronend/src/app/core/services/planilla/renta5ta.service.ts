@@ -48,6 +48,8 @@ export type MetodoRenta5ta = 'sunat' | 'rrhh';
 
 export interface ListaRenta5ta {
   anio: number;
+  /** Los años del filtro: los que tienen datos, más el actual. */
+  anios: number[];
   mes: number;
   metodo: MetodoRenta5ta;
   uit: number;

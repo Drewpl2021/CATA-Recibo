@@ -6,7 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../../core/services';
 import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { CargaHistorial5ta, FilaRenta5ta, ListaRenta5ta, Renta5taService } from '../../../core/services/planilla/renta5ta.service';
-import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
+import { anioDeLaDireccion, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { MESES_OPCIONES, nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
@@ -45,10 +45,10 @@ export class Renta5taListComponent implements OnInit {
   private router = inject(Router);
   private ruta = inject(ActivatedRoute);
 
-  readonly anioActual = new Date().getFullYear();
-  readonly anios = [this.anioActual, this.anioActual - 1, this.anioActual - 2];
   readonly meses = MESES_OPCIONES;
-  anio = this.anioActual;
+  anio = new Date().getFullYear();
+  /** Los años con datos, más el actual: los manda el servidor. */
+  anios: number[] = [this.anio];
   /** null hasta la primera carga: el servidor elige el mes en curso. */
   mes: number | null = null;
 
@@ -159,9 +159,12 @@ export class Renta5taListComponent implements OnInit {
   ngOnInit(): void {
     // Al volver de la hoja de alguien, la lista sigue en el año y mes que se miraban.
     const params = this.ruta.snapshot.queryParamMap;
-    const anio = Number(params.get('anio'));
+    const anio = anioDeLaDireccion(params.get('anio'));
     const mes = Number(params.get('mes'));
-    if (this.anios.includes(anio)) this.anio = anio;
+    if (anio) {
+      this.anio = anio;
+      this.anios = [anio];
+    }
     if (mes >= 1 && mes <= 12) this.mes = mes;
     this.cargar();
   }
@@ -179,6 +182,7 @@ export class Renta5taListComponent implements OnInit {
         this.cargando = false;
         if (!res.success) return;
         this.datos = res.data;
+        this.anios = res.data.anios;
         this.mes = res.data.mes;
         this.armarColumnas();
         this.ponerOpcionesDeFiltro();

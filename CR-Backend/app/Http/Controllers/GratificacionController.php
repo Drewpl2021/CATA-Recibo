@@ -90,6 +90,7 @@ class GratificacionController extends Controller
 
         return response()->json(['success' => true, 'data' => [
             'anio'    => $anio,
+            'anios'   => \App\Support\AniosConDatos::gratificaciones($anio),
             'periodo' => $periodo,
             'desde'   => $semestre['desde']->toDateString(),
             'hasta'   => $semestre['hasta']->toDateString(),

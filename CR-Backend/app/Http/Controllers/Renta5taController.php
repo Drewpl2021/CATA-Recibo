@@ -66,6 +66,7 @@ class Renta5taController extends Controller
 
         return response()->json(['success' => true, 'data' => [
             'anio'      => $anio,
+            'anios'     => \App\Support\AniosConDatos::renta5ta($anio),
             'mes'       => $mes,
             'metodo'    => MetodoRenta5ta::comoHojaDeRrhh() ? 'rrhh' : 'sunat',
             'uit'       => (float) \App\Models\ValorLegal::delAnio($anio)->uit,

@@ -63,6 +63,8 @@ export interface FilaGratificacion {
 
 export interface ListaGratificacion {
   anio: number;
+  /** Los años del filtro: los que tienen datos, más el actual. */
+  anios: number[];
   periodo: PeriodoGratificacion;
   desde: string;
   hasta: string;

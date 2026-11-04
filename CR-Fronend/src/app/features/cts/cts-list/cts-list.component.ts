@@ -7,7 +7,7 @@ import { Subscription } from 'rxjs';
 import { ConfirmService, ToastService } from '../../../core/services';
 import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { CtsService, EstadoCts, FilaCts, HistorialCts, ListaCts, MesHistorialCts, PeriodoCts } from '../../../core/services/planilla/cts.service';
-import { fechaDeDia, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
+import { anioDeLaDireccion, fechaDeDia, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
@@ -146,8 +146,8 @@ export class CtsListComponent implements OnInit {
     this.location.replaceState(url.toString());
   }
 
-  readonly anioActual = new Date().getFullYear();
-  readonly anios = [this.anioActual + 1, this.anioActual, this.anioActual - 1, this.anioActual - 2];
+  /** Los años con datos, más el actual: los manda el servidor. */
+  anios: number[] = [];
   readonly periodos: { valor: PeriodoCts; titulo: string; detalle: string }[] = [
     { valor: 'mayo', titulo: 'Mayo', detalle: 'noviembre – abril' },
     { valor: 'noviembre', titulo: 'Noviembre', detalle: 'mayo – octubre' },
@@ -201,9 +201,8 @@ export class CtsListComponent implements OnInit {
   ngOnInit(): void {
     // Al volver a la pantalla, sigue en el depósito que se miraba.
     const params = this.ruta.snapshot.queryParamMap;
-    const anio = Number(params.get('anio'));
     const periodo = params.get('periodo');
-    if (this.anios.includes(anio)) this.anio = anio;
+    this.anio = anioDeLaDireccion(params.get('anio'));
     if (periodo === 'mayo' || periodo === 'noviembre') this.periodo = periodo;
     this.cargar();
   }
@@ -282,6 +281,7 @@ export class CtsListComponent implements OnInit {
 
   private mostrar(datos: ListaCts): void {
     this.datos = datos;
+    this.anios = datos.anios;
     this.anio = datos.anio;
     this.periodo = datos.periodo;
     this.ponerEnLaDireccion();

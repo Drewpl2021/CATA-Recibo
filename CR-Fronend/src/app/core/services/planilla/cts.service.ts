@@ -61,6 +61,8 @@ export interface FilaCts {
 
 export interface ListaCts {
   anio: number;
+  /** Los años del filtro: los que tienen datos, más el actual. */
+  anios: number[];
   periodo: PeriodoCts;
   desde: string;
   hasta: string;

@@ -9,7 +9,7 @@ import {
   EstadoGratificacion, FilaGratificacion, GratificacionService, HistorialGratificacion, ListaGratificacion,
   MesGratificacion, PeriodoGratificacion,
 } from '../../../core/services/planilla/gratificacion.service';
-import { fechaDeDia, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
+import { anioDeLaDireccion, fechaDeDia, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
@@ -110,8 +110,8 @@ export class GratificacionesListComponent implements OnInit {
     this.location.replaceState(url.toString());
   }
 
-  readonly anioActual = new Date().getFullYear();
-  readonly anios = [this.anioActual, this.anioActual - 1, this.anioActual - 2];
+  /** Los años con datos, más el actual: los manda el servidor. */
+  anios: number[] = [];
   readonly periodos: { valor: PeriodoGratificacion; titulo: string; detalle: string }[] = [
     { valor: 'julio', titulo: 'Julio', detalle: 'Fiestas Patrias · enero – junio' },
     { valor: 'diciembre', titulo: 'Diciembre', detalle: 'Navidad · julio – diciembre' },
@@ -168,9 +168,8 @@ export class GratificacionesListComponent implements OnInit {
 
   ngOnInit(): void {
     const params = this.ruta.snapshot.queryParamMap;
-    const anio = Number(params.get('anio'));
     const periodo = params.get('periodo');
-    if (this.anios.includes(anio)) this.anio = anio;
+    this.anio = anioDeLaDireccion(params.get('anio'));
     if (periodo === 'julio' || periodo === 'diciembre') this.periodo = periodo;
     this.cargar();
   }
@@ -249,6 +248,7 @@ export class GratificacionesListComponent implements OnInit {
 
   private mostrar(datos: ListaGratificacion): void {
     this.datos = datos;
+    this.anios = datos.anios;
     this.anio = datos.anio;
     this.periodo = datos.periodo;
     this.ponerEnLaDireccion();
