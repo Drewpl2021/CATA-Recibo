@@ -84,20 +84,38 @@ class ModuloController extends Controller
     }
 
     /**
-     * Asigna o reemplaza los roles que pueden VER este módulo en el sidebar (mis-modulos).
-     * Esto NO otorga permisos reales sobre los endpoints del módulo: el acceso a las
-     * rutas sigue controlado aparte por el middleware `rol:` en routes/api.php.
+     * Deja la lista de roles que tienen este módulo: es a la vez su menú y su
+     * permiso real (ver App\Support\Permisos), así que pasa por las mismas
+     * reglas que dar o quitar un módulo desde Roles.
      */
     public function asignarRoles(Request $request, string $id)
     {
-        $modulo = Modulo::findOrFail($id);
-
-        $request->validate([
-            'roles'   => 'required|array',
+        $datos = $request->validate([
+            'roles'   => 'present|array',
             'roles.*' => 'uuid|exists:roles,id|distinct',
         ]);
 
-        $modulo->roles()->sync($request->roles);
+        $modulo = Modulo::with('roles')->findOrFail($id);
+
+        $antes = $modulo->roles->pluck('id')->map(fn ($r) => (string) $r)->all();
+        $ahora = array_map('strval', $datos['roles']);
+        $cambian = [
+            ...array_map(fn ($rol) => [$rol, true], array_diff($ahora, $antes)),
+            ...array_map(fn ($rol) => [$rol, false], array_diff($antes, $ahora)),
+        ];
+        foreach ($cambian as [$rolId, $activo]) {
+            $motivo = \App\Support\Permisos::porQueNoPuedeCambiar($request->user(), \App\Models\Rol::findOrFail($rolId), $modulo, $activo);
+            if ($motivo) {
+                return response()->json(['success' => false, 'message' => $motivo], 403);
+            }
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($modulo, $ahora, $cambian) {
+            $modulo->roles()->sync($ahora);
+            if ($cambian) {
+                \App\Models\Auditoria::registrar('cambió', 'modulo', (string) $modulo->id, "Cambió los roles que tienen el módulo {$modulo->nombre}.");
+            }
+        });
         \App\Support\Permisos::refrescar();
 
         return response()->json([

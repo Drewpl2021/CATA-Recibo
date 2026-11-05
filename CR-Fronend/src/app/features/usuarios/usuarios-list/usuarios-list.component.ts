@@ -6,37 +6,41 @@ import { forkJoin } from 'rxjs';
 import {
   UsuarioService,
   RolService,
+  ModuloService,
   EmpleadoService,
   AuthService,
   ToastService,
   ConfirmService,
 } from '../../../core/services';
-import { Empleado, Rol, Usuario } from '../../../core/models';
+import { Empleado, ModuloAdmin, Rol, Usuario } from '../../../core/models';
 import { fechaLegible, mensajeErrorApi } from '../../../core/utils';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { etiquetaRol, ROL_ADMIN } from '../../../shared/constants';
+import { etiquetaRol } from '../../../shared/constants';
 
 /**
  * Cuentas de acceso al sistema (solo Admin).
  *
- * Acá NO se crean usuarios: nacen cuando alguien se registra o cuando se da
- * de alta un empleado. Desde esta pantalla se administran los que ya existen:
- * su nombre, su correo, el ROL que decide a qué entra, y a qué EMPLEADO está
- * vinculada la cuenta (ese vínculo es el que permite ver sus propias boletas).
+ * Acá NO se crean usuarios: nacen al dar de alta a un empleado. Desde esta
+ * pantalla se administran los que ya existen: su nombre, su correo, el ROL que
+ * decide a qué entra, y a qué EMPLEADO está vinculada la cuenta (ese vínculo es
+ * el que permite ver sus propias boletas).
  *
- * Dar de baja no borra: desactiva la cuenta y le cierra las sesiones abiertas,
- * y se puede volver a activar.
+ * El rol y el estado se cambian en la misma fila, si quien mira es
+ * Administrador. Dar de baja no borra: desactiva la cuenta y le cierra las
+ * sesiones abiertas, y se puede volver a activar.
  */
 import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
 import { FotoDeCuenta } from '../../../shared/components/avatar/avatar.component';
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 @Component({
   selector: 'app-usuarios-list',
   standalone: true,
-  imports: [CeldaTablaDirective, AvatarComponent, 
+  imports: [CeldaTablaDirective, AvatarComponent, FiltrosComponent,
     ReactiveFormsModule,
     PageHeaderComponent,
     DataTableComponent,
@@ -45,9 +49,12 @@ import { FotoDeCuenta } from '../../../shared/components/avatar/avatar.component
   templateUrl: './usuarios-list.component.html',
 })
 export class UsuariosListComponent implements OnInit {
+  readonly etiquetaRol = etiquetaRol;
+
   private fb = inject(FormBuilder);
   private usuarioService = inject(UsuarioService);
   private rolService = inject(RolService);
+  private moduloService = inject(ModuloService);
   private empleadoService = inject(EmpleadoService);
   private authService = inject(AuthService);
   private toastService = inject(ToastService);
@@ -56,6 +63,24 @@ export class UsuariosListComponent implements OnInit {
   usuarios: Usuario[] = [];
   roles: Rol[] = [];
   empleados: Empleado[] = [];
+  private modulos: ModuloAdmin[] = [];
+
+  /** Cambiar rol, ficha y estado es solo del Administrador; el servidor lo exige igual. */
+  readonly esAdministrador = this.authService.esSuperadmin();
+
+  filtros: ValoresFiltro = {};
+  camposFiltro: CampoFiltro[] = [
+    { clave: 'rol_id', etiqueta: 'Rol', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+    ...(this.esAdministrador ? [{
+      clave: 'estado_registro', etiqueta: 'Estado', tipo: 'opciones' as const, vacio: 'Todos',
+      opciones: [{ valor: 'activo', etiqueta: 'Activos' }, { valor: 'inactivo', etiqueta: 'De baja' }],
+    }] : []),
+  ];
+
+  /** Lo que tendrá con el rol elegido en el formulario. */
+  modulosDelRolElegido: string[] = [];
+  /** Cuentas cuya fila está guardando un cambio. */
+  private filasOcupadas = new Set<number>();
 
   cargando = false;
 
@@ -82,28 +107,23 @@ export class UsuariosListComponent implements OnInit {
   usuarioEditando: Usuario | null = null;
 
   columnas: ColumnaTabla<Usuario>[] = [
-    { campo: 'name', header: 'Nombre', ancho: '22%' },
-    { campo: 'email', header: 'Correo', ancho: '26%', romperTexto: true },
+    // El correo va debajo del nombre: en su propia columna se partía a media palabra.
+    { campo: 'name', header: 'Nombre y correo', ancho: '30%' },
     {
       campo: 'rol',
       header: 'Rol',
-      ancho: '14%',
-      tipo: 'badge',
-      formatear: (valor) => etiquetaRol(valor),
-      badgeSeveridad: (valor) => (this.nombreRol(valor) === ROL_ADMIN ? 'warning' : 'info'),
+      ancho: '16%',
     },
     {
       campo: 'empleado_id',
       header: 'Empleado vinculado',
+      ancho: '16%',
       formatear: (_v, fila) => this.nombreEmpleadoDe(fila),
     },
     {
       campo: 'estado_registro',
       header: 'Estado',
       ancho: '12%',
-      tipo: 'badge',
-      formatear: (valor) => (valor === 'inactivo' ? 'Inactivo' : 'Activo'),
-      badgeSeveridad: (valor) => (valor === 'inactivo' ? 'secondary' : 'success'),
     },
     {
       // La columna que antes era una hoja de Excel con las firmas: quién
@@ -111,7 +131,7 @@ export class UsuariosListComponent implements OnInit {
       // con un papel para saberlo.
       campo: 'terminos_estado',
       header: 'Términos',
-      ancho: '12%',
+      ancho: '10%',
       tipo: 'badge',
       formatear: (valor, fila) => this.etiquetaTerminos(valor, fila),
       badgeSeveridad: (valor) => {
@@ -144,14 +164,6 @@ export class UsuariosListComponent implements OnInit {
       severidad: 'warning',
       // En la cuenta propia no: cerraría la sesión con la que se trabaja.
       visible: (u) => !this.esMiCuenta(u) && u.estado_registro !== 'inactivo',
-    },
-    /** Reactivar solo aparece en las cuentas dadas de baja. */
-    {
-      id: 'reactivar',
-      titulo: 'Volver a activar esta cuenta',
-      icono: 'shield',
-      severidad: 'success',
-      visible: (u) => u.estado_registro === 'inactivo',
     },
   ];
 
@@ -226,19 +238,142 @@ export class UsuariosListComponent implements OnInit {
       empleados: this.empleadoService.paraSelector(),
     }).subscribe({
       next: ({ roles, empleados }) => {
-        if (roles.success) this.roles = roles.data;
+        if (roles.success) {
+          this.roles = roles.data;
+          this.camposFiltro = this.camposFiltro.map((c) => c.clave === 'rol_id'
+            ? { ...c, opciones: roles.data.map((r) => ({ valor: r.id, etiqueta: etiquetaRol(r) })) }
+            : c);
+        }
         if (empleados.success) this.empleados = empleados.data;
       },
       error: (err) => {
         this.toastService.error('Error', mensajeErrorApi(err, 'No se pudieron cargar los roles y empleados.'));
       },
     });
+
+    // Para enseñar qué tendrá cada rol. Sin permiso para leerlos, simplemente no se enseña.
+    if (this.authService.puede('/roles', '/modulos', '/modulos-padre')) {
+      this.moduloService.getAll().subscribe({
+        next: (res) => { if (res.success) this.modulos = res.data; },
+        error: () => {},
+      });
+    }
+  }
+
+  alFiltrar(): void {
+    this.pagina = 0;
+    this.cargar();
+  }
+
+  rolIdDe(usuario: Usuario): string {
+    return usuario.rol_id ?? this.roles.find((r) => r.nombre === this.nombreRol(usuario.rol))?.id ?? '';
+  }
+
+  estaOcupada(usuario: Usuario): boolean {
+    return this.filasOcupadas.has(usuario.id);
+  }
+
+  /** Los módulos de ese rol, para decir antes de guardar qué tendrá la persona. */
+  private modulosDeRol(rolId: string): string[] {
+    return this.modulos.filter((m) => m.roles?.some((r) => r.id === rolId)).map((m) => m.nombre);
+  }
+
+  alElegirRolEnFormulario(): void {
+    this.modulosDelRolElegido = this.modulosDeRol(this.form.get('rol_id')?.value ?? '');
+  }
+
+  /** Cambia el rol desde la fila. Dar permisos pide confirmar; si no, vuelve como estaba. */
+  cambiarRolEnFila(usuario: Usuario, control: HTMLSelectElement): void {
+    const anterior = this.rolIdDe(usuario);
+    const rol = this.roles.find((r) => r.id === control.value);
+    if (!rol || rol.id === anterior) return;
+
+    const cuantos = this.modulosDeRol(rol.id).length;
+    this.confirmService
+      .confirmar({
+        titulo: 'Cambiar el rol',
+        mensaje: rol.es_superadmin
+          ? `"${usuario.name}" será Administrador y podrá entrar a todo el sistema. ¿Seguimos?`
+          : `"${usuario.name}" pasará a ${etiquetaRol(rol)}, con ${cuantos} módulo(s). ¿Seguimos?`,
+        aceptarTexto: 'Sí, cambiar',
+        variante: 'default',
+      })
+      .then((aceptado) => {
+        if (!aceptado) {
+          control.value = anterior;
+          return;
+        }
+        this.filasOcupadas.add(usuario.id);
+        this.usuarioService.update(usuario.id, { rol_id: rol.id }).subscribe({
+          next: () => {
+            this.filasOcupadas.delete(usuario.id);
+            usuario.rol_id = rol.id;
+            usuario.rol = rol;
+            this.toastService.success('Rol cambiado', `"${usuario.name}" ahora es ${etiquetaRol(rol)}.`);
+          },
+          error: (err) => {
+            this.filasOcupadas.delete(usuario.id);
+            control.value = anterior;
+            this.toastService.error('No se cambió', mensajeErrorApi(err, 'No se pudo cambiar el rol.'));
+          },
+        });
+      });
+  }
+
+  /** Enciende o apaga la cuenta desde la fila. */
+  cambiarEstadoEnFila(usuario: Usuario, control: HTMLInputElement): void {
+    const activar = control.checked;
+    const volver = () => { control.checked = !activar; };
+
+    if (activar) {
+      this.filasOcupadas.add(usuario.id);
+      this.usuarioService.update(usuario.id, { estado_registro: 'activo' }).subscribe({
+        next: () => {
+          this.filasOcupadas.delete(usuario.id);
+          this.toastService.success('Cuenta activada', `"${usuario.name}" ya puede volver a entrar.`);
+          this.cargar();
+        },
+        error: (err) => {
+          this.filasOcupadas.delete(usuario.id);
+          volver();
+          this.toastService.error('No se activó', mensajeErrorApi(err, 'No se pudo activar la cuenta.'));
+        },
+      });
+      return;
+    }
+
+    this.confirmService
+      .confirmar({
+        titulo: 'Desactivar la cuenta',
+        mensaje: `"${usuario.name}" no podrá entrar y se le cerrarán las sesiones abiertas. Podrás volver a activarla. ¿Seguimos?`,
+        aceptarTexto: 'Sí, desactivar',
+        variante: 'danger',
+      })
+      .then((aceptado) => {
+        if (!aceptado) {
+          volver();
+          return;
+        }
+        this.filasOcupadas.add(usuario.id);
+        this.usuarioService.delete(usuario.id).subscribe({
+          next: () => {
+            this.filasOcupadas.delete(usuario.id);
+            this.toastService.success('Cuenta desactivada', `"${usuario.name}" ya no puede entrar al sistema.`);
+            this.cargar();
+          },
+          error: (err) => {
+            this.filasOcupadas.delete(usuario.id);
+            volver();
+            this.toastService.error('No se desactivó', mensajeErrorApi(err, 'No se pudo desactivar la cuenta.'));
+          },
+        });
+      });
   }
 
   cargar(): void {
     this.cargando = true;
     this.usuarioService
-      .getPagina({ page: this.pagina, size: this.TAMANO_PAGINA, search: this.busqueda || undefined })
+      .getPagina({ page: this.pagina, size: this.TAMANO_PAGINA, search: this.busqueda || undefined, ...this.filtros })
       .subscribe({
         next: (res) => {
           if (res.success) {
@@ -258,16 +393,17 @@ export class UsuariosListComponent implements OnInit {
 
   editar(usuario: Usuario): void {
     this.usuarioEditando = usuario;
-    // rol_id no siempre viene suelto; si falta, se deduce del rol incluido.
-    const rolId = usuario.rol_id
-      ?? this.roles.find((r) => r.nombre === this.nombreRol(usuario.rol))?.id
-      ?? '';
     this.form.patchValue({
       name: usuario.name,
       email: usuario.email,
-      rol_id: rolId,
+      // rol_id no siempre viene suelto; si falta, se deduce del rol incluido.
+      rol_id: this.rolIdDe(usuario),
       empleado_id: usuario.empleado_id ?? '',
     });
+    // Solo el Administrador los cambia: así no se ofrece lo que el servidor rechazaría.
+    const controles = [this.form.get('rol_id')!, this.form.get('empleado_id')!];
+    controles.forEach((c) => (this.esAdministrador ? c.enable() : c.disable()));
+    this.alElegirRolEnFormulario();
     this.modalVisible = true;
   }
 
@@ -332,18 +468,6 @@ export class UsuariosListComponent implements OnInit {
     );
   }
 
-  reactivar(usuario: Usuario): void {
-    this.usuarioService.update(usuario.id, { estado_registro: 'activo' }).subscribe({
-      next: () => {
-        this.toastService.success('Cuenta reactivada', `"${usuario.name}" ya puede volver a entrar.`);
-        this.cargar();
-      },
-      error: (err) => {
-        this.toastService.error('Error', mensajeErrorApi(err, 'No se pudo reactivar la cuenta.'));
-      },
-    });
-  }
-
   /**
    * Le repone la contraseña a alguien que se quedó fuera.
    *
@@ -394,7 +518,6 @@ export class UsuariosListComponent implements OnInit {
   }
 
   alAccionar(evento: { accion: string; fila: Usuario }): void {
-    if (evento.accion === 'reactivar') this.reactivar(evento.fila);
     if (evento.accion === 'restablecer') this.restablecer(evento.fila);
   }
 

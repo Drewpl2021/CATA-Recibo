@@ -24,19 +24,47 @@
   (eliminarFila)="desactivar($event)"
   (accionPersonalizada)="alAccionar($event)"
 >
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros" (cambio)="alFiltrar()"></app-filtros>
+
   <ng-template appCelda="name" let-f>
     <div class="celda-persona">
       <app-avatar [foto]="fotoDe(f)" [nombre]="f.name"></app-avatar>
-      <span class="celda-persona__texto">{{ f.name }}</span>
+      <span class="celda-persona__texto">
+        {{ f.name }}
+        <small class="celda-persona__correo">{{ f.email }}</small>
+      </span>
     </div>
+  </ng-template>
+
+  <ng-template appCelda="rol" let-f>
+    @if (esAdministrador && !esMiCuenta(f)) {
+      <select #rolDeFila class="form-control celda-control" [value]="rolIdDe(f)" [disabled]="estaOcupada(f)"
+        [attr.aria-label]="'Rol de ' + f.name" (change)="cambiarRolEnFila(f, rolDeFila)">
+        @for (r of roles; track r.id) {
+          <option [value]="r.id" [selected]="r.id === rolIdDe(f)">{{ etiquetaRol(r) }}</option>
+        }
+      </select>
+    } @else {
+      {{ etiquetaRol(f.rol) }}
+    }
+  </ng-template>
+
+  <ng-template appCelda="estado_registro" let-f>
+    @if (esAdministrador && !esMiCuenta(f)) {
+      <label class="interruptor">
+        <input #estadoDeFila type="checkbox" role="switch" [checked]="f.estado_registro !== 'inactivo'" [disabled]="estaOcupada(f)"
+          [attr.aria-label]="'Cuenta de ' + f.name + ' activa'" (change)="cambiarEstadoEnFila(f, estadoDeFila)" />
+        {{ f.estado_registro === 'inactivo' ? 'De baja' : 'Activa' }}
+      </label>
+    } @else {
+      {{ f.estado_registro === 'inactivo' ? 'De baja' : 'Activa' }}
+    }
   </ng-template>
 </app-data-table>
 
-<p class="form-nota" style="margin-top: 16px;">
-  Las cuentas no se crean desde aquí: nacen cuando alguien se registra o cuando
-  das de alta un empleado. Lo que sí se decide acá es el <strong>rol</strong>
-  (a qué puede entrar) y el <strong>empleado vinculado</strong> (de quién son
-  las boletas que verá).
+<p class="form-nota nota-bajo-tabla">
+  Las cuentas nacen al dar de alta a un empleado. Aquí se decide el <strong>rol</strong>
+  (a qué puede entrar) y el <strong>empleado vinculado</strong> (de quién son las boletas que verá).
 </p>
 
 <app-form-modal
@@ -70,19 +98,26 @@
         <div class="form-group">
           <label for="rol_id">Rol *</label>
           <select id="rol_id" class="form-control" formControlName="rol_id"
-            [class.is-invalid]="invalido('rol_id')">
+            [class.is-invalid]="invalido('rol_id')" (change)="alElegirRolEnFormulario()">
             <option value="">— Elige un rol —</option>
             @for (r of roles; track r.id) {
-              <option [value]="r.id">{{ r.nombre }}</option>
+              <option [value]="r.id">{{ etiquetaRol(r) }}</option>
             }
           </select>
           @if (invalido('rol_id')) {
             <small class="form-error">El usuario necesita un rol.</small>
           }
-          @if (!invalido('rol_id')) {
-            <small class="form-ayuda">
-              Decide qué módulos ve y a qué endpoints llega.
-            </small>
+          @if (!esAdministrador) {
+            <small class="form-ayuda">El rol y el empleado vinculado solo los cambia un Administrador.</small>
+          } @else if (modulosDelRolElegido.length) {
+            <small class="form-ayuda">Con este rol tendrá {{ modulosDelRolElegido.length }} módulo(s):</small>
+            <div class="chips-filtro chips-filtro--tabla">
+              @for (modulo of modulosDelRolElegido; track modulo) {
+                <span class="chip-filtro chip-filtro--solo-lectura">{{ modulo }}</span>
+              }
+            </div>
+          } @else if (form.get('rol_id')?.value) {
+            <small class="form-ayuda">Este rol todavía no tiene módulos: elígelos en Roles.</small>
           }
         </div>
 

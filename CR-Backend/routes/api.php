@@ -358,6 +358,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
 
     // ── Roles y módulos: el sistema de permisos mismo ──
     Route::apiResource('roles', RolController::class)->only(['store', 'update', 'destroy'])->middleware('permiso:/roles');
+    Route::put('roles/{id}/modules/{modulo}', [RolController::class, 'cambiarModulo'])->middleware('permiso:/roles');
     Route::middleware('permiso:/modulos,/modulos-padre,/roles')->group(function () {
         Route::apiResource('module-groups', ModuloPadreController::class)->only(['index', 'show']);
         Route::apiResource('modules', ModuloController::class)->only(['index', 'show']);

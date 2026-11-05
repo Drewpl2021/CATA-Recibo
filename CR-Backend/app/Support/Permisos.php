@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\Modulo;
+use App\Models\Rol;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
@@ -39,6 +41,35 @@ final class Permisos
     private const PROPIOS = ['/mis-boletas', '/mis-documentos', '/mis-vacaciones'];
 
     private const CLAVE_VERSION = 'permisos.version';
+
+    /** Sin estos en su menú, el superadministrador ya no llegaría a corregir nada. */
+    private const INTOCABLES_DEL_SUPERADMIN = ['/roles', '/modulos'];
+
+    /**
+     * Por qué no puede dar o quitar este módulo a este rol; null si puede.
+     *
+     * Dar módulos es dar permisos: nadie se los da a sí mismo, ni da lo que no
+     * tiene, ni toca el rol del superadministrador si no lo es.
+     */
+    public static function porQueNoPuedeCambiar(User $quien, Rol $rol, Modulo $modulo, bool $activo): ?string
+    {
+        if (self::esSuperadmin($quien)) {
+            return $rol->es_superadmin && ! $activo && in_array($modulo->ruta, self::INTOCABLES_DEL_SUPERADMIN, true)
+                ? "El Administrador necesita «{$modulo->nombre}» en su menú para poder corregir los permisos."
+                : null;
+        }
+        if ($rol->es_superadmin) {
+            return 'Solo un Administrador puede cambiar los permisos de este rol.';
+        }
+        if ((string) $quien->rol_id === (string) $rol->id) {
+            return 'No puedes cambiar los permisos de tu propio rol.';
+        }
+        if ($activo && $modulo->ruta && ! self::puede($quien, $modulo->ruta)) {
+            return "No puedes dar «{$modulo->nombre}» porque tu rol no lo tiene.";
+        }
+
+        return null;
+    }
 
     public static function esSuperadmin(?User $usuario): bool
     {

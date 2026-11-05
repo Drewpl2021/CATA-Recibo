@@ -19,6 +19,9 @@ import { FormModalComponent } from '../../../shared/components/form-modal/form-m
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { etiquetaRol } from '../../../shared/constants';
+import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
+import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
+import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 
 /**
  * Módulos = los ÍTEMS de la barra lateral (solo Admin).
@@ -28,7 +31,8 @@ import { etiquetaRol } from '../../../shared/constants';
  *   1. El módulo cuelga de un MÓDULO PADRE (el grupo donde saldrá).
  *   2. La RUTA es la de Angular a la que lleva el ítem ("/areas"). Si la
  *      pantalla todavía no existe en el front, el ítem no se muestra.
- *   3. Los ROLES marcados son los que verán el ítem en su barra lateral.
+ *   3. Los ROLES marcados lo tienen: es su menú y su permiso real. En la tabla
+ *      se dan y se quitan con un clic.
  *
  * Los roles NO son un campo del módulo: el backend los guarda aparte, en
  * POST /modulos/{id}/roles. Por eso guardar es en dos pasos — primero el
@@ -42,7 +46,9 @@ import { etiquetaRol } from '../../../shared/constants';
     PageHeaderComponent,
     DataTableComponent,
     FormModalComponent,
-    IconComponent
+    IconComponent,
+    CeldaTablaDirective,
+    FiltrosComponent
 ],
   templateUrl: './modulos-list.component.html',
 })
@@ -84,24 +90,31 @@ export class ModulosListComponent implements OnInit {
   /** Ids de los roles marcados en el formulario abierto. */
   rolesMarcados = new Set<string>();
 
+  filtros: ValoresFiltro = {};
+  camposFiltro: CampoFiltro[] = [
+    { clave: 'modulo_padre_id', etiqueta: 'Grupo', tipo: 'opciones', vacio: 'Todos', opciones: [] },
+  ];
+
+  /** «módulo|rol» de los cambios que están viajando, para no repetirlos. */
+  private guardandoEnFila = new Set<string>();
+
   iconos = CLAVES_ICONO;
 
   columnas: ColumnaTabla<ModuloAdmin>[] = [
-    { campo: 'nombre', header: 'Módulo', ancho: '20%' },
-    { campo: 'modulo_padre.nombre', header: 'Grupo', ancho: '18%' },
+    { campo: 'nombre', header: 'Módulo', ancho: '17%' },
+    { campo: 'modulo_padre.nombre', header: 'Grupo', ancho: '14%' },
     // Después de Grupo y no al principio: es el orden DENTRO de ese grupo
     // (la posición en el menú), así que se lee mejor pegado al grupo al
     // que pertenece. Se llama "Orden" y no "#" porque la numeración de
     // fila (app-data-table la trae por defecto) ya usa esa cabecera, y
     // dos columnas de "#" una al lado de la otra no había forma de
     // distinguirlas.
-    { campo: 'orden', header: 'Orden', ancho: '10%' },
-    { campo: 'ruta', header: 'Ruta', ancho: '18%' },
+    { campo: 'orden', header: 'Orden', ancho: '7%' },
+    { campo: 'ruta', header: 'Ruta', ancho: '13%' },
     {
       campo: 'roles',
-      header: 'Lo ven',
-      formatear: (roles: Rol[] | undefined) =>
-        roles?.length ? roles.map((r) => r.nombre).join(', ') : 'Nadie todavía',
+      header: 'Roles que lo tienen',
+      ancho: '32%',
     },
   ];
 
@@ -152,7 +165,13 @@ export class ModulosListComponent implements OnInit {
       roles: this.rolService.getAll(),
     }).subscribe({
       next: ({ padres, roles }) => {
-        if (padres.success) this.padres = padres.data;
+        if (padres.success) {
+          this.padres = padres.data;
+          this.camposFiltro = [{
+            ...this.camposFiltro[0],
+            opciones: padres.data.map((p) => ({ valor: p.id, etiqueta: p.nombre })),
+          }];
+        }
         if (roles.success) this.roles = roles.data;
       },
       error: (err) => {
@@ -164,7 +183,7 @@ export class ModulosListComponent implements OnInit {
   cargar(): void {
     this.cargando = true;
     this.moduloService
-      .getPagina({ page: this.pagina, size: this.TAMANO_PAGINA, search: this.busqueda || undefined })
+      .getPagina({ page: this.pagina, size: this.TAMANO_PAGINA, search: this.busqueda || undefined, ...this.filtros })
       .subscribe({
         next: (res) => {
           if (res.success) {
@@ -178,6 +197,35 @@ export class ModulosListComponent implements OnInit {
           this.cargando = false;
         },
       });
+  }
+
+  alFiltrar(): void {
+    this.pagina = 0;
+    this.cargar();
+  }
+
+  tieneElRol(modulo: ModuloAdmin, rol: Rol): boolean {
+    return !!modulo.roles?.some((r) => r.id === rol.id);
+  }
+
+  /** Se ve al instante; si el servidor lo rechaza, vuelve como estaba y dice por qué. */
+  alternarRolEnFila(modulo: ModuloAdmin, rol: Rol): void {
+    const clave = `${modulo.id}|${rol.id}`;
+    if (this.guardandoEnFila.has(clave)) return;
+
+    const antes = modulo.roles ?? [];
+    const activo = !this.tieneElRol(modulo, rol);
+    modulo.roles = activo ? [...antes, rol] : antes.filter((r) => r.id !== rol.id);
+    this.guardandoEnFila.add(clave);
+
+    this.rolService.cambiarModulo(rol.id, modulo.id, activo).subscribe({
+      next: () => this.guardandoEnFila.delete(clave),
+      error: (err) => {
+        this.guardandoEnFila.delete(clave);
+        modulo.roles = antes;
+        this.toastService.error('No se guardó', mensajeErrorApi(err, 'No se pudo cambiar el permiso.'));
+      },
+    });
   }
 
   alternarRol(rolId: string): void {
@@ -258,7 +306,7 @@ export class ModulosListComponent implements OnInit {
           this.toastService.success(
             this.moduloEditando ? 'Módulo actualizado' : 'Módulo creado',
             this.rolesMarcados.size
-              ? `Visible para ${this.rolesMarcados.size} rol(es). Deben volver a entrar para verlo.`
+              ? `Lo tienen ${this.rolesMarcados.size} rol(es). Lo verán en su menú al recargar la página.`
               : 'Guardado. Todavía no lo ve ningún rol: márcalos para que aparezca en su menú.'
           );
           this.cerrarModal();

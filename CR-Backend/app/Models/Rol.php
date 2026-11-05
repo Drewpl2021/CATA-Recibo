@@ -17,6 +17,11 @@ class Rol extends Model
         return $this->belongsToMany(Modulo::class, 'rol_modulo', 'rol_id', 'modulo_id');
     }
 
+    public function usuarios()
+    {
+        return $this->hasMany(User::class, 'rol_id');
+    }
+
     protected static function boot()
     {
         parent::boot();

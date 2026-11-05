@@ -22,10 +22,21 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        $filtros = $request->validate([
+            'rol_id'          => 'nullable|uuid',
+            'estado_registro' => 'nullable|in:activo,inactivo',
+        ]);
+
         $query = User::with('rol', 'empleado');
 
         if (! $request->user()->esSuperadmin()) {
             $query->where('estado_registro', 'activo');
+        } elseif (! empty($filtros['estado_registro'])) {
+            $query->where('estado_registro', $filtros['estado_registro']);
+        }
+
+        if (! empty($filtros['rol_id'])) {
+            $query->where('rol_id', $filtros['rol_id']);
         }
 
         return $this->responderListado(

@@ -1,7 +1,7 @@
 <app-page-header
   icono="view_module"
   titulo="Módulos"
-  subtitulo="Los ítems de la barra lateral: de qué grupo cuelgan, a dónde llevan y qué roles los ven."
+  subtitulo="Los ítems del menú y qué roles los tienen. Un clic en un rol se lo da o se lo quita."
   [cifras]="cifras"
   [cargandoCifras]="cargando"
   >
@@ -26,7 +26,20 @@
   mensajeVacio="Todavía no hay módulos."
   (editarFila)="editar($event)"
   (eliminarFila)="eliminar($event)"
-></app-data-table>
+>
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros" (cambio)="alFiltrar()"></app-filtros>
+
+  <ng-template appCelda="roles" let-m>
+    <div class="chips-filtro chips-filtro--tabla">
+      @for (rol of roles; track rol.id) {
+        <button type="button" class="chip-filtro" [class.chip-filtro--activo]="tieneElRol(m, rol)"
+          [attr.aria-pressed]="tieneElRol(m, rol)"
+          [attr.aria-label]="(tieneElRol(m, rol) ? 'Quitar ' : 'Dar ') + m.nombre + ' a ' + etiquetaRol(rol)"
+          (click)="alternarRolEnFila(m, rol)">{{ etiquetaRol(rol) }}</button>
+      }
+    </div>
+  </ng-template>
+</app-data-table>
 
 <app-form-modal
   [(visible)]="modalVisible"
@@ -102,7 +115,7 @@
     </div>
 
     <div class="form-group">
-      <label>¿Qué roles ven este módulo?</label>
+      <label>¿Qué roles tienen este módulo?</label>
       <div class="lista-checks">
         @for (rol of roles; track rol.id) {
           <label class="check-item">
@@ -115,8 +128,7 @@
         }
       </div>
       <small class="form-ayuda">
-        Esto decide solo lo que se <strong>ve</strong> en el menú. El permiso real
-        sobre cada endpoint lo sigue controlando el backend.
+        Es a la vez su menú y su <strong>permiso real</strong>: quien tiene el módulo puede entrar a él.
       </small>
     </div>
   </form>
