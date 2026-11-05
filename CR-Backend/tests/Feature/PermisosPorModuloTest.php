@@ -63,6 +63,16 @@ class PermisosPorModuloTest extends TestCase
         $this->actingAs($this->crearUsuario('portal-y-sedes'), 'sanctum')->getJson('/api/employees')->assertOk();
     }
 
+    public function test_la_guia_de_un_rol_solo_de_portal_web_es_la_de_su_cuenta(): void
+    {
+        $this->rolCon('portal', ['/portal-web']);
+        $editor = $this->crearUsuario('portal');
+
+        // Sin ficha de trabajador: ni boletas ni hoja de vida, solo su cuenta.
+        $claves = collect($this->actingAs($editor, 'sanctum')->getJson('/api/my-first-steps')->assertOk()->json('data.pasos'))->pluck('clave')->all();
+        $this->assertSame(['clave', 'terminos'], $claves);
+    }
+
     public function test_la_cuenta_de_portal_web_solo_la_cambia_el_superadministrador(): void
     {
         $this->rolCon('portal', ['/portal-web']);

@@ -35,10 +35,14 @@ class PrimerosPasosController extends Controller
         $usuario = $request->user();
         $rol     = $usuario->rol?->nombre;
 
-        // La guía de RR.HH. es para quien maneja algo más que su propio espacio.
-        $pasos = ! $usuario->puede(\App\Support\Permisos::GESTION)
-            ? $this->pasosDelTrabajador($usuario)
-            : $this->pasosDeRecursosHumanos($usuario);
+        // La guía de RR.HH. es para quien trabaja con el personal; la del
+        // trabajador, para quien tiene su ficha. Quien no es ninguno de los
+        // dos (un rol solo de Portal Web) solo deja su cuenta en orden.
+        $pasos = match (true) {
+            $usuario->puede(\App\Support\Permisos::GESTION) => $this->pasosDeRecursosHumanos($usuario),
+            $usuario->empleado_id !== null                   => $this->pasosDelTrabajador($usuario),
+            default                                          => $this->pasosDeLaCuenta($usuario),
+        };
 
         $hechos = count(array_filter($pasos, fn (array $p) => $p['hecho']));
 
@@ -125,6 +129,29 @@ class PrimerosPasosController extends Controller
                 'hoja_de_vida', 'Sube tu hoja de vida',
                 'Tu CV en PDF, para que el colegio lo tenga en tu expediente y no te lo pidan otra vez.',
                 'folder_shared', '/inicio/mis-documentos', (bool) $tieneHojaDeVida
+            ),
+        ];
+    }
+
+    /**
+     * Una cuenta sin ficha de trabajador y sin módulos del personal (por
+     * ejemplo, quien solo edita el Portal Web): no tiene boletas ni hoja de
+     * vida, solo su contraseña y los términos.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function pasosDeLaCuenta(User $usuario): array
+    {
+        return [
+            $this->paso(
+                'clave', 'Pon una contraseña tuya',
+                'La clave con la que entraste te la dio otra persona. Cámbiala por una que solo sepas tú.',
+                'lock', '/cambiar-clave', ! $usuario->debe_cambiar_password
+            ),
+            $this->paso(
+                'terminos', 'Firma los términos de uso',
+                'Dicen qué puedes hacer en el sistema y cómo se cuidan los datos del colegio.',
+                'signature', '/terminos', $usuario->terminosAlDia()
             ),
         ];
     }
