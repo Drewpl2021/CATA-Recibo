@@ -22,7 +22,7 @@ class User extends Authenticatable
      * El rol (quién puede ver qué), si la cuenta está activa, su correo y la
      * contraseña. De la contraseña se anota QUE cambió, nunca su valor.
      */
-    protected array $camposAuditables = ['email', 'rol_id', 'estado_registro', 'password'];
+    protected array $camposAuditables = ['email', 'rol_id', 'empleado_id', 'estado_registro', 'password'];
 
     protected array $camposSecretos = ['password'];
 
@@ -89,6 +89,17 @@ class User extends Authenticatable
     public function esSuperadmin(): bool
     {
         return \App\Support\Permisos::esSuperadmin($this);
+    }
+
+    /**
+     * Una cuenta que maneja algo más que su propio espacio solo la cambia el
+     * superadministrador: quien cambia un correo o repone una contraseña puede
+     * terminar entrando con esa cuenta.
+     */
+    public function protegidaPara(?User $quien): bool
+    {
+        return $this->puede(\App\Support\Permisos::GESTION)
+            && ! \App\Support\Permisos::esSuperadmin($quien);
     }
 
     /**

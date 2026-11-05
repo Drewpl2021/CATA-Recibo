@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Documento;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -132,10 +133,37 @@ final class ExpedienteDigital
             $tipo,
             now()->format('Ymd-His'),
             bin2hex(random_bytes(3)),
-            strtolower($archivo->getClientOriginalExtension())
+            self::extensionSegura($archivo)
         );
 
         Storage::disk('local')->put($ruta, file_get_contents($archivo->getRealPath()));
+
+        try {
+            return DB::transaction(fn () => self::registrar($empleadoId, $tipo, $archivo, $ruta, $extra));
+        } catch (\Throwable $e) {
+            // Sin documento que lo nombre, el archivo quedaría suelto para siempre.
+            Storage::disk('local')->delete($ruta);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * La validación mira el contenido, pero el nombre lo pone quien sube: un
+     * PDF llamado «x.html» pasaría. Una extensión que no sea de las permitidas
+     * se reemplaza por la del contenido.
+     */
+    private static function extensionSegura(UploadedFile $archivo): string
+    {
+        $delNombre = strtolower($archivo->getClientOriginalExtension());
+
+        return in_array($delNombre, ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'], true)
+            ? $delNombre
+            : ($archivo->guessExtension() ?: 'bin');
+    }
+
+    private static function registrar(string $empleadoId, string $tipo, UploadedFile $archivo, string $ruta, array $extra): Documento
+    {
 
         /*
          * La hoja de vida es una sola: la vigente.

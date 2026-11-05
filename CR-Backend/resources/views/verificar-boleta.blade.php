@@ -107,8 +107,16 @@
         <div class="estado estado--mal" role="status">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6m0-6 6 6"/></svg>
             <div>
-                No se pudo verificar
-                <small>El código no corresponde a ninguna boleta emitida por el colegio, o fue modificado.</small>
+                @if (($motivo ?? null) === 'anulada')
+                    Boleta sin validez
+                    <small>El colegio dio de baja esta boleta: ya no es un documento vigente.</small>
+                @elseif (($motivo ?? null) === 'en_firma')
+                    Boleta todavía sin validez
+                    <small>Le falta la firma digital del colegio: aún no se ha entregado.</small>
+                @else
+                    No se pudo verificar
+                    <small>El código no corresponde a ninguna boleta emitida por el colegio, o fue modificado.</small>
+                @endif
             </div>
         </div>
         <p class="pie" style="padding-top: 12px;">Si tienes la boleta en la mano, consulta con Recursos Humanos del colegio.</p>

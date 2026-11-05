@@ -334,15 +334,18 @@ class BoletasFirmadasController extends Controller
         $nombre = trim("{$documento->empleado?->apellido} {$documento->empleado?->nombre}");
         $numero = $documento->planilla?->numeroDeBoleta();
 
-        DB::transaction(function () use ($documento) {
-            foreach (array_filter([$documento->archivo, $documento->archivo_sin_firma]) as $archivo) {
-                Storage::disk('local')->delete($archivo);
-            }
+        $archivos = array_filter([$documento->archivo, $documento->archivo_sin_firma]);
+
+        DB::transaction(function () use ($documento, $id, $numero, $nombre) {
             Notificacion::where('documento_id', $documento->id)->delete();
             $documento->delete();
+            Auditoria::registrar('borró', 'boleta', $id, "Anuló la boleta {$numero} de {$nombre} para volver a emitirla.");
         });
 
-        Auditoria::registrar('borró', 'boleta', $id, "Anuló la boleta {$numero} de {$nombre} para volver a emitirla.");
+        // Al final: un archivo borrado no vuelve si la base falla.
+        foreach ($archivos as $archivo) {
+            Storage::disk('local')->delete($archivo);
+        }
 
         return response()->json(['success' => true, 'message' => "Boleta {$numero} anulada: ya puedes corregir su planilla y volver a emitirla."]);
     }

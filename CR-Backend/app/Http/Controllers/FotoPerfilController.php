@@ -53,8 +53,9 @@ class FotoPerfilController extends Controller
     {
         $usuario = $this->cuentaDelEmpleado($id);
 
-        $this->borrarArchivo($usuario->foto);
+        $anterior = $usuario->foto;
         $usuario->update(['foto' => null]);
+        $this->borrarArchivo($anterior);
 
         return response()->json(['success' => true, 'data' => ['foto' => null]]);
     }
@@ -93,13 +94,15 @@ class FotoPerfilController extends Controller
             $archivo->extension() ?: 'jpg'
         );
 
-        // La anterior se borra de verdad. Acá no hay historial que conservar
-        // —es la misma persona, solo que con otra foto— y guardarlas todas
-        // sería ir llenando el disco con caras repetidas.
-        $this->borrarArchivo($usuario->foto);
+        $anterior = $usuario->foto;
 
         Storage::disk('local')->put($ruta, file_get_contents($archivo->getRealPath()));
         $usuario->update(['foto' => $ruta]);
+
+        // La anterior se borra de verdad, y al final: si algo fallara antes,
+        // la persona se quedaría sin ninguna. Acá no hay historial que
+        // conservar: es la misma persona, solo que con otra foto.
+        $this->borrarArchivo($anterior);
 
         return $ruta;
     }
@@ -109,8 +112,9 @@ class FotoPerfilController extends Controller
     {
         $usuario = $request->user();
 
-        $this->borrarArchivo($usuario->foto);
+        $anterior = $usuario->foto;
         $usuario->update(['foto' => null]);
+        $this->borrarArchivo($anterior);
 
         return response()->json(['success' => true, 'data' => ['foto' => null]]);
     }

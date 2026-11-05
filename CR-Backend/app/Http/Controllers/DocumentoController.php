@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -63,17 +64,13 @@ class DocumentoController extends Controller
     public function store(Request $request)
     {
         $datos = $request->validate([
-            'empleado_id' => 'required|exists:empleados,id',
+            'empleado_id' => 'required|uuid|exists:empleados,id',
             'contrato_id' => 'nullable|uuid|exists:contratos,id',
             'tipo' => ['required', Rule::in(ExpedienteDigital::TIPOS)],
-            // Ruta relativa dentro de storage y nada más: sin "..", sin
-            // ruta absoluta y sin barras invertidas. Flysystem ya frena la
-            // travesía de directorios al descargar, pero aceptar la cadena
-            // dejaba el documento apuntando a un archivo que no existe y roto
-            // para siempre.
-            'archivo'     => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9._\/-]+$/', 'not_regex:/\.\./'],
+            'archivo'     => ['required', 'string', 'max:255'],
             'firmado_por' => 'nullable|string|max:120',
         ]);
+        $this->exigirArchivoDelEmpleado($datos['archivo'], (string) $datos['empleado_id']);
 
         if ($request->filled('contrato_id')) {
             $contrato = Contrato::findOrFail($request->contrato_id);
@@ -105,7 +102,33 @@ class DocumentoController extends Controller
             'estado_firma' => 'pendiente',
         ]));
 
+        \App\Models\Auditoria::registrar('creó', 'documento', (string) $documento->id, "Registró un documento ({$documento->tipo}) en el expediente de un trabajador.");
+
         return response()->json(['success' => true, 'data' => $documento], 201);
+    }
+
+    /**
+     * Un documento solo apunta a un archivo que existe en la carpeta de su
+     * trabajador. Con una ruta libre se podía abrir el archivo de cualquiera:
+     * bastaba registrar un documento propio que apuntara hacia él.
+     */
+    private function exigirArchivoDelEmpleado(string $ruta, string $empleadoId): void
+    {
+        $esSuyo = preg_match('/^[A-Za-z0-9._\/-]+$/', $ruta) === 1
+            && ! str_contains($ruta, '..')
+            && str_starts_with($ruta, "documentos/{$empleadoId}/");
+
+        if (! $esSuyo || ! Storage::disk('local')->exists($ruta)) {
+            throw ValidationException::withMessages([
+                'archivo' => ['Ese archivo no está en el expediente de este trabajador.'],
+            ]);
+        }
+    }
+
+    /** Lo firmado es la prueba de lo que se entregó: su archivo ya no se toca. */
+    private function estaCerrado(Documento $documento): bool
+    {
+        return $documento->estado_firma === 'firmado' || $documento->tieneFirmaDelColegio();
     }
 
     /**
@@ -187,14 +210,26 @@ class DocumentoController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $documento = Documento::findOrFail($id);
-
         $datos = $request->validate([
             'tipo'    => ['sometimes', Rule::in(ExpedienteDigital::TIPOS)],
-            'archivo' => ['sometimes', 'string', 'max:255', 'regex:/^[A-Za-z0-9._\/-]+$/', 'not_regex:/\.\./'],
+            'archivo' => ['sometimes', 'string', 'max:255'],
         ]);
 
-        $documento->update($datos);
+        $documento = Documento::findOrFail($id);
+
+        if ($this->estaCerrado($documento)) {
+            return response()->json(['success' => false, 'message' => 'Este documento ya está firmado: no se puede cambiar.'], 409);
+        }
+        if (isset($datos['archivo'])) {
+            $this->exigirArchivoDelEmpleado($datos['archivo'], (string) $documento->empleado_id);
+        }
+
+        $antes = $documento->only(array_keys($datos));
+        DB::transaction(function () use ($documento, $datos, $antes) {
+            $documento->update($datos);
+            \App\Models\Auditoria::registrar('cambió', 'documento', (string) $documento->id, "Cambió un documento ({$documento->tipo}) del expediente de un trabajador.",
+                array_map(fn ($campo) => [$antes[$campo] ?? null, $datos[$campo]], array_combine(array_keys($datos), array_keys($datos))));
+        });
 
         return response()->json(['success' => true, 'data' => $documento]);
     }
@@ -202,7 +237,15 @@ class DocumentoController extends Controller
     public function destroy(string $id)
     {
         $documento = Documento::findOrFail($id);
-        $documento->update(['estado_registro' => 'inactivo']);
+
+        if ($this->estaCerrado($documento)) {
+            return response()->json(['success' => false, 'message' => 'Este documento ya está firmado: no se puede eliminar.'], 409);
+        }
+
+        DB::transaction(function () use ($documento) {
+            $documento->update(['estado_registro' => 'inactivo']);
+            \App\Models\Auditoria::registrar('borró', 'documento', (string) $documento->id, "Dio de baja un documento ({$documento->tipo}) del expediente de un trabajador.");
+        });
 
         return response()->json(['success' => true, 'data' => ['message' => 'Documento eliminado correctamente.']]);
     }

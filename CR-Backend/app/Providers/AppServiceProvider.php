@@ -81,7 +81,12 @@ class AppServiceProvider extends ServiceProvider
     private function frenosDeLasPuertasAbiertas(): void
     {
         // Probar contraseñas a lo bruto contra /login.
-        RateLimiter::for('ingreso', fn (Request $peticion) => Limit::perMinute(8)->by($peticion->ip()));
+        // Por IP y también por cuenta: con muchas IP, el primero solo no frena
+        // a quien prueba claves contra un mismo correo.
+        RateLimiter::for('ingreso', fn (Request $peticion) => [
+            Limit::perMinute(8)->by($peticion->ip()),
+            Limit::perMinutes(15, 20)->by('correo:' . hash('sha256', mb_strtolower((string) $peticion->input('email')))),
+        ]);
 
         // Crear cuentas en masa desde el autoregistro.
         RateLimiter::for('registro', fn (Request $peticion) => Limit::perMinute(5)->by($peticion->ip()));

@@ -221,6 +221,16 @@ class VacacionController extends Controller
 
         $vacacion = Vacacion::findOrFail($id);
 
+        // Nadie resuelve lo suyo. El Administrador sí, porque no tiene quien lo
+        // resuelva por encima.
+        $quien = $request->user();
+        if ($quien->empleado_id && (string) $quien->empleado_id === (string) $vacacion->empleado_id && ! $quien->esSuperadmin()) {
+            return response()->json([
+                'success' => false,
+                'data'    => ['message' => 'No puedes resolver tu propia solicitud: la resuelve otra persona.'],
+            ], 403);
+        }
+
         if ($datos['estado'] === 'aprobado' && $vacacion->estado !== 'aprobado') {
             // También el derecho se revisa otra vez. Una solicitud puede haber
             // quedado pendiente desde antes de que se le cambiara el contrato;

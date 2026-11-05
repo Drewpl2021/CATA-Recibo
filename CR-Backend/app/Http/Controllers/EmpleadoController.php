@@ -728,9 +728,11 @@ class EmpleadoController extends Controller
         $omitidos = [];
         foreach ($empleados as $empleado) {
             $nombre = trim("{$empleado->apellido} {$empleado->nombre}");
-            $motivo = $empleado->usuario
-                ? \App\Support\AccesoPorCorreo::enviar($empleado->usuario)
-                : 'no tiene cuenta (le falta el correo en su ficha)';
+            $motivo = match (true) {
+                ! $empleado->usuario => 'no tiene cuenta (le falta el correo en su ficha)',
+                $empleado->cuentaProtegidaPara($request->user()) => 'su cuenta la gestiona un Administrador',
+                default => \App\Support\AccesoPorCorreo::enviar($empleado->usuario),
+            };
             if ($motivo === null) {
                 $enviados++;
             } else {
@@ -938,7 +940,6 @@ class EmpleadoController extends Controller
         if ((string) $request->user()?->empleado_id === (string) $empleado->id) {
             return response()->json(['success' => false, 'message' => 'No puedes darte de baja a ti mismo.'], 422);
         }
-
         $empleado->darDeBaja();
 
         return response()->json(['success' => true, 'data' => ['message' => 'Empleado desactivado correctamente.']]);
@@ -994,8 +995,7 @@ class EmpleadoController extends Controller
 
             $motivo = match (true) {
                 $empleado->estado === $estado => $estado === 'activo' ? 'Ya estaba activo.' : 'Ya estaba de baja.',
-                $estado === 'inactivo' && $propio === (string) $empleado->id => 'Es tu propia cuenta: no puedes darte de baja.',
-                $estado === 'inactivo' && $ingreso && $fechaBaja < $ingreso => 'La fecha de baja es anterior a su ingreso (' . \Carbon\Carbon::parse($ingreso)->format('d/m/Y') . ').',
+                $estado === 'inactivo' && $propio === (string) $empleado->id => 'Es tu propia cuenta: no puedes darte de baja.',                $estado === 'inactivo' && $ingreso && $fechaBaja < $ingreso => 'La fecha de baja es anterior a su ingreso (' . \Carbon\Carbon::parse($ingreso)->format('d/m/Y') . ').',
                 default => null,
             };
 

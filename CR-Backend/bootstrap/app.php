@@ -63,6 +63,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(CorsMiddleware::class);
         // Le pone un código a cada petición para poder seguirla en el registro.
         $middleware->append(RastroDePeticion::class);
+        $middleware->append(\App\Http\Middleware\CabecerasDeSeguridad::class);
         /*
          * Sin sesión, la API contesta 401 en JSON.
          *

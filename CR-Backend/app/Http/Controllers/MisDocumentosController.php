@@ -6,6 +6,7 @@ use App\Support\ExpedienteDigital;
 use App\Traits\ListadoPaginado;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
@@ -104,6 +105,7 @@ class MisDocumentosController extends Controller
         $empleado_id = $request->user()->empleado_id;
         $documento = Documento::where('id', $id)
             ->where('empleado_id', $empleado_id)
+            ->where('estado_registro', 'activo')
             ->firstOrFail();
 
         if (! ExpedienteDigital::seFirma($documento->tipo)) {
@@ -164,85 +166,89 @@ class MisDocumentosController extends Controller
         // Contraseña correcta: reinicia el contador
         Cache::forget($intentosKey);
 
-        $documento = Documento::where('id', $id)
-            ->where('empleado_id', $empleado_id)
-            ->firstOrFail();
+        // Todo junto y con candado: dos clics a la vez no firman dos veces, y si
+        // el PDF no se puede armar, el documento no queda firmado.
+        return DB::transaction(function () use ($request, $user, $id, $empleado_id) {
+            $documento = Documento::where('id', $id)
+                ->where('empleado_id', $empleado_id)
+                ->where('estado_registro', 'activo')
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        // Se revisa aquí y no solo escondiendo el botón: una pantalla no es
-        // una cerradura.
-        if (! ExpedienteDigital::seFirma($documento->tipo)) {
-            return response()->json([
-                'success' => false,
-                'message' => ExpedienteDigital::porQueNoSeFirma($documento->tipo),
-            ], 422);
-        }
-
-        if ($documento->esperaFirmaDelColegio()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tu boleta todavía está en firma del colegio. Te avisaremos cuando esté lista.',
-            ], 422);
-        }
-
-        if ($documento->estado_firma === 'firmado') {
-            return response()->json([
-                'success' => false,
-                'message' => 'El documento ya está firmado.'
-            ], 422);
-        }
-
-        if ($documento->estado_firma === 'en_papel') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Esta boleta es de registro: ya la firmaste en papel en su momento.'
-            ], 422);
-        }
-
-        $empleado = $user->empleado;
-        $nombre_completo = $empleado->nombre . ' ' . $empleado->apellido;
-
-        // La conformidad, con su rastro: desde dónde y sobre QUÉ archivo. El
-        // código del PDF (SHA-256) prueba que la dio a esa boleta exacta: si
-        // alguien la cambiara después, ya no coincidiría.
-        $archivo = $documento->archivo && Storage::disk('local')->exists($documento->archivo)
-            ? Storage::disk('local')->get($documento->archivo) : null;
-
-        $documento->update([
-            'estado_firma' => 'firmado',
-            'fecha_firma'  => now(),
-            'firmado_por'  => $nombre_completo,
-            'codigo_firma' => strtoupper(Str::random(8)) . '-' . time(),
-            'conformidad_ip'          => mb_substr((string) $request->ip(), 0, 45),
-            'conformidad_dispositivo' => mb_substr((string) $request->userAgent(), 0, 255),
-            'conformidad_sha256'      => $archivo !== null ? hash('sha256', $archivo) : null,
-        ]);
-
-        // Si es una boleta, se vuelve a armar el PDF ahora que ya quedó firmada —
-        // así el archivo congelado en disco sí incluye el sello de firma+huella y
-        // el texto de verificación (si no se regenerara aquí, quedaría archivada
-        // para siempre la versión de ANTES de firmar).
-        //
-        // Con la firma digital del colegio NO: el PDF ya está sellado y
-        // tocarlo invalidaría esas firmas. Su conformidad queda en el
-        // documento (fecha, código) y sale en la Constancia de entrega.
-        if ($documento->tipo === 'boleta' && $documento->planilla_id && $documento->firma_colegio === null) {
-            $planilla = Planilla::find($documento->planilla_id);
-            if ($planilla) {
-                app(BoletaController::class)->construirBoleta(
-                    $empleado->load('area', 'cargo'),
-                    $planilla,
-                    (int) $planilla->mes,
-                    (int) $planilla->anio,
-                    forzarGuardado: true
-                );
+            // Se revisa aquí y no solo escondiendo el botón: una pantalla no es
+            // una cerradura.
+            if (! ExpedienteDigital::seFirma($documento->tipo)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => ExpedienteDigital::porQueNoSeFirma($documento->tipo),
+                ], 422);
             }
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Documento firmado correctamente.',
-            'data'    => $documento
-        ]);
+            if ($documento->esperaFirmaDelColegio()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tu boleta todavía está en firma del colegio. Te avisaremos cuando esté lista.',
+                ], 422);
+            }
+
+            if ($documento->estado_firma === 'firmado') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El documento ya está firmado.'
+                ], 422);
+            }
+
+            if ($documento->estado_firma === 'en_papel') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta boleta es de registro: ya la firmaste en papel en su momento.'
+                ], 422);
+            }
+
+            $empleado = $user->empleado;
+
+            $documento->update([
+                'estado_firma' => 'firmado',
+                'fecha_firma'  => now(),
+                'firmado_por'  => $empleado->nombre . ' ' . $empleado->apellido,
+                'codigo_firma' => strtoupper(Str::random(8)) . '-' . time(),
+                'conformidad_ip'          => mb_substr((string) $request->ip(), 0, 45),
+                'conformidad_dispositivo' => mb_substr((string) $request->userAgent(), 0, 255),
+            ]);
+
+            // Si es una boleta, se vuelve a armar el PDF ahora que ya quedó firmada —
+            // así el archivo congelado en disco sí incluye el sello de firma+huella y
+            // el texto de verificación (si no se regenerara aquí, quedaría archivada
+            // para siempre la versión de ANTES de firmar).
+            //
+            // Con la firma digital del colegio NO: el PDF ya está sellado y
+            // tocarlo invalidaría esas firmas. Su conformidad queda en el
+            // documento (fecha, código) y sale en la Constancia de entrega.
+            if ($documento->tipo === 'boleta' && $documento->planilla_id && $documento->firma_colegio === null) {
+                $planilla = Planilla::find($documento->planilla_id);
+                if ($planilla) {
+                    app(BoletaController::class)->construirBoleta(
+                        $empleado->load('area', 'cargo'),
+                        $planilla,
+                        (int) $planilla->mes,
+                        (int) $planilla->anio,
+                        forzarGuardado: true
+                    );
+                }
+            }
+
+            // La huella va al final: es la del archivo que queda guardado. Si
+            // alguien lo cambiara después, ya no coincidiría.
+            $archivo = $documento->archivo && Storage::disk('local')->exists($documento->archivo)
+                ? Storage::disk('local')->get($documento->archivo) : null;
+            $documento->update(['conformidad_sha256' => $archivo !== null ? hash('sha256', $archivo) : null]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Documento firmado correctamente.',
+                'data'    => $documento
+            ]);
+        });
     }
 
     /**

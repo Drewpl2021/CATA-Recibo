@@ -8,8 +8,7 @@
 
     @if ($restablecer)
         <p style="margin:0 0 12px;">
-            Recursos Humanos restableció el acceso a tu cuenta. La contraseña que tenías ya no sirve:
-            crea una nueva con este botón.
+            Recursos Humanos restableció el acceso a tu cuenta. Crea una contraseña nueva con este botón.
         </p>
     @else
         <p style="margin:0 0 12px;">

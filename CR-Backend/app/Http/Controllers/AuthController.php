@@ -217,17 +217,9 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
-        $estado = Password::sendResetLink($request->only('email'));
-
-        // El único caso que sí se avisa: pidió otro enlace demasiado pronto.
-        // Callarlo haría que la persona siguiera esperando un correo que no
-        // va a salir.
-        if ($estado === Password::RESET_THROTTLED) {
-            return response()->json([
-                'success' => false,
-                'data'    => ['message' => 'Ya te enviamos un enlace hace poco. Revisa tu correo y espera un minuto antes de pedir otro.'],
-            ], 429);
-        }
+        // Sin mirar el resultado: «ya te enviamos uno» solo le sale a un correo
+        // que existe, y eso bastaba para descubrir cuáles están registrados.
+        Password::sendResetLink($request->only('email'));
 
         return response()->json([
             'success' => true,

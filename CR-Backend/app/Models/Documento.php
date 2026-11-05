@@ -98,10 +98,13 @@ class Documento extends Model
      * La dirección que va dentro del QR de la boleta: firmada por el
      * servidor, para que nadie arme la de otra cambiando el id. Ver
      * VerificarBoletaController.
+     *
+     * La firma no incluye el dominio: una boleta impresa dura años, y su QR
+     * tiene que seguir valiendo si se entra por http y el sitio pasa a https.
      */
     public function urlDeVerificacion(): string
     {
-        return \Illuminate\Support\Facades\URL::signedRoute('boleta.verificar', ['documento' => $this->id]);
+        return url(\Illuminate\Support\Facades\URL::signedRoute('boleta.verificar', ['documento' => $this->id], absolute: false));
     }
 
     protected static function boot()

@@ -22,12 +22,24 @@ class VerificarBoletaController extends Controller
 {
     public function ver(Request $request, string $documento)
     {
-        $doc = $request->hasValidSignature()
+        // Las boletas ya impresas llevan la firma con el dominio; las nuevas, sin él.
+        $firmaBien = $request->hasValidRelativeSignature() || $request->hasValidSignature();
+        $doc = $firmaBien
             ? Documento::with('empleado', 'planilla')->where('tipo', 'boleta')->find($documento)
             : null;
 
         if (! $doc || ! $doc->planilla || ! $doc->empleado) {
-            return response()->view('verificar-boleta', ['valida' => false], 404);
+            return response()->view('verificar-boleta', ['valida' => false, 'motivo' => 'no_existe'], 404);
+        }
+
+        // «Auténtica» es solo lo que está vigente y ya se le entregó al trabajador.
+        // En los otros dos casos no se enseña ningún dato: quien lo abre no
+        // tiene por qué ver el sueldo de una boleta que no vale.
+        if ($doc->estado_registro !== 'activo') {
+            return response()->view('verificar-boleta', ['valida' => false, 'motivo' => 'anulada'], 410);
+        }
+        if ($doc->esperaFirmaDelColegio()) {
+            return response()->view('verificar-boleta', ['valida' => false, 'motivo' => 'en_firma']);
         }
 
         $planilla = $doc->planilla;
