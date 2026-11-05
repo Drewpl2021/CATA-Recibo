@@ -44,6 +44,37 @@ class PermisosPorModuloTest extends TestCase
         $this->actingAs($contador, 'sanctum')->postJson('/api/areas', ['nombre' => 'Contabilidad'])->assertForbidden();
     }
 
+    public function test_un_rol_solo_de_portal_web_no_ve_al_personal_ni_los_catalogos(): void
+    {
+        $this->rolCon('portal', ['/portal-web']);
+        $editor = $this->crearUsuario('portal');
+
+        $this->actingAs($editor, 'sanctum')->getJson('/api/web-portal/summary')->assertOk();
+
+        // La lista del personal trae nombre y DNI: no es para quien edita la web.
+        $this->actingAs($editor, 'sanctum')->getJson('/api/employees')->assertForbidden();
+        $this->actingAs($editor, 'sanctum')->getJson('/api/settings')->assertForbidden();
+        $this->actingAs($editor, 'sanctum')->getJson('/api/legal-values')->assertForbidden();
+        $this->actingAs($editor, 'sanctum')->getJson('/api/payment-concepts')->assertForbidden();
+        $this->actingAs($editor, 'sanctum')->getJson('/api/roles')->assertForbidden();
+
+        // Con Portal Web y además un módulo del personal, los catálogos siguen.
+        $this->rolCon('portal-y-sedes', ['/portal-web', '/sedes']);
+        $this->actingAs($this->crearUsuario('portal-y-sedes'), 'sanctum')->getJson('/api/employees')->assertOk();
+    }
+
+    public function test_la_cuenta_de_portal_web_solo_la_cambia_el_superadministrador(): void
+    {
+        $this->rolCon('portal', ['/portal-web']);
+        $editor = $this->crearUsuario('portal');
+
+        // Quien le pone otra clave podría entrar y cambiar la web del colegio.
+        $this->actingAs($this->crearUsuario('rrhh'), 'sanctum')
+            ->postJson("/api/users/{$editor->id}/reset-password")->assertForbidden();
+        $this->actingAs($this->crearUsuario('admin'), 'sanctum')
+            ->postJson("/api/users/{$editor->id}/reset-password")->assertOk();
+    }
+
     public function test_quitarle_un_modulo_a_un_rol_le_cierra_esa_puerta_en_el_acto(): void
     {
         $admin = $this->crearUsuario('admin');

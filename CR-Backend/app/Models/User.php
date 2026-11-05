@@ -98,7 +98,7 @@ class User extends Authenticatable
      */
     public function protegidaPara(?User $quien): bool
     {
-        return $this->puede(\App\Support\Permisos::GESTION)
+        return \App\Support\Permisos::manejaAlgoMasQueLoSuyo($this)
             && ! \App\Support\Permisos::esSuperadmin($quien);
     }
 
