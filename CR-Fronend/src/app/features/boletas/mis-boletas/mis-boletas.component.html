@@ -45,6 +45,32 @@
   [mensajeVacio]="'Todavía no tienes boletas emitidas del ' + anioElegido + '.'"
 ></app-data-table>
 
+<!-- Sus hojas de CTS y de gratificación: le llegan aquí cuando el colegio ya las firmó. -->
+@if (hojas.length) {
+  <section class="mis-hojas">
+  <div class="mis-hojas__titulos">
+    <h2 class="seccion-form__titulo">Hojas de CTS y gratificación del {{ anioElegido }}</h2>
+    <span class="form-ayuda">Ya vienen firmadas digitalmente por el colegio. Revísalas y da tu conformidad; después las puedes descargar.</span>
+  </div>
+  <app-data-table
+    entidad="esta hoja"
+    [columnas]="columnasHojas"
+    [datos]="hojas"
+    [cargando]="cargandoHojas"
+    [numerarFilas]="true"
+    [mostrarBuscador]="false"
+    [acciones]="[]"
+    [accionesPersonalizadas]="accionesHojas"
+    (accionPersonalizada)="alAccionarHoja($event)"
+  >
+    <ng-template appCelda="documento" let-h>
+      <strong>{{ h.documento }}</strong>
+      <div class="form-ayuda">{{ h.periodo }}</div>
+    </ng-template>
+  </app-data-table>
+  </section>
+}
+
 <!-- Visor de la boleta en PDF -->
 @if (showPdfModal) {
   <div class="pdf-modal-overlay" appAlCuerpo (click)="closePdfModal()">
@@ -52,13 +78,13 @@
       <div class="pdf-modal-header">
         <h3>{{ pdfBoletaName }}</h3>
         <div style="display: flex; gap: 12px; align-items: center;">
-          @if (!boletaAbierta?.firmado && !boletaAbierta?.enPapel) {
-            <span class="form-ayuda">Fírmala y podrás descargarla.</span>
+          @if (!sePuedeBajar) {
+            <span class="form-ayuda">Da tu conformidad y podrás descargarla.</span>
           }
           @if (boletaAbierta?.enPapel) {
             <span class="form-ayuda">De registro: ya la firmaste en papel.</span>
           }
-          @if (boletaAbierta?.firmado || boletaAbierta?.enPapel) {
+          @if (sePuedeBajar) {
             <button class="btn-primary" (click)="descargarPdfDirecto()">
               <app-icon icono="download" [tamano]="16"></app-icon>
               Descargar
@@ -96,15 +122,15 @@
   (cancelar)="closeSignModal()"
   >
   <div class="form-fields">
-    @if (boletaAFirmar?.firmadaPorElColegio) {
+    @if (boletaAFirmar?.firmadaPorElColegio || hojaAFirmar) {
       <p class="form-nota">
-        Tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong> ya viene firmada
+        <strong>{{ queFirma.charAt(0).toUpperCase() + queFirma.slice(1) }}</strong> ya viene firmada
         digitalmente por el colegio. Para confirmar que la recibiste, escribe la contraseña con la que entras
-        al sistema. Queda registrado con la fecha y la hora; tu boleta no cambia.
+        al sistema. Queda registrado con la fecha y la hora; el documento no cambia.
       </p>
     } @else {
       <p class="form-nota">
-        Para confirmar que recibiste tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong>,
+        Para confirmar que recibiste <strong>{{ queFirma }}</strong>,
         escribe la contraseña con la que entras al sistema. Queda registrado con la fecha y la hora.
       </p>
     }

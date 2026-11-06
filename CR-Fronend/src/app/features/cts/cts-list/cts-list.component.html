@@ -98,6 +98,19 @@
             </button>
           }
           @if (p.numero === 3) {
+            @if (datos.firma.mi_certificado; as c) {
+              <button type="button" [ngClass]="puedeFirmar ? 'btn-primary' : 'btn-secondary'" (click)="modalFirmarAqui = true"
+                [disabled]="!puedeFirmar" [appPista]="pistaFirmar">
+                <app-icon icono="signature" [tamano]="16"></app-icon>
+                Firmar aquí{{ c.por_firmar ? ' (' + c.por_firmar + ')' : '' }}
+              </button>
+            } @else {
+              <a class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }"
+                appPista="Abre Ajustes → Boletas para poner tu certificado digital (.pfx o .p12). Con él firmas las hojas desde aquí.">
+                <app-icon icono="signature" [tamano]="16"></app-icon>
+                Poner mi certificado
+              </a>
+            }
             <button type="button" class="btn-secondary" (click)="elegirSituacion('depositada')"
               [disabled]="!datos.resumen.depositadas">
               <app-icon icono="eye" [tamano]="16"></app-icon>
@@ -188,6 +201,9 @@
     }
     @if (f.fecha_deposito) {
       <div class="form-ayuda">Depositada el {{ fecha(f.fecha_deposito) }}</div>
+      @if (f.firma_colegio) {
+        <div class="form-ayuda" [class.texto-aviso]="f.firma_colegio !== 'completa'">{{ textoDeFirma(f.firma_colegio) }}</div>
+      }
     } @else if (!f.cuenta_ficha && f.estado !== 'inactivo') {
       <div class="form-ayuda texto-aviso">Sin cuenta CTS</div>
     }
@@ -208,7 +224,7 @@
       <li><strong>CTS:</strong> la remuneración computable ÷ 12 por cada mes completo, más ÷ 360 por cada día suelto (quien entró o cesó a mitad del semestre).</li>
       <li><strong>Sin CTS:</strong> las prácticas y los tipos de contrato marcados sin CTS en Tipos de Contrato, y quien no llega a un mes de servicio.</li>
       <li>La CTS no paga ONP, AFP, EsSalud ni Renta de 5ta: va completa a la cuenta.</li>
-      <li>Marca a quienes ya se les depositó y usa <strong>Registrar depósito</strong>: su hoja de liquidación queda en su expediente y la ve en Mis Documentos. Una CTS depositada ya no se recalcula.</li>
+      <li>Marca a quienes ya se les depositó y usa <strong>Registrar depósito</strong>: su hoja de liquidación queda esperando la firma digital del colegio. Fírmalas con <strong>Firmar aquí</strong>: recién firmada, el trabajador la ve en Mis Documentos y da su conformidad. Una CTS depositada ya no se recalcula.</li>
     </ul>
   </details>
 }
@@ -498,6 +514,9 @@
           <dt>Fecha</dt><dd>{{ fecha(d.fecha_deposito) }}</dd>
           <dt>Entidad</dt><dd>{{ d.entidad_financiera || '—' }}</dd>
           <dt>Cuenta</dt><dd>{{ d.numero_cuenta || '—' }}</dd>
+          @if (d.firma_colegio) {
+            <dt>Hoja</dt><dd>{{ textoDeFirma(d.firma_colegio) }}</dd>
+          }
         </dl>
       }
     }
@@ -620,3 +639,11 @@
     </p>
   }
 </app-form-modal>
+
+<!-- «Firmar aquí»: la firma digital del colegio en las hojas del depósito, como en las boletas. -->
+@if (datos) {
+  <app-firmar-aqui [(visible)]="modalFirmarAqui" [certificado]="datos.firma.mi_certificado"
+    [requeridas]="datos.firma.requeridas" singular="hoja de CTS" plural="hojas de CTS"
+    [periodo]="datos.periodo + ' ' + datos.anio" [tanda]="firmarTanda" (terminado)="recargar()">
+  </app-firmar-aqui>
+}

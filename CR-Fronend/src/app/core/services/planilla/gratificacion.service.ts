@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse, bajarPorEnlaceFirmado } from '../../utils';
+import { FirmaColegio, ResultadoFirmarAqui, ResumenDeFirma } from './boleta.service';
 
 /** Julio paga el semestre enero–junio; diciembre, julio–diciembre. */
 export type PeriodoGratificacion = 'julio' | 'diciembre';
@@ -59,6 +60,8 @@ export interface FilaGratificacion {
   diferencia: number;
   estado_grati: EstadoGratificacion;
   documento_id: string | null;
+  /** Cómo va la firma digital del colegio en su hoja. */
+  firma_colegio: FirmaColegio;
 }
 
 export interface ListaGratificacion {
@@ -84,6 +87,8 @@ export interface ListaGratificacion {
     pagado: number;
     entregadas: number;
   };
+  /** La firma digital del colegio en las hojas del semestre. */
+  firma: ResumenDeFirma;
 }
 
 /** Un mes del semestre de alguien, de su planilla. */
@@ -132,6 +137,11 @@ export class GratificacionService {
   /** Deja la hoja en el expediente de cada uno (solo de quien ya la tiene pagada). */
   entregar(anio: number, periodo: PeriodoGratificacion, ids: string[]): Observable<ApiResponse<{ entregadas: number; saltadas: string[]; message: string }>> {
     return this.http.post<ApiResponse<{ entregadas: number; saltadas: string[]; message: string }>>(`${this.url}/deliver`, { anio, periodo, ids });
+  }
+
+  /** «Firmar aquí»: una tanda de las hojas del semestre que esperan la firma de quien pide. La clave no se guarda. */
+  firmarAqui(anio: number, periodo: PeriodoGratificacion, clave: string, desde: string | null = null, limite = 25): Observable<ApiResponse<ResultadoFirmarAqui>> {
+    return this.http.post<ApiResponse<ResultadoFirmarAqui>>(`${this.url}/sign-here`, { anio, periodo, clave, desde, limite });
   }
 
   /**

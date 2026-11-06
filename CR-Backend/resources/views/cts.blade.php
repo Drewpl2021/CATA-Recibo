@@ -6,7 +6,8 @@
         La hoja de liquidación de la CTS que el colegio entrega con cada
         depósito (art. 29 del TUO de la Ley de CTS, D.S. 001-97-TR): datos del
         empleador, del trabajador y del depósito; la remuneración computable,
-        el tiempo y el cálculo en cuadros; el monto en letras y las firmas.
+        el tiempo y el cálculo en cuadros; el monto en letras y las firmas (digital del colegio, ver
+        partials/firma-digital).
         Con la cabecera y los colores de la boleta, para que se lean igual.
 
         Lo dibuja dompdf: nada de flex ni de variables CSS, todo con tablas y
@@ -62,9 +63,6 @@
 
         .nota { font-size: 7px; color: #6B7A82; margin-top: 10px; line-height: 1.45; }
         .lugar-fecha { margin-top: 14px; text-align: right; font-size: 8.8px; }
-        .firmas { margin-top: 56px; }
-        .firmas td { text-align: center; font-size: 7.8px; padding: 0 24px; vertical-align: top; }
-        .firmas .raya { border-top: 1px solid #1F2B33; padding-top: 4px; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -230,11 +228,9 @@
 
     <p class="lugar-fecha">Juliaca, {{ $enLetra($fechaHoja) }}</p>
 
-    <table class="firmas">
-        <tr>
-            <td><div class="raya">EL EMPLEADOR<br>{{ $colegioNombre }}</div></td>
-            <td><div class="raya">EL TRABAJADOR<br>{{ $empleado->nombre }} {{ $empleado->apellido }} · DNI {{ $empleado->dni }}</div></td>
-        </tr>
-    </table>
+    @include('partials.firma-digital', [
+        'trabajador' => trim("{$empleado->nombre} {$empleado->apellido}"),
+        'dni'        => $empleado->dni,
+    ])
 </body>
 </html>

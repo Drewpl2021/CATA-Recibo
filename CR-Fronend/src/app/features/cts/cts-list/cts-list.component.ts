@@ -95,12 +95,23 @@ interface ChipSituacion {
  * y redibuja los íconos en cada ciclo).
  */
 import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { FirmarAquiComponent, TandaDeFirma } from '../../../shared/components/firmar-aqui/firmar-aqui.component';
+import { RouterLink } from '@angular/router';
+import { FirmaColegio } from '../../../core/services/planilla/boleta.service';
+
+/** Cómo va la firma digital del colegio en una hoja, en palabras. */
+export const TEXTO_FIRMA: Record<Exclude<FirmaColegio, null>, string> = {
+  pendiente: 'Hoja por firmar',
+  parcial: 'Hoja con una firma de dos',
+  completa: 'Hoja firmada y entregada',
+};
 @Component({
   selector: 'app-cts-list',
   standalone: true,
   imports: [AvatarComponent, 
     PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective,
     FiltrosComponent, OrdenComponent, FormModalComponent, PanelLateralComponent, BarraSeleccionComponent,
+    FirmarAquiComponent, RouterLink,
   ],
   templateUrl: './cts-list.component.html',
 })
@@ -299,6 +310,7 @@ export class CtsListComponent implements OnInit {
   private armarResumen(): void {
     const d = this.datos!;
     const r = d.resumen;
+    const f = d.firma;
     const filas = d.filas;
     const guardadas = r.calculadas + r.depositadas;
     const hoy = new Date();
@@ -341,13 +353,23 @@ export class CtsListComponent implements OnInit {
         avance: r.con_derecho ? Math.round((r.depositadas / r.con_derecho) * 100) : null,
       },
       {
-        numero: 3, icono: 'receipt_long', titulo: 'Entregar la hoja',
-        explicacion: 'Al registrar el depósito, su hoja de liquidación llega a su expediente y la firma en Mis Documentos.',
-        estado: r.depositadas ? `${r.depositadas} hoja(s) entregada(s)` : 'Todavía ninguna',
-        fase: fase(depositado, depositado),
-        avance: null,
+        numero: 3, icono: 'signature', titulo: 'Firmar y entregar la hoja',
+        explicacion: 'Al registrar el depósito, su hoja de liquidación espera la firma digital del colegio. Firmada, le llega a su expediente y da su conformidad en Mis Documentos.',
+        estado: !f.emitidas ? 'Todavía ninguna'
+          : f.por_firmar + f.a_medias ? `${f.entregadas} de ${f.emitidas} firmada(s) y entregada(s) · ${f.por_firmar + f.a_medias} por firmar`
+          : `${f.entregadas} firmada(s) y entregada(s) · ${f.conformidad} con conformidad`,
+        fase: fase(depositado && f.emitidas > 0 && f.por_firmar + f.a_medias === 0, r.depositadas > 0),
+        avance: f.emitidas ? Math.round((f.entregadas / f.emitidas) * 100) : null,
       },
     ];
+
+    // «Firmar aquí»: con el certificado de quien mira.
+    const c = f.mi_certificado;
+    this.puedeFirmar = !!c && !c.vencido && c.por_firmar > 0;
+    this.pistaFirmar = !c ? 'Primero pon tu certificado en Ajustes → Boletas.'
+      : c.vencido ? 'Tu certificado venció: renuévalo con la entidad y ponlo de nuevo en Ajustes → Boletas.'
+      : !c.por_firmar ? 'No hay hojas de este depósito esperando tu firma.'
+      : `Firma de una vez las ${c.por_firmar} hoja(s) que esperan tu firma, con tu certificado. Te pide su clave.`;
 
     const cuenta = (e: EstadoCts) => filas.filter((f) => f.estado_cts === e).length;
     this.chips = [
@@ -357,6 +379,16 @@ export class CtsListComponent implements OnInit {
         .filter((c) => c.cuenta > 0 || c.valor === this.situacion),
     ];
   }
+
+  // ── «Firmar aquí»: la firma digital del colegio en las hojas del depósito ──
+  modalFirmarAqui = false;
+  puedeFirmar = false;
+  pistaFirmar = '';
+  readonly textoDeFirma = (firma: FirmaColegio): string => (firma ? TEXTO_FIRMA[firma] : '');
+
+  /** Una tanda de «Firmar aquí» con las hojas del depósito que se está viendo. */
+  readonly firmarTanda: TandaDeFirma = (clave, desde) =>
+    this.servicio.firmarAqui(this.datos!.anio, this.datos!.periodo, clave, desde);
 
   elegirSituacion(valor: EstadoCts | ''): void {
     this.situacion = valor;

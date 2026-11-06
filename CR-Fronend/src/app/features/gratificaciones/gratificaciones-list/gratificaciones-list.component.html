@@ -97,6 +97,19 @@
               <app-icon icono="receipt_long" [tamano]="16"></app-icon>
               {{ entregando ? 'Entregando…' : 'Entregar hojas' }}
             </button>
+            @if (datos.firma.mi_certificado; as c) {
+              <button type="button" [ngClass]="puedeFirmar ? 'btn-primary' : 'btn-secondary'" (click)="modalFirmarAqui = true"
+                [disabled]="!puedeFirmar" [appPista]="pistaFirmar">
+                <app-icon icono="signature" [tamano]="16"></app-icon>
+                Firmar aquí{{ c.por_firmar ? ' (' + c.por_firmar + ')' : '' }}
+              </button>
+            } @else {
+              <a class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }"
+                appPista="Abre Ajustes → Boletas para poner tu certificado digital (.pfx o .p12). Con él firmas las hojas desde aquí.">
+                <app-icon icono="signature" [tamano]="16"></app-icon>
+                Poner mi certificado
+              </a>
+            }
           }
         </div>
       </li>
@@ -183,6 +196,9 @@
     }
     @if (f.planilla_del_plame) {
       <div class="form-ayuda">Importada del PLAME</div>
+    }
+    @if (f.firma_colegio) {
+      <div class="form-ayuda" [class.texto-aviso]="f.firma_colegio !== 'completa'">{{ textoDeFirma(f.firma_colegio) }}</div>
     }
   } @else {
     <span class="form-ayuda">{{ f.aplica ? 'Sin planilla todavía' : '—' }}</span>
@@ -332,3 +348,11 @@
     </div>
   }
 </app-panel-lateral>
+
+<!-- «Firmar aquí»: la firma digital del colegio en las hojas del semestre, como en las boletas. -->
+@if (datos) {
+  <app-firmar-aqui [(visible)]="modalFirmarAqui" [certificado]="datos.firma.mi_certificado"
+    [requeridas]="datos.firma.requeridas" singular="hoja de gratificación" plural="hojas de gratificación"
+    [periodo]="datos.periodo + ' ' + datos.anio" [tanda]="firmarTanda" (terminado)="recargar()">
+  </app-firmar-aqui>
+}

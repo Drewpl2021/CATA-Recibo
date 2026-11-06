@@ -31,6 +31,8 @@ class MisDocumentosController extends Controller
      * aquí, y cada uno ahorra traer documentos que no se van a pintar:
      *
      *   Mis Boletas   -> ?tipo=boleta&anio=2026  (la pantalla ya elige el año)
+     *                    y ?tipo=cts,gratificacion&anio=2026 (sus hojas, que
+     *                    también llegan ahí)
      *   Mis Documentos-> sin filtro, todo lo suyo
      *   La campanita  -> ?sin_firmar=1           (solo lo que le falta firmar)
      */
@@ -69,8 +71,10 @@ class MisDocumentosController extends Controller
             ->orderByRaw('COALESCE(planilla.mes, documentos.periodo_mes) DESC')
             ->orderByDesc('documentos.created_at');
 
+        // Uno o varios tipos separados por coma (las hojas de CTS y de
+        // gratificación van juntas en Mis Boletas).
         if ($request->filled('tipo')) {
-            $query->where('tipo', $request->input('tipo'));
+            $query->whereIn('tipo', array_slice(array_filter(array_map('trim', explode(',', (string) $request->input('tipo')))), 0, 10));
         }
 
         // El año es el de la planilla, no el de created_at: una boleta de
@@ -187,7 +191,7 @@ class MisDocumentosController extends Controller
             if ($documento->esperaFirmaDelColegio()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Tu boleta todavía está en firma del colegio. Te avisaremos cuando esté lista.',
+                    'message' => \App\Support\AccesoADocumento::enFirmaDelColegio($documento),
                 ], 422);
             }
 

@@ -22,7 +22,10 @@ import { FiltrosComponent } from '../../../shared/components/filtros/filtros.com
 import { OrdenComponent, OpcionOrden } from '../../../shared/components/orden/orden.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
-import { PasoCts } from '../../cts/cts-list/cts-list.component';
+import { PasoCts, TEXTO_FIRMA } from '../../cts/cts-list/cts-list.component';
+import { FirmaColegio } from '../../../core/services/planilla/boleta.service';
+import { FirmarAquiComponent, TandaDeFirma } from '../../../shared/components/firmar-aqui/firmar-aqui.component';
+import { RouterLink } from '@angular/router';
 
 /** Cómo se dice y se pinta cada estado de la gratificación de alguien. */
 const ESTADOS: Record<EstadoGratificacion, { texto: string; tono: 'success' | 'info' | 'warning' | 'danger' | 'secondary' }> = {
@@ -65,6 +68,7 @@ import { AvatarComponent } from '../../../shared/components/avatar/avatar.compon
   imports: [AvatarComponent, 
     PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective,
     FiltrosComponent, OrdenComponent, PanelLateralComponent, BarraSeleccionComponent,
+    FirmarAquiComponent, RouterLink,
   ],
   templateUrl: './gratificaciones-list.component.html',
 })
@@ -265,6 +269,7 @@ export class GratificacionesListComponent implements OnInit {
   private armarResumen(): void {
     const d = this.datos!;
     const r = d.resumen;
+    const f = d.firma;
     const filas = d.filas;
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -302,13 +307,23 @@ export class GratificacionesListComponent implements OnInit {
         avance: null,
       },
       {
-        numero: 3, icono: 'receipt_long', titulo: 'Entregar la hoja',
-        explicacion: 'La hoja de gratificación llega a su expediente y la firma en Mis Documentos.',
-        estado: r.entregadas ? `${r.entregadas} de ${r.pagadas} entregada(s)` : 'Todavía ninguna',
-        fase: fase(r.pagadas > 0 && r.entregadas >= r.pagadas, sinDiferencias),
-        avance: r.pagadas ? Math.round((r.entregadas / r.pagadas) * 100) : null,
+        numero: 3, icono: 'signature', titulo: 'Entregar y firmar la hoja',
+        explicacion: 'La hoja de gratificación queda en su expediente esperando la firma digital del colegio. Firmada, le llega y da su conformidad en Mis Documentos.',
+        estado: !r.entregadas ? 'Todavía ninguna'
+          : f.por_firmar + f.a_medias ? `${r.entregadas} de ${r.pagadas} en su expediente · ${f.por_firmar + f.a_medias} por firmar`
+          : `${f.entregadas} de ${r.pagadas} firmada(s) y entregada(s) · ${f.conformidad} con conformidad`,
+        fase: fase(r.pagadas > 0 && r.entregadas >= r.pagadas && f.por_firmar + f.a_medias === 0, sinDiferencias),
+        avance: r.pagadas ? Math.round((f.entregadas / r.pagadas) * 100) : null,
       },
     ];
+
+    // «Firmar aquí»: con el certificado de quien mira.
+    const c = f.mi_certificado;
+    this.puedeFirmar = !!c && !c.vencido && c.por_firmar > 0;
+    this.pistaFirmar = !c ? 'Primero pon tu certificado en Ajustes → Boletas.'
+      : c.vencido ? 'Tu certificado venció: renuévalo con la entidad y ponlo de nuevo en Ajustes → Boletas.'
+      : !c.por_firmar ? 'No hay hojas de esta gratificación esperando tu firma.'
+      : `Firma de una vez las ${c.por_firmar} hoja(s) que esperan tu firma, con tu certificado. Te pide su clave.`;
 
     const cuenta = (e: EstadoGratificacion) => filas.filter((f) => f.estado_grati === e).length;
     this.chips = [
@@ -317,6 +332,16 @@ export class GratificacionesListComponent implements OnInit {
       { valor: 'trunca' as const, texto: 'Truncas (cesaron)', cuenta: r.truncas },
     ].filter((c) => c.cuenta > 0 || c.valor === '' || c.valor === this.situacion);
   }
+
+  // ── «Firmar aquí»: la firma digital del colegio en las hojas del semestre ──
+  modalFirmarAqui = false;
+  puedeFirmar = false;
+  pistaFirmar = '';
+  readonly textoDeFirma = (firma: FirmaColegio): string => (firma ? TEXTO_FIRMA[firma] : '');
+
+  /** Una tanda de «Firmar aquí» con las hojas de la gratificación que se está viendo. */
+  readonly firmarTanda: TandaDeFirma = (clave, desde) =>
+    this.servicio.firmarAqui(this.datos!.anio, this.datos!.periodo, clave, desde);
 
   elegirSituacion(valor: ChipSituacion['valor']): void {
     this.situacion = valor;

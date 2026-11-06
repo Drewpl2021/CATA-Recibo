@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse, bajarPorEnlaceFirmado } from '../../utils';
+import { FirmaColegio, ResultadoFirmarAqui, ResumenDeFirma } from './boleta.service';
 
 /** El depósito: mayo cubre noviembre–abril, noviembre cubre mayo–octubre. */
 export type PeriodoCts = 'mayo' | 'noviembre';
@@ -60,6 +61,8 @@ export interface FilaCts {
   entidad_financiera: string | null;
   numero_cuenta: string | null;
   documento_id: string | null;
+  /** Cómo va la firma digital del colegio en su hoja. */
+  firma_colegio: FirmaColegio;
   /** Las faltas anotadas ahora; si difieren de `faltas`, falta volver a calcular. */
   faltas_registradas: number;
   faltas_observacion: string | null;
@@ -85,6 +88,8 @@ export interface ListaCts {
     total: number;
     depositado: number;
   };
+  /** La firma digital del colegio en las hojas de este depósito. */
+  firma: ResumenDeFirma;
 }
 
 /** Un mes del semestre en el historial de alguien, de su planilla (ver MotorCts::historial). */
@@ -148,6 +153,11 @@ export class CtsService {
 
   depositar(datos: DepositoCts): Observable<ApiResponse<{ depositadas: number }>> {
     return this.http.post<ApiResponse<{ depositadas: number }>>(`${this.url}/deposit`, datos);
+  }
+
+  /** «Firmar aquí»: una tanda de las hojas del depósito que esperan la firma de quien pide. La clave no se guarda. */
+  firmarAqui(anio: number, periodo: PeriodoCts, clave: string, desde: string | null = null, limite = 25): Observable<ApiResponse<ResultadoFirmarAqui>> {
+    return this.http.post<ApiResponse<ResultadoFirmarAqui>>(`${this.url}/sign-here`, { anio, periodo, clave, desde, limite });
   }
 
   anularDeposito(liquidacionId: string): Observable<ApiResponse<{ message: string }>> {

@@ -53,6 +53,19 @@ final class AccesoADocumento
      * entonces la ve y la descarga. Los demás documentos (un contrato) sí se
      * leen antes de firmarlos.
      */
+    /** El aviso de que todavía falta la firma del colegio, con el nombre de lo que es. */
+    public static function enFirmaDelColegio(Documento $documento): string
+    {
+        $que = match ($documento->tipo) {
+            'boleta'        => 'Tu boleta',
+            'cts'           => 'Tu hoja de CTS',
+            'gratificacion' => 'Tu hoja de gratificación',
+            default         => 'Este documento',
+        };
+
+        return "{$que} todavía está en firma del colegio. Te avisaremos cuando esté lista.";
+    }
+
     public static function porQueNoPuedeVer(Documento $documento, ?User $usuario): ?string
     {
         if (self::esRrhhOAdmin($usuario)) {
@@ -62,7 +75,7 @@ final class AccesoADocumento
             return 'No tienes permiso para ver este documento.';
         }
         if ($documento->esperaFirmaDelColegio()) {
-            return 'Tu boleta todavía está en firma del colegio. Te avisaremos cuando esté lista.';
+            return self::enFirmaDelColegio($documento);
         }
         if ($documento->tipo === 'boleta' && ! in_array($documento->estado_firma, Documento::FIRMA_RESUELTA, true)) {
             return 'Primero firma tu boleta con tu contraseña; después la puedes ver y descargar.';
@@ -85,7 +98,7 @@ final class AccesoADocumento
             return 'No tienes permiso para descargar este documento.';
         }
         if ($documento->esperaFirmaDelColegio()) {
-            return 'Tu boleta todavía está en firma del colegio. Te avisaremos cuando esté lista.';
+            return self::enFirmaDelColegio($documento);
         }
         if (! ExpedienteDigital::seFirma($documento->tipo) || in_array($documento->estado_firma, Documento::FIRMA_RESUELTA, true)) {
             return null;

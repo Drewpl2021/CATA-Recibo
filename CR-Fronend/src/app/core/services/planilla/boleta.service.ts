@@ -154,6 +154,15 @@ export class BoletaService {
   }
 }
 
+/**
+ * Cómo va la firma digital del colegio en un grupo de documentos (las
+ * boletas del mes, las hojas de un depósito de CTS, las de una gratificación).
+ */
+export type ResumenDeFirma = Omit<ResumenFirmaDigital, 'activa' | 'sin_firma_digital'>;
+
+/** Cómo va la firma de un documento: null si no va por firma digital. */
+export type FirmaColegio = 'pendiente' | 'parcial' | 'completa' | null;
+
 export interface ResumenFirmaDigital {
   activa: boolean;
   requeridas: number;

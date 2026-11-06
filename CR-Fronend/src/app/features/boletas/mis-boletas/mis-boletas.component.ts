@@ -11,9 +11,30 @@ import { FormModalComponent } from '../../../shared/components/form-modal/form-m
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
+import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
 import { nombreMes } from '../../../shared/constants';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { AlCuerpoDirective } from '../../../shared/directives/al-cuerpo.directive';
+import { DocumentoService } from '../../../core/services/planilla/documento.service';
+
+/**
+ * Una hoja de CTS o de gratificación: le llega aquí, junto a sus boletas,
+ * cuando el colegio ya la firmó digitalmente. La puede leer antes de dar su
+ * conformidad (como un contrato) y bajarla después.
+ */
+export interface HojaRow {
+  id: string;
+  /** «Hoja de CTS», «Hoja de gratificación». */
+  documento: string;
+  /** «Depósito de noviembre 2026», «Fiestas Patrias (julio 2026)». */
+  periodo: string;
+  avisoEnviado: string | null;
+  revisado: string | null;
+  descargado: string | null;
+  descargas: number;
+  firmado: string | null;
+  correo: string;
+}
 
 /**
  * Una fila de la tabla: la boleta ya masticada para pintarla.
@@ -61,7 +82,7 @@ export interface BoletaRow {
 @Component({
   selector: 'app-mis-boletas',
   standalone: true,
-  imports: [IconComponent, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent, FormModalComponent, AlCuerpoDirective],
+  imports: [IconComponent, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, AlCuerpoDirective],
   templateUrl: './mis-boletas.component.html',
   styleUrl: './mis-boletas.component.scss'
 })
@@ -69,6 +90,7 @@ export class MisBoletasComponent implements OnInit {
   private authService = inject(AuthService);
   private boletaService = inject(BoletaService);
   private misDocumentosService = inject(MisDocumentosService);
+  private documentoService = inject(DocumentoService);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
 
@@ -92,10 +114,13 @@ export class MisBoletasComponent implements OnInit {
   pdfBoletaName = '';
   private currentPdfBlob: Blob | null = null;
 
-  // Modal de firma
+  // Modal de firma (la boleta o una hoja)
   showSignModal = false;
   signPassword = '';
   boletaAFirmar: BoletaRow | null = null;
+  hojaAFirmar: HojaRow | null = null;
+  /** «tu boleta de octubre 2026», «tu hoja de CTS del depósito de noviembre 2026». */
+  queFirma = '';
   signErrorMsg = '';
   isSigning = false;
   private firmaPendienteId: string | null = null;
@@ -148,6 +173,31 @@ export class MisBoletasComponent implements OnInit {
     },
   ];
 
+  // ── Sus hojas de CTS y de gratificación del año ──
+  hojas: HojaRow[] = [];
+  cargandoHojas = false;
+
+  columnasHojas: ColumnaTabla<HojaRow>[] = [
+    { campo: 'documento', header: 'Documento', ancho: '26%' },
+    { campo: 'avisoEnviado', header: 'Aviso enviado', tipo: 'hito', ancho: '20%', hitoDetalle: (h) => h.correo },
+    { campo: 'revisado', header: 'Revisado', tipo: 'hito', ancho: '17%' },
+    {
+      campo: 'descargado', header: 'Descargado', tipo: 'hito', ancho: '18%',
+      hitoDetalle: (h) => (h.descargas > 1 ? `${h.descargas} descargas` : null),
+    },
+    { campo: 'firmado', header: 'Conformidad', tipo: 'hito', ancho: '17%' },
+  ];
+
+  accionesHojas: AccionPersonalizada<HojaRow>[] = [
+    // La hoja se lee antes de dar la conformidad; se baja después.
+    { id: 'ver', titulo: 'Ver tu hoja', icono: 'receipt_long' },
+    {
+      id: 'firmar', titulo: 'Dar tu conformidad: confirma que recibiste esta hoja', icono: 'check_circle',
+      etiqueta: 'Dar conformidad', severidad: 'success',
+      visible: (h) => !h.firmado,
+    },
+  ];
+
   ngOnInit(): void {
     // El motor de pdf.js sale de nuestro propio servidor, no de un CDN.
     GlobalWorkerOptions.workerSrc = 'assets/pdf/pdf.worker.min.mjs';
@@ -189,6 +239,7 @@ export class MisBoletasComponent implements OnInit {
 
     this.cargando = true;
     this.errorMsg = '';
+    this.cargarHojas();
     this.misDocumentosService
       .paginar({ tipo: 'boleta', anio: this.anioElegido, page: this.pagina, size: this.TAMANO_PAGINA })
       .subscribe({
@@ -207,6 +258,79 @@ export class MisBoletasComponent implements OnInit {
           this.errorMsg = 'No se pudieron cargar tus boletas. Revisa tu conexión e inténtalo de nuevo.';
         },
       });
+  }
+
+  /** Sus hojas de CTS y de gratificación del año elegido (llegan ya firmadas por el colegio). */
+  private cargarHojas(): void {
+    this.cargandoHojas = true;
+    this.misDocumentosService.paginar({ tipo: 'cts,gratificacion', anio: this.anioElegido, page: 0, size: 20 }).subscribe({
+      next: (res) => {
+        this.cargandoHojas = false;
+        if (res.success) this.hojas = res.data.content.map((d) => this.aHoja(d));
+        this.abrirFirmaPendiente();
+      },
+      // Si fallan, la sección queda vacía: las boletas siguen igual.
+      error: () => { this.cargandoHojas = false; },
+    });
+  }
+
+  private aHoja(d: Documento): HojaRow {
+    const mes = d.periodo_mes ?? 0;
+    const anio = d.periodo_anio ?? 0;
+    const esCts = d.tipo === 'cts';
+    const grati = mes === 7 ? `Fiestas Patrias (julio ${anio})` : mes === 12 ? `Navidad (diciembre ${anio})` : `trunca (${nombreMes(mes).toLowerCase()} ${anio})`;
+    return {
+      id: d.id,
+      documento: esCts ? 'Hoja de CTS' : 'Hoja de gratificación',
+      periodo: esCts ? `Depósito de ${nombreMes(mes).toLowerCase()} ${anio}` : grati,
+      avisoEnviado: d.fecha_aviso ?? null,
+      revisado: d.fecha_visto ?? null,
+      descargado: d.fecha_descarga ?? null,
+      descargas: d.descargas ?? 0,
+      firmado: d.estado_firma === 'firmado' ? (d.fecha_firma ?? d.created_at ?? null) : null,
+      correo: d.aviso_correo ?? d.empleado?.usuario?.email ?? '—',
+    };
+  }
+
+  alAccionarHoja(evento: { accion: string; fila: HojaRow }): void {
+    if (evento.accion === 'ver') this.verHoja(evento.fila);
+    if (evento.accion === 'firmar') this.firmarHoja(evento.fila);
+  }
+
+  verHoja(hoja: HojaRow): void {
+    this.documentoService.ver(hoja.id).subscribe({
+      next: (blob) => {
+        this.currentPdfBlob = blob;
+        this.pdfUrl = URL.createObjectURL(blob);
+        this.pdfBoletaName = `${hoja.documento} · ${hoja.periodo}`;
+        this.boletaAbierta = null;
+        this.hojaAbierta = hoja;
+        this.showPdfModal = true;
+      },
+      error: (err) => this.toastService.error('No se abrió', mensajeErrorApi(err, 'No se pudo abrir tu hoja.')),
+    });
+  }
+
+  /** La hoja que está abierta en el visor: se baja recién con su conformidad. */
+  hojaAbierta: HojaRow | null = null;
+
+  /** En el visor: se puede bajar lo que ya tiene su conformidad (o la boleta de registro). */
+  get sePuedeBajar(): boolean {
+    return !!(this.boletaAbierta?.firmado || this.boletaAbierta?.enPapel || this.hojaAbierta?.firmado);
+  }
+
+  firmarHoja(hoja: HojaRow): void {
+    if (hoja.firmado) {
+      this.toastService.info('Ya diste tu conformidad', `La diste el ${this.formatFecha(hoja.firmado)}.`);
+      return;
+    }
+    this.boletaAFirmar = null;
+    this.hojaAFirmar = hoja;
+    this.queFirma = `tu ${hoja.documento.replace('Hoja', 'hoja')} (${hoja.periodo.charAt(0).toLowerCase() + hoja.periodo.slice(1)})`;
+    this.signPassword = '';
+    this.signErrorMsg = '';
+    this.showSignModal = true;
+    document.body.style.overflow = 'hidden';
   }
 
   private aFila(d: Documento): BoletaRow {
@@ -242,10 +366,13 @@ export class MisBoletasComponent implements OnInit {
 
   /** Si veníamos de la campanita, abrir la firma de esa boleta. */
   private abrirFirmaPendiente(): void {
-    if (!this.firmaPendienteId || this.boletas.length === 0) return;
+    if (!this.firmaPendienteId) return;
     const boleta = this.boletas.find((b) => b.id === this.firmaPendienteId);
+    const hoja = this.hojas.find((h) => h.id === this.firmaPendienteId);
+    if (!boleta && !hoja) return;
     this.firmaPendienteId = null;
     if (boleta && !boleta.firmado && !boleta.enPapel) this.firmarBoleta(boleta);
+    if (hoja && !hoja.firmado) this.firmarHoja(hoja);
   }
 
   alAccionar(evento: { accion: string; fila: BoletaRow }): void {
@@ -264,6 +391,7 @@ export class MisBoletasComponent implements OnInit {
         this.pdfUrl = URL.createObjectURL(blob);
         this.pdfBoletaName = `Boleta de ${boleta.mes} ${boleta.anio}`;
         this.boletaAbierta = boleta;
+        this.hojaAbierta = null;
         this.showPdfModal = true;
       },
       error: () => {
@@ -279,6 +407,7 @@ export class MisBoletasComponent implements OnInit {
   closePdfModal(): void {
     this.showPdfModal = false;
     this.boletaAbierta = null;
+    this.hojaAbierta = null;
     // Abrirla dejó anotado que la revisó: la tabla tiene que enterarse.
     this.cargar();
     if (this.pdfUrl) URL.revokeObjectURL(this.pdfUrl);
@@ -306,6 +435,8 @@ export class MisBoletasComponent implements OnInit {
       return;
     }
     this.boletaAFirmar = boleta;
+    this.hojaAFirmar = null;
+    this.queFirma = `tu boleta de ${boleta.mes} ${boleta.anio}`;
     this.signPassword = '';
     this.signErrorMsg = '';
     this.showSignModal = true;
@@ -315,6 +446,7 @@ export class MisBoletasComponent implements OnInit {
   closeSignModal(): void {
     this.showSignModal = false;
     this.boletaAFirmar = null;
+    this.hojaAFirmar = null;
     this.signPassword = '';
     this.signErrorMsg = '';
     this.isSigning = false;
@@ -322,7 +454,8 @@ export class MisBoletasComponent implements OnInit {
   }
 
   confirmarFirma(): void {
-    if (!this.boletaAFirmar) return;
+    const id = this.boletaAFirmar?.id ?? this.hojaAFirmar?.id;
+    if (!id) return;
     if (!this.signPassword) {
       this.signErrorMsg = 'Ingresa tu contraseña para dar tu conformidad.';
       return;
@@ -331,9 +464,17 @@ export class MisBoletasComponent implements OnInit {
     this.isSigning = true;
     this.signErrorMsg = '';
 
-    this.misDocumentosService.firmar(this.boletaAFirmar.id, this.signPassword).subscribe({
+    this.misDocumentosService.firmar(id, this.signPassword).subscribe({
       next: (res) => {
         this.isSigning = false;
+        if (res.success && this.hojaAFirmar) {
+          const hoja = this.hojaAFirmar;
+          this.toastService.success('Conformidad registrada', `Diste tu conformidad a ${this.queFirma}. Ya puedes descargarla.`);
+          this.closeSignModal();
+          this.cargarHojas();
+          this.verHoja({ ...hoja, firmado: new Date().toISOString() });
+          return;
+        }
         if (res.success) {
           const firmada = this.boletaAFirmar!;
           this.toastService.success('Conformidad registrada', `Diste tu conformidad a tu boleta de ${firmada.mes}. Ya puedes verla y descargarla.`);

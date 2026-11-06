@@ -94,3 +94,17 @@
     transform: translateY(0);
   }
 }
+
+// Sus hojas de CTS y de gratificación, debajo de las boletas.
+.mis-hojas {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mis-hojas__titulos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

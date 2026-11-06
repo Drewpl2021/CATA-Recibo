@@ -13,7 +13,7 @@ import { PayrollDetalleService } from '../../../core/services';
 import { Planilla } from '../../../core/models';
 import { ToastService } from '../../../core/services';
 import { ConfirmService } from '../../../core/services';
-import { Observable, of, map, switchMap, forkJoin, EMPTY, expand } from 'rxjs';
+import { Observable, of, map, switchMap, forkJoin } from 'rxjs';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { AlCuerpoDirective } from '../../../shared/directives/al-cuerpo.directive';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -28,7 +28,8 @@ import { MESES_OPCIONES } from '../../../shared/constants';
 import { diasHabilesDelMes, formatoDia, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { SubirFirmadasComponent } from '../subir-firmadas/subir-firmadas.component';
-import { ResultadoFirmarAqui, ResumenFirmaDigital } from '../../../core/services/planilla/boleta.service';
+import { ResumenFirmaDigital } from '../../../core/services/planilla/boleta.service';
+import { FirmarAquiComponent, TandaDeFirma } from '../../../shared/components/firmar-aqui/firmar-aqui.component';
 
 export interface FormularioBoleta {
   remuneracionBasica: number | null;
@@ -65,7 +66,7 @@ import { CeldaTablaDirective } from '../../../shared/components/data-table/celda
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [CeldaTablaDirective, AvatarComponent, IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, SubirFirmadasComponent, RouterLink, BarraSeleccionComponent],
+  imports: [CeldaTablaDirective, AvatarComponent, IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, SubirFirmadasComponent, FirmarAquiComponent, RouterLink, BarraSeleccionComponent],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })
@@ -350,19 +351,6 @@ export class EmisionBoletaListComponent implements OnInit {
   // ── «Firmar aquí», con el certificado de quien mira ──
 
   modalFirmarAqui = false;
-  claveFirmarAqui = '';
-  firmandoAqui = false;
-  /** Cómo va la pasada: cuántas lleva de cuántas. */
-  avanceFirma: { hechas: number; total: number } | null = null;
-  /** Se pidió detener: termina la tanda en curso y no pide más. */
-  private detenerFirma = false;
-  /** Solo si alguna falló o se detuvo: el detalle se queda en el modal. */
-  resultadoFirmarAqui: (Pick<ResultadoFirmarAqui, 'firmadas' | 'entregadas' | 'a_medias' | 'errores'> & { quedan: number; detenida: boolean }) | null = null;
-
-  get porcentajeFirma(): number {
-    const a = this.avanceFirma;
-    return a && a.total ? Math.min(100, Math.round((a.hechas / a.total) * 100)) : 0;
-  }
 
   get puedeFirmarAqui(): boolean {
     const c = this.resumenFirma?.mi_certificado;
@@ -380,86 +368,16 @@ export class EmisionBoletaListComponent implements OnInit {
   abrirFirmarAqui(): void {
     if (!this.puedeFirmarAqui) return;
     this.modalFirma = false;
-    this.claveFirmarAqui = '';
-    this.resultadoFirmarAqui = null;
     this.modalFirmarAqui = true;
   }
 
-  /** Al cerrar se olvida la clave. Mientras firma no se cierra: primero «Detener». */
-  cerrarFirmarAqui(): void {
-    if (this.firmandoAqui) return;
-    this.modalFirmarAqui = false;
-    this.claveFirmarAqui = '';
-    this.resultadoFirmarAqui = null;
-  }
+  /** Una tanda de «Firmar aquí» con las boletas del mes que se está viendo. */
+  readonly firmarTanda: TandaDeFirma = (clave, desde) =>
+    this.boletaService.firmarAqui(Number(this.mesGlobal), Number(this.anioGlobal), clave, desde);
 
-  /**
-   * Firma por tandas: pide una, y con su «siguiente» la que sigue, hasta que
-   * no quede ninguna (o se pida detener). Con 94 o con mil boletas, ningún
-   * pedido es largo y la barra avanza de verdad.
-   */
-  firmarAqui(): void {
-    if (!this.claveFirmarAqui || this.firmandoAqui) return;
-    const periodo = `${this.nombreMes(this.mesGlobal * 1)} ${this.anioGlobal}`;
-    const mes = Number(this.mesGlobal);
-    const anio = Number(this.anioGlobal);
-    const clave = this.claveFirmarAqui;
-    const tanda = (desde: string | null) => this.boletaService.firmarAqui(mes, anio, clave, desde);
-
-    const suma = { firmadas: 0, entregadas: 0, a_medias: 0, errores: [] as ResultadoFirmarAqui['errores'] };
-    let quedan = 0;
-    this.firmandoAqui = true;
-    this.detenerFirma = false;
-    this.avanceFirma = { hechas: 0, total: 0 };
-
-    const terminar = (falla?: unknown) => {
-      this.firmandoAqui = false;
-      this.claveFirmarAqui = '';
-      this.avanceFirma = null;
-      this.cargarEmpleados();
-      this.cargarResumenFirma();
-
-      // Falló antes de firmar nada (la clave, por ejemplo): solo el aviso.
-      if (falla && !suma.firmadas && !suma.errores.length) {
-        this.toastService.error('No se firmó', mensajeErrorApi(falla, 'No se pudieron firmar las boletas.'));
-        return;
-      }
-      const detenida = this.detenerFirma || !!falla;
-      if (suma.errores.length || detenida) {
-        this.resultadoFirmarAqui = { ...suma, quedan, detenida };
-        if (falla) this.toastService.error('Se cortó la firma', mensajeErrorApi(falla, 'Se perdió la conexión con el servidor.'));
-        return;
-      }
-      this.modalFirmarAqui = false;
-      this.toastService.success(
-        `${suma.firmadas} boleta${suma.firmadas === 1 ? '' : 's'} firmada${suma.firmadas === 1 ? '' : 's'}`,
-        suma.a_medias
-          ? `De ${periodo}: ${suma.entregadas} ya le llegaron al trabajador y ${suma.a_medias} esperan la otra firma.`
-          : `De ${periodo}: ya le llegaron a cada trabajador.`
-      );
-    };
-
-    tanda(null)
-      .pipe(expand((res) => (res.data.siguiente && !this.detenerFirma ? tanda(res.data.siguiente) : EMPTY)))
-      .subscribe({
-        next: (res) => {
-          const d = res.data;
-          if (this.avanceFirma && !this.avanceFirma.total) this.avanceFirma.total = d.total;
-          if (this.avanceFirma) this.avanceFirma.hechas += d.procesadas;
-          suma.firmadas += d.firmadas;
-          suma.entregadas += d.entregadas;
-          suma.a_medias += d.a_medias;
-          suma.errores.push(...d.errores);
-          quedan = d.total - d.procesadas;
-        },
-        error: (err) => terminar(err),
-        complete: () => terminar(),
-      });
-  }
-
-  /** Termina la tanda en curso y no pide más: lo firmado queda firmado. */
-  detenerFirmarAqui(): void {
-    this.detenerFirma = true;
+  alTerminarFirma(): void {
+    this.cargarEmpleados();
+    this.cargarResumenFirma();
   }
   descargandoParaFirmar = false;
   descargandoConstancia = false;

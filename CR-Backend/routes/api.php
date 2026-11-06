@@ -315,12 +315,15 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::get('cts/{empleado}/history',       [\App\Http\Controllers\CtsController::class, 'historial'])->whereUuid('empleado');
         Route::put('cts/absences',                 [\App\Http\Controllers\CtsController::class, 'registrarFaltas']);
         Route::put('cts/absences/batch',           [\App\Http\Controllers\CtsController::class, 'registrarFaltasEnLote']);
+        // «Firmar aquí» en las hojas del depósito, con el certificado de quien lo pide, por tandas.
+        Route::post('cts/sign-here',               [\App\Http\Controllers\CtsController::class, 'firmarAqui'])->middleware('throttle:120,1');
     });
 
     // ── Gratificaciones ──
     Route::middleware('permiso:/gratificaciones')->group(function () {
         Route::get('bonuses',                    [\App\Http\Controllers\GratificacionController::class, 'index']);
         Route::post('bonuses/deliver',           [\App\Http\Controllers\GratificacionController::class, 'entregar']);
+        Route::post('bonuses/sign-here',         [\App\Http\Controllers\GratificacionController::class, 'firmarAqui'])->middleware('throttle:120,1');
         Route::get('bonuses/{empleado}/history', [\App\Http\Controllers\GratificacionController::class, 'historial'])->whereUuid('empleado');
         Route::match(['get', 'post'], 'bonuses/zip/link', [\App\Http\Controllers\GratificacionController::class, 'enlaceZip']);
         Route::get('bonuses/{empleado}/sheet',   [\App\Http\Controllers\GratificacionController::class, 'hoja'])->whereUuid('empleado');

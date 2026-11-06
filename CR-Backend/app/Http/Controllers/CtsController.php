@@ -9,6 +9,7 @@ use App\Models\Documento;
 use App\Models\Empleado;
 use App\Models\ValorLegal;
 use App\Support\Cts\MotorCts;
+use App\Support\FirmaDelColegio;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -27,6 +28,11 @@ use Illuminate\Validation\Rule;
  *   GET    /cts/{empleado}/history      lo que ganó mes por mes en el semestre, de sus planillas
  *   PUT    /cts/absences                anotar sus días de falta injustificada del semestre
  *   PUT    /cts/absences/batch          los de varios a la vez, como la columna de la hoja de RR.HH.
+ *   POST   /cts/sign-here               «Firmar aquí»: la firma digital del colegio en las hojas del depósito
+ *
+ * La hoja de cada depósito se firma digitalmente por el colegio, como la
+ * boleta (App\Support\FirmaDelColegio): el trabajador la ve en Mis
+ * Documentos recién cuando tiene las firmas que pide el colegio.
  *
  * Ver App\Support\Cts\MotorCts para el cálculo.
  */
@@ -90,7 +96,42 @@ class CtsController extends Controller
                 'total'         => round($conDerecho->sum('monto'), 2),
                 'depositado'    => round($filas->where('estado_cts', 'depositada')->sum('monto'), 2),
             ],
+            // Cómo va la firma digital del colegio en las hojas de este depósito.
+            'firma'   => FirmaDelColegio::resumen($request, $this->hojasDelDeposito($anio, $periodo)),
         ]]);
+    }
+
+    /** Las hojas de un depósito que están en el expediente. */
+    private function hojasDelDeposito(int $anio, string $periodo): \Illuminate\Database\Eloquent\Builder
+    {
+        return Documento::where('tipo', 'cts')->where('estado_registro', 'activo')
+            ->where('periodo_anio', $anio)->where('periodo_mes', $periodo === 'mayo' ? 5 : 11);
+    }
+
+    /**
+     * POST /cts/sign-here — «Firmar aquí»: firma una tanda de las hojas del
+     * depósito que esperan la firma de quien lo pide, con su certificado.
+     * La que queda completa le llega al trabajador.
+     */
+    public function firmarAqui(Request $request)
+    {
+        $datos = $request->validate([
+            'anio'    => 'required|integer|min:2000|max:2100',
+            'periodo' => ['required', Rule::in(MotorCts::PERIODOS)],
+        ]);
+        $deposito = "{$datos['periodo']} {$datos['anio']}";
+
+        return FirmaDelColegio::firmarTanda(
+            $request,
+            $this->hojasDelDeposito((int) $datos['anio'], $datos['periodo']),
+            "hojas de CTS de {$deposito}",
+            fn (Documento $d) => "Liquidación de CTS, depósito de {$deposito}",
+            fn (Documento $d) => FirmaDelColegio::avisarAlTrabajador($d, 'hoja de CTS', $deposito),
+            fn (Documento $d) => null,
+            fn (int $firmadas, string $detalle) => Auditoria::registrar('firmó', 'cts', null,
+                "Firmó desde el sistema {$firmadas} hoja(s) de CTS de {$deposito} con su certificado ({$detalle}).",
+                ['firmadas' => $firmadas]),
+        );
     }
 
     /**
@@ -105,8 +146,10 @@ class CtsController extends Controller
         $motor = new MotorCts();
         $guardadas = CtsLiquidacion::where('anio', $anio)->where('periodo', $periodo)->get()->keyBy('empleado_id');
         $faltas = CtsInasistencia::where('anio', $anio)->where('periodo', $periodo)->get()->keyBy('empleado_id');
+        // Cómo va la firma del colegio en la hoja de cada uno.
+        $firmas = Documento::whereIn('id', $guardadas->pluck('documento_id')->filter()->values())->pluck('firma_colegio', 'id');
 
-        return $this->personalDelSemestre($anio, $periodo)->map(function (Empleado $e) use ($motor, $anio, $periodo, $guardadas, $faltas) {
+        return $this->personalDelSemestre($anio, $periodo)->map(function (Empleado $e) use ($motor, $anio, $periodo, $guardadas, $faltas, $firmas) {
             $previa = $motor->calcular($e, $anio, $periodo, (int) ($faltas->get($e->id)?->dias ?? 0));
             $guardada = $guardadas->get($e->id);
             $calculo = $guardada ? $this->desglose($guardada) : $previa;
@@ -147,6 +190,8 @@ class CtsController extends Controller
                 'entidad_financiera' => $guardada?->entidad_financiera,
                 'numero_cuenta'      => $guardada?->numero_cuenta,
                 'documento_id'       => $guardada?->documento_id,
+                // pendiente | parcial | completa; null si su hoja no va por firma digital o no hay hoja.
+                'firma_colegio'      => $guardada?->documento_id ? $firmas->get($guardada->documento_id) : null,
                 // Lo anotado ahora (puede diferir de lo que lleva una ya calculada).
                 'faltas_registradas' => (int) ($faltas->get($e->id)?->dias ?? 0),
                 'faltas_observacion' => $faltas->get($e->id)?->observacion,
@@ -445,6 +490,10 @@ class CtsController extends Controller
         }
 
         $documentoId = $l->documento_id;
+        // Lo que el trabajador ya abrió o firmó no se borra, como con la boleta.
+        if ($documentoId && Documento::where('id', $documentoId)->where('estado_firma', '!=', 'pendiente')->exists()) {
+            return response()->json(['success' => false, 'message' => 'El trabajador ya abrió su hoja de CTS o dio su conformidad: no se puede anular el depósito.'], 422);
+        }
         $l->fill(['estado' => CtsLiquidacion::CALCULADA, 'fecha_deposito' => null, 'documento_id' => null])->save();
         if ($documentoId) {
             Documento::where('id', $documentoId)->update(['estado_registro' => 'inactivo']);
@@ -547,10 +596,12 @@ class CtsController extends Controller
         $semestre = MotorCts::semestre($l->anio, $l->periodo);
 
         return Pdf::loadView('cts', [
-            'l'          => $l,
-            'empleado'   => $l->empleado,
-            'semestre'   => $semestre,
-            'nombreAnio' => ValorLegal::nombreDelAnio($l->anio),
+            'l'                => $l,
+            'empleado'         => $l->empleado,
+            'semestre'         => $semestre,
+            'nombreAnio'       => ValorLegal::nombreDelAnio($l->anio),
+            'firmaDigital'     => \App\Support\FirmaDigitalDeBoletas::activa(),
+            'firmasRequeridas' => \App\Support\FirmaDigitalDeBoletas::requeridas(),
         ])->setPaper('a4', 'portrait');
     }
 
@@ -566,7 +617,8 @@ class CtsController extends Controller
 
         $documento = Documento::updateOrCreate(
             ['empleado_id' => $l->empleado_id, 'tipo' => 'cts', 'periodo_mes' => $mes, 'periodo_anio' => $l->anio],
-            ['archivo' => $ruta, 'estado_registro' => 'activo', 'estado_firma' => 'pendiente'],
+            // Espera la firma digital del colegio: el trabajador la ve cuando esté firmada.
+            ['archivo' => $ruta, 'estado_registro' => 'activo', 'estado_firma' => 'pendiente', ...FirmaDelColegio::camposDeEmision()],
         );
 
         $l->documento_id = $documento->id;
