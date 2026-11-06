@@ -412,7 +412,7 @@
       <div class="form-group">
         <label for="passwordDesbloqueo">Tu contraseña</label>
         <input id="passwordDesbloqueo" type="password" class="form-control" [(ngModel)]="passwordDesbloqueo"
-          placeholder="Tu contraseña" autocomplete="current-password" (keyup.enter)="confirmarDesbloqueo()" />
+          placeholder="Ingrese su contraseña" autocomplete="current-password" (keyup.enter)="confirmarDesbloqueo()" />
           @if (passwordErrorMsg) {
             <small class="form-error">{{ passwordErrorMsg }}</small>
           }

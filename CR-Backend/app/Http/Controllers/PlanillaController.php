@@ -27,7 +27,7 @@ class PlanillaController extends Controller
         // documentoBoleta solo se trae con ?empleado_ids=: es Emisión de
         // Boletas preguntando, para esa página de diez, a quién ya se le
         // armó su boleta — de ahí sale si "Editar" se puede abrir o no.
-        $relaciones = ['empleado.foto', 'corrida'];
+        $relaciones = ['empleado:id,dni,nombre,apellido', 'empleado.foto', 'corrida'];
         if ($request->filled('empleado_ids')) {
             $relaciones[] = 'documentoBoleta';
         }
@@ -593,7 +593,7 @@ class PlanillaController extends Controller
         // ofrecer cambiar conceptos o recalcular. `bloqueo` dice por qué no
         // (planilla cerrada o boleta firmada), con el mismo texto que el
         // rechazo, para avisarlo antes en vez de esperar al error.
-        $planilla = Planilla::with('empleado', 'corrida', 'documentoBoleta:id,planilla_id,tipo,estado_firma')->findOrFail($id);
+        $planilla = Planilla::with('empleado:id,dni,nombre,apellido', 'corrida', 'documentoBoleta:id,planilla_id,tipo,estado_firma')->findOrFail($id);
         $planilla->setAttribute('bloqueo', $planilla->motivoParaNoTocar());
 
         return response()->json(['success' => true, 'data' => $planilla]);
@@ -695,7 +695,7 @@ class PlanillaController extends Controller
 
         return response()->json([
             'success'        => true,
-            'data'           => $planilla->fresh()->load('payrollDetalles.paymentConcept', 'empleado'),
+            'data'           => $planilla->fresh()->load('payrollDetalles.paymentConcept', 'empleado:id,dni,nombre,apellido'),
             'boleta_rehecha' => \App\Support\BoletaAlDia::rehacer($planilla),
         ]);
     }

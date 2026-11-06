@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'foto', 'password', 'rol_id', 'empleado_id', 'estado_registro', 'debe_cambiar_password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'terminos_ip', 'email_verified_at', 'guia_vista_en', 'acceso_enviado_en'])]
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;

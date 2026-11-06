@@ -13,7 +13,8 @@ export interface Documento {
   periodo_anio?: number | null;
   contrato_id?: string | null;
   tipo: string;
-  archivo: string;
+  /** La del archivo guardado, para nombrarlo al bajarlo. La ruta se queda en el servidor. */
+  extension?: string | null;
   estado_registro?: string;
 
   // Firma del trabajador

@@ -27,7 +27,7 @@ class UserController extends Controller
             'estado_registro' => 'nullable|in:activo,inactivo',
         ]);
 
-        $query = User::with('rol', 'empleado');
+        $query = User::with('rol:id,nombre,es_superadmin', 'empleado:id,dni,nombre,apellido');
 
         if (! $request->user()->esSuperadmin()) {
             $query->where('estado_registro', 'activo');
@@ -51,7 +51,7 @@ class UserController extends Controller
 
     public function show(string $id)
     {
-        $user = User::with('rol', 'empleado')->findOrFail($id);
+        $user = User::with('rol:id,nombre,es_superadmin', 'empleado:id,dni,nombre,apellido')->findOrFail($id);
         return response()->json(['success' => true, 'data' => $user]);
     }
 
@@ -59,7 +59,7 @@ class UserController extends Controller
     {
         $datos = $request->validate([
             'name'            => 'sometimes|string|max:255',
-            'email'           => 'sometimes|email|unique:users,email,' . $id,
+            'email'           => 'sometimes|email:rfc,filter|unique:users,email,' . $id,
             'rol_id'          => 'sometimes|uuid|exists:roles,id',
             'empleado_id'     => ['nullable', 'uuid', 'exists:empleados,id', Rule::unique('users', 'empleado_id')->ignore($id)],
             'estado_registro' => 'sometimes|in:activo,inactivo',
@@ -92,7 +92,7 @@ class UserController extends Controller
         $quitaAdministrador = ($cambios['estado_registro'] ?? null) === 'inactivo'
             || (isset($cambios['rol_id']) && ! Rol::whereKey($cambios['rol_id'])->value('es_superadmin'));
         if ($quitaAdministrador && $this->esElUltimoAdministrador($user)) {
-            return response()->json(['success' => false, 'data' => ['message' => self::ULTIMO_ADMINISTRADOR]], 422);
+            return response()->json(['success' => false, 'message' => self::ULTIMO_ADMINISTRADOR], 422);
         }
 
         DB::transaction(function () use ($user, $cambios) {
@@ -101,7 +101,7 @@ class UserController extends Controller
                 $user->tokens()->delete();
             }
         });
-        $user->load('rol', 'empleado');
+        $user->load('rol:id,nombre,es_superadmin', 'empleado:id,dni,nombre,apellido');
 
         return response()->json(['success' => true, 'data' => $user]);
     }
@@ -112,13 +112,13 @@ class UserController extends Controller
         $quien = $request->user();
 
         if ((string) $quien->id === (string) $user->id) {
-            return response()->json(['success' => false, 'data' => ['message' => 'No puedes darte de baja a ti mismo.']], 422);
+            return response()->json(['success' => false, 'message' => 'No puedes darte de baja a ti mismo.'], 422);
         }
         if ($user->protegidaPara($quien)) {
             return $this->prohibido(self::SOLO_ADMINISTRADOR);
         }
         if ($this->esElUltimoAdministrador($user)) {
-            return response()->json(['success' => false, 'data' => ['message' => self::ULTIMO_ADMINISTRADOR]], 422);
+            return response()->json(['success' => false, 'message' => self::ULTIMO_ADMINISTRADOR], 422);
         }
 
         DB::transaction(function () use ($user) {
@@ -135,7 +135,7 @@ class UserController extends Controller
 
     private function prohibido(string $mensaje)
     {
-        return response()->json(['success' => false, 'data' => ['message' => $mensaje]], 403);
+        return response()->json(['success' => false, 'message' => $mensaje], 403);
     }
 
     private function esElUltimoAdministrador(User $user): bool
@@ -167,7 +167,7 @@ class UserController extends Controller
         if ($quienPide->id === $user->id) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'Para tu propia cuenta usa Cambiar contraseña, en tu perfil.'],
+                'message' => 'Para tu propia cuenta usa Cambiar contraseña, en tu perfil.',
             ], 422);
         }
 

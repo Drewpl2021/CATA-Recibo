@@ -116,7 +116,7 @@ class PaymentConceptController extends Controller
         if (in_array($concepto->nombre, self::CONCEPTOS_CON_CALCULO_ESPECIAL, true) || $concepto->de_ley) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => "\"{$concepto->nombre}\" se calcula automáticamente por empleado y no se puede aplicar por grupo."],
+                'message' => "\"{$concepto->nombre}\" se calcula automáticamente por empleado y no se puede aplicar por grupo.",
             ], 422);
         }
 
@@ -137,7 +137,7 @@ class PaymentConceptController extends Controller
         if (empty($calculo) || is_null($valor)) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => "\"{$concepto->nombre}\" no tiene un monto por defecto en el catálogo. Indica cuánto se le aplica a cada trabajador."],
+                'message' => "\"{$concepto->nombre}\" no tiene un monto por defecto en el catálogo. Indica cuánto se le aplica a cada trabajador.",
             ], 422);
         }
 
@@ -169,7 +169,7 @@ class PaymentConceptController extends Controller
             if ($corrida->estaCerrada()) {
                 return response()->json([
                     'success' => false,
-                    'data'    => ['message' => "La planilla \"{$corrida->nombre}\" está cerrada: ya se pagó y no se le pueden mover las cifras."],
+                    'message' => "La planilla \"{$corrida->nombre}\" está cerrada: ya se pagó y no se le pueden mover las cifras.",
                 ], 409);
             }
 
@@ -184,7 +184,7 @@ class PaymentConceptController extends Controller
             if (empty($deLaPlanilla)) {
                 return response()->json([
                     'success' => false,
-                    'data'    => ['message' => "La planilla \"{$corrida->nombre}\" todavía no tiene trabajadores."],
+                    'message' => "La planilla \"{$corrida->nombre}\" todavía no tiene trabajadores.",
                 ], 422);
             }
 
@@ -204,7 +204,7 @@ class PaymentConceptController extends Controller
                 if (empty($elegidos)) {
                     return response()->json([
                         'success' => false,
-                        'data'    => ['message' => "Ninguno de los trabajadores que marcaste está dentro de \"{$corrida->nombre}\"."],
+                        'message' => "Ninguno de los trabajadores que marcaste está dentro de \"{$corrida->nombre}\".",
                     ], 422);
                 }
 

@@ -26,7 +26,7 @@ class MiBoletaController extends Controller
         if (!$empleado_id) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'Tu usuario no tiene empleado vinculado.']
+                'message' => 'Tu usuario no tiene empleado vinculado.'
             ], 403);
         }
 
@@ -39,7 +39,7 @@ class MiBoletaController extends Controller
         if (!$planilla) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => "No existe planilla para el mes {$mes} del año {$anio}."]
+                'message' => "No existe planilla para el mes {$mes} del año {$anio}."
             ], 404);
         }
 

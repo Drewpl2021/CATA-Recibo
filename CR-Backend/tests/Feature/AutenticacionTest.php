@@ -20,7 +20,7 @@ class AutenticacionTest extends TestCase
         $r->assertOk()
           ->assertJsonPath('success', true)
           ->assertJsonPath('data.user.email', $user->email)
-          ->assertJsonStructure(['data' => ['token', 'debe_cambiar_password', 'es_institucional']]);
+          ->assertJsonStructure(['data' => ['token', 'debe_cambiar_password', 'user' => ['es_institucional']]]);
         $this->assertNotEmpty($r->json('data.token'));
     }
 

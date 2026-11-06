@@ -21,14 +21,14 @@ class CheckPermiso
         if (! $usuario) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'No autenticado.'],
+                'message' => 'No autenticado.',
             ], 401);
         }
 
         if (! Permisos::puede($usuario->loadMissing('rol'), ...$modulos)) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'No tienes permiso para esta acción. Pide a Administración que le dé ese módulo a tu rol.'],
+                'message' => 'No tienes permiso para esta acción. Pide a Administración que le dé ese módulo a tu rol.',
             ], 403);
         }
 

@@ -50,7 +50,7 @@
       <div class="form-group">
         <label for="cuspp">CUSPP *</label>
         <input type="text" id="cuspp" class="form-control" formControlName="cuspp"
-          maxlength="12" placeholder="12 caracteres, por ejemplo 052281JHPMM4"
+          maxlength="12" placeholder="Ingrese los 12 caracteres del CUSPP"
           [class.is-invalid]="invalido('cuspp')" />
           @if (invalido('cuspp')) {
             <small class="form-error">Son 12 caracteres, entre letras y números.</small>
@@ -129,12 +129,12 @@
             <div class="form-group">
               <label for="numero_cuenta">Número de cuenta</label>
               <input type="text" id="numero_cuenta" class="form-control"
-                formControlName="numero_cuenta" placeholder="Cuenta de abono del sueldo" />
+                formControlName="numero_cuenta" placeholder="Ingrese la cuenta de abono del sueldo" />
               </div>
               <div class="form-group">
                 <label for="cci">CCI</label>
                 <input type="text" id="cci" class="form-control" formControlName="cci"
-                  inputmode="numeric" maxlength="20" placeholder="20 dígitos"
+                  inputmode="numeric" maxlength="20" placeholder="Ingrese los 20 dígitos del CCI"
                   [class.is-invalid]="invalido('cci')" />
                   @if (invalido('cci')) {
                     <small class="form-error">

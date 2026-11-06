@@ -20,6 +20,12 @@ class Planilla extends Model
      * (0 de 13 con periodo_id) y en la pantalla, cuyo filtro por periodo no
      * devolvía nunca nada. Nadie lo notó porque no falla: solo no guarda.
      */
+    /**
+     * Las dos columnas viejas ya no cuentan (ver abajo) y el neto exacto es para
+     * sumar en el servidor: la pantalla usa las líneas y el total.
+     */
+    protected $hidden = ['bonificaciones', 'descuentos', 'total_exacto'];
+
     protected $fillable = [
         'empleado_id',
         'mes',

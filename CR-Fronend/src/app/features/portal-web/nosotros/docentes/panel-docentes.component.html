@@ -83,7 +83,7 @@
     <div class="form-group">
       <label for="docente-nombre">Nombre *</label>
       <input id="docente-nombre" type="text" class="form-control" formControlName="nombre" maxlength="80"
-        placeholder="Ej. Rosa Quispe Mamani" [class.is-invalid]="invalido('nombre')" />
+        placeholder="Ingrese los nombres y apellidos del docente" [class.is-invalid]="invalido('nombre')" />
       <small class="form-error" *ngIf="invalido('nombre')">Obligatorio (máximo 80).</small>
     </div>
     <div class="form-group">

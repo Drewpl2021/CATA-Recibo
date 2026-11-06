@@ -22,6 +22,34 @@ class Documento extends Model
      */
     public const FIRMA_COLEGIO_EN_CURSO = ['pendiente', 'parcial'];
 
+    /**
+     * Dónde está guardado el archivo y el rastro de la firma se quedan en el
+     * servidor: la pantalla abre el documento por su id, y la constancia de
+     * entrega los lee aquí adentro.
+     */
+    protected $hidden = [
+        'archivo',
+        'archivo_sin_firma',
+        'huella',
+        'conformidad_ip',
+        'conformidad_dispositivo',
+        'conformidad_sha256',
+        'firma_colegio_subida_por',
+        'empleador_id',
+        'firmado_por_empleador',
+        'codigo_firma_empleador',
+        'fecha_firma_empleador',
+        'estado_firma_empleador',
+    ];
+
+    /** Para nombrar el archivo al bajarlo, sin enseñar su ruta. */
+    protected $appends = ['extension'];
+
+    public function getExtensionAttribute(): ?string
+    {
+        return pathinfo((string) ($this->attributes['archivo'] ?? ''), PATHINFO_EXTENSION) ?: null;
+    }
+
     protected $fillable = [
         'empleado_id',
         'contrato_id',

@@ -44,6 +44,13 @@ class UsuarioDemoSeeder extends Seeder
 {
     public function run(): void
     {
+        // Borra a las personas y siembra gente ficticia: jamás en producción.
+        if (app()->isProduction()) {
+            $this->command?->error('Los datos de demostración no se cargan en producción.');
+
+            return;
+        }
+
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         User::truncate();
         Empleado::truncate();

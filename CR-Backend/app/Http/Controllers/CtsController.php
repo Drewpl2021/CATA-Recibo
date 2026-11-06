@@ -240,17 +240,13 @@ class CtsController extends Controller
         ]);
         // Una cuenta escrita a mano solo tiene sentido para una persona.
         if (! empty($datos['numero_cuenta']) && count($datos['ids']) > 1) {
-            return response()->json(['success' => false, 'data' => [
-                'message' => 'El número de cuenta se escribe solo cuando se registra el depósito de una persona.',
-            ]], 422);
+            return response()->json(['success' => false, 'message' => 'El número de cuenta se escribe solo cuando se registra el depósito de una persona.'], 422);
         }
 
         $liquidaciones = CtsLiquidacion::with('empleado.cargo')->whereIn('id', $datos['ids'])->get();
         $yaDepositadas = $liquidaciones->filter->depositada();
         if ($yaDepositadas->isNotEmpty()) {
-            return response()->json(['success' => false, 'data' => [
-                'message' => 'Hay CTS que ya estaban depositadas. Quítalas de la selección.',
-            ]], 422);
+            return response()->json(['success' => false, 'message' => 'Hay CTS que ya estaban depositadas. Quítalas de la selección.'], 422);
         }
 
         DB::transaction(function () use ($liquidaciones, $datos) {
@@ -278,7 +274,7 @@ class CtsController extends Controller
     {
         $l = CtsLiquidacion::with('empleado')->findOrFail($id);
         if (! $l->depositada()) {
-            return response()->json(['success' => false, 'data' => ['message' => 'Esta CTS no tiene un depósito registrado.']], 422);
+            return response()->json(['success' => false, 'message' => 'Esta CTS no tiene un depósito registrado.'], 422);
         }
 
         $documentoId = $l->documento_id;

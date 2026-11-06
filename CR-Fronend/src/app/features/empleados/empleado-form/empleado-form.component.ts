@@ -19,7 +19,7 @@ import {
 import { Area, Cargo, Documento, Empleado, EmpleadoPayload, Rol, Sede,
   Contrato, TipoContrato, Usuario,
 } from '../../../core/models';
-import { mensajeErrorApi } from '../../../core/utils';
+import { CORREO_CON_DOMINIO, mensajeErrorApi } from '../../../core/utils';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { WizardComponent } from '../../../shared/components/wizard/wizard.component';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
@@ -171,7 +171,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     contacto_emergencia_telefono: ['', [Validators.pattern(/^[0-9]*$/), Validators.maxLength(15)]],
 
     // ── Acceso ──
-    email: ['', [Validators.required, Validators.email]],
+    email: ['', [Validators.required, Validators.email, Validators.pattern(CORREO_CON_DOMINIO)]],
     rol_id: ['', [Validators.required]],
   });
 
@@ -300,7 +300,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     rol.updateValueAndValidity();
 
     const email = this.form.get('email')!;
-    email.setValidators([Validators.email]);
+    email.setValidators([Validators.email, Validators.pattern(CORREO_CON_DOMINIO)]);
     email.updateValueAndValidity();
   }
 
@@ -764,8 +764,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
 
   /** "CV - Mamani Flores Carlos.pdf", conservando su extensión original. */
   private nombreDelCv(): string {
-    const guardado = this.hojaDeVida?.archivo ?? '';
-    const extension = guardado.includes('.') ? guardado.split('.').pop() : 'pdf';
+    const extension = this.hojaDeVida?.extension || 'pdf';
 
     const v = this.form.getRawValue();
     const persona = `${v.apellido ?? ''} ${v.nombre ?? ''}`.trim() || 'trabajador';

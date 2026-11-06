@@ -67,7 +67,7 @@ final class AltaDeEmpleado
             'fecha_cese'         => ['nullable', 'date', 'after:fecha_ingreso', new FechaFinSegunTipoContrato()],
             'forma_pago'         => 'nullable|in:banco,efectivo,otro,honorarios',
             'sede_id'            => 'required|uuid|exists:sedes,id',
-            'email'              => 'required|email|unique:users,email',
+            'email'              => 'required|email:rfc,filter|unique:users,email',
             'rol_id'             => 'required|uuid|exists:roles,id',
             'nivel_estudios'       => 'nullable|in:primaria,secundaria,tecnico,universitario,maestria,doctorado',
             'especialidad'         => 'nullable|string|max:150',

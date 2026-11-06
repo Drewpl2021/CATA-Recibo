@@ -443,7 +443,7 @@ class PlanillaCorridaController extends Controller
         if ($corrida->estaCerrada()) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'Esta planilla está cerrada. Ábrela primero si de verdad quieres eliminarla.'],
+                'message' => 'Esta planilla está cerrada. Ábrela primero si de verdad quieres eliminarla.',
             ], 409);
         }
 
@@ -496,7 +496,7 @@ class PlanillaCorridaController extends Controller
         if ($corrida->estaCerrada()) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'Esta planilla está cerrada: no se le pueden agregar trabajadores.'],
+                'message' => 'Esta planilla está cerrada: no se le pueden agregar trabajadores.',
             ], 409);
         }
 
@@ -509,7 +509,7 @@ class PlanillaCorridaController extends Controller
         if ($empleados->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'Ningún trabajador activo coincide con el grupo indicado.'],
+                'message' => 'Ningún trabajador activo coincide con el grupo indicado.',
             ], 422);
         }
 
@@ -555,7 +555,7 @@ class PlanillaCorridaController extends Controller
         if ($corrida->estaCerrada()) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'Esta planilla está cerrada: no se le pueden mover trabajadores.'],
+                'message' => 'Esta planilla está cerrada: no se le pueden mover trabajadores.',
             ], 409);
         }
 

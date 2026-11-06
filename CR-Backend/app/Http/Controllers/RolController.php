@@ -116,7 +116,7 @@ class RolController extends Controller
         if ($this->esDelSistema($rol)) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => "El rol \"{$rol->nombre}\" es del sistema y no se puede eliminar."],
+                'message' => "El rol \"{$rol->nombre}\" es del sistema y no se puede eliminar.",
             ], 409);
         }
 
@@ -124,7 +124,7 @@ class RolController extends Controller
         if ($usuariosConEsteRol > 0) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => "No se puede eliminar: hay {$usuariosConEsteRol} usuario(s) con este rol asignado."],
+                'message' => "No se puede eliminar: hay {$usuariosConEsteRol} usuario(s) con este rol asignado.",
             ], 409);
         }
 

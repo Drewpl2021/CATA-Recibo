@@ -809,7 +809,7 @@ class EmpleadoController extends Controller
             // Email del usuario vinculado: se acepta editar aquí mismo porque no todos
             // tienen correo institucional al momento de ingresar. Se da de alta con uno
             // provisional y se actualiza cuando ya tienen el definitivo.
-            'email'              => ['nullable', 'email', Rule::unique('users', 'email')->ignore($usuario?->id)],
+            'email'              => ['nullable', 'email:rfc,filter', Rule::unique('users', 'email')->ignore($usuario?->id)],
             'nivel_estudios'       => 'nullable|in:primaria,secundaria,tecnico,universitario,maestria,doctorado',
             'especialidad'         => 'nullable|string|max:150',
             'institucion_estudios' => 'nullable|string|max:150',

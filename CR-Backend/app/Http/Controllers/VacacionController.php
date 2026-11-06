@@ -198,7 +198,7 @@ class VacacionController extends Controller
             && $vacacion->empleado_id !== $this->empleadoDelToken($request)) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'Esta solicitud no es tuya.'],
+                'message' => 'Esta solicitud no es tuya.',
             ], 403);
         }
 
@@ -227,7 +227,7 @@ class VacacionController extends Controller
         if ($quien->empleado_id && (string) $quien->empleado_id === (string) $vacacion->empleado_id && ! $quien->esSuperadmin()) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'No puedes resolver tu propia solicitud: la resuelve otra persona.'],
+                'message' => 'No puedes resolver tu propia solicitud: la resuelve otra persona.',
             ], 403);
         }
 
@@ -285,14 +285,14 @@ class VacacionController extends Controller
             if ($vacacion->empleado_id !== $this->empleadoDelToken($request)) {
                 return response()->json([
                     'success' => false,
-                    'data'    => ['message' => 'Esta solicitud no es tuya.'],
+                    'message' => 'Esta solicitud no es tuya.',
                 ], 403);
             }
 
             if ($vacacion->estado !== 'pendiente') {
                 return response()->json([
                     'success' => false,
-                    'data'    => ['message' => 'Esta solicitud ya fue resuelta. Habla con Recursos Humanos.'],
+                    'message' => 'Esta solicitud ya fue resuelta. Habla con Recursos Humanos.',
                 ], 422);
             }
         }

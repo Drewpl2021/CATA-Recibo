@@ -76,10 +76,9 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'data'    => [
-                'user'            => $user->load('rol', 'empleado'),
+                'user'            => $user->load('rol:id,nombre,es_superadmin'),
                 'permisos'        => \App\Support\Permisos::paraPantalla($user),
                 'token'           => $token,
-                'es_institucional'=> $user->es_institucional,
                 // Si viene en true, el frontend manda a cambiar la contraseña
                 // y no deja pasar a ninguna otra pantalla. El backend lo
                 // vuelve a comprobar en cada petición (ExigirCambioPassword),
@@ -102,7 +101,7 @@ class AuthController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data'    => $request->user()->load('rol', 'empleado')->setAttribute('permisos', \App\Support\Permisos::paraPantalla($request->user())),
+            'data'    => $request->user()->load('rol:id,nombre,es_superadmin')->setAttribute('permisos', \App\Support\Permisos::paraPantalla($request->user())),
         ]);
     }
     public function cambiarPassword(Request $request)

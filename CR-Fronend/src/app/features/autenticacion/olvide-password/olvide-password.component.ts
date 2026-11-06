@@ -55,10 +55,7 @@ export class OlvidePasswordComponent {
       },
       error: (err) => {
         this.enviando = false;
-        // 429: pidió otro enlace demasiado pronto. Es el único caso en que el
-        // backend sí dice algo concreto.
         this.errorMsg =
-          err?.error?.data?.message ||
           err?.error?.message ||
           'No se pudo conectar con el servidor. Intenta de nuevo.';
       },

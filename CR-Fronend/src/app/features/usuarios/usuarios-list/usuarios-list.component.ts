@@ -13,7 +13,7 @@ import {
   ConfirmService,
 } from '../../../core/services';
 import { Empleado, ModuloAdmin, Rol, Usuario } from '../../../core/models';
-import { fechaLegible, mensajeErrorApi } from '../../../core/utils';
+import { CORREO_CON_DOMINIO, fechaLegible, mensajeErrorApi } from '../../../core/utils';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
@@ -175,7 +175,7 @@ export class UsuariosListComponent implements OnInit {
 
   form = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(255)]],
-    email: ['', [Validators.required, Validators.email]],
+    email: ['', [Validators.required, Validators.email, Validators.pattern(CORREO_CON_DOMINIO)]],
     rol_id: ['', [Validators.required]],
     empleado_id: [''],
   });

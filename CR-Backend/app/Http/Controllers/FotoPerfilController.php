@@ -137,14 +137,14 @@ class FotoPerfilController extends Controller
         if (! $puede) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'No tienes permiso para ver esta foto.'],
+                'message' => 'No tienes permiso para ver esta foto.',
             ], 403);
         }
 
         if (! $usuario->foto || ! Storage::disk('local')->exists($usuario->foto)) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'Esta cuenta no tiene foto de perfil.'],
+                'message' => 'Esta cuenta no tiene foto de perfil.',
             ], 404);
         }
 

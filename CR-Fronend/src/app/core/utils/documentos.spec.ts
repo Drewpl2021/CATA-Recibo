@@ -79,26 +79,26 @@ describe('firma del documento', () => {
 
 describe('formato del archivo', () => {
   it('reconoce PDF, imágenes y Word', () => {
-    expect(esPdf(doc({ archivo: 'Hoja.PDF' }))).toBeTrue();
-    expect(esImagen(doc({ archivo: 'foto.jpeg' }))).toBeTrue();
-    expect(formatoDocumento(doc({ archivo: 'a.docx' }))).toBe('Word');
-    expect(formatoDocumento(doc({ archivo: 'a.png' }))).toBe('imagen');
-    expect(formatoDocumento(doc({ archivo: 'a.pdf' }))).toBe('PDF');
+    expect(esPdf(doc({ extension: 'PDF' }))).toBeTrue();
+    expect(esImagen(doc({ extension: 'jpeg' }))).toBeTrue();
+    expect(formatoDocumento(doc({ extension: 'docx' }))).toBe('Word');
+    expect(formatoDocumento(doc({ extension: 'png' }))).toBe('imagen');
+    expect(formatoDocumento(doc({ extension: 'pdf' }))).toBe('PDF');
   });
 
   it('solo se ven sin bajar los PDF y las imágenes', () => {
-    expect(sePuedeVer(doc({ archivo: 'a.pdf' }))).toBeTrue();
-    expect(sePuedeVer(doc({ archivo: 'a.webp' }))).toBeTrue();
-    expect(sePuedeVer(doc({ archivo: 'a.docx' }))).toBeFalse();
+    expect(sePuedeVer(doc({ extension: 'pdf' }))).toBeTrue();
+    expect(sePuedeVer(doc({ extension: 'webp' }))).toBeTrue();
+    expect(sePuedeVer(doc({ extension: 'docx' }))).toBeFalse();
   });
 
   it('sin extensión se asume PDF', () => {
-    expect(extensionDocumento(doc({ archivo: 'sin_extension' }))).toBe('pdf');
+    expect(extensionDocumento(doc({ extension: null }))).toBe('pdf');
     expect(extensionDocumento(doc({}))).toBe('pdf');
   });
 
   it('el nombre de descarga lleva a la persona para no repetirse', () => {
-    const d = doc({ tipo: 'hoja_de_vida', archivo: 'x.pdf' });
+    const d = doc({ tipo: 'hoja_de_vida', extension: 'pdf' });
 
     expect(nombreArchivoDocumento(d, 'Ana Pérez')).toBe('Hoja de vida - Ana Pérez.pdf');
     expect(nombreArchivoDocumento(d)).toBe('Hoja de vida.pdf');

@@ -126,7 +126,11 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             if ($e instanceof ValidationException) {
-                return null;
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->validator->errors()->first(),
+                    'errors'  => $e->errors(),
+                ], $e->status);
             }
 
             [$estado, $mensaje] = match (true) {

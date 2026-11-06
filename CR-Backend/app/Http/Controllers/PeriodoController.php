@@ -89,7 +89,7 @@ class PeriodoController extends Controller
         if ($fechaDelMes->lt($inicioPeriodo) || $fechaDelMes->gt($finPeriodo)) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => "El mes {$mes}/{$anio} no cae dentro del rango de este periodo ({$periodo->fecha_inicio} a {$periodo->fecha_fin})."],
+                'message' => "El mes {$mes}/{$anio} no cae dentro del rango de este periodo ({$periodo->fecha_inicio} a {$periodo->fecha_fin}).",
             ], 422);
         }
 
@@ -100,7 +100,7 @@ class PeriodoController extends Controller
         if ($empleados->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'Ningún empleado activo coincide con el grupo indicado.'],
+                'message' => 'Ningún empleado activo coincide con el grupo indicado.',
             ], 422);
         }
 
