@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Documento } from '../../models';
@@ -68,6 +68,18 @@ export class MisDocumentosService {
     return this.http
       .patch<ApiResponse<Documento>>(`${this.apiUrl}/${END_POINTS_ACCIONES.marcarDocumentoVisto(id)}`, {})
       .pipe(tap((res) => { if (res.success) this.refrescarPendientes().subscribe(); }));
+  }
+
+  /**
+   * Varias de sus boletas y hojas juntas: un .zip (cada una firmada, tal
+   * cual) o un solo PDF para leer o imprimir. Solo entran las que ya tienen
+   * su conformidad; cuántas quedaron fuera viene en X-No-Incluidas.
+   */
+  juntar(ids: string[], formato: 'zip' | 'pdf'): Observable<HttpResponse<Blob>> {
+    return this.http.post(`${this.apiUrl}/${END_POINTS_ACCIONES.juntarMisDocumentos}`, { ids, formato }, {
+      responseType: 'blob',
+      observe: 'response',
+    });
   }
 
   firmar(id: string, password: string): Observable<ApiResponse<Documento> & { message?: string }> {

@@ -119,6 +119,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     Route::post('my-documents/{id}/sign',  [MisDocumentosController::class, 'firmar'])->middleware('throttle:clave');
     // El trabajador sube su propio CV; el empleado sale del token.
     Route::post('my-documents/resume', [MisDocumentosController::class, 'subirHojaDeVida']);
+    // Varias de sus boletas y hojas juntas, en .zip o en un solo PDF.
+    Route::post('my-documents/bundle', [MisDocumentosController::class, 'juntar'])->middleware('throttle:20,1');
     Route::get('my-modules', [MisModulosController::class, 'index']);
     Route::put('change-password', [AuthController::class, 'cambiarPassword'])->middleware('throttle:clave');
     // Confirma la CLAVE de quien está en la sesión, sin cambiar nada. La usa

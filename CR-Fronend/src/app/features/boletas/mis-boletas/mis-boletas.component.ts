@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { GlobalWorkerOptions } from 'pdfjs-dist';
 import { AuthService, BoletaService, MisDocumentosService, ToastService } from '../../../core/services';
 import { Documento } from '../../../core/models';
-import { mensajeErrorApi } from '../../../core/utils';
+import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { VisorPdfComponent } from '../../../shared/components/visor-pdf/visor-pdf.component';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -15,7 +15,18 @@ import { CeldaTablaDirective } from '../../../shared/components/data-table/celda
 import { nombreMes } from '../../../shared/constants';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { AlCuerpoDirective } from '../../../shared/directives/al-cuerpo.directive';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { DocumentoService } from '../../../core/services/planilla/documento.service';
+
+/** Una boleta u hoja en la lista de «Descargar varias». */
+interface OpcionJuntar {
+  id: string;
+  titulo: string;
+  detalle: string;
+  /** Ya tiene su conformidad: se puede bajar. */
+  sePuede: boolean;
+  marcada: boolean;
+}
 
 /**
  * Una hoja de CTS o de gratificación: le llega aquí, junto a sus boletas,
@@ -82,7 +93,7 @@ export interface BoletaRow {
 @Component({
   selector: 'app-mis-boletas',
   standalone: true,
-  imports: [IconComponent, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, AlCuerpoDirective],
+  imports: [IconComponent, FormsModule, VisorPdfComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, AlCuerpoDirective, PistaDirective],
   templateUrl: './mis-boletas.component.html',
   styleUrl: './mis-boletas.component.scss'
 })
@@ -172,6 +183,71 @@ export class MisBoletasComponent implements OnInit {
       visible: (b) => !b.firmado && !b.enPapel,
     },
   ];
+
+  // ── Bajar varias juntas: .zip o un solo PDF ──
+  modalJuntar = false;
+  juntando = false;
+  formatoJuntar: 'zip' | 'pdf' = 'zip';
+  /** Lo que se ofrece para juntar; se arma al abrir, no en un getter. */
+  opcionesJuntar: OpcionJuntar[] = [];
+  cuantasMarcadas = 0;
+
+  abrirJuntar(): void {
+    this.opcionesJuntar = [
+      ...this.boletas.map((b) => ({
+        id: b.id, titulo: `Boleta de ${b.mes}`, detalle: `${b.anio}`,
+        sePuede: !!b.firmado || b.enPapel, marcada: !!b.firmado || b.enPapel,
+      })),
+      ...this.hojas.map((h) => ({
+        id: h.id, titulo: h.documento, detalle: h.periodo, sePuede: !!h.firmado, marcada: !!h.firmado,
+      })),
+    ];
+    this.formatoJuntar = 'zip';
+    this.contarMarcadas();
+    this.modalJuntar = true;
+  }
+
+  contarMarcadas(): void {
+    this.cuantasMarcadas = this.opcionesJuntar.filter((o) => o.sePuede && o.marcada).length;
+  }
+
+  marcarTodasJuntar(marcar: boolean): void {
+    this.opcionesJuntar.forEach((o) => (o.marcada = o.sePuede && marcar));
+    this.contarMarcadas();
+  }
+
+  juntar(): void {
+    const ids = this.opcionesJuntar.filter((o) => o.sePuede && o.marcada).map((o) => o.id);
+    if (!ids.length || this.juntando) return;
+    this.juntando = true;
+    this.misDocumentosService.juntar(ids, this.formatoJuntar).subscribe({
+      next: (res) => {
+        this.juntando = false;
+        this.modalJuntar = false;
+        const nombre = `Mis documentos ${this.anioElegido}.${this.formatoJuntar}`;
+        guardarArchivo(res.body!, nombre);
+        const fuera = Number(res.headers.get('X-No-Incluidas') ?? 0);
+        this.toastService.success(
+          'Descarga lista',
+          fuera
+            ? `${ids.length - fuera} documento(s) en ${nombre}. ${fuera} no se pudieron incluir${this.formatoJuntar === 'zip' ? ': el motivo va en NO_INCLUIDAS.txt' : ''}.`
+            : `${ids.length} documento(s) en ${nombre}.`,
+        );
+        this.cargar();
+      },
+      error: async (err) => {
+        this.juntando = false;
+        // El error llega como Blob (se pidió un archivo): se lee para mostrar su mensaje.
+        let mensaje = 'No se pudieron bajar. Inténtalo de nuevo.';
+        try {
+          if (err?.error instanceof Blob) mensaje = JSON.parse(await err.error.text())?.message ?? mensaje;
+        } catch {
+          /* se queda el mensaje de siempre */
+        }
+        this.toastService.error('No se descargó', mensaje);
+      },
+    });
+  }
 
   // ── Sus hojas de CTS y de gratificación del año ──
   hojas: HojaRow[] = [];

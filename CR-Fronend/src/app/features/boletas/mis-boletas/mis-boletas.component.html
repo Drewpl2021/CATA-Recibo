@@ -4,7 +4,13 @@
   [subtitulo]="'Hola ' + userName + '. Acá están tus boletas de pago: revísalas y da tu conformidad.'"
   [cifras]="cifras"
   [cargandoCifras]="cargando"
-></app-page-header>
+>
+  <button headerActions type="button" class="btn-secondary" (click)="abrirJuntar()" [disabled]="!boletas.length && !hojas.length"
+    appPista="Baja varias de tus boletas y hojas del año juntas: en un .zip o en un solo PDF para imprimir.">
+    <app-icon icono="download" [tamano]="16"></app-icon>
+    Descargar varias
+  </button>
+</app-page-header>
 
 <section class="panel-filtros">
   <div class="panel-filtros__campos panel-filtros__campos--compacto">
@@ -144,3 +150,50 @@
       </div>
     </div>
   </app-form-modal>
+
+<!-- Varias juntas: .zip con cada una firmada, o un solo PDF para leer o imprimir. -->
+<app-form-modal
+  [(visible)]="modalJuntar"
+  [titulo]="'Descargar varias del ' + anioElegido"
+  [textoGuardar]="juntando ? 'Preparando…' : 'Descargar ' + cuantasMarcadas"
+  [guardando]="juntando"
+  (guardar)="juntar()"
+  (cancelar)="modalJuntar = false"
+  ancho="560px"
+  >
+  <div class="form-fields">
+    <div class="form-group">
+      <label>Formato</label>
+      <div class="juntar-formatos" role="radiogroup" aria-label="Formato">
+        <label class="juntar-formato" [class.juntar-formato--activo]="formatoJuntar === 'zip'">
+          <input type="radio" name="formatoJuntar" value="zip" [(ngModel)]="formatoJuntar" />
+          <span><strong>Archivo .zip</strong><small>Cada una por separado, con la firma digital del colegio. Es el que vale como constancia.</small></span>
+        </label>
+        <label class="juntar-formato" [class.juntar-formato--activo]="formatoJuntar === 'pdf'">
+          <input type="radio" name="formatoJuntar" value="pdf" [(ngModel)]="formatoJuntar" />
+          <span><strong>Un solo PDF</strong><small>Todas seguidas, para leer o imprimir. Al juntarlas, la firma digital no viaja en esta copia.</small></span>
+        </label>
+      </div>
+    </div>
+    <div class="juntar-lista__cabecera">
+      <label>Qué incluir</label>
+      <span>
+        <button type="button" class="enlace-sutil" (click)="marcarTodasJuntar(true)">Marcar todas</button> ·
+        <button type="button" class="enlace-sutil" (click)="marcarTodasJuntar(false)">Ninguna</button>
+      </span>
+    </div>
+    <ul class="juntar-lista">
+      @for (o of opcionesJuntar; track o.id) {
+        <li [class.juntar-lista__item--apagado]="!o.sePuede">
+          <label>
+            <input type="checkbox" [(ngModel)]="o.marcada" [disabled]="!o.sePuede" (ngModelChange)="contarMarcadas()" />
+            <span><strong>{{ o.titulo }}</strong> · {{ o.detalle }}</span>
+          </label>
+          @if (!o.sePuede) {
+            <small class="form-ayuda">Da tu conformidad para poder bajarla.</small>
+          }
+        </li>
+      }
+    </ul>
+  </div>
+</app-form-modal>

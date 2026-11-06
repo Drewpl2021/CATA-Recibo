@@ -296,5 +296,151 @@ class MisDocumentosController extends Controller
 
         return response()->json(['success' => true, 'data' => $documento], 201);
     }
-    
+
+    /**
+     * POST /my-documents/bundle — varias de sus boletas y hojas juntas: en un
+     * .zip (cada una tal cual, con su firma digital) o en un solo PDF para
+     * leer o imprimir (ahí la firma no viaja: vale sobre cada archivo).
+     *
+     * Solo entra lo suyo y lo que ya puede bajar (con su conformidad), con
+     * los mismos controles que al bajar una por una; cada una queda anotada
+     * como descargada. Lo que no entra se dice: en el .zip, en
+     * NO_INCLUIDAS.txt; en los dos, en la cabecera X-No-Incluidas.
+     */
+    public function juntar(Request $request)
+    {
+        $datos = $request->validate([
+            'ids'     => 'required|array|min:1|max:60',
+            'ids.*'   => 'uuid',
+            'formato' => 'required|in:zip,pdf',
+        ], ['ids.max' => 'Elige hasta 60 a la vez.']);
+        $usuario = $request->user();
+        if (! $usuario->empleado_id) {
+            return response()->json(['success' => false, 'message' => 'Tu cuenta no tiene un trabajador vinculado.'], 403);
+        }
+
+        $documentos = Documento::with('planilla')
+            ->where('empleado_id', $usuario->empleado_id)
+            ->whereIn('id', $datos['ids'])
+            ->whereIn('tipo', self::SE_JUNTAN)
+            ->where('estado_registro', 'activo')
+            ->visiblesParaElTrabajador()
+            ->get()
+            ->sortBy(fn (Documento $d) => sprintf('%04d-%02d-%s', $d->planilla?->anio ?? $d->periodo_anio, $d->planilla?->mes ?? $d->periodo_mes, $d->tipo))
+            ->values();
+
+        $archivos = [];
+        $fuera = [];
+        foreach ($documentos as $d) {
+            $nombre = $this->nombreParaJuntar($d);
+            if ($motivo = \App\Support\AccesoADocumento::porQueNoPuedeDescargar($d, $usuario)) {
+                $fuera[] = "{$nombre}: {$motivo}";
+                continue;
+            }
+            $bytes = $this->bytesParaElTrabajador($request, $d);
+            if ($bytes === null) {
+                $fuera[] = "{$nombre}: su archivo no está disponible; pídelo a Recursos Humanos.";
+                continue;
+            }
+            $archivos[$nombre] = $bytes;
+        }
+        // Lo que pidió y no es suyo, o no existe, no se nombra: solo se cuenta.
+        $faltan = count(array_unique($datos['ids'])) - $documentos->count();
+        if ($faltan > 0) {
+            $fuera[] = "{$faltan} documento(s) que no se encontraron entre los tuyos.";
+        }
+
+        if (! $archivos) {
+            return response()->json(['success' => false, 'message' => $fuera
+                ? 'Ninguno se puede bajar todavía. ' . $fuera[0]
+                : 'No hay documentos para bajar.'], 422);
+        }
+
+        $base = 'Mis documentos ' . now()->format('Y-m-d');
+        if ($datos['formato'] === 'pdf') {
+            ['pdf' => $pdf, 'fallaron' => $fallaron] = \App\Support\JuntarPdf::juntar($archivos, $base);
+            foreach ($fallaron as $f) {
+                $fuera[] = "{$f}: no se pudo leer para juntarlo; bájalo en el .zip.";
+            }
+            if ($pdf === '') {
+                return response()->json(['success' => false, 'message' => 'No se pudieron juntar en un PDF: bájalos en .zip.'], 422);
+            }
+
+            return response($pdf, 200, [
+                'Content-Type'                  => 'application/pdf',
+                'Content-Disposition'           => 'attachment; filename="' . $base . '.pdf"',
+                'X-No-Incluidas'                => (string) count($fuera),
+                'Access-Control-Expose-Headers' => 'X-No-Incluidas',
+            ]);
+        }
+
+        $ruta = tempnam(sys_get_temp_dir(), 'mis');
+        $zip = new \ZipArchive();
+        $zip->open($ruta, \ZipArchive::OVERWRITE);
+        foreach ($archivos as $nombre => $bytes) {
+            $zip->addFromString($nombre, $bytes);
+        }
+        if ($fuera) {
+            $zip->addFromString('NO_INCLUIDAS.txt', "No van en este archivo:\r\n\r\n- " . implode("\r\n- ", $fuera) . "\r\n");
+        }
+        $zip->close();
+
+        return response()->download($ruta, $base . '.zip', [
+            'Content-Type'                  => 'application/zip',
+            'X-No-Incluidas'                => (string) count($fuera),
+            'Access-Control-Expose-Headers' => 'X-No-Incluidas',
+        ])->deleteFileAfterSend();
+    }
+
+    /** Lo que se puede juntar: lo que tiene periodo y se baja con su conformidad. */
+    private const SE_JUNTAN = ['boleta', 'cts', 'gratificacion'];
+
+    /** «2026-10 Boleta BOL-2026-0002.pdf», «2026-11 Hoja de CTS.pdf». */
+    private function nombreParaJuntar(Documento $d): string
+    {
+        $anio = $d->planilla?->anio ?? $d->periodo_anio;
+        $mes = $d->planilla?->mes ?? $d->periodo_mes;
+        $que = match ($d->tipo) {
+            'boleta' => 'Boleta ' . ($d->planilla?->numeroDeBoleta() ?? \App\Support\Meses::nombre((int) $mes)),
+            'cts'    => 'Hoja de CTS',
+            default  => 'Hoja de gratificación',
+        };
+
+        return sprintf('%04d-%02d %s.pdf', $anio, $mes, $que);
+    }
+
+    /**
+     * Los bytes que el trabajador se lleva: su boleta con UNA copia (la
+     * misma que baja en Mis Boletas, que además la anota como descargada) y
+     * la hoja tal cual está guardada. null si no hay archivo.
+     */
+    private function bytesParaElTrabajador(Request $request, Documento $d): ?string
+    {
+        if ($d->tipo === 'boleta' && $d->planilla) {
+            $pedido = $request->duplicate(['ver' => 0], []);
+            $pedido->setUserResolver(fn () => $request->user());
+            $respuesta = app(MiBoletaController::class)->descargar($pedido, (int) $d->planilla->mes, (int) $d->planilla->anio);
+            if ($respuesta->getStatusCode() !== 200) {
+                return null;
+            }
+            if ($respuesta instanceof \Symfony\Component\HttpFoundation\BinaryFileResponse) {
+                return (string) file_get_contents($respuesta->getFile()->getPathname());
+            }
+            if ($respuesta instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
+                ob_start();
+                $respuesta->sendContent();
+
+                return (string) ob_get_clean();
+            }
+
+            return (string) $respuesta->getContent();
+        }
+
+        if (! $d->archivo || ! Storage::disk('local')->exists($d->archivo)) {
+            return null;
+        }
+        $d->registrarDescarga();
+
+        return Storage::disk('local')->get($d->archivo);
+    }
 }
