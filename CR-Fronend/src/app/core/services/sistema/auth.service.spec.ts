@@ -93,6 +93,12 @@ describe('AuthService', () => {
     guardar({ rol: 'empleado', permisos: { es_superadmin: false, modulos: ['/mis-boletas'] } });
     expect(servicio.puede('@gestion')).toBeFalse();
 
+    // Solo Portal Web: no trabaja con el personal y entra directo a su módulo.
+    guardar({ rol: 'portal', permisos: { es_superadmin: false, modulos: ['/portal-web'] } });
+    expect(servicio.puede('/portal-web')).toBeTrue();
+    expect(servicio.puede('@gestion')).toBeFalse();
+    expect(servicio.rutaInicioSegunRol()).toBe('/inicio/portal-web');
+
     guardar({ rol: 'direccion', permisos: { es_superadmin: true, modulos: ['*'] } });
     expect(servicio.puede('/auditoria')).toBeTrue();
     expect(servicio.rutaInicioSegunRol()).toBe('/inicio/dashboard');

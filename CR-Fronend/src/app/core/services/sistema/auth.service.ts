@@ -252,16 +252,17 @@ export class AuthService {
   /**
    * ¿Su rol tiene alguno de esos módulos? Es la misma regla que el servidor
    * (App\Support\Permisos): «/planillas», o «@gestion» para cualquier módulo
-   * de trabajo (todo menos Mi Espacio). El superadministrador puede todo.
+   * de trabajo con el personal (todo menos Mi Espacio y Portal Web). El
+   * superadministrador puede todo.
    */
   puede(...modulos: string[]): boolean {
     const permisos = this.getUser()?.permisos;
     if (!permisos) return this.puedeSegunRolAntiguo(modulos);
     if (permisos.es_superadmin || permisos.modulos.includes('*')) return true;
 
-    const propios = ['/mis-boletas', '/mis-documentos', '/mis-vacaciones'];
+    const noCuentan = ['/mis-boletas', '/mis-documentos', '/mis-vacaciones', '/portal-web'];
     return modulos.some((m) =>
-      m === '@gestion' ? permisos.modulos.some((r) => !propios.includes(r)) : permisos.modulos.includes(m)
+      m === '@gestion' ? permisos.modulos.some((r) => !noCuentan.includes(r)) : permisos.modulos.includes(m)
     );
   }
 
@@ -286,9 +287,16 @@ export class AuthService {
     return this.puede('@gestion');
   }
 
-  /** A dónde mandar a alguien justo después de loguearse: al panel si lo tiene. */
+  /**
+   * A dónde mandar a alguien justo después de loguearse: al panel si lo
+   * tiene; si no, a Mis Boletas, y si tampoco la tiene (un rol solo de
+   * Portal Web), al primer módulo de su menú.
+   */
   rutaInicioSegunRol(): string {
-    return this.puede('/dashboard') ? '/inicio/dashboard' : '/inicio/mis-boletas';
+    if (this.puede('/dashboard')) return '/inicio/dashboard';
+    const suyos = this.getUser()?.permisos?.modulos ?? [];
+    if (suyos.length === 0 || suyos.includes('/mis-boletas')) return '/inicio/mis-boletas';
+    return '/inicio' + suyos[0];
   }
 
   /**

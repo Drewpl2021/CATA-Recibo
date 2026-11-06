@@ -22,9 +22,11 @@ use Illuminate\Support\Facades\DB;
  *   ->middleware('permiso:/planillas')            hay que tener Planillas
  *   ->middleware('permiso:/planillas,/boletas')   basta con uno de los dos
  *   ->middleware('permiso:@gestion')              cualquier módulo de trabajo
- *                                                 (todo menos «Mi Espacio»):
- *                                                 los catálogos que leen
- *                                                 muchas pantallas
+ *                                                 con el personal (todo menos
+ *                                                 «Mi Espacio» y «Portal Web»):
+ *                                                 la lista del personal y los
+ *                                                 catálogos que leen muchas
+ *                                                 pantallas
  *
  * El rol con `es_superadmin` entra a todo: es la llave para que nadie quede
  * fuera por quitarle un módulo a quien no debía.
@@ -34,11 +36,18 @@ use Illuminate\Support\Facades\DB;
  */
 final class Permisos
 {
-    /** Cualquier módulo de trabajo: todo lo que no es «Mi Espacio». */
+    /** Cualquier módulo de trabajo con el personal: todo menos «Mi Espacio» y «Portal Web». */
     public const GESTION = '@gestion';
 
     /** Los módulos de «Mi Espacio»: los del propio trabajador, no dan acceso a lo de otros. */
     private const PROPIOS = ['/mis-boletas', '/mis-documentos', '/mis-vacaciones'];
+
+    /**
+     * Los que no tienen que ver con el personal: quien solo edita la web del
+     * colegio no necesita la lista del personal (con su DNI) ni los catálogos
+     * de planilla, así que no cuentan para @gestion.
+     */
+    private const AJENOS_AL_PERSONAL = ['/portal-web'];
 
     private const CLAVE_VERSION = 'permisos.version';
 
@@ -71,6 +80,21 @@ final class Permisos
         return null;
     }
 
+    /**
+     * ¿Maneja algo más que su propio espacio? Incluye «Portal Web»: esa cuenta
+     * cambia la página del colegio, así que también se protege (ver
+     * User::protegidaPara).
+     */
+    public static function manejaAlgoMasQueLoSuyo(?User $usuario): bool
+    {
+        if (! $usuario) {
+            return false;
+        }
+
+        return self::esSuperadmin($usuario)
+            || (bool) array_diff(self::delRol($usuario->rol_id), self::PROPIOS);
+    }
+
     public static function esSuperadmin(?User $usuario): bool
     {
         return (bool) $usuario?->rol?->es_superadmin;
@@ -89,7 +113,7 @@ final class Permisos
         $suyos = self::delRol($usuario->rol_id);
         foreach ($modulos as $modulo) {
             if ($modulo === self::GESTION) {
-                if (array_diff($suyos, self::PROPIOS)) {
+                if (array_diff($suyos, self::PROPIOS, self::AJENOS_AL_PERSONAL)) {
                     return true;
                 }
                 continue;
