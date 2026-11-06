@@ -24,6 +24,21 @@ use Illuminate\Support\Facades\Hash;
 final class AltaDeEmpleado
 {
     /** Las reglas del alta. Las usa tal cual EmpleadoController::store. */
+    /**
+     * La cuenta de la CTS: solo cifras, con guiones si el banco la escribe
+     * así (191-12345678-0-12). Una con letras o espacios no es una cuenta, y
+     * un depósito a una cuenta mal copiada no rebota: se pierde. Sin la
+     * entidad no se sabe a qué banco mandarla.
+     */
+    public const REGLA_CUENTA_CTS = 'nullable|string|min:6|max:30|regex:/^[0-9]+(-[0-9]+)*$/';
+    public const REGLA_ENTIDAD_CTS = 'nullable|string|max:100|required_with:cts_numero_cuenta';
+    public const MENSAJES_CUENTA_CTS = [
+        'cts_numero_cuenta.regex'              => 'La cuenta CTS lleva solo números, con guiones si el banco la escribe así.',
+        'cts_numero_cuenta.min'                => 'La cuenta CTS tiene al menos 6 cifras.',
+        'cts_numero_cuenta.max'                => 'La cuenta CTS tiene como máximo 30 caracteres.',
+        'cts_entidad_financiera.required_with' => 'Indica la entidad donde está la cuenta CTS.',
+    ];
+
     public static function reglas(): array
     {
         return [
@@ -54,6 +69,8 @@ final class AltaDeEmpleado
             // dígitos exactos. Uno mal copiado no rebota, se abona a otra
             // persona, y eso no hay forma de verlo hasta el reclamo.
             'cci'                => 'nullable|regex:/^[0-9]{20}$/',
+            'cts_entidad_financiera' => self::REGLA_ENTIDAD_CTS,
+            'cts_numero_cuenta'      => self::REGLA_CUENTA_CTS,
             'tiene_hijos'        => 'nullable|boolean',
             'aplica_diezmo'      => 'nullable|boolean',
             'sueldo_base'        => 'required|numeric|min:0',
@@ -101,6 +118,7 @@ final class AltaDeEmpleado
             // El genérico ("el formato no es válido") no dice qué arreglar.
             'cci.regex'   => 'El CCI son 20 dígitos, sin espacios ni guiones.',
             'cuspp.regex' => 'El CUSPP son 12 caracteres, entre letras (incluida la Ñ) y números.',
+            ...self::MENSAJES_CUENTA_CTS,
         ];
     }
 

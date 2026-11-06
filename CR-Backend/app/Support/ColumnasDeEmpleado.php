@@ -66,6 +66,9 @@ final class ColumnasDeEmpleado
         'entidad_financiera'           => ['titulo' => 'Banco', 'tipo' => 'texto', 'alias' => ['banco', 'entidad financiera']],
         'numero_cuenta'                => ['titulo' => 'N° de cuenta', 'tipo' => 'texto', 'alias' => ['n de cuenta', 'no de cuenta', 'nro de cuenta', 'numero de cuenta', 'cuenta', 'n cuenta']],
         'cci'                          => ['titulo' => 'CCI', 'tipo' => 'digitos', 'alias' => ['cci']],
+        // La de la CTS es otra cuenta: sus títulos dicen «CTS», y así no se confunden con los del sueldo.
+        'cts_entidad_financiera'       => ['titulo' => 'Banco CTS', 'tipo' => 'texto', 'alias' => ['banco cts', 'entidad cts', 'banco de la cts', 'entidad de la cts', 'entidad depositaria', 'entidad depositaria cts', 'entidad financiera cts']],
+        'cts_numero_cuenta'            => ['titulo' => 'N° de cuenta CTS', 'tipo' => 'texto', 'alias' => ['n de cuenta cts', 'no de cuenta cts', 'nro de cuenta cts', 'numero de cuenta cts', 'cuenta cts', 'n cuenta cts', 'cuenta de la cts', 'cuenta de cts']],
         'tiene_hijos'                  => ['titulo' => 'Tiene hijos', 'tipo' => 'si_no', 'alias' => ['tiene hijos', 'hijos']],
         // El Diezmo se le aplica a TODO el personal por defecto (10% del
         // sueldo, ver PaymentConceptSeeder): esta columna es la excepción.

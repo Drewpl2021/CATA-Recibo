@@ -30,6 +30,7 @@ export interface FilaCts {
   sede: string | null;
   estado: string;
   fecha_ingreso: string;
+  /** La cuenta CTS de su ficha (no la del sueldo), para proponerla al depositar. */
   entidad_ficha: string | null;
   cuenta_ficha: string | null;
   aplica: boolean;
@@ -49,6 +50,8 @@ export interface FilaCts {
   remuneracion_computable: number;
   meses: number;
   dias: number;
+  /** Días de falta injustificada con que se calculó: ya restados de meses y días. */
+  faltas: number;
   monto: number;
   estado_cts: EstadoCts;
   /** Calculada, sin depositar, y ya no coincide con lo que daría hoy. */
@@ -57,6 +60,11 @@ export interface FilaCts {
   entidad_financiera: string | null;
   numero_cuenta: string | null;
   documento_id: string | null;
+  /** Las faltas anotadas ahora; si difieren de `faltas`, falta volver a calcular. */
+  faltas_registradas: number;
+  faltas_observacion: string | null;
+  /** Pista: lo que la planilla le descontó por «Tardanzas y Faltas» en el semestre, en soles. */
+  tardanzas_soles: number;
 }
 
 export interface ListaCts {
@@ -108,6 +116,14 @@ export interface HistorialCts {
   meses: MesHistorialCts[];
 }
 
+export interface FaltasCts {
+  empleado_id: string;
+  anio: number;
+  periodo: PeriodoCts;
+  dias: number;
+  observacion?: string | null;
+}
+
 export interface DepositoCts {
   ids: string[];
   fecha_deposito: string;
@@ -138,6 +154,20 @@ export class CtsService {
 
   anularDeposito(liquidacionId: string): Observable<ApiResponse<{ message: string }>> {
     return this.http.delete<ApiResponse<{ message: string }>>(`${this.url}/${liquidacionId}/deposit`);
+  }
+
+  /** Anota sus días no laborados del semestre (0 los borra). Si ya estaba calculada, se recalcula al momento. */
+  registrarFaltas(datos: FaltasCts): Observable<ApiResponse<{ faltas: number; monto: number; meses: number; dias: number }>> {
+    return this.http.put<ApiResponse<{ faltas: number; monto: number; meses: number; dias: number }>>(`${this.url}/absences`, datos);
+  }
+
+  /** Los días no laborados de varios a la vez. Las depositadas se saltan y vuelven en `omitidas`. */
+  registrarFaltasEnLote(
+    anio: number,
+    periodo: PeriodoCts,
+    faltas: { empleado_id: string; dias: number; observacion: string | null }[],
+  ): Observable<ApiResponse<{ cambiadas: number; omitidas: string[]; total: number }>> {
+    return this.http.put<ApiResponse<{ cambiadas: number; omitidas: string[]; total: number }>>(`${this.url}/absences/batch`, { anio, periodo, faltas });
   }
 
   /** Lo que ganó mes por mes en el semestre, de sus planillas. */

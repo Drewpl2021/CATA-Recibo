@@ -83,6 +83,11 @@
               <app-icon icono="refresh" [tamano]="16"></app-icon>
               {{ calculando ? 'Calculando…' : p.fase === 'hecho' ? 'Volver a calcular' : 'Calcular CTS' }}
             </button>
+            <button type="button" class="btn-secondary" (click)="abrirFaltas()" [disabled]="!datos.resumen.con_derecho"
+              appPista="Anota los días no laborados de cada uno, como en la hoja de RR.HH. Cada día le quita 1/360 de su CTS y se recalcula al guardar.">
+              <app-icon icono="calendar_check" [tamano]="16"></app-icon>
+              Anotar faltas
+            </button>
           }
           @if (p.numero === 2 && p.fase !== 'hecho') {
             <button type="button" [ngClass]="p.fase === 'actual' ? 'btn-primary' : 'btn-secondary'"
@@ -158,6 +163,9 @@
   @if (f.aplica) {
     <span>{{ tiempo(f) }}</span>
     <div class="form-ayuda">{{ fecha(f.desde) }} – {{ fecha(f.hasta) }}</div>
+    @if (f.faltas) {
+      <div class="form-ayuda texto-aviso">Menos {{ f.faltas }} {{ f.faltas === 1 ? 'día' : 'días' }} por faltas</div>
+    }
   } @else {
     <span class="form-ayuda">{{ f.motivo }}</span>
   }
@@ -180,6 +188,8 @@
     }
     @if (f.fecha_deposito) {
       <div class="form-ayuda">Depositada el {{ fecha(f.fecha_deposito) }}</div>
+    } @else if (!f.cuenta_ficha && f.estado !== 'inactivo') {
+      <div class="form-ayuda texto-aviso">Sin cuenta CTS</div>
     }
   } @else {
     <span class="form-ayuda">—</span>
@@ -248,12 +258,86 @@
       </div>
       <div class="form-group">
         <label for="cuentaCts">N° de cuenta CTS</label>
-        <input type="text" id="cuentaCts" class="form-control" [(ngModel)]="deposito.cuenta" maxlength="50" />
-        <small class="form-ayuda">Se propone la cuenta de su ficha; cámbiala si su CTS va a otra.</small>
+        <input type="text" id="cuentaCts" class="form-control" [(ngModel)]="deposito.cuenta" maxlength="30"
+          inputmode="numeric" placeholder="Ingrese el número de la cuenta CTS" />
+        @if (sinCuentaCts.length) {
+          <small class="form-ayuda texto-aviso">Su ficha no tiene cuenta CTS: escribe la cuenta donde se hizo el depósito.</small>
+        } @else {
+          <small class="form-ayuda">Se propone la cuenta CTS de su ficha; cámbiala si el depósito fue a otra.</small>
+        }
       </div>
     } @else {
-      <p class="form-ayuda">A cada uno se le anota la entidad y la cuenta de su ficha.</p>
+      <p class="form-ayuda">A cada uno se le anota la entidad y la cuenta CTS de su ficha.</p>
+      @if (sinCuentaCts.length) {
+        <p class="form-ayuda texto-aviso">
+          {{ sinCuentaCts.length === 1 ? '1 trabajador no tiene' : sinCuentaCts.length + ' trabajadores no tienen' }}
+          cuenta CTS en su ficha: {{ nombresSinCuentaCts }}. Anótala en su ficha o quítalos de la selección.
+        </p>
+      }
     }
+  </div>
+</app-form-modal>
+
+<!-- Los días no laborados de todos, de una vez: la columna de la hoja de RR.HH. -->
+<app-form-modal
+  [(visible)]="modalFaltas"
+  titulo="Días no laborados del semestre"
+  textoGuardar="Guardar faltas"
+  [guardando]="guardandoListaFaltas"
+  (guardar)="guardarListaFaltas()"
+  (cancelar)="modalFaltas = false"
+  ancho="860px"
+  >
+  <div class="form-fields">
+    <p class="form-ayuda">
+      Anota solo las faltas sin justificación: cada día le quita 1/360 de la remuneración computable. Las tardanzas
+      no van aquí. Al guardar, su CTS se recalcula al momento. Arriba salen quienes tuvieron descuento por
+      «Tardanzas y Faltas» en su planilla.
+    </p>
+    <div class="form-group">
+      <label for="buscarFaltas">Buscar</label>
+      <input type="search" id="buscarFaltas" class="form-control" [(ngModel)]="buscarFaltas" (ngModelChange)="filtrarFaltas()"
+        placeholder="Ingrese el nombre o el DNI" autocomplete="off" />
+    </div>
+    <div class="cts-cuadro__marco">
+      <table class="cts-cuadro">
+        <thead>
+          <tr>
+            <th class="cts-cuadro__concepto">Trabajador</th>
+            <th>Descuento en planilla</th>
+            <th>Días no laborados</th>
+            <th class="cts-cuadro__concepto">Sustento</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filasFaltas; track f.fila.id) {
+            <tr>
+              <td class="cts-cuadro__concepto">
+                {{ f.fila.nombre }}
+                <div class="form-ayuda">DNI {{ f.fila.dni }}</div>
+              </td>
+              <td class="num">
+                @if (f.fila.tardanzas_soles > 0) {
+                  <span class="texto-aviso">S/ {{ f.fila.tardanzas_soles | number: '1.2-2' }}</span>
+                } @else {
+                  <span class="form-ayuda">—</span>
+                }
+              </td>
+              <td class="num">
+                <input type="number" class="form-control" style="max-width: 90px; margin-left: auto;" [(ngModel)]="f.dias"
+                  min="0" max="180" step="1" inputmode="numeric" [attr.aria-label]="'Días no laborados de ' + f.fila.nombre" />
+              </td>
+              <td>
+                <input type="text" class="form-control" [(ngModel)]="f.observacion" maxlength="255"
+                  placeholder="Ingrese el sustento" [attr.aria-label]="'Sustento de ' + f.fila.nombre" />
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4" class="form-ayuda">Nadie coincide con la búsqueda.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 </app-form-modal>
 
@@ -277,7 +361,12 @@
         <dt>Periodo</dt>
         <dd>{{ fecha(d.desde) }} – {{ fecha(d.hasta) }}</dd>
         <dt>Tiempo</dt>
-        <dd>{{ tiempo(d) }}</dd>
+        <dd>
+          {{ tiempo(d) }}
+          @if (d.faltas) {
+            <div class="form-ayuda">Ya descontadas {{ d.faltas }} {{ d.faltas === 1 ? 'falta' : 'faltas' }} injustificadas.</div>
+          }
+        </dd>
       }
       @if (!d.aplica) {
         <dt>Por qué no</dt>
@@ -382,6 +471,41 @@
         }
         <dt>CTS</dt><dd><strong>S/ {{ d.monto | number: '1.2-2' }}</strong></dd>
       </dl>
+    }
+    <!-- Solo las faltas sin justificar le quitan días; las tardanzas se descuentan del sueldo. -->
+    @if (d.aplica || d.faltas_registradas) {
+      <h3 class="detalle-subtitulo">Faltas injustificadas del semestre</h3>
+      @if (d.tardanzas_soles > 0) {
+        <p class="form-nota form-nota--aviso">
+          Su planilla le descontó S/ {{ d.tardanzas_soles | number: '1.2-2' }} por «Tardanzas y Faltas» en este semestre.
+          Revisa su control de asistencia y anota aquí solo los días que faltó sin justificación.
+        </p>
+      }
+      <p class="form-ayuda">
+        Cada día de falta injustificada se resta del tiempo: le quita 1/360 de la remuneración computable.
+        Las tardanzas no se anotan aquí.
+      </p>
+      <div class="form-group">
+        <label for="faltasCts">Días de falta injustificada</label>
+        <input type="number" id="faltasCts" class="form-control" [(ngModel)]="faltas.dias" min="0" max="180" step="1"
+          inputmode="numeric" placeholder="Ingrese los días" [disabled]="d.estado_cts === 'depositada' || guardandoFaltas" />
+      </div>
+      <div class="form-group">
+        <label for="faltasObs">Sustento</label>
+        <input type="text" id="faltasObs" class="form-control" [(ngModel)]="faltas.observacion" maxlength="255"
+          placeholder="Ingrese el sustento, como el registro de asistencia"
+          [disabled]="d.estado_cts === 'depositada' || guardandoFaltas" />
+      </div>
+      @if (d.estado_cts === 'depositada') {
+        <p class="form-ayuda">Su CTS ya está depositada: para cambiar sus faltas, primero anula el depósito.</p>
+      } @else {
+        <button type="button" class="btn-secondary" (click)="guardarFaltas(d)" [disabled]="guardandoFaltas">
+          <app-icon icono="save" [tamano]="16"></app-icon>
+          {{ guardandoFaltas ? 'Guardando…' : 'Guardar faltas' }}
+        </button>
+      }
+    }
+    @if (d.aplica) {
       @if (d.estado_cts === 'depositada') {
         <h3 class="detalle-subtitulo">Datos del depósito</h3>
         <dl class="detalle-lista">

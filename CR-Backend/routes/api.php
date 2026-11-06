@@ -313,6 +313,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::match(['get', 'post'], 'cts/zip/link', [\App\Http\Controllers\CtsController::class, 'enlaceZip']);
         Route::get('cts/{liquidacion}/sheet',      [\App\Http\Controllers\CtsController::class, 'hoja'])->whereUuid('liquidacion');
         Route::get('cts/{empleado}/history',       [\App\Http\Controllers\CtsController::class, 'historial'])->whereUuid('empleado');
+        Route::put('cts/absences',                 [\App\Http\Controllers\CtsController::class, 'registrarFaltas']);
+        Route::put('cts/absences/batch',           [\App\Http\Controllers\CtsController::class, 'registrarFaltasEnLote']);
     });
 
     // ── Gratificaciones ──

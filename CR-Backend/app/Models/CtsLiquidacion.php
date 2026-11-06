@@ -26,7 +26,7 @@ class CtsLiquidacion extends Model
         'empleado_id', 'anio', 'periodo', 'desde', 'hasta',
         'sueldo', 'asignacion_familiar', 'bonificacion_cargo', 'remuneracion_fuente',
         'gratificacion', 'gratificacion_fuente', 'sexto_gratificacion', 'remuneracion_computable',
-        'meses', 'dias', 'monto',
+        'meses', 'dias', 'faltas', 'monto',
         'estado', 'fecha_deposito', 'entidad_financiera', 'numero_cuenta', 'documento_id', 'observacion',
     ];
 
@@ -42,6 +42,7 @@ class CtsLiquidacion extends Model
         'remuneracion_computable' => 'float',
         'meses'                   => 'integer',
         'dias'                    => 'integer',
+        'faltas'                  => 'integer',
         'monto'                   => 'float',
         'fecha_deposito'          => 'date:Y-m-d',
     ];

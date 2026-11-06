@@ -44,6 +44,9 @@ export interface Empleado {
   numero_cuenta?: string | null;
   /** Código de Cuenta Interbancario, 20 dígitos. Opcional. */
   cci?: string | null;
+  /** La cuenta de la CTS: otra, distinta de la del sueldo. La elige el trabajador. */
+  cts_entidad_financiera?: string | null;
+  cts_numero_cuenta?: string | null;
   tiene_hijos?: boolean;
   /** El Diezmo (10% del sueldo) se le aplica a todos por defecto; en false queda excluido. */
   aplica_diezmo?: boolean;
@@ -92,6 +95,8 @@ export interface EmpleadoPayload {
   entidad_financiera?: string | null;
   numero_cuenta?: string | null;
   cci?: string | null;
+  cts_entidad_financiera?: string | null;
+  cts_numero_cuenta?: string | null;
   tiene_hijos?: boolean;
   aplica_diezmo?: boolean;
   forma_pago?: string | null;

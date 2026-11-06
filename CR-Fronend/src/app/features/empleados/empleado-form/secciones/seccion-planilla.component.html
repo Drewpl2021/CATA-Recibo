@@ -150,6 +150,45 @@
                 </div>
               }
 
+              <!-- La CTS va a otra cuenta, la que eligió el trabajador. Quien cobra
+              por honorarios no tiene CTS. -->
+              @if (!esHonorarios) {
+                <h3 class="seccion-form__titulo rejilla-campos--completo">Cuenta CTS</h3>
+                <p class="form-ayuda rejilla-campos--completo">
+                  Donde se le deposita la CTS en mayo y noviembre. Es otra cuenta, distinta de la del
+                  sueldo: la abre el trabajador en la entidad que él elige.
+                </p>
+                <div class="form-group">
+                  <label for="cts_entidad_financiera">Entidad depositaria{{ form.get('cts_numero_cuenta')?.value ? ' *' : '' }}</label>
+                  <input type="text" id="cts_entidad_financiera" class="form-control" list="lista-bancos-cts"
+                    formControlName="cts_entidad_financiera" autocomplete="off" maxlength="100"
+                    placeholder="Elija la entidad o escríbala"
+                    [class.is-invalid]="invalido('cts_entidad_financiera')" />
+                  <datalist id="lista-bancos-cts">
+                    @for (b of bancos; track $index) {
+                      <option [value]="b"></option>
+                    }
+                  </datalist>
+                  @if (invalido('cts_entidad_financiera')) {
+                    <small class="form-error">Indica la entidad donde está la cuenta CTS.</small>
+                  } @else {
+                    <small class="form-ayuda">Banco, caja municipal o financiera. Si no aparece, escríbala tal cual.</small>
+                  }
+                </div>
+                <div class="form-group">
+                  <label for="cts_numero_cuenta">N° de cuenta CTS</label>
+                  <input type="text" id="cts_numero_cuenta" class="form-control" formControlName="cts_numero_cuenta"
+                    inputmode="numeric" maxlength="30" autocomplete="off"
+                    placeholder="Ingrese el número de la cuenta CTS"
+                    [class.is-invalid]="invalido('cts_numero_cuenta')" />
+                  @if (invalido('cts_numero_cuenta')) {
+                    <small class="form-error">Solo números, con guiones si el banco la escribe así. Al menos 6 cifras.</small>
+                  } @else {
+                    <small class="form-ayuda">Sin ella no se puede registrar el depósito de su CTS.</small>
+                  }
+                </div>
+              }
+
               <div class="form-group rejilla-campos--completo">
                 <label class="check-item check-item--bloque">
                   <input type="checkbox" formControlName="tiene_hijos" />

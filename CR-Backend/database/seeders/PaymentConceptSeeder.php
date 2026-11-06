@@ -158,7 +158,7 @@ class PaymentConceptSeeder extends Seeder
             [
                 // Columna AK del PLAME. El monto sale de la hoja DSCT, que lo
                 // calcula por minutos de tardanza sobre el pago por hora.
-                'nombre' => 'Descuento Autorizado - Tardanzas y Faltas',
+                'nombre' => ConceptosDePago::TARDANZAS_Y_FALTAS,
                 'tipo' => 'descuento', 'calculo' => null, 'valor' => null,
                 'descripcion' => 'Lo que se le descuenta por llegar tarde o faltar. El monto se saca de sus minutos de tardanza y de su pago por hora, así que se agrega caso por caso.',
             ],

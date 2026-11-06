@@ -521,6 +521,15 @@ export class CtsListComponent implements OnInit {
   depositando = false;
   /** Las que se van a depositar: solo las calculadas y no depositadas. */
   aDepositar: FilaCts[] = [];
+  /**
+   * De los que se van a depositar, quienes siguen trabajando y no tienen
+   * cuenta CTS en su ficha: el backend no registra su depósito. Se arma al
+   * abrir el modal, no en un getter. Al cesado no se le pide: su CTS se le
+   * paga directo al cese.
+   */
+  sinCuentaCts: FilaCts[] = [];
+  /** Sus nombres, ya armados para el aviso: «Ana, Luis y 3 más». */
+  nombresSinCuentaCts = '';
   deposito = { fecha: '', entidad: '', cuenta: '' };
 
   abrirDeposito(filas: FilaCts[]): void {
@@ -530,6 +539,10 @@ export class CtsListComponent implements OnInit {
       return;
     }
     const una = this.aDepositar.length === 1 ? this.aDepositar[0] : null;
+    this.sinCuentaCts = this.aDepositar.filter((f) => f.estado !== 'inactivo' && !f.cuenta_ficha);
+    const nombres = this.sinCuentaCts.slice(0, 5).map((f) => f.nombre).join(', ');
+    const resto = this.sinCuentaCts.length - 5;
+    this.nombresSinCuentaCts = resto > 0 ? `${nombres} y ${resto} más` : nombres;
     this.deposito = {
       fecha: this.hoy(),
       entidad: una?.entidad_ficha ?? '',
@@ -560,6 +573,14 @@ export class CtsListComponent implements OnInit {
       return;
     }
     const una = this.aDepositar.length === 1;
+    if (una && this.sinCuentaCts.length && !this.deposito.cuenta.trim()) {
+      this.toast.error('Falta la cuenta CTS', 'Escribe la cuenta CTS donde se hizo el depósito, o anótala en su ficha.');
+      return;
+    }
+    if (!una && this.sinCuentaCts.length) {
+      this.toast.error('Falta la cuenta CTS', 'Anota la cuenta CTS en la ficha de quienes no la tienen, o quítalos de la selección.');
+      return;
+    }
     this.depositando = true;
     this.servicio.depositar({
       ids: this.aDepositar.map((f) => f.liquidacion_id!),
@@ -615,7 +636,111 @@ export class CtsListComponent implements OnInit {
   abrirDetalle(f: FilaCts): void {
     this.detalle = f;
     this.panelAbierto = true;
+    this.faltas = { dias: f.faltas_registradas ?? 0, observacion: f.faltas_observacion ?? '' };
     this.cargarHistorial(f);
+  }
+
+  // ── La lista de días no laborados, como la columna de la hoja de RR.HH. ──
+  modalFaltas = false;
+  guardandoListaFaltas = false;
+  buscarFaltas = '';
+  /** Todos los que se pueden anotar; se arma al abrir, no en un getter. */
+  private todasFaltas: FilaFaltas[] = [];
+  /** Las que se ven según el buscador. */
+  filasFaltas: FilaFaltas[] = [];
+
+  abrirFaltas(): void {
+    const filas = (this.datos?.filas ?? []).filter((f) => (f.aplica || f.faltas_registradas) && f.estado_cts !== 'depositada');
+    this.todasFaltas = filas
+      .map((f) => ({
+        fila: f,
+        dias: f.faltas_registradas ?? 0,
+        observacion: f.faltas_observacion ?? '',
+        diasAntes: f.faltas_registradas ?? 0,
+        observacionAntes: f.faltas_observacion ?? '',
+      }))
+      // Primero quienes ya tienen faltas o tuvieron descuento en planilla: son a quienes hay que revisar.
+      .sort((a, b) => Number(this.esPista(b)) - Number(this.esPista(a)) || a.fila.nombre.localeCompare(b.fila.nombre));
+    this.buscarFaltas = '';
+    this.filtrarFaltas();
+    this.modalFaltas = true;
+  }
+
+  esPista(f: FilaFaltas): boolean {
+    return f.fila.tardanzas_soles > 0 || f.diasAntes > 0;
+  }
+
+  filtrarFaltas(): void {
+    const q = this.buscarFaltas.trim().toLowerCase();
+    this.filasFaltas = q
+      ? this.todasFaltas.filter((f) => f.fila.nombre.toLowerCase().includes(q) || f.fila.dni.includes(q))
+      : this.todasFaltas;
+  }
+
+  guardarListaFaltas(): void {
+    if (!this.datos) return;
+    const malos = this.todasFaltas.filter((f) => !Number.isInteger(Number(f.dias)) || Number(f.dias) < 0 || Number(f.dias) > 180);
+    if (malos.length) {
+      this.toast.error('Revisa los días', `${malos[0].fila.nombre}: escribe un número entero de 0 a 180.`);
+      return;
+    }
+    const cambios = this.todasFaltas.filter((f) => Number(f.dias) !== f.diasAntes || f.observacion.trim() !== f.observacionAntes.trim());
+    if (!cambios.length) {
+      this.modalFaltas = false;
+      return;
+    }
+    this.guardandoListaFaltas = true;
+    this.servicio.registrarFaltasEnLote(this.datos.anio, this.datos.periodo, cambios.map((f) => ({
+      empleado_id: f.fila.id,
+      dias: Number(f.dias),
+      observacion: f.observacion.trim() || null,
+    }))).subscribe({
+      next: (res) => {
+        this.guardandoListaFaltas = false;
+        if (!res.success) return;
+        this.modalFaltas = false;
+        const omitidas = res.data.omitidas.length ? ` No se tocó a ${res.data.omitidas.join(', ')}: su CTS ya está depositada.` : '';
+        this.toast.success('Faltas guardadas', `${res.data.cambiadas} trabajador(es) actualizados.${omitidas}`);
+        this.recargar();
+      },
+      error: (err) => {
+        this.guardandoListaFaltas = false;
+        this.toast.error('No se guardaron', mensajeErrorApi(err, 'Inténtalo de nuevo.'));
+      },
+    });
+  }
+
+  // ── Las faltas injustificadas del semestre ──
+  faltas = { dias: 0, observacion: '' };
+  guardandoFaltas = false;
+
+  guardarFaltas(f: FilaCts): void {
+    if (!this.datos) return;
+    const dias = Number(this.faltas.dias);
+    if (!Number.isInteger(dias) || dias < 0 || dias > 180) {
+      this.toast.error('Revisa los días', 'Escribe un número entero de días, de 0 a 180.');
+      return;
+    }
+    this.guardandoFaltas = true;
+    this.servicio.registrarFaltas({
+      empleado_id: f.id,
+      anio: this.datos.anio,
+      periodo: this.datos.periodo,
+      dias,
+      observacion: this.faltas.observacion.trim() || null,
+    }).subscribe({
+      next: (res) => {
+        this.guardandoFaltas = false;
+        if (!res.success) return;
+        const texto = dias === 0 ? 'Se quitaron sus faltas.' : `Quedaron ${dias} día(s) no laborados.`;
+        this.toast.success('Faltas guardadas', `${texto} Su CTS ahora es S/ ${res.data.monto.toFixed(2)}.`);
+        this.recargar();
+      },
+      error: (err) => {
+        this.guardandoFaltas = false;
+        this.toast.error('No se guardaron', mensajeErrorApi(err, 'Inténtalo de nuevo.'));
+      },
+    });
   }
 
   // ── El historial del semestre: el mapa en el panel y el cuadro grande ──
@@ -701,4 +826,13 @@ export class CtsListComponent implements OnInit {
     if (this.detalle) this.detalle = this.datos?.filas.find((f) => f.id === this.detalle!.id) ?? null;
     if (!this.detalle) this.panelAbierto = false;
   }
+}
+
+/** Una persona en la lista de días no laborados, con lo que tenía al abrir. */
+interface FilaFaltas {
+  fila: FilaCts;
+  dias: number;
+  observacion: string;
+  diasAntes: number;
+  observacionAntes: string;
 }

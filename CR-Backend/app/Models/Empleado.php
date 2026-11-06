@@ -14,7 +14,7 @@ class Empleado extends Model
      */
     protected array $camposAuditables = [
         'dni', 'nombre', 'apellido', 'sueldo_base', 'bonificacion_cargo', 'sistema_pensiones', 'afp', 'tipo_comision_afp', 'cuspp', 'fecha_afiliacion',
-        'entidad_financiera', 'numero_cuenta', 'cci', 'forma_pago', 'tiene_hijos', 'aplica_diezmo',
+        'entidad_financiera', 'numero_cuenta', 'cci', 'cts_entidad_financiera', 'cts_numero_cuenta', 'forma_pago', 'tiene_hijos', 'aplica_diezmo',
         'cargo_id', 'area_id', 'sede_id', 'estado', 'tipo_contrato_id',
     ];
 
@@ -48,6 +48,9 @@ class Empleado extends Model
     'entidad_financiera',
     'numero_cuenta',
     'cci',
+    // La cuenta de la CTS: otra, distinta de la del sueldo (la elige el trabajador).
+    'cts_entidad_financiera',
+    'cts_numero_cuenta',
     'tiene_hijos',
     'aplica_diezmo',
     'sueldo_base',

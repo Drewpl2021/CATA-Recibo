@@ -67,7 +67,7 @@ final class ReconocedorDeColumnas
         'nombre', 'nombres', 'apellido', 'apellidos', 'apellidos y nombres', 'nombres y apellidos',
         'trabajador', 'empleado', 'colaborador', 'personal', 'cargo', 'area', 'sede', 'planilla',
         'item', 'n', 'no', 'nro', 'numero', 'correo', 'email', 'neto', 'neto a pagar', 'categoria',
-        'regimen', 'sistema de pension', 'cuspp', 'banco', 'cuenta', 'cci',
+        'regimen', 'sistema de pension', 'cuspp', 'banco', 'cuenta', 'cci', 'banco cts', 'cuenta cts',
     ];
 
     /** Palabras que delatan algo que calcula el sistema por cada trabajador. */

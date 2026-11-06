@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Auditoria;
+use App\Models\CtsInasistencia;
 use App\Models\CtsLiquidacion;
 use App\Models\Documento;
 use App\Models\Empleado;
@@ -24,6 +25,8 @@ use Illuminate\Validation\Rule;
  *   DELETE /cts/{liquidacion}/deposit   deshacer un depósito registrado por error
  *   GET    /cts/{liquidacion}/sheet     la hoja de liquidación en PDF
  *   GET    /cts/{empleado}/history      lo que ganó mes por mes en el semestre, de sus planillas
+ *   PUT    /cts/absences                anotar sus días de falta injustificada del semestre
+ *   PUT    /cts/absences/batch          los de varios a la vez, como la columna de la hoja de RR.HH.
  *
  * Ver App\Support\Cts\MotorCts para el cálculo.
  */
@@ -101,9 +104,11 @@ class CtsController extends Controller
     {
         $motor = new MotorCts();
         $guardadas = CtsLiquidacion::where('anio', $anio)->where('periodo', $periodo)->get()->keyBy('empleado_id');
+        $faltas = CtsInasistencia::where('anio', $anio)->where('periodo', $periodo)->get()->keyBy('empleado_id');
+        $tardanzas = $this->tardanzasDelSemestre($anio, $periodo);
 
-        return $this->personalDelSemestre($anio, $periodo)->map(function (Empleado $e) use ($motor, $anio, $periodo, $guardadas) {
-            $previa = $motor->calcular($e, $anio, $periodo);
+        return $this->personalDelSemestre($anio, $periodo)->map(function (Empleado $e) use ($motor, $anio, $periodo, $guardadas, $faltas, $tardanzas) {
+            $previa = $motor->calcular($e, $anio, $periodo, (int) ($faltas->get($e->id)?->dias ?? 0));
             $guardada = $guardadas->get($e->id);
             $calculo = $guardada ? $this->desglose($guardada) : $previa;
 
@@ -131,9 +136,10 @@ class CtsController extends Controller
                 'sede'               => $e->sede?->nombre,
                 'estado'             => $e->estado,
                 'fecha_ingreso'      => $e->fecha_ingreso,
-                // La cuenta de su ficha, para proponerla al registrar el depósito.
-                'entidad_ficha'      => $e->entidad_financiera,
-                'cuenta_ficha'       => $e->numero_cuenta,
+                // La cuenta CTS de su ficha, para proponerla al registrar el
+                // depósito. Nunca la del sueldo: la CTS va a otra cuenta.
+                'entidad_ficha'      => $e->cts_entidad_financiera,
+                'cuenta_ficha'       => $e->cts_numero_cuenta,
                 ...$calculo,
                 'aplica'             => $guardada ? true : $previa['aplica'],
                 'estado_cts'         => $estado,
@@ -142,8 +148,175 @@ class CtsController extends Controller
                 'entidad_financiera' => $guardada?->entidad_financiera,
                 'numero_cuenta'      => $guardada?->numero_cuenta,
                 'documento_id'       => $guardada?->documento_id,
+                // Lo anotado ahora (puede diferir de lo que lleva una ya calculada).
+                'faltas_registradas' => (int) ($faltas->get($e->id)?->dias ?? 0),
+                'faltas_observacion' => $faltas->get($e->id)?->observacion,
+                // Pista: lo que la planilla le descontó por tardanzas y faltas en el semestre.
+                'tardanzas_soles'    => round((float) ($tardanzas[$e->id] ?? 0), 2),
             ];
         });
+    }
+
+    /**
+     * Cuánto le descontó la planilla a cada uno por «Tardanzas y Faltas» en
+     * los meses del semestre: [empleado_id => soles]. Una sola consulta.
+     */
+    private function tardanzasDelSemestre(int $anio, string $periodo): array
+    {
+        $semestre = MotorCts::semestre($anio, $periodo);
+        $meses = [];
+        for ($m = $semestre['desde']->copy(); $m->lte($semestre['hasta']); $m->addMonth()) {
+            $meses[] = [(int) $m->year, (int) $m->month];
+        }
+
+        return DB::table('payroll_detalles as d')
+            ->join('planilla as p', 'p.id', '=', 'd.planilla_id')
+            ->join('payment_concepts as c', 'c.id', '=', 'd.payment_concept_id')
+            ->where('c.nombre', \App\Support\ConceptosDePago::TARDANZAS_Y_FALTAS)
+            ->where('p.estado_registro', 'activo')
+            ->where(function ($q) use ($meses) {
+                foreach ($meses as [$a, $m]) {
+                    $q->orWhere(fn ($w) => $w->where('p.anio', $a)->where('p.mes', $m));
+                }
+            })
+            ->groupBy('p.empleado_id')
+            ->selectRaw('p.empleado_id, SUM(d.monto_calculado) as total')
+            ->pluck('total', 'empleado_id')
+            ->map(fn ($s) => (float) $s)->all();
+    }
+
+    /**
+     * Anota los días no laborados (faltas injustificadas) de un trabajador en
+     * un semestre, como la columna «Días no laborados» de la hoja de RR.HH.
+     *
+     * Solo las faltas, no las tardanzas: cada día le quita 1/360 de su CTS.
+     * Con 0 se borra el registro. No se toca una CTS ya depositada: eso es lo
+     * que se pagó, y para corregirla primero se anula el depósito. Si ya
+     * estaba calculada se recalcula al momento, para que cuadre sin otro paso.
+     */
+    public function registrarFaltas(Request $request)
+    {
+        $datos = $request->validate([
+            'empleado_id' => 'required|uuid|exists:empleados,id',
+            'anio'        => 'required|integer|min:2000|max:2100',
+            'periodo'     => ['required', Rule::in(MotorCts::PERIODOS)],
+            'dias'        => 'required|integer|min:0|max:180',
+            'observacion' => 'nullable|string|max:255',
+        ], self::MENSAJES_FALTAS);
+        $anio = (int) $datos['anio'];
+        $periodo = $datos['periodo'];
+
+        $liquidacion = CtsLiquidacion::where('empleado_id', $datos['empleado_id'])->where('anio', $anio)->where('periodo', $periodo)->first();
+        if ($liquidacion?->depositada()) {
+            return response()->json(['success' => false, 'message' => 'Su CTS de este semestre ya está depositada. Para cambiar sus faltas, primero anula el depósito.'], 422);
+        }
+
+        $empleado = Empleado::findOrFail($datos['empleado_id']);
+        [$antes, $calculo] = DB::transaction(fn () => $this->guardarFaltasDe(
+            $empleado, $anio, $periodo, (int) $datos['dias'], $datos['observacion'] ?? null, $request->user()?->id
+        ));
+
+        if ($antes !== (int) $datos['dias']) {
+            Auditoria::registrar('cambió', 'cts', $liquidacion?->id,
+                "Anotó los días no laborados de {$empleado->nombre} {$empleado->apellido} en la CTS de {$periodo} {$anio}: de {$antes} a {$datos['dias']} día(s).");
+        }
+
+        return response()->json(['success' => true, 'data' => [
+            'faltas' => (int) $datos['dias'],
+            'monto'  => $calculo['monto'],
+            'meses'  => $calculo['meses'],
+            'dias'   => $calculo['dias'],
+        ]]);
+    }
+
+    /**
+     * Los días no laborados de varios trabajadores a la vez: la lista que
+     * RR.HH. llena de una sola vez, como la columna de su hoja.
+     *
+     * Las depositadas se saltan y se dice de quiénes. Todo lo demás se guarda
+     * junto o nada, y las ya calculadas se recalculan al momento.
+     */
+    public function registrarFaltasEnLote(Request $request)
+    {
+        $datos = $request->validate([
+            'anio'                  => 'required|integer|min:2000|max:2100',
+            'periodo'               => ['required', Rule::in(MotorCts::PERIODOS)],
+            'faltas'                => 'required|array|min:1|max:500',
+            'faltas.*.empleado_id'  => 'required|uuid|distinct|exists:empleados,id',
+            'faltas.*.dias'         => 'required|integer|min:0|max:180',
+            'faltas.*.observacion'  => 'nullable|string|max:255',
+        ], self::MENSAJES_FALTAS);
+        $anio = (int) $datos['anio'];
+        $periodo = $datos['periodo'];
+
+        $ids = array_column($datos['faltas'], 'empleado_id');
+        $empleados = Empleado::whereIn('id', $ids)->get()->keyBy('id');
+        $depositadas = CtsLiquidacion::where('anio', $anio)->where('periodo', $periodo)->whereIn('empleado_id', $ids)
+            ->where('estado', CtsLiquidacion::DEPOSITADA)->pluck('empleado_id')->flip();
+
+        $cambiadas = 0;
+        $omitidas = [];
+        DB::transaction(function () use ($datos, $empleados, $depositadas, $anio, $periodo, $request, &$cambiadas, &$omitidas) {
+            foreach ($datos['faltas'] as $f) {
+                $e = $empleados[$f['empleado_id']];
+                if (isset($depositadas[$e->id])) {
+                    $omitidas[] = trim("{$e->apellido} {$e->nombre}");
+                    continue;
+                }
+                [$antes] = $this->guardarFaltasDe($e, $anio, $periodo, (int) $f['dias'], $f['observacion'] ?? null, $request->user()?->id);
+                if ($antes !== (int) $f['dias']) {
+                    $cambiadas++;
+                }
+            }
+        });
+
+        if ($cambiadas > 0) {
+            Auditoria::registrar('cambió', 'cts', null,
+                "Anotó los días no laborados de {$cambiadas} trabajador(es) en la CTS de {$periodo} {$anio}.");
+        }
+
+        return response()->json(['success' => true, 'data' => [
+            'cambiadas' => $cambiadas,
+            // Ya depositadas: lo pagado no se toca.
+            'omitidas'  => $omitidas,
+            'total'     => round(CtsLiquidacion::where('anio', $anio)->where('periodo', $periodo)->sum('monto'), 2),
+        ]]);
+    }
+
+    private const MENSAJES_FALTAS = [
+        'dias.max'         => 'Un semestre tiene 180 días: no puede tener más faltas que eso.',
+        'faltas.*.dias.max' => 'Un semestre tiene 180 días: nadie puede tener más faltas que eso.',
+        'faltas.*.dias.integer' => 'Los días no laborados son un número entero.',
+        'faltas.*.empleado_id.distinct' => 'Hay un trabajador repetido en la lista.',
+    ];
+
+    /**
+     * Guarda sus días (0 los borra) y, si su CTS ya estaba calculada y sin
+     * depositar, la recalcula ahí mismo. Va dentro de la transacción de quien
+     * llama. Devuelve [días que tenía antes, cálculo nuevo].
+     *
+     * @return array{0: int, 1: array<string, mixed>}
+     */
+    private function guardarFaltasDe(Empleado $empleado, int $anio, string $periodo, int $dias, ?string $observacion, ?string $quien): array
+    {
+        $clave = ['empleado_id' => $empleado->id, 'anio' => $anio, 'periodo' => $periodo];
+        $antes = (int) CtsInasistencia::where($clave)->value('dias');
+
+        if ($dias === 0) {
+            CtsInasistencia::where($clave)->delete();
+        } else {
+            CtsInasistencia::updateOrCreate($clave, ['dias' => $dias, 'observacion' => $observacion, 'registrado_por' => $quien]);
+        }
+
+        $calculo = (new MotorCts())->calcular($empleado, $anio, $periodo, $dias);
+        $guardada = CtsLiquidacion::where($clave)->lockForUpdate()->first();
+        if ($guardada && ! $guardada->depositada()) {
+            $nuevo = $calculo;
+            unset($nuevo['aplica'], $nuevo['motivo']);
+            $calculo['aplica'] ? $guardada->fill($nuevo)->save() : $guardada->delete();
+        }
+
+        return [$antes, $calculo];
     }
 
     /** Lo guardado, con la misma forma que devuelve el motor. */
@@ -156,7 +329,7 @@ class CtsController extends Controller
             'remuneracion_fuente' => $l->remuneracion_fuente,
             'gratificacion' => $l->gratificacion, 'gratificacion_fuente' => $l->gratificacion_fuente,
             'sexto_gratificacion' => $l->sexto_gratificacion, 'remuneracion_computable' => $l->remuneracion_computable,
-            'meses' => $l->meses, 'dias' => $l->dias, 'monto' => $l->monto,
+            'meses' => $l->meses, 'dias' => $l->dias, 'faltas' => (int) $l->faltas, 'monto' => $l->monto,
         ];
     }
 
@@ -182,6 +355,7 @@ class CtsController extends Controller
 
         DB::transaction(function () use ($motor, $anio, $periodo, &$calculadas, &$depositadas, &$quitadas) {
             $guardadas = CtsLiquidacion::where('anio', $anio)->where('periodo', $periodo)->get()->keyBy('empleado_id');
+            $faltas = CtsInasistencia::delSemestre($anio, $periodo);
 
             foreach ($this->personalDelSemestre($anio, $periodo) as $e) {
                 $guardada = $guardadas->get($e->id);
@@ -190,7 +364,7 @@ class CtsController extends Controller
                     continue;
                 }
 
-                $calculo = $motor->calcular($e, $anio, $periodo);
+                $calculo = $motor->calcular($e, $anio, $periodo, $faltas[$e->id] ?? 0);
                 if (! $calculo['aplica']) {
                     if ($guardada) {
                         $guardada->delete();
@@ -227,7 +401,12 @@ class CtsController extends Controller
      * liquidación queda en el expediente del trabajador (tipo «cts»), donde él
      * la ve en Mis Documentos y da su conformidad como con la boleta.
      *
-     * Si no se indica banco ni cuenta, se toma la de la ficha de cada uno.
+     * Si no se indica la cuenta, se toma la cuenta CTS de la ficha de cada
+     * uno, nunca la del sueldo. A quien sigue trabajando y no la tiene no se
+     * le registra: su CTS va a una cuenta que él eligió, y anotar otra sería
+     * dejar en su hoja un depósito que no se hizo ahí. Al cesado sí: su CTS
+     * no se deposita, se le paga directo con la liquidación (D.S. 001-97-TR,
+     * art. 3).
      */
     public function depositar(Request $request)
     {
@@ -235,8 +414,12 @@ class CtsController extends Controller
             'ids'                => 'required|array|min:1',
             'ids.*'              => 'uuid|exists:cts_liquidaciones,id',
             'fecha_deposito'     => 'required|date',
-            'entidad_financiera' => 'nullable|string|max:100',
-            'numero_cuenta'      => 'nullable|string|max:50',
+            'entidad_financiera' => 'nullable|string|max:100|required_with:numero_cuenta',
+            'numero_cuenta'      => 'nullable|string|min:6|max:30|regex:/^[0-9]+(-[0-9]+)*$/',
+        ], [
+            'numero_cuenta.regex'              => 'La cuenta CTS lleva solo números, con guiones si el banco la escribe así.',
+            'numero_cuenta.min'                => 'La cuenta CTS tiene al menos 6 cifras.',
+            'entidad_financiera.required_with' => 'Indica la entidad donde está la cuenta CTS.',
         ]);
         // Una cuenta escrita a mano solo tiene sentido para una persona.
         if (! empty($datos['numero_cuenta']) && count($datos['ids']) > 1) {
@@ -249,13 +432,26 @@ class CtsController extends Controller
             return response()->json(['success' => false, 'message' => 'Hay CTS que ya estaban depositadas. Quítalas de la selección.'], 422);
         }
 
-        DB::transaction(function () use ($liquidaciones, $datos) {
+        $cuentaDe = fn (CtsLiquidacion $l) => [
+            'entidad_financiera' => ($datos['entidad_financiera'] ?? null) ?: $l->empleado->cts_entidad_financiera,
+            'numero_cuenta'      => ($datos['numero_cuenta'] ?? null) ?: $l->empleado->cts_numero_cuenta,
+        ];
+        $sinCuenta = $liquidaciones
+            ->filter(fn (CtsLiquidacion $l) => $l->empleado->estado !== 'inactivo' && empty($cuentaDe($l)['numero_cuenta']))
+            ->map(fn (CtsLiquidacion $l) => trim("{$l->empleado->apellido} {$l->empleado->nombre}"))
+            ->sort()->values();
+        if ($sinCuenta->isNotEmpty()) {
+            $nombres = $sinCuenta->take(3)->implode(', ') . ($sinCuenta->count() > 3 ? ' y ' . ($sinCuenta->count() - 3) . ' más' : '');
+
+            return response()->json(['success' => false, 'message' => "Falta la cuenta CTS de {$nombres}. Anótala en su ficha (Planilla y pagos) antes de registrar el depósito."], 422);
+        }
+
+        DB::transaction(function () use ($liquidaciones, $datos, $cuentaDe) {
             foreach ($liquidaciones as $l) {
                 $l->fill([
-                    'estado'             => CtsLiquidacion::DEPOSITADA,
-                    'fecha_deposito'     => $datos['fecha_deposito'],
-                    'entidad_financiera' => $datos['entidad_financiera'] ?? $l->empleado->entidad_financiera,
-                    'numero_cuenta'      => $datos['numero_cuenta'] ?? $l->empleado->numero_cuenta,
+                    'estado'         => CtsLiquidacion::DEPOSITADA,
+                    'fecha_deposito' => $datos['fecha_deposito'],
+                    ...$cuentaDe($l),
                 ])->save();
 
                 $this->guardarHoja($l);

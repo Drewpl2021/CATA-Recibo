@@ -16,7 +16,7 @@ class RespuestasDelApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const DATOS_RESERVADOS = ['sueldo_base', 'bonificacion_cargo', 'numero_cuenta', 'cci', 'cuspp', 'entidad_financiera', 'direccion', 'fecha_nacimiento'];
+    private const DATOS_RESERVADOS = ['sueldo_base', 'bonificacion_cargo', 'numero_cuenta', 'cci', 'cts_entidad_financiera', 'cts_numero_cuenta', 'cuspp', 'entidad_financiera', 'direccion', 'fecha_nacimiento'];
 
     private function empleadoCompleto()
     {

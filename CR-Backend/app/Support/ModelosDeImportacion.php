@@ -50,7 +50,7 @@ final class ModelosDeImportacion
             $estiloColumnas[$c] = match ($definicion['tipo']) {
                 'dni', 'digitos', 'fecha' => LibroExcel::TEXTO,
                 'monto'                   => LibroExcel::MONTO,
-                default                   => in_array($campo, ['numero_cuenta'], true) ? LibroExcel::TEXTO : LibroExcel::NORMAL,
+                default                   => in_array($campo, ['numero_cuenta', 'cts_numero_cuenta'], true) ? LibroExcel::TEXTO : LibroExcel::NORMAL,
             };
 
             $anchos[$c] = match (true) {

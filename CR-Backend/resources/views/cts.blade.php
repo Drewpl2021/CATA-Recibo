@@ -147,8 +147,8 @@
     <div class="barra">Datos del depósito</div>
     <table class="datos">
         <tr>
-            <td style="width: 30%;"><div class="rotulo">Entidad depositaria</div><div class="valor">{{ $l->entidad_financiera ?: ($empleado->entidad_financiera ?: '---') }}</div></td>
-            <td style="width: 30%;"><div class="rotulo">N° de cuenta CTS</div><div class="valor">{{ $l->numero_cuenta ?: ($empleado->numero_cuenta ?: '---') }}</div></td>
+            <td style="width: 30%;"><div class="rotulo">Entidad depositaria</div><div class="valor">{{ $l->entidad_financiera ?: ($empleado->cts_entidad_financiera ?: '---') }}</div></td>
+            <td style="width: 30%;"><div class="rotulo">N° de cuenta CTS</div><div class="valor">{{ $l->numero_cuenta ?: ($empleado->cts_numero_cuenta ?: ($cesado ? 'Pago directo al cese' : '---')) }}</div></td>
             <td style="width: 15%;"><div class="rotulo">Moneda</div><div class="valor">Soles</div></td>
             <td style="width: 25%;"><div class="rotulo">Fecha de depósito</div><div class="valor">{{ $l->fecha_deposito ? $fecha($l->fecha_deposito) : 'Hasta el ' . $semestre['limite']->format('d/m/Y') }}</div></td>
         </tr>
@@ -187,6 +187,9 @@
             <td style="width: 34%;"><strong style="font-size: 10px;">{{ $fecha($l->desde) }} – {{ $fecha($l->hasta) }}</strong><span>Periodo computado</span></td>
         </tr>
     </table>
+    @if ($l->faltas > 0)
+        <p class="nota">Del periodo se descontaron {{ $l->faltas }} {{ $l->faltas === 1 ? 'día' : 'días' }} de inasistencia injustificada: solo se computan los días de trabajo efectivo.</p>
+    @endif
 
     {{-- ── III. Cálculo ── --}}
     <div class="barra">III. Cálculo de la CTS</div>

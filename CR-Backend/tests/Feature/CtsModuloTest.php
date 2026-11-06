@@ -124,7 +124,8 @@ class CtsModuloTest extends TestCase
     {
         Storage::fake('local');
         $e = $this->crearEmpleado(['sueldo_base' => 3000, 'fecha_ingreso' => '2020-03-01', 'tiene_hijos' => 0, 'bonificacion_cargo' => 0,
-            'entidad_financiera' => 'Caja Arequipa', 'numero_cuenta' => '123-456']);
+            'entidad_financiera' => 'BCP', 'numero_cuenta' => '191-0000000',
+            'cts_entidad_financiera' => 'Caja Arequipa', 'cts_numero_cuenta' => '123-456']);
         $practicante = $this->crearEmpleado(['tipo_contrato_id' => $this->idTipoContrato('Prácticas')]);
         $rrhh = $this->crearUsuario('rrhh');
 

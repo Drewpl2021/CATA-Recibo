@@ -588,7 +588,7 @@ class EmpleadoController extends Controller
             'Teléfono', 'Dirección', 'Correo', 'Rol',
             'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Fecha de cese', 'Tipo de contrato',
             'Sueldo base', 'Bonificación por cargo', 'Sistema de pensión', 'AFP', 'Tipo de comisión AFP', 'CUSPP', 'Fecha de afiliación',
-            'Forma de pago', 'Banco', 'N° de cuenta', 'CCI',
+            'Forma de pago', 'Banco', 'N° de cuenta', 'CCI', 'Banco CTS', 'N° de cuenta CTS',
             'Tiene hijos', 'Diezmo', 'Nivel de estudios', 'Especialidad', 'Institución donde estudió',
             'Contacto de emergencia', 'Teléfono del contacto',
         ];
@@ -633,6 +633,8 @@ class EmpleadoController extends Controller
                 $e->entidad_financiera ?? '',
                 (string) ($e->numero_cuenta ?? ''),
                 (string) ($e->cci ?? ''),
+                $e->cts_entidad_financiera ?? '',
+                (string) ($e->cts_numero_cuenta ?? ''),
                 $e->tiene_hijos ? 'Sí' : 'No',
                 $e->aplica_diezmo ? 'Sí' : 'No',
                 $e->nivel_estudios ?? '',
@@ -648,7 +650,7 @@ class EmpleadoController extends Controller
         // donde se suma.
         $comoTexto = [
             'DNI', 'Fecha de nacimiento', 'Teléfono', 'Fecha de ingreso', 'Fecha de cese', 'Fin de contrato',
-            'CUSPP', 'N° de cuenta', 'CCI', 'Teléfono del contacto',
+            'CUSPP', 'N° de cuenta', 'CCI', 'N° de cuenta CTS', 'Teléfono del contacto',
         ];
         $estiloColumnas = [];
         foreach ($cabecera as $i => $titulo) {
@@ -799,6 +801,8 @@ class EmpleadoController extends Controller
             'entidad_financiera' => 'nullable|string|max:100',
             'numero_cuenta'      => 'nullable|string|max:50',
             'cci'                => 'nullable|regex:/^[0-9]{20}$/',
+            'cts_entidad_financiera' => AltaDeEmpleado::REGLA_ENTIDAD_CTS,
+            'cts_numero_cuenta'      => AltaDeEmpleado::REGLA_CUENTA_CTS,
             'tiene_hijos'        => 'nullable|boolean',
             'aplica_diezmo'      => 'nullable|boolean',
             'sueldo_base'        => 'nullable|numeric|min:0',
@@ -819,6 +823,7 @@ class EmpleadoController extends Controller
         ];
         $request->validate($reglas, [
             'cci.regex' => 'El CCI son 20 dígitos, sin espacios ni guiones.',
+            ...AltaDeEmpleado::MENSAJES_CUENTA_CTS,
         ]);
 
         $this->exigirCargoDelArea(
