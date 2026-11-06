@@ -42,7 +42,7 @@ final class FirmadorPdf
      * @param  array{nombre?: ?string, motivo?: ?string, lugar?: ?string, fecha?: ?\DateTimeInterface} $datos
      * @return string el PDF firmado
      */
-    public static function firmar(string $pdf, string $certificado, $llave, array $cadena = [], array $datos = []): string
+    public static function firmar(string $pdf, string $certificado, #[\SensitiveParameter] $llave, array $cadena = [], array $datos = []): string
     {
         $lector = new LectorPdf($pdf);
         $trailer = $lector->trailer();

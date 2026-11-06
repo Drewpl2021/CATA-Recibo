@@ -64,6 +64,9 @@ class MisDocumentosController extends Controller
             // La que espera la firma digital del colegio todavía no es suya.
             ->visiblesParaElTrabajador()
             ->with(['planilla', 'empleado:id,nombre,apellido,telefono,sede_id', 'empleado.sede:id,nombre', 'empleado.usuario:id,empleado_id,email'])
+            // Quién firmó por el colegio (nombre y DNI completo) es para RR.HH.;
+            // al trabajador le basta saber que ya está firmada (firma_colegio).
+            ->afterQuery(fn ($documentos) => $documentos->each->makeHidden(['firmas_colegio']))
             ->leftJoin('planilla', 'documentos.planilla_id', '=', 'planilla.id')
             ->select('documentos.*')
             // Un archivo anterior no tiene planilla: su periodo es el suyo.

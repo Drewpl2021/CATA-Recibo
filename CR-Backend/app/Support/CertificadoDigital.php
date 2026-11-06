@@ -30,7 +30,7 @@ final class CertificadoDigital
      *     serie: string, huella: string, desde: ?\DateTimeImmutable, hasta: ?\DateTimeImmutable
      * }
      */
-    public static function abrir(string $pfx, string $clave, bool $exigirVigente = true): array
+    public static function abrir(#[\SensitiveParameter] string $pfx, #[\SensitiveParameter] string $clave, bool $exigirVigente = true): array
     {
         while (openssl_error_string() !== false) {
             // Errores viejos de OpenSSL: que no se mezclen con los de este intento.

@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Sin ruta /storage: boletas, hojas y certificados solo salen por
+            // los controladores, que revisan quién pide qué.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

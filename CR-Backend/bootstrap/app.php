@@ -93,6 +93,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // La clave del certificado y la contraseña nunca se guardan para
+        // volver a llenar un formulario.
+        $exceptions->dontFlash(['clave', 'password', 'password_confirmation', 'current_password']);
+
         /*
          * Qué ve quien usa el sistema cuando algo sale mal.
          *
