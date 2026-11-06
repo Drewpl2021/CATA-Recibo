@@ -105,9 +105,8 @@ class CtsController extends Controller
         $motor = new MotorCts();
         $guardadas = CtsLiquidacion::where('anio', $anio)->where('periodo', $periodo)->get()->keyBy('empleado_id');
         $faltas = CtsInasistencia::where('anio', $anio)->where('periodo', $periodo)->get()->keyBy('empleado_id');
-        $tardanzas = $this->tardanzasDelSemestre($anio, $periodo);
 
-        return $this->personalDelSemestre($anio, $periodo)->map(function (Empleado $e) use ($motor, $anio, $periodo, $guardadas, $faltas, $tardanzas) {
+        return $this->personalDelSemestre($anio, $periodo)->map(function (Empleado $e) use ($motor, $anio, $periodo, $guardadas, $faltas) {
             $previa = $motor->calcular($e, $anio, $periodo, (int) ($faltas->get($e->id)?->dias ?? 0));
             $guardada = $guardadas->get($e->id);
             $calculo = $guardada ? $this->desglose($guardada) : $previa;
@@ -151,45 +150,17 @@ class CtsController extends Controller
                 // Lo anotado ahora (puede diferir de lo que lleva una ya calculada).
                 'faltas_registradas' => (int) ($faltas->get($e->id)?->dias ?? 0),
                 'faltas_observacion' => $faltas->get($e->id)?->observacion,
-                // Pista: lo que la planilla le descontó por tardanzas y faltas en el semestre.
-                'tardanzas_soles'    => round((float) ($tardanzas[$e->id] ?? 0), 2),
             ];
         });
-    }
-
-    /**
-     * Cuánto le descontó la planilla a cada uno por «Tardanzas y Faltas» en
-     * los meses del semestre: [empleado_id => soles]. Una sola consulta.
-     */
-    private function tardanzasDelSemestre(int $anio, string $periodo): array
-    {
-        $semestre = MotorCts::semestre($anio, $periodo);
-        $meses = [];
-        for ($m = $semestre['desde']->copy(); $m->lte($semestre['hasta']); $m->addMonth()) {
-            $meses[] = [(int) $m->year, (int) $m->month];
-        }
-
-        return DB::table('payroll_detalles as d')
-            ->join('planilla as p', 'p.id', '=', 'd.planilla_id')
-            ->join('payment_concepts as c', 'c.id', '=', 'd.payment_concept_id')
-            ->where('c.nombre', \App\Support\ConceptosDePago::TARDANZAS_Y_FALTAS)
-            ->where('p.estado_registro', 'activo')
-            ->where(function ($q) use ($meses) {
-                foreach ($meses as [$a, $m]) {
-                    $q->orWhere(fn ($w) => $w->where('p.anio', $a)->where('p.mes', $m));
-                }
-            })
-            ->groupBy('p.empleado_id')
-            ->selectRaw('p.empleado_id, SUM(d.monto_calculado) as total')
-            ->pluck('total', 'empleado_id')
-            ->map(fn ($s) => (float) $s)->all();
     }
 
     /**
      * Anota los días no laborados (faltas injustificadas) de un trabajador en
      * un semestre, como la columna «Días no laborados» de la hoja de RR.HH.
      *
-     * Solo las faltas, no las tardanzas: cada día le quita 1/360 de su CTS.
+     * Es un dato solo de la CTS: no sale de la planilla ni la toca. El
+     * descuento por tardanzas y faltas de la boleta es otra cosa y se queda
+     * en la boleta. Cada día le quita 1/360 de su CTS.
      * Con 0 se borra el registro. No se toca una CTS ya depositada: eso es lo
      * que se pagó, y para corregirla primero se anula el depósito. Si ya
      * estaba calculada se recalcula al momento, para que cuadre sin otro paso.

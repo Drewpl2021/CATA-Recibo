@@ -72,7 +72,8 @@ interface GrupoHistorial {
 
 /** Lo que entra en la remuneración computable: del mes de cierre, y la gratificación de su mes. */
 const COMPUTABLES_DEL_CIERRE = ['Remuneración básica', 'Asignación Familiar', 'Bonificación por Cargo'];
-const GRATIFICACION = 'Gratificaciones Fiestas Patrias - Ley 29351 y 30334';
+/** La gratificación y su bonificación del 9%: las dos entran al sexto. */
+const GRATIFICACION = ['Gratificaciones Fiestas Patrias - Ley 29351 y 30334', 'Bonif. Extraord. Temporal - Ley 29351 y 30334'];
 
 /** Un chip de situación sobre la tabla, con su cuenta. */
 interface ChipSituacion {
@@ -659,15 +660,11 @@ export class CtsListComponent implements OnInit {
         diasAntes: f.faltas_registradas ?? 0,
         observacionAntes: f.faltas_observacion ?? '',
       }))
-      // Primero quienes ya tienen faltas o tuvieron descuento en planilla: son a quienes hay que revisar.
-      .sort((a, b) => Number(this.esPista(b)) - Number(this.esPista(a)) || a.fila.nombre.localeCompare(b.fila.nombre));
+      // Primero quienes ya tienen días anotados; luego por nombre.
+      .sort((a, b) => Number(b.diasAntes > 0) - Number(a.diasAntes > 0) || a.fila.nombre.localeCompare(b.fila.nombre));
     this.buscarFaltas = '';
     this.filtrarFaltas();
     this.modalFaltas = true;
-  }
-
-  esPista(f: FilaFaltas): boolean {
-    return f.fila.tardanzas_soles > 0 || f.diasAntes > 0;
   }
 
   filtrarFaltas(): void {
@@ -804,7 +801,7 @@ export class CtsListComponent implements OnInit {
       return [...nombres].map((nombre) => fila(
         nombre,
         (m) => m.conceptos.filter((c) => c.nombre === nombre).reduce((s, c) => s + c.monto, 0) || null,
-        (m) => (m.es_cierre && COMPUTABLES_DEL_CIERRE.includes(nombre)) || (m.es_gratificacion && nombre === GRATIFICACION),
+        (m) => (m.es_cierre && COMPUTABLES_DEL_CIERRE.includes(nombre)) || (m.es_gratificacion && GRATIFICACION.includes(nombre)),
       ));
     };
 

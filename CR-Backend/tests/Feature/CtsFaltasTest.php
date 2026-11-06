@@ -21,7 +21,7 @@ class CtsFaltasTest extends TestCase
 
     private function trabajador()
     {
-        // Semestre de mayo sin planilla de diciembre: RC = 3000 + 3000/6 = 3500.
+        // Semestre de mayo sin planilla de diciembre: RC = 3000 + (3000 + 9%) / 6 = 3545.
         return $this->crearEmpleado(['sueldo_base' => 3000, 'fecha_ingreso' => '2020-03-01', 'tiene_hijos' => 0, 'bonificacion_cargo' => 0,
             'cts_entidad_financiera' => 'Caja Arequipa', 'cts_numero_cuenta' => '105-0012345-6']);
     }
@@ -41,8 +41,8 @@ class CtsFaltasTest extends TestCase
         $this->assertSame(2, $r['faltas']);
         $this->assertSame(5, $r['meses']);
         $this->assertSame(28, $r['dias']);
-        // 3500 / 12 × 5 + 3500 / 360 × 28 = 1750 − 2 × 3500/360
-        $this->assertEqualsWithDelta(1730.56, $r['monto'], 0.001);
+        // 3545 / 12 × 5 + 3545 / 360 × 28 = 1772.50 − 2 × 3545/360
+        $this->assertEqualsWithDelta(1752.81, $r['monto'], 0.001);
     }
 
     public function test_las_faltas_no_le_quitan_mas_de_lo_que_trabajo(): void
@@ -66,7 +66,7 @@ class CtsFaltasTest extends TestCase
 
         $l = CtsLiquidacion::where('empleado_id', $e->id)->firstOrFail();
         $this->assertSame(2, $l->faltas);
-        $this->assertEqualsWithDelta(1730.56, $l->monto, 0.001);
+        $this->assertEqualsWithDelta(1752.81, $l->monto, 0.001);
 
         $fila = collect($this->getJson('/api/cts?anio=2026&periodo=mayo')->json('data.filas'))->firstWhere('id', $e->id);
         $this->assertSame(2, $fila['faltas']);
@@ -100,7 +100,7 @@ class CtsFaltasTest extends TestCase
         $this->assertSame(1, CtsLiquidacion::where('empleado_id', $b->id)->value('faltas'));
         $this->assertSame(0, (int) $depositada->refresh()->faltas, 'Lo depositado no se toca.');
         $this->assertSame(0, CtsInasistencia::where('empleado_id', $c->id)->count());
-        $this->assertEqualsWithDelta(1730.56 + 1740.28 + 1750, $r->json('data.total'), 0.01);
+        $this->assertEqualsWithDelta(1752.81 + 1762.65 + 1772.5, $r->json('data.total'), 0.01);
         $this->assertTrue(Auditoria::where('entidad', 'cts')->where('descripcion', 'like', '%de 2 trabajador(es)%')->exists());
     }
 
@@ -160,7 +160,7 @@ class CtsFaltasTest extends TestCase
             ->assertStatus(422)->assertJsonValidationErrors('periodo');
     }
 
-    public function test_la_lista_trae_como_pista_lo_descontado_por_tardanzas_y_faltas_en_el_semestre(): void
+    public function test_el_descuento_de_tardanzas_de_la_boleta_no_toca_la_cts(): void
     {
         $e = $this->trabajador();
         $concepto = PaymentConcept::firstOrCreate(['nombre' => ConceptosDePago::TARDANZAS_Y_FALTAS], ['tipo' => 'descuento']);
@@ -172,8 +172,8 @@ class CtsFaltasTest extends TestCase
         $fila = collect($this->actingAs($this->crearUsuario('rrhh'), 'sanctum')
             ->getJson('/api/cts?anio=2026&periodo=mayo')->assertOk()->json('data.filas'))->firstWhere('id', $e->id);
 
-        // Enero y marzo están en el semestre de mayo (noviembre a abril); junio no.
-        $this->assertEqualsWithDelta(30.75, $fila['tardanzas_soles'], 0.001);
-        $this->assertSame(6, $fila['meses'], 'El descuento en soles no le quita días: solo las faltas anotadas.');
+        $this->assertArrayNotHasKey('tardanzas_soles', $fila, 'La CTS no muestra ni usa el descuento de la boleta.');
+        $this->assertSame(6, $fila['meses'], 'El descuento de la boleta no le quita días: solo los días no laborados anotados.');
+        $this->assertEqualsWithDelta(1772.5, $fila['monto'], 0.001);
     }
 }

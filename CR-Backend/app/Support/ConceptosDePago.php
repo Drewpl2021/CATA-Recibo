@@ -108,10 +108,9 @@ final class ConceptosDePago
     public const ADELANTO_BONIFICACIONES = 'Adelanto de Bonificaciones';
 
     /**
-     * Lo que se le descuenta por llegar tarde o faltar, en soles. La CTS no
-     * lo usa para calcular (junta tardanzas con faltas, y solo las faltas
-     * le quitan días): lo muestra como pista de a quién revisar al anotar
-     * sus faltas del semestre. Ver CtsInasistencia.
+     * Lo que se le descuenta en la boleta por llegar tarde o faltar, en
+     * soles. Es solo de la planilla: la CTS no lo mira. Sus días no
+     * laborados los anota RR.HH. aparte (CtsInasistencia).
      */
     public const TARDANZAS_Y_FALTAS = 'Descuento Autorizado - Tardanzas y Faltas';
 

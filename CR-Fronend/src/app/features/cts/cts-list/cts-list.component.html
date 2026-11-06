@@ -164,7 +164,7 @@
     <span>{{ tiempo(f) }}</span>
     <div class="form-ayuda">{{ fecha(f.desde) }} – {{ fecha(f.hasta) }}</div>
     @if (f.faltas) {
-      <div class="form-ayuda texto-aviso">Menos {{ f.faltas }} {{ f.faltas === 1 ? 'día' : 'días' }} por faltas</div>
+      <div class="form-ayuda texto-aviso">Menos {{ f.faltas }} {{ f.faltas === 1 ? 'día no laborado' : 'días no laborados' }}</div>
     }
   } @else {
     <span class="form-ayuda">{{ f.motivo }}</span>
@@ -204,7 +204,7 @@
     <ul class="ajuste-detalle">
       <li><strong>Qué es:</strong> un ahorro que el colegio le guarda a cada trabajador en una cuenta CTS a su nombre, para que tenga con qué vivir si deja de trabajar. Es como medio sueldo cada semestre.</li>
       <li><strong>Dos depósitos al año:</strong> hasta el 15 de mayo, por noviembre a abril; y hasta el 15 de noviembre, por mayo a octubre. Se deposita en la cuenta CTS que eligió el trabajador.</li>
-      <li><strong>Remuneración computable:</strong> sueldo + asignación familiar + bonificación por cargo de su planilla de abril u octubre (el cierre del semestre, o el mes en que cesó), más un sexto de la gratificación del semestre (la de diciembre para mayo, la de julio para noviembre). Si alguno de esos meses no tiene planilla en el sistema, se toma su ficha.</li>
+      <li><strong>Remuneración computable:</strong> sueldo + asignación familiar + bonificación por cargo de su planilla de abril u octubre (el cierre del semestre, o el mes en que cesó), más un sexto de la gratificación del semestre con su bonificación del 9% (la de diciembre para mayo, la de julio para noviembre). Si alguno de esos meses no tiene planilla en el sistema, se toma su ficha.</li>
       <li><strong>CTS:</strong> la remuneración computable ÷ 12 por cada mes completo, más ÷ 360 por cada día suelto (quien entró o cesó a mitad del semestre).</li>
       <li><strong>Sin CTS:</strong> las prácticas y los tipos de contrato marcados sin CTS en Tipos de Contrato, y quien no llega a un mes de servicio.</li>
       <li>La CTS no paga ONP, AFP, EsSalud ni Renta de 5ta: va completa a la cuenta.</li>
@@ -290,9 +290,9 @@
   >
   <div class="form-fields">
     <p class="form-ayuda">
-      Anota solo las faltas sin justificación: cada día le quita 1/360 de la remuneración computable. Las tardanzas
-      no van aquí. Al guardar, su CTS se recalcula al momento. Arriba salen quienes tuvieron descuento por
-      «Tardanzas y Faltas» en su planilla.
+      Los días no laborados del semestre, como en la hoja de CTS de RR.HH.: cada día le quita 1/360 de la
+      remuneración computable. Es un dato solo de la CTS: no toca la planilla ni la boleta. Al guardar, su CTS se
+      recalcula al momento.
     </p>
     <div class="form-group">
       <label for="buscarFaltas">Buscar</label>
@@ -304,7 +304,6 @@
         <thead>
           <tr>
             <th class="cts-cuadro__concepto">Trabajador</th>
-            <th>Descuento en planilla</th>
             <th>Días no laborados</th>
             <th class="cts-cuadro__concepto">Sustento</th>
           </tr>
@@ -317,13 +316,6 @@
                 <div class="form-ayuda">DNI {{ f.fila.dni }}</div>
               </td>
               <td class="num">
-                @if (f.fila.tardanzas_soles > 0) {
-                  <span class="texto-aviso">S/ {{ f.fila.tardanzas_soles | number: '1.2-2' }}</span>
-                } @else {
-                  <span class="form-ayuda">—</span>
-                }
-              </td>
-              <td class="num">
                 <input type="number" class="form-control" style="max-width: 90px; margin-left: auto;" [(ngModel)]="f.dias"
                   min="0" max="180" step="1" inputmode="numeric" [attr.aria-label]="'Días no laborados de ' + f.fila.nombre" />
               </td>
@@ -333,7 +325,7 @@
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="4" class="form-ayuda">Nadie coincide con la búsqueda.</td></tr>
+            <tr><td colspan="3" class="form-ayuda">Nadie coincide con la búsqueda.</td></tr>
           }
         </tbody>
       </table>
@@ -364,7 +356,7 @@
         <dd>
           {{ tiempo(d) }}
           @if (d.faltas) {
-            <div class="form-ayuda">Ya descontadas {{ d.faltas }} {{ d.faltas === 1 ? 'falta' : 'faltas' }} injustificadas.</div>
+            <div class="form-ayuda">Ya restados {{ d.faltas }} {{ d.faltas === 1 ? 'día no laborado' : 'días no laborados' }}.</div>
           }
         </dd>
       }
@@ -450,7 +442,7 @@
           S/ {{ d.sexto_gratificacion | number: '1.2-2' }}
           <div class="form-ayuda">
             @if (d.gratificacion_fuente) {
-              Gratificación de {{ mesGratificacion }}: S/ {{ d.gratificacion | number: '1.2-2' }} ÷ 6
+              Gratificación de {{ mesGratificacion }} con su 9%: S/ {{ d.gratificacion | number: '1.2-2' }} ÷ 6
               ({{ d.gratificacion_fuente === 'planilla' ? 'de su planilla' : 'calculada con su ficha' }})
             } @else {
               No recibió gratificación de {{ mesGratificacion }}.
@@ -474,19 +466,13 @@
     }
     <!-- Solo las faltas sin justificar le quitan días; las tardanzas se descuentan del sueldo. -->
     @if (d.aplica || d.faltas_registradas) {
-      <h3 class="detalle-subtitulo">Faltas injustificadas del semestre</h3>
-      @if (d.tardanzas_soles > 0) {
-        <p class="form-nota form-nota--aviso">
-          Su planilla le descontó S/ {{ d.tardanzas_soles | number: '1.2-2' }} por «Tardanzas y Faltas» en este semestre.
-          Revisa su control de asistencia y anota aquí solo los días que faltó sin justificación.
-        </p>
-      }
+      <h3 class="detalle-subtitulo">Días no laborados del semestre</h3>
       <p class="form-ayuda">
-        Cada día de falta injustificada se resta del tiempo: le quita 1/360 de la remuneración computable.
-        Las tardanzas no se anotan aquí.
+        Los días no laborados del semestre, de la hoja de CTS de RR.HH. Cada día le quita 1/360 de la
+        remuneración computable. No toca su planilla ni su boleta.
       </p>
       <div class="form-group">
-        <label for="faltasCts">Días de falta injustificada</label>
+        <label for="faltasCts">Días no laborados</label>
         <input type="number" id="faltasCts" class="form-control" [(ngModel)]="faltas.dias" min="0" max="180" step="1"
           inputmode="numeric" placeholder="Ingrese los días" [disabled]="d.estado_cts === 'depositada' || guardandoFaltas" />
       </div>

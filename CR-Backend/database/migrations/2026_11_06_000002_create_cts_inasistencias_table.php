@@ -12,10 +12,9 @@ use Illuminate\Support\Facades\Schema;
  * es decir 1/360 de la remuneración. La hoja de RR.HH. lo hacía a mano
  * («CTS Con descuento», columna «Días no laborados»).
  *
- * No sale del concepto «Descuento Autorizado - Tardanzas y Faltas»: ese
- * concepto está en soles y junta tardanzas con faltas, y las tardanzas no
- * le quitan días a nadie. Por eso RR.HH. anota los días aquí, y el concepto
- * solo se le muestra como pista de a quién revisar.
+ * No sale del concepto «Descuento Autorizado - Tardanzas y Faltas»: ese es
+ * el descuento de la boleta, en soles, y se queda en la boleta. Los días de
+ * la CTS los anota RR.HH. aquí, de su propia hoja, sin mezclarlos.
  *
  * `faltas` queda también en la liquidación: lo que se depositó tiene que
  * decir con cuántas faltas se calculó, aunque después se corrija el registro.

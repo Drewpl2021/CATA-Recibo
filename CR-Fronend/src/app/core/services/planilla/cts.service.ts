@@ -63,8 +63,6 @@ export interface FilaCts {
   /** Las faltas anotadas ahora; si difieren de `faltas`, falta volver a calcular. */
   faltas_registradas: number;
   faltas_observacion: string | null;
-  /** Pista: lo que la planilla le descontó por «Tardanzas y Faltas» en el semestre, en soles. */
-  tardanzas_soles: number;
 }
 
 export interface ListaCts {

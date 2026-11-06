@@ -168,7 +168,7 @@
         @endif
         <tr>
             <td>
-                Sexta parte de la gratificación de {{ $gratiMes }}
+                Sexta parte de la gratificación de {{ $gratiMes }}, con su bonificación extraordinaria
                 @if ($l->gratificacion > 0)
                     <span class="detalle">(S/ {{ number_format($l->gratificacion, 2) }} ÷ 6)</span>
                 @endif
