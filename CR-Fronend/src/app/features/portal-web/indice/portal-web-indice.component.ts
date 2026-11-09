@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, ElementRef, OnInit, QueryList, ViewChildren, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router } from '@angular/router';
 
 import { ToastService } from '../../../core/services';
@@ -54,7 +54,7 @@ const DURACION_SALIDA = 300;
 @Component({
   selector: 'app-portal-web-indice',
   standalone: true,
-  imports: [CommonModule, IconComponent, PageHeaderComponent],
+  imports: [IconComponent, PageHeaderComponent],
   templateUrl: './portal-web-indice.component.html',
   styleUrls: ['./portal-web-indice.component.scss'],
 })

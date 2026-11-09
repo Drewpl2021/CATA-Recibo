@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -29,9 +29,15 @@ import { PanelPaginasComponent } from './paginas/panel-paginas.component';
   selector: 'app-portal-web-nosotros',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, PageHeaderComponent, IconComponent, FormModalComponent, IndiceDeSeccionesComponent,
-    PanelPaginasComponent, PanelNivelesDocentesComponent, PanelDocentesComponent,
-  ],
+    ReactiveFormsModule,
+    PageHeaderComponent,
+    IconComponent,
+    FormModalComponent,
+    IndiceDeSeccionesComponent,
+    PanelPaginasComponent,
+    PanelNivelesDocentesComponent,
+    PanelDocentesComponent
+],
   templateUrl: './portal-web-nosotros.component.html',
   styleUrls: ['../compartido/pw-estilos.scss'],
 })

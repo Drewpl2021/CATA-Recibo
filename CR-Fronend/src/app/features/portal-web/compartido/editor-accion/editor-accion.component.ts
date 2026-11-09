@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
 
 import { AccionPortal } from '../../portal-web.models';
@@ -98,7 +98,7 @@ export function accionDelGrupo(grupo: FormGroup): AccionPortal | null {
 @Component({
   selector: 'app-editor-accion',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './editor-accion.component.html',
 })
 export class EditorAccionComponent {

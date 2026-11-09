@@ -1,5 +1,5 @@
 import { Component, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 
 import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
@@ -37,7 +37,7 @@ function validarEnlace(grupo: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-panel-plataformas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, CuerpoDesplazableComponent],
+  imports: [ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, CuerpoDesplazableComponent],
   templateUrl: './panel-plataformas.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

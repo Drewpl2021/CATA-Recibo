@@ -1,5 +1,5 @@
 import { Component, EventEmitter, OnInit, Output, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -22,7 +22,7 @@ import { PanelUniversidadesComponent } from './panel-universidades.component';
 @Component({
   selector: 'app-panel-academia',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, FormModalComponent, PanelUniversidadesComponent, PanelCiclosComponent],
+  imports: [ReactiveFormsModule, IconComponent, FormModalComponent, PanelUniversidadesComponent, PanelCiclosComponent],
   templateUrl: './panel-academia.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

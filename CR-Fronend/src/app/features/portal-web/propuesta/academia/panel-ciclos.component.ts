@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 
 import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
@@ -39,7 +39,7 @@ function soles(n: number | null): string {
 @Component({
   selector: 'app-panel-ciclos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
+  imports: [ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
   templateUrl: './panel-ciclos.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

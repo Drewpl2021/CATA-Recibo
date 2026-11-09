@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -42,10 +42,18 @@ const HTTPS = /^https:\/\//;
   selector: 'app-portal-web-logros',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent,
-    SelectorImagenComponent, EditorCifrasComponent, WizardComponent, CuerpoDesplazableComponent, IndiceDeSeccionesComponent,
-  ],
+    ReactiveFormsModule,
+    PageHeaderComponent,
+    IconComponent,
+    DataTableComponent,
+    CeldaTablaDirective,
+    FormModalComponent,
+    SelectorImagenComponent,
+    EditorCifrasComponent,
+    WizardComponent,
+    CuerpoDesplazableComponent,
+    IndiceDeSeccionesComponent
+],
   templateUrl: './portal-web-logros.component.html',
   styleUrls: ['../compartido/pw-estilos.scss'],
 })

@@ -29,12 +29,14 @@
       (editarFila)="editar($event)"
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
-    >
+      >
       <ng-template appCelda="nombre" let-fila>
         <div class="pw-celda-titulo">
           <span>
             <strong>{{ fila.nombre }}</strong>
-            <small>{{ detalle(fila) }}<ng-container *ngIf="fila.aclaracion"> · <span class="pw-falta">{{ fila.aclaracion }}</span></ng-container></small>
+            <small>{{ detalle(fila) }}@if (fila.aclaracion) {
+              · <span class="pw-falta">{{ fila.aclaracion }}</span>
+            }</small>
           </span>
         </div>
       </ng-template>
@@ -62,107 +64,125 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrar()"
->
+  >
   <pw-cuerpo-desplazable #cuerpo>
-  <form [formGroup]="form" class="form-fields" novalidate>
-    <div class="form-row">
-      <div class="form-group">
-        <label for="plataforma-nombre">Nombre *</label>
-        <input id="plataforma-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
-          placeholder="Ej. Cubicol" [class.is-invalid]="invalido(form.controls.nombre)" />
-        <small class="form-error" *ngIf="invalido(form.controls.nombre)">Obligatorio (máximo 40).</small>
-      </div>
-      <div class="form-group">
-        <label for="plataforma-estado">Estado</label>
-        <select id="plataforma-estado" class="form-control" formControlName="estado">
-          <option value="publicado">Publicada</option>
-          <option value="borrador">Borrador</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label for="plataforma-descripcion">Descripción</label>
-      <textarea id="plataforma-descripcion" class="form-control" rows="3" formControlName="descripcion" maxlength="300"
-        [class.is-invalid]="invalido(form.controls.descripcion)"></textarea>
-      <small class="form-ayuda">Opcional. Hasta 300 caracteres.</small>
-    </div>
-
-    <div class="form-group">
-      <label for="plataforma-aclaracion">Aviso</label>
-      <input id="plataforma-aclaracion" type="text" class="form-control" formControlName="aclaracion" maxlength="60"
-        placeholder="Ej. Descripción por confirmar" />
-      <small class="form-ayuda">Opcional. Se ve junto a la plataforma: úsalo si algo aún no está confirmado.</small>
-    </div>
-
-    <!-- Funciones -->
-    <div class="form-group" formArrayName="funciones">
-      <label>Qué ofrece a quién</label>
-      <small class="form-ayuda">Hasta {{ maxFunciones }}: para quién (docentes, familias…) y qué hace ahí. Opcional.</small>
-      <div class="form-row" *ngFor="let f of funciones.controls; let i = index" [formGroupName]="i">
+    <form [formGroup]="form" class="form-fields" novalidate>
+      <div class="form-row">
         <div class="form-group">
-          <label [for]="'funcion-titulo-' + i">Para quién *</label>
-          <input [id]="'funcion-titulo-' + i" type="text" class="form-control" formControlName="titulo" maxlength="40"
-            placeholder="Ej. Padres de familia" [class.is-invalid]="invalido(f.get('titulo'))" />
-          <small class="form-error" *ngIf="invalido(f.get('titulo'))">Obligatorio (máximo 40).</small>
-        </div>
-        <div class="form-group">
-          <label [for]="'funcion-texto-' + i">Qué ofrece *</label>
-          <textarea [id]="'funcion-texto-' + i" class="form-control" rows="2" formControlName="texto" maxlength="200"
-            [class.is-invalid]="invalido(f.get('texto'))"></textarea>
-          <small class="form-error" *ngIf="invalido(f.get('texto'))">Obligatorio (máximo 200).</small>
-        </div>
-        <div class="form-group">
-          <label>&nbsp;</label>
-          <div class="action-btns">
-            <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverFuncion(i, -1)" [disabled]="i === 0"
-              [attr.aria-label]="'Subir la función ' + (i + 1)" title="Subir">
-              <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
-            </button>
-            <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverFuncion(i, 1)" [disabled]="i === funciones.length - 1"
-              [attr.aria-label]="'Bajar la función ' + (i + 1)" title="Bajar">
-              <app-icon icono="chevron_down" [tamano]="16"></app-icon>
-            </button>
-            <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarFuncion(i)"
-              [attr.aria-label]="'Quitar la función ' + (i + 1)" title="Quitar">
-              <app-icon icono="trash" [tamano]="16"></app-icon>
-            </button>
+          <label for="plataforma-nombre">Nombre *</label>
+          <input id="plataforma-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
+            placeholder="Ej. Cubicol" [class.is-invalid]="invalido(form.controls.nombre)" />
+            @if (invalido(form.controls.nombre)) {
+              <small class="form-error">Obligatorio (máximo 40).</small>
+            }
+          </div>
+          <div class="form-group">
+            <label for="plataforma-estado">Estado</label>
+            <select id="plataforma-estado" class="form-control" formControlName="estado">
+              <option value="publicado">Publicada</option>
+              <option value="borrador">Borrador</option>
+            </select>
           </div>
         </div>
-      </div>
-      <div>
-        <button type="button" class="btn-secondary" (click)="agregarFuncion()" [disabled]="funciones.length >= maxFunciones">
-          <app-icon icono="plus" [tamano]="14"></app-icon> Agregar
-        </button>
-      </div>
-    </div>
 
-    <!-- Enlace -->
-    <div class="form-fields" formGroupName="enlace">
-      <label class="check-item">
-        <input type="checkbox" formControlName="conEnlace" />
-        <span>Lleva un enlace</span>
-      </label>
-      <div class="form-row" *ngIf="enlace.value.conEnlace">
         <div class="form-group">
-          <label for="plataforma-enlace-etiqueta">Texto del enlace *</label>
-          <input id="plataforma-enlace-etiqueta" type="text" class="form-control" formControlName="etiqueta" maxlength="40"
-            placeholder="Ej. Entrar a Cubicol" [class.is-invalid]="errorDelEnlace('etiquetaMala')" />
-          <small class="form-error" *ngIf="errorDelEnlace('etiquetaMala')">Obligatorio (máximo 40).</small>
-          <small class="form-ayuda" *ngIf="!errorDelEnlace('etiquetaMala')">Que diga a dónde lleva, no «clic aquí».</small>
+          <label for="plataforma-descripcion">Descripción</label>
+          <textarea id="plataforma-descripcion" class="form-control" rows="3" formControlName="descripcion" maxlength="300"
+          [class.is-invalid]="invalido(form.controls.descripcion)"></textarea>
+          <small class="form-ayuda">Opcional. Hasta 300 caracteres.</small>
         </div>
+
         <div class="form-group">
-          <label for="plataforma-enlace-url">Dirección *</label>
-          <input id="plataforma-enlace-url" type="url" class="form-control" formControlName="url" placeholder="https://…"
-            [class.is-invalid]="errorDelEnlace('urlMala')" />
-          <small class="form-error" *ngIf="errorDelEnlace('urlMala')">Una dirección que empiece con https://.</small>
-        </div>
-      </div>
-      <label class="check-item" *ngIf="enlace.value.conEnlace">
-        <input type="checkbox" formControlName="externo" />
-        <span>Abrir en otra pestaña (es otro sitio)</span>
-      </label>
-    </div>
-  </form>
-  </pw-cuerpo-desplazable>
-</app-form-modal>
+          <label for="plataforma-aclaracion">Aviso</label>
+          <input id="plataforma-aclaracion" type="text" class="form-control" formControlName="aclaracion" maxlength="60"
+            placeholder="Ej. Descripción por confirmar" />
+            <small class="form-ayuda">Opcional. Se ve junto a la plataforma: úsalo si algo aún no está confirmado.</small>
+          </div>
+
+          <!-- Funciones -->
+          <div class="form-group" formArrayName="funciones">
+            <label>Qué ofrece a quién</label>
+            <small class="form-ayuda">Hasta {{ maxFunciones }}: para quién (docentes, familias…) y qué hace ahí. Opcional.</small>
+            @for (f of funciones.controls; track f; let i = $index) {
+              <div class="form-row" [formGroupName]="i">
+                <div class="form-group">
+                  <label [for]="'funcion-titulo-' + i">Para quién *</label>
+                  <input [id]="'funcion-titulo-' + i" type="text" class="form-control" formControlName="titulo" maxlength="40"
+                    placeholder="Ej. Padres de familia" [class.is-invalid]="invalido(f.get('titulo'))" />
+                    @if (invalido(f.get('titulo'))) {
+                      <small class="form-error">Obligatorio (máximo 40).</small>
+                    }
+                  </div>
+                  <div class="form-group">
+                    <label [for]="'funcion-texto-' + i">Qué ofrece *</label>
+                    <textarea [id]="'funcion-texto-' + i" class="form-control" rows="2" formControlName="texto" maxlength="200"
+                    [class.is-invalid]="invalido(f.get('texto'))"></textarea>
+                    @if (invalido(f.get('texto'))) {
+                      <small class="form-error">Obligatorio (máximo 200).</small>
+                    }
+                  </div>
+                  <div class="form-group">
+                    <label>&nbsp;</label>
+                    <div class="action-btns">
+                      <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverFuncion(i, -1)" [disabled]="i === 0"
+                        [attr.aria-label]="'Subir la función ' + (i + 1)" title="Subir">
+                        <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+                      </button>
+                      <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverFuncion(i, 1)" [disabled]="i === funciones.length - 1"
+                        [attr.aria-label]="'Bajar la función ' + (i + 1)" title="Bajar">
+                        <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+                      </button>
+                      <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarFuncion(i)"
+                        [attr.aria-label]="'Quitar la función ' + (i + 1)" title="Quitar">
+                        <app-icon icono="trash" [tamano]="16"></app-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+              <div>
+                <button type="button" class="btn-secondary" (click)="agregarFuncion()" [disabled]="funciones.length >= maxFunciones">
+                  <app-icon icono="plus" [tamano]="14"></app-icon> Agregar
+                </button>
+              </div>
+            </div>
+
+            <!-- Enlace -->
+            <div class="form-fields" formGroupName="enlace">
+              <label class="check-item">
+                <input type="checkbox" formControlName="conEnlace" />
+                <span>Lleva un enlace</span>
+              </label>
+              @if (enlace.value.conEnlace) {
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="plataforma-enlace-etiqueta">Texto del enlace *</label>
+                    <input id="plataforma-enlace-etiqueta" type="text" class="form-control" formControlName="etiqueta" maxlength="40"
+                      placeholder="Ej. Entrar a Cubicol" [class.is-invalid]="errorDelEnlace('etiquetaMala')" />
+                      @if (errorDelEnlace('etiquetaMala')) {
+                        <small class="form-error">Obligatorio (máximo 40).</small>
+                      }
+                      @if (!errorDelEnlace('etiquetaMala')) {
+                        <small class="form-ayuda">Que diga a dónde lleva, no «clic aquí».</small>
+                      }
+                    </div>
+                    <div class="form-group">
+                      <label for="plataforma-enlace-url">Dirección *</label>
+                      <input id="plataforma-enlace-url" type="url" class="form-control" formControlName="url" placeholder="https://…"
+                        [class.is-invalid]="errorDelEnlace('urlMala')" />
+                        @if (errorDelEnlace('urlMala')) {
+                          <small class="form-error">Una dirección que empiece con https://.</small>
+                        }
+                      </div>
+                    </div>
+                  }
+                  @if (enlace.value.conEnlace) {
+                    <label class="check-item">
+                      <input type="checkbox" formControlName="externo" />
+                      <span>Abrir en otra pestaña (es otro sitio)</span>
+                    </label>
+                  }
+                </div>
+              </form>
+            </pw-cuerpo-desplazable>
+          </app-form-modal>

@@ -9,32 +9,38 @@
     </div>
   </header>
 
-  <div class="pw-esqueleto" *ngIf="cargando" role="status">
-    <span class="solo-lectores">Cargando los títulos…</span>
-    <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
-    <span class="esqueleto esqueleto--linea esqueleto--corta" aria-hidden="true"></span>
-  </div>
-
-  <ng-container *ngIf="!cargando">
-    <div class="ajuste-bloque" *ngFor="let p of paginas">
-      <div class="pw-fila-dato">
-        <h3 class="ajuste-bloque__pregunta pw-sin-margen">
-          {{ p.nombre }}
-          <span class="pw-falta" *ngIf="faltanEn(p)"> · {{ faltanEn(p) === 1 ? '1 sin llenar' : faltanEn(p) + ' sin llenar' }}</span>
-        </h3>
-        <button type="button" class="btn-secondary" (click)="abrir(p)" [attr.aria-label]="'Editar los títulos de ' + p.nombre">
-          <app-icon icono="edit" [tamano]="14"></app-icon>
-          Editar
-        </button>
-      </div>
-      <dl class="pw-lista-datos">
-        <ng-container *ngFor="let c of p.campos">
-          <dt>{{ c.nombre }}</dt>
-          <dd [class.pw-sin-dato]="!valor(p.pagina, c.campo)">{{ valor(p.pagina, c.campo) || 'Sin llenar' }}</dd>
-        </ng-container>
-      </dl>
+  @if (cargando) {
+    <div class="pw-esqueleto" role="status">
+      <span class="solo-lectores">Cargando los títulos…</span>
+      <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+      <span class="esqueleto esqueleto--linea esqueleto--corta" aria-hidden="true"></span>
     </div>
-  </ng-container>
+  }
+
+  @if (!cargando) {
+    @for (p of paginas; track p) {
+      <div class="ajuste-bloque">
+        <div class="pw-fila-dato">
+          <h3 class="ajuste-bloque__pregunta pw-sin-margen">
+            {{ p.nombre }}
+            @if (faltanEn(p)) {
+              <span class="pw-falta"> · {{ faltanEn(p) === 1 ? '1 sin llenar' : faltanEn(p) + ' sin llenar' }}</span>
+            }
+          </h3>
+          <button type="button" class="btn-secondary" (click)="abrir(p)" [attr.aria-label]="'Editar los títulos de ' + p.nombre">
+            <app-icon icono="edit" [tamano]="14"></app-icon>
+            Editar
+          </button>
+        </div>
+        <dl class="pw-lista-datos">
+          @for (c of p.campos; track c) {
+            <dt>{{ c.nombre }}</dt>
+            <dd [class.pw-sin-dato]="!valor(p.pagina, c.campo)">{{ valor(p.pagina, c.campo) || 'Sin llenar' }}</dd>
+          }
+        </dl>
+      </div>
+    }
+  }
 </section>
 
 <!-- Los títulos de una página -->
@@ -47,23 +53,29 @@
   textoGuardar="Guardar cambios"
   (guardar)="guardar()"
   (cancelar)="cerrar()"
->
+  >
   <pw-cuerpo-desplazable #cuerpo>
-  <form [formGroup]="form" class="form-fields" novalidate *ngIf="editando as p">
-    <div [formGroupName]="p.pagina" class="form-fields">
-      <div class="form-group" *ngFor="let c of p.campos">
-        <label [for]="'titulo-' + p.pagina + '-' + c.campo">{{ c.nombre }} *</label>
-        <input [id]="'titulo-' + p.pagina + '-' + c.campo" type="text" class="form-control" [formControlName]="c.campo"
-          [attr.maxlength]="c.maximo" [placeholder]="'Ej. ' + c.ejemplo"
-          [class.is-invalid]="invalido(p.pagina, c.campo)" [attr.aria-describedby]="'ayuda-' + p.pagina + '-' + c.campo" />
-        <small class="form-error" *ngIf="invalido(p.pagina, c.campo)">
-          {{ c.ejemplo.includes(marca) ? 'Obligatorio, con ' + marca + ' donde va el número (máximo ' + c.maximo + ').' : 'Obligatorio (máximo ' + c.maximo + ').' }}
-        </small>
-        <small class="form-ayuda" [id]="'ayuda-' + p.pagina + '-' + c.campo">
-          {{ c.ayuda ? c.ayuda + ' ' : '' }}{{ largo(p.pagina, c.campo) }}/{{ c.maximo }}
-        </small>
-      </div>
-    </div>
-  </form>
-  </pw-cuerpo-desplazable>
-</app-form-modal>
+    @if (editando; as p) {
+      <form [formGroup]="form" class="form-fields" novalidate>
+        <div [formGroupName]="p.pagina" class="form-fields">
+          @for (c of p.campos; track c) {
+            <div class="form-group">
+              <label [for]="'titulo-' + p.pagina + '-' + c.campo">{{ c.nombre }} *</label>
+              <input [id]="'titulo-' + p.pagina + '-' + c.campo" type="text" class="form-control" [formControlName]="c.campo"
+                [attr.maxlength]="c.maximo" [placeholder]="'Ej. ' + c.ejemplo"
+                [class.is-invalid]="invalido(p.pagina, c.campo)" [attr.aria-describedby]="'ayuda-' + p.pagina + '-' + c.campo" />
+                @if (invalido(p.pagina, c.campo)) {
+                  <small class="form-error">
+                    {{ c.ejemplo.includes(marca) ? 'Obligatorio, con ' + marca + ' donde va el número (máximo ' + c.maximo + ').' : 'Obligatorio (máximo ' + c.maximo + ').' }}
+                  </small>
+                }
+                <small class="form-ayuda" [id]="'ayuda-' + p.pagina + '-' + c.campo">
+                  {{ c.ayuda ? c.ayuda + ' ' : '' }}{{ largo(p.pagina, c.campo) }}/{{ c.maximo }}
+                </small>
+              </div>
+            }
+          </div>
+        </form>
+      }
+    </pw-cuerpo-desplazable>
+  </app-form-modal>

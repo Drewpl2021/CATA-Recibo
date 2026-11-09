@@ -1,5 +1,5 @@
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormArray, FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -32,7 +32,7 @@ type Simbolo = QuienesSomosPortal['simbolos'][number];
 @Component({
   selector: 'app-panel-quienes-somos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, FormModalComponent, SelectorImagenComponent, CuerpoDesplazableComponent],
+  imports: [ReactiveFormsModule, IconComponent, FormModalComponent, SelectorImagenComponent, CuerpoDesplazableComponent],
   templateUrl: './panel-quienes-somos.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
@@ -19,7 +19,7 @@ import { enfocarPrimerError } from '../../compartido/panel';
 @Component({
   selector: 'app-panel-preguntas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
+  imports: [ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent],
   templateUrl: './panel-preguntas.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

@@ -1,5 +1,5 @@
 import { Component, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
@@ -35,9 +35,16 @@ import { RECURSOS } from '../../portal-web.service';
   selector: 'app-panel-banners',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent,
-    SelectorImagenComponent, EditorAccionComponent, WizardComponent, CuerpoDesplazableComponent,
-  ],
+    ReactiveFormsModule,
+    IconComponent,
+    DataTableComponent,
+    CeldaTablaDirective,
+    FormModalComponent,
+    SelectorImagenComponent,
+    EditorAccionComponent,
+    WizardComponent,
+    CuerpoDesplazableComponent
+],
   templateUrl: './panel-banners.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

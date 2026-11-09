@@ -1,5 +1,5 @@
 import { Component, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
@@ -31,9 +31,15 @@ const MAX_TALLERES = 12;
   selector: 'app-panel-niveles-propuesta',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent,
-    WizardComponent, CuerpoDesplazableComponent,
-  ],
+    ReactiveFormsModule,
+    IconComponent,
+    DataTableComponent,
+    CeldaTablaDirective,
+    FormModalComponent,
+    SelectorImagenComponent,
+    WizardComponent,
+    CuerpoDesplazableComponent
+],
   templateUrl: './panel-niveles-propuesta.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

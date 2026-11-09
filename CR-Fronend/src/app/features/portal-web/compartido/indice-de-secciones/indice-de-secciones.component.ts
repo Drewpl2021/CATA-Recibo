@@ -1,5 +1,5 @@
 import { Component, ElementRef, EventEmitter, Input, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { PendienteConSeccion, SeccionDelIndice } from '../pantalla-con-indice';
@@ -21,41 +21,49 @@ import { ResumenDeSeccion } from '../resumen-de-seccion';
 @Component({
   selector: 'pw-indice-de-secciones',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [IconComponent],
   styleUrls: ['../pw-estilos.scss'],
   template: `
-    <section class="pendientes" *ngIf="pendientes.length" [attr.aria-labelledby]="id + '-pendientes'">
-      <h2 class="pendientes__titulo" [id]="id + '-pendientes'">Pendientes de {{ nombre }}</h2>
-      <div class="pendientes__lista pendientes__lista--fila">
-        <button type="button" class="pendiente" *ngFor="let p of pendientes; trackBy: porPendiente" (click)="irA(p.seccion)">
-          <strong class="pendiente__cuantos">{{ p.cuantos }}</strong>
-          <span class="pendiente__texto">{{ p.texto }}</span>
-          <app-icon icono="arrow_right" [tamano]="16" class="pendiente__flecha"></app-icon>
-        </button>
-      </div>
-    </section>
-
+    @if (pendientes.length) {
+      <section class="pendientes" [attr.aria-labelledby]="id + '-pendientes'">
+        <h2 class="pendientes__titulo" [id]="id + '-pendientes'">Pendientes de {{ nombre }}</h2>
+        <div class="pendientes__lista pendientes__lista--fila">
+          @for (p of pendientes; track porPendiente($index, p)) {
+            <button type="button" class="pendiente" (click)="irA(p.seccion)">
+              <strong class="pendiente__cuantos">{{ p.cuantos }}</strong>
+              <span class="pendiente__texto">{{ p.texto }}</span>
+              <app-icon icono="arrow_right" [tamano]="16" class="pendiente__flecha"></app-icon>
+            </button>
+          }
+        </div>
+      </section>
+    }
+    
     <div class="ajustes-layout">
       <nav class="ajustes-indice" [attr.aria-label]="'Secciones de ' + nombre">
-        <button type="button" *ngFor="let s of secciones; trackBy: porSeccion" class="ajustes-indice__item"
-          [class.ajustes-indice__item--activo]="actual === s.id" [attr.aria-current]="actual === s.id ? 'page' : null"
-          [attr.aria-controls]="'pw-seccion-' + s.id" (click)="actualChange.emit(s.id)">
-          <span class="ajustes-indice__icono"><app-icon [icono]="s.icono" [tamano]="18"></app-icon></span>
-          <span class="ajustes-indice__textos">
-            <span class="ajustes-indice__nombre">{{ s.nombre }}</span>
-            <span class="ajustes-indice__estado" [class.ajustes-indice__estado--aviso]="resumenes[s.id]?.aviso">
-              <app-icon *ngIf="resumenes[s.id]?.aviso" icono="warning" [tamano]="13"></app-icon>
-              {{ resumenes[s.id]?.estado ?? 'Cargando…' }}
+        @for (s of secciones; track porSeccion($index, s)) {
+          <button type="button" class="ajustes-indice__item"
+            [class.ajustes-indice__item--activo]="actual === s.id" [attr.aria-current]="actual === s.id ? 'page' : null"
+            [attr.aria-controls]="'pw-seccion-' + s.id" (click)="actualChange.emit(s.id)">
+            <span class="ajustes-indice__icono"><app-icon [icono]="s.icono" [tamano]="18"></app-icon></span>
+            <span class="ajustes-indice__textos">
+              <span class="ajustes-indice__nombre">{{ s.nombre }}</span>
+              <span class="ajustes-indice__estado" [class.ajustes-indice__estado--aviso]="resumenes[s.id]?.aviso">
+                @if (resumenes[s.id]?.aviso) {
+                  <app-icon icono="warning" [tamano]="13"></app-icon>
+                }
+                {{ resumenes[s.id]?.estado ?? 'Cargando…' }}
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+        }
       </nav>
-
+    
       <div class="ajustes-contenido pw-detalle">
         <ng-content></ng-content>
       </div>
     </div>
-  `,
+    `,
 })
 export class IndiceDeSeccionesComponent {
   private host = inject<ElementRef<HTMLElement>>(ElementRef);

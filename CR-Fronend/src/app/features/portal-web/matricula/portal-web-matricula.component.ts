@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -34,10 +34,19 @@ import { PanelVacantesComponent } from './vacantes/panel-vacantes.component';
   selector: 'app-portal-web-matricula',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, PageHeaderComponent, IconComponent, FormModalComponent, SelectorImagenComponent,
-    CuerpoDesplazableComponent, IndiceDeSeccionesComponent,
-    PanelProcesosComponent, PanelVacantesComponent, PanelFechasComponent, PanelPreguntasComponent, PanelGradosComponent,
-  ],
+    ReactiveFormsModule,
+    PageHeaderComponent,
+    IconComponent,
+    FormModalComponent,
+    SelectorImagenComponent,
+    CuerpoDesplazableComponent,
+    IndiceDeSeccionesComponent,
+    PanelProcesosComponent,
+    PanelVacantesComponent,
+    PanelFechasComponent,
+    PanelPreguntasComponent,
+    PanelGradosComponent
+],
   templateUrl: './portal-web-matricula.component.html',
   styleUrls: ['../compartido/pw-estilos.scss'],
 })

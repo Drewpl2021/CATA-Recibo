@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -27,9 +27,14 @@ import { PanelProyectosComponent } from './proyectos/panel-proyectos.component';
   selector: 'app-portal-web-proyectos',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, PageHeaderComponent, IconComponent, FormModalComponent, IndiceDeSeccionesComponent,
-    PanelCategoriasComponent, PanelProyectosComponent,
-  ],
+    ReactiveFormsModule,
+    PageHeaderComponent,
+    IconComponent,
+    FormModalComponent,
+    IndiceDeSeccionesComponent,
+    PanelCategoriasComponent,
+    PanelProyectosComponent
+],
   templateUrl: './portal-web-proyectos.component.html',
   styleUrls: ['../compartido/pw-estilos.scss'],
 })

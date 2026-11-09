@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { EMPTY, Observable, expand } from 'rxjs';
 import { ToastService } from '../../../core/services';
@@ -25,7 +25,7 @@ export type TandaDeFirma = (clave: string, desde: string | null) => Observable<A
 @Component({
   selector: 'app-firmar-aqui',
   standalone: true,
-  imports: [CommonModule, FormsModule, FormModalComponent, IconComponent, PistaDirective],
+  imports: [FormsModule, FormModalComponent, IconComponent, PistaDirective],
   templateUrl: './firmar-aqui.component.html',
 })
 export class FirmarAquiComponent {

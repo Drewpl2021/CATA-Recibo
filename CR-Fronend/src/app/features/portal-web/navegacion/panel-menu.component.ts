@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -42,7 +42,7 @@ export type ParteDelMenu = 'menu' | 'grupos' | 'pie';
 @Component({
   selector: 'app-panel-menu',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, FormModalComponent, WizardComponent, CuerpoDesplazableComponent],
+  imports: [ReactiveFormsModule, IconComponent, FormModalComponent, WizardComponent, CuerpoDesplazableComponent],
   templateUrl: './panel-menu.component.html',
   styleUrls: ['../compartido/pw-estilos.scss'],
 })

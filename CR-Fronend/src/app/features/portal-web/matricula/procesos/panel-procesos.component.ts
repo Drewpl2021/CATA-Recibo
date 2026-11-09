@@ -1,5 +1,5 @@
 import { Component, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
@@ -31,9 +31,14 @@ const MAX_LISTAS = 4;
   selector: 'app-panel-procesos',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent,
-    WizardComponent, CuerpoDesplazableComponent,
-  ],
+    ReactiveFormsModule,
+    IconComponent,
+    DataTableComponent,
+    CeldaTablaDirective,
+    FormModalComponent,
+    WizardComponent,
+    CuerpoDesplazableComponent
+],
   templateUrl: './panel-procesos.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

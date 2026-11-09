@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 
 import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
@@ -37,7 +37,7 @@ function enlaceCompleto(grupo: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-panel-noticias',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent, CuerpoDesplazableComponent],
+  imports: [ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent, CuerpoDesplazableComponent],
   templateUrl: './panel-noticias.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

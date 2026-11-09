@@ -1,5 +1,5 @@
 import { Component, EventEmitter, OnInit, Output, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -28,7 +28,7 @@ type PaginaDeTitulos = (typeof TITULOS_DE_PAGINAS)[number];
 @Component({
   selector: 'app-panel-titulos',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, FormModalComponent, CuerpoDesplazableComponent],
+  imports: [ReactiveFormsModule, IconComponent, FormModalComponent, CuerpoDesplazableComponent],
   templateUrl: './panel-titulos.component.html',
   styleUrls: ['../compartido/pw-estilos.scss'],
 })

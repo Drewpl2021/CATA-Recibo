@@ -14,25 +14,31 @@
     </div>
   </header>
 
-  <div class="pw-esqueleto" *ngIf="cargandoIntro" role="status">
-    <span class="solo-lectores">Cargando la introducción…</span>
-    <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
-  </div>
+  @if (cargandoIntro) {
+    <div class="pw-esqueleto" role="status">
+      <span class="solo-lectores">Cargando la introducción…</span>
+      <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+    </div>
+  }
 
   <!-- La introducción: se lee aquí y se cambia en su modal -->
-  <div class="ajuste-bloque" *ngIf="!cargandoIntro">
-    <div class="pw-fila-dato">
-      <div class="pw-dato">
-        <span>Introducción</span>
-        <strong [class.pw-sin-dato]="!introGuardada">{{ introGuardada?.titulo || 'Sin introducción: la sección empieza con los pilares' }}</strong>
-        <small *ngIf="introGuardada">{{ introGuardada.parrafos.length === 1 ? '1 párrafo' : introGuardada.parrafos.length + ' párrafos' }}: «{{ introGuardada.parrafos[0] | slice: 0 : 90 }}{{ introGuardada.parrafos[0].length > 90 ? '…' : '' }}»</small>
+  @if (!cargandoIntro) {
+    <div class="ajuste-bloque">
+      <div class="pw-fila-dato">
+        <div class="pw-dato">
+          <span>Introducción</span>
+          <strong [class.pw-sin-dato]="!introGuardada">{{ introGuardada?.titulo || 'Sin introducción: la sección empieza con los pilares' }}</strong>
+          @if (introGuardada) {
+            <small>{{ introGuardada.parrafos.length === 1 ? '1 párrafo' : introGuardada.parrafos.length + ' párrafos' }}: «{{ introGuardada.parrafos[0] | slice: 0 : 90 }}{{ introGuardada.parrafos[0].length > 90 ? '…' : '' }}»</small>
+          }
+        </div>
+        <button type="button" class="btn-secondary" (click)="abrirIntro()">
+          <app-icon icono="edit" [tamano]="14"></app-icon>
+          Editar introducción
+        </button>
       </div>
-      <button type="button" class="btn-secondary" (click)="abrirIntro()">
-        <app-icon icono="edit" [tamano]="14"></app-icon>
-        Editar introducción
-      </button>
     </div>
-  </div>
+  }
 
   <div class="ajuste-bloque">
     <app-data-table
@@ -48,12 +54,14 @@
       (editarFila)="editar($event)"
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
-    >
+      >
       <ng-template appCelda="titulo" let-fila>
         <div class="pw-celda-titulo">
           <span>
             <strong>{{ fila.titulo }}</strong>
-            <small>{{ fila.texto | slice: 0 : 110 }}{{ fila.texto.length > 110 ? '…' : '' }}<ng-container *ngIf="fila.puntos.length"> · {{ fila.puntos.join(', ') }}</ng-container></small>
+            <small>{{ fila.texto | slice: 0 : 110 }}{{ fila.texto.length > 110 ? '…' : '' }}@if (fila.puntos.length) {
+              · {{ fila.puntos.join(', ') }}
+            }</small>
           </span>
         </div>
       </ng-template>
@@ -81,103 +89,124 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrar()"
->
+  >
   <form [formGroup]="form" class="form-fields" novalidate>
     <div class="form-row">
       <div class="form-group">
         <label for="pilar-titulo">Pilar *</label>
         <input id="pilar-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
           placeholder="Ej. Desarrollo integral" [class.is-invalid]="invalido(form.controls.titulo)" />
-        <small class="form-error" *ngIf="invalido(form.controls.titulo)">Obligatorio (máximo 60).</small>
+          @if (invalido(form.controls.titulo)) {
+            <small class="form-error">Obligatorio (máximo 60).</small>
+          }
+        </div>
+        <div class="form-group">
+          <label for="pilar-estado">Estado</label>
+          <select id="pilar-estado" class="form-control" formControlName="estado">
+            <option value="publicado">Publicado</option>
+            <option value="borrador">Borrador</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
-        <label for="pilar-estado">Estado</label>
-        <select id="pilar-estado" class="form-control" formControlName="estado">
-          <option value="publicado">Publicado</option>
-          <option value="borrador">Borrador</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label for="pilar-texto">Texto *</label>
-      <textarea id="pilar-texto" class="form-control" rows="4" formControlName="texto" maxlength="400"
+        <label for="pilar-texto">Texto *</label>
+        <textarea id="pilar-texto" class="form-control" rows="4" formControlName="texto" maxlength="400"
         [class.is-invalid]="invalido(form.controls.texto)"></textarea>
-      <small class="form-error" *ngIf="invalido(form.controls.texto)">Obligatorio (máximo 400).</small>
-      <small class="form-ayuda" *ngIf="!invalido(form.controls.texto)">{{ form.value.texto?.length ?? 0 }} de 400.</small>
-    </div>
-    <div class="form-group">
-      <label for="pilar-puntos">Aspectos, uno por línea</label>
-      <textarea id="pilar-puntos" class="form-control" rows="4" formControlName="puntos" placeholder="Espiritual&#10;Mental&#10;Físico&#10;Social"
-        [class.is-invalid]="invalido(form.controls.puntos)"></textarea>
-      <small class="form-error" *ngIf="invalido(form.controls.puntos)">Hasta 8, de hasta 30 caracteres, sin repetir.</small>
-      <small class="form-ayuda" *ngIf="!invalido(form.controls.puntos)">Opcional. Palabras cortas que el portal muestra como etiquetas.</small>
-    </div>
-  </form>
-</app-form-modal>
-
-<!-- La introducción de los pilares -->
-<app-form-modal
-  [(visible)]="modalIntro"
-  titulo="Introducción de los pilares"
-  ancho="760px"
-  [guardando]="guardandoIntro"
-  textoGuardar="Guardar cambios"
-  (guardar)="guardarIntro()"
->
-  <pw-cuerpo-desplazable #cuerpoIntro>
-  <form [formGroup]="intro" class="form-fields" novalidate>
-    <div class="seccion-form">
-      <label class="check-item">
-        <input type="checkbox" formControlName="conIntroduccion" />
-        <span>Mostrar una introducción antes de los pilares</span>
-      </label>
-
-      <div class="form-fields" *ngIf="intro.value.conIntroduccion">
-        <div class="form-group">
-          <label for="intro-titulo">Título *</label>
-          <input id="intro-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
-            placeholder="Ej. Educación adventista" [class.is-invalid]="invalido(intro.controls.titulo)" />
-          <small class="form-error" *ngIf="invalido(intro.controls.titulo)">Obligatorio (máximo 60).</small>
-        </div>
-
-        <div class="form-group" formArrayName="parrafos">
-          <label>Párrafos</label>
-          <small class="form-ayuda">De 1 a {{ maxParrafos }}, de hasta {{ maxParrafo }} caracteres cada uno. Texto simple, sin formato.</small>
-          <div class="form-row" *ngFor="let p of parrafos.controls; let i = index">
-            <div class="form-group">
-              <label [for]="'intro-parrafo-' + i">Párrafo {{ i + 1 }} *</label>
-              <textarea [id]="'intro-parrafo-' + i" class="form-control" rows="4" [formControlName]="i" [attr.maxlength]="maxParrafo"
-                [class.is-invalid]="invalido(p)"></textarea>
-              <small class="form-error" *ngIf="invalido(p)">Escribe el párrafo (máximo {{ maxParrafo }}), o quítalo.</small>
-              <small class="form-ayuda" *ngIf="!invalido(p)">{{ p.value?.length ?? 0 }} de {{ maxParrafo }}.</small>
-            </div>
-            <div class="form-group">
-              <label>&nbsp;</label>
-              <div class="action-btns">
-                <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverParrafo(i, -1)" [disabled]="i === 0"
-                  [attr.aria-label]="'Subir el párrafo ' + (i + 1)" title="Subir">
-                  <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
-                </button>
-                <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverParrafo(i, 1)" [disabled]="i === parrafos.length - 1"
-                  [attr.aria-label]="'Bajar el párrafo ' + (i + 1)" title="Bajar">
-                  <app-icon icono="chevron_down" [tamano]="16"></app-icon>
-                </button>
-                <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarParrafo(i)" [disabled]="parrafos.length === 1"
-                  [attr.aria-label]="'Quitar el párrafo ' + (i + 1)" title="Quitar">
-                  <app-icon icono="trash" [tamano]="16"></app-icon>
-                </button>
-              </div>
-            </div>
-          </div>
-          <div>
-            <button type="button" class="btn-secondary" (click)="agregarParrafo()" [disabled]="parrafos.length >= maxParrafos">
-              <app-icon icono="plus" [tamano]="14"></app-icon> Agregar párrafo
-            </button>
-          </div>
-        </div>
+        @if (invalido(form.controls.texto)) {
+          <small class="form-error">Obligatorio (máximo 400).</small>
+        }
+        @if (!invalido(form.controls.texto)) {
+          <small class="form-ayuda">{{ form.value.texto?.length ?? 0 }} de 400.</small>
+        }
       </div>
-      <p class="form-ayuda" *ngIf="!intro.value.conIntroduccion">Sin introducción, la sección empieza directo con los pilares.</p>
-    </div>
-  </form>
-  </pw-cuerpo-desplazable>
-</app-form-modal>
+      <div class="form-group">
+        <label for="pilar-puntos">Aspectos, uno por línea</label>
+        <textarea id="pilar-puntos" class="form-control" rows="4" formControlName="puntos" placeholder="Espiritual&#10;Mental&#10;Físico&#10;Social"
+        [class.is-invalid]="invalido(form.controls.puntos)"></textarea>
+        @if (invalido(form.controls.puntos)) {
+          <small class="form-error">Hasta 8, de hasta 30 caracteres, sin repetir.</small>
+        }
+        @if (!invalido(form.controls.puntos)) {
+          <small class="form-ayuda">Opcional. Palabras cortas que el portal muestra como etiquetas.</small>
+        }
+      </div>
+    </form>
+  </app-form-modal>
+
+  <!-- La introducción de los pilares -->
+  <app-form-modal
+    [(visible)]="modalIntro"
+    titulo="Introducción de los pilares"
+    ancho="760px"
+    [guardando]="guardandoIntro"
+    textoGuardar="Guardar cambios"
+    (guardar)="guardarIntro()"
+    >
+    <pw-cuerpo-desplazable #cuerpoIntro>
+      <form [formGroup]="intro" class="form-fields" novalidate>
+        <div class="seccion-form">
+          <label class="check-item">
+            <input type="checkbox" formControlName="conIntroduccion" />
+            <span>Mostrar una introducción antes de los pilares</span>
+          </label>
+
+          @if (intro.value.conIntroduccion) {
+            <div class="form-fields">
+              <div class="form-group">
+                <label for="intro-titulo">Título *</label>
+                <input id="intro-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+                  placeholder="Ej. Educación adventista" [class.is-invalid]="invalido(intro.controls.titulo)" />
+                  @if (invalido(intro.controls.titulo)) {
+                    <small class="form-error">Obligatorio (máximo 60).</small>
+                  }
+                </div>
+                <div class="form-group" formArrayName="parrafos">
+                  <label>Párrafos</label>
+                  <small class="form-ayuda">De 1 a {{ maxParrafos }}, de hasta {{ maxParrafo }} caracteres cada uno. Texto simple, sin formato.</small>
+                  @for (p of parrafos.controls; track p; let i = $index) {
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label [for]="'intro-parrafo-' + i">Párrafo {{ i + 1 }} *</label>
+                        <textarea [id]="'intro-parrafo-' + i" class="form-control" rows="4" [formControlName]="i" [attr.maxlength]="maxParrafo"
+                        [class.is-invalid]="invalido(p)"></textarea>
+                        @if (invalido(p)) {
+                          <small class="form-error">Escribe el párrafo (máximo {{ maxParrafo }}), o quítalo.</small>
+                        }
+                        @if (!invalido(p)) {
+                          <small class="form-ayuda">{{ p.value?.length ?? 0 }} de {{ maxParrafo }}.</small>
+                        }
+                      </div>
+                      <div class="form-group">
+                        <label>&nbsp;</label>
+                        <div class="action-btns">
+                          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverParrafo(i, -1)" [disabled]="i === 0"
+                            [attr.aria-label]="'Subir el párrafo ' + (i + 1)" title="Subir">
+                            <app-icon icono="chevron_down" [tamano]="16" class="pw-girado"></app-icon>
+                          </button>
+                          <button type="button" class="btn-icon-accion btn-icon-brand" (click)="moverParrafo(i, 1)" [disabled]="i === parrafos.length - 1"
+                            [attr.aria-label]="'Bajar el párrafo ' + (i + 1)" title="Bajar">
+                            <app-icon icono="chevron_down" [tamano]="16"></app-icon>
+                          </button>
+                          <button type="button" class="btn-icon-accion btn-icon-danger" (click)="quitarParrafo(i)" [disabled]="parrafos.length === 1"
+                            [attr.aria-label]="'Quitar el párrafo ' + (i + 1)" title="Quitar">
+                            <app-icon icono="trash" [tamano]="16"></app-icon>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                  <div>
+                    <button type="button" class="btn-secondary" (click)="agregarParrafo()" [disabled]="parrafos.length >= maxParrafos">
+                      <app-icon icono="plus" [tamano]="14"></app-icon> Agregar párrafo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+            @if (!intro.value.conIntroduccion) {
+              <p class="form-ayuda">Sin introducción, la sección empieza directo con los pilares.</p>
+            }
+          </div>
+        </form>
+      </pw-cuerpo-desplazable>
+    </app-form-modal>
