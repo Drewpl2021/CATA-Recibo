@@ -62,6 +62,7 @@ final class AccesoADocumento
             'boleta'        => 'Tu boleta',
             'cts'           => 'Tu hoja de CTS',
             'gratificacion' => 'Tu hoja de gratificación',
+            'certificado_5ta' => 'Tu certificado de retenciones de 5ta',
             default         => 'Este documento',
         };
 

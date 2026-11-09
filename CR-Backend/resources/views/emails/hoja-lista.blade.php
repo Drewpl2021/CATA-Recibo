@@ -1,13 +1,13 @@
 @extends('emails.plantilla')
 
-@section('preheader', 'Tu ' . $queEs . ' de ' . $periodo . ' ya está en CATA-Recibo, firmada por el colegio.')
-@section('titulo', 'Tu ' . $queEs . ' ya está lista')
+@section('preheader', 'Tu ' . $queEs . ' de ' . $periodo . ' ya está en CATA-Recibo, ' . ($femenino ? 'firmada' : 'firmado') . ' por el colegio.')
+@section('titulo', 'Tu ' . $queEs . ' ya está ' . ($femenino ? 'lista' : 'listo'))
 
 @section('contenido')
     <p style="margin:0 0 12px;">Hola, <strong>{{ $nombreEmpleado }}</strong>:</p>
     <p style="margin:0 0 16px;">
         Tu {{ $queEs }} ya está en tu cuenta de CATA-Recibo, con la firma digital del colegio.
-        La encuentras en <strong>Mis Boletas</strong>, debajo de tus boletas.
+        {{ $femenino ? 'La' : 'Lo' }} encuentras en <strong>Mis Boletas</strong>, debajo de tus boletas.
     </p>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
@@ -24,10 +24,10 @@
         </tr>
     </table>
 
-    @include('emails._boton', ['texto' => 'Ver mi hoja'])
+    @include('emails._boton', ['texto' => $femenino ? 'Ver mi hoja' : 'Ver mi certificado'])
 
     <p style="margin:0 0 12px;">
-        Revísala y, si todo está bien, <strong>da tu conformidad</strong> con tu contraseña. Si algo no cuadra,
+        {{ $femenino ? 'Revísala' : 'Revísalo' }} y, si todo está bien, <strong>da tu conformidad</strong> con tu contraseña. Si algo no cuadra,
         avísale a Recursos Humanos.
     </p>
 @endsection

@@ -393,7 +393,7 @@ class MisDocumentosController extends Controller
     }
 
     /** Lo que se puede juntar: lo que tiene periodo y se baja con su conformidad. */
-    private const SE_JUNTAN = ['boleta', 'cts', 'gratificacion'];
+    private const SE_JUNTAN = ['boleta', 'cts', 'gratificacion', 'certificado_5ta'];
 
     /** «2026-10 Boleta BOL-2026-0002.pdf», «2026-11 Hoja de CTS.pdf». */
     private function nombreParaJuntar(Documento $d): string
@@ -402,8 +402,9 @@ class MisDocumentosController extends Controller
         $mes = $d->planilla?->mes ?? $d->periodo_mes;
         $que = match ($d->tipo) {
             'boleta' => 'Boleta ' . ($d->planilla?->numeroDeBoleta() ?? \App\Support\Meses::nombre((int) $mes)),
-            'cts'    => 'Hoja de CTS',
-            default  => 'Hoja de gratificación',
+            'cts'             => 'Hoja de CTS',
+            'certificado_5ta' => 'Certificado de retenciones de 5ta',
+            default           => 'Hoja de gratificación',
         };
 
         return sprintf('%04d-%02d %s.pdf', $anio, $mes, $que);

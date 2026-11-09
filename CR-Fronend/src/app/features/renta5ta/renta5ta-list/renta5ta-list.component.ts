@@ -32,13 +32,17 @@ import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/f
  */
 import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { Renta5taCertificadosComponent } from '../renta5ta-certificados/renta5ta-certificados.component';
 @Component({
   selector: 'app-renta5ta-list',
   standalone: true,
-  imports: [AvatarComponent, PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FiltrosComponent, OrdenComponent, FormModalComponent, SelectorArchivoComponent],
+  imports: [AvatarComponent, PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, FiltrosComponent, OrdenComponent, FormModalComponent, SelectorArchivoComponent, Renta5taCertificadosComponent],
   templateUrl: './renta5ta-list.component.html',
 })
 export class Renta5taListComponent implements OnInit {
+  /** Los certificados de rentas y retenciones del año (se entregan antes del 1 de marzo, o al cese). */
+  modalCertificados = false;
+
   private servicio = inject(Renta5taService);
   private toast = inject(ToastService);
   private progreso = inject(ProgresoService);

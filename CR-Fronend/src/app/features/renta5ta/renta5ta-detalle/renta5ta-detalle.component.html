@@ -6,6 +6,11 @@
   [cifras]="cifras"
   [cargandoCifras]="cargando"
   >
+  <button headerActions class="btn-secondary" type="button" (click)="bajarCertificado()" [disabled]="bajandoCertificado" pistaLado="abajo"
+    [appPista]="'Su certificado de rentas y retenciones de 5ta del ' + anio + ': el entregado, o uno con lo que hay hasta ahora si el año ya cerró o cesó.'">
+    <app-icon icono="receipt_long" [tamano]="16"></app-icon>
+    {{ bajandoCertificado ? 'Preparando…' : 'Certificado de retenciones' }}
+  </button>
   <button headerActions class="btn-secondary" type="button" (click)="volver()" pistaLado="abajo"
     appPista="Vuelve a la lista de Renta de 5ta, en el mismo año y mes.">
     <app-icon icono="arrow_left" [tamano]="16"></app-icon>

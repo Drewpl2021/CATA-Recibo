@@ -441,6 +441,118 @@ class MotorRenta5ta
         return $this->recordar("bonif-{$empleado->id}-{$anio}-{$mes}", fn () => $this->bonificacionCargoDelMes($empleado, $mes, $anio));
     }
 
+    /**
+     * Por qué todavía no se le puede emitir el certificado de un año; null si
+     * ya se puede. Es anual: se entrega cuando el año terminó (hasta el 1 de
+     * marzo del siguiente) o, a quien cesó en ese año, con su liquidación.
+     */
+    public function porQueNoHayCertificado(Empleado $empleado, int $anio): ?string
+    {
+        $cesoEseAnio = $empleado->estado === 'inactivo' && $empleado->fecha_cese
+            && (int) \Carbon\Carbon::parse($empleado->fecha_cese)->year === $anio;
+        $anioCerrado = $anio < (int) now()->year
+            || Planilla::where('empleado_id', $empleado->id)->where('anio', $anio)->where('mes', 12)->exists();
+
+        if (! $cesoEseAnio && ! $anioCerrado) {
+            return "El {$anio} todavía no termina: el certificado se entrega cuando cierra el año (con la planilla de diciembre) o al cese.";
+        }
+        if (! $this->mesesReales($empleado, $anio)) {
+            return "No tiene remuneraciones de 5ta categoría registradas en el {$anio}.";
+        }
+
+        return null;
+    }
+
+    /**
+     * El Certificado de Rentas y Retenciones por Rentas de Quinta Categoría
+     * de un año (art. 45 del Reglamento de la Ley del Impuesto a la Renta):
+     * lo que de verdad se le pagó y se le retuvo cada mes —de sus planillas
+     * o del historial cargado—, no una proyección.
+     *
+     *   Renta bruta = remuneraciones + gratificaciones + otros ingresos afectos
+     *   − 7 UIT = renta neta  →  tramos 8 / 14 / 17 / 20 / 30 % = impuesto
+     *   Impuesto − retenciones = saldo (por regularizar o retenido de más)
+     *
+     * Solo lo pagado por el colegio: si tuvo otro empleador en el año, ese le
+     * entrega su propio certificado.
+     */
+    public function certificado(Empleado $empleado, int $anio): array
+    {
+        $reales = $this->mesesReales($empleado, $anio);
+        ksort($reales);
+        $uit = (float) $this->valoresLegales($anio)->uit;
+
+        $meses = [];
+        foreach ($reales as $mes => $r) {
+            $meses[] = [
+                'mes'            => $mes,
+                'fuente'         => $r['fuente'],
+                'remuneracion'   => round($r['ordinaria'], 2),
+                'gratificacion'  => round($r['gratificacion'], 2),
+                'otros'          => round($r['extraordinaria'], 2),
+                'total'          => round($r['remuneracion'], 2),
+                'retencion'      => round($r['retencion'], 2),
+            ];
+        }
+
+        $suma = fn (string $campo) => round(array_sum(array_column($meses, $campo)), 2);
+        $bruta = $suma('total');
+        $deduccion = round(min($bruta, 7 * $uit), 2);
+        $neta = round(max(0, $bruta - 7 * $uit), 2);
+        $impuesto = round($this->aplicarTramosImpuestoRenta($neta, $uit), 2);
+        $retenido = $suma('retencion');
+
+        $ingreso = \Carbon\Carbon::parse($empleado->fecha_ingreso);
+        $cese = $empleado->estado === 'inactivo' && $empleado->fecha_cese ? \Carbon\Carbon::parse($empleado->fecha_cese) : null;
+        $inicioAnio = \Carbon\Carbon::create($anio, 1, 1);
+        $finAnio = \Carbon\Carbon::create($anio, 12, 31);
+
+        return [
+            'anio'          => $anio,
+            'uit'           => $uit,
+            'desde'         => ($ingreso->gt($inicioAnio) ? $ingreso : $inicioAnio)->toDateString(),
+            'hasta'         => ($cese && $cese->lt($finAnio) ? $cese : $finAnio)->toDateString(),
+            'al_cese'       => $cese !== null && $cese->year === $anio,
+            'meses'         => $meses,
+            'remuneraciones' => $suma('remuneracion'),
+            'gratificaciones' => $suma('gratificacion'),
+            'otros'         => $suma('otros'),
+            'renta_bruta'   => $bruta,
+            'deduccion'     => $deduccion,
+            'renta_neta'    => $neta,
+            'impuesto'      => $impuesto,
+            'tramos'        => $this->tramosDe($neta, $uit),
+            'retenido'      => $retenido,
+            // Positivo: faltó retener; negativo: se retuvo de más.
+            'saldo'         => round($impuesto - $retenido, 2),
+        ];
+    }
+
+    /**
+     * La renta neta repartida en los tramos de la escala (8 % hasta 5 UIT,
+     * 14 % hasta 20, 17 % hasta 35, 20 % hasta 45 y 30 % por encima), solo
+     * los que tienen algo: lo que el certificado muestra para que se vea de
+     * dónde sale el impuesto. Suma lo mismo que aplicarTramosImpuestoRenta.
+     *
+     * @return list<array{tramo: string, tasa: int, base: float, impuesto: float}>
+     */
+    private function tramosDe(float $neta, float $uit): array
+    {
+        $escala = [[5, 8, 'Hasta 5 UIT'], [15, 14, 'Más de 5 hasta 20 UIT'], [15, 17, 'Más de 20 hasta 35 UIT'], [10, 20, 'Más de 35 hasta 45 UIT'], [null, 30, 'Más de 45 UIT']];
+        $tramos = [];
+        $resta = $neta;
+        foreach ($escala as [$ancho, $tasa, $nombre]) {
+            if ($resta <= 0) {
+                break;
+            }
+            $base = $ancho === null ? $resta : min($resta, $ancho * $uit);
+            $tramos[] = ['tramo' => $nombre, 'tasa' => $tasa, 'base' => round($base, 2), 'impuesto' => round($base * $tasa / 100, 2)];
+            $resta -= $base;
+        }
+
+        return $tramos;
+    }
+
     /** Lo que tiene una línea de su planilla del mes (0 si no hay planilla o línea). */
     private function lineaDe(Empleado $empleado, int $mes, int $anio, string $concepto): float
     {

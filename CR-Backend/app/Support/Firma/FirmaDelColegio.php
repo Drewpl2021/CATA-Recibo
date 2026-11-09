@@ -333,10 +333,11 @@ final class FirmaDelColegio
      * cuándo se le avisó, que es lo que permite contestar «a mí nunca me
      * avisaron» con una fecha y un correo.
      *
-     * @param  string  $queEs    «hoja de CTS», «hoja de gratificación»
-     * @param  string  $periodo  «noviembre 2026», «julio 2026»
+     * @param  string  $queEs     «hoja de CTS», «hoja de gratificación», «certificado de retenciones de 5ta»
+     * @param  string  $periodo   «noviembre 2026», «julio 2026», «2026»
+     * @param  bool    $femenino  «lista / Revísala» o «listo / Revísalo»
      */
-    public static function avisarAlTrabajador(Documento $documento, string $queEs, string $periodo): void
+    public static function avisarAlTrabajador(Documento $documento, string $queEs, string $periodo, bool $femenino = true): void
     {
         $usuario = \App\Models\User::where('empleado_id', $documento->empleado_id)->first();
         if (! $usuario) {
@@ -346,8 +347,10 @@ final class FirmaDelColegio
         \App\Models\Notificacion::create([
             'user_id'      => $usuario->id,
             'tipo'         => 'documento_disponible',
-            'titulo'       => "Tu {$queEs} de {$periodo} ya está lista",
-            'mensaje'      => 'Ya está firmada por el colegio. Revísala en Mis Boletas y da tu conformidad con tu contraseña.',
+            'titulo'       => "Tu {$queEs} de {$periodo} ya está " . ($femenino ? 'lista' : 'listo'),
+            'mensaje'      => $femenino
+                ? 'Ya está firmada por el colegio. Revísala en Mis Boletas y da tu conformidad con tu contraseña.'
+                : 'Ya está firmado por el colegio. Revísalo en Mis Boletas y da tu conformidad con tu contraseña.',
             'documento_id' => $documento->id,
         ]);
         $documento->registrarAviso($usuario->email);
@@ -355,7 +358,7 @@ final class FirmaDelColegio
         if ($usuario->email) {
             $empleado = $documento->empleado;
             \Illuminate\Support\Facades\Mail::to($usuario->email)->queue(new \App\Mail\HojaLista(
-                trim("{$empleado?->nombre} {$empleado?->apellido}"), $queEs, $periodo
+                trim("{$empleado?->nombre} {$empleado?->apellido}"), $queEs, $periodo, $femenino
             ));
         }
     }

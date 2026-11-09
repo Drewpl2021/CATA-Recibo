@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ToastService } from '../../../core/services';
 import { HojaRenta5ta, MesRenta5ta, MetodoRenta5ta, Renta5taService } from '../../../core/services/planilla/renta5ta.service';
-import { mensajeErrorApi } from '../../../core/utils';
+import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { nombreMes } from '../../../shared/constants';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -43,6 +43,29 @@ export class Renta5taDetalleComponent implements OnInit {
   private router = inject(Router);
 
   empleadoId = '';
+  bajandoCertificado = false;
+
+  /** Su certificado de rentas y retenciones del año que se está viendo. */
+  bajarCertificado(): void {
+    if (this.bajandoCertificado) return;
+    this.bajandoCertificado = true;
+    this.servicio.certificado(this.empleadoId, this.anio).subscribe({
+      next: (blob) => {
+        this.bajandoCertificado = false;
+        guardarArchivo(blob, `Certificado de 5ta ${this.anio} - ${this.hoja?.empleado?.nombre ?? ''}.pdf`);
+      },
+      error: async (err) => {
+        this.bajandoCertificado = false;
+        let mensaje = 'No se pudo armar su certificado.';
+        try {
+          if (err?.error instanceof Blob) mensaje = JSON.parse(await err.error.text())?.message ?? mensaje;
+        } catch {
+          /* se queda el mensaje de siempre */
+        }
+        this.toast.error('Todavía no', mensaje);
+      },
+    });
+  }
   anio = new Date().getFullYear();
   /** El mes que se miraba en la lista (o el actual): su columna va resaltada. */
   mesResaltado = new Date().getMonth() + 1;

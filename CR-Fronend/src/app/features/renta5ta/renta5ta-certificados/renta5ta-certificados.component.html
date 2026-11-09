@@ -1,0 +1,92 @@
+<!-- Los certificados de rentas y retenciones de 5ta del año: entregar, firmar y bajar. -->
+<app-form-modal [visible]="visible" (visibleChange)="$event ? null : cerrar()" (cancelar)="cerrar()"
+  [titulo]="'Certificados de rentas y retenciones de 5ta · ' + anio" ancho="980px" [ocultarBotonesPorDefecto]="true">
+  <div class="form-fields">
+    <p class="form-ayuda">
+      Lo que el colegio le pagó y le retuvo a cada trabajador en el año, con el impuesto y el saldo. Se entrega antes del
+      1 de marzo del año siguiente, o al cese. Va firmado digitalmente por el colegio, como la boleta, y le llega a cada
+      uno en Mis Boletas y por correo.
+    </p>
+
+    <div class="certificados-cabecera">
+      <div class="form-group certificados-cabecera__anio">
+        <label for="anioCertificados">Año</label>
+        <select id="anioCertificados" class="form-control" [(ngModel)]="anio" (ngModelChange)="cargar()">
+          @for (a of anios; track a) {
+            <option [ngValue]="a">{{ a }}</option>
+          }
+        </select>
+      </div>
+      @if (datos; as d) {
+        <div class="certificados-cifras">
+          <div><strong>{{ d.resumen.pueden }}</strong><span>pueden recibirlo</span></div>
+          <div><strong>{{ d.resumen.entregados }}</strong><span>entregados</span></div>
+          <div><strong>{{ d.firma.entregadas }}</strong><span>firmados</span></div>
+          <div><strong>{{ d.firma.conformidad }}</strong><span>con conformidad</span></div>
+        </div>
+      }
+    </div>
+
+    @if (datos; as d) {
+      <div class="certificados-acciones">
+        <button type="button" [ngClass]="porEntregar ? 'btn-primary' : 'btn-secondary'" (click)="entregar()" [disabled]="entregando || !porEntregar"
+          [appPista]="porEntregar ? 'Deja el certificado en el expediente de los ' + porEntregar + ' que ya pueden recibirlo. Después falta firmarlos.' : 'No hay certificados por entregar en este año.'">
+          <app-icon icono="receipt_long" [tamano]="16"></app-icon>
+          {{ entregando ? 'Entregando…' : 'Entregar certificados' + (porEntregar ? ' (' + porEntregar + ')' : '') }}
+        </button>
+        @if (d.firma.mi_certificado; as c) {
+          <button type="button" [ngClass]="puedeFirmar ? 'btn-primary' : 'btn-secondary'" (click)="modalFirmar = true"
+            [disabled]="!puedeFirmar" [appPista]="pistaFirmar">
+            <app-icon icono="signature" [tamano]="16"></app-icon>
+            Firmar aquí{{ c.por_firmar ? ' (' + c.por_firmar + ')' : '' }}
+          </button>
+        } @else {
+          <a class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }" (click)="cerrar()"
+            appPista="Abre Ajustes → Boletas para poner tu certificado digital (.pfx o .p12). Con él firmas los certificados desde aquí.">
+            <app-icon icono="signature" [tamano]="16"></app-icon>
+            Poner mi certificado
+          </a>
+        }
+        <button type="button" class="btn-secondary" (click)="bajarZip()" [disabled]="bajandoZip || !d.resumen.entregados"
+          appPista="Los certificados entregados de este año en un solo .zip, tal como los recibió cada uno.">
+          <app-icon icono="download" [tamano]="16"></app-icon>
+          {{ bajandoZip ? 'Preparando…' : 'Descargar (.zip)' }}
+        </button>
+      </div>
+    }
+
+    <app-data-table
+      entidad="este trabajador"
+      [columnas]="columnas"
+      [datos]="filas"
+      [cargando]="cargando"
+      [camposBusqueda]="['dni', 'nombre', 'cargo']"
+      placeholderBusqueda="Buscar por DNI, nombre o cargo…"
+      [acciones]="[]"
+      [accionesPersonalizadas]="acciones"
+      (accionPersonalizada)="alAccionar($event)"
+      mensajeVacio="No hay trabajadores con rentas en este año."
+    >
+      <ng-template appCelda="nombre" let-f>
+        <strong>{{ f.nombre }}</strong>
+        <div class="form-ayuda">DNI {{ f.dni }}{{ f.estado === 'inactivo' ? ' · cesado' : '' }}</div>
+      </ng-template>
+      <ng-template appCelda="saldo" let-f>
+        <span [class.texto-aviso]="f.saldo !== null && f.saldo > 0.005">{{ textoSaldo(f) }}</span>
+        @if (!f.puede && f.motivo) {
+          <div class="form-ayuda">{{ f.motivo }}</div>
+        }
+      </ng-template>
+    </app-data-table>
+  </div>
+
+  <div modalFooter class="asistente-pie">
+    <button type="button" class="btn-primary" (click)="cerrar()">Cerrar</button>
+  </div>
+</app-form-modal>
+
+@if (datos) {
+  <app-firmar-aqui [(visible)]="modalFirmar" [certificado]="datos.firma.mi_certificado" [requeridas]="datos.firma.requeridas"
+    singular="certificado de 5ta" plural="certificados de 5ta" [femenino]="false" [periodo]="'' + anio" [tanda]="firmarTanda" (terminado)="cargar()">
+  </app-firmar-aqui>
+}

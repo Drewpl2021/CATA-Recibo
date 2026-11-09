@@ -2907,6 +2907,15 @@ td.celda-numero {
   transition: all 0.2s;
 }
 
+/* Un enlace con forma de botón («Poner mi certificado»): sin subrayado, alineado como los botones. */
+a.btn-primary,
+a.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
 .btn-secondary:hover {
   background-color: var(--bg);
   border-color: var(--text-muted);

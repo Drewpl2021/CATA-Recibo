@@ -28,6 +28,8 @@ class HojaLista extends Mailable
         public string $nombreEmpleado,
         public string $queEs,
         public string $periodo,
+        /** «hoja» (lista, Revísala) o «certificado» (listo, Revísalo). */
+        public bool $femenino = true,
     ) {
         $this->enlace = rtrim((string) config('app.frontend_url'), '/') . '/inicio/mis-boletas';
     }

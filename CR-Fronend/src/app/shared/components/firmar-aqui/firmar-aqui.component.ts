@@ -40,6 +40,8 @@ export class FirmarAquiComponent {
   /** «boleta», «hoja de CTS»: femenino, como todo lo que firma el colegio. */
   @Input() singular = 'boleta';
   @Input() plural = 'boletas';
+  /** false para lo masculino («certificado»): firmado, cada uno, los que… */
+  @Input() femenino = true;
   /** «octubre 2026», «noviembre 2026». */
   @Input() periodo = '';
   @Input({ required: true }) tanda!: TandaDeFirma;
@@ -107,7 +109,7 @@ export class FirmarAquiComponent {
       }
       this.cerrar();
       this.toast.success(
-        `${suma.firmadas} ${this.nombre(suma.firmadas)} firmada${suma.firmadas === 1 ? '' : 's'}`,
+        `${suma.firmadas} ${this.nombre(suma.firmadas)} ${this.femenino ? 'firmada' : 'firmado'}${suma.firmadas === 1 ? '' : 's'}`,
         suma.a_medias
           ? `De ${this.periodo}: ${suma.entregadas} ya le llegaron al trabajador y ${suma.a_medias} esperan la otra firma.`
           : `De ${this.periodo}: ya le llegaron a cada trabajador.`,

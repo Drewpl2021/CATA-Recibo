@@ -339,7 +339,7 @@ export class MisBoletasComponent implements OnInit {
   /** Sus hojas de CTS y de gratificación del año elegido (llegan ya firmadas por el colegio). */
   private cargarHojas(): void {
     this.cargandoHojas = true;
-    this.misDocumentosService.paginar({ tipo: 'cts,gratificacion', anio: this.anioElegido, page: 0, size: 20 }).subscribe({
+    this.misDocumentosService.paginar({ tipo: 'cts,gratificacion,certificado_5ta', anio: this.anioElegido, page: 0, size: 20 }).subscribe({
       next: (res) => {
         this.cargandoHojas = false;
         if (res.success) this.hojas = res.data.content.map((d) => this.aHoja(d));
@@ -354,6 +354,14 @@ export class MisBoletasComponent implements OnInit {
     const mes = d.periodo_mes ?? 0;
     const anio = d.periodo_anio ?? 0;
     const esCts = d.tipo === 'cts';
+    if (d.tipo === 'certificado_5ta') {
+      return {
+        id: d.id, documento: 'Certificado de retenciones de 5ta', periodo: `Año ${anio}`,
+        avisoEnviado: d.fecha_aviso ?? null, revisado: d.fecha_visto ?? null, descargado: d.fecha_descarga ?? null,
+        descargas: d.descargas ?? 0, firmado: d.estado_firma === 'firmado' ? (d.fecha_firma ?? d.created_at ?? null) : null,
+        correo: d.aviso_correo ?? d.empleado?.usuario?.email ?? '—',
+      };
+    }
     const grati = mes === 7 ? `Fiestas Patrias (julio ${anio})` : mes === 12 ? `Navidad (diciembre ${anio})` : `trunca (${nombreMes(mes).toLowerCase()} ${anio})`;
     return {
       id: d.id,

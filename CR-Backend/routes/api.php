@@ -68,6 +68,8 @@ Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle
 // navegador, sin el token. Ver EmpleadoController::enlaceBoletasEnZip.
 Route::get('/cts/zip/download', [\App\Http\Controllers\CtsController::class, 'zipConEnlace'])
     ->name('cts.zip')->middleware(['signed:relative', 'throttle:30,1']);
+Route::get('/income-tax/certificates/zip/download', [\App\Http\Controllers\CertificadoRenta5taController::class, 'zipConEnlace'])
+    ->name('certificados5ta.zip')->middleware(['signed:relative', 'throttle:30,1']);
 Route::get('/bonuses/zip/download', [\App\Http\Controllers\GratificacionController::class, 'zipConEnlace'])
     ->name('gratificaciones.zip')->middleware(['signed:relative', 'throttle:30,1']);
 Route::get('/payslips-zip/download', [EmpleadoController::class, 'boletasEnZipConEnlace'])
@@ -298,6 +300,12 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('income-tax/history',           [\App\Http\Controllers\Renta5taController::class, 'cargarHistorial']);
         Route::post('income-tax/recalculate',       [\App\Http\Controllers\Renta5taController::class, 'recalcular']);
         Route::get('income-tax/export',             [\App\Http\Controllers\Renta5taController::class, 'exportar']);
+        // El certificado de rentas y retenciones de 5ta del año (antes de {empleado}).
+        Route::get('income-tax/certificates',               [\App\Http\Controllers\CertificadoRenta5taController::class, 'index']);
+        Route::post('income-tax/certificates/deliver',      [\App\Http\Controllers\CertificadoRenta5taController::class, 'entregar']);
+        Route::post('income-tax/certificates/sign-here',    [\App\Http\Controllers\CertificadoRenta5taController::class, 'firmarAqui'])->middleware('throttle:120,1');
+        Route::post('income-tax/certificates/zip/link',     [\App\Http\Controllers\CertificadoRenta5taController::class, 'enlaceZip']);
+        Route::get('income-tax/{empleado}/certificate',     [\App\Http\Controllers\CertificadoRenta5taController::class, 'hoja'])->whereUuid('empleado');
         Route::get('income-tax/{empleado}',         [\App\Http\Controllers\Renta5taController::class, 'show'])->whereUuid('empleado');
         Route::put('income-tax/{empleado}/history', [\App\Http\Controllers\Renta5taController::class, 'guardarHistorial'])->whereUuid('empleado');
     });

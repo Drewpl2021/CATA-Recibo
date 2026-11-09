@@ -7,9 +7,15 @@
       como <strong>{{ c.nombre }}</strong>@if (c.dni) { (DNI {{ c.dni }})}.
     </p>
     <p class="form-ayuda">
-      {{ requeridas === 2
-      ? 'Las que ya tienen la otra firma le llegan al trabajador al momento; las demás esperan la segunda.'
-      : 'Cada una le llega al trabajador apenas queda firmada.' }}
+      @if (femenino) {
+        {{ requeridas === 2
+        ? 'Las que ya tienen la otra firma le llegan al trabajador al momento; las demás esperan la segunda.'
+        : 'Cada una le llega al trabajador apenas queda firmada.' }}
+      } @else {
+        {{ requeridas === 2
+        ? 'Los que ya tienen la otra firma le llegan al trabajador al momento; los demás esperan la segunda.'
+        : 'Cada uno le llega al trabajador apenas queda firmado.' }}
+      }
       La firma va dentro del PDF, igual que con ReFirma.
     </p>
     <div class="form-group">
@@ -24,7 +30,7 @@
   @if (firmando && avance; as a) {
     <div class="progreso" role="status">
       <p class="progreso__etapa">
-        {{ a.total ? 'Firmando las ' + plural + ' con tu certificado…' : 'Abriendo tu certificado…' }}
+        {{ a.total ? 'Firmando ' + (femenino ? 'las ' : 'los ') + plural + ' con tu certificado…' : 'Abriendo tu certificado…' }}
       </p>
       <div class="progreso__barra"><span [style.width.%]="porcentaje"></span></div>
       <div class="progreso__cifras"><span>{{ a.hechas }} de {{ a.total || '…' }}</span><span>{{ porcentaje }}%</span></div>
@@ -70,7 +76,7 @@
         <button type="button" class="btn-secondary" (click)="cerrar()">Cancelar</button>
       }
       <button type="button" class="btn-primary" (click)="firmar()" [disabled]="firmando || !clave"
-        [appPista]="clave ? 'Firma ahora las ' + (certificado?.por_firmar ?? 0) + ' ' + plural + ' con tu certificado.' : 'Escribe la clave de tu certificado.'">
+        [appPista]="clave ? 'Firma ahora ' + (femenino ? 'las ' : 'los ') + (certificado?.por_firmar ?? 0) + ' ' + plural + ' con tu certificado.' : 'Escribe la clave de tu certificado.'">
         <app-icon icono="signature" [tamano]="15"></app-icon>
         {{ firmando ? 'Firmando…' : 'Firmar ' + (certificado?.por_firmar ?? 0) }}
       </button>
