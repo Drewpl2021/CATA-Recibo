@@ -84,6 +84,24 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
 
+      /*
+       * El sistema está de baja: en mantenimiento (503, «php artisan down»),
+       * PHP no responde (502/504 del nginx) o no hay conexión (0). En vez de
+       * que cada pantalla diga «no se pudo cargar», se va a la pantalla de
+       * mantenimiento, que vuelve sola a donde estaba cuando el sistema
+       * regresa. Su propia consulta (/status) no cuenta.
+       */
+      const deBaja = [502, 503, 504].includes(error.status) || error.status === 0;
+      if (deBaja && !req.url.endsWith('/status') && !router.url.startsWith('/mantenimiento')) {
+        router.navigate(['/mantenimiento'], {
+          queryParams: {
+            volver: router.url,
+            codigo: error.status || null,
+            motivo: error.status === 0 ? 'sin_conexion' : null,
+          },
+        });
+      }
+
       return throwError(() => error);
     })
   );

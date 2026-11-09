@@ -167,6 +167,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 $e instanceof MethodNotAllowedHttpException => [
                     404, 'No encontramos lo que buscas. Puede que ya no exista.',
                 ],
+                // «php artisan down»: el sistema está en mantenimiento. La
+                // pantalla lo reconoce por el 503 y muestra la de mantenimiento.
+                $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface && $e->getStatusCode() === 503 => [
+                    503, 'CATA-Recibo está en mantenimiento. Vuelve en unos minutos: tus boletas y documentos están a salvo.',
+                ],
                 $e instanceof ThrottleRequestsException => [
                     429, 'Demasiados intentos seguidos. Espera un momento y vuelve a intentarlo.',
                 ],

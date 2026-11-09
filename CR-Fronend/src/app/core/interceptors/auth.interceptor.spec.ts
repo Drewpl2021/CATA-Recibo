@@ -47,6 +47,24 @@ describe('authInterceptor', () => {
     req.flush({});
   });
 
+  it('con el sistema de baja (503) lleva a la pantalla de mantenimiento, recordando dónde estaba', () => {
+    http.get('/api/employees').subscribe({ error: () => {} });
+
+    control.expectOne('/api/employees').flush({ message: 'mantenimiento' }, { status: 503, statusText: 'Service Unavailable' });
+
+    expect(router.navigate).toHaveBeenCalledWith(['/mantenimiento'], {
+      queryParams: { volver: '/inicio/dashboard', codigo: 503, motivo: null },
+    });
+  });
+
+  it('la consulta de la propia pantalla de mantenimiento no la vuelve a abrir', () => {
+    http.get('/api/status').subscribe({ error: () => {} });
+
+    control.expectOne('/api/status').flush({}, { status: 502, statusText: 'Bad Gateway' });
+
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
   it('sin token no manda Authorization', () => {
     http.get('/api/x').subscribe();
 

@@ -9,6 +9,8 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
   // Pública: se lee sin iniciar sesión (y con sesión también).
   { path: 'privacidad', loadComponent: () => import('./features/legal/privacidad/privacidad.component').then(m => m.PrivacidadComponent) },
+  // El sistema está de baja (502/503/504) o no hay conexión: la abre el interceptor.
+  { path: 'mantenimiento', loadComponent: () => import('./features/legal/mantenimiento/mantenimiento.component').then(m => m.MantenimientoComponent) },
   // El autorregistro está cerrado: las cuentas las crea RR.HH. Quien llegue
   // con un enlace viejo va al login, que explica cómo es el primer ingreso.
   { path: 'registro', redirectTo: 'login', pathMatch: 'full' },

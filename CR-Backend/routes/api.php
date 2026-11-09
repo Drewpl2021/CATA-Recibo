@@ -60,6 +60,9 @@ Route::post('/register', fn () => response()->json([
     'message' => 'El registro público está deshabilitado. Acceso restringido a personal autorizado. '
         . 'Si requieres asistencia, contacta al administrador del sistema.',
 ], 403))->middleware('throttle:registro');
+// ¿Está arriba el sistema? Sin sesión y sin datos: lo pregunta la pantalla
+// de mantenimiento para saber cuándo volver. En mantenimiento responde 503.
+Route::get('/status', fn () => response()->json(['success' => true]))->middleware('throttle:60,1');
 Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:ingreso');
 
 // Lo que abre el QR de la boleta: si es auténtica. Pública y con la dirección
