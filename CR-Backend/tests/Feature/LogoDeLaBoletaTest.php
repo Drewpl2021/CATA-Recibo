@@ -40,9 +40,9 @@ class LogoDeLaBoletaTest extends TestCase
             ->getContent();
 
         $this->assertDirectoryExists(storage_path('app/dompdf'));
-        // El escudo (225 × 225), la marca de agua (795 × 181) y el QR.
-        $this->assertMatchesRegularExpression('/\/Width 225\s*\/Height 225/', $pdf, 'La boleta salió sin el escudo.');
-        $this->assertMatchesRegularExpression('/\/Width 795\s*\/Height 181/', $pdf, 'La boleta salió sin la marca de agua.');
+        // El escudo y la marca de agua en su versión liviana para PDF (public/pdf/), y el QR.
+        $this->assertMatchesRegularExpression('/\/Width 112\s*\/Height 112/', $pdf, 'La boleta salió sin el escudo.');
+        $this->assertMatchesRegularExpression('/\/Width 380\s*\/Height 87/', $pdf, 'La boleta salió sin la marca de agua.');
         $this->assertGreaterThanOrEqual(3, preg_match_all('/\/Subtype\s*\/Image/', $pdf), 'Faltan imágenes en la boleta (¿el QR?).');
     }
 

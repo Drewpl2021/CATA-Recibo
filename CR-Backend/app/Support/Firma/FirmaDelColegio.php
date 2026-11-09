@@ -250,8 +250,12 @@ final class FirmaDelColegio
     /**
      * Guarda el PDF firmado y su estado: lo mismo venga de una subida
      * (ReFirma) o de «Firmar aquí». Va dentro de la transacción de quien
-     * llama. El firmado queda junto al emitido, con «_firmada» en el nombre;
-     * el emitido se guarda: contra él se compara la próxima subida.
+     * llama. El firmado queda junto al emitido, con «_firmada» en el nombre.
+     *
+     * Mientras falte una firma, el emitido se guarda: contra él se compara
+     * la próxima subida. Cuando ya tiene todas, sobra: el firmado lo lleva
+     * dentro intacto (firmar solo agrega al final), así que se borra para no
+     * guardar cada documento dos veces.
      */
     public static function guardarFirmada(Documento $documento, string $contenido, array $firmas, string $estado, string $quien): void
     {
@@ -260,14 +264,52 @@ final class FirmaDelColegio
 
         Storage::disk('local')->put($ruta, $contenido);
 
+        $completa = $estado === 'completa';
         $documento->forceFill([
-            'archivo_sin_firma'         => $emitido,
+            'archivo_sin_firma'         => $completa ? null : $emitido,
             'archivo'                   => $ruta,
             'firmas_colegio'            => $firmas,
             'firma_colegio'             => $estado,
             'firma_colegio_subida_por'  => $quien,
-            'firma_colegio_completa_en' => $estado === 'completa' ? now() : null,
+            'firma_colegio_completa_en' => $completa ? now() : null,
         ])->save();
+
+        // Recién cuando la base quedó guardada: si algo falla a mitad, el
+        // emitido sigue ahí.
+        if ($completa && $emitido !== $ruta) {
+            DB::afterCommit(fn () => Storage::disk('local')->delete($emitido));
+        }
+    }
+
+    /**
+     * Borra las copias sin firmar de los documentos que ya tienen todas sus
+     * firmas (las que quedaron de antes de que esto se hiciera solo). Devuelve
+     * cuántas borró y cuánto espacio liberó.
+     *
+     * @return array{borradas: int, bytes: int}
+     */
+    public static function quitarCopiasSinFirma(): array
+    {
+        $borradas = 0;
+        $bytes = 0;
+        Documento::where('firma_colegio', 'completa')->whereNotNull('archivo_sin_firma')
+            ->select(['id', 'archivo', 'archivo_sin_firma'])
+            ->chunkById(200, function ($documentos) use (&$borradas, &$bytes) {
+                foreach ($documentos as $d) {
+                    $disco = Storage::disk('local');
+                    // Solo si el firmado existe: es el que lleva al emitido adentro.
+                    if ($d->archivo_sin_firma !== $d->archivo && $disco->exists($d->archivo)) {
+                        if ($disco->exists($d->archivo_sin_firma)) {
+                            $bytes += $disco->size($d->archivo_sin_firma);
+                            $disco->delete($d->archivo_sin_firma);
+                            $borradas++;
+                        }
+                        $d->forceFill(['archivo_sin_firma' => null])->save();
+                    }
+                }
+            });
+
+        return ['borradas' => $borradas, 'bytes' => $bytes];
     }
 
     /**

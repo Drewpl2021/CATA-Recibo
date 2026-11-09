@@ -46,6 +46,8 @@ preparar_aplicacion() {
 
     echo "→ aplicando migraciones…"
     php artisan migrate --force
+    # Los documentos ya firmados no guardan su copia sin firmar (no hace nada si ya está limpio).
+    php artisan documentos:quitar-copias-sin-firma || true
 
     # La configuración cacheada es lo que evita que Laravel ande leyendo
     # archivos en cada petición. Se rehace en cada arranque porque las

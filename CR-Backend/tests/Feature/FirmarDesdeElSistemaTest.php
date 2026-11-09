@@ -116,6 +116,9 @@ class FirmarDesdeElSistemaTest extends TestCase
         $this->firmarAqui($this->admin, 'otra-clave')->assertStatus(422);
         $this->assertSame('pendiente', $this->boleta(0)->firma_colegio);
 
+        // Las emitidas, antes de firmar: cada firmada las tiene que llevar intactas.
+        $emitidas = [Storage::disk('local')->get($this->boleta(0)->archivo), Storage::disk('local')->get($this->boleta(1)->archivo)];
+
         $this->firmarAqui($this->admin)
             ->assertOk()
             ->assertJsonPath('data.firmadas', 2)
@@ -129,7 +132,9 @@ class FirmarDesdeElSistemaTest extends TestCase
 
             // La boleta emitida queda intacta al principio, y la firma es válida y cubre todo.
             $firmado = Storage::disk('local')->get($boleta->archivo);
-            $this->assertStringStartsWith(Storage::disk('local')->get($boleta->archivo_sin_firma), $firmado);
+            $this->assertStringStartsWith($emitidas[$i], $firmado);
+            // Con todas las firmas, la copia sin firmar ya no se guarda.
+            $this->assertNull($boleta->archivo_sin_firma);
             $firmas = FirmaDigitalPdf::firmas($firmado);
             $this->assertCount(1, $firmas);
             $this->assertTrue($firmas[0]['valida']);

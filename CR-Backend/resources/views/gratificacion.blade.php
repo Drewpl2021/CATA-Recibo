@@ -99,7 +99,7 @@
             <td style="width: 60%;">
                 <table>
                     <tr>
-                        <td class="cab__logo" style="width: 16%;"><img src="{{ public_path('logo.png') }}"></td>
+                        <td class="cab__logo" style="width: 16%;"><img src="{{ public_path('pdf/logo.png') }}"></td>
                         <td class="cab__inst" style="width: 84%;">ASOCIACIÓN EDUCATIVA<br>COLEGIO ADVENTISTA<br>TÚPAC AMARU</td>
                     </tr>
                 </table>

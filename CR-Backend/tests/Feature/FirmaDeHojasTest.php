@@ -93,6 +93,10 @@ class FirmaDeHojasTest extends TestCase
         $this->ponerCertificado();
         $this->assertSame(1, $this->actingAs($this->rrhh, 'sanctum')->getJson('/api/cts?anio=2026&periodo=mayo')->json('data.firma.mi_certificado.por_firmar'));
 
+        // El emitido, antes de firmar: el firmado lo tiene que llevar adentro intacto.
+        $rutaEmitido = $hoja->refresh()->archivo;
+        $emitido = Storage::disk('local')->get($rutaEmitido);
+
         $this->actingAs($this->rrhh, 'sanctum')->postJson('/api/cts/sign-here', ['anio' => 2026, 'periodo' => 'mayo', 'clave' => 'otra-clave'])
             ->assertStatus(422);
         $this->actingAs($this->rrhh, 'sanctum')->postJson('/api/cts/sign-here', ['anio' => 2026, 'periodo' => 'mayo', 'clave' => self::CLAVE])
@@ -104,8 +108,11 @@ class FirmaDeHojasTest extends TestCase
         $firmas = FirmaDigitalPdf::firmas(Storage::disk('local')->get($hoja->archivo));
         $this->assertCount(1, $firmas);
         $this->assertTrue($firmas[0]['valida']);
-        // Lo emitido se guarda aparte: el firmado es el emitido con la firma al final.
-        $this->assertStringStartsWith(Storage::disk('local')->get($hoja->archivo_sin_firma), Storage::disk('local')->get($hoja->archivo));
+        // Con todas las firmas, la copia sin firmar sobra y se borra: el firmado
+        // es el emitido con la firma al final.
+        $this->assertNull($hoja->archivo_sin_firma);
+        $this->assertFalse(Storage::disk('local')->exists($rutaEmitido));
+        $this->assertStringStartsWith($emitido, Storage::disk('local')->get($hoja->archivo));
 
         $this->assertContains('cts', $this->susDocumentos($usuario));
         $this->assertTrue(Notificacion::where('user_id', $usuario->id)->where('documento_id', $hoja->id)->exists());
@@ -141,6 +148,28 @@ class FirmaDeHojasTest extends TestCase
         $this->assertSame('firmado', $hoja->estado_firma);
         // Su conformidad no toca el PDF firmado por el colegio.
         $this->assertCount(1, FirmaDigitalPdf::firmas(Storage::disk('local')->get($hoja->archivo)));
+    }
+
+    public function test_el_comando_borra_las_copias_sin_firmar_que_quedaron_de_antes(): void
+    {
+        $empleado = $this->crearEmpleado();
+        Storage::disk('local')->put('documentos/a/cts.pdf', '%PDF emitido');
+        Storage::disk('local')->put('documentos/a/cts_firmada.pdf', '%PDF emitido + firma');
+        Storage::disk('local')->put('documentos/b/cts.pdf', '%PDF emitido');
+        Storage::disk('local')->put('documentos/b/cts_firmada.pdf', '%PDF emitido + una firma');
+        $completa = Documento::create(['empleado_id' => $empleado->id, 'tipo' => 'cts', 'archivo' => 'documentos/a/cts_firmada.pdf',
+            'archivo_sin_firma' => 'documentos/a/cts.pdf', 'firma_colegio' => 'completa', 'estado_registro' => 'activo', 'estado_firma' => 'pendiente']);
+        $aMedias = Documento::create(['empleado_id' => $empleado->id, 'tipo' => 'cts', 'archivo' => 'documentos/b/cts_firmada.pdf',
+            'archivo_sin_firma' => 'documentos/b/cts.pdf', 'firma_colegio' => 'parcial', 'estado_registro' => 'activo', 'estado_firma' => 'pendiente']);
+
+        $this->artisan('documentos:quitar-copias-sin-firma')->expectsOutputToContain('1 copia(s)')->assertSuccessful();
+
+        $this->assertFalse(Storage::disk('local')->exists('documentos/a/cts.pdf'));
+        $this->assertNull($completa->refresh()->archivo_sin_firma);
+        // La que espera otra firma la necesita para comparar la próxima subida.
+        $this->assertTrue(Storage::disk('local')->exists('documentos/b/cts.pdf'));
+        $this->assertSame('documentos/b/cts.pdf', $aMedias->refresh()->archivo_sin_firma);
+        $this->artisan('documentos:quitar-copias-sin-firma')->expectsOutputToContain('No había')->assertSuccessful();
     }
 
     public function test_no_se_anula_el_deposito_si_el_trabajador_ya_abrio_su_hoja(): void

@@ -323,7 +323,7 @@
             <td style="width: 37%;">
                 <table>
                     <tr>
-                        <td class="cab__logo" style="width: 24%;"><img src="{{ public_path('logo.png') }}"></td>
+                        <td class="cab__logo" style="width: 24%;"><img src="{{ public_path('pdf/logo.png') }}"></td>
                         <td class="cab__inst" style="width: 76%;">ASOCIACIÓN EDUCATIVA<br>COLEGIO ADVENTISTA<br>TÚPAC AMARU</td>
                     </tr>
                 </table>
@@ -356,7 +356,7 @@
     </table>
 
     <div class="datos">
-        <img class="marca-agua" src="{{ public_path('marca-agua.png') }}">
+        <img class="marca-agua" src="{{ public_path('pdf/marca-agua.png') }}">
         <table>
             <tr>
                 <td style="width: 34%;"><div class="rotulo">Apellidos</div><div class="valor valor--grande">{{ $empleado->apellido }}</div></td>

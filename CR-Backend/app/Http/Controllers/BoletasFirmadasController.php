@@ -338,6 +338,9 @@ class BoletasFirmadasController extends Controller
         if ($documento->firma_colegio === null) {
             return $falla('no_aplica', 'Esta boleta se emitió sin firma digital del colegio: ya se le entregó al trabajador como siempre.');
         }
+        if ($documento->firma_colegio === 'completa') {
+            return $falla('sin_cambios', 'Esta boleta ya tiene todas sus firmas y ya se le entregó al trabajador: no hay nada nuevo que guardar.');
+        }
 
         // La misma boleta que emitió el sistema, sin cambios: firmar solo
         // AGREGA al final del archivo, así que el original tiene que estar
