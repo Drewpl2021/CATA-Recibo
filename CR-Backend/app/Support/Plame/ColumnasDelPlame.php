@@ -5,8 +5,8 @@ namespace App\Support\Plame;
 use App\Models\ConceptoAlias;
 use App\Models\PaymentConcept;
 use App\Support\ConceptosDePago;
-use App\Support\LectorDeCeldas;
-use App\Support\ReconocedorDeColumnas;
+use App\Support\Importacion\LectorDeCeldas;
+use App\Support\Importacion\ReconocedorDeColumnas;
 
 /**
  * Qué es cada columna del PLAME.

@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 use App\Models\Documento;
 use App\Models\Planilla;
-use App\Support\ExpedienteDigital;
+use App\Support\Documentos\ExpedienteDigital;
 use App\Traits\ListadoPaginado;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -194,7 +194,7 @@ class MisDocumentosController extends Controller
             if ($documento->esperaFirmaDelColegio()) {
                 return response()->json([
                     'success' => false,
-                    'message' => \App\Support\AccesoADocumento::enFirmaDelColegio($documento),
+                    'message' => \App\Support\Documentos\AccesoADocumento::enFirmaDelColegio($documento),
                 ], 422);
             }
 
@@ -333,7 +333,7 @@ class MisDocumentosController extends Controller
         $fuera = [];
         foreach ($documentos as $d) {
             $nombre = $this->nombreParaJuntar($d);
-            if ($motivo = \App\Support\AccesoADocumento::porQueNoPuedeDescargar($d, $usuario)) {
+            if ($motivo = \App\Support\Documentos\AccesoADocumento::porQueNoPuedeDescargar($d, $usuario)) {
                 $fuera[] = "{$nombre}: {$motivo}";
                 continue;
             }
@@ -358,7 +358,7 @@ class MisDocumentosController extends Controller
 
         $base = 'Mis documentos ' . now()->format('Y-m-d');
         if ($datos['formato'] === 'pdf') {
-            ['pdf' => $pdf, 'fallaron' => $fallaron] = \App\Support\JuntarPdf::juntar($archivos, $base);
+            ['pdf' => $pdf, 'fallaron' => $fallaron] = \App\Support\Pdf\JuntarPdf::juntar($archivos, $base);
             foreach ($fallaron as $f) {
                 $fuera[] = "{$f}: no se pudo leer para juntarlo; bájalo en el .zip.";
             }

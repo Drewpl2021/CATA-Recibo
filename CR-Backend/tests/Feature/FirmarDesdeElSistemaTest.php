@@ -7,10 +7,10 @@ use App\Models\Configuracion;
 use App\Models\Documento;
 use App\Models\Notificacion;
 use App\Models\Planilla;
-use App\Support\FirmaDigitalDeBoletas;
-use App\Support\FirmaDigitalPdf;
-use App\Support\FirmadorPdf;
-use App\Support\LectorPdf;
+use App\Support\Firma\FirmaDigitalDeBoletas;
+use App\Support\Firma\FirmaDigitalPdf;
+use App\Support\Firma\FirmadorPdf;
+use App\Support\Pdf\LectorPdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
@@ -341,7 +341,7 @@ class FirmarDesdeElSistemaTest extends TestCase
             . ' /DecodeParms << /Columns 4 /Predictor 12 >> /Length ' . strlen($datos) . " >>\nstream\n{$datos}\nendstream\nendobj\n"
             . "startxref\n{$posXref}\n%%EOF\n";
 
-        $leido = \App\Support\CertificadoDigital::abrir(FirmadorPdfDePrueba::pfx('Isidoro', 'Rodriguez Mamani', '01234567', self::CLAVE), self::CLAVE);
+        $leido = \App\Support\Firma\CertificadoDigital::abrir(FirmadorPdfDePrueba::pfx('Isidoro', 'Rodriguez Mamani', '01234567', self::CLAVE), self::CLAVE);
         $firmado = FirmadorPdf::firmar($pdf, $leido['certificado'], $leido['llave'], $leido['cadena'], ['nombre' => 'ISIDORO']);
 
         $this->assertStringStartsWith($pdf, $firmado);

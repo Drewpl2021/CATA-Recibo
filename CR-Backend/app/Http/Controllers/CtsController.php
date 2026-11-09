@@ -9,7 +9,7 @@ use App\Models\Documento;
 use App\Models\Empleado;
 use App\Models\ValorLegal;
 use App\Support\Cts\MotorCts;
-use App\Support\FirmaDelColegio;
+use App\Support\Firma\FirmaDelColegio;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -32,7 +32,7 @@ use Illuminate\Validation\Rule;
  *   POST   /cts/sign-here               «Firmar aquí»: la firma digital del colegio en las hojas del depósito
  *
  * La hoja de cada depósito se firma digitalmente por el colegio, como la
- * boleta (App\Support\FirmaDelColegio): el trabajador la ve en Mis
+ * boleta (App\Support\Firma\FirmaDelColegio): el trabajador la ve en Mis
  * Documentos recién cuando tiene las firmas que pide el colegio.
  *
  * Ver App\Support\Cts\MotorCts para el cálculo.
@@ -119,7 +119,7 @@ class CtsController extends Controller
             'search'    => 'nullable|string|max:100',
         ]);
         $todas = $this->filas($anio, $periodo);
-        $filas = \App\Support\FiltroDeLista::aplicar($todas, $f, fn (array $x, string $s) => $x['estado_cts'] === $s);
+        $filas = \App\Support\Listados\FiltroDeLista::aplicar($todas, $f, fn (array $x, string $s) => $x['estado_cts'] === $s);
 
         $estados = ['por_calcular' => 'Por calcular', 'calculada' => 'Por depositar', 'depositada' => 'Depositada', 'sin_derecho' => 'Sin CTS'];
         $firma = ['pendiente' => 'Por firmar', 'parcial' => 'Una firma de dos', 'completa' => 'Firmada y entregada'];
@@ -128,7 +128,7 @@ class CtsController extends Controller
 
         $hoja = [
             [$titulo],
-            [\App\Support\FiltroDeLista::describir($f, $todas, $estados) . ' · ' . $filas->count() . ' de ' . $todas->count() . ' trabajador(es)'],
+            [\App\Support\Listados\FiltroDeLista::describir($f, $todas, $estados) . ' · ' . $filas->count() . ' de ' . $todas->count() . ' trabajador(es)'],
             [''],
             ['N°', 'DNI', 'Apellidos y nombres', 'Cargo', 'Área', 'Sede', 'Estado', 'Ingreso',
                 'Sueldo', 'Asignación familiar', 'Bonificación por cargo', '1/6 gratificación', 'Remuneración computable',
@@ -152,16 +152,16 @@ class CtsController extends Controller
         $total[16] = round($filas->where('aplica', true)->sum('monto'), 2);
         $hoja[] = $total;
 
-        $estiloTotal = array_fill(0, 22, \App\Support\LibroExcel::TOTAL_TEXTO);
+        $estiloTotal = array_fill(0, 22, \App\Support\Listados\LibroExcel::TOTAL_TEXTO);
         foreach ($montos as $c) {
-            $estiloTotal[$c] = \App\Support\LibroExcel::TOTAL_MONTO;
+            $estiloTotal[$c] = \App\Support\Listados\LibroExcel::TOTAL_MONTO;
         }
-        $libro = new \App\Support\LibroExcel();
+        $libro = new \App\Support\Listados\LibroExcel();
         $libro->hoja('CTS', $hoja, [
             'anchos' => [6, 12, 36, 26, 22, 18, 10, 12, 12, 12, 12, 12, 14, 8, 8, 10, 13, 15, 13, 18, 22, 20],
-            'estiloColumnas' => [1 => \App\Support\LibroExcel::TEXTO, 20 => \App\Support\LibroExcel::TEXTO] + array_fill_keys($montos, \App\Support\LibroExcel::MONTO),
-            'estiloFilas' => [0 => \App\Support\LibroExcel::ENCABEZADO, 1 => \App\Support\LibroExcel::PARRAFO,
-                3 => array_fill(0, 22, \App\Support\LibroExcel::TITULO), count($hoja) - 1 => $estiloTotal],
+            'estiloColumnas' => [1 => \App\Support\Listados\LibroExcel::TEXTO, 20 => \App\Support\Listados\LibroExcel::TEXTO] + array_fill_keys($montos, \App\Support\Listados\LibroExcel::MONTO),
+            'estiloFilas' => [0 => \App\Support\Listados\LibroExcel::ENCABEZADO, 1 => \App\Support\Listados\LibroExcel::PARRAFO,
+                3 => array_fill(0, 22, \App\Support\Listados\LibroExcel::TITULO), count($hoja) - 1 => $estiloTotal],
         ]);
 
         return $libro->descargar($titulo . (array_filter($f) ? ' (filtrado)' : '') . '.xlsx');
@@ -666,8 +666,8 @@ class CtsController extends Controller
             'empleado'         => $l->empleado,
             'semestre'         => $semestre,
             'nombreAnio'       => ValorLegal::nombreDelAnio($l->anio),
-            'firmaDigital'     => \App\Support\FirmaDigitalDeBoletas::activa(),
-            'firmasRequeridas' => \App\Support\FirmaDigitalDeBoletas::requeridas(),
+            'firmaDigital'     => \App\Support\Firma\FirmaDigitalDeBoletas::activa(),
+            'firmasRequeridas' => \App\Support\Firma\FirmaDigitalDeBoletas::requeridas(),
         ])->setPaper('a4', 'portrait');
     }
 

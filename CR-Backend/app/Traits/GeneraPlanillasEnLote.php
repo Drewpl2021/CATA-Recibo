@@ -102,7 +102,7 @@ trait GeneraPlanillasEnLote
         $incluirVencidos   = request()?->boolean('incluir_contrato_vencido') ?? false;
         $revisarVencidos   = ! $incluirVencidos && ! AniosAnteriores::esAnterior($anio);
 
-        $progreso = \App\Support\Progreso::actual()->etapa('Armando la planilla de cada trabajador', count($empleados));
+        $progreso = \App\Support\Listados\Progreso::actual()->etapa('Armando la planilla de cada trabajador', count($empleados));
         foreach ($empleados as $empleado) {
             $progreso->avanzar();
             $nombreCompleto = trim($empleado->nombre . ' ' . $empleado->apellido);

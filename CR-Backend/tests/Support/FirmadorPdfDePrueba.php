@@ -8,7 +8,7 @@ namespace Tests\Support;
  * lo que ya estaba. Con un certificado de prueba hecho al vuelo.
  *
  * No es un PDF que Adobe vaya a validar (no actualiza el AcroForm), pero sí
- * es exactamente lo que App\Support\FirmaDigitalPdf lee y comprueba.
+ * es exactamente lo que App\Support\Firma\FirmaDigitalPdf lee y comprueba.
  */
 final class FirmadorPdfDePrueba
 {

@@ -10,7 +10,7 @@ use App\Models\Periodo;
 use App\Models\Planilla;
 use App\Models\Sede;
 use App\Models\User;
-use App\Support\ExpedienteDigital;
+use App\Support\Documentos\ExpedienteDigital;
 use Illuminate\Http\Request;
 
 /**

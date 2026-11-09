@@ -83,7 +83,7 @@ trait DescargaEnZip
         $zip->open($ruta, \ZipArchive::OVERWRITE);
 
         $faltan = [];
-        $progreso = \App\Support\Progreso::actual()->etapa($etapa, count($hojas));
+        $progreso = \App\Support\Listados\Progreso::actual()->etapa($etapa, count($hojas));
         foreach ($hojas as $nombre => $contenido) {
             $progreso->avanzar();
             try {

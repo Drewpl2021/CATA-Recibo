@@ -8,12 +8,12 @@ use App\Models\Documento;
 use App\Models\Empleado;
 use App\Models\Notificacion;
 use App\Models\Planilla;
-use App\Support\FirmaDelColegio;
-use App\Support\FirmaDigitalDeBoletas;
-use App\Support\CertificadoDigital;
-use App\Support\FirmaDigitalPdf;
-use App\Support\FirmadorPdf;
-use App\Support\LibroExcel;
+use App\Support\Firma\FirmaDelColegio;
+use App\Support\Firma\FirmaDigitalDeBoletas;
+use App\Support\Firma\CertificadoDigital;
+use App\Support\Firma\FirmaDigitalPdf;
+use App\Support\Firma\FirmadorPdf;
+use App\Support\Listados\LibroExcel;
 use App\Support\Meses;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * Las boletas firmadas digitalmente por el colegio, de vuelta al sistema.
- * Ver App\Support\FirmaDigitalDeBoletas para el camino completo.
+ * Ver App\Support\Firma\FirmaDigitalDeBoletas para el camino completo.
  *
  *   GET  /payslips/signed/summary   cómo va la firma del mes
  *   POST /payslips/signed/check     revisa UN archivo y dice qué pasaría (no guarda)

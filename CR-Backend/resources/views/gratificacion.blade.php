@@ -195,7 +195,7 @@
             <td class="rotulo-neto">TOTAL A PAGAR</td>
             <td class="monto">S/ {{ number_format($c['total'], 2) }}</td>
         </tr>
-        <tr><td colspan="2" class="son"><strong>SON:</strong> {{ \App\Support\MontoEnLetras::soles($c['total']) }}</td></tr>
+        <tr><td colspan="2" class="son"><strong>SON:</strong> {{ \App\Support\Pdf\MontoEnLetras::soles($c['total']) }}</td></tr>
     </table>
 
     <p class="nota">

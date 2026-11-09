@@ -7,7 +7,7 @@ use App\Models\Documento;
 use App\Models\Notificacion;
 use App\Models\PaymentConcept;
 use App\Models\Planilla;
-use App\Support\FirmaDigitalDeBoletas;
+use App\Support\Firma\FirmaDigitalDeBoletas;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;

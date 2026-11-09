@@ -3,7 +3,7 @@ namespace App\Http\Controllers;
 use App\Models\Planilla;
 use App\Models\Empleado;
 use App\Traits\CalculaConceptosPlanilla;
-use App\Support\LibroExcel;
+use App\Support\Listados\LibroExcel;
 use App\Traits\ExportaExcel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -539,7 +539,7 @@ class PlanillaController extends Controller
             $this->generarYPersistirRenta5ta($planilla, $planilla->empleado);
         }
 
-        $rehecha = \App\Support\BoletaAlDia::rehacer($planilla);
+        $rehecha = \App\Support\Documentos\BoletaAlDia::rehacer($planilla);
 
         return response()->json([
             'success' => true,
@@ -696,7 +696,7 @@ class PlanillaController extends Controller
         return response()->json([
             'success'        => true,
             'data'           => $planilla->fresh()->load('payrollDetalles.paymentConcept', 'empleado:id,dni,nombre,apellido'),
-            'boleta_rehecha' => \App\Support\BoletaAlDia::rehacer($planilla),
+            'boleta_rehecha' => \App\Support\Documentos\BoletaAlDia::rehacer($planilla),
         ]);
     }
 

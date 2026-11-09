@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Documento;
 use App\Models\Planilla;
-use App\Support\FirmadorPdf;
+use App\Support\Firma\FirmadorPdf;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;

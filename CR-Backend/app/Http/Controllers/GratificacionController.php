@@ -6,7 +6,7 @@ use App\Models\Auditoria;
 use App\Models\Documento;
 use App\Models\Empleado;
 use App\Models\ValorLegal;
-use App\Support\FirmaDelColegio;
+use App\Support\Firma\FirmaDelColegio;
 use App\Support\Gratificacion\MotorGratificacion;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -26,7 +26,7 @@ use Illuminate\Validation\Rule;
  *   POST /bonuses/sign-here                   «Firmar aquí»: la firma digital del colegio en las hojas
  *
  * La hoja se firma digitalmente por el colegio, como la boleta
- * (App\Support\FirmaDelColegio): el trabajador la ve en Mis Documentos
+ * (App\Support\Firma\FirmaDelColegio): el trabajador la ve en Mis Documentos
  * recién cuando tiene las firmas que pide el colegio. Una vez firmada no se
  * vuelve a generar.
  *
@@ -173,7 +173,7 @@ class GratificacionController extends Controller
             'situacion' => 'nullable|in:pagada,por_pagar,diferencia,no_corresponde,trunca',
         ]);
         $todas = $this->filas($anio, $periodo);
-        $filas = \App\Support\FiltroDeLista::aplicar($todas, $f, fn (array $x, string $s) => $s === 'trunca' ? (bool) $x['trunca'] : $x['estado_grati'] === $s);
+        $filas = \App\Support\Listados\FiltroDeLista::aplicar($todas, $f, fn (array $x, string $s) => $s === 'trunca' ? (bool) $x['trunca'] : $x['estado_grati'] === $s);
 
         $estados = ['pagada' => 'Pagada', 'por_pagar' => 'Por pagar', 'diferencia' => 'Con diferencia', 'no_corresponde' => 'No corresponde'];
         $firma = ['pendiente' => 'Por firmar', 'parcial' => 'Una firma de dos', 'completa' => 'Firmada y entregada'];
@@ -182,7 +182,7 @@ class GratificacionController extends Controller
 
         $hoja = [
             [$titulo],
-            [\App\Support\FiltroDeLista::describir($f, $todas, ['trunca' => 'Truncas (cesaron)'] + $estados) . ' · ' . $filas->count() . ' de ' . $todas->count() . ' trabajador(es)'],
+            [\App\Support\Listados\FiltroDeLista::describir($f, $todas, ['trunca' => 'Truncas (cesaron)'] + $estados) . ' · ' . $filas->count() . ' de ' . $todas->count() . ' trabajador(es)'],
             [''],
             ['N°', 'DNI', 'Apellidos y nombres', 'Cargo', 'Área', 'Sede', 'Estado', 'Ingreso', 'Cese', 'Meses',
                 'Sueldo', 'Asignación familiar', 'Bonificación por cargo', 'Remuneración computable',
@@ -209,16 +209,16 @@ class GratificacionController extends Controller
         $total[18] = round($filas->sum('diferencia'), 2);
         $hoja[] = $total;
 
-        $estiloTotal = array_fill(0, 21, \App\Support\LibroExcel::TOTAL_TEXTO);
+        $estiloTotal = array_fill(0, 21, \App\Support\Listados\LibroExcel::TOTAL_TEXTO);
         foreach ($montos as $c) {
-            $estiloTotal[$c] = \App\Support\LibroExcel::TOTAL_MONTO;
+            $estiloTotal[$c] = \App\Support\Listados\LibroExcel::TOTAL_MONTO;
         }
-        $libro = new \App\Support\LibroExcel();
+        $libro = new \App\Support\Listados\LibroExcel();
         $libro->hoja('Gratificación', $hoja, [
             'anchos' => [6, 12, 36, 26, 22, 18, 10, 12, 12, 8, 12, 12, 12, 14, 13, 13, 14, 14, 12, 18, 20],
-            'estiloColumnas' => [1 => \App\Support\LibroExcel::TEXTO] + array_fill_keys($montos, \App\Support\LibroExcel::MONTO),
-            'estiloFilas' => [0 => \App\Support\LibroExcel::ENCABEZADO, 1 => \App\Support\LibroExcel::PARRAFO,
-                3 => array_fill(0, 21, \App\Support\LibroExcel::TITULO), count($hoja) - 1 => $estiloTotal],
+            'estiloColumnas' => [1 => \App\Support\Listados\LibroExcel::TEXTO] + array_fill_keys($montos, \App\Support\Listados\LibroExcel::MONTO),
+            'estiloFilas' => [0 => \App\Support\Listados\LibroExcel::ENCABEZADO, 1 => \App\Support\Listados\LibroExcel::PARRAFO,
+                3 => array_fill(0, 21, \App\Support\Listados\LibroExcel::TITULO), count($hoja) - 1 => $estiloTotal],
         ]);
 
         return $libro->descargar($titulo . (array_filter($f) ? ' (filtrado)' : '') . '.xlsx');
@@ -406,8 +406,8 @@ class GratificacionController extends Controller
             'periodo'    => $periodo,
             'semestre'   => MotorGratificacion::semestre($anio, $periodo),
             'nombreAnio'       => ValorLegal::nombreDelAnio($anio),
-            'firmaDigital'     => \App\Support\FirmaDigitalDeBoletas::activa(),
-            'firmasRequeridas' => \App\Support\FirmaDigitalDeBoletas::requeridas(),
+            'firmaDigital'     => \App\Support\Firma\FirmaDigitalDeBoletas::activa(),
+            'firmasRequeridas' => \App\Support\Firma\FirmaDigitalDeBoletas::requeridas(),
         ])->setPaper('a4', 'portrait');
     }
 }

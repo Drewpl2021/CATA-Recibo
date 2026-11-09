@@ -54,7 +54,7 @@ class CargaRentaQuintaPrevia
         $afectados = [];
         $numero = fn ($v) => round((float) $v, 2);
 
-        $progreso = \App\Support\Progreso::actual()->etapa('Leyendo enero y febrero de cada trabajador', count($filas));
+        $progreso = \App\Support\Listados\Progreso::actual()->etapa('Leyendo enero y febrero de cada trabajador', count($filas));
         DB::transaction(function () use ($filas, $indice, $anio, $origen, $numero, $progreso, &$leidos, &$faltan, &$afectados) {
             foreach ($filas as $fila) {
                 $progreso->avanzar();
@@ -97,7 +97,7 @@ class CargaRentaQuintaPrevia
                         return;
                     }
                     $this->generarYPersistirRenta5ta($planilla, $empleado);
-                    \App\Support\BoletaAlDia::rehacer($planilla);
+                    \App\Support\Documentos\BoletaAlDia::rehacer($planilla);
                     $recalculadas++;
                 });
         }

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     {{--
-        La boleta, con el diseño de la boleta de pago del Minedu
-        (postman/plame/BOLETA DEGUIA.pdf): hoja vertical, datos personales en
+        La boleta, con el diseño de la boleta de pago del Minedu (el modelo
+        se usó solo como guía y no se guarda en el repositorio): hoja vertical, datos personales en
         cuadrícula de tres columnas, Ingresos y Descuentos lado a lado sobre
         un panel gris azulado, el total líquido, el QR para verificarla, el
         mensaje y la nota del medio ambiente. Con la cabecera, los datos y
@@ -149,7 +149,7 @@
 
     /*
      * Las filas de la boleta, SIEMPRE las mismas y en el mismo orden que la
-     * boleta física del colegio (postman/guia_boleta.jpeg): con un "-" cuando
+     * boleta física del colegio (la de papel que entregaba RR.HH.): con un "-" cuando
      * el monto es cero. Antes solo salían los conceptos que la planilla
      * tenía, así que dos boletas no se parecían entre sí y la Renta de 5ta
      * desaparecía cuando era cero.
@@ -292,7 +292,7 @@
 
     // El QR: la dirección firmada que abre la verificación de esta boleta.
     $qr = (isset($documento) && $documento?->id)
-        ? \App\Support\CodigoQr::png($documento->urlDeVerificacion())
+        ? \App\Support\Pdf\CodigoQr::png($documento->urlDeVerificacion())
         : null;
 
     $fecha   = fn ($v) => $v ? \Carbon\Carbon::parse($v)->format('d/m/Y') : '---';

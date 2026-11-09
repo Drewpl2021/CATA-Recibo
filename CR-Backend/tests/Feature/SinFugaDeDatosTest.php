@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Documento;
-use App\Support\CertificadoDigital;
-use App\Support\FirmadorPdf;
+use App\Support\Firma\CertificadoDigital;
+use App\Support\Firma\FirmadorPdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;

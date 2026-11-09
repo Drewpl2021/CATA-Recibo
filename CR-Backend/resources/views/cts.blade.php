@@ -218,7 +218,7 @@
             <td class="rotulo-neto">CTS A DEPOSITAR</td>
             <td class="monto">S/ {{ number_format($l->monto, 2) }}</td>
         </tr>
-        <tr><td colspan="2" class="son"><strong>SON:</strong> {{ \App\Support\MontoEnLetras::soles($l->monto) }}</td></tr>
+        <tr><td colspan="2" class="son"><strong>SON:</strong> {{ \App\Support\Pdf\MontoEnLetras::soles($l->monto) }}</td></tr>
     </table>
 
     <p class="nota">

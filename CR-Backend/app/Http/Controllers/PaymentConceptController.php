@@ -257,7 +257,7 @@ class PaymentConceptController extends Controller
                 ]
             );
             $planilla->recalcularTotal();
-            $rehecha = \App\Support\BoletaAlDia::rehacer($planilla);
+            $rehecha = \App\Support\Documentos\BoletaAlDia::rehacer($planilla);
 
             $aplicadas++;
             $detalle[] = ['empleado' => $nombreCompleto, 'estado' => 'aplicada', 'monto' => $monto]

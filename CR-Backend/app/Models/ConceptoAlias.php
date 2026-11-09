@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 /**
  * Un nombre con que RR.HH. llama a un concepto en sus Excel ("Movilidad"
- * para "Planilla de Movilidad"). Lo usa App\Support\ReconocedorDeColumnas.
+ * para "Planilla de Movilidad"). Lo usa App\Support\Importacion\ReconocedorDeColumnas.
  */
 class ConceptoAlias extends Model
 {

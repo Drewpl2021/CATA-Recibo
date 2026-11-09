@@ -8,10 +8,10 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Support\ConceptosDePago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Support\AccesoADocumento;
+use App\Support\Documentos\AccesoADocumento;
 use App\Support\Meses;
 use App\Support\AniosAnteriores;
-use App\Support\FirmaDigitalDeBoletas;
+use App\Support\Firma\FirmaDigitalDeBoletas;
 
 class MiBoletaController extends Controller
 {

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Documento;
 use App\Models\Empleado;
 use App\Models\Planilla;
-use App\Support\ExpedienteDigital;
+use App\Support\Documentos\ExpedienteDigital;
 use App\Traits\ListadoPaginado;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;

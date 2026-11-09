@@ -17,7 +17,7 @@ class Documento extends Model
     public const FIRMA_RESUELTA = ['firmado', 'en_papel'];
 
     /**
-     * La firma digital del colegio (ver App\Support\FirmaDigitalDeBoletas):
+     * La firma digital del colegio (ver App\Support\Firma\FirmaDigitalDeBoletas):
      * mientras esté en uno de estos, la boleta todavía no es del trabajador.
      */
     public const FIRMA_COLEGIO_EN_CURSO = ['pendiente', 'parcial'];

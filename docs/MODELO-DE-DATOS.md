@@ -30,14 +30,14 @@ son del framework, no del colegio.
 
 ## El modelo completo
 
-![Modelo de datos completo](modelo-datos.png)
+![Modelo de datos completo](diagramas/modelo-datos.png)
 
 Con veintidós tablas juntas el dibujo se cruza bastante. Para leerlo con calma,
 los tres diagramas por tema de abajo dicen lo mismo, separado.
 
 ### Personal
 
-![Modelo del personal](modelo-personal.png)
+![Modelo del personal](diagramas/modelo-personal.png)
 
 El centro es **`empleados`**. De ahí cuelga todo lo demás: sus contratos, su
 firma, su cuenta de acceso y sus vacaciones. Las tres tablas de catálogo
@@ -47,7 +47,7 @@ de cada área (un cargo como "Docente" vale en varias).
 
 ### Planilla
 
-![Modelo de la planilla](modelo-planilla.png)
+![Modelo de la planilla](diagramas/modelo-planilla.png)
 
 Se lee de arriba abajo: un **periodo** (el mes de la campaña) agrupa **corridas**
 (lo que se paga junto), cada corrida tiene una **planilla por trabajador**, y
@@ -59,7 +59,7 @@ concepto, con qué cálculo y por cuánto.
 
 ### Documentos y seguridad
 
-![Modelo de documentos y seguridad](modelo-documentos-seguridad.png)
+![Modelo de documentos y seguridad](diagramas/modelo-documentos-seguridad.png)
 
 **`documentos`** es el expediente: la misma tabla guarda la boleta, el contrato
 escaneado, la hoja de vida y los documentos anteriores al sistema, distinguidos
@@ -586,7 +586,7 @@ Es gratis, no hay que instalar nada y el gráfico queda editable: se arrastran
 las tablas hasta que se vea bien y se exporta en PNG o PDF.
 
 1. Abre **https://dbdiagram.io** y entra a *Create new diagram*.
-2. Abre el archivo **`docs/modelo-datos.dbml`** de este proyecto, copia todo su
+2. Abre el archivo **`docs/diagramas/modelo-datos.dbml`** de este proyecto, copia todo su
    contenido y pégalo en el panel de la izquierda.
 3. El diagrama aparece solo a la derecha. Acomoda las tablas con el mouse.
 4. *Export* → **PNG** o **PDF** para pegarlo en el informe.
@@ -596,7 +596,7 @@ cada tabla, así que el gráfico sale documentado.
 
 ### 2. Mermaid — el que se ve solo en GitHub
 
-Los archivos `docs/modelo-datos.mmd` y los tres por tema están en Mermaid.
+Los archivos `docs/diagramas/modelo-datos.mmd` y los tres por tema están en Mermaid.
 GitHub los dibuja solo dentro de un bloque ```` ```mermaid ````, y también
 funcionan en https://mermaid.live si quieres retocarlos.
 
@@ -612,12 +612,12 @@ doble de resolución, para imprimir) y el SVG (que se escala sin pixelarse).
 
 ### 3. MySQL Workbench — sin conectarse a nada
 
-En el repositorio va **`docs/modelo-datos.sql`**: la estructura completa de las
+En el repositorio va **`docs/diagramas/modelo-datos.sql`**: la estructura completa de las
 22 tablas con sus 28 llaves foráneas, y **ni un dato dentro**. Workbench puede
 dibujar el modelo leyendo ese archivo, sin tocar ninguna base:
 
 1. **File → Import → Reverse Engineer MySQL Create Script…**
-2. *Browse* y elige `docs/modelo-datos.sql`.
+2. *Browse* y elige `docs/diagramas/modelo-datos.sql`.
 3. Marca **"Place imported objects on a diagram"**.
 4. *Execute* → *Next* → *Finish*.
 
@@ -634,7 +634,7 @@ así que el diagrama sale completo.
 
 Si prefieres el modelo de la base real en lugar del archivo:
 
-1. Publica el puerto de MySQL temporalmente (ver [INSTALACION.md](../INSTALACION.md),
+1. Publica el puerto de MySQL temporalmente (ver [INSTALACION.md](instalacion/INSTALACION.md),
    capítulo 8) y conéctate a `127.0.0.1:3307` con el usuario `root`.
 2. *Database → Reverse Engineer* (`Ctrl+R`), elige el esquema `colegio_db`.
 3. En *Select Objects* quita las ocho tablas de Laravel: `cache`, `cache_locks`,
@@ -659,7 +659,7 @@ Para rehacer también el `.sql` hace falta un MySQL a mano: se crea una base
 vacía, se corre `php artisan migrate` contra ella y se vuelca su estructura:
 
 ```bash
-mysqldump -u USUARIO -p --no-data --skip-comments NOMBRE_DE_LA_BASE > docs/modelo-datos.sql
+mysqldump -u USUARIO -p --no-data --skip-comments NOMBRE_DE_LA_BASE > docs/diagramas/modelo-datos.sql
 ```
 
 (quitándole después las ocho tablas de Laravel y la tabla `migrations`).

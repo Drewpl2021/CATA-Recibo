@@ -5,7 +5,7 @@ use App\Models\PaymentConcept;
 use App\Models\Planilla;
 use App\Support\ConceptosDePago;
 use Illuminate\Database\Eloquent\Builder;
-use App\Support\BoletaAlDia;
+use App\Support\Documentos\BoletaAlDia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Documento;
-use App\Support\AccesoADocumento;
-use App\Support\ExpedienteDigital;
+use App\Support\Documentos\AccesoADocumento;
+use App\Support\Documentos\ExpedienteDigital;
 use App\Models\Contrato;
 use App\Models\Empleado;
 use App\Models\Planilla;

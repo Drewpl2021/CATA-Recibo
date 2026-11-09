@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Auditoria;
 use App\Models\CtsLiquidacion;
-use App\Support\ColumnasDeEmpleado;
+use App\Support\Importacion\ColumnasDeEmpleado;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;

@@ -9,7 +9,7 @@ use App\Models\PaymentConcept;
 use App\Models\Planilla;
 use App\Models\PayrollDetalle;
 use App\Support\ConceptosDePago;
-use App\Support\FirmaDigitalPdf;
+use App\Support\Firma\FirmaDigitalPdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;

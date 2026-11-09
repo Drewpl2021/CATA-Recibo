@@ -9,13 +9,13 @@ use App\Models\PayrollDetalle;
 use App\Models\Planilla;
 use App\Models\PlanillaCorrida;
 use App\Services\AltaDeEmpleado;
-use App\Support\ColumnasDeEmpleado;
+use App\Support\Importacion\ColumnasDeEmpleado;
 use App\Support\ConceptosDePago;
-use App\Support\LectorDeCeldas;
+use App\Support\Importacion\LectorDeCeldas;
 use App\Support\Meses;
 use App\Support\Plame\ColumnasDelPlame;
 use App\Support\Plame\LectorPlame;
-use App\Support\ReconocedorDeColumnas;
+use App\Support\Importacion\ReconocedorDeColumnas;
 use App\Support\Renta5ta\RecalculoRenta5ta;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -119,7 +119,7 @@ class ImportacionPlameController extends Controller
             ]);
 
             $empleados = [];
-            $progreso = \App\Support\Progreso::actual()->etapa('Guardando la planilla de cada trabajador', count($r['trabajadores']));
+            $progreso = \App\Support\Listados\Progreso::actual()->etapa('Guardando la planilla de cada trabajador', count($r['trabajadores']));
             foreach ($r['trabajadores'] as $t) {
                 $progreso->avanzar();
                 $empleado = $t['_empleado'];
@@ -161,7 +161,7 @@ class ImportacionPlameController extends Controller
         $recalculadas = 0;
         if ($r['mes'] < 12) {
             $recalculo = new RecalculoRenta5ta();
-            $progreso = \App\Support\Progreso::actual()->etapa('Recalculando la 5ta de los meses siguientes', count($empleados));
+            $progreso = \App\Support\Listados\Progreso::actual()->etapa('Recalculando la 5ta de los meses siguientes', count($empleados));
             foreach ($empleados as $empleado) {
                 $progreso->avanzar();
                 $recalculadas += $recalculo->empleado($empleado, $r['anio'], $r['mes'] + 1)['recalculadas'];
@@ -301,7 +301,7 @@ class ImportacionPlameController extends Controller
         // ── Fila por fila ────────────────────────────────────────
         $vistos = [];
         $celda = fn (array $celdas, ?int $i) => $i === null ? null : ($celdas[$i] ?? null);
-        $progreso = \App\Support\Progreso::actual()->etapa('Revisando las filas del PLAME', count($hoja['filas']));
+        $progreso = \App\Support\Listados\Progreso::actual()->etapa('Revisando las filas del PLAME', count($hoja['filas']));
 
         foreach ($hoja['filas'] as $fila) {
             $progreso->avanzar();

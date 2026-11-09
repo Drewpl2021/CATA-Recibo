@@ -8,10 +8,10 @@ use App\Models\Cargo;
 use App\Models\Empleado;
 use App\Models\User;
 use App\Services\AltaDeEmpleado;
-use App\Support\ColumnasDeEmpleado;
-use App\Support\ExpedienteDigital;
-use App\Support\LectorDeCeldas;
-use App\Support\ModelosDeImportacion;
+use App\Support\Importacion\ColumnasDeEmpleado;
+use App\Support\Documentos\ExpedienteDigital;
+use App\Support\Importacion\LectorDeCeldas;
+use App\Support\Importacion\ModelosDeImportacion;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -118,7 +118,7 @@ class ImportacionEmpleadosController extends Controller
                 }
             }
 
-            $progreso = \App\Support\Progreso::actual()->etapa('Guardando los trabajadores', count($r['filas']));
+            $progreso = \App\Support\Listados\Progreso::actual()->etapa('Guardando los trabajadores', count($r['filas']));
             foreach ($r['filas'] as $fila) {
                 $progreso->avanzar();
                 if ($fila['modo'] === 'alta') {
@@ -345,7 +345,7 @@ class ImportacionEmpleadosController extends Controller
         $bloqueadas   = [];
 
         // ── Fila por fila ────────────────────────────────────────
-        $progreso = \App\Support\Progreso::actual()->etapa('Revisando las filas del archivo', count($datos['filas']));
+        $progreso = \App\Support\Listados\Progreso::actual()->etapa('Revisando las filas del archivo', count($datos['filas']));
         foreach ($datos['filas'] as $fila) {
             $progreso->avanzar();
             $numero = (int) $fila['numero'];

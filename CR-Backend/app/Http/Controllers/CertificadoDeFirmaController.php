@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Auditoria;
 use App\Models\CertificadoFirma;
-use App\Support\CertificadoDigital;
+use App\Support\Firma\CertificadoDigital;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 

@@ -35,5 +35,5 @@ cd CR-Fronend && npm run test:ci             # interfaz
 
 ## Instalar
 
-Ver [DESPLIEGUE.md](DESPLIEGUE.md) (con Docker) o
-[INSTALACION-SIN-DOCKER.md](INSTALACION-SIN-DOCKER.md).
+Ver [DESPLIEGUE.md](docs/instalacion/DESPLIEGUE.md) (con Docker) o
+[INSTALACION-SIN-DOCKER.md](docs/instalacion/INSTALACION-SIN-DOCKER.md).

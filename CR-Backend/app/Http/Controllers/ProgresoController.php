@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\Progreso;
+use App\Support\Listados\Progreso;
 use Illuminate\Http\Request;
 
-/** GET /progress/{id} — cuánto lleva un proceso largo de esta misma cuenta (ver App\Support\Progreso). */
+/** GET /progress/{id} — cuánto lleva un proceso largo de esta misma cuenta (ver App\Support\Listados\Progreso). */
 class ProgresoController extends Controller
 {
     public function ver(Request $request, string $id)
