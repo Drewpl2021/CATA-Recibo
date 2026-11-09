@@ -427,6 +427,42 @@ export class GratificacionesListComponent implements OnInit {
   }
 
   bajandoZip = false;
+  exportando = false;
+
+  /** Lo que se ve en la tabla: los filtros, la situación y la búsqueda. */
+  private filasQueSeVen(): FilaGratificacion[] {
+    return this.tabla?.filaFiltradas ?? this.filasVisibles;
+  }
+
+  /** Hay algo que acota la lista: un filtro, la situación o la búsqueda. */
+  private hayFiltros(): boolean {
+    return !!this.situacion || Object.values(this.filtros).some((v) => !!v) || !!this.tabla?.busqueda.trim();
+  }
+
+  /** La lista en Excel, tal como se ve (con los filtros y la búsqueda). */
+  exportar(): void {
+    if (this.exportando || !this.datos) return;
+    const filtros: Record<string, string> = { ...this.filtros } as Record<string, string>;
+    if (this.situacion) filtros['situacion'] = this.situacion;
+    const busqueda = this.tabla?.busqueda.trim() ?? '';
+    if (busqueda) filtros['search'] = busqueda;
+    Object.keys(filtros).forEach((k) => { if (!filtros[k]) delete filtros[k]; });
+    const cuantos = this.filasQueSeVen().length;
+
+    this.exportando = true;
+    this.servicio.exportar(this.datos.anio, this.datos.periodo, filtros).subscribe({
+      next: (blob) => {
+        this.exportando = false;
+        const filtrado = Object.keys(filtros).length ? ' (filtrado)' : '';
+        guardarArchivo(blob, `Gratificación de ${this.datos?.periodo} ${this.datos?.anio}${filtrado}.xlsx`);
+        this.toast.success('Excel descargado', `${cuantos} trabajador(es)${filtrado ? ', con los filtros de la lista' : ''}.`);
+      },
+      error: (err) => {
+        this.exportando = false;
+        this.toast.error('No se descargó', mensajeErrorApi(err, 'No se pudo armar el Excel.'));
+      },
+    });
+  }
 
   /**
    * Las hojas de gratificación en un .zip: de los marcados o, sin marcados, de todo
@@ -434,6 +470,14 @@ export class GratificacionesListComponent implements OnInit {
    */
   bajarHojasEnZip(filas?: { id: string }[]): void {
     if (this.bajandoZip || !this.anio || !this.periodo) return;
+    // El botón de arriba (sin marcados): con filtros, solo lo que se ve.
+    if (!filas && this.hayFiltros()) {
+      filas = this.filasQueSeVen();
+      if (!filas.length) {
+        this.toast.info('Nada que bajar', 'Nadie cumple estos filtros.');
+        return;
+      }
+    }
     this.bajandoZip = true;
     this.servicio.bajarHojasEnZip(this.anio, this.periodo, filas?.map((f) => f.id)).subscribe({
       next: (cantidad) => {

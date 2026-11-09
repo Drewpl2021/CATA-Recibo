@@ -193,6 +193,11 @@ export class CtsService {
    * todos los que tienen hoja. Lo baja el navegador con un enlace firmado.
    * Devuelve cuántas hojas trae.
    */
+  /** La lista en Excel, con los mismos filtros que la pantalla (situacion, sede_id, area_id, cargo_id, search). */
+  exportar(anio: number, periodo: PeriodoCts, filtros: Record<string, string> = {}): Observable<Blob> {
+    return this.http.get(`${this.url}/export`, { params: { anio: String(anio), periodo, ...filtros }, responseType: 'blob' });
+  }
+
   bajarHojasEnZip(anio: number, periodo: PeriodoCts, ids?: string[]): Observable<number> {
     return this.http
       .post<ApiResponse<{ url: string; cantidad: number }>>(`${this.url}/zip/link`, { anio, periodo, ...(ids?.length ? { ids } : {}) })

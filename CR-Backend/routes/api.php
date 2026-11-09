@@ -313,6 +313,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('cts/deposit',                 [\App\Http\Controllers\CtsController::class, 'depositar']);
         Route::delete('cts/{liquidacion}/deposit', [\App\Http\Controllers\CtsController::class, 'anularDeposito'])->whereUuid('liquidacion');
         Route::match(['get', 'post'], 'cts/zip/link', [\App\Http\Controllers\CtsController::class, 'enlaceZip']);
+        Route::get('cts/export',                   [\App\Http\Controllers\CtsController::class, 'exportar']);
         Route::get('cts/{liquidacion}/sheet',      [\App\Http\Controllers\CtsController::class, 'hoja'])->whereUuid('liquidacion');
         Route::get('cts/{empleado}/history',       [\App\Http\Controllers\CtsController::class, 'historial'])->whereUuid('empleado');
         Route::put('cts/absences',                 [\App\Http\Controllers\CtsController::class, 'registrarFaltas']);
@@ -328,6 +329,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('bonuses/sign-here',         [\App\Http\Controllers\GratificacionController::class, 'firmarAqui'])->middleware('throttle:120,1');
         Route::get('bonuses/{empleado}/history', [\App\Http\Controllers\GratificacionController::class, 'historial'])->whereUuid('empleado');
         Route::match(['get', 'post'], 'bonuses/zip/link', [\App\Http\Controllers\GratificacionController::class, 'enlaceZip']);
+        Route::get('bonuses/export',             [\App\Http\Controllers\GratificacionController::class, 'exportar']);
         Route::get('bonuses/{empleado}/sheet',   [\App\Http\Controllers\GratificacionController::class, 'hoja'])->whereUuid('empleado');
     });
 

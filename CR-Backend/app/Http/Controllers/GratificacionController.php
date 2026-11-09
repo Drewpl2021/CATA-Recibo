@@ -21,6 +21,7 @@ use Illuminate\Validation\Rule;
  *   GET  /bonuses?anio=&periodo=              cada trabajador: lo que corresponde y lo que tiene su planilla
  *   GET  /bonuses/{empleado}/history          el semestre mes a mes, de sus planillas
  *   GET  /bonuses/{empleado}/sheet            la hoja de gratificación en PDF
+ *   GET  /bonuses/export                      la lista en Excel, con los filtros de la pantalla
  *   POST /bonuses/deliver                     dejar la hoja en el expediente de varios
  *   POST /bonuses/sign-here                   «Firmar aquí»: la firma digital del colegio en las hojas
  *
@@ -65,33 +66,7 @@ class GratificacionController extends Controller
     {
         [$anio, $periodo] = $this->periodoPedido($request);
         $semestre = MotorGratificacion::semestre($anio, $periodo);
-        $motor = new MotorGratificacion();
-        $hojas = $this->hojasDelSemestre($anio, $periodo)->get(['id', 'empleado_id', 'firma_colegio'])->keyBy('empleado_id');
-
-        $filas = $this->personalDelSemestre($anio, $periodo)->map(fn (Empleado $e) => (fn (array $c) => [
-            'id'        => $e->id,
-            'dni'       => $e->dni,
-            'nombre'    => trim("{$e->apellido} {$e->nombre}"),
-            'foto'      => $e->foto,
-            'apellido'  => $e->apellido,
-            'nombres'   => $e->nombre,
-            'cargo_id'  => $e->cargo_id,
-            'cargo'     => $e->cargo?->nombre,
-            'area_id'   => $e->area_id,
-            'area'      => $e->area?->nombre,
-            'sede_id'   => $e->sede_id,
-            'sede'      => $e->sede?->nombre,
-            'fecha_ingreso' => $e->fecha_ingreso,
-            'fecha_cese'    => $e->estado === 'inactivo' ? $e->fecha_cese : null,
-            ...$c,
-            // El del trabajador (activo/inactivo) y el de su gratificación, cada uno con su nombre.
-            'estado'       => $e->estado,
-            'estado_grati' => $c['estado'],
-            'documento_id' => $hojas->get($e->id)?->id,
-            // pendiente | parcial | completa; null si no hay hoja o no va por firma digital.
-            'firma_colegio' => $hojas->get($e->id)?->firma_colegio,
-        ])($motor->calcular($e, $anio, $periodo)))->values();
-
+        $filas = $this->filas($anio, $periodo);
         $conDerecho = $filas->where('aplica', true);
 
         return response()->json(['success' => true, 'data' => [
@@ -154,6 +129,108 @@ class GratificacionController extends Controller
                 ['firmadas' => $firmadas]),
         );
     }
+
+    /** Una fila por trabajador del semestre: lo que le corresponde, lo que tiene su planilla y su hoja. */
+    private function filas(int $anio, string $periodo): Collection
+    {
+        $motor = new MotorGratificacion();
+        $hojas = $this->hojasDelSemestre($anio, $periodo)->get(['id', 'empleado_id', 'firma_colegio'])->keyBy('empleado_id');
+
+        return $this->personalDelSemestre($anio, $periodo)->map(fn (Empleado $e) => (fn (array $c) => [
+            'id'        => $e->id,
+            'dni'       => $e->dni,
+            'nombre'    => trim("{$e->apellido} {$e->nombre}"),
+            'foto'      => $e->foto,
+            'apellido'  => $e->apellido,
+            'nombres'   => $e->nombre,
+            'cargo_id'  => $e->cargo_id,
+            'cargo'     => $e->cargo?->nombre,
+            'area_id'   => $e->area_id,
+            'area'      => $e->area?->nombre,
+            'sede_id'   => $e->sede_id,
+            'sede'      => $e->sede?->nombre,
+            'fecha_ingreso' => $e->fecha_ingreso,
+            'fecha_cese'    => $e->estado === 'inactivo' ? $e->fecha_cese : null,
+            ...$c,
+            // El del trabajador (activo/inactivo) y el de su gratificación, cada uno con su nombre.
+            'estado'       => $e->estado,
+            'estado_grati' => $c['estado'],
+            'documento_id' => $hojas->get($e->id)?->id,
+            // pendiente | parcial | completa; null si no hay hoja o no va por firma digital.
+            'firma_colegio' => $hojas->get($e->id)?->firma_colegio,
+        ])($motor->calcular($e, $anio, $periodo)))->values();
+    }
+
+    /**
+     * GET /bonuses/export — la lista del semestre en Excel, con los mismos
+     * filtros que la pantalla (situación, sede, área, cargo y búsqueda): lo
+     * que corresponde, lo que tiene su planilla, la diferencia y su hoja.
+     */
+    public function exportar(Request $request)
+    {
+        [$anio, $periodo] = $this->periodoPedido($request);
+        $f = $request->validate(self::REGLAS_FILTRO + [
+            'situacion' => 'nullable|in:pagada,por_pagar,diferencia,no_corresponde,trunca',
+        ]);
+        $todas = $this->filas($anio, $periodo);
+        $filas = \App\Support\FiltroDeLista::aplicar($todas, $f, fn (array $x, string $s) => $s === 'trunca' ? (bool) $x['trunca'] : $x['estado_grati'] === $s);
+
+        $estados = ['pagada' => 'Pagada', 'por_pagar' => 'Por pagar', 'diferencia' => 'Con diferencia', 'no_corresponde' => 'No corresponde'];
+        $firma = ['pendiente' => 'Por firmar', 'parcial' => 'Una firma de dos', 'completa' => 'Firmada y entregada'];
+        $titulo = 'Gratificación de ' . $periodo . ' ' . $anio;
+        $fecha = fn ($d) => $d ? \Carbon\Carbon::parse($d)->format('d/m/Y') : '';
+
+        $hoja = [
+            [$titulo],
+            [\App\Support\FiltroDeLista::describir($f, $todas, ['trunca' => 'Truncas (cesaron)'] + $estados) . ' · ' . $filas->count() . ' de ' . $todas->count() . ' trabajador(es)'],
+            [''],
+            ['N°', 'DNI', 'Apellidos y nombres', 'Cargo', 'Área', 'Sede', 'Estado', 'Ingreso', 'Cese', 'Meses',
+                'Sueldo', 'Asignación familiar', 'Bonificación por cargo', 'Remuneración computable',
+                'Gratificación', 'Bonificación 9%', 'Le corresponde', 'En su planilla', 'Diferencia', 'Situación', 'Hoja'],
+        ];
+        foreach ($filas->values() as $n => $x) {
+            $hoja[] = [$n + 1, (string) $x['dni'], $x['nombre'], $x['cargo'], $x['area'], $x['sede'],
+                $x['estado'] === 'activo' ? 'Activo' : 'Cesado', $fecha($x['fecha_ingreso']), $fecha($x['fecha_cese']),
+                $x['aplica'] ? $x['meses'] : null,
+                $x['aplica'] ? $x['sueldo'] : null, $x['aplica'] ? $x['asignacion_familiar'] : null, $x['aplica'] ? $x['bonificacion_cargo'] : null,
+                $x['aplica'] ? $x['remuneracion_computable'] : null,
+                $x['aplica'] ? $x['gratificacion'] : null, $x['aplica'] ? $x['bonificacion_extraordinaria'] : null, $x['aplica'] ? $x['total'] : null,
+                $x['pagado_total'], $x['diferencia'],
+                ($estados[$x['estado_grati']] ?? $x['estado_grati']) . ($x['trunca'] ? ' (trunca)' : ''),
+                $x['firma_colegio'] ? $firma[$x['firma_colegio']] : ($x['documento_id'] ? 'Entregada' : '')];
+        }
+        $montos = [10, 11, 12, 13, 14, 15, 16, 17, 18];
+        $total = array_fill(0, 21, '');
+        $total[2] = 'TOTAL';
+        foreach ([14 => 'gratificacion', 15 => 'bonificacion_extraordinaria', 16 => 'total'] as $c => $campo) {
+            $total[$c] = round($filas->where('aplica', true)->sum($campo), 2);
+        }
+        $total[17] = round($filas->sum('pagado_total'), 2);
+        $total[18] = round($filas->sum('diferencia'), 2);
+        $hoja[] = $total;
+
+        $estiloTotal = array_fill(0, 21, \App\Support\LibroExcel::TOTAL_TEXTO);
+        foreach ($montos as $c) {
+            $estiloTotal[$c] = \App\Support\LibroExcel::TOTAL_MONTO;
+        }
+        $libro = new \App\Support\LibroExcel();
+        $libro->hoja('Gratificación', $hoja, [
+            'anchos' => [6, 12, 36, 26, 22, 18, 10, 12, 12, 8, 12, 12, 12, 14, 13, 13, 14, 14, 12, 18, 20],
+            'estiloColumnas' => [1 => \App\Support\LibroExcel::TEXTO] + array_fill_keys($montos, \App\Support\LibroExcel::MONTO),
+            'estiloFilas' => [0 => \App\Support\LibroExcel::ENCABEZADO, 1 => \App\Support\LibroExcel::PARRAFO,
+                3 => array_fill(0, 21, \App\Support\LibroExcel::TITULO), count($hoja) - 1 => $estiloTotal],
+        ]);
+
+        return $libro->descargar($titulo . (array_filter($f) ? ' (filtrado)' : '') . '.xlsx');
+    }
+
+    /** Los filtros de la lista que también entiende el Excel. */
+    private const REGLAS_FILTRO = [
+        'sede_id'  => 'nullable|string|max:64',
+        'area_id'  => 'nullable|string|max:64',
+        'cargo_id' => 'nullable|string|max:64',
+        'search'   => 'nullable|string|max:100',
+    ];
 
     /** El semestre mes a mes (ver MotorGratificacion::historial). */
     public function historial(Request $request, string $empleado)

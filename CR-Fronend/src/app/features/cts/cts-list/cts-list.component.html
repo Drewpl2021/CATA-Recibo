@@ -6,9 +6,14 @@
   [cargandoCifras]="refrescando"
 >
   <button headerActions type="button" class="btn-secondary" (click)="bajarHojasEnZip()" [disabled]="bajandoZip || !datos"
-    appPista="Todas las hojas de CTS de este periodo en un solo archivo .zip, para imprimirlas o archivarlas.">
+    appPista="Las hojas de CTS de lo que ves en la lista (con los filtros y la búsqueda), en un solo archivo .zip, para imprimirlas o archivarlas.">
     <app-icon icono="download" [tamano]="16"></app-icon>
     {{ bajandoZip ? 'Preparando…' : 'Descargar hojas (.zip)' }}
+  </button>
+  <button headerActions type="button" class="btn-exportar" (click)="exportar()" [disabled]="exportando || !datos"
+    appPista="La lista como se ve (con los filtros y la búsqueda): remuneración computable, tiempo, CTS, depósito, cuenta y su hoja.">
+    <app-icon icono="excel" [tamano]="16"></app-icon>
+    {{ exportando ? 'Generando…' : 'Descargar Excel' }}
   </button>
 </app-page-header>
 

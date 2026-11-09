@@ -25,6 +25,7 @@ use Illuminate\Validation\Rule;
  *   POST   /cts/deposit                 registrar el depósito de una o varias (con su hoja en el expediente)
  *   DELETE /cts/{liquidacion}/deposit   deshacer un depósito registrado por error
  *   GET    /cts/{liquidacion}/sheet     la hoja de liquidación en PDF
+ *   GET    /cts/export                  la lista en Excel, con los filtros de la pantalla
  *   GET    /cts/{empleado}/history      lo que ganó mes por mes en el semestre, de sus planillas
  *   PUT    /cts/absences                anotar sus días de falta injustificada del semestre
  *   PUT    /cts/absences/batch          los de varios a la vez, como la columna de la hoja de RR.HH.
@@ -99,6 +100,71 @@ class CtsController extends Controller
             // Cómo va la firma digital del colegio en las hojas de este depósito.
             'firma'   => FirmaDelColegio::resumen($request, $this->hojasDelDeposito($anio, $periodo)),
         ]]);
+    }
+
+    /**
+     * GET /cts/export — la lista del depósito en Excel, con los mismos filtros
+     * que la pantalla (situación, sede, área, cargo y búsqueda): la
+     * remuneración computable desglosada, el tiempo, la CTS, el depósito con
+     * su cuenta y cómo va la firma de su hoja.
+     */
+    public function exportar(Request $request)
+    {
+        [$anio, $periodo] = $this->periodoPedido($request);
+        $f = $request->validate([
+            'situacion' => 'nullable|in:por_calcular,calculada,depositada,sin_derecho',
+            'sede_id'   => 'nullable|string|max:64',
+            'area_id'   => 'nullable|string|max:64',
+            'cargo_id'  => 'nullable|string|max:64',
+            'search'    => 'nullable|string|max:100',
+        ]);
+        $todas = $this->filas($anio, $periodo);
+        $filas = \App\Support\FiltroDeLista::aplicar($todas, $f, fn (array $x, string $s) => $x['estado_cts'] === $s);
+
+        $estados = ['por_calcular' => 'Por calcular', 'calculada' => 'Por depositar', 'depositada' => 'Depositada', 'sin_derecho' => 'Sin CTS'];
+        $firma = ['pendiente' => 'Por firmar', 'parcial' => 'Una firma de dos', 'completa' => 'Firmada y entregada'];
+        $titulo = "CTS - depósito de {$periodo} {$anio}";
+        $fecha = fn ($d) => $d ? \Carbon\Carbon::parse($d)->format('d/m/Y') : '';
+
+        $hoja = [
+            [$titulo],
+            [\App\Support\FiltroDeLista::describir($f, $todas, $estados) . ' · ' . $filas->count() . ' de ' . $todas->count() . ' trabajador(es)'],
+            [''],
+            ['N°', 'DNI', 'Apellidos y nombres', 'Cargo', 'Área', 'Sede', 'Estado', 'Ingreso',
+                'Sueldo', 'Asignación familiar', 'Bonificación por cargo', '1/6 gratificación', 'Remuneración computable',
+                'Meses', 'Días', 'Días no laborados', 'CTS', 'Situación', 'Fecha de depósito', 'Entidad CTS', 'N° de cuenta CTS', 'Hoja'],
+        ];
+        foreach ($filas->values() as $n => $x) {
+            $aplica = (bool) $x['aplica'];
+            $hoja[] = [$n + 1, (string) $x['dni'], $x['nombre'], $x['cargo'], $x['area'], $x['sede'],
+                $x['estado'] === 'activo' ? 'Activo' : 'Cesado', $fecha($x['fecha_ingreso']),
+                $aplica ? $x['sueldo'] : null, $aplica ? $x['asignacion_familiar'] : null, $aplica ? $x['bonificacion_cargo'] : null,
+                $aplica ? $x['sexto_gratificacion'] : null, $aplica ? $x['remuneracion_computable'] : null,
+                $aplica ? $x['meses'] : null, $aplica ? $x['dias'] : null, $aplica ? ($x['faltas'] ?: null) : null,
+                $aplica ? $x['monto'] : null,
+                $estados[$x['estado_cts']] ?? $x['estado_cts'], $fecha($x['fecha_deposito']),
+                $x['entidad_financiera'] ?: $x['entidad_ficha'], (string) ($x['numero_cuenta'] ?: $x['cuenta_ficha']),
+                $x['firma_colegio'] ? $firma[$x['firma_colegio']] : ''];
+        }
+        $montos = [8, 9, 10, 11, 12, 16];
+        $total = array_fill(0, 22, '');
+        $total[2] = 'TOTAL';
+        $total[16] = round($filas->where('aplica', true)->sum('monto'), 2);
+        $hoja[] = $total;
+
+        $estiloTotal = array_fill(0, 22, \App\Support\LibroExcel::TOTAL_TEXTO);
+        foreach ($montos as $c) {
+            $estiloTotal[$c] = \App\Support\LibroExcel::TOTAL_MONTO;
+        }
+        $libro = new \App\Support\LibroExcel();
+        $libro->hoja('CTS', $hoja, [
+            'anchos' => [6, 12, 36, 26, 22, 18, 10, 12, 12, 12, 12, 12, 14, 8, 8, 10, 13, 15, 13, 18, 22, 20],
+            'estiloColumnas' => [1 => \App\Support\LibroExcel::TEXTO, 20 => \App\Support\LibroExcel::TEXTO] + array_fill_keys($montos, \App\Support\LibroExcel::MONTO),
+            'estiloFilas' => [0 => \App\Support\LibroExcel::ENCABEZADO, 1 => \App\Support\LibroExcel::PARRAFO,
+                3 => array_fill(0, 22, \App\Support\LibroExcel::TITULO), count($hoja) - 1 => $estiloTotal],
+        ]);
+
+        return $libro->descargar($titulo . (array_filter($f) ? ' (filtrado)' : '') . '.xlsx');
     }
 
     /** Las hojas de un depósito que están en el expediente. */
