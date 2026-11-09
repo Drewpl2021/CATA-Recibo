@@ -89,6 +89,12 @@ export function antiguedad(desde: string | null | undefined, hasta?: string | nu
   return `${partesAnios} y ${partesMeses}`;
 }
 
+/** El año de la dirección (?anio=2026), si es uno que el servidor acepta. */
+export function anioDeLaDireccion(valor: string | null): number | null {
+  const anio = Number(valor);
+  return Number.isInteger(anio) && anio >= 2000 && anio <= 2100 ? anio : null;
+}
+
 /**
  * Cuántos días de lunes a viernes tiene un mes: los que se le pagan a quien
  * trabaja el mes entero. Es la misma regla del backend

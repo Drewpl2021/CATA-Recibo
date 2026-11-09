@@ -4,6 +4,8 @@ export * from './entity-data.service';
 export * from './error-api';
 export * from './fecha';
 export * from './clave-segura';
+export * from './correo';
+export * from './cuentas';
 export * from './guardar-archivo';
 export * from './documentos';
 export * from './descarga-por-enlace';

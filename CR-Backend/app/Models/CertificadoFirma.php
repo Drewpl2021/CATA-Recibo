@@ -61,7 +61,7 @@ class CertificadoFirma extends Model
      * Si la APP_KEY cambia (otra instalación), el archivo ya no se puede
      * abrir: la persona vuelve a poner su certificado y listo.
      */
-    public static function cifrar(string $pfx): string
+    public static function cifrar(#[\SensitiveParameter] string $pfx): string
     {
         $iv = random_bytes(12);
         $cifrado = openssl_encrypt($pfx, 'aes-256-gcm', self::llave(), OPENSSL_RAW_DATA, $iv, $etiqueta);

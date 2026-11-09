@@ -8,11 +8,12 @@ use App\Models\Documento;
 use App\Models\Empleado;
 use App\Models\Notificacion;
 use App\Models\Planilla;
-use App\Support\FirmaDigitalDeBoletas;
-use App\Support\CertificadoDigital;
-use App\Support\FirmaDigitalPdf;
-use App\Support\FirmadorPdf;
-use App\Support\LibroExcel;
+use App\Support\Firma\FirmaDelColegio;
+use App\Support\Firma\FirmaDigitalDeBoletas;
+use App\Support\Firma\CertificadoDigital;
+use App\Support\Firma\FirmaDigitalPdf;
+use App\Support\Firma\FirmadorPdf;
+use App\Support\Listados\LibroExcel;
 use App\Support\Meses;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -21,7 +22,7 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * Las boletas firmadas digitalmente por el colegio, de vuelta al sistema.
- * Ver App\Support\FirmaDigitalDeBoletas para el camino completo.
+ * Ver App\Support\Firma\FirmaDigitalDeBoletas para el camino completo.
  *
  *   GET  /payslips/signed/summary   cómo va la firma del mes
  *   POST /payslips/signed/check     revisa UN archivo y dice qué pasaría (no guarda)
@@ -45,69 +46,19 @@ class BoletasFirmadasController extends Controller
     {
         $datos = $request->validate(['mes' => 'required|integer|min:1|max:12', 'anio' => 'required|integer|min:2000']);
 
-        $boletas = Documento::where('tipo', 'boleta')
-            ->whereHas('planilla', fn ($q) => $q->where('mes', (int) $datos['mes'])->where('anio', (int) $datos['anio']))
-            ->get(['id', 'firma_colegio', 'estado_firma']);
-        $digitales = $boletas->whereNotNull('firma_colegio');
+        $boletas = $this->delMes((int) $datos['mes'], (int) $datos['anio']);
 
         return response()->json(['success' => true, 'data' => [
-            'activa'      => FirmaDigitalDeBoletas::activa(),
-            'requeridas'  => FirmaDigitalDeBoletas::requeridas(),
-            'emitidas'    => $boletas->count(),
-            'por_firmar'  => $digitales->where('firma_colegio', 'pendiente')->count(),
-            'a_medias'    => $digitales->where('firma_colegio', 'parcial')->count(),
-            'entregadas'  => $digitales->where('firma_colegio', 'completa')->count(),
-            'conformidad' => $digitales->where('firma_colegio', 'completa')->where('estado_firma', 'firmado')->count(),
-            'sin_firma_digital' => $boletas->whereNull('firma_colegio')->count(),
-            'mi_certificado' => $this->miCertificado($request, (int) $datos['mes'], (int) $datos['anio']),
-        ]]);
+            'activa'            => FirmaDigitalDeBoletas::activa(),
+            'sin_firma_digital' => (clone $boletas)->whereNull('firma_colegio')->count(),
+        ] + FirmaDelColegio::resumen($request, $boletas)]);
     }
 
-    /**
-     * Para «Firmar aquí»: el certificado de quien mira, y cuántas boletas del
-     * mes le faltan SU firma (las que ya firmó no cuentan).
-     */
-    private function miCertificado(Request $request, int $mes, int $anio): ?array
+    /** Las boletas emitidas de un mes. */
+    private function delMes(int $mes, int $anio): \Illuminate\Database\Eloquent\Builder
     {
-        $certificado = CertificadoFirma::activoDe($request->user());
-        if (! $certificado) {
-            return null;
-        }
-
-        return $certificado->resumen() + [
-            'por_firmar' => $this->esperanMiFirma($certificado, $mes, $anio)->count(),
-        ];
-    }
-
-    /**
-     * Los ids de las boletas del mes que esperan la firma del colegio y no
-     * tienen la de este certificado, en orden (el orden es el que siguen las
-     * tandas de «Firmar aquí»).
-     *
-     * Solo trae el id y quién firmó: con mil trabajadores son mil filas
-     * livianas. Quién firmó se mira aquí y no en SQL porque va en un JSON, y
-     * la búsqueda dentro de un JSON no es igual en MySQL que en SQLite (el
-     * de las pruebas).
-     *
-     * @return \Illuminate\Support\Collection<int, string>
-     */
-    private function esperanMiFirma(CertificadoFirma $certificado, int $mes, int $anio)
-    {
-        return Documento::query()
-            ->where('tipo', 'boleta')
-            ->whereIn('firma_colegio', Documento::FIRMA_COLEGIO_EN_CURSO)
-            ->whereHas('planilla', fn ($q) => $q->where('mes', $mes)->where('anio', $anio))
-            ->orderBy('id')
-            ->get(['id', 'firmas_colegio'])
-            ->reject(fn (Documento $d) => $this->yaLaFirmo($d, $certificado->dni, $certificado->nombre))
-            ->pluck('id')
-            ->values();
-    }
-
-    private function yaLaFirmo(Documento $documento, ?string $dni, string $nombre): bool
-    {
-        return collect($documento->firmas_colegio ?? [])
-            ->contains(fn ($f) => $dni ? ($f['dni'] ?? null) === $dni : ($f['nombre'] ?? null) === $nombre);
+        return Documento::where('tipo', 'boleta')
+            ->whereHas('planilla', fn ($q) => $q->where('mes', $mes)->where('anio', $anio));
     }
 
     /**
@@ -135,138 +86,24 @@ class BoletasFirmadasController extends Controller
     public function firmarAqui(Request $request)
     {
         $datos = $request->validate([
-            'mes'    => 'required|integer|min:1|max:12',
-            'anio'   => 'required|integer|min:2000',
-            'clave'  => 'required|string|max:200',
-            'desde'  => 'nullable|string|max:40',
-            'limite' => 'nullable|integer|min:1|max:50',
-        ], ['clave.required' => 'Escribe la clave de tu certificado.']);
-        $mes = (int) $datos['mes'];
-        $anio = (int) $datos['anio'];
-        $periodo = Meses::nombre($mes) . " {$anio}";
-        $desde = $datos['desde'] ?? null;
-        $limite = (int) ($datos['limite'] ?? 25);
+            'mes'  => 'required|integer|min:1|max:12',
+            'anio' => 'required|integer|min:2000',
+        ]);
+        $periodo = Meses::nombre((int) $datos['mes']) . " {$datos['anio']}";
 
-        $certificado = CertificadoFirma::activoDe($request->user());
-        if (! $certificado) {
-            return response()->json(['success' => false, 'message' => 'Todavía no pusiste tu certificado digital: hazlo en Ajustes del sistema → Boletas.'], 422);
-        }
-        if ($certificado->vencido()) {
-            return response()->json(['success' => false, 'message' => 'Tu certificado venció el ' . $certificado->valido_hasta->format('d/m/Y') . ': renuévalo y ponlo de nuevo en Ajustes.'], 422);
-        }
-
-        // Contra adivinar la clave: 5 intentos fallidos y 15 minutos de espera.
-        // Las tandas buenas no cuentan; solo la clave equivocada.
-        $intentos = 'clave-certificado:' . $request->user()->id;
-        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($intentos, 5)) {
-            $minutos = (int) ceil(\Illuminate\Support\Facades\RateLimiter::availableIn($intentos) / 60);
-            return response()->json(['success' => false, 'message' => "Pusiste mal la clave varias veces. Espera {$minutos} minuto(s) y vuelve a intentarlo."], 429);
-        }
-        try {
-            $llaves = CertificadoDigital::abrir($certificado->archivo(), $datos['clave']);
-        } catch (\App\Exceptions\AvisoParaElUsuario $e) {
-            if (str_contains($e->getMessage(), 'clave')) {
-                \Illuminate\Support\Facades\RateLimiter::hit($intentos, 15 * 60);
-            }
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
-        }
-        \Illuminate\Support\Facades\RateLimiter::clear($intentos);
-
-        $pendientes = $this->esperanMiFirma($certificado, $mes, $anio);
-        if ($pendientes->isEmpty() && $desde === null) {
-            return response()->json(['success' => false, 'message' => "No hay boletas de {$periodo} esperando tu firma."], 422);
-        }
-        $porHacer = $desde === null ? $pendientes : $pendientes->filter(fn ($id) => strcmp($id, $desde) > 0)->values();
-        $lote = $porHacer->take($limite)->values();
-        $documentos = Documento::with('planilla', 'empleado')->whereIn('id', $lote)->orderBy('id')->get();
-
-        $requeridas = FirmaDigitalDeBoletas::requeridas();
-        $quien = mb_substr((string) $request->user()->name, 0, 100);
-        $cuenta = ['firmadas' => 0, 'entregadas' => 0, 'a_medias' => 0];
-        $errores = [];
-
-        foreach ($documentos as $documento) {
-            $trabajador = trim("{$documento->empleado?->apellido} {$documento->empleado?->nombre}");
-            try {
-                $estado = DB::transaction(function () use ($documento, $llaves, $certificado, $requeridas, $quien) {
-                    // Otra pestaña pudo firmarla mientras tanto: se vuelve a mirar, con candado.
-                    $actual = Documento::with('planilla', 'empleado')->lockForUpdate()->findOrFail($documento->id);
-                    if (! in_array($actual->firma_colegio, Documento::FIRMA_COLEGIO_EN_CURSO, true)
-                        || $this->yaLaFirmo($actual, $certificado->dni, $certificado->nombre)) {
-                        return null;
-                    }
-
-                    $pdf = Storage::disk('local')->get($actual->archivo);
-                    if ($pdf === null) {
-                        throw new \App\Exceptions\AvisoParaElUsuario('No se encontró su PDF: vuelve a emitirla.');
-                    }
-                    $firmado = FirmadorPdf::firmar($pdf, $llaves['certificado'], $llaves['llave'], $llaves['cadena'], [
-                        'nombre' => $llaves['nombre'],
-                        'motivo' => 'Boleta de pago ' . $actual->planilla?->numeroDeBoleta(),
-                        'lugar'  => 'Juliaca, Perú',
-                    ]);
-
-                    // La misma revisión que a una subida: si no cuadra, no se guarda.
-                    $firmas = FirmaDigitalPdf::firmas($firmado);
-                    $ultima = end($firmas);
-                    if (! $firmas || collect($firmas)->contains(fn ($f) => ! $f['valida']) || ! $ultima['cubre_hasta_el_final']) {
-                        throw new \App\Exceptions\AvisoParaElUsuario('La firma no salió bien: no se guardó.');
-                    }
-                    $distintas = collect($firmas)->unique(fn ($f) => $f['dni'] ?? $f['nombre'])->values();
-                    $estado = $distintas->count() >= $requeridas ? 'completa' : 'parcial';
-
-                    $this->guardarFirmada(
-                        $actual,
-                        $firmado,
-                        $distintas->map(fn ($f) => ['nombre' => $f['nombre'], 'dni' => $f['dni'], 'fecha' => $f['fecha'], 'emisor' => $f['emisor']])->all(),
-                        $estado,
-                        $quien
-                    );
-
-                    return $estado;
-                });
-
-                if ($estado !== null) {
-                    $cuenta['firmadas']++;
-                    $cuenta[$estado === 'completa' ? 'entregadas' : 'a_medias']++;
-                    if ($estado === 'completa') {
-                        app(BoletaController::class)->avisarBoletaLista(
-                            $documento->empleado, (int) $documento->planilla->mes, (int) $documento->planilla->anio,
-                            $documento->planilla->numeroDeBoleta(), $documento->id
-                        );
-                    }
-                }
-            } catch (\Throwable $e) {
-                report($e);
-                $errores[] = [
-                    'trabajador' => $trabajador,
-                    'numero'     => $documento->planilla?->numeroDeBoleta(),
-                    'mensaje'    => $e instanceof \App\Exceptions\AvisoParaElUsuario ? $e->getMessage() : 'No se pudo firmar: vuelve a intentarlo.',
-                ];
-            }
-        }
-
-        if ($cuenta['firmadas'] > 0) {
-            Auditoria::registrar(
-                'firmó',
-                'boleta',
-                null,
-                "Firmó desde el sistema {$cuenta['firmadas']} boleta(s) de {$periodo} con su certificado ({$certificado->nombre})"
-                    . ($cuenta['entregadas'] ? ": {$cuenta['entregadas']} ya se entregaron" : '')
-                    . ($cuenta['a_medias'] ? ", {$cuenta['a_medias']} esperan la otra firma" : '')
-                    . ($errores ? ', ' . count($errores) . ' no se pudieron firmar' : '') . '.',
-                ['certificado' => $certificado->id, 'firmadas' => $cuenta['firmadas'], 'errores' => count($errores)]
-            );
-        }
-
-        return response()->json(['success' => true, 'data' => $cuenta + [
-            'errores'    => $errores,
-            // Para la barra: cuántas faltaban al empezar esta tanda y cuántas vio.
-            'total'      => $porHacer->count(),
-            'procesadas' => $lote->count(),
-            // La tanda que sigue empieza después de esta; null si ya no hay.
-            'siguiente'  => $porHacer->count() > $lote->count() ? $lote->last() : null,
-        ]]);
+        return FirmaDelColegio::firmarTanda(
+            $request,
+            $this->delMes((int) $datos['mes'], (int) $datos['anio']),
+            "boletas de {$periodo}",
+            fn (Documento $d) => 'Boleta de pago ' . $d->planilla?->numeroDeBoleta(),
+            fn (Documento $d) => app(BoletaController::class)->avisarBoletaLista(
+                $d->empleado, (int) $d->planilla->mes, (int) $d->planilla->anio, $d->planilla->numeroDeBoleta(), $d->id
+            ),
+            fn (Documento $d) => $d->planilla?->numeroDeBoleta(),
+            fn (int $firmadas, string $detalle) => Auditoria::registrar('firmó', 'boleta', null,
+                "Firmó desde el sistema {$firmadas} boleta(s) de {$periodo} con su certificado ({$detalle}).",
+                ['firmadas' => $firmadas]),
+        );
     }
 
     public function revisar(Request $request)
@@ -288,7 +125,7 @@ class BoletasFirmadasController extends Controller
         $planilla = $documento->planilla;
         $empleado = $documento->empleado;
 
-        DB::transaction(fn () => $this->guardarFirmada(
+        DB::transaction(fn () => FirmaDelColegio::guardarFirmada(
             $documento, $contenido, $firmas, $resultado['resultado'], mb_substr((string) $request->user()?->name, 0, 100)
         ));
 
@@ -334,15 +171,18 @@ class BoletasFirmadasController extends Controller
         $nombre = trim("{$documento->empleado?->apellido} {$documento->empleado?->nombre}");
         $numero = $documento->planilla?->numeroDeBoleta();
 
-        DB::transaction(function () use ($documento) {
-            foreach (array_filter([$documento->archivo, $documento->archivo_sin_firma]) as $archivo) {
-                Storage::disk('local')->delete($archivo);
-            }
+        $archivos = array_filter([$documento->archivo, $documento->archivo_sin_firma]);
+
+        DB::transaction(function () use ($documento, $id, $numero, $nombre) {
             Notificacion::where('documento_id', $documento->id)->delete();
             $documento->delete();
+            Auditoria::registrar('borró', 'boleta', $id, "Anuló la boleta {$numero} de {$nombre} para volver a emitirla.");
         });
 
-        Auditoria::registrar('borró', 'boleta', $id, "Anuló la boleta {$numero} de {$nombre} para volver a emitirla.");
+        // Al final: un archivo borrado no vuelve si la base falla.
+        foreach ($archivos as $archivo) {
+            Storage::disk('local')->delete($archivo);
+        }
 
         return response()->json(['success' => true, 'message' => "Boleta {$numero} anulada: ya puedes corregir su planilla y volver a emitirla."]);
     }
@@ -422,30 +262,6 @@ class BoletasFirmadasController extends Controller
     // ─────────────────────────────────────────────────────────────
 
     /**
-     * Guarda la boleta firmada y su estado: lo mismo venga de una subida
-     * (ReFirma) o de «Firmar aquí». Va dentro de la transacción de quien llama.
-     */
-    private function guardarFirmada(Documento $documento, string $contenido, array $firmas, string $estado, string $quien): void
-    {
-        $planilla = $documento->planilla;
-        $empleado = $documento->empleado;
-        $ruta = "documentos/{$empleado->id}/boletas/boleta_{$empleado->dni}_{$planilla->mes}_{$planilla->anio}_firmada.pdf";
-
-        Storage::disk('local')->put($ruta, $contenido);
-
-        $documento->forceFill([
-            // El que emitió el sistema se guarda: contra él se compara la
-            // próxima subida (la segunda firma, por ejemplo).
-            'archivo_sin_firma'        => $documento->archivo_sin_firma ?? $documento->archivo,
-            'archivo'                  => $ruta,
-            'firmas_colegio'           => $firmas,
-            'firma_colegio'            => $estado,
-            'firma_colegio_subida_por' => $quien,
-            'firma_colegio_completa_en' => $estado === 'completa' ? now() : null,
-        ])->save();
-    }
-
-    /**
      * Revisa un archivo de punta a punta. Nunca guarda: lo usan la revisión
      * y el guardado, así que los dos dicen lo mismo.
      *
@@ -521,6 +337,9 @@ class BoletasFirmadasController extends Controller
         }
         if ($documento->firma_colegio === null) {
             return $falla('no_aplica', 'Esta boleta se emitió sin firma digital del colegio: ya se le entregó al trabajador como siempre.');
+        }
+        if ($documento->firma_colegio === 'completa') {
+            return $falla('sin_cambios', 'Esta boleta ya tiene todas sus firmas y ya se le entregó al trabajador: no hay nada nuevo que guardar.');
         }
 
         // La misma boleta que emitió el sistema, sin cambios: firmar solo

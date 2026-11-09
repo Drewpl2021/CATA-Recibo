@@ -4,7 +4,13 @@
   [subtitulo]="'Hola ' + userName + '. Acá están tus boletas de pago: revísalas y da tu conformidad.'"
   [cifras]="cifras"
   [cargandoCifras]="cargando"
-></app-page-header>
+>
+  <button headerActions type="button" class="btn-secondary" (click)="abrirJuntar()" [disabled]="!boletas.length && !hojas.length"
+    appPista="Baja varias de tus boletas y hojas del año juntas: en un .zip o en un solo PDF para imprimir.">
+    <app-icon icono="download" [tamano]="16"></app-icon>
+    Descargar varias
+  </button>
+</app-page-header>
 
 <section class="panel-filtros">
   <div class="panel-filtros__campos panel-filtros__campos--compacto">
@@ -45,6 +51,32 @@
   [mensajeVacio]="'Todavía no tienes boletas emitidas del ' + anioElegido + '.'"
 ></app-data-table>
 
+<!-- Sus hojas de CTS y de gratificación: le llegan aquí cuando el colegio ya las firmó. -->
+@if (hojas.length) {
+  <section class="mis-hojas">
+  <div class="mis-hojas__titulos">
+    <h2 class="seccion-form__titulo">Hojas de CTS y gratificación del {{ anioElegido }}</h2>
+    <span class="form-ayuda">Ya vienen firmadas digitalmente por el colegio. Revísalas y da tu conformidad; después las puedes descargar.</span>
+  </div>
+  <app-data-table
+    entidad="esta hoja"
+    [columnas]="columnasHojas"
+    [datos]="hojas"
+    [cargando]="cargandoHojas"
+    [numerarFilas]="true"
+    [mostrarBuscador]="false"
+    [acciones]="[]"
+    [accionesPersonalizadas]="accionesHojas"
+    (accionPersonalizada)="alAccionarHoja($event)"
+  >
+    <ng-template appCelda="documento" let-h>
+      <strong>{{ h.documento }}</strong>
+      <div class="form-ayuda">{{ h.periodo }}</div>
+    </ng-template>
+  </app-data-table>
+  </section>
+}
+
 <!-- Visor de la boleta en PDF -->
 @if (showPdfModal) {
   <div class="pdf-modal-overlay" appAlCuerpo (click)="closePdfModal()">
@@ -52,13 +84,13 @@
       <div class="pdf-modal-header">
         <h3>{{ pdfBoletaName }}</h3>
         <div style="display: flex; gap: 12px; align-items: center;">
-          @if (!boletaAbierta?.firmado && !boletaAbierta?.enPapel) {
-            <span class="form-ayuda">Fírmala y podrás descargarla.</span>
+          @if (!sePuedeBajar) {
+            <span class="form-ayuda">Da tu conformidad y podrás descargarla.</span>
           }
           @if (boletaAbierta?.enPapel) {
             <span class="form-ayuda">De registro: ya la firmaste en papel.</span>
           }
-          @if (boletaAbierta?.firmado || boletaAbierta?.enPapel) {
+          @if (sePuedeBajar) {
             <button class="btn-primary" (click)="descargarPdfDirecto()">
               <app-icon icono="download" [tamano]="16"></app-icon>
               Descargar
@@ -96,25 +128,72 @@
   (cancelar)="closeSignModal()"
   >
   <div class="form-fields">
-    @if (boletaAFirmar?.firmadaPorElColegio) {
+    @if (boletaAFirmar?.firmadaPorElColegio || hojaAFirmar) {
       <p class="form-nota">
-        Tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong> ya viene firmada
+        <strong>{{ queFirma.charAt(0).toUpperCase() + queFirma.slice(1) }}</strong> ya viene firmada
         digitalmente por el colegio. Para confirmar que la recibiste, escribe la contraseña con la que entras
-        al sistema. Queda registrado con la fecha y la hora; tu boleta no cambia.
+        al sistema. Queda registrado con la fecha y la hora; el documento no cambia.
       </p>
     } @else {
       <p class="form-nota">
-        Para confirmar que recibiste tu boleta de <strong>{{ boletaAFirmar?.mes }} {{ boletaAFirmar?.anio }}</strong>,
+        Para confirmar que recibiste <strong>{{ queFirma }}</strong>,
         escribe la contraseña con la que entras al sistema. Queda registrado con la fecha y la hora.
       </p>
     }
     <div class="form-group">
       <label for="passwordFirma">Contraseña</label>
       <input id="passwordFirma" type="password" class="form-control" [(ngModel)]="signPassword"
-        placeholder="Tu contraseña" autocomplete="current-password" (keyup.enter)="confirmarFirma()" />
+        placeholder="Ingrese su contraseña" autocomplete="current-password" (keyup.enter)="confirmarFirma()" />
         @if (signErrorMsg) {
           <small class="form-error">{{ signErrorMsg }}</small>
         }
       </div>
     </div>
   </app-form-modal>
+
+<!-- Varias juntas: .zip con cada una firmada, o un solo PDF para leer o imprimir. -->
+<app-form-modal
+  [(visible)]="modalJuntar"
+  [titulo]="'Descargar varias del ' + anioElegido"
+  [textoGuardar]="juntando ? 'Preparando…' : 'Descargar ' + cuantasMarcadas"
+  [guardando]="juntando"
+  (guardar)="juntar()"
+  (cancelar)="modalJuntar = false"
+  ancho="560px"
+  >
+  <div class="form-fields">
+    <div class="form-group">
+      <label>Formato</label>
+      <div class="juntar-formatos" role="radiogroup" aria-label="Formato">
+        <label class="juntar-formato" [class.juntar-formato--activo]="formatoJuntar === 'zip'">
+          <input type="radio" name="formatoJuntar" value="zip" [(ngModel)]="formatoJuntar" />
+          <span><strong>Archivo .zip</strong><small>Cada una por separado, con la firma digital del colegio. Es el que vale como constancia.</small></span>
+        </label>
+        <label class="juntar-formato" [class.juntar-formato--activo]="formatoJuntar === 'pdf'">
+          <input type="radio" name="formatoJuntar" value="pdf" [(ngModel)]="formatoJuntar" />
+          <span><strong>Un solo PDF</strong><small>Todas seguidas, para leer o imprimir. Al juntarlas, la firma digital no viaja en esta copia.</small></span>
+        </label>
+      </div>
+    </div>
+    <div class="juntar-lista__cabecera">
+      <label>Qué incluir</label>
+      <span>
+        <button type="button" class="enlace-sutil" (click)="marcarTodasJuntar(true)">Marcar todas</button> ·
+        <button type="button" class="enlace-sutil" (click)="marcarTodasJuntar(false)">Ninguna</button>
+      </span>
+    </div>
+    <ul class="juntar-lista">
+      @for (o of opcionesJuntar; track o.id) {
+        <li [class.juntar-lista__item--apagado]="!o.sePuede">
+          <label>
+            <input type="checkbox" [(ngModel)]="o.marcada" [disabled]="!o.sePuede" (ngModelChange)="contarMarcadas()" />
+            <span><strong>{{ o.titulo }}</strong> · {{ o.detalle }}</span>
+          </label>
+          @if (!o.sePuede) {
+            <small class="form-ayuda">Da tu conformidad para poder bajarla.</small>
+          }
+        </li>
+      }
+    </ul>
+  </div>
+</app-form-modal>

@@ -8,10 +8,10 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Support\ConceptosDePago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Support\AccesoADocumento;
+use App\Support\Documentos\AccesoADocumento;
 use App\Support\Meses;
 use App\Support\AniosAnteriores;
-use App\Support\FirmaDigitalDeBoletas;
+use App\Support\Firma\FirmaDigitalDeBoletas;
 
 class MiBoletaController extends Controller
 {
@@ -26,7 +26,7 @@ class MiBoletaController extends Controller
         if (!$empleado_id) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => 'Tu usuario no tiene empleado vinculado.']
+                'message' => 'Tu usuario no tiene empleado vinculado.'
             ], 403);
         }
 
@@ -39,7 +39,7 @@ class MiBoletaController extends Controller
         if (!$planilla) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => "No existe planilla para el mes {$mes} del año {$anio}."]
+                'message' => "No existe planilla para el mes {$mes} del año {$anio}."
             ], 404);
         }
 

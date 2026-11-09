@@ -41,6 +41,7 @@ class RolSeeder extends Seeder
             Rol::create([
                 'nombre'      => $nombre,
                 'descripcion' => $descripcion,
+                'es_superadmin' => $nombre === 'admin',
             ]);
         }
 

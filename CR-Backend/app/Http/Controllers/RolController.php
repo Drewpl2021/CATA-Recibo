@@ -1,8 +1,12 @@
 <?php
 namespace App\Http\Controllers;
+use App\Models\Auditoria;
+use App\Models\Modulo;
 use App\Models\Rol;
 use App\Models\User;
+use App\Support\Permisos;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Traits\ListadoPaginado;
 
 class RolController extends Controller
@@ -34,9 +38,35 @@ class RolController extends Controller
     {
         return $this->responderListado(
             $request,
-            Rol::query()->orderBy('nombre'),
+            Rol::query()->withCount(['usuarios' => fn ($q) => $q->where('estado_registro', 'activo')])->orderBy('nombre'),
             ['nombre', 'descripcion']
         );
+    }
+
+    /**
+     * PUT /roles/{id}/modules/{modulo} — da o quita un solo módulo.
+     *
+     * Uno por uno y no la lista entera: así dos personas con la pantalla
+     * abierta no se pisan los cambios.
+     */
+    public function cambiarModulo(Request $request, string $id, string $moduloId)
+    {
+        $activo = (bool) $request->validate(['activo' => 'required|boolean'])['activo'];
+        $rol = Rol::findOrFail($id);
+        $modulo = Modulo::where('estado_registro', 'activo')->findOrFail($moduloId);
+
+        if ($motivo = Permisos::porQueNoPuedeCambiar($request->user(), $rol, $modulo, $activo)) {
+            return response()->json(['success' => false, 'message' => $motivo], 403);
+        }
+
+        DB::transaction(function () use ($rol, $modulo, $activo) {
+            $activo ? $rol->modulos()->syncWithoutDetaching([$modulo->id]) : $rol->modulos()->detach($modulo->id);
+            Auditoria::registrar('cambió', 'rol', (string) $rol->id,
+                ($activo ? 'Dio' : 'Quitó') . " el módulo {$modulo->nombre} " . ($activo ? 'al' : 'del') . " rol {$rol->nombre}.");
+        });
+        Permisos::refrescar();
+
+        return response()->json(['success' => true, 'data' => ['rol_id' => $rol->id, 'modulo_id' => $modulo->id, 'activo' => $activo]]);
     }
 
     public function store(Request $request)
@@ -86,7 +116,7 @@ class RolController extends Controller
         if ($this->esDelSistema($rol)) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => "El rol \"{$rol->nombre}\" es del sistema y no se puede eliminar."],
+                'message' => "El rol \"{$rol->nombre}\" es del sistema y no se puede eliminar.",
             ], 409);
         }
 
@@ -94,7 +124,7 @@ class RolController extends Controller
         if ($usuariosConEsteRol > 0) {
             return response()->json([
                 'success' => false,
-                'data'    => ['message' => "No se puede eliminar: hay {$usuariosConEsteRol} usuario(s) con este rol asignado."],
+                'message' => "No se puede eliminar: hay {$usuariosConEsteRol} usuario(s) con este rol asignado.",
             ], 409);
         }
 

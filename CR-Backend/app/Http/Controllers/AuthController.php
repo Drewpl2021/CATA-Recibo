@@ -76,10 +76,9 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'data'    => [
-                'user'            => $user->load('rol', 'empleado'),
+                'user'            => $user->load('rol:id,nombre,es_superadmin'),
                 'permisos'        => \App\Support\Permisos::paraPantalla($user),
                 'token'           => $token,
-                'es_institucional'=> $user->es_institucional,
                 // Si viene en true, el frontend manda a cambiar la contraseña
                 // y no deja pasar a ninguna otra pantalla. El backend lo
                 // vuelve a comprobar en cada petición (ExigirCambioPassword),
@@ -102,7 +101,7 @@ class AuthController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data'    => $request->user()->load('rol', 'empleado')->setAttribute('permisos', \App\Support\Permisos::paraPantalla($request->user())),
+            'data'    => $request->user()->load('rol:id,nombre,es_superadmin')->setAttribute('permisos', \App\Support\Permisos::paraPantalla($request->user())),
         ]);
     }
     public function cambiarPassword(Request $request)
@@ -217,17 +216,9 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
-        $estado = Password::sendResetLink($request->only('email'));
-
-        // El único caso que sí se avisa: pidió otro enlace demasiado pronto.
-        // Callarlo haría que la persona siguiera esperando un correo que no
-        // va a salir.
-        if ($estado === Password::RESET_THROTTLED) {
-            return response()->json([
-                'success' => false,
-                'data'    => ['message' => 'Ya te enviamos un enlace hace poco. Revisa tu correo y espera un minuto antes de pedir otro.'],
-            ], 429);
-        }
+        // Sin mirar el resultado: «ya te enviamos uno» solo le sale a un correo
+        // que existe, y eso bastaba para descubrir cuáles están registrados.
+        Password::sendResetLink($request->only('email'));
 
         return response()->json([
             'success' => true,

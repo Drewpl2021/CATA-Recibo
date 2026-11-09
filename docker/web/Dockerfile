@@ -34,5 +34,7 @@ COPY CR-Backend/public /var/www/html/public
 
 COPY docker/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/web/cabeceras-seguridad.conf /etc/nginx/cabeceras-seguridad.conf
+# La página que se ve si PHP no responde (ver «error_page» en nginx.conf).
+COPY docker/web/mantenimiento.html /usr/share/nginx/mantenimiento/mantenimiento.html
 
 EXPOSE 80

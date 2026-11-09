@@ -19,7 +19,7 @@ import {
 import { Area, Cargo, Documento, Empleado, EmpleadoPayload, Rol, Sede,
   Contrato, TipoContrato, Usuario,
 } from '../../../core/models';
-import { mensajeErrorApi } from '../../../core/utils';
+import { CORREO_CON_DOMINIO, CUENTA_CTS, mensajeErrorApi } from '../../../core/utils';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { WizardComponent } from '../../../shared/components/wizard/wizard.component';
 import { PistaDirective } from '../../../shared/directives/pista.directive';
@@ -158,6 +158,11 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     // Opcional, pero si lo escriben tiene que ser un CCI completo: 20
     // dígitos. Es la misma regla que aplica el backend.
     cci: ['', [Validators.pattern(/^[0-9]{20}$/)]],
+    // La cuenta de la CTS es otra, la que eligió el trabajador. Solo cifras
+    // y guiones, igual que en el backend; la entidad se exige si hay cuenta
+    // (ver ajustarEntidadCts).
+    cts_entidad_financiera: ['', [Validators.maxLength(100)]],
+    cts_numero_cuenta: ['', [Validators.pattern(CUENTA_CTS), Validators.minLength(6), Validators.maxLength(30)]],
     tiene_hijos: [false],
     // El Diezmo se le aplica a todo el personal por defecto: el formulario
     // arranca en true, igual que el valor por defecto de la columna.
@@ -171,7 +176,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     contacto_emergencia_telefono: ['', [Validators.pattern(/^[0-9]*$/), Validators.maxLength(15)]],
 
     // ── Acceso ──
-    email: ['', [Validators.required, Validators.email]],
+    email: ['', [Validators.required, Validators.email, Validators.pattern(CORREO_CON_DOMINIO)]],
     rol_id: ['', [Validators.required]],
   });
 
@@ -222,6 +227,8 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     // Y la fecha de término solo se exige si el contrato lleva plazo.
     this.form.get('tipo_contrato_id')!.valueChanges.subscribe(() => this.ajustarFechaCese());
     this.ajustarFechaCese();
+    // Con número de cuenta CTS hace falta saber en qué entidad está.
+    this.form.get('cts_numero_cuenta')!.valueChanges.subscribe(() => this.ajustarEntidadCts());
 
     this.cargarCatalogos();
     if (this.empleadoId) this.cargarContratos();
@@ -270,7 +277,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       },
       {
         id: 'planilla', titulo: 'Planilla', icono: 'money',
-        campos: ['sistema_pensiones', 'afp', 'cuspp', 'fecha_afiliacion'],
+        campos: ['sistema_pensiones', 'afp', 'cuspp', 'fecha_afiliacion', 'cci', 'cts_entidad_financiera', 'cts_numero_cuenta'],
       },
       {
         id: 'complementarios', titulo: 'Complementarios', icono: 'description',
@@ -300,7 +307,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
     rol.updateValueAndValidity();
 
     const email = this.form.get('email')!;
-    email.setValidators([Validators.email]);
+    email.setValidators([Validators.email, Validators.pattern(CORREO_CON_DOMINIO)]);
     email.updateValueAndValidity();
   }
 
@@ -321,6 +328,13 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       fechaFin.setValue('', { emitEvent: false });
     }
     fechaFin.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private ajustarEntidadCts(): void {
+    const entidad = this.form.get('cts_entidad_financiera')!;
+    const conCuenta = !!String(this.form.get('cts_numero_cuenta')?.value ?? '').trim();
+    entidad.setValidators(conCuenta ? [Validators.required, Validators.maxLength(100)] : [Validators.maxLength(100)]);
+    entidad.updateValueAndValidity({ emitEvent: false });
   }
 
   private ajustarValidacionAfp(): void {
@@ -420,6 +434,8 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       entidad_financiera: e.entidad_financiera ?? '',
       numero_cuenta: e.numero_cuenta ?? '',
       cci: e.cci ?? '',
+      cts_entidad_financiera: e.cts_entidad_financiera ?? '',
+      cts_numero_cuenta: e.cts_numero_cuenta ?? '',
       tiene_hijos: !!e.tiene_hijos,
       aplica_diezmo: e.aplica_diezmo ?? true,
       nivel_estudios: e.nivel_estudios ?? '',
@@ -630,6 +646,8 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
       entidad_financiera: oNull(v.entidad_financiera),
       numero_cuenta: oNull(v.numero_cuenta),
       cci: oNull(v.cci),
+      cts_entidad_financiera: oNull(v.cts_entidad_financiera),
+      cts_numero_cuenta: oNull(v.cts_numero_cuenta),
       tiene_hijos: !!v.tiene_hijos,
       aplica_diezmo: !!v.aplica_diezmo,
       nivel_estudios: oNull(v.nivel_estudios),
@@ -764,8 +782,7 @@ export class EmpleadoFormComponent implements OnInit, OnDestroy {
 
   /** "CV - Mamani Flores Carlos.pdf", conservando su extensión original. */
   private nombreDelCv(): string {
-    const guardado = this.hojaDeVida?.archivo ?? '';
-    const extension = guardado.includes('.') ? guardado.split('.').pop() : 'pdf';
+    const extension = this.hojaDeVida?.extension || 'pdf';
 
     const v = this.form.getRawValue();
     const persona = `${v.apellido ?? ''} ${v.nombre ?? ''}`.trim() || 'trabajador';

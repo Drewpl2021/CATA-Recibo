@@ -256,7 +256,7 @@ sequenceDiagram
 ## 5. Importar empleados desde Excel
 
 El archivo **no sale del navegador**: se lee allí y solo viajan las filas.
-Detalle del flujo en `docs/importacion-empleados-secuencia.mmd`.
+Detalle del flujo en `docs/diagramas/importacion-empleados-secuencia.mmd`.
 
 | | |
 |---|---|

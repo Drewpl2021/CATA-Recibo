@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse, bajarPorEnlaceFirmado } from '../../utils';
+import { FirmaColegio, ResultadoFirmarAqui, ResumenDeFirma } from './boleta.service';
 
 /** El depósito: mayo cubre noviembre–abril, noviembre cubre mayo–octubre. */
 export type PeriodoCts = 'mayo' | 'noviembre';
@@ -30,6 +31,7 @@ export interface FilaCts {
   sede: string | null;
   estado: string;
   fecha_ingreso: string;
+  /** La cuenta CTS de su ficha (no la del sueldo), para proponerla al depositar. */
   entidad_ficha: string | null;
   cuenta_ficha: string | null;
   aplica: boolean;
@@ -49,6 +51,8 @@ export interface FilaCts {
   remuneracion_computable: number;
   meses: number;
   dias: number;
+  /** Días de falta injustificada con que se calculó: ya restados de meses y días. */
+  faltas: number;
   monto: number;
   estado_cts: EstadoCts;
   /** Calculada, sin depositar, y ya no coincide con lo que daría hoy. */
@@ -57,10 +61,17 @@ export interface FilaCts {
   entidad_financiera: string | null;
   numero_cuenta: string | null;
   documento_id: string | null;
+  /** Cómo va la firma digital del colegio en su hoja. */
+  firma_colegio: FirmaColegio;
+  /** Las faltas anotadas ahora; si difieren de `faltas`, falta volver a calcular. */
+  faltas_registradas: number;
+  faltas_observacion: string | null;
 }
 
 export interface ListaCts {
   anio: number;
+  /** Los años del filtro: los que tienen datos, más el actual. */
+  anios: number[];
   periodo: PeriodoCts;
   desde: string;
   hasta: string;
@@ -77,6 +88,8 @@ export interface ListaCts {
     total: number;
     depositado: number;
   };
+  /** La firma digital del colegio en las hojas de este depósito. */
+  firma: ResumenDeFirma;
 }
 
 /** Un mes del semestre en el historial de alguien, de su planilla (ver MotorCts::historial). */
@@ -104,6 +117,14 @@ export interface HistorialCts {
   periodo: PeriodoCts;
   empleado: { id: string; dni: string; nombre: string };
   meses: MesHistorialCts[];
+}
+
+export interface FaltasCts {
+  empleado_id: string;
+  anio: number;
+  periodo: PeriodoCts;
+  dias: number;
+  observacion?: string | null;
 }
 
 export interface DepositoCts {
@@ -134,8 +155,27 @@ export class CtsService {
     return this.http.post<ApiResponse<{ depositadas: number }>>(`${this.url}/deposit`, datos);
   }
 
+  /** «Firmar aquí»: una tanda de las hojas del depósito que esperan la firma de quien pide. La clave no se guarda. */
+  firmarAqui(anio: number, periodo: PeriodoCts, clave: string, desde: string | null = null, limite = 25): Observable<ApiResponse<ResultadoFirmarAqui>> {
+    return this.http.post<ApiResponse<ResultadoFirmarAqui>>(`${this.url}/sign-here`, { anio, periodo, clave, desde, limite });
+  }
+
   anularDeposito(liquidacionId: string): Observable<ApiResponse<{ message: string }>> {
     return this.http.delete<ApiResponse<{ message: string }>>(`${this.url}/${liquidacionId}/deposit`);
+  }
+
+  /** Anota sus días no laborados del semestre (0 los borra). Si ya estaba calculada, se recalcula al momento. */
+  registrarFaltas(datos: FaltasCts): Observable<ApiResponse<{ faltas: number; monto: number; meses: number; dias: number }>> {
+    return this.http.put<ApiResponse<{ faltas: number; monto: number; meses: number; dias: number }>>(`${this.url}/absences`, datos);
+  }
+
+  /** Los días no laborados de varios a la vez. Las depositadas se saltan y vuelven en `omitidas`. */
+  registrarFaltasEnLote(
+    anio: number,
+    periodo: PeriodoCts,
+    faltas: { empleado_id: string; dias: number; observacion: string | null }[],
+  ): Observable<ApiResponse<{ cambiadas: number; omitidas: string[]; total: number }>> {
+    return this.http.put<ApiResponse<{ cambiadas: number; omitidas: string[]; total: number }>>(`${this.url}/absences/batch`, { anio, periodo, faltas });
   }
 
   /** Lo que ganó mes por mes en el semestre, de sus planillas. */
@@ -153,6 +193,11 @@ export class CtsService {
    * todos los que tienen hoja. Lo baja el navegador con un enlace firmado.
    * Devuelve cuántas hojas trae.
    */
+  /** La lista en Excel, con los mismos filtros que la pantalla (situacion, sede_id, area_id, cargo_id, search). */
+  exportar(anio: number, periodo: PeriodoCts, filtros: Record<string, string> = {}): Observable<Blob> {
+    return this.http.get(`${this.url}/export`, { params: { anio: String(anio), periodo, ...filtros }, responseType: 'blob' });
+  }
+
   bajarHojasEnZip(anio: number, periodo: PeriodoCts, ids?: string[]): Observable<number> {
     return this.http
       .post<ApiResponse<{ url: string; cantidad: number }>>(`${this.url}/zip/link`, { anio, periodo, ...(ids?.length ? { ids } : {}) })

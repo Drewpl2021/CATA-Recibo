@@ -5,8 +5,8 @@ namespace App\Support\Plame;
 use App\Models\ConceptoAlias;
 use App\Models\PaymentConcept;
 use App\Support\ConceptosDePago;
-use App\Support\LectorDeCeldas;
-use App\Support\ReconocedorDeColumnas;
+use App\Support\Importacion\LectorDeCeldas;
+use App\Support\Importacion\ReconocedorDeColumnas;
 
 /**
  * Qué es cada columna del PLAME.
@@ -101,7 +101,7 @@ final class ColumnasDelPlame
         ['alimentacion', 'concepto', 'Descuento Serv. Alimentación'],
         ['copias', 'concepto', 'Descuento Serv. Copias'],
         ['bazar', 'concepto', 'Descuento Serv. Bazar'],
-        ['tardanza', 'concepto', 'Descuento Autorizado - Tardanzas y Faltas'],
+        ['tardanza', 'concepto', \App\Support\ConceptosDePago::TARDANZAS_Y_FALTAS],
         // Cada adelanto con su frase: la genérica «adelanto» los juntaba todos
         // en «Adelanto de Sueldo» (mayo traía el de sueldo Y el de CTS), y
         // «adelanto de gratificaciones» caía en «gratificacion», que es más larga.

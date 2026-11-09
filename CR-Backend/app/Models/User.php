@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'foto', 'password', 'rol_id', 'empleado_id', 'estado_registro', 'debe_cambiar_password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'terminos_ip', 'email_verified_at', 'guia_vista_en', 'acceso_enviado_en'])]
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -22,7 +22,7 @@ class User extends Authenticatable
      * El rol (quién puede ver qué), si la cuenta está activa, su correo y la
      * contraseña. De la contraseña se anota QUE cambió, nunca su valor.
      */
-    protected array $camposAuditables = ['email', 'rol_id', 'estado_registro', 'password'];
+    protected array $camposAuditables = ['email', 'rol_id', 'empleado_id', 'estado_registro', 'password'];
 
     protected array $camposSecretos = ['password'];
 
@@ -89,6 +89,17 @@ class User extends Authenticatable
     public function esSuperadmin(): bool
     {
         return \App\Support\Permisos::esSuperadmin($this);
+    }
+
+    /**
+     * Una cuenta que maneja algo más que su propio espacio solo la cambia el
+     * superadministrador: quien cambia un correo o repone una contraseña puede
+     * terminar entrando con esa cuenta.
+     */
+    public function protegidaPara(?User $quien): bool
+    {
+        return \App\Support\Permisos::manejaAlgoMasQueLoSuyo($this)
+            && ! \App\Support\Permisos::esSuperadmin($quien);
     }
 
     /**

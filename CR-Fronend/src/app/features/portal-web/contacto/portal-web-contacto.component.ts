@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -54,10 +54,18 @@ const MARCAS = /\{([^}]*)\}/g;
   selector: 'app-portal-web-contacto',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, FormsModule,
-    PageHeaderComponent, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent,
-    WizardComponent, CuerpoDesplazableComponent, IndiceDeSeccionesComponent,
-  ],
+    ReactiveFormsModule,
+    FormsModule,
+    PageHeaderComponent,
+    IconComponent,
+    DataTableComponent,
+    CeldaTablaDirective,
+    FormModalComponent,
+    SelectorImagenComponent,
+    WizardComponent,
+    CuerpoDesplazableComponent,
+    IndiceDeSeccionesComponent
+],
   templateUrl: './portal-web-contacto.component.html',
   styleUrls: ['../compartido/pw-estilos.scss'],
 })

@@ -9,7 +9,7 @@
       menos erratas en el nombre que se va a imprimir en las boletas. -->
       <div class="campo-con-accion">
         <input type="text" id="dni" class="form-control" formControlName="dni"
-          inputmode="numeric" maxlength="9" placeholder="12345678"
+          inputmode="numeric" maxlength="9" placeholder="Ingrese su número de documento"
           (input)="alEscribirDni()"
           (keydown.enter)="$event.preventDefault(); buscarPorDni()"
           [class.is-invalid]="invalido('dni')" />
@@ -62,7 +62,7 @@
       <div class="form-group">
         <label for="nombre">Nombres *</label>
         <input type="text" id="nombre" class="form-control" formControlName="nombre"
-          placeholder="Ej. María Elena" [class.is-invalid]="invalido('nombre')" />
+          placeholder="Ingrese sus nombres completos" [class.is-invalid]="invalido('nombre')" />
           @if (invalido('nombre')) {
             <small class="form-error">{{ error('nombre') }}</small>
           }
@@ -71,7 +71,7 @@
         <div class="form-group">
           <label for="apellido">Apellidos *</label>
           <input type="text" id="apellido" class="form-control" formControlName="apellido"
-            placeholder="Ej. Quispe Mamani" [class.is-invalid]="invalido('apellido')" />
+            placeholder="Ingrese sus apellidos" [class.is-invalid]="invalido('apellido')" />
             @if (invalido('apellido')) {
               <small class="form-error">{{ error('apellido') }}</small>
             }
@@ -89,7 +89,7 @@
             <div class="form-group">
               <label for="telefono">Teléfono *</label>
               <input type="tel" id="telefono" class="form-control" formControlName="telefono"
-                inputmode="numeric" maxlength="15" placeholder="951234567"
+                inputmode="numeric" maxlength="15" placeholder="Ingrese su número de celular"
                 [class.is-invalid]="invalido('telefono')" />
                 @if (invalido('telefono')) {
                   <small class="form-error">Solo números, hasta 15 dígitos.</small>
@@ -99,7 +99,7 @@
               <div class="form-group rejilla-campos--completo">
                 <label for="direccion">Dirección *</label>
                 <input type="text" id="direccion" class="form-control" formControlName="direccion"
-                  placeholder="Ej. Jr. Moquegua N° 852 — Juliaca"
+                  placeholder="Ingrese su dirección"
                   [class.is-invalid]="invalido('direccion')" />
                   @if (invalido('direccion')) {
                     <small class="form-error">{{ error('direccion') }}</small>

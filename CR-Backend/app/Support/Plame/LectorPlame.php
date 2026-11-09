@@ -2,8 +2,8 @@
 
 namespace App\Support\Plame;
 
-use App\Support\LectorDeCeldas;
-use App\Support\ReconocedorDeColumnas;
+use App\Support\Importacion\LectorDeCeldas;
+use App\Support\Importacion\ReconocedorDeColumnas;
 use PhpOffice\PhpSpreadsheet\Cell\Cell;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;

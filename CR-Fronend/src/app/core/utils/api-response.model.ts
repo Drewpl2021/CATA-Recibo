@@ -1,8 +1,10 @@
 /**
  * Forma estándar en que responde el backend Laravel de CATA-Recibo:
  *   { "success": true, "data": ... }
- * y en los errores de validación (422):
- *   { "message": "...", "errors": { "campo": ["mensaje"] } }
+ * y en todos los errores, con su código HTTP:
+ *   { "success": false, "message": "..." }
+ * Los de un formulario (422) traen además los campos:
+ *   { "success": false, "message": "...", "errors": { "campo": ["mensaje"] } }
  */
 export interface ApiResponse<T> {
   success: boolean;

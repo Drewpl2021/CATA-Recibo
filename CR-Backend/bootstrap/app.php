@@ -63,6 +63,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(CorsMiddleware::class);
         // Le pone un código a cada petición para poder seguirla en el registro.
         $middleware->append(RastroDePeticion::class);
+        $middleware->append(\App\Http\Middleware\CabecerasDeSeguridad::class);
         /*
          * Sin sesión, la API contesta 401 en JSON.
          *
@@ -92,6 +93,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // La clave del certificado y la contraseña nunca se guardan para
+        // volver a llenar un formulario.
+        $exceptions->dontFlash(['clave', 'password', 'password_confirmation', 'current_password']);
+
         /*
          * Qué ve quien usa el sistema cuando algo sale mal.
          *
@@ -125,7 +130,11 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             if ($e instanceof ValidationException) {
-                return null;
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->validator->errors()->first(),
+                    'errors'  => $e->errors(),
+                ], $e->status);
             }
 
             [$estado, $mensaje] = match (true) {
@@ -157,6 +166,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 // existen para quien anda probando.
                 $e instanceof MethodNotAllowedHttpException => [
                     404, 'No encontramos lo que buscas. Puede que ya no exista.',
+                ],
+                // «php artisan down»: el sistema está en mantenimiento. La
+                // pantalla lo reconoce por el 503 y muestra la de mantenimiento.
+                $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface && $e->getStatusCode() === 503 => [
+                    503, 'CATA-Recibo está en mantenimiento. Vuelve en unos minutos: tus boletas y documentos están a salvo.',
                 ],
                 $e instanceof ThrottleRequestsException => [
                     429, 'Demasiados intentos seguidos. Espera un momento y vuelve a intentarlo.',

@@ -29,7 +29,7 @@
       (editarFila)="editar($event)"
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
-    >
+      >
       <ng-template appCelda="nivel" let-fila>
         <div class="pw-celda-titulo">
           <span>
@@ -61,36 +61,45 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrar()"
->
+  >
   <form [formGroup]="form" class="form-fields" novalidate>
     <div class="form-row">
       <div class="form-group">
         <label for="grados-nivel">Nivel *</label>
         <input id="grados-nivel" type="text" class="form-control" formControlName="nivel" maxlength="24"
           placeholder="Ej. Primaria" [class.is-invalid]="invalido('nivel')" />
-        <small class="form-error" *ngIf="invalido('nivel')">Obligatorio (máximo 24). No puede repetirse.</small>
+          @if (invalido('nivel')) {
+            <small class="form-error">Obligatorio (máximo 24). No puede repetirse.</small>
+          }
+        </div>
+        <div class="form-group">
+          <label for="grados-estado">Estado</label>
+          <select id="grados-estado" class="form-control" formControlName="estado">
+            <option value="publicado">Publicado</option>
+            <option value="borrador">Borrador</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
-        <label for="grados-estado">Estado</label>
-        <select id="grados-estado" class="form-control" formControlName="estado">
-          <option value="publicado">Publicado</option>
-          <option value="borrador">Borrador</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label for="grados-opciones">Opciones, una por línea *</label>
-      <textarea id="grados-opciones" class="form-control" rows="8" formControlName="opciones"
+        <label for="grados-opciones">Opciones, una por línea *</label>
+        <textarea id="grados-opciones" class="form-control" rows="8" formControlName="opciones"
         placeholder="1.er grado&#10;2.º grado&#10;3.er grado" [class.is-invalid]="invalido('opciones')"></textarea>
-      <ng-container *ngIf="invalido('opciones'); else ayudaOpciones">
-        <small class="form-error" *ngIf="form.controls.opciones.errors?.['lineasMin']">Escribe al menos una opción.</small>
-        <small class="form-error" *ngIf="form.controls.opciones.errors?.['lineasMax']">Hasta 8 opciones por nivel.</small>
-        <small class="form-error" *ngIf="form.controls.opciones.errors?.['lineaLarga']">Cada opción, hasta 24 caracteres.</small>
-        <small class="form-error" *ngIf="form.controls.opciones.errors?.['lineaRepetida']">Hay una opción repetida.</small>
-      </ng-container>
-      <ng-template #ayudaOpciones>
-        <small class="form-ayuda">{{ cuantasOpciones }} de 8. Se muestran en este orden, cada una hasta 24 caracteres.</small>
-      </ng-template>
-    </div>
-  </form>
-</app-form-modal>
+        @if (invalido('opciones')) {
+          @if (form.controls.opciones.errors?.['lineasMin']) {
+            <small class="form-error">Escribe al menos una opción.</small>
+          }
+          @if (form.controls.opciones.errors?.['lineasMax']) {
+            <small class="form-error">Hasta 8 opciones por nivel.</small>
+          }
+          @if (form.controls.opciones.errors?.['lineaLarga']) {
+            <small class="form-error">Cada opción, hasta 24 caracteres.</small>
+          }
+          @if (form.controls.opciones.errors?.['lineaRepetida']) {
+            <small class="form-error">Hay una opción repetida.</small>
+          }
+        } @else {
+          <small class="form-ayuda">{{ cuantasOpciones }} de 8. Se muestran en este orden, cada una hasta 24 caracteres.</small>
+        }
+      </div>
+    </form>
+  </app-form-modal>

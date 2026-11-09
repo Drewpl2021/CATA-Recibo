@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     {{--
         La hoja de la gratificación de julio o diciembre (Ley 27735 y su
-        reglamento, D.S. 005-2002-TR; bonificación de la Ley 30334): datos del
-        empleador y del trabajador, la remuneración computable, el tiempo y el
-        cálculo en cuadros, el total en letras y las firmas. Con la cabecera y
-        los colores de la hoja de CTS y de la boleta.
+        reglamento, D.S. 005-2002-TR; bonificación de la Ley 30334), con el
+        mismo orden y los mismos colores que la hoja de CTS: el empleador, el
+        trabajador, dónde se paga, y en cuadros la remuneración computable, el
+        tiempo y el cálculo; el total en letras y las firmas (digital del
+        colegio, ver partials/firma-digital).
 
         Lo dibuja dompdf: nada de flex ni de variables CSS.
     --}}
@@ -17,40 +18,48 @@
         body { font-family: Helvetica, Arial, sans-serif; font-size: 8.8px; color: #1F2B33; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         td, th { vertical-align: middle; }
+
+        /* ── Cabecera ── */
         .cab__logo img { width: 52px; height: 52px; }
         .cab__inst { font-size: 7.5px; font-weight: bold; line-height: 1.3; padding-left: 6px; }
         .cab__lugar { text-align: right; font-size: 8px; line-height: 1.4; color: #4A5961; }
         .cab__lugar strong { color: #1F2B33; font-size: 9px; }
         .cab__nombre-anio { text-align: center; font-size: 6.5px; font-style: italic; color: #4A5961; margin-bottom: 4px; }
+
         .titulo { margin-top: 10px; text-align: center; }
         .titulo h1 { font-size: 13px; letter-spacing: .3px; }
         .titulo p { font-size: 7.5px; color: #4A5961; margin-top: 2px; }
         .titulo .periodo { display: inline-block; margin-top: 6px; padding: 3px 12px; background: #EC7A3A; color: #FFFFFF; font-size: 9.5px; font-weight: bold; }
+
+        /* ── Bloques de datos ── */
         .barra { background: #D3E3E8; font-weight: bold; font-size: 7.8px; text-transform: uppercase; padding: 4px 6px; margin-top: 10px; }
         .datos td { padding: 4px 6px; border-bottom: 1px solid #DCE7EB; vertical-align: top; }
         .rotulo { font-size: 6.6px; font-weight: bold; text-transform: uppercase; color: #4A5961; }
         .valor { font-size: 8.8px; color: #1F2B33; margin-top: 1px; }
         .valor--grande { font-size: 10.5px; font-weight: bold; }
+
+        /* ── Cuadros con borde, como en una liquidación ── */
         .cuadro { margin-top: 4px; border: 1px solid #9FB6BF; }
         .cuadro th { background: #EDF3F5; font-size: 7px; text-transform: uppercase; text-align: left; padding: 5px 8px; border-bottom: 1px solid #9FB6BF; }
         .cuadro td { padding: 5px 8px; border-bottom: 1px solid #DCE7EB; font-size: 8.8px; }
         .cuadro .num { text-align: right; white-space: nowrap; }
         .cuadro .detalle { color: #6B7A82; font-size: 7.6px; }
         .cuadro tr.total td { background: #D3E3E8; font-weight: bold; border-bottom: none; }
+
         .tiempo td { text-align: center; padding: 6px 8px; border-right: 1px solid #DCE7EB; }
         .tiempo td:last-child { border-right: none; }
         .tiempo strong { display: block; font-size: 14px; }
+        .tiempo strong small { font-size: 9px; font-weight: normal; color: #6B7A82; }
         .tiempo span { font-size: 7px; text-transform: uppercase; color: #4A5961; }
+
         .neto { margin-top: 10px; border: 1.5px solid #1F2B33; }
         .neto td { padding: 8px 10px; }
         .neto .rotulo-neto { font-size: 10px; font-weight: bold; }
         .neto .monto { text-align: right; font-size: 14px; font-weight: bold; }
         .son { padding: 5px 10px; background: #EDF3F5; font-size: 8.2px; border-top: 1px solid #9FB6BF; }
+
         .nota { font-size: 7px; color: #6B7A82; margin-top: 10px; line-height: 1.45; }
-        .lugar-fecha { margin-top: 14px; text-align: right; font-size: 8.8px; }
-        .firmas { margin-top: 56px; }
-        .firmas td { text-align: center; font-size: 7.8px; padding: 0 24px; vertical-align: top; }
-        .firmas .raya { border-top: 1px solid #1F2B33; padding-top: 4px; line-height: 1.4; }
+        .lugar-fecha { margin-top: 12px; text-align: right; font-size: 8.8px; }
     </style>
 </head>
 <body>
@@ -72,6 +81,13 @@
     $rc          = number_format($c['remuneracion_computable'], 2);
     $cesado      = $e->estado === 'inactivo' && $e->fecha_cese;
     $tasa        = $c['gratificacion'] > 0 ? round($c['bonificacion_extraordinaria'] / $c['gratificacion'] * 100, 2) : 0;
+    $tasaTexto   = rtrim(rtrim(number_format($tasa, 2), '0'), '.') . '%';
+    $finComputo  = $cesado && $c['trunca'] ? $e->fecha_cese : $semestre['hasta'];
+    $tipo        = $e->tipoContratoVigente()?->nombre;
+
+    // La boleta del mes en que se pagó, si ya está su planilla.
+    $planilla = !empty($c['planilla_id']) ? \App\Models\Planilla::find($c['planilla_id']) : null;
+    $boleta   = $planilla?->numeroDeBoleta();
 @endphp
 
     @if (!empty($nombreAnio))
@@ -83,7 +99,7 @@
             <td style="width: 60%;">
                 <table>
                     <tr>
-                        <td class="cab__logo" style="width: 16%;"><img src="{{ public_path('logo.png') }}"></td>
+                        <td class="cab__logo" style="width: 16%;"><img src="{{ public_path('pdf/logo.png') }}"></td>
                         <td class="cab__inst" style="width: 84%;">ASOCIACIÓN EDUCATIVA<br>COLEGIO ADVENTISTA<br>TÚPAC AMARU</td>
                     </tr>
                 </table>
@@ -95,11 +111,12 @@
     </table>
 
     <div class="titulo">
-        <h1>{{ $c['trunca'] ? 'LIQUIDACIÓN DE GRATIFICACIÓN TRUNCA' : 'HOJA DE GRATIFICACIÓN POR ' . $nombreGrati }}</h1>
+        <h1>{{ $c['trunca'] ? 'LIQUIDACIÓN DE GRATIFICACIÓN TRUNCA' : 'HOJA DE LIQUIDACIÓN DE LA GRATIFICACIÓN POR ' . $nombreGrati }}</h1>
         <p>Ley N° 27735 y su reglamento, D.S. N° 005-2002-TR · Bonificación extraordinaria, Ley N° 30334</p>
         <span class="periodo">GRATIFICACIÓN DE {{ mb_strtoupper($periodo) }} {{ $anio }}</span>
     </div>
 
+    {{-- ── El empleador, el trabajador y el pago ── --}}
     <div class="barra">Datos del empleador</div>
     <table class="datos">
         <tr>
@@ -117,12 +134,23 @@
             <td style="width: 30%;"><div class="rotulo">Cargo</div><div class="valor">{{ $e->cargo->nombre ?? '---' }}</div></td>
         </tr>
         <tr>
+            <td><div class="rotulo">Tipo de contrato</div><div class="valor">{{ $tipo ?? '---' }}</div></td>
             <td><div class="rotulo">Fecha de ingreso</div><div class="valor">{{ $fecha($e->fecha_ingreso) }}</div></td>
             <td><div class="rotulo">Fecha de cese</div><div class="valor">{{ $cesado ? $fecha($e->fecha_cese) : '---' }}</div></td>
-            <td><div class="rotulo">Semestre</div><div class="valor">Del {{ $fecha($semestre['desde']) }} al {{ $fecha($semestre['hasta']) }}</div></td>
         </tr>
     </table>
 
+    <div class="barra">Datos del pago</div>
+    <table class="datos">
+        <tr>
+            <td style="width: 30%;"><div class="rotulo">Semestre</div><div class="valor">Del {{ $fecha($semestre['desde']) }} al {{ $fecha($semestre['hasta']) }}</div></td>
+            <td style="width: 25%;"><div class="rotulo">Se paga con</div><div class="valor">La planilla de {{ $mesPago }}</div></td>
+            <td style="width: 20%;"><div class="rotulo">Boleta</div><div class="valor">{{ $boleta ?? '---' }}</div></td>
+            <td style="width: 25%;"><div class="rotulo">{{ $c['trunca'] ? 'Se paga' : 'Pago hasta el' }}</div><div class="valor">{{ $c['trunca'] ? 'Con la liquidación del cese' : $semestre['limite']->format('d/m/Y') }}</div></td>
+        </tr>
+    </table>
+
+    {{-- ── I. Remuneración computable ── --}}
     <div class="barra">I. Remuneración computable</div>
     <table class="cuadro">
         <tr><th style="width: 75%;">Concepto</th><th class="num" style="width: 25%;">Importe S/</th></tr>
@@ -134,26 +162,30 @@
         <tr class="total"><td>Total remuneración computable</td><td class="num">{{ $rc }}</td></tr>
     </table>
 
+    {{-- ── II. Tiempo computable ── --}}
     <div class="barra">II. Tiempo computable</div>
     <table class="cuadro tiempo">
         <tr>
-            <td style="width: 33%;"><strong>{{ $c['meses'] }}</strong><span>{{ $c['meses'] === 1 ? 'Mes completo' : 'Meses completos' }}</span></td>
-            <td style="width: 33%;"><strong>6</strong><span>Meses del semestre</span></td>
-            <td style="width: 34%;"><strong style="font-size: 10px;">{{ $fecha($semestre['desde']) }} – {{ $fecha($cesado && $c['trunca'] ? $e->fecha_cese : $semestre['hasta']) }}</strong><span>Periodo computado</span></td>
+            <td style="width: 50%;"><strong>{{ $c['meses'] }} <small>de 6</small></strong><span>{{ $c['meses'] === 1 ? 'Mes calendario completo' : 'Meses calendario completos' }}</span></td>
+            <td style="width: 50%;"><strong style="font-size: 10px;">{{ $fecha(max(\Carbon\Carbon::parse($e->fecha_ingreso), $semestre['desde'])) }} – {{ $fecha($finComputo) }}</strong><span>Periodo computado</span></td>
         </tr>
     </table>
+    @if ($c['meses'] < 6)
+        <p class="nota">Solo se computan los meses calendario completos trabajados en el semestre (art. 3 del D.S. N° 005-2002-TR).</p>
+    @endif
 
-    <div class="barra">III. Cálculo</div>
+    {{-- ── III. Cálculo ── --}}
+    <div class="barra">III. Cálculo de la gratificación</div>
     <table class="cuadro">
-        <tr><th style="width: 40%;">Concepto</th><th style="width: 35%;">Cálculo</th><th class="num" style="width: 25%;">Importe S/</th></tr>
+        <tr><th style="width: 45%;">Concepto</th><th style="width: 30%;">Cálculo</th><th class="num" style="width: 25%;">Importe S/</th></tr>
         <tr>
             <td>{{ $c['trunca'] ? 'Gratificación trunca' : 'Gratificación' }}</td>
-            <td class="detalle">{{ $rc }} ÷ 6 × {{ $c['meses'] }}</td>
+            <td class="detalle">{{ $rc }} ÷ 6 × {{ $c['meses'] }} {{ $c['meses'] === 1 ? 'mes' : 'meses' }}</td>
             <td class="num">{{ number_format($c['gratificacion'], 2) }}</td>
         </tr>
         <tr>
-            <td>Bonificación extraordinaria (Ley 30334)</td>
-            <td class="detalle">{{ number_format($c['gratificacion'], 2) }} × {{ rtrim(rtrim(number_format($tasa, 2), '0'), '.') }}%</td>
+            <td>Bonificación extraordinaria <span class="detalle">(Ley 30334)</span></td>
+            <td class="detalle">{{ $tasaTexto }} de {{ number_format($c['gratificacion'], 2) }}</td>
             <td class="num">{{ number_format($c['bonificacion_extraordinaria'], 2) }}</td>
         </tr>
     </table>
@@ -163,23 +195,20 @@
             <td class="rotulo-neto">TOTAL A PAGAR</td>
             <td class="monto">S/ {{ number_format($c['total'], 2) }}</td>
         </tr>
-        <tr><td colspan="2" class="son"><strong>SON:</strong> {{ \App\Support\MontoEnLetras::soles($c['total']) }}</td></tr>
+        <tr><td colspan="2" class="son"><strong>SON:</strong> {{ \App\Support\Pdf\MontoEnLetras::soles($c['total']) }}</td></tr>
     </table>
 
     <p class="nota">
-        Se paga con la planilla de {{ $mesPago }} y figura en la boleta de ese mes.
         La gratificación y la bonificación extraordinaria no están afectas a aportes de pensiones ni a EsSalud
-        (Ley 30334); sí forman parte de la renta de 5ta categoría.
+        (Ley N° 30334); sí forman parte de la renta de 5ta categoría. Figuran también en la boleta de {{ $mesPago }}.
         Cualquier observación se presenta a la Oficina de Recursos Humanos.
     </p>
 
     <p class="lugar-fecha">Juliaca, {{ $enLetra(now()) }}</p>
 
-    <table class="firmas">
-        <tr>
-            <td><div class="raya">EL EMPLEADOR<br>{{ $colegioNombre }}</div></td>
-            <td><div class="raya">EL TRABAJADOR<br>{{ $e->nombre }} {{ $e->apellido }} · DNI {{ $e->dni }}</div></td>
-        </tr>
-    </table>
+    @include('partials.firma-digital', [
+        'trabajador' => trim("{$e->nombre} {$e->apellido}"),
+        'dni'        => $e->dni,
+    ])
 </body>
 </html>

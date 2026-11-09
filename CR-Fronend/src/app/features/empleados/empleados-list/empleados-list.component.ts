@@ -302,11 +302,11 @@ export class EmpleadosListComponent implements OnInit {
             if (omitidos.length) {
               const detalle = omitidos.slice(0, 3).map((o) => `${o.trabajador}: ${o.motivo}`).join('; ');
               this.toastService.warning(
-                `Acceso enviado a ${enviados}`,
+                `Accesos por enviar: ${enviados}`,
                 `${omitidos.length} sin enviar — ${detalle}${omitidos.length > 3 ? '…' : ''}`
               );
             } else {
-              this.toastService.success('Acceso enviado', `A ${enviados} trabajador(es) les llegará el enlace para crear su contraseña.`);
+              this.toastService.success('Accesos por enviar', `${enviados} correo(s) quedaron en la cola de envío. Si alguien no lo recibe, revisa la configuración del correo.`);
             }
             this.soltarMarcados();
           },

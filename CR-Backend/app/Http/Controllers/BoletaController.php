@@ -10,7 +10,7 @@ use App\Traits\CalculaConceptosPlanilla;
 use App\Mail\BoletaGenerada;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Support\AniosAnteriores;
-use App\Support\FirmaDigitalDeBoletas;
+use App\Support\Firma\FirmaDigitalDeBoletas;
 use App\Support\ConceptosDePago;
 use App\Support\Meses;
 use Illuminate\Http\Request;
@@ -295,7 +295,7 @@ class BoletaController extends Controller
         $generadas = 0;
         $yaTenian  = 0;
 
-        $progreso = \App\Support\Progreso::actual()->etapa('Armando el PDF de cada boleta', $planillas->count());
+        $progreso = \App\Support\Listados\Progreso::actual()->etapa('Armando el PDF de cada boleta', $planillas->count());
         foreach ($planillas as $planilla) {
             $progreso->avanzar();
             // Idempotente: la boleta que ya existe no se vuelve a generar.

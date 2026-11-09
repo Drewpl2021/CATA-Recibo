@@ -67,6 +67,9 @@ fi
 echo "== Migraciones"
 "$PHP" artisan migrate --force
 
+# Los documentos ya firmados no guardan su copia sin firmar (no hace nada si ya está limpio).
+"$PHP" artisan documentos:quitar-copias-sin-firma
+
 echo "== Cachés"
 "$PHP" artisan optimize:clear
 "$PHP" artisan config:cache

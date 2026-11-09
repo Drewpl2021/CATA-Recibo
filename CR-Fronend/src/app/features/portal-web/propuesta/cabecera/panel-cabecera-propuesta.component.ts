@@ -1,5 +1,5 @@
 import { Component, EventEmitter, OnInit, Output, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -39,9 +39,14 @@ interface Figura {
   selector: 'app-panel-cabecera-propuesta',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, IconComponent, FormModalComponent, SelectorImagenComponent, EditorAccionComponent,
-    WizardComponent, CuerpoDesplazableComponent,
-  ],
+    ReactiveFormsModule,
+    IconComponent,
+    FormModalComponent,
+    SelectorImagenComponent,
+    EditorAccionComponent,
+    WizardComponent,
+    CuerpoDesplazableComponent
+],
   templateUrl: './panel-cabecera-propuesta.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

@@ -34,9 +34,8 @@ CR-Backend/bootstrap/cache/*
 .vscode
 .idea
 **/*.md
-!DESPLIEGUE.md
+!docs/instalacion/DESPLIEGUE.md
 postman
-_test_data
 *.sql
 
 # Windows

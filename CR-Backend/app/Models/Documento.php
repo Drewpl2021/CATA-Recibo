@@ -17,10 +17,38 @@ class Documento extends Model
     public const FIRMA_RESUELTA = ['firmado', 'en_papel'];
 
     /**
-     * La firma digital del colegio (ver App\Support\FirmaDigitalDeBoletas):
+     * La firma digital del colegio (ver App\Support\Firma\FirmaDigitalDeBoletas):
      * mientras esté en uno de estos, la boleta todavía no es del trabajador.
      */
     public const FIRMA_COLEGIO_EN_CURSO = ['pendiente', 'parcial'];
+
+    /**
+     * Dónde está guardado el archivo y el rastro de la firma se quedan en el
+     * servidor: la pantalla abre el documento por su id, y la constancia de
+     * entrega los lee aquí adentro.
+     */
+    protected $hidden = [
+        'archivo',
+        'archivo_sin_firma',
+        'huella',
+        'conformidad_ip',
+        'conformidad_dispositivo',
+        'conformidad_sha256',
+        'firma_colegio_subida_por',
+        'empleador_id',
+        'firmado_por_empleador',
+        'codigo_firma_empleador',
+        'fecha_firma_empleador',
+        'estado_firma_empleador',
+    ];
+
+    /** Para nombrar el archivo al bajarlo, sin enseñar su ruta. */
+    protected $appends = ['extension'];
+
+    public function getExtensionAttribute(): ?string
+    {
+        return pathinfo((string) ($this->attributes['archivo'] ?? ''), PATHINFO_EXTENSION) ?: null;
+    }
 
     protected $fillable = [
         'empleado_id',
@@ -98,10 +126,13 @@ class Documento extends Model
      * La dirección que va dentro del QR de la boleta: firmada por el
      * servidor, para que nadie arme la de otra cambiando el id. Ver
      * VerificarBoletaController.
+     *
+     * La firma no incluye el dominio: una boleta impresa dura años, y su QR
+     * tiene que seguir valiendo si se entra por http y el sitio pasa a https.
      */
     public function urlDeVerificacion(): string
     {
-        return \Illuminate\Support\Facades\URL::signedRoute('boleta.verificar', ['documento' => $this->id]);
+        return url(\Illuminate\Support\Facades\URL::signedRoute('boleta.verificar', ['documento' => $this->id], absolute: false));
     }
 
     protected static function boot()

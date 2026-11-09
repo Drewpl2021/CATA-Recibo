@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Documento;
 use App\Models\Empleado;
 use App\Models\Planilla;
-use App\Support\ExpedienteDigital;
+use App\Support\Documentos\ExpedienteDigital;
 use App\Traits\ListadoPaginado;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -33,6 +33,9 @@ class ExpedienteController extends Controller
     private const DIAS_POR_VENCER = 30;
 
     /** GET /expedientes?page=&size=&search=&filtro= */
+    /** Lo que muestra el expediente. El sueldo y las cuentas se ven en Empleados, con su permiso. */
+    private const CAMPOS_DEL_EXPEDIENTE = ['empleados.id', 'dni', 'nombre', 'apellido', 'estado', 'fecha_ingreso', 'fecha_cese', 'area_id', 'cargo_id', 'sede_id', 'tipo_contrato_id'];
+
     public function index(Request $request)
     {
         $request->validate([
@@ -42,6 +45,7 @@ class ExpedienteController extends Controller
         $filtro = $request->input('filtro');
 
         $query = $this->personal($filtro === 'de_baja')
+            ->select(self::CAMPOS_DEL_EXPEDIENTE)
             ->with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'contratoVigente.tipoContrato', 'foto'])
             ->withCount([
                 'documentos as documentos_count'   => fn (Builder $q) => $q->where('estado_registro', 'activo'),
@@ -83,7 +87,8 @@ class ExpedienteController extends Controller
     /** GET /expedientes/{empleadoId} — todo lo que hay a nombre de un trabajador. */
     public function show(string $empleadoId)
     {
-        $empleado = Empleado::with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'usuario:id,empleado_id,email', 'foto'])
+        $empleado = Empleado::select([...self::CAMPOS_DEL_EXPEDIENTE, 'telefono'])
+            ->with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'usuario:id,empleado_id,email', 'foto'])
             ->findOrFail($empleadoId);
 
         $documentos = Documento::with('planilla:id,mes,anio')

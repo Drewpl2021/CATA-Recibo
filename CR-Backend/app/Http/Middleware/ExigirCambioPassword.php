@@ -41,10 +41,8 @@ class ExigirCambioPassword
         if ($usuario && $usuario->debe_cambiar_password && ! $request->is(...self::PERMITIDAS)) {
             return response()->json([
                 'success' => false,
-                'data'    => [
-                    'message'               => 'Antes de continuar tienes que cambiar tu contraseña.',
-                    'debe_cambiar_password' => true,
-                ],
+                'message' => 'Antes de continuar tienes que cambiar tu contraseña.',
+                'data'    => ['debe_cambiar_password' => true],
             ], 423); // 423 Locked: la sesión es válida, la cuenta está trabada.
         }
 

@@ -2,7 +2,7 @@
   icono="people"
   titulo="Nosotros"
   subtitulo="El índice de Nosotros, sus subpáginas y el personal docente. Cada cambio queda en la Auditoría y se ve en el portal en hasta un minuto."
->
+  >
   <button headerActions type="button" class="btn-secondary" (click)="volver()">
     <app-icon icono="arrow_left" [tamano]="16"></app-icon>
     Volver a Portal Web
@@ -20,35 +20,43 @@
           <h2 id="titulo-indice-nosotros">Índice de Nosotros</h2>
           <p class="form-ayuda">El título y la frase de arriba de la página Nosotros. La frase de cada tarjeta va con su subpágina.</p>
         </div>
-        <div class="ajustes-panel__acciones" *ngIf="!cargandoIndice && indiceGuardado">
-          <button type="button" class="btn-primary" (click)="abrirIndice()">
-            <app-icon icono="edit" [tamano]="16"></app-icon>
-            Editar índice
-          </button>
-        </div>
+        @if (!cargandoIndice && indiceGuardado) {
+          <div class="ajustes-panel__acciones">
+            <button type="button" class="btn-primary" (click)="abrirIndice()">
+              <app-icon icono="edit" [tamano]="16"></app-icon>
+              Editar índice
+            </button>
+          </div>
+        }
       </header>
 
-      <div class="pw-esqueleto" *ngIf="cargandoIndice" role="status">
-        <span class="solo-lectores">Cargando el índice…</span>
-        <span class="esqueleto esqueleto--titulo" aria-hidden="true"></span>
-        <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
-      </div>
+      @if (cargandoIndice) {
+        <div class="pw-esqueleto" role="status">
+          <span class="solo-lectores">Cargando el índice…</span>
+          <span class="esqueleto esqueleto--titulo" aria-hidden="true"></span>
+          <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+        </div>
+      }
 
-      <div class="card-vacio" *ngIf="!cargandoIndice && !indiceGuardado">
-        <app-icon icono="people" [tamano]="34"></app-icon>
-        El índice de Nosotros no está configurado: el portal muestra «Esta sección del portal todavía no está disponible».
-        <button type="button" class="btn-primary" (click)="abrirIndice()">
-          <app-icon icono="edit" [tamano]="16"></app-icon>
-          Configurar el índice
-        </button>
-      </div>
+      @if (!cargandoIndice && !indiceGuardado) {
+        <div class="card-vacio">
+          <app-icon icono="people" [tamano]="34"></app-icon>
+          El índice de Nosotros no está configurado: el portal muestra «Esta sección del portal todavía no está disponible».
+          <button type="button" class="btn-primary" (click)="abrirIndice()">
+            <app-icon icono="edit" [tamano]="16"></app-icon>
+            Configurar el índice
+          </button>
+        </div>
+      }
 
-      <div class="ajuste-bloque" *ngIf="!cargandoIndice && indiceGuardado as c">
-        <dl class="pw-lista-datos">
-          <dt>Título</dt><dd>{{ c.titulo }}</dd>
-          <dt>Frase bajo el título</dt><dd [class.pw-sin-dato]="!c.bajada">{{ c.bajada || 'Sin frase' }}</dd>
-        </dl>
-      </div>
+      @if (!cargandoIndice && indiceGuardado; as c) {
+        <div class="ajuste-bloque">
+          <dl class="pw-lista-datos">
+            <dt>Título</dt><dd>{{ c.titulo }}</dd>
+            <dt>Frase bajo el título</dt><dd [class.pw-sin-dato]="!c.bajada">{{ c.bajada || 'Sin frase' }}</dd>
+          </dl>
+        </div>
+      }
     </section>
   </div>
 
@@ -70,7 +78,7 @@
       </header>
 
       <app-panel-niveles-docentes (cambiaron)="niveles = $event" (verDocentes)="verDocentes($event)"
-        (resumen)="alResumir('docentes', $event)"></app-panel-niveles-docentes>
+      (resumen)="alResumir('docentes', $event)"></app-panel-niveles-docentes>
 
       <app-panel-docentes [niveles]="niveles" [(nivelId)]="nivelElegido" (cambiaron)="recargarNiveles()"></app-panel-docentes>
     </section>
@@ -85,18 +93,20 @@
   [guardando]="guardandoIndice"
   textoGuardar="Guardar cambios"
   (guardar)="guardarIndice()"
->
+  >
   <form [formGroup]="indice" class="form-fields" novalidate>
     <div class="form-group">
       <label for="nosotros-titulo">Título *</label>
       <input id="nosotros-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
         placeholder="Ej. Nosotros" [class.is-invalid]="invalidoIndice('titulo')" />
-      <small class="form-error" *ngIf="invalidoIndice('titulo')">Obligatorio (máximo 60).</small>
-    </div>
-    <div class="form-group">
-      <label for="nosotros-bajada">Frase bajo el título</label>
-      <textarea id="nosotros-bajada" class="form-control" rows="3" formControlName="bajada" maxlength="200"></textarea>
-      <small class="form-ayuda">Opcional. Hasta 200 caracteres.</small>
-    </div>
-  </form>
-</app-form-modal>
+        @if (invalidoIndice('titulo')) {
+          <small class="form-error">Obligatorio (máximo 60).</small>
+        }
+      </div>
+      <div class="form-group">
+        <label for="nosotros-bajada">Frase bajo el título</label>
+        <textarea id="nosotros-bajada" class="form-control" rows="3" formControlName="bajada" maxlength="200"></textarea>
+        <small class="form-ayuda">Opcional. Hasta 200 caracteres.</small>
+      </div>
+    </form>
+  </app-form-modal>

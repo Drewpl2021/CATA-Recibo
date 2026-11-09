@@ -33,7 +33,7 @@ final class DetalleDeAuditoria
         'apellido' => 'Apellidos', 'nombre' => 'Nombre', 'dni' => 'DNI', 'estado' => 'Estado', 'sueldo_base' => 'Sueldo base',
         'bonificacion_cargo' => 'Bonificación por cargo', 'sistema_pensiones' => 'Sistema de pensión', 'afp' => 'AFP',
         'tipo_comision_afp' => 'Tipo de comisión AFP', 'cuspp' => 'CUSPP', 'fecha_afiliacion' => 'Fecha de afiliación',
-        'entidad_financiera' => 'Banco', 'numero_cuenta' => 'N° de cuenta', 'cci' => 'CCI', 'forma_pago' => 'Forma de pago',
+        'entidad_financiera' => 'Banco', 'numero_cuenta' => 'N° de cuenta', 'cci' => 'CCI', 'cts_entidad_financiera' => 'Entidad de la CTS', 'cts_numero_cuenta' => 'N° de cuenta CTS', 'forma_pago' => 'Forma de pago',
         'tiene_hijos' => 'Tiene hijos', 'aplica_diezmo' => 'Se le descuenta el diezmo', 'cargo_id' => 'Cargo',
         'area_id' => 'Área', 'sede_id' => 'Sede', 'tipo_contrato_id' => 'Tipo de contrato',
         'email' => 'Correo', 'rol_id' => 'Rol', 'estado_registro' => 'Estado de la cuenta', 'password' => 'Contraseña',

@@ -15,25 +15,29 @@
     </div>
   </header>
 
-  <div class="pw-esqueleto" *ngIf="cargandoNota" role="status">
-    <span class="solo-lectores">Cargando el aviso…</span>
-    <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
-  </div>
+  @if (cargandoNota) {
+    <div class="pw-esqueleto" role="status">
+      <span class="solo-lectores">Cargando el aviso…</span>
+      <span class="esqueleto esqueleto--linea esqueleto--media" aria-hidden="true"></span>
+    </div>
+  }
 
   <!-- El aviso: se lee aquí y se cambia en su modal -->
-  <div class="ajuste-bloque" *ngIf="!cargandoNota">
-    <div class="pw-fila-dato">
-      <div class="pw-dato">
-        <span>Aviso sobre el cronograma</span>
-        <strong [class.pw-sin-dato]="!notaGuardada">{{ notaGuardada || 'Sin aviso' }}</strong>
-        <small>Se muestra en un recuadro sobre la lista.</small>
+  @if (!cargandoNota) {
+    <div class="ajuste-bloque">
+      <div class="pw-fila-dato">
+        <div class="pw-dato">
+          <span>Aviso sobre el cronograma</span>
+          <strong [class.pw-sin-dato]="!notaGuardada">{{ notaGuardada || 'Sin aviso' }}</strong>
+          <small>Se muestra en un recuadro sobre la lista.</small>
+        </div>
+        <button type="button" class="btn-secondary" (click)="abrirNota()">
+          <app-icon icono="edit" [tamano]="14"></app-icon>
+          Editar aviso
+        </button>
       </div>
-      <button type="button" class="btn-secondary" (click)="abrirNota()">
-        <app-icon icono="edit" [tamano]="14"></app-icon>
-        Editar aviso
-      </button>
     </div>
-  </div>
+  }
 
   <div class="ajuste-bloque">
     <app-data-table
@@ -49,7 +53,7 @@
       (editarFila)="editar($event)"
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
-    >
+      >
       <ng-template appCelda="titulo" let-fila>
         <div class="pw-celda-titulo">
           <span>
@@ -69,60 +73,70 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrar()"
->
+  >
   <form [formGroup]="form" class="form-fields" novalidate>
     <div class="form-group">
       <label for="fecha-titulo">Qué pasa *</label>
       <input id="fecha-titulo" type="text" class="form-control" formControlName="titulo" maxlength="80"
         placeholder="Ej. Matrícula de estudiantes nuevos" [class.is-invalid]="invalido('titulo')" />
-      <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 80).</small>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label for="fecha-inicio">Desde *</label>
-        <input id="fecha-inicio" type="date" class="form-control" formControlName="inicio" [class.is-invalid]="invalido('inicio')" />
-        <small class="form-error" *ngIf="invalido('inicio')">Elige la fecha.</small>
+        @if (invalido('titulo')) {
+          <small class="form-error">Obligatorio (máximo 80).</small>
+        }
       </div>
-      <div class="form-group">
-        <label for="fecha-fin">Hasta</label>
-        <input id="fecha-fin" type="date" class="form-control" formControlName="fin" [min]="form.value.inicio || null"
-          [class.is-invalid]="form.hasError('finAntes') && form.controls.fin.touched" />
-        <small class="form-error" *ngIf="form.hasError('finAntes') && form.controls.fin.touched">No puede ser antes de «Desde».</small>
-        <small class="form-ayuda" *ngIf="!(form.hasError('finAntes') && form.controls.fin.touched)">Vacío si es un solo día.</small>
-      </div>
-      <div class="form-group">
-        <label for="fecha-estado">Estado</label>
-        <select id="fecha-estado" class="form-control" formControlName="estado">
-          <option value="publicado">Publicada</option>
-          <option value="borrador">Borrador</option>
-        </select>
-      </div>
-    </div>
-    <p class="form-nota" *ngIf="vistaDelPeriodo">El portal dirá: <strong>{{ vistaDelPeriodo }}</strong>.</p>
-    <div class="form-group">
-      <label for="fecha-detalle">Detalle</label>
-      <input id="fecha-detalle" type="text" class="form-control" formControlName="detalle" maxlength="160"
-        placeholder="Ej. Con la constancia de vacante y los documentos completos." />
-      <small class="form-ayuda">Opcional. Hasta 160 caracteres.</small>
-    </div>
-  </form>
-</app-form-modal>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="fecha-inicio">Desde *</label>
+          <input id="fecha-inicio" type="date" class="form-control" formControlName="inicio" [class.is-invalid]="invalido('inicio')" />
+          @if (invalido('inicio')) {
+            <small class="form-error">Elige la fecha.</small>
+          }
+        </div>
+        <div class="form-group">
+          <label for="fecha-fin">Hasta</label>
+          <input id="fecha-fin" type="date" class="form-control" formControlName="fin" [min]="form.value.inicio || null"
+            [class.is-invalid]="form.hasError('finAntes') && form.controls.fin.touched" />
+            @if (form.hasError('finAntes') && form.controls.fin.touched) {
+              <small class="form-error">No puede ser antes de «Desde».</small>
+            }
+            @if (!(form.hasError('finAntes') && form.controls.fin.touched)) {
+              <small class="form-ayuda">Vacío si es un solo día.</small>
+            }
+          </div>
+          <div class="form-group">
+            <label for="fecha-estado">Estado</label>
+            <select id="fecha-estado" class="form-control" formControlName="estado">
+              <option value="publicado">Publicada</option>
+              <option value="borrador">Borrador</option>
+            </select>
+          </div>
+        </div>
+        @if (vistaDelPeriodo) {
+          <p class="form-nota">El portal dirá: <strong>{{ vistaDelPeriodo }}</strong>.</p>
+        }
+        <div class="form-group">
+          <label for="fecha-detalle">Detalle</label>
+          <input id="fecha-detalle" type="text" class="form-control" formControlName="detalle" maxlength="160"
+            placeholder="Ej. Con la constancia de vacante y los documentos completos." />
+            <small class="form-ayuda">Opcional. Hasta 160 caracteres.</small>
+          </div>
+        </form>
+      </app-form-modal>
 
-<!-- El aviso sobre el cronograma -->
-<app-form-modal
-  [(visible)]="modalNota"
-  titulo="Aviso sobre el cronograma"
-  ancho="640px"
-  [guardando]="guardandoNota"
-  textoGuardar="Guardar cambios"
-  (guardar)="guardarNota()"
->
-  <form [formGroup]="nota" class="form-fields" novalidate>
-    <div class="form-group">
-      <label for="fechas-nota">Aviso</label>
-      <textarea id="fechas-nota" class="form-control" rows="3" formControlName="nota" maxlength="200"
-        placeholder="Ej. Las fechas pueden cambiar; confirma en secretaría."></textarea>
-      <small class="form-ayuda">Opcional. Se muestra en un recuadro sobre la lista. Hasta 200 caracteres.</small>
-    </div>
-  </form>
-</app-form-modal>
+      <!-- El aviso sobre el cronograma -->
+      <app-form-modal
+        [(visible)]="modalNota"
+        titulo="Aviso sobre el cronograma"
+        ancho="640px"
+        [guardando]="guardandoNota"
+        textoGuardar="Guardar cambios"
+        (guardar)="guardarNota()"
+        >
+        <form [formGroup]="nota" class="form-fields" novalidate>
+          <div class="form-group">
+            <label for="fechas-nota">Aviso</label>
+            <textarea id="fechas-nota" class="form-control" rows="3" formControlName="nota" maxlength="200"
+            placeholder="Ej. Las fechas pueden cambiar; confirma en secretaría."></textarea>
+            <small class="form-ayuda">Opcional. Se muestra en un recuadro sobre la lista. Hasta 200 caracteres.</small>
+          </div>
+        </form>
+      </app-form-modal>

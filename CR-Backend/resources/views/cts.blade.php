@@ -6,7 +6,8 @@
         La hoja de liquidación de la CTS que el colegio entrega con cada
         depósito (art. 29 del TUO de la Ley de CTS, D.S. 001-97-TR): datos del
         empleador, del trabajador y del depósito; la remuneración computable,
-        el tiempo y el cálculo en cuadros; el monto en letras y las firmas.
+        el tiempo y el cálculo en cuadros; el monto en letras y las firmas (digital del colegio, ver
+        partials/firma-digital).
         Con la cabecera y los colores de la boleta, para que se lean igual.
 
         Lo dibuja dompdf: nada de flex ni de variables CSS, todo con tablas y
@@ -62,9 +63,6 @@
 
         .nota { font-size: 7px; color: #6B7A82; margin-top: 10px; line-height: 1.45; }
         .lugar-fecha { margin-top: 14px; text-align: right; font-size: 8.8px; }
-        .firmas { margin-top: 56px; }
-        .firmas td { text-align: center; font-size: 7.8px; padding: 0 24px; vertical-align: top; }
-        .firmas .raya { border-top: 1px solid #1F2B33; padding-top: 4px; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -101,7 +99,7 @@
             <td style="width: 60%;">
                 <table>
                     <tr>
-                        <td class="cab__logo" style="width: 16%;"><img src="{{ public_path('logo.png') }}"></td>
+                        <td class="cab__logo" style="width: 16%;"><img src="{{ public_path('pdf/logo.png') }}"></td>
                         <td class="cab__inst" style="width: 84%;">ASOCIACIÓN EDUCATIVA<br>COLEGIO ADVENTISTA<br>TÚPAC AMARU</td>
                     </tr>
                 </table>
@@ -147,8 +145,8 @@
     <div class="barra">Datos del depósito</div>
     <table class="datos">
         <tr>
-            <td style="width: 30%;"><div class="rotulo">Entidad depositaria</div><div class="valor">{{ $l->entidad_financiera ?: ($empleado->entidad_financiera ?: '---') }}</div></td>
-            <td style="width: 30%;"><div class="rotulo">N° de cuenta CTS</div><div class="valor">{{ $l->numero_cuenta ?: ($empleado->numero_cuenta ?: '---') }}</div></td>
+            <td style="width: 30%;"><div class="rotulo">Entidad depositaria</div><div class="valor">{{ $l->entidad_financiera ?: ($empleado->cts_entidad_financiera ?: '---') }}</div></td>
+            <td style="width: 30%;"><div class="rotulo">N° de cuenta CTS</div><div class="valor">{{ $l->numero_cuenta ?: ($empleado->cts_numero_cuenta ?: ($cesado ? 'Pago directo al cese' : '---')) }}</div></td>
             <td style="width: 15%;"><div class="rotulo">Moneda</div><div class="valor">Soles</div></td>
             <td style="width: 25%;"><div class="rotulo">Fecha de depósito</div><div class="valor">{{ $l->fecha_deposito ? $fecha($l->fecha_deposito) : 'Hasta el ' . $semestre['limite']->format('d/m/Y') }}</div></td>
         </tr>
@@ -168,7 +166,7 @@
         @endif
         <tr>
             <td>
-                Sexta parte de la gratificación de {{ $gratiMes }}
+                Sexta parte de la gratificación de {{ $gratiMes }}, con su bonificación extraordinaria
                 @if ($l->gratificacion > 0)
                     <span class="detalle">(S/ {{ number_format($l->gratificacion, 2) }} ÷ 6)</span>
                 @endif
@@ -187,6 +185,9 @@
             <td style="width: 34%;"><strong style="font-size: 10px;">{{ $fecha($l->desde) }} – {{ $fecha($l->hasta) }}</strong><span>Periodo computado</span></td>
         </tr>
     </table>
+    @if ($l->faltas > 0)
+        <p class="nota">Del periodo se descontaron {{ $l->faltas }} {{ $l->faltas === 1 ? 'día' : 'días' }} de inasistencia injustificada: solo se computan los días de trabajo efectivo.</p>
+    @endif
 
     {{-- ── III. Cálculo ── --}}
     <div class="barra">III. Cálculo de la CTS</div>
@@ -217,7 +218,7 @@
             <td class="rotulo-neto">CTS A DEPOSITAR</td>
             <td class="monto">S/ {{ number_format($l->monto, 2) }}</td>
         </tr>
-        <tr><td colspan="2" class="son"><strong>SON:</strong> {{ \App\Support\MontoEnLetras::soles($l->monto) }}</td></tr>
+        <tr><td colspan="2" class="son"><strong>SON:</strong> {{ \App\Support\Pdf\MontoEnLetras::soles($l->monto) }}</td></tr>
     </table>
 
     <p class="nota">
@@ -227,11 +228,9 @@
 
     <p class="lugar-fecha">Juliaca, {{ $enLetra($fechaHoja) }}</p>
 
-    <table class="firmas">
-        <tr>
-            <td><div class="raya">EL EMPLEADOR<br>{{ $colegioNombre }}</div></td>
-            <td><div class="raya">EL TRABAJADOR<br>{{ $empleado->nombre }} {{ $empleado->apellido }} · DNI {{ $empleado->dni }}</div></td>
-        </tr>
-    </table>
+    @include('partials.firma-digital', [
+        'trabajador' => trim("{$empleado->nombre} {$empleado->apellido}"),
+        'dni'        => $empleado->dni,
+    ])
 </body>
 </html>

@@ -18,7 +18,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const DOCS = path.resolve(__dirname, '..');
+const DOCS = path.resolve(__dirname, '..', 'diagramas');
 const CHROME = process.env.CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PUERTO = 9455;
 // El perfil de Chrome va al temporal del sistema: si queda algo suelto, no

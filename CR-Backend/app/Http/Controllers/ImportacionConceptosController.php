@@ -9,10 +9,10 @@ use App\Models\PaymentConcept;
 use App\Models\PayrollDetalle;
 use App\Models\Planilla;
 use App\Support\ConceptosDePago;
-use App\Support\LectorDeCeldas;
+use App\Support\Importacion\LectorDeCeldas;
 use App\Support\Meses;
-use App\Support\ModelosDeImportacion;
-use App\Support\ReconocedorDeColumnas;
+use App\Support\Importacion\ModelosDeImportacion;
+use App\Support\Importacion\ReconocedorDeColumnas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -145,7 +145,7 @@ class ImportacionConceptosController extends Controller
             }
 
             // 2. Las líneas de cada planilla, y su neto.
-            $progreso = \App\Support\Progreso::actual()->etapa('Guardando los conceptos de cada trabajador', count($r['trabajadores']));
+            $progreso = \App\Support\Listados\Progreso::actual()->etapa('Guardando los conceptos de cada trabajador', count($r['trabajadores']));
             foreach ($r['trabajadores'] as $trabajador) {
                 $progreso->avanzar();
                 $planilla = $trabajador['_planilla'];
@@ -201,7 +201,7 @@ class ImportacionConceptosController extends Controller
         // firmar), su PDF se rehace con los montos nuevos.
         $boletasRehechas = 0;
         foreach ($r['trabajadores'] as $trabajador) {
-            $boletasRehechas += \App\Support\BoletaAlDia::rehacer($trabajador['_planilla']) ? 1 : 0;
+            $boletasRehechas += \App\Support\Documentos\BoletaAlDia::rehacer($trabajador['_planilla']) ? 1 : 0;
         }
 
         $resumen = $this->paraPantalla($r)['resumen'];
@@ -416,7 +416,7 @@ class ImportacionConceptosController extends Controller
 
         // ── Fila por fila ────────────────────────────────────────
         $vistos = [];
-        $progreso = \App\Support\Progreso::actual()->etapa('Revisando las filas del archivo', count($datos['filas']));
+        $progreso = \App\Support\Listados\Progreso::actual()->etapa('Revisando las filas del archivo', count($datos['filas']));
         foreach ($datos['filas'] as $fila) {
             $progreso->avanzar();
             $numero = (int) $fila['numero'];

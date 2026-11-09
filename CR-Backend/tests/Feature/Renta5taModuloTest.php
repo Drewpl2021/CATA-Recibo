@@ -7,7 +7,7 @@ use App\Models\PayrollDetalle;
 use App\Models\Planilla;
 use App\Models\RentaQuintaPrevia;
 use App\Support\ConceptosDePago;
-use App\Support\LibroExcel;
+use App\Support\Listados\LibroExcel;
 use App\Support\Renta5ta\MetodoRenta5ta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;

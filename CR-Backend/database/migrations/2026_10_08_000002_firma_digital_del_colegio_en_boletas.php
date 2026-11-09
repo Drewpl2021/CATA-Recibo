@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * La firma digital del colegio en las boletas (ReFirma). Ver
- * App\Support\FirmaDigitalDeBoletas.
+ * App\Support\Firma\FirmaDigitalDeBoletas.
  *
  *   firma_colegio      null: la boleta no va por este camino (las de antes, o
  *                      con el ajuste apagado). 'pendiente': emitida, falta

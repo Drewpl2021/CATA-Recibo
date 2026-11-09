@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { CeldaTablaDirective } from '../../../../shared/components/data-table/celda-tabla.directive';
@@ -26,9 +26,14 @@ import { RECURSOS } from '../../portal-web.service';
   selector: 'app-panel-docentes',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent,
-    CuerpoDesplazableComponent,
-  ],
+    ReactiveFormsModule,
+    IconComponent,
+    DataTableComponent,
+    CeldaTablaDirective,
+    FormModalComponent,
+    SelectorImagenComponent,
+    CuerpoDesplazableComponent
+],
   templateUrl: './panel-docentes.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

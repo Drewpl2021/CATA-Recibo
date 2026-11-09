@@ -31,14 +31,17 @@
       (editarFila)="editar($event)"
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
-    >
+      >
       <ng-template appCelda="titulo" let-fila>
         <div class="pw-celda-titulo">
           <span>
             <strong>{{ fila.titulo }}</strong>
             <small>
-              <ng-container *ngIf="fila.grupo; else fuera">{{ fila.grupoTitulo }} › {{ fila.nombre }}</ng-container>
-              <ng-template #fuera><span class="pw-falta">fuera del menú</span></ng-template>
+              @if (fila.grupo) {
+                {{ fila.grupoTitulo }} › {{ fila.nombre }}
+              } @else {
+                <span class="pw-falta">fuera del menú</span>
+              }
               · /nosotros/{{ fila.slug }} ·
               <span [class.pw-falta]="!fila.bloques">{{ fila.bloques ? (fila.bloques === 1 ? '1 bloque' : fila.bloques + ' bloques') : 'sin contenido' }}</span>
             </small>
@@ -69,79 +72,92 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrar()"
->
+  >
   <pw-cuerpo-desplazable #cuerpo>
-  <form [formGroup]="form" class="form-fields" novalidate>
-    <div class="seccion-form">
-      <h3 class="seccion-form__titulo">Dirección y lugar en el menú</h3>
-      <div class="form-group" *ngIf="!editando; else direccionFija">
-        <label for="pagina-slug">Dirección *</label>
-        <input id="pagina-slug" type="text" class="form-control" formControlName="slug" maxlength="60" list="paginas-sugeridas"
-          placeholder="Ej. asociacion-de-padres" (change)="alEscribirSlug()" [class.is-invalid]="invalido('slug')" aria-describedby="ayuda-slug" />
-        <datalist id="paginas-sugeridas">
-          <option *ngFor="let p of libres" [value]="p.slug">{{ p.grupo }} › {{ p.nombre }}</option>
-        </datalist>
-        <small class="form-error" *ngIf="invalido('slug')">Minúsculas sin tildes, números y guiones (máximo 60).</small>
-        <small class="form-ayuda" id="ayuda-slug">
-          Se verá en /nosotros/<strong>{{ form.controls.slug.value || 'direccion' }}</strong> y no cambia después. Se sugieren las de cata.edu.pe que aún no existen.
-        </small>
-      </div>
-      <ng-template #direccionFija>
-        <p class="form-nota">/nosotros/{{ editando?.slug }}. La dirección no cambia.</p>
-      </ng-template>
+    <form [formGroup]="form" class="form-fields" novalidate>
+      <div class="seccion-form">
+        <h3 class="seccion-form__titulo">Dirección y lugar en el menú</h3>
+        @if (!editando) {
+          <div class="form-group">
+            <label for="pagina-slug">Dirección *</label>
+            <input id="pagina-slug" type="text" class="form-control" formControlName="slug" maxlength="60" list="paginas-sugeridas"
+              placeholder="Ej. asociacion-de-padres" (change)="alEscribirSlug()" [class.is-invalid]="invalido('slug')" aria-describedby="ayuda-slug" />
+              <datalist id="paginas-sugeridas">
+                @for (p of libres; track p) {
+                  <option [value]="p.slug">{{ p.grupo }} › {{ p.nombre }}</option>
+                }
+              </datalist>
+              @if (invalido('slug')) {
+                <small class="form-error">Minúsculas sin tildes, números y guiones (máximo 60).</small>
+              }
+              <small class="form-ayuda" id="ayuda-slug">
+                Se verá en /nosotros/<strong>{{ form.controls.slug.value || 'direccion' }}</strong> y no cambia después. Se sugieren las de cata.edu.pe que aún no existen.
+              </small>
+            </div>
+          } @else {
+            <p class="form-nota">/nosotros/{{ editando.slug }}. La dirección no cambia.</p>
+          }
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="pagina-grupo">Grupo del menú</label>
-          <select id="pagina-grupo" class="form-control" formControlName="grupo" (change)="alElegirGrupo()">
-            <option value="">Fuera del menú (el portal no la abre)</option>
-            <option *ngFor="let g of grupos" [value]="g.id">{{ g.titulo }}</option>
-          </select>
-          <small class="form-ayuda">Hasta 12 publicadas por grupo.</small>
-        </div>
-        <div class="form-group">
-          <label for="pagina-nombre">Nombre en el menú{{ form.controls.grupo.value ? ' *' : '' }}</label>
-          <input id="pagina-nombre" type="text" class="form-control" formControlName="nombreEnMenu" maxlength="40"
-            placeholder="Ej. Misión y Visión" [class.is-invalid]="(form.controls.nombreEnMenu.touched && faltaNombre) || invalido('nombreEnMenu')" />
-          <small class="form-error" *ngIf="form.controls.nombreEnMenu.touched && faltaNombre">En un grupo, necesita su nombre en el menú.</small>
-          <small class="form-ayuda" *ngIf="!(form.controls.nombreEnMenu.touched && faltaNombre)">Hasta 40 caracteres.</small>
-        </div>
-      </div>
-    </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="pagina-grupo">Grupo del menú</label>
+              <select id="pagina-grupo" class="form-control" formControlName="grupo" (change)="alElegirGrupo()">
+                <option value="">Fuera del menú (el portal no la abre)</option>
+                @for (g of grupos; track g) {
+                  <option [value]="g.id">{{ g.titulo }}</option>
+                }
+              </select>
+              <small class="form-ayuda">Hasta 12 publicadas por grupo.</small>
+            </div>
+            <div class="form-group">
+              <label for="pagina-nombre">Nombre en el menú{{ form.controls.grupo.value ? ' *' : '' }}</label>
+              <input id="pagina-nombre" type="text" class="form-control" formControlName="nombreEnMenu" maxlength="40"
+                placeholder="Ej. Misión y Visión" [class.is-invalid]="(form.controls.nombreEnMenu.touched && faltaNombre) || invalido('nombreEnMenu')" />
+                @if (form.controls.nombreEnMenu.touched && faltaNombre) {
+                  <small class="form-error">En un grupo, necesita su nombre en el menú.</small>
+                }
+                @if (!(form.controls.nombreEnMenu.touched && faltaNombre)) {
+                  <small class="form-ayuda">Hasta 40 caracteres.</small>
+                }
+              </div>
+            </div>
+          </div>
 
-    <div class="seccion-form">
-      <h3 class="seccion-form__titulo">Textos</h3>
+          <div class="seccion-form">
+            <h3 class="seccion-form__titulo">Textos</h3>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="pagina-titulo">Título *</label>
-          <input id="pagina-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
-            placeholder="Ej. Misión y Visión" [class.is-invalid]="invalido('titulo')" />
-          <small class="form-error" *ngIf="invalido('titulo')">Obligatorio (máximo 60).</small>
-        </div>
-        <div class="form-group">
-          <label for="pagina-estado">Estado</label>
-          <select id="pagina-estado" class="form-control" formControlName="estado">
-            <option value="publicado">Publicada</option>
-            <option value="borrador">Borrador</option>
-          </select>
-        </div>
-      </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pagina-titulo">Título *</label>
+                <input id="pagina-titulo" type="text" class="form-control" formControlName="titulo" maxlength="60"
+                  placeholder="Ej. Misión y Visión" [class.is-invalid]="invalido('titulo')" />
+                  @if (invalido('titulo')) {
+                    <small class="form-error">Obligatorio (máximo 60).</small>
+                  }
+                </div>
+                <div class="form-group">
+                  <label for="pagina-estado">Estado</label>
+                  <select id="pagina-estado" class="form-control" formControlName="estado">
+                    <option value="publicado">Publicada</option>
+                    <option value="borrador">Borrador</option>
+                  </select>
+                </div>
+              </div>
 
-      <div class="form-group">
-        <label for="pagina-bajada">Frase bajo el título</label>
-        <textarea id="pagina-bajada" class="form-control" rows="2" formControlName="bajada" maxlength="160"></textarea>
-        <small class="form-ayuda">Opcional. Hasta 160 caracteres.</small>
-      </div>
+              <div class="form-group">
+                <label for="pagina-bajada">Frase bajo el título</label>
+                <textarea id="pagina-bajada" class="form-control" rows="2" formControlName="bajada" maxlength="160"></textarea>
+                <small class="form-ayuda">Opcional. Hasta 160 caracteres.</small>
+              </div>
 
-      <div class="form-group">
-        <label for="pagina-resumen">Frase de su tarjeta en el índice</label>
-        <textarea id="pagina-resumen" class="form-control" rows="2" formControlName="resumen" maxlength="140"></textarea>
-        <small class="form-ayuda">Opcional. Hasta 140 caracteres. Vacía, la tarjeta muestra solo el nombre.</small>
-      </div>
-    </div>
-  </form>
-  </pw-cuerpo-desplazable>
-</app-form-modal>
+              <div class="form-group">
+                <label for="pagina-resumen">Frase de su tarjeta en el índice</label>
+                <textarea id="pagina-resumen" class="form-control" rows="2" formControlName="resumen" maxlength="140"></textarea>
+                <small class="form-ayuda">Opcional. Hasta 140 caracteres. Vacía, la tarjeta muestra solo el nombre.</small>
+              </div>
+            </div>
+          </form>
+        </pw-cuerpo-desplazable>
+      </app-form-modal>
 
-<app-editor-bloques [pagina]="paginaEnEdicion" (cerrado)="alCerrarEditor($event)"></app-editor-bloques>
+      <app-editor-bloques [pagina]="paginaEnEdicion" (cerrado)="alCerrarEditor($event)"></app-editor-bloques>

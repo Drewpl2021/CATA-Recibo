@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use App\Traits\ListadoPaginado;
-use App\Support\LibroExcel;
+use App\Support\Listados\LibroExcel;
 use App\Traits\ExportaExcel;
 use App\Models\Cargo;
 use App\Services\AltaDeEmpleado;
@@ -393,7 +393,7 @@ class EmpleadoController extends Controller
         $zip->open($ruta, \ZipArchive::OVERWRITE);
 
         $faltan = [];
-        $progreso = \App\Support\Progreso::actual()->etapa('Juntando las boletas en el .zip', $documentos->count());
+        $progreso = \App\Support\Listados\Progreso::actual()->etapa('Juntando las boletas en el .zip', $documentos->count());
         foreach ($documentos as $documento) {
             $progreso->avanzar();
             $persona = $personas[$documento->empleado_id];
@@ -588,7 +588,7 @@ class EmpleadoController extends Controller
             'Teléfono', 'Dirección', 'Correo', 'Rol',
             'Área', 'Cargo', 'Sede', 'Fecha de ingreso', 'Estado', 'Fecha de cese', 'Tipo de contrato',
             'Sueldo base', 'Bonificación por cargo', 'Sistema de pensión', 'AFP', 'Tipo de comisión AFP', 'CUSPP', 'Fecha de afiliación',
-            'Forma de pago', 'Banco', 'N° de cuenta', 'CCI',
+            'Forma de pago', 'Banco', 'N° de cuenta', 'CCI', 'Banco CTS', 'N° de cuenta CTS',
             'Tiene hijos', 'Diezmo', 'Nivel de estudios', 'Especialidad', 'Institución donde estudió',
             'Contacto de emergencia', 'Teléfono del contacto',
         ];
@@ -633,6 +633,8 @@ class EmpleadoController extends Controller
                 $e->entidad_financiera ?? '',
                 (string) ($e->numero_cuenta ?? ''),
                 (string) ($e->cci ?? ''),
+                $e->cts_entidad_financiera ?? '',
+                (string) ($e->cts_numero_cuenta ?? ''),
                 $e->tiene_hijos ? 'Sí' : 'No',
                 $e->aplica_diezmo ? 'Sí' : 'No',
                 $e->nivel_estudios ?? '',
@@ -648,7 +650,7 @@ class EmpleadoController extends Controller
         // donde se suma.
         $comoTexto = [
             'DNI', 'Fecha de nacimiento', 'Teléfono', 'Fecha de ingreso', 'Fecha de cese', 'Fin de contrato',
-            'CUSPP', 'N° de cuenta', 'CCI', 'Teléfono del contacto',
+            'CUSPP', 'N° de cuenta', 'CCI', 'N° de cuenta CTS', 'Teléfono del contacto',
         ];
         $estiloColumnas = [];
         foreach ($cabecera as $i => $titulo) {
@@ -728,9 +730,11 @@ class EmpleadoController extends Controller
         $omitidos = [];
         foreach ($empleados as $empleado) {
             $nombre = trim("{$empleado->apellido} {$empleado->nombre}");
-            $motivo = $empleado->usuario
-                ? \App\Support\AccesoPorCorreo::enviar($empleado->usuario)
-                : 'no tiene cuenta (le falta el correo en su ficha)';
+            $motivo = match (true) {
+                ! $empleado->usuario => 'no tiene cuenta (le falta el correo en su ficha)',
+                $empleado->cuentaProtegidaPara($request->user()) => 'su cuenta la gestiona un Administrador',
+                default => \App\Support\AccesoPorCorreo::enviar($empleado->usuario),
+            };
             if ($motivo === null) {
                 $enviados++;
             } else {
@@ -797,6 +801,8 @@ class EmpleadoController extends Controller
             'entidad_financiera' => 'nullable|string|max:100',
             'numero_cuenta'      => 'nullable|string|max:50',
             'cci'                => 'nullable|regex:/^[0-9]{20}$/',
+            'cts_entidad_financiera' => AltaDeEmpleado::REGLA_ENTIDAD_CTS,
+            'cts_numero_cuenta'      => AltaDeEmpleado::REGLA_CUENTA_CTS,
             'tiene_hijos'        => 'nullable|boolean',
             'aplica_diezmo'      => 'nullable|boolean',
             'sueldo_base'        => 'nullable|numeric|min:0',
@@ -807,7 +813,7 @@ class EmpleadoController extends Controller
             // Email del usuario vinculado: se acepta editar aquí mismo porque no todos
             // tienen correo institucional al momento de ingresar. Se da de alta con uno
             // provisional y se actualiza cuando ya tienen el definitivo.
-            'email'              => ['nullable', 'email', Rule::unique('users', 'email')->ignore($usuario?->id)],
+            'email'              => ['nullable', 'email:rfc,filter', Rule::unique('users', 'email')->ignore($usuario?->id)],
             'nivel_estudios'       => 'nullable|in:primaria,secundaria,tecnico,universitario,maestria,doctorado',
             'especialidad'         => 'nullable|string|max:150',
             'institucion_estudios' => 'nullable|string|max:150',
@@ -817,6 +823,7 @@ class EmpleadoController extends Controller
         ];
         $request->validate($reglas, [
             'cci.regex' => 'El CCI son 20 dígitos, sin espacios ni guiones.',
+            ...AltaDeEmpleado::MENSAJES_CUENTA_CTS,
         ]);
 
         $this->exigirCargoDelArea(
@@ -938,7 +945,6 @@ class EmpleadoController extends Controller
         if ((string) $request->user()?->empleado_id === (string) $empleado->id) {
             return response()->json(['success' => false, 'message' => 'No puedes darte de baja a ti mismo.'], 422);
         }
-
         $empleado->darDeBaja();
 
         return response()->json(['success' => true, 'data' => ['message' => 'Empleado desactivado correctamente.']]);
@@ -981,7 +987,7 @@ class EmpleadoController extends Controller
 
         $empleados = Empleado::whereIn('id', $request->input('ids'))->orderBy('apellido')->orderBy('nombre')->get();
 
-        $progreso = \App\Support\Progreso::actual()->etapa($estado === 'activo' ? 'Activando a los trabajadores' : 'Dando de baja a los trabajadores', $empleados->count());
+        $progreso = \App\Support\Listados\Progreso::actual()->etapa($estado === 'activo' ? 'Activando a los trabajadores' : 'Dando de baja a los trabajadores', $empleados->count());
         foreach ($empleados as $empleado) {
             $progreso->avanzar();
             $nombre = trim("{$empleado->nombre} {$empleado->apellido}");
@@ -994,8 +1000,7 @@ class EmpleadoController extends Controller
 
             $motivo = match (true) {
                 $empleado->estado === $estado => $estado === 'activo' ? 'Ya estaba activo.' : 'Ya estaba de baja.',
-                $estado === 'inactivo' && $propio === (string) $empleado->id => 'Es tu propia cuenta: no puedes darte de baja.',
-                $estado === 'inactivo' && $ingreso && $fechaBaja < $ingreso => 'La fecha de baja es anterior a su ingreso (' . \Carbon\Carbon::parse($ingreso)->format('d/m/Y') . ').',
+                $estado === 'inactivo' && $propio === (string) $empleado->id => 'Es tu propia cuenta: no puedes darte de baja.',                $estado === 'inactivo' && $ingreso && $fechaBaja < $ingreso => 'La fecha de baja es anterior a su ingreso (' . \Carbon\Carbon::parse($ingreso)->format('d/m/Y') . ').',
                 default => null,
             };
 

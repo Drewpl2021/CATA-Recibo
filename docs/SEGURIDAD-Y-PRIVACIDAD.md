@@ -104,7 +104,7 @@ Prueba automática: `tests/Feature/AccesoPorCorreoTest.php`.
 ## 7. Pendiente (no depende del código)
 
 1. **HTTPS en el servidor.** Sin él, contraseñas y boletas viajan sin cifrar
-   por la red. Ver «Sobre entrar por IP y sin HTTPS» en `DESPLIEGUE.md`. Con
+   por la red. Ver «Sobre entrar por IP y sin HTTPS» en `docs/instalacion/DESPLIEGUE.md`. Con
    HTTPS activo, conviene agregar la cabecera `Strict-Transport-Security`.
 2. **Inscribir el banco de datos personales** del personal ante la Autoridad
    Nacional de Protección de Datos Personales, como pide la Ley 29733.

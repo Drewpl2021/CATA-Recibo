@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\Modulo;
+use App\Models\Rol;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
@@ -20,9 +22,11 @@ use Illuminate\Support\Facades\DB;
  *   ->middleware('permiso:/planillas')            hay que tener Planillas
  *   ->middleware('permiso:/planillas,/boletas')   basta con uno de los dos
  *   ->middleware('permiso:@gestion')              cualquier módulo de trabajo
- *                                                 (todo menos «Mi Espacio»):
- *                                                 los catálogos que leen
- *                                                 muchas pantallas
+ *                                                 con el personal (todo menos
+ *                                                 «Mi Espacio» y «Portal Web»):
+ *                                                 la lista del personal y los
+ *                                                 catálogos que leen muchas
+ *                                                 pantallas
  *
  * El rol con `es_superadmin` entra a todo: es la llave para que nadie quede
  * fuera por quitarle un módulo a quien no debía.
@@ -32,13 +36,64 @@ use Illuminate\Support\Facades\DB;
  */
 final class Permisos
 {
-    /** Cualquier módulo de trabajo: todo lo que no es «Mi Espacio». */
+    /** Cualquier módulo de trabajo con el personal: todo menos «Mi Espacio» y «Portal Web». */
     public const GESTION = '@gestion';
 
     /** Los módulos de «Mi Espacio»: los del propio trabajador, no dan acceso a lo de otros. */
     private const PROPIOS = ['/mis-boletas', '/mis-documentos', '/mis-vacaciones'];
 
+    /**
+     * Los que no tienen que ver con el personal: quien solo edita la web del
+     * colegio no necesita la lista del personal (con su DNI) ni los catálogos
+     * de planilla, así que no cuentan para @gestion.
+     */
+    private const AJENOS_AL_PERSONAL = ['/portal-web'];
+
     private const CLAVE_VERSION = 'permisos.version';
+
+    /** Sin estos en su menú, el superadministrador ya no llegaría a corregir nada. */
+    private const INTOCABLES_DEL_SUPERADMIN = ['/roles', '/modulos'];
+
+    /**
+     * Por qué no puede dar o quitar este módulo a este rol; null si puede.
+     *
+     * Dar módulos es dar permisos: nadie se los da a sí mismo, ni da lo que no
+     * tiene, ni toca el rol del superadministrador si no lo es.
+     */
+    public static function porQueNoPuedeCambiar(User $quien, Rol $rol, Modulo $modulo, bool $activo): ?string
+    {
+        if (self::esSuperadmin($quien)) {
+            return $rol->es_superadmin && ! $activo && in_array($modulo->ruta, self::INTOCABLES_DEL_SUPERADMIN, true)
+                ? "El Administrador necesita «{$modulo->nombre}» en su menú para poder corregir los permisos."
+                : null;
+        }
+        if ($rol->es_superadmin) {
+            return 'Solo un Administrador puede cambiar los permisos de este rol.';
+        }
+        if ((string) $quien->rol_id === (string) $rol->id) {
+            return 'No puedes cambiar los permisos de tu propio rol.';
+        }
+        if ($activo && $modulo->ruta && ! self::puede($quien, $modulo->ruta)) {
+            return "No puedes dar «{$modulo->nombre}» porque tu rol no lo tiene.";
+        }
+
+        return null;
+    }
+
+    /**
+     * ¿Maneja algo más que su propio espacio? Incluye «Portal Web»: esa cuenta
+     * cambia la página del colegio, así que también se protege (ver
+     * User::protegidaPara).
+     */
+    public static function manejaAlgoMasQueLoSuyo(?User $usuario): bool
+    {
+        if (! $usuario) {
+            return false;
+        }
+
+        return self::esSuperadmin($usuario)
+            || (bool) array_diff(self::delRol($usuario->rol_id), self::PROPIOS);
+    }
 
     public static function esSuperadmin(?User $usuario): bool
     {
@@ -58,7 +113,7 @@ final class Permisos
         $suyos = self::delRol($usuario->rol_id);
         foreach ($modulos as $modulo) {
             if ($modulo === self::GESTION) {
-                if (array_diff($suyos, self::PROPIOS)) {
+                if (array_diff($suyos, self::PROPIOS, self::AJENOS_AL_PERSONAL)) {
                     return true;
                 }
                 continue;

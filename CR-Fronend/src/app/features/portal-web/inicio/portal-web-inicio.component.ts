@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -36,9 +36,16 @@ const SECCIONES: SeccionDelIndice[] = [
   selector: 'app-portal-web-inicio',
   standalone: true,
   imports: [
-    CommonModule, PageHeaderComponent, IconComponent, EditorCifrasComponent, IndiceDeSeccionesComponent,
-    PanelBannersComponent, PanelQuienesSomosComponent, PanelNivelesComponent, PanelNoticiasComponent, PanelCierreComponent,
-  ],
+    PageHeaderComponent,
+    IconComponent,
+    EditorCifrasComponent,
+    IndiceDeSeccionesComponent,
+    PanelBannersComponent,
+    PanelQuienesSomosComponent,
+    PanelNivelesComponent,
+    PanelNoticiasComponent,
+    PanelCierreComponent
+],
   template: `
     <app-page-header
       icono="dashboard"

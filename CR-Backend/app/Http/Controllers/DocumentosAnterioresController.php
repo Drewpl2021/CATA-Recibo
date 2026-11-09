@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Documento;
 use App\Models\Empleado;
-use App\Support\ExpedienteDigital;
-use App\Support\LectorDeCeldas;
+use App\Support\Documentos\ExpedienteDigital;
+use App\Support\Importacion\LectorDeCeldas;
 use App\Support\Meses;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;

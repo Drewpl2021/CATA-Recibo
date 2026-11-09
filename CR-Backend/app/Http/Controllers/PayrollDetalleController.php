@@ -5,8 +5,9 @@ use App\Models\PaymentConcept;
 use App\Models\Planilla;
 use App\Support\ConceptosDePago;
 use Illuminate\Database\Eloquent\Builder;
-use App\Support\BoletaAlDia;
+use App\Support\Documentos\BoletaAlDia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use App\Traits\ListadoPaginado;
 
@@ -128,10 +129,13 @@ class PayrollDetalleController extends Controller
             $nuevo['estado'] = $datos['estado'];
         }
 
-        $detalle = PayrollDetalle::create($nuevo);
+        $detalle = DB::transaction(function () use ($nuevo, $planilla) {
+            $detalle = PayrollDetalle::create($nuevo);
+            $planilla->recalcularTotal();
+            $this->anotar('agregó', $detalle, $planilla, null);
 
-        $planilla->recalcularTotal();
-        $this->anotar('agregó', $detalle, $planilla, null);
+            return $detalle;
+        });
 
         return response()->json([
             'success'        => true,
@@ -193,19 +197,23 @@ class PayrollDetalleController extends Controller
             'valor'           => $detalle->valor,
         ];
 
-        $detalle->update($cambios);
-        $planilla->recalcularTotal();
+        $diferencias = DB::transaction(function () use ($detalle, $cambios, $planilla, $antes) {
+            $detalle->update($cambios);
+            $planilla->recalcularTotal();
 
-        $diferencias = [];
-        foreach ($antes as $campo => $valorAntes) {
-            if (array_key_exists($campo, $cambios) && (string) $valorAntes !== (string) $detalle->{$campo}) {
-                $diferencias[$campo] = [$valorAntes, $detalle->{$campo}];
+            $diferencias = [];
+            foreach ($antes as $campo => $valorAntes) {
+                if (array_key_exists($campo, $cambios) && (string) $valorAntes !== (string) $detalle->{$campo}) {
+                    $diferencias[$campo] = [$valorAntes, $detalle->{$campo}];
+                }
             }
-        }
 
-        if ($diferencias) {
-            $this->anotar('cambió', $detalle, $planilla, $diferencias);
-        }
+            if ($diferencias) {
+                $this->anotar('cambió', $detalle, $planilla, $diferencias);
+            }
+
+            return $diferencias;
+        });
 
         return response()->json([
             'success'        => true,
@@ -276,9 +284,12 @@ class PayrollDetalleController extends Controller
             return $bloqueo;
         }
 
-        $this->anotar('quitó', $detalle, $planilla, null);
-        $detalle->delete();
-        $planilla->recalcularTotal();
+        DB::transaction(function () use ($detalle, $planilla) {
+            $detalle->delete();
+            $planilla->recalcularTotal();
+            // Después de borrar: la auditoría solo dice lo que de verdad pasó.
+            $this->anotar('quitó', $detalle, $planilla, null);
+        });
 
         return response()->json([
             'success'        => true,

@@ -137,8 +137,8 @@ class AccesoPorCorreoTest extends TestCase
         ])->assertOk()->assertJsonPath('data.enviados', 1)->assertJsonCount(1, 'data.omitidos');
 
         Mail::assertQueued(AccesoAlSistema::class, fn ($m) => $m->email === $usuario->email);
-        // La clave que tenía deja de servir.
-        $this->assertFalse(Hash::check('ClaveVieja1', $usuario->fresh()->password));
+        // Conserva su clave hasta usar el enlace: el correo todavía puede fallar.
+        $this->assertTrue(Hash::check('ClaveVieja1', $usuario->fresh()->password));
 
         // Un trabajador no puede mandar accesos.
         $this->actingAs($this->crearUsuario('empleado'), 'sanctum')->postJson('/api/employees/send-access', ['ids' => [(string) $conCuenta->id]])->assertForbidden();
@@ -154,7 +154,7 @@ class AccesoPorCorreoTest extends TestCase
         // Con correo: le llega el enlace.
         $this->actingAs($rrhh, 'sanctum')->postJson("/api/users/{$usuario->id}/reset-password")
             ->assertOk()->assertJsonPath('data.por_correo', true)->assertJsonMissingPath('data.password_temporal');
-        Mail::assertQueued(AccesoAlSistema::class, fn ($m) => $m->email === $usuario->email);
+        Mail::assertSent(AccesoAlSistema::class, fn ($m) => $m->email === $usuario->email);
         $this->assertFalse(Hash::check('40000003', $usuario->fresh()->password));
 
         // Sin correo válido: una clave temporal aleatoria, que no es el DNI.

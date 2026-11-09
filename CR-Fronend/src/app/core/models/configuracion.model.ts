@@ -99,6 +99,10 @@ export interface Rol {
   id: string;
   nombre: string;
   descripcion?: string | null;
+  /** La llave maestra: entra a todo, aunque le falte un módulo en el menú. */
+  es_superadmin?: boolean;
+  /** Las cuentas activas con este rol. */
+  usuarios_count?: number;
 }
 
 /**

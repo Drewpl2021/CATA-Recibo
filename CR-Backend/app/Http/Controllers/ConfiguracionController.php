@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
 use App\Support\AniosAnteriores;
-use App\Support\FirmaDigitalDeBoletas;
+use App\Support\Firma\FirmaDigitalDeBoletas;
 use App\Support\Renta5ta\MetodoRenta5ta;
 use Illuminate\Http\Request;
 

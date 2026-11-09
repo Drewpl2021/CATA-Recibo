@@ -1,0 +1,27 @@
+<!-- El mismo diseño que las páginas de error del servidor (errors/plantilla.blade.php). -->
+<div class="pagina-error">
+  <a class="pagina-error__marca" href="/">
+    <img src="logo-cata.png" alt="CATA" />
+    <span><strong>CATA-Recibo</strong>Colegio Adventista Túpac Amaru</span>
+  </a>
+
+  <main class="pagina-error__tarjeta">
+    <span class="pagina-error__codigo">{{ codigo }}</span>
+    <h1>{{ titulo }}</h1>
+    @for (m of mensajes; track $index) {
+      <p>{{ m }}</p>
+    }
+
+    <div class="pagina-error__acciones">
+      <button type="button" class="pagina-error__boton pagina-error__boton--primario" (click)="probar()" [disabled]="probando">
+        {{ probando ? 'Probando…' : 'Volver a intentar' }}
+      </button>
+    </div>
+    @if (todaviaNo) {
+      <p class="pagina-error__aviso pagina-error__aviso--fuerte" role="status">Todavía no vuelve. Lo seguimos intentando solos.</p>
+    }
+    <p class="pagina-error__aviso">Se vuelve a intentar sola cada 30 segundos.</p>
+  </main>
+
+  <footer>Boletas, CTS y documentos del personal · Juliaca</footer>
+</div>

@@ -16,6 +16,11 @@
       <app-icon icono="refresh" [tamano]="16"></app-icon>
       {{ recalculando ? 'Recalculando…' : 'Recalcular 5ta' }}
     </button>
+    <button class="btn-secondary" (click)="modalCertificados = true" pistaLado="abajo"
+      appPista="El certificado de rentas y retenciones de 5ta de cada uno: se entrega antes del 1 de marzo del año siguiente, o al cese. Entrégalos, fírmalos y bájalos.">
+      <app-icon icono="receipt_long" [tamano]="16"></app-icon>
+      Certificados de 5ta
+    </button>
     <button class="btn-exportar" (click)="exportar()" [disabled]="exportando || cargando"
       title="La lista como se ve (con los filtros y la búsqueda) y la hoja de retención de cada uno">
       <app-icon icono="excel" [tamano]="16"></app-icon>
@@ -219,3 +224,6 @@
     }
   </div>
 </app-form-modal>
+
+<!-- Los certificados de rentas y retenciones del año. -->
+<app-renta5ta-certificados [(visible)]="modalCertificados"></app-renta5ta-certificados>

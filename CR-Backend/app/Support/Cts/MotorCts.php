@@ -28,11 +28,18 @@ use Carbon\Carbon;
  * La gratificación del semestre es la de diciembre para el depósito de mayo
  * y la de julio para el de noviembre. Se toma la que de verdad se pagó en su
  * planilla; si no hay planilla de ese mes (se pagó antes del sistema), se
- * calcula con la misma regla con la que el sistema la paga. La bonificación
- * extraordinaria de la Ley 30334 no entra: no es remuneración computable.
+ * calcula con la misma regla con la que el sistema la paga. Como en la hoja
+ * de CTS de RR.HH., la gratificación va con su bonificación extraordinaria
+ * del 9% (Ley 30334): el sexto es (gratificación + 9%) ÷ 6. Así lo decidió
+ * el colegio.
  *
  * No genera CTS quien tiene un tipo de contrato marcado sin CTS (las
  * prácticas) ni quien no llega a un mes de servicio.
+ *
+ * Las faltas injustificadas del semestre (CtsInasistencia) se restan del
+ * tiempo: solo cuentan los días de trabajo efectivo. Seis meses con dos
+ * faltas son 5 meses y 28 días, como en la hoja «CTS Con descuento». Las
+ * tardanzas no: esas se descuentan del sueldo, no del tiempo.
  */
 class MotorCts
 {
@@ -71,8 +78,12 @@ class MotorCts
      *
      * `aplica` en false trae el porqué en `motivo`, para que la pantalla lo
      * diga en vez de esconder a la persona.
+     *
+     * $faltas son sus días de falta injustificada del semestre. Quien calcula
+     * a todo el personal los trae de una vez (CtsInasistencia::delSemestre)
+     * y los pasa; sin ellos se buscan aquí.
      */
-    public function calcular(Empleado $empleado, int $anio, string $periodo): array
+    public function calcular(Empleado $empleado, int $anio, string $periodo, ?int $faltas = null): array
     {
         $semestre = self::semestre($anio, $periodo);
         $base = [
@@ -80,7 +91,7 @@ class MotorCts
             'desde' => null, 'hasta' => null,
             'sueldo' => 0.0, 'asignacion_familiar' => 0.0, 'bonificacion_cargo' => 0.0, 'remuneracion_fuente' => null,
             'gratificacion' => 0.0, 'gratificacion_fuente' => null, 'sexto_gratificacion' => 0.0,
-            'remuneracion_computable' => 0.0, 'meses' => 0, 'dias' => 0, 'monto' => 0.0,
+            'remuneracion_computable' => 0.0, 'meses' => 0, 'dias' => 0, 'faltas' => 0, 'monto' => 0.0,
         ];
 
         $tipo = $empleado->tipoContratoVigente();
@@ -109,6 +120,17 @@ class MotorCts
 
         ['meses' => $meses, 'dias' => $dias] = self::tiempo($desde, $hasta);
 
+        // Las faltas salen del tiempo, a razón de un día cada una (1/360). No
+        // pueden quitarle más de lo que trabajó.
+        $faltas ??= (int) \App\Models\CtsInasistencia::where('empleado_id', $empleado->id)
+            ->where('anio', $anio)->where('periodo', $periodo)->value('dias');
+        $faltas = min(max(0, $faltas), $meses * 30 + $dias);
+        if ($faltas > 0) {
+            $restante = $meses * 30 + $dias - $faltas;
+            $meses = intdiv($restante, 30);
+            $dias  = $restante % 30;
+        }
+
         ['sueldo' => $sueldo, 'asignacion' => $asignacion, 'cargo' => $cargo, 'fuente' => $fuenteRemuneracion]
             = $this->remuneracionAlCierre($empleado, (int) $hasta->month, (int) $hasta->year);
         ['monto' => $grati, 'fuente' => $fuente] = $this->gratificacionDelSemestre($empleado, $semestre['grati_mes'], $semestre['grati_anio']);
@@ -122,7 +144,7 @@ class MotorCts
             'sueldo' => $sueldo, 'asignacion_familiar' => $asignacion, 'bonificacion_cargo' => $cargo,
             'remuneracion_fuente' => $fuenteRemuneracion,
             'gratificacion' => round($grati, 2), 'gratificacion_fuente' => $fuente, 'sexto_gratificacion' => $sexto,
-            'remuneracion_computable' => $computable, 'meses' => $meses, 'dias' => $dias, 'monto' => $monto,
+            'remuneracion_computable' => $computable, 'meses' => $meses, 'dias' => $dias, 'faltas' => $faltas, 'monto' => $monto,
         ];
     }
 
@@ -279,9 +301,9 @@ class MotorCts
     }
 
     /**
-     * La gratificación del semestre: la pagada en su planilla o, si ese mes
-     * no pasó por el sistema, la que le correspondía con la regla de siempre
-     * (sin la bonificación extraordinaria, que no es computable).
+     * La gratificación del semestre con su bonificación del 9%: la pagada en
+     * su planilla (las dos líneas) o, si ese mes no pasó por el sistema, la
+     * que le correspondía con la regla de siempre.
      *
      * @return array{monto: float, fuente: ?string}
      */
@@ -293,7 +315,7 @@ class MotorCts
 
         if ($planilla) {
             $pagada = (float) $planilla->payrollDetalles
-                ->filter(fn ($d) => $d->paymentConcept?->nombre === ConceptosDePago::GRATIFICACION)
+                ->filter(fn ($d) => in_array($d->paymentConcept?->nombre, [ConceptosDePago::GRATIFICACION, ConceptosDePago::BONIF_EXTRAORDINARIA], true))
                 ->sum('monto_calculado');
 
             return ['monto' => $pagada, 'fuente' => 'planilla'];
@@ -304,6 +326,6 @@ class MotorCts
             return ['monto' => 0.0, 'fuente' => null];
         }
 
-        return ['monto' => $calculada['gratificacion'], 'fuente' => 'calculada'];
+        return ['monto' => $calculada['total'], 'fuente' => 'calculada'];
     }
 }

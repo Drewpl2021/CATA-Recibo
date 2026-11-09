@@ -7,7 +7,7 @@ import { Subscription } from 'rxjs';
 import { ConfirmService, ToastService } from '../../../core/services';
 import { ProgresoService } from '../../../core/services/sistema/progreso.service';
 import { CtsService, EstadoCts, FilaCts, HistorialCts, ListaCts, MesHistorialCts, PeriodoCts } from '../../../core/services/planilla/cts.service';
-import { fechaDeDia, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
+import { anioDeLaDireccion, fechaDeDia, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
@@ -72,7 +72,8 @@ interface GrupoHistorial {
 
 /** Lo que entra en la remuneración computable: del mes de cierre, y la gratificación de su mes. */
 const COMPUTABLES_DEL_CIERRE = ['Remuneración básica', 'Asignación Familiar', 'Bonificación por Cargo'];
-const GRATIFICACION = 'Gratificaciones Fiestas Patrias - Ley 29351 y 30334';
+/** La gratificación y su bonificación del 9%: las dos entran al sexto. */
+const GRATIFICACION = ['Gratificaciones Fiestas Patrias - Ley 29351 y 30334', 'Bonif. Extraord. Temporal - Ley 29351 y 30334'];
 
 /** Un chip de situación sobre la tabla, con su cuenta. */
 interface ChipSituacion {
@@ -94,12 +95,23 @@ interface ChipSituacion {
  * y redibuja los íconos en cada ciclo).
  */
 import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { FirmarAquiComponent, TandaDeFirma } from '../../../shared/components/firmar-aqui/firmar-aqui.component';
+import { RouterLink } from '@angular/router';
+import { FirmaColegio } from '../../../core/services/planilla/boleta.service';
+
+/** Cómo va la firma digital del colegio en una hoja, en palabras. */
+export const TEXTO_FIRMA: Record<Exclude<FirmaColegio, null>, string> = {
+  pendiente: 'Hoja por firmar',
+  parcial: 'Hoja con una firma de dos',
+  completa: 'Hoja firmada y entregada',
+};
 @Component({
   selector: 'app-cts-list',
   standalone: true,
   imports: [AvatarComponent, 
     PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective,
     FiltrosComponent, OrdenComponent, FormModalComponent, PanelLateralComponent, BarraSeleccionComponent,
+    FirmarAquiComponent, RouterLink,
   ],
   templateUrl: './cts-list.component.html',
 })
@@ -146,8 +158,8 @@ export class CtsListComponent implements OnInit {
     this.location.replaceState(url.toString());
   }
 
-  readonly anioActual = new Date().getFullYear();
-  readonly anios = [this.anioActual + 1, this.anioActual, this.anioActual - 1, this.anioActual - 2];
+  /** Los años con datos, más el actual: los manda el servidor. */
+  anios: number[] = [];
   readonly periodos: { valor: PeriodoCts; titulo: string; detalle: string }[] = [
     { valor: 'mayo', titulo: 'Mayo', detalle: 'noviembre – abril' },
     { valor: 'noviembre', titulo: 'Noviembre', detalle: 'mayo – octubre' },
@@ -201,9 +213,8 @@ export class CtsListComponent implements OnInit {
   ngOnInit(): void {
     // Al volver a la pantalla, sigue en el depósito que se miraba.
     const params = this.ruta.snapshot.queryParamMap;
-    const anio = Number(params.get('anio'));
     const periodo = params.get('periodo');
-    if (this.anios.includes(anio)) this.anio = anio;
+    this.anio = anioDeLaDireccion(params.get('anio'));
     if (periodo === 'mayo' || periodo === 'noviembre') this.periodo = periodo;
     this.cargar();
   }
@@ -282,6 +293,7 @@ export class CtsListComponent implements OnInit {
 
   private mostrar(datos: ListaCts): void {
     this.datos = datos;
+    this.anios = datos.anios;
     this.anio = datos.anio;
     this.periodo = datos.periodo;
     this.ponerEnLaDireccion();
@@ -298,6 +310,7 @@ export class CtsListComponent implements OnInit {
   private armarResumen(): void {
     const d = this.datos!;
     const r = d.resumen;
+    const f = d.firma;
     const filas = d.filas;
     const guardadas = r.calculadas + r.depositadas;
     const hoy = new Date();
@@ -340,13 +353,23 @@ export class CtsListComponent implements OnInit {
         avance: r.con_derecho ? Math.round((r.depositadas / r.con_derecho) * 100) : null,
       },
       {
-        numero: 3, icono: 'receipt_long', titulo: 'Entregar la hoja',
-        explicacion: 'Al registrar el depósito, su hoja de liquidación llega a su expediente y la firma en Mis Documentos.',
-        estado: r.depositadas ? `${r.depositadas} hoja(s) entregada(s)` : 'Todavía ninguna',
-        fase: fase(depositado, depositado),
-        avance: null,
+        numero: 3, icono: 'signature', titulo: 'Firmar y entregar la hoja',
+        explicacion: 'Al registrar el depósito, su hoja de liquidación espera la firma digital del colegio. Firmada, le llega a su expediente y da su conformidad en Mis Documentos.',
+        estado: !f.emitidas ? 'Todavía ninguna'
+          : f.por_firmar + f.a_medias ? `${f.entregadas} de ${f.emitidas} firmada(s) y entregada(s) · ${f.por_firmar + f.a_medias} por firmar`
+          : `${f.entregadas} firmada(s) y entregada(s) · ${f.conformidad} con conformidad`,
+        fase: fase(depositado && f.emitidas > 0 && f.por_firmar + f.a_medias === 0, r.depositadas > 0),
+        avance: f.emitidas ? Math.round((f.entregadas / f.emitidas) * 100) : null,
       },
     ];
+
+    // «Firmar aquí»: con el certificado de quien mira.
+    const c = f.mi_certificado;
+    this.puedeFirmar = !!c && !c.vencido && c.por_firmar > 0;
+    this.pistaFirmar = !c ? 'Primero pon tu certificado en Ajustes → Boletas.'
+      : c.vencido ? 'Tu certificado venció: renuévalo con la entidad y ponlo de nuevo en Ajustes → Boletas.'
+      : !c.por_firmar ? 'No hay hojas de este depósito esperando tu firma.'
+      : `Firma de una vez las ${c.por_firmar} hoja(s) que esperan tu firma, con tu certificado. Te pide su clave.`;
 
     const cuenta = (e: EstadoCts) => filas.filter((f) => f.estado_cts === e).length;
     this.chips = [
@@ -356,6 +379,16 @@ export class CtsListComponent implements OnInit {
         .filter((c) => c.cuenta > 0 || c.valor === this.situacion),
     ];
   }
+
+  // ── «Firmar aquí»: la firma digital del colegio en las hojas del depósito ──
+  modalFirmarAqui = false;
+  puedeFirmar = false;
+  pistaFirmar = '';
+  readonly textoDeFirma = (firma: FirmaColegio): string => (firma ? TEXTO_FIRMA[firma] : '');
+
+  /** Una tanda de «Firmar aquí» con las hojas del depósito que se está viendo. */
+  readonly firmarTanda: TandaDeFirma = (clave, desde) =>
+    this.servicio.firmarAqui(this.datos!.anio, this.datos!.periodo, clave, desde);
 
   elegirSituacion(valor: EstadoCts | ''): void {
     this.situacion = valor;
@@ -492,6 +525,42 @@ export class CtsListComponent implements OnInit {
   }
 
   bajandoZip = false;
+  exportando = false;
+
+  /** Lo que se ve en la tabla: los filtros, la situación y la búsqueda. */
+  private filasQueSeVen(): FilaCts[] {
+    return this.tabla?.filaFiltradas ?? this.filasVisibles;
+  }
+
+  /** Hay algo que acota la lista: un filtro, la situación o la búsqueda. */
+  private hayFiltros(): boolean {
+    return !!this.situacion || Object.values(this.filtros).some((v) => !!v) || !!this.tabla?.busqueda.trim();
+  }
+
+  /** La lista en Excel, tal como se ve (con los filtros y la búsqueda). */
+  exportar(): void {
+    if (this.exportando || !this.datos) return;
+    const filtros: Record<string, string> = { ...this.filtros } as Record<string, string>;
+    if (this.situacion) filtros['situacion'] = this.situacion;
+    const busqueda = this.tabla?.busqueda.trim() ?? '';
+    if (busqueda) filtros['search'] = busqueda;
+    Object.keys(filtros).forEach((k) => { if (!filtros[k]) delete filtros[k]; });
+    const cuantos = this.filasQueSeVen().length;
+
+    this.exportando = true;
+    this.servicio.exportar(this.datos.anio, this.datos.periodo, filtros).subscribe({
+      next: (blob) => {
+        this.exportando = false;
+        const filtrado = Object.keys(filtros).length ? ' (filtrado)' : '';
+        guardarArchivo(blob, `CTS - depósito de ${this.datos?.periodo} ${this.datos?.anio}${filtrado}.xlsx`);
+        this.toast.success('Excel descargado', `${cuantos} trabajador(es)${filtrado ? ', con los filtros de la lista' : ''}.`);
+      },
+      error: (err) => {
+        this.exportando = false;
+        this.toast.error('No se descargó', mensajeErrorApi(err, 'No se pudo armar el Excel.'));
+      },
+    });
+  }
 
   /**
    * Las hojas de CTS en un .zip: de los marcados o, sin marcados, de todo
@@ -499,6 +568,14 @@ export class CtsListComponent implements OnInit {
    */
   bajarHojasEnZip(filas?: { id: string }[]): void {
     if (this.bajandoZip || !this.anio || !this.periodo) return;
+    // El botón de arriba (sin marcados): con filtros, solo lo que se ve.
+    if (!filas && this.hayFiltros()) {
+      filas = this.filasQueSeVen();
+      if (!filas.length) {
+        this.toast.info('Nada que bajar', 'Nadie cumple estos filtros.');
+        return;
+      }
+    }
     this.bajandoZip = true;
     this.servicio.bajarHojasEnZip(this.anio, this.periodo, filas?.map((f) => f.id)).subscribe({
       next: (cantidad) => {
@@ -521,6 +598,15 @@ export class CtsListComponent implements OnInit {
   depositando = false;
   /** Las que se van a depositar: solo las calculadas y no depositadas. */
   aDepositar: FilaCts[] = [];
+  /**
+   * De los que se van a depositar, quienes siguen trabajando y no tienen
+   * cuenta CTS en su ficha: el backend no registra su depósito. Se arma al
+   * abrir el modal, no en un getter. Al cesado no se le pide: su CTS se le
+   * paga directo al cese.
+   */
+  sinCuentaCts: FilaCts[] = [];
+  /** Sus nombres, ya armados para el aviso: «Ana, Luis y 3 más». */
+  nombresSinCuentaCts = '';
   deposito = { fecha: '', entidad: '', cuenta: '' };
 
   abrirDeposito(filas: FilaCts[]): void {
@@ -530,6 +616,10 @@ export class CtsListComponent implements OnInit {
       return;
     }
     const una = this.aDepositar.length === 1 ? this.aDepositar[0] : null;
+    this.sinCuentaCts = this.aDepositar.filter((f) => f.estado !== 'inactivo' && !f.cuenta_ficha);
+    const nombres = this.sinCuentaCts.slice(0, 5).map((f) => f.nombre).join(', ');
+    const resto = this.sinCuentaCts.length - 5;
+    this.nombresSinCuentaCts = resto > 0 ? `${nombres} y ${resto} más` : nombres;
     this.deposito = {
       fecha: this.hoy(),
       entidad: una?.entidad_ficha ?? '',
@@ -560,6 +650,14 @@ export class CtsListComponent implements OnInit {
       return;
     }
     const una = this.aDepositar.length === 1;
+    if (una && this.sinCuentaCts.length && !this.deposito.cuenta.trim()) {
+      this.toast.error('Falta la cuenta CTS', 'Escribe la cuenta CTS donde se hizo el depósito, o anótala en su ficha.');
+      return;
+    }
+    if (!una && this.sinCuentaCts.length) {
+      this.toast.error('Falta la cuenta CTS', 'Anota la cuenta CTS en la ficha de quienes no la tienen, o quítalos de la selección.');
+      return;
+    }
     this.depositando = true;
     this.servicio.depositar({
       ids: this.aDepositar.map((f) => f.liquidacion_id!),
@@ -615,7 +713,107 @@ export class CtsListComponent implements OnInit {
   abrirDetalle(f: FilaCts): void {
     this.detalle = f;
     this.panelAbierto = true;
+    this.faltas = { dias: f.faltas_registradas ?? 0, observacion: f.faltas_observacion ?? '' };
     this.cargarHistorial(f);
+  }
+
+  // ── La lista de días no laborados, como la columna de la hoja de RR.HH. ──
+  modalFaltas = false;
+  guardandoListaFaltas = false;
+  buscarFaltas = '';
+  /** Todos los que se pueden anotar; se arma al abrir, no en un getter. */
+  private todasFaltas: FilaFaltas[] = [];
+  /** Las que se ven según el buscador. */
+  filasFaltas: FilaFaltas[] = [];
+
+  abrirFaltas(): void {
+    const filas = (this.datos?.filas ?? []).filter((f) => (f.aplica || f.faltas_registradas) && f.estado_cts !== 'depositada');
+    this.todasFaltas = filas
+      .map((f) => ({
+        fila: f,
+        dias: f.faltas_registradas ?? 0,
+        observacion: f.faltas_observacion ?? '',
+        diasAntes: f.faltas_registradas ?? 0,
+        observacionAntes: f.faltas_observacion ?? '',
+      }))
+      // Primero quienes ya tienen días anotados; luego por nombre.
+      .sort((a, b) => Number(b.diasAntes > 0) - Number(a.diasAntes > 0) || a.fila.nombre.localeCompare(b.fila.nombre));
+    this.buscarFaltas = '';
+    this.filtrarFaltas();
+    this.modalFaltas = true;
+  }
+
+  filtrarFaltas(): void {
+    const q = this.buscarFaltas.trim().toLowerCase();
+    this.filasFaltas = q
+      ? this.todasFaltas.filter((f) => f.fila.nombre.toLowerCase().includes(q) || f.fila.dni.includes(q))
+      : this.todasFaltas;
+  }
+
+  guardarListaFaltas(): void {
+    if (!this.datos) return;
+    const malos = this.todasFaltas.filter((f) => !Number.isInteger(Number(f.dias)) || Number(f.dias) < 0 || Number(f.dias) > 180);
+    if (malos.length) {
+      this.toast.error('Revisa los días', `${malos[0].fila.nombre}: escribe un número entero de 0 a 180.`);
+      return;
+    }
+    const cambios = this.todasFaltas.filter((f) => Number(f.dias) !== f.diasAntes || f.observacion.trim() !== f.observacionAntes.trim());
+    if (!cambios.length) {
+      this.modalFaltas = false;
+      return;
+    }
+    this.guardandoListaFaltas = true;
+    this.servicio.registrarFaltasEnLote(this.datos.anio, this.datos.periodo, cambios.map((f) => ({
+      empleado_id: f.fila.id,
+      dias: Number(f.dias),
+      observacion: f.observacion.trim() || null,
+    }))).subscribe({
+      next: (res) => {
+        this.guardandoListaFaltas = false;
+        if (!res.success) return;
+        this.modalFaltas = false;
+        const omitidas = res.data.omitidas.length ? ` No se tocó a ${res.data.omitidas.join(', ')}: su CTS ya está depositada.` : '';
+        this.toast.success('Faltas guardadas', `${res.data.cambiadas} trabajador(es) actualizados.${omitidas}`);
+        this.recargar();
+      },
+      error: (err) => {
+        this.guardandoListaFaltas = false;
+        this.toast.error('No se guardaron', mensajeErrorApi(err, 'Inténtalo de nuevo.'));
+      },
+    });
+  }
+
+  // ── Las faltas injustificadas del semestre ──
+  faltas = { dias: 0, observacion: '' };
+  guardandoFaltas = false;
+
+  guardarFaltas(f: FilaCts): void {
+    if (!this.datos) return;
+    const dias = Number(this.faltas.dias);
+    if (!Number.isInteger(dias) || dias < 0 || dias > 180) {
+      this.toast.error('Revisa los días', 'Escribe un número entero de días, de 0 a 180.');
+      return;
+    }
+    this.guardandoFaltas = true;
+    this.servicio.registrarFaltas({
+      empleado_id: f.id,
+      anio: this.datos.anio,
+      periodo: this.datos.periodo,
+      dias,
+      observacion: this.faltas.observacion.trim() || null,
+    }).subscribe({
+      next: (res) => {
+        this.guardandoFaltas = false;
+        if (!res.success) return;
+        const texto = dias === 0 ? 'Se quitaron sus faltas.' : `Quedaron ${dias} día(s) no laborados.`;
+        this.toast.success('Faltas guardadas', `${texto} Su CTS ahora es S/ ${res.data.monto.toFixed(2)}.`);
+        this.recargar();
+      },
+      error: (err) => {
+        this.guardandoFaltas = false;
+        this.toast.error('No se guardaron', mensajeErrorApi(err, 'Inténtalo de nuevo.'));
+      },
+    });
   }
 
   // ── El historial del semestre: el mapa en el panel y el cuadro grande ──
@@ -679,7 +877,7 @@ export class CtsListComponent implements OnInit {
       return [...nombres].map((nombre) => fila(
         nombre,
         (m) => m.conceptos.filter((c) => c.nombre === nombre).reduce((s, c) => s + c.monto, 0) || null,
-        (m) => (m.es_cierre && COMPUTABLES_DEL_CIERRE.includes(nombre)) || (m.es_gratificacion && nombre === GRATIFICACION),
+        (m) => (m.es_cierre && COMPUTABLES_DEL_CIERRE.includes(nombre)) || (m.es_gratificacion && GRATIFICACION.includes(nombre)),
       ));
     };
 
@@ -701,4 +899,13 @@ export class CtsListComponent implements OnInit {
     if (this.detalle) this.detalle = this.datos?.filas.find((f) => f.id === this.detalle!.id) ?? null;
     if (!this.detalle) this.panelAbierto = false;
   }
+}
+
+/** Una persona en la lista de días no laborados, con lo que tenía al abrir. */
+interface FilaFaltas {
+  fila: FilaCts;
+  dias: number;
+  observacion: string;
+  diasAntes: number;
+  observacionAntes: string;
 }

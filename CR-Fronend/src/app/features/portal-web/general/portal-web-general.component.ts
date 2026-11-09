@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -42,10 +42,16 @@ const HTTPS = /^https:\/\//;
   selector: 'app-portal-web-general',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule,
-    PageHeaderComponent, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent,
-    WizardComponent, CuerpoDesplazableComponent, IndiceDeSeccionesComponent,
-  ],
+    ReactiveFormsModule,
+    PageHeaderComponent,
+    IconComponent,
+    DataTableComponent,
+    CeldaTablaDirective,
+    FormModalComponent,
+    WizardComponent,
+    CuerpoDesplazableComponent,
+    IndiceDeSeccionesComponent
+],
   templateUrl: './portal-web-general.component.html',
   styleUrls: ['../compartido/pw-estilos.scss'],
 })

@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 /**
  * La boleta impresa: las mismas filas siempre, como la boleta física del
- * colegio (postman/guia_boleta.jpeg), con "-" donde el monto es cero.
+ * colegio (la de papel que entregaba RR.HH.), con "-" donde el monto es cero.
  */
 class BoletaImpresaTest extends TestCase
 {

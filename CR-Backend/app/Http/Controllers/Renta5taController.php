@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Empleado;
 use App\Models\Planilla;
 use App\Models\RentaQuintaPrevia;
-use App\Support\LibroExcel;
+use App\Support\Listados\LibroExcel;
 use App\Support\Meses;
-use App\Support\Progreso;
+use App\Support\Listados\Progreso;
 use App\Support\Renta5ta\MetodoRenta5ta;
 use App\Support\Renta5ta\MotorRenta5ta;
 use App\Support\Renta5ta\RecalculoRenta5ta;
@@ -66,6 +66,7 @@ class Renta5taController extends Controller
 
         return response()->json(['success' => true, 'data' => [
             'anio'      => $anio,
+            'anios'     => \App\Support\AniosConDatos::renta5ta($anio),
             'mes'       => $mes,
             'metodo'    => MetodoRenta5ta::comoHojaDeRrhh() ? 'rrhh' : 'sunat',
             'uit'       => (float) \App\Models\ValorLegal::delAnio($anio)->uit,

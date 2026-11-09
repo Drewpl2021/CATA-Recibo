@@ -230,4 +230,4 @@ flowchart TB
 ```
 
 Las tres piezas de PHP salen de la **misma imagen**, así que no pueden quedar
-desincronizadas entre ellas. Detalle en [DESPLIEGUE.md](../DESPLIEGUE.md).
+desincronizadas entre ellas. Detalle en [DESPLIEGUE.md](instalacion/DESPLIEGUE.md).

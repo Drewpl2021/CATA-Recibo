@@ -32,7 +32,7 @@ git -C "$RAIZ" archive "$COMMIT" CR-Backend | tar -x -C "$TMP"
 B="$TMP/CR-Backend"
 ( cd "$B" && composer install --no-dev --optimize-autoloader --no-interaction --no-progress --quiet )
 # Lo que está en Git pero no va al servidor.
-rm -rf "$B/tests" "$B/postman" "$B/.claude" "$B/phpunit.xml" "$B/boleta_generada.pdf"
+rm -rf "$B/tests" "$B/postman" "$B/.claude" "$B/phpunit.xml"
 [ -d "$B/resources/portal/ejemplos/tipico" ] || { echo "ERROR: faltan resources/portal/ejemplos en $COMMIT."; exit 1; }
 [ -f "$B/servidor/despues-de-subir.sh" ] || { echo "ERROR: falta CR-Backend/servidor/ en $COMMIT."; exit 1; }
 sed -e "s/{COMMIT}/$COMMIT/" -e "s/{FECHA}/$FECHA/" "$RAIZ/despliegue/LEEME-backend.txt" | sed 's/$/\r/' > "$B/LEEME.txt"

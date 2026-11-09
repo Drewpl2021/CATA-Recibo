@@ -1,0 +1,88 @@
+<!-- «Firmar aquí»: confirma cuántos y como quién, y pide la clave del certificado (no se guarda). -->
+<app-form-modal [visible]="visible" (visibleChange)="$event ? null : cerrar()" titulo="Firmar aquí" ancho="520px"
+  [ocultarBotonesPorDefecto]="true" (cancelar)="cerrar()">
+  @if (!resultado && !firmando && certificado; as c) {
+    <p class="firmar-aqui__resumen">
+      Vas a firmar <strong>{{ c.por_firmar }} {{ nombre(c.por_firmar) }} de {{ periodo }}</strong>
+      como <strong>{{ c.nombre }}</strong>@if (c.dni) { (DNI {{ c.dni }})}.
+    </p>
+    <p class="form-ayuda">
+      @if (femenino) {
+        {{ requeridas === 2
+        ? 'Las que ya tienen la otra firma le llegan al trabajador al momento; las demás esperan la segunda.'
+        : 'Cada una le llega al trabajador apenas queda firmada.' }}
+      } @else {
+        {{ requeridas === 2
+        ? 'Los que ya tienen la otra firma le llegan al trabajador al momento; los demás esperan la segunda.'
+        : 'Cada uno le llega al trabajador apenas queda firmado.' }}
+      }
+      La firma va dentro del PDF, igual que con ReFirma.
+    </p>
+    <div class="form-group">
+      <label for="clave_firmar_aqui">Clave de tu certificado</label>
+      <input type="password" id="clave_firmar_aqui" class="form-control" autocomplete="off" [(ngModel)]="clave"
+        [disabled]="firmando" (keydown.enter)="firmar()" aria-describedby="ayuda_clave_firmar" />
+      <small class="form-ayuda" id="ayuda_clave_firmar">La misma que pusiste al subir tu certificado. No se guarda.</small>
+    </div>
+  }
+
+  <!-- Firmando, por tandas: cuántas lleva. -->
+  @if (firmando && avance; as a) {
+    <div class="progreso" role="status">
+      <p class="progreso__etapa">
+        {{ a.total ? 'Firmando ' + (femenino ? 'las ' : 'los ') + plural + ' con tu certificado…' : 'Abriendo tu certificado…' }}
+      </p>
+      <div class="progreso__barra"><span [style.width.%]="porcentaje"></span></div>
+      <div class="progreso__cifras"><span>{{ a.hechas }} de {{ a.total || '…' }}</span><span>{{ porcentaje }}%</span></div>
+    </div>
+  }
+
+  <!-- Si alguna no se pudo o se detuvo, se dice; si todo salió bien, el modal ya se cerró. -->
+  @if (resultado; as res) {
+    <p class="firmar-aqui__resumen">
+      Se firmaron <strong>{{ res.firmadas }}</strong>:
+      {{ res.entregadas }} ya le llegaron al trabajador@if (res.a_medias) {
+      , {{ res.a_medias }} esperan la otra firma
+      }.
+    </p>
+    @if (res.detenida && res.quedan > 0) {
+      <p class="form-nota">
+        Se detuvo antes de terminar: quedan {{ res.quedan }} por firmar. Lo firmado ya quedó firmado; para seguir, vuelve a «Firmar aquí».
+      </p>
+    }
+    @if (res.errores.length) {
+      <p class="form-nota">{{ res.errores.length }} no se pudieron firmar. Revisa el motivo y vuelve a intentarlo:</p>
+      <ul class="firmar-aqui__errores">
+        @for (e of res.errores; track $index) {
+          <li>
+            <strong>{{ e.trabajador }}</strong>@if (e.numero) {
+            ({{ e.numero }})
+            }: {{ e.mensaje }}
+          </li>
+        }
+      </ul>
+    }
+  }
+
+  <div modalFooter class="asistente-pie">
+    @if (firmando) {
+      <button type="button" class="btn-secondary" (click)="detenerFirma()"
+        appPista="Termina la tanda que está firmando y se detiene. Lo ya firmado queda firmado y entregado.">
+        Detener
+      </button>
+    }
+    @if (!resultado) {
+      @if (!firmando) {
+        <button type="button" class="btn-secondary" (click)="cerrar()">Cancelar</button>
+      }
+      <button type="button" class="btn-primary" (click)="firmar()" [disabled]="firmando || !clave"
+        [appPista]="clave ? 'Firma ahora ' + (femenino ? 'las ' : 'los ') + (certificado?.por_firmar ?? 0) + ' ' + plural + ' con tu certificado.' : 'Escribe la clave de tu certificado.'">
+        <app-icon icono="signature" [tamano]="15"></app-icon>
+        {{ firmando ? 'Firmando…' : 'Firmar ' + (certificado?.por_firmar ?? 0) }}
+      </button>
+    }
+    @if (resultado) {
+      <button type="button" class="btn-primary" (click)="cerrar()">Cerrar</button>
+    }
+  </div>
+</app-form-modal>

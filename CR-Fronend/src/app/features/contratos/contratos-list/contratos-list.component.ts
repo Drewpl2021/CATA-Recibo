@@ -295,7 +295,7 @@ export class ContratosListComponent implements OnInit {
 
   /** "Contrato - Mamani Flores Carlos.pdf", con su extensión original. */
   private nombreDelArchivo(documento: Documento): string {
-    const extension = documento.archivo?.includes('.') ? documento.archivo.split('.').pop() : 'pdf';
+    const extension = documento.extension || 'pdf';
     const tipo = this.etiqueta(this.tiposDocumento, documento.tipo);
     const persona = this.nombreEmpleado(this.contratoElegido?.empleado);
 

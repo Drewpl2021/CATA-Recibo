@@ -30,7 +30,7 @@
       (editarFila)="editar($event)"
       (eliminarFila)="eliminar($event)"
       (accionPersonalizada)="alAccionar($event)"
-    >
+      >
       <ng-template appCelda="pregunta" let-fila>
         <div class="pw-celda-titulo">
           <span>
@@ -63,29 +63,35 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrar()"
->
+  >
   <form [formGroup]="form" class="form-fields" novalidate>
     <div class="form-group">
       <label for="pregunta-texto">Pregunta *</label>
       <input id="pregunta-texto" type="text" class="form-control" formControlName="pregunta" maxlength="140"
         placeholder="Ej. ¿Cuánto cuesta la pensión?" [class.is-invalid]="invalido('pregunta')" />
-      <small class="form-error" *ngIf="invalido('pregunta')">Obligatoria (máximo 140).</small>
-    </div>
-    <div class="form-group">
-      <label for="pregunta-respuesta">Respuesta *</label>
-      <textarea id="pregunta-respuesta" class="form-control" rows="5" formControlName="respuesta" maxlength="600"
+        @if (invalido('pregunta')) {
+          <small class="form-error">Obligatoria (máximo 140).</small>
+        }
+      </div>
+      <div class="form-group">
+        <label for="pregunta-respuesta">Respuesta *</label>
+        <textarea id="pregunta-respuesta" class="form-control" rows="5" formControlName="respuesta" maxlength="600"
         [class.is-invalid]="invalido('respuesta')"></textarea>
-      <small class="form-error" *ngIf="invalido('respuesta')">Obligatoria (máximo 600).</small>
-      <small class="form-ayuda" *ngIf="!invalido('respuesta')">
-        Texto simple, sin formato. {{ form.value.respuesta?.length ?? 0 }} de 600.
-      </small>
-    </div>
-    <div class="form-group">
-      <label for="pregunta-estado">Estado</label>
-      <select id="pregunta-estado" class="form-control" formControlName="estado">
-        <option value="publicado">Publicada</option>
-        <option value="borrador">Borrador</option>
-      </select>
-    </div>
-  </form>
-</app-form-modal>
+        @if (invalido('respuesta')) {
+          <small class="form-error">Obligatoria (máximo 600).</small>
+        }
+        @if (!invalido('respuesta')) {
+          <small class="form-ayuda">
+            Texto simple, sin formato. {{ form.value.respuesta?.length ?? 0 }} de 600.
+          </small>
+        }
+      </div>
+      <div class="form-group">
+        <label for="pregunta-estado">Estado</label>
+        <select id="pregunta-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicada</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </form>
+  </app-form-modal>

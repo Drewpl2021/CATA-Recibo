@@ -30,17 +30,19 @@ class CtsModuloTest extends TestCase
 
     public function test_un_semestre_completo_suma_el_sexto_de_la_gratificacion(): void
     {
-        // Sin planilla de diciembre: la gratificación se calcula (3000 por el semestre entero).
+        // Sin planilla de diciembre: la gratificación se calcula (3000 por el semestre entero) y va con su 9%:
+        // (3000 + 270) ÷ 6 = 545, como en la hoja de CTS de RR.HH.
         $e = $this->crearEmpleado(['sueldo_base' => 3000, 'fecha_ingreso' => '2020-03-01', 'tiene_hijos' => 0, 'bonificacion_cargo' => 0]);
 
         $r = (new MotorCts())->calcular($e, 2026, 'mayo');
 
         $this->assertTrue($r['aplica']);
         $this->assertSame('calculada', $r['gratificacion_fuente']);
-        $this->assertEqualsWithDelta(500, $r['sexto_gratificacion'], 0.001);
-        $this->assertEqualsWithDelta(3500, $r['remuneracion_computable'], 0.001);
+        $this->assertEqualsWithDelta(3270, $r['gratificacion'], 0.001);
+        $this->assertEqualsWithDelta(545, $r['sexto_gratificacion'], 0.001);
+        $this->assertEqualsWithDelta(3545, $r['remuneracion_computable'], 0.001);
         $this->assertSame(6, $r['meses']);
-        $this->assertEqualsWithDelta(1750, $r['monto'], 0.001);
+        $this->assertEqualsWithDelta(1772.5, $r['monto'], 0.001);
     }
 
     public function test_la_remuneracion_sale_de_la_planilla_del_mes_de_cierre(): void
@@ -58,9 +60,26 @@ class CtsModuloTest extends TestCase
         $this->assertEqualsWithDelta(3200, $r['sueldo'], 0.001);
         $this->assertEqualsWithDelta(113, $r['asignacion_familiar'], 0.001);
         $this->assertEqualsWithDelta(100, $r['bonificacion_cargo'], 0.001);
-        // Julio no pasó por el sistema: la gratificación se calcula con la ficha (3000 ÷ 6 = 500).
-        $this->assertEqualsWithDelta(3200 + 113 + 100 + 500, $r['remuneracion_computable'], 0.001);
-        $this->assertEqualsWithDelta(3913 / 2, $r['monto'], 0.01);
+        // Julio no pasó por el sistema: la gratificación se calcula con la ficha, con su 9% ((3000 + 270) ÷ 6 = 545).
+        $this->assertEqualsWithDelta(3200 + 113 + 100 + 545, $r['remuneracion_computable'], 0.001);
+        $this->assertEqualsWithDelta(3958 / 2, $r['monto'], 0.01);
+    }
+
+    public function test_el_sexto_suma_la_gratificacion_y_su_bonificacion_del_9_por_ciento_de_la_planilla(): void
+    {
+        // Julio sí pasó por el sistema: se toman las dos líneas tal como se pagaron.
+        $e = $this->crearEmpleado(['sueldo_base' => 3000, 'fecha_ingreso' => '2020-03-01', 'tiene_hijos' => 0, 'bonificacion_cargo' => 0]);
+        $julio = Planilla::create(['empleado_id' => $e->id, 'mes' => 7, 'anio' => 2026, 'sueldo_base' => 3000, 'total' => 0]);
+        $concepto = fn (string $nombre) => PaymentConcept::firstOrCreate(['nombre' => $nombre], ['tipo' => 'bonificacion'])->id;
+        PayrollDetalle::create(['planilla_id' => $julio->id, 'payment_concept_id' => $concepto(ConceptosDePago::GRATIFICACION), 'monto_calculado' => 2400]);
+        PayrollDetalle::create(['planilla_id' => $julio->id, 'payment_concept_id' => $concepto(ConceptosDePago::BONIF_EXTRAORDINARIA), 'monto_calculado' => 216]);
+
+        $r = (new MotorCts())->calcular($e, 2026, 'noviembre');
+
+        $this->assertSame('planilla', $r['gratificacion_fuente']);
+        $this->assertEqualsWithDelta(2616, $r['gratificacion'], 0.001);
+        $this->assertEqualsWithDelta(436, $r['sexto_gratificacion'], 0.001);
+        $this->assertEqualsWithDelta(3436, $r['remuneracion_computable'], 0.001);
     }
 
     public function test_el_historial_trae_los_seis_meses_con_sus_marcas(): void
@@ -124,7 +143,8 @@ class CtsModuloTest extends TestCase
     {
         Storage::fake('local');
         $e = $this->crearEmpleado(['sueldo_base' => 3000, 'fecha_ingreso' => '2020-03-01', 'tiene_hijos' => 0, 'bonificacion_cargo' => 0,
-            'entidad_financiera' => 'Caja Arequipa', 'numero_cuenta' => '123-456']);
+            'entidad_financiera' => 'BCP', 'numero_cuenta' => '191-0000000',
+            'cts_entidad_financiera' => 'Caja Arequipa', 'cts_numero_cuenta' => '123-456']);
         $practicante = $this->crearEmpleado(['tipo_contrato_id' => $this->idTipoContrato('Prácticas')]);
         $rrhh = $this->crearUsuario('rrhh');
 
@@ -139,7 +159,7 @@ class CtsModuloTest extends TestCase
             ->assertOk()->assertJsonPath('data.calculadas', 1);
 
         $l = CtsLiquidacion::where('empleado_id', $e->id)->firstOrFail();
-        $this->assertEqualsWithDelta(1750, $l->monto, 0.001);
+        $this->assertEqualsWithDelta(1772.5, $l->monto, 0.001);
 
         $this->actingAs($rrhh, 'sanctum')->postJson('/api/cts/deposit', ['ids' => [$l->id], 'fecha_deposito' => '2026-05-12'])
             ->assertOk()->assertJsonPath('data.depositadas', 1);
@@ -155,7 +175,7 @@ class CtsModuloTest extends TestCase
         $e->update(['sueldo_base' => 9000]);
         $this->actingAs($rrhh, 'sanctum')->postJson('/api/cts/calculate', ['anio' => 2026, 'periodo' => 'mayo'])
             ->assertOk()->assertJsonPath('data.depositadas', 1);
-        $this->assertEqualsWithDelta(1750, $l->refresh()->monto, 0.001);
+        $this->assertEqualsWithDelta(1772.5, $l->refresh()->monto, 0.001);
 
         // No se deposita dos veces.
         $this->actingAs($rrhh, 'sanctum')->postJson('/api/cts/deposit', ['ids' => [$l->id], 'fecha_deposito' => '2026-05-13'])

@@ -6,9 +6,14 @@
   [cargandoCifras]="refrescando"
 >
   <button headerActions type="button" class="btn-secondary" (click)="bajarHojasEnZip()" [disabled]="bajandoZip || !datos"
-    appPista="Todas las hojas de CTS de este periodo en un solo archivo .zip, para imprimirlas o archivarlas.">
+    appPista="Las hojas de CTS de lo que ves en la lista (con los filtros y la búsqueda), en un solo archivo .zip, para imprimirlas o archivarlas.">
     <app-icon icono="download" [tamano]="16"></app-icon>
     {{ bajandoZip ? 'Preparando…' : 'Descargar hojas (.zip)' }}
+  </button>
+  <button headerActions type="button" class="btn-exportar" (click)="exportar()" [disabled]="exportando || !datos"
+    appPista="La lista como se ve (con los filtros y la búsqueda): remuneración computable, tiempo, CTS, depósito, cuenta y su hoja.">
+    <app-icon icono="excel" [tamano]="16"></app-icon>
+    {{ exportando ? 'Generando…' : 'Descargar Excel' }}
   </button>
 </app-page-header>
 
@@ -83,6 +88,11 @@
               <app-icon icono="refresh" [tamano]="16"></app-icon>
               {{ calculando ? 'Calculando…' : p.fase === 'hecho' ? 'Volver a calcular' : 'Calcular CTS' }}
             </button>
+            <button type="button" class="btn-secondary" (click)="abrirFaltas()" [disabled]="!datos.resumen.con_derecho"
+              appPista="Anota los días no laborados de cada uno, como en la hoja de RR.HH. Cada día le quita 1/360 de su CTS y se recalcula al guardar.">
+              <app-icon icono="calendar_check" [tamano]="16"></app-icon>
+              Anotar faltas
+            </button>
           }
           @if (p.numero === 2 && p.fase !== 'hecho') {
             <button type="button" [ngClass]="p.fase === 'actual' ? 'btn-primary' : 'btn-secondary'"
@@ -93,6 +103,19 @@
             </button>
           }
           @if (p.numero === 3) {
+            @if (datos.firma.mi_certificado; as c) {
+              <button type="button" [ngClass]="puedeFirmar ? 'btn-primary' : 'btn-secondary'" (click)="modalFirmarAqui = true"
+                [disabled]="!puedeFirmar" [appPista]="pistaFirmar">
+                <app-icon icono="signature" [tamano]="16"></app-icon>
+                Firmar aquí{{ c.por_firmar ? ' (' + c.por_firmar + ')' : '' }}
+              </button>
+            } @else {
+              <a class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }"
+                appPista="Abre Ajustes → Boletas para poner tu certificado digital (.pfx o .p12). Con él firmas las hojas desde aquí.">
+                <app-icon icono="signature" [tamano]="16"></app-icon>
+                Poner mi certificado
+              </a>
+            }
             <button type="button" class="btn-secondary" (click)="elegirSituacion('depositada')"
               [disabled]="!datos.resumen.depositadas">
               <app-icon icono="eye" [tamano]="16"></app-icon>
@@ -158,6 +181,9 @@
   @if (f.aplica) {
     <span>{{ tiempo(f) }}</span>
     <div class="form-ayuda">{{ fecha(f.desde) }} – {{ fecha(f.hasta) }}</div>
+    @if (f.faltas) {
+      <div class="form-ayuda texto-aviso">Menos {{ f.faltas }} {{ f.faltas === 1 ? 'día no laborado' : 'días no laborados' }}</div>
+    }
   } @else {
     <span class="form-ayuda">{{ f.motivo }}</span>
   }
@@ -180,6 +206,11 @@
     }
     @if (f.fecha_deposito) {
       <div class="form-ayuda">Depositada el {{ fecha(f.fecha_deposito) }}</div>
+      @if (f.firma_colegio) {
+        <div class="form-ayuda" [class.texto-aviso]="f.firma_colegio !== 'completa'">{{ textoDeFirma(f.firma_colegio) }}</div>
+      }
+    } @else if (!f.cuenta_ficha && f.estado !== 'inactivo') {
+      <div class="form-ayuda texto-aviso">Sin cuenta CTS</div>
     }
   } @else {
     <span class="form-ayuda">—</span>
@@ -194,11 +225,11 @@
     <ul class="ajuste-detalle">
       <li><strong>Qué es:</strong> un ahorro que el colegio le guarda a cada trabajador en una cuenta CTS a su nombre, para que tenga con qué vivir si deja de trabajar. Es como medio sueldo cada semestre.</li>
       <li><strong>Dos depósitos al año:</strong> hasta el 15 de mayo, por noviembre a abril; y hasta el 15 de noviembre, por mayo a octubre. Se deposita en la cuenta CTS que eligió el trabajador.</li>
-      <li><strong>Remuneración computable:</strong> sueldo + asignación familiar + bonificación por cargo de su planilla de abril u octubre (el cierre del semestre, o el mes en que cesó), más un sexto de la gratificación del semestre (la de diciembre para mayo, la de julio para noviembre). Si alguno de esos meses no tiene planilla en el sistema, se toma su ficha.</li>
+      <li><strong>Remuneración computable:</strong> sueldo + asignación familiar + bonificación por cargo de su planilla de abril u octubre (el cierre del semestre, o el mes en que cesó), más un sexto de la gratificación del semestre con su bonificación del 9% (la de diciembre para mayo, la de julio para noviembre). Si alguno de esos meses no tiene planilla en el sistema, se toma su ficha.</li>
       <li><strong>CTS:</strong> la remuneración computable ÷ 12 por cada mes completo, más ÷ 360 por cada día suelto (quien entró o cesó a mitad del semestre).</li>
       <li><strong>Sin CTS:</strong> las prácticas y los tipos de contrato marcados sin CTS en Tipos de Contrato, y quien no llega a un mes de servicio.</li>
       <li>La CTS no paga ONP, AFP, EsSalud ni Renta de 5ta: va completa a la cuenta.</li>
-      <li>Marca a quienes ya se les depositó y usa <strong>Registrar depósito</strong>: su hoja de liquidación queda en su expediente y la ve en Mis Documentos. Una CTS depositada ya no se recalcula.</li>
+      <li>Marca a quienes ya se les depositó y usa <strong>Registrar depósito</strong>: su hoja de liquidación queda esperando la firma digital del colegio. Fírmalas con <strong>Firmar aquí</strong>: recién firmada, el trabajador la ve en Mis Documentos y da su conformidad. Una CTS depositada ya no se recalcula.</li>
     </ul>
   </details>
 }
@@ -248,12 +279,78 @@
       </div>
       <div class="form-group">
         <label for="cuentaCts">N° de cuenta CTS</label>
-        <input type="text" id="cuentaCts" class="form-control" [(ngModel)]="deposito.cuenta" maxlength="50" />
-        <small class="form-ayuda">Se propone la cuenta de su ficha; cámbiala si su CTS va a otra.</small>
+        <input type="text" id="cuentaCts" class="form-control" [(ngModel)]="deposito.cuenta" maxlength="30"
+          inputmode="numeric" placeholder="Ingrese el número de la cuenta CTS" />
+        @if (sinCuentaCts.length) {
+          <small class="form-ayuda texto-aviso">Su ficha no tiene cuenta CTS: escribe la cuenta donde se hizo el depósito.</small>
+        } @else {
+          <small class="form-ayuda">Se propone la cuenta CTS de su ficha; cámbiala si el depósito fue a otra.</small>
+        }
       </div>
     } @else {
-      <p class="form-ayuda">A cada uno se le anota la entidad y la cuenta de su ficha.</p>
+      <p class="form-ayuda">A cada uno se le anota la entidad y la cuenta CTS de su ficha.</p>
+      @if (sinCuentaCts.length) {
+        <p class="form-ayuda texto-aviso">
+          {{ sinCuentaCts.length === 1 ? '1 trabajador no tiene' : sinCuentaCts.length + ' trabajadores no tienen' }}
+          cuenta CTS en su ficha: {{ nombresSinCuentaCts }}. Anótala en su ficha o quítalos de la selección.
+        </p>
+      }
     }
+  </div>
+</app-form-modal>
+
+<!-- Los días no laborados de todos, de una vez: la columna de la hoja de RR.HH. -->
+<app-form-modal
+  [(visible)]="modalFaltas"
+  titulo="Días no laborados del semestre"
+  textoGuardar="Guardar faltas"
+  [guardando]="guardandoListaFaltas"
+  (guardar)="guardarListaFaltas()"
+  (cancelar)="modalFaltas = false"
+  ancho="860px"
+  >
+  <div class="form-fields">
+    <p class="form-ayuda">
+      Los días no laborados del semestre, como en la hoja de CTS de RR.HH.: cada día le quita 1/360 de la
+      remuneración computable. Es un dato solo de la CTS: no toca la planilla ni la boleta. Al guardar, su CTS se
+      recalcula al momento.
+    </p>
+    <div class="form-group">
+      <label for="buscarFaltas">Buscar</label>
+      <input type="search" id="buscarFaltas" class="form-control" [(ngModel)]="buscarFaltas" (ngModelChange)="filtrarFaltas()"
+        placeholder="Ingrese el nombre o el DNI" autocomplete="off" />
+    </div>
+    <div class="cts-cuadro__marco">
+      <table class="cts-cuadro">
+        <thead>
+          <tr>
+            <th class="cts-cuadro__concepto">Trabajador</th>
+            <th>Días no laborados</th>
+            <th class="cts-cuadro__concepto">Sustento</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filasFaltas; track f.fila.id) {
+            <tr>
+              <td class="cts-cuadro__concepto">
+                {{ f.fila.nombre }}
+                <div class="form-ayuda">DNI {{ f.fila.dni }}</div>
+              </td>
+              <td class="num">
+                <input type="number" class="form-control" style="max-width: 90px; margin-left: auto;" [(ngModel)]="f.dias"
+                  min="0" max="180" step="1" inputmode="numeric" [attr.aria-label]="'Días no laborados de ' + f.fila.nombre" />
+              </td>
+              <td>
+                <input type="text" class="form-control" [(ngModel)]="f.observacion" maxlength="255"
+                  placeholder="Ingrese el sustento" [attr.aria-label]="'Sustento de ' + f.fila.nombre" />
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3" class="form-ayuda">Nadie coincide con la búsqueda.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 </app-form-modal>
 
@@ -277,7 +374,12 @@
         <dt>Periodo</dt>
         <dd>{{ fecha(d.desde) }} – {{ fecha(d.hasta) }}</dd>
         <dt>Tiempo</dt>
-        <dd>{{ tiempo(d) }}</dd>
+        <dd>
+          {{ tiempo(d) }}
+          @if (d.faltas) {
+            <div class="form-ayuda">Ya restados {{ d.faltas }} {{ d.faltas === 1 ? 'día no laborado' : 'días no laborados' }}.</div>
+          }
+        </dd>
       }
       @if (!d.aplica) {
         <dt>Por qué no</dt>
@@ -361,7 +463,7 @@
           S/ {{ d.sexto_gratificacion | number: '1.2-2' }}
           <div class="form-ayuda">
             @if (d.gratificacion_fuente) {
-              Gratificación de {{ mesGratificacion }}: S/ {{ d.gratificacion | number: '1.2-2' }} ÷ 6
+              Gratificación de {{ mesGratificacion }} con su 9%: S/ {{ d.gratificacion | number: '1.2-2' }} ÷ 6
               ({{ d.gratificacion_fuente === 'planilla' ? 'de su planilla' : 'calculada con su ficha' }})
             } @else {
               No recibió gratificación de {{ mesGratificacion }}.
@@ -382,12 +484,44 @@
         }
         <dt>CTS</dt><dd><strong>S/ {{ d.monto | number: '1.2-2' }}</strong></dd>
       </dl>
+    }
+    <!-- Solo las faltas sin justificar le quitan días; las tardanzas se descuentan del sueldo. -->
+    @if (d.aplica || d.faltas_registradas) {
+      <h3 class="detalle-subtitulo">Días no laborados del semestre</h3>
+      <p class="form-ayuda">
+        Los días no laborados del semestre, de la hoja de CTS de RR.HH. Cada día le quita 1/360 de la
+        remuneración computable. No toca su planilla ni su boleta.
+      </p>
+      <div class="form-group">
+        <label for="faltasCts">Días no laborados</label>
+        <input type="number" id="faltasCts" class="form-control" [(ngModel)]="faltas.dias" min="0" max="180" step="1"
+          inputmode="numeric" placeholder="Ingrese los días" [disabled]="d.estado_cts === 'depositada' || guardandoFaltas" />
+      </div>
+      <div class="form-group">
+        <label for="faltasObs">Sustento</label>
+        <input type="text" id="faltasObs" class="form-control" [(ngModel)]="faltas.observacion" maxlength="255"
+          placeholder="Ingrese el sustento, como el registro de asistencia"
+          [disabled]="d.estado_cts === 'depositada' || guardandoFaltas" />
+      </div>
+      @if (d.estado_cts === 'depositada') {
+        <p class="form-ayuda">Su CTS ya está depositada: para cambiar sus faltas, primero anula el depósito.</p>
+      } @else {
+        <button type="button" class="btn-secondary" (click)="guardarFaltas(d)" [disabled]="guardandoFaltas">
+          <app-icon icono="save" [tamano]="16"></app-icon>
+          {{ guardandoFaltas ? 'Guardando…' : 'Guardar faltas' }}
+        </button>
+      }
+    }
+    @if (d.aplica) {
       @if (d.estado_cts === 'depositada') {
         <h3 class="detalle-subtitulo">Datos del depósito</h3>
         <dl class="detalle-lista">
           <dt>Fecha</dt><dd>{{ fecha(d.fecha_deposito) }}</dd>
           <dt>Entidad</dt><dd>{{ d.entidad_financiera || '—' }}</dd>
           <dt>Cuenta</dt><dd>{{ d.numero_cuenta || '—' }}</dd>
+          @if (d.firma_colegio) {
+            <dt>Hoja</dt><dd>{{ textoDeFirma(d.firma_colegio) }}</dd>
+          }
         </dl>
       }
     }
@@ -510,3 +644,11 @@
     </p>
   }
 </app-form-modal>
+
+<!-- «Firmar aquí»: la firma digital del colegio en las hojas del depósito, como en las boletas. -->
+@if (datos) {
+  <app-firmar-aqui [(visible)]="modalFirmarAqui" [certificado]="datos.firma.mi_certificado"
+    [requeridas]="datos.firma.requeridas" singular="hoja de CTS" plural="hojas de CTS"
+    [periodo]="datos.periodo + ' ' + datos.anio" [tanda]="firmarTanda" (terminado)="recargar()">
+  </app-firmar-aqui>
+}

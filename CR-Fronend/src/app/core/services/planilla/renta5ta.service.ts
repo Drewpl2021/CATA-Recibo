@@ -1,9 +1,10 @@
 import { FotoDeCuenta } from '../../../shared/components/avatar/avatar.component';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiResponse } from '../../utils';
+import { ApiResponse, bajarPorEnlaceFirmado } from '../../utils';
+import { FirmaColegio, ResultadoFirmarAqui, ResumenDeFirma } from './boleta.service';
 
 /** De dónde sale el dato de un mes. */
 export type FuenteMes5ta = 'planilla' | 'historial' | 'proyectado' | 'no_trabaja';
@@ -48,6 +49,8 @@ export type MetodoRenta5ta = 'sunat' | 'rrhh';
 
 export interface ListaRenta5ta {
   anio: number;
+  /** Los años del filtro: los que tienen datos, más el actual. */
+  anios: number[];
   mes: number;
   metodo: MetodoRenta5ta;
   uit: number;
@@ -108,6 +111,34 @@ export interface CargaHistorial5ta {
   recalculadas: number;
 }
 
+/** Un trabajador en la lista de certificados de rentas y retenciones del año. */
+export interface FilaCertificado5ta {
+  id: string;
+  dni: string;
+  nombre: string;
+  cargo: string | null;
+  estado: 'activo' | 'inactivo';
+  /** Ya se le puede entregar: el año terminó o cesó en él, y tiene rentas. */
+  puede: boolean;
+  /** Por qué todavía no. */
+  motivo: string | null;
+  renta_bruta: number | null;
+  impuesto: number | null;
+  retenido: number | null;
+  /** Positivo: faltó retener; negativo: se retuvo de más. */
+  saldo: number | null;
+  documento_id: string | null;
+  firma_colegio: FirmaColegio;
+  conformidad: boolean;
+}
+
+export interface ListaCertificados5ta {
+  anio: number;
+  filas: FilaCertificado5ta[];
+  resumen: { trabajadores: number; pueden: number; entregados: number };
+  firma: ResumenDeFirma;
+}
+
 /**
  * El módulo «Renta de 5ta»: la retención de cada trabajador con el método
  * activo (SUNAT o la hoja de RR.HH.), su historial de los meses antes del
@@ -157,5 +188,33 @@ export class Renta5taService {
     const params: Record<string, string> = { anio: String(anio), ...filtros };
     if (mes) params['mes'] = String(mes);
     return this.http.get(`${this.url}/export`, { params, responseType: 'blob' });
+  }
+
+  // ── Certificado de rentas y retenciones del año ──
+
+  certificados(anio: number): Observable<ApiResponse<ListaCertificados5ta>> {
+    return this.http.get<ApiResponse<ListaCertificados5ta>>(`${this.url}/certificates`, { params: { anio: String(anio) } });
+  }
+
+  /** El certificado en PDF: el entregado (firmado) o uno al vuelo. */
+  certificado(empleadoId: string, anio: number): Observable<Blob> {
+    return this.http.get(`${this.url}/${empleadoId}/certificate`, { params: { anio: String(anio) }, responseType: 'blob' });
+  }
+
+  /** Lo deja en el expediente de cada uno (sin ids, a todos los que ya pueden recibirlo). */
+  entregarCertificados(anio: number, ids?: string[]): Observable<ApiResponse<{ entregados: number; saltados: string[]; message: string }>> {
+    return this.http.post<ApiResponse<{ entregados: number; saltados: string[]; message: string }>>(`${this.url}/certificates/deliver`, { anio, ...(ids?.length ? { ids } : {}) });
+  }
+
+  /** «Firmar aquí»: una tanda de los certificados del año que esperan la firma de quien pide. */
+  firmarCertificados(anio: number, clave: string, desde: string | null = null, limite = 25): Observable<ApiResponse<ResultadoFirmarAqui>> {
+    return this.http.post<ApiResponse<ResultadoFirmarAqui>>(`${this.url}/certificates/sign-here`, { anio, clave, desde, limite });
+  }
+
+  /** Los certificados entregados en un .zip (de los marcados o de todos). Devuelve cuántos trae. */
+  bajarCertificadosEnZip(anio: number, ids?: string[]): Observable<number> {
+    return this.http
+      .post<ApiResponse<{ url: string; cantidad: number }>>(`${this.url}/certificates/zip/link`, { anio, ...(ids?.length ? { ids } : {}) })
+      .pipe(map((res) => { bajarPorEnlaceFirmado(res.data.url); return res.data.cantidad; }));
   }
 }

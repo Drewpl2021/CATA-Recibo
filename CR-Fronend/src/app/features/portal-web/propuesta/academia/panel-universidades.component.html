@@ -28,7 +28,7 @@
     (editarFila)="editar($event)"
     (eliminarFila)="eliminar($event)"
     (accionPersonalizada)="alAccionar($event)"
-  >
+    >
     <ng-template appCelda="nombre" let-fila>
       <div class="pw-celda-titulo">
         <span>
@@ -60,23 +60,26 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrar()"
->
+  >
   <form [formGroup]="form" class="form-fields" novalidate>
     <div class="form-group">
       <label for="universidad-nombre">Nombre *</label>
       <input id="universidad-nombre" type="text" class="form-control" formControlName="nombre" maxlength="80"
         placeholder="Ej. Universidad Nacional del Altiplano de Puno" [class.is-invalid]="invalido()" />
-      <small class="form-error" *ngIf="invalido()">Obligatorio (máximo 80).</small>
-    </div>
-    <div class="form-group" *ngIf="puedePublicar; else sinCiclos">
-      <label for="universidad-estado">Estado</label>
-      <select id="universidad-estado" class="form-control" formControlName="estado">
-        <option value="publicado">Publicada</option>
-        <option value="borrador">Borrador</option>
-      </select>
-    </div>
-    <ng-template #sinCiclos>
-      <p class="form-nota">Queda en borrador: agrégale sus ciclos (debajo de la tabla) y después publícala.</p>
-    </ng-template>
-  </form>
-</app-form-modal>
+        @if (invalido()) {
+          <small class="form-error">Obligatorio (máximo 80).</small>
+        }
+      </div>
+      @if (puedePublicar) {
+        <div class="form-group">
+          <label for="universidad-estado">Estado</label>
+          <select id="universidad-estado" class="form-control" formControlName="estado">
+            <option value="publicado">Publicada</option>
+            <option value="borrador">Borrador</option>
+          </select>
+        </div>
+      } @else {
+        <p class="form-nota">Queda en borrador: agrégale sus ciclos (debajo de la tabla) y después publícala.</p>
+      }
+    </form>
+  </app-form-modal>

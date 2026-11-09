@@ -24,7 +24,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 RAIZ = Path(__file__).resolve().parents[2]
 MIGRACIONES = RAIZ / 'CR-Backend' / 'database' / 'migrations'
-DOCS = RAIZ / 'docs'
+DOCS = RAIZ / 'docs' / 'diagramas'
 
 # Tablas de Laravel: no son del negocio y ensucian el gráfico.
 DE_LARAVEL = {

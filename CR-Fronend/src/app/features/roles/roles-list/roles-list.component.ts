@@ -2,22 +2,40 @@ import { Component, OnInit, inject } from '@angular/core';
 
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { RolService, ToastService, ConfirmService } from '../../../core/services';
-import { Rol } from '../../../core/models';
+import { forkJoin } from 'rxjs';
+
+import { ModuloService, RolService, ToastService, ConfirmService } from '../../../core/services';
+import { ModuloAdmin, Rol } from '../../../core/models';
 import { mensajeErrorApi } from '../../../core/utils';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
-import { ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
+import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
+import { PanelLateralComponent } from '../../../shared/components/panel-lateral/panel-lateral.component';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { esRolDelSistema, etiquetaRol } from '../../../shared/constants';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
+/** Un módulo en el panel de permisos, con su interruptor. */
+interface PermisoDeModulo {
+  modulo: ModuloAdmin;
+  activo: boolean;
+  guardando: boolean;
+  /** No se puede quitar: el Administrador lo necesita para corregir los permisos. */
+  fijo: boolean;
+}
+
+interface GrupoDePermisos {
+  id: string;
+  nombre: string;
+  permisos: PermisoDeModulo[];
+}
+
 /**
  * Roles del sistema (solo Admin).
  *
  * El rol es la pieza de la que cuelga todo lo demás: un usuario tiene un
- * rol, y ese rol decide qué módulos ve en la barra lateral (pantalla de
- * Módulos) y a qué endpoints llega (middleware `rol:` del backend).
+ * rol, y los módulos de ese rol son a la vez su menú y sus permisos reales. Se
+ * dan y se quitan aquí con un interruptor, y cada cambio se guarda al momento.
  *
  * Borrar un rol es DEFINITIVO — no tiene baja lógica como los módulos — y
  * el backend lo rechaza si todavía hay usuarios usándolo.
@@ -25,17 +43,31 @@ import { esRolDelSistema, etiquetaRol } from '../../../shared/constants';
 @Component({
   selector: 'app-roles-list',
   standalone: true,
-  imports: [IconComponent, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent],
+  imports: [IconComponent, ReactiveFormsModule, PageHeaderComponent, DataTableComponent, FormModalComponent, PanelLateralComponent],
   templateUrl: './roles-list.component.html',
 })
 export class RolesListComponent implements OnInit {
   private fb = inject(FormBuilder);
   private rolService = inject(RolService);
+  private moduloService = inject(ModuloService);
   private toastService = inject(ToastService);
   private confirmService = inject(ConfirmService);
 
   roles: Rol[] = [];
   cargando = false;
+
+  /** Todos los módulos, con los roles que tiene cada uno. */
+  private modulos: ModuloAdmin[] = [];
+
+  readonly accionesExtra: AccionPersonalizada<Rol>[] = [
+    { id: 'permisos', titulo: 'Elegir sus módulos y permisos', icono: 'view_module' },
+  ];
+
+  panelAbierto = false;
+  rolDelPanel: Rol | null = null;
+  gruposDePermisos: GrupoDePermisos[] = [];
+  cuentaDelPanel = 0;
+  etiquetaDelPanel = '';
 
   /** Filas por página; el backend corta y cuenta, acá solo se pinta. */
   readonly TAMANO_PAGINA = 10;
@@ -60,6 +92,8 @@ export class RolesListComponent implements OnInit {
     // aunque en la base ponga "rrhh", igual que en el resto de la app.
     { campo: 'nombre', header: 'Nombre', ancho: '24%', formatear: (v) => etiquetaRol(v) },
     { campo: 'descripcion', header: 'Descripción' },
+    { campo: 'id', header: 'Módulos', ancho: '10%', formatear: (_v, fila) => (fila.es_superadmin ? 'Todos' : String(this.cuantosModulos(fila))) },
+    { campo: 'usuarios_count', header: 'Cuentas activas', ancho: '12%', formatear: (v) => String(v ?? 0) },
     {
       campo: 'nombre',
       header: 'Tipo',
@@ -87,6 +121,110 @@ export class RolesListComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+    this.cargarModulos();
+  }
+
+  private cargarModulos(): void {
+    this.moduloService.getAll().subscribe({
+      next: (res) => {
+        if (!res.success) return;
+        this.modulos = res.data;
+        // Un arreglo nuevo para que la tabla vuelva a pintar la cuenta de módulos.
+        this.roles = [...this.roles];
+      },
+      error: (err) => this.toastService.error('Error', mensajeErrorApi(err, 'No se pudieron cargar los módulos.')),
+    });
+  }
+
+  private cuantosModulos(rol: Rol): number {
+    return this.modulos.filter((m) => m.roles?.some((r) => r.id === rol.id)).length;
+  }
+
+  alAccionar(evento: { accion: string; fila: Rol }): void {
+    if (evento.accion === 'permisos') this.abrirPermisos(evento.fila);
+  }
+
+  abrirPermisos(rol: Rol): void {
+    this.rolDelPanel = rol;
+    this.etiquetaDelPanel = etiquetaRol(rol);
+    const grupos = new Map<string, GrupoDePermisos>();
+
+    [...this.modulos]
+      .sort((a, b) => (a.modulo_padre?.orden ?? 0) - (b.modulo_padre?.orden ?? 0) || a.orden - b.orden)
+      .forEach((modulo) => {
+        const grupo = grupos.get(modulo.modulo_padre_id)
+          ?? { id: modulo.modulo_padre_id, nombre: modulo.modulo_padre?.nombre ?? 'Sin grupo', permisos: [] };
+        grupos.set(modulo.modulo_padre_id, grupo);
+        grupo.permisos.push({
+          modulo,
+          activo: !!modulo.roles?.some((r) => r.id === rol.id),
+          guardando: false,
+          fijo: !!rol.es_superadmin && ['/roles', '/modulos'].includes(modulo.ruta ?? ''),
+        });
+      });
+
+    this.gruposDePermisos = [...grupos.values()];
+    this.actualizarCuentaDelPanel();
+    this.panelAbierto = true;
+  }
+
+  private actualizarCuentaDelPanel(): void {
+    this.cuentaDelPanel = this.gruposDePermisos.reduce((suma, g) => suma + g.permisos.filter((p) => p.activo).length, 0);
+  }
+
+  /** Se ve al instante; si el servidor lo rechaza, vuelve como estaba y dice por qué. */
+  cambiarPermiso(permiso: PermisoDeModulo, activo: boolean): void {
+    const rol = this.rolDelPanel;
+    if (!rol || permiso.guardando || permiso.fijo) return;
+
+    permiso.activo = activo;
+    permiso.guardando = true;
+    this.actualizarCuentaDelPanel();
+
+    this.rolService.cambiarModulo(rol.id, permiso.modulo.id, activo).subscribe({
+      next: () => {
+        permiso.guardando = false;
+        this.anotarEnElModulo(permiso.modulo, rol, activo);
+      },
+      error: (err) => {
+        permiso.guardando = false;
+        permiso.activo = !activo;
+        this.actualizarCuentaDelPanel();
+        this.toastService.error('No se guardó', mensajeErrorApi(err, 'No se pudo cambiar el permiso.'));
+      },
+    });
+  }
+
+  /** Marca o desmarca todo el grupo, sin tocar lo que ya está así ni lo fijo. */
+  cambiarGrupo(grupo: GrupoDePermisos, activo: boolean): void {
+    const rol = this.rolDelPanel;
+    if (!rol) return;
+    const pendientes = grupo.permisos.filter((p) => p.activo !== activo && !p.guardando && !p.fijo);
+    if (!pendientes.length) return;
+
+    pendientes.forEach((p) => { p.activo = activo; p.guardando = true; });
+    this.actualizarCuentaDelPanel();
+
+    forkJoin(pendientes.map((p) => this.rolService.cambiarModulo(rol.id, p.modulo.id, activo))).subscribe({
+      next: () => {
+        pendientes.forEach((p) => { p.guardando = false; this.anotarEnElModulo(p.modulo, rol, activo); });
+      },
+      error: (err) => {
+        this.toastService.error('Revisa el grupo', mensajeErrorApi(err, 'No se pudieron cambiar todos los permisos.'));
+        // Alguno pudo guardarse: lo cierto es lo que diga el servidor.
+        this.moduloService.getAll().subscribe((res) => {
+          if (res.success) this.modulos = res.data;
+          this.abrirPermisos(rol);
+          this.roles = [...this.roles];
+        });
+      },
+    });
+  }
+
+  private anotarEnElModulo(modulo: ModuloAdmin, rol: Rol, activo: boolean): void {
+    const otros = (modulo.roles ?? []).filter((r) => r.id !== rol.id);
+    modulo.roles = activo ? [...otros, rol] : otros;
+    this.roles = [...this.roles];
   }
 
   invalido(campo: string): boolean {
@@ -178,8 +316,11 @@ export class RolesListComponent implements OnInit {
             this.rolEditando ? 'Rol actualizado' : 'Rol creado',
             `"${res.data.nombre}" se guardó correctamente.`
           );
+          const esNuevo = !this.rolEditando;
           this.cerrarModal();
           this.cargar();
+          // Un rol sin módulos no sirve de nada: lo siguiente es elegirlos.
+          if (esNuevo) this.abrirPermisos(res.data);
         }
       },
       error: (err) => {

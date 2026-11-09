@@ -1,5 +1,5 @@
 import { Component, Input, ViewChild, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -42,9 +42,15 @@ const MAX_GALERIA = 12;
   selector: 'app-panel-proyectos',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, IconComponent, DataTableComponent, CeldaTablaDirective, FormModalComponent, SelectorImagenComponent,
-    WizardComponent, CuerpoDesplazableComponent,
-  ],
+    ReactiveFormsModule,
+    IconComponent,
+    DataTableComponent,
+    CeldaTablaDirective,
+    FormModalComponent,
+    SelectorImagenComponent,
+    WizardComponent,
+    CuerpoDesplazableComponent
+],
   templateUrl: './panel-proyectos.component.html',
   styleUrls: ['../../compartido/pw-estilos.scss'],
 })

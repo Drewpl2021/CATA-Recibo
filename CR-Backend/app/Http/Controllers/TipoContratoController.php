@@ -74,7 +74,7 @@ class TipoContratoController extends Controller
         if ($enUso) {
             return response()->json([
                 'success' => false,
-                'data' => ['message' => 'Este tipo de contrato está en uso: no se puede eliminar. Puedes desactivarlo en vez de borrarlo.'],
+                'message' => 'Este tipo de contrato está en uso: no se puede eliminar. Puedes desactivarlo en vez de borrarlo.',
             ], 422);
         }
 

@@ -85,7 +85,7 @@ export function severidadFirma(doc: Documento): 'success' | 'info' | 'warning' {
 }
 
 export function esPdf(doc: Documento): boolean {
-  return (doc.archivo ?? '').toLowerCase().endsWith('.pdf');
+  return (doc.extension ?? '').toLowerCase() === 'pdf';
 }
 
 /** Las imágenes que el navegador pinta sin ayuda de nadie. */
@@ -106,8 +106,7 @@ export function sePuedeVer(doc: Documento): boolean {
 }
 
 export function extensionDocumento(doc: Documento): string {
-  const nombre = doc.archivo ?? '';
-  return nombre.includes('.') ? nombre.slice(nombre.lastIndexOf('.') + 1).toLowerCase() : 'pdf';
+  return (doc.extension || 'pdf').toLowerCase();
 }
 
 /** "PDF", "Word" o "imagen": lo que la persona reconoce, no la extensión. */

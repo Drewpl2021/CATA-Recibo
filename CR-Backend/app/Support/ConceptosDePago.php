@@ -107,6 +107,13 @@ final class ConceptosDePago
      */
     public const ADELANTO_BONIFICACIONES = 'Adelanto de Bonificaciones';
 
+    /**
+     * Lo que se le descuenta en la boleta por llegar tarde o faltar, en
+     * soles. Es solo de la planilla: la CTS no lo mira. Sus días no
+     * laborados los anota RR.HH. aparte (CtsInasistencia).
+     */
+    public const TARDANZAS_Y_FALTAS = 'Descuento Autorizado - Tardanzas y Faltas';
+
     // ── Las dos bolsas genéricas ──────────────────────────────────
     public const OTROS_INGRESOS      = 'Otros Conceptos (Ingresos)';
     public const OTROS_DESCUENTOS    = 'Otros Conceptos (Descuentos)';

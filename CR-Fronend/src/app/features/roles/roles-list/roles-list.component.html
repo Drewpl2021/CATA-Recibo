@@ -23,10 +23,58 @@
   (cambioBusqueda)="buscar($event)"
   [camposBusqueda]="['nombre', 'descripcion']"
   [acciones]="['editar', 'eliminar']"
+  [accionesPersonalizadas]="accionesExtra"
   mensajeVacio="Todavía no hay roles registrados."
   (editarFila)="editar($event)"
   (eliminarFila)="eliminar($event)"
+  (accionPersonalizada)="alAccionar($event)"
 ></app-data-table>
+
+<app-panel-lateral
+  [(visible)]="panelAbierto"
+  icono="shield"
+  ancho="540px"
+  [titulo]="'Módulos y permisos de ' + etiquetaDelPanel"
+  [subtitulo]="cuentaDelPanel + ' módulo(s) activos · cada cambio se guarda al momento'"
+  >
+  @if (rolDelPanel?.es_superadmin) {
+    <p class="form-nota">
+      Este rol entra a todo el sistema. Aquí solo eliges qué aparece en su menú.
+    </p>
+  } @else {
+    <p class="form-nota">
+      Cada módulo es a la vez el menú y el permiso real. El permiso cambia al momento; el menú
+      se actualiza cuando la persona recarga la página.
+    </p>
+  }
+
+  @for (grupo of gruposDePermisos; track grupo.id) {
+    <section class="permisos-grupo" [attr.aria-label]="grupo.nombre">
+      <header class="permisos-grupo__cabecera">
+        <h3>{{ grupo.nombre }}</h3>
+        <div class="permisos-grupo__acciones chips-filtro chips-filtro--tabla">
+          <button type="button" class="chip-filtro" [attr.aria-label]="'Dar todos los módulos de ' + grupo.nombre" (click)="cambiarGrupo(grupo, true)">Todos</button>
+          <button type="button" class="chip-filtro" [attr.aria-label]="'Quitar los módulos de ' + grupo.nombre" (click)="cambiarGrupo(grupo, false)">Ninguno</button>
+        </div>
+      </header>
+      @for (p of grupo.permisos; track p.modulo.id) {
+        <label class="interruptor permisos-grupo__fila">
+          <span class="permisos-grupo__nombre">
+            <app-icon [icono]="p.modulo.icono ?? 'circle'" [tamano]="18"></app-icon>
+            {{ p.modulo.nombre }}
+            @if (p.fijo) {
+              <small>Siempre en su menú</small>
+            }
+          </span>
+          <input type="checkbox" role="switch" [checked]="p.activo" [disabled]="p.guardando || p.fijo"
+            (change)="cambiarPermiso(p, $any($event.target).checked)" />
+        </label>
+      }
+    </section>
+  } @empty {
+    <p class="form-ayuda">No hay módulos para mostrar.</p>
+  }
+</app-panel-lateral>
 
 <app-form-modal
   [(visible)]="modalVisible"
@@ -64,10 +112,7 @@
     </div>
 
     @if (!rolEditando) {
-      <p class="form-nota">
-        Después de crear el rol, entra a <strong>Módulos</strong> para elegir qué
-        ítems del menú verá.
-      </p>
+      <p class="form-nota">Al crearlo se abrirá la lista para elegir sus módulos.</p>
     }
   </form>
 </app-form-modal>

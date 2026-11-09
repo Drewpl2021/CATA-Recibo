@@ -27,7 +27,7 @@
       mensajeVacio="Todavía no hay categorías: crea una antes de agregar proyectos."
       (editarFila)="editar($event)"
       (eliminarFila)="pedirEliminar($event)"
-    >
+      >
       <ng-template appCelda="nombre" let-fila>
         <div class="pw-celda-titulo">
           <span>
@@ -60,16 +60,20 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrar()"
->
+  >
   <form [formGroup]="form" class="form-fields" novalidate>
     <div class="form-group">
       <label for="categoria-nombre">Nombre *</label>
       <input id="categoria-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
         placeholder="Ej. Tecnología" [class.is-invalid]="invalido()" />
-      <small class="form-error" *ngIf="invalido()">Obligatorio (máximo 40).</small>
-      <small class="form-ayuda" *ngIf="!invalido() && editando">
-        Su dirección sigue siendo «?categoria={{ $any(editando).clave }}». El nuevo nombre se ve también en el detalle de sus proyectos.
-      </small>
-    </div>
-  </form>
-</app-form-modal>
+        @if (invalido()) {
+          <small class="form-error">Obligatorio (máximo 40).</small>
+        }
+        @if (!invalido() && editando) {
+          <small class="form-ayuda">
+            Su dirección sigue siendo «?categoria={{ $any(editando).clave }}». El nuevo nombre se ve también en el detalle de sus proyectos.
+          </small>
+        }
+      </div>
+    </form>
+  </app-form-modal>

@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Support\LibroExcel;
+use App\Support\Listados\LibroExcel;
 
 /**
  * Lo común de los dos reportes que se descargan: el personal y la planilla.

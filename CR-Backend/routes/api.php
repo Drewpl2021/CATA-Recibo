@@ -60,6 +60,9 @@ Route::post('/register', fn () => response()->json([
     'message' => 'El registro público está deshabilitado. Acceso restringido a personal autorizado. '
         . 'Si requieres asistencia, contacta al administrador del sistema.',
 ], 403))->middleware('throttle:registro');
+// ¿Está arriba el sistema? Sin sesión y sin datos: lo pregunta la pantalla
+// de mantenimiento para saber cuándo volver. En mantenimiento responde 503.
+Route::get('/status', fn () => response()->json(['success' => true]))->middleware('throttle:60,1');
 Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle:ingreso');
 
 // Lo que abre el QR de la boleta: si es auténtica. Pública y con la dirección
@@ -68,6 +71,8 @@ Route::post('/login',    [AuthController::class, 'login'])->middleware('throttle
 // navegador, sin el token. Ver EmpleadoController::enlaceBoletasEnZip.
 Route::get('/cts/zip/download', [\App\Http\Controllers\CtsController::class, 'zipConEnlace'])
     ->name('cts.zip')->middleware(['signed:relative', 'throttle:30,1']);
+Route::get('/income-tax/certificates/zip/download', [\App\Http\Controllers\CertificadoRenta5taController::class, 'zipConEnlace'])
+    ->name('certificados5ta.zip')->middleware(['signed:relative', 'throttle:30,1']);
 Route::get('/bonuses/zip/download', [\App\Http\Controllers\GratificacionController::class, 'zipConEnlace'])
     ->name('gratificaciones.zip')->middleware(['signed:relative', 'throttle:30,1']);
 Route::get('/payslips-zip/download', [EmpleadoController::class, 'boletasEnZipConEnlace'])
@@ -119,13 +124,15 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     Route::post('my-documents/{id}/sign',  [MisDocumentosController::class, 'firmar'])->middleware('throttle:clave');
     // El trabajador sube su propio CV; el empleado sale del token.
     Route::post('my-documents/resume', [MisDocumentosController::class, 'subirHojaDeVida']);
+    // Varias de sus boletas y hojas juntas, en .zip o en un solo PDF.
+    Route::post('my-documents/bundle', [MisDocumentosController::class, 'juntar'])->middleware('throttle:20,1');
     Route::get('my-modules', [MisModulosController::class, 'index']);
     Route::put('change-password', [AuthController::class, 'cambiarPassword'])->middleware('throttle:clave');
     // Confirma la CLAVE de quien está en la sesión, sin cambiar nada. La usa
     // Emisión de Boletas para destrabar la edición de una boleta ya emitida.
     Route::post('verify-password', [AuthController::class, 'verificarPassword'])->middleware('throttle:clave');
 
-    // Cuánto lleva un proceso largo que pidió esta misma cuenta (ver App\Support\Progreso).
+    // Cuánto lleva un proceso largo que pidió esta misma cuenta (ver App\Support\Listados\Progreso).
     Route::get('progress/{id}', [\App\Http\Controllers\ProgresoController::class, 'ver'])->where('id', '[A-Za-z0-9-]{8,64}');
 
     // Los términos de uso: el papel que antes se firmaba a mano. Los firma
@@ -296,6 +303,12 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('income-tax/history',           [\App\Http\Controllers\Renta5taController::class, 'cargarHistorial']);
         Route::post('income-tax/recalculate',       [\App\Http\Controllers\Renta5taController::class, 'recalcular']);
         Route::get('income-tax/export',             [\App\Http\Controllers\Renta5taController::class, 'exportar']);
+        // El certificado de rentas y retenciones de 5ta del año (antes de {empleado}).
+        Route::get('income-tax/certificates',               [\App\Http\Controllers\CertificadoRenta5taController::class, 'index']);
+        Route::post('income-tax/certificates/deliver',      [\App\Http\Controllers\CertificadoRenta5taController::class, 'entregar']);
+        Route::post('income-tax/certificates/sign-here',    [\App\Http\Controllers\CertificadoRenta5taController::class, 'firmarAqui'])->middleware('throttle:120,1');
+        Route::post('income-tax/certificates/zip/link',     [\App\Http\Controllers\CertificadoRenta5taController::class, 'enlaceZip']);
+        Route::get('income-tax/{empleado}/certificate',     [\App\Http\Controllers\CertificadoRenta5taController::class, 'hoja'])->whereUuid('empleado');
         Route::get('income-tax/{empleado}',         [\App\Http\Controllers\Renta5taController::class, 'show'])->whereUuid('empleado');
         Route::put('income-tax/{empleado}/history', [\App\Http\Controllers\Renta5taController::class, 'guardarHistorial'])->whereUuid('empleado');
     });
@@ -311,16 +324,23 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::post('cts/deposit',                 [\App\Http\Controllers\CtsController::class, 'depositar']);
         Route::delete('cts/{liquidacion}/deposit', [\App\Http\Controllers\CtsController::class, 'anularDeposito'])->whereUuid('liquidacion');
         Route::match(['get', 'post'], 'cts/zip/link', [\App\Http\Controllers\CtsController::class, 'enlaceZip']);
+        Route::get('cts/export',                   [\App\Http\Controllers\CtsController::class, 'exportar']);
         Route::get('cts/{liquidacion}/sheet',      [\App\Http\Controllers\CtsController::class, 'hoja'])->whereUuid('liquidacion');
         Route::get('cts/{empleado}/history',       [\App\Http\Controllers\CtsController::class, 'historial'])->whereUuid('empleado');
+        Route::put('cts/absences',                 [\App\Http\Controllers\CtsController::class, 'registrarFaltas']);
+        Route::put('cts/absences/batch',           [\App\Http\Controllers\CtsController::class, 'registrarFaltasEnLote']);
+        // «Firmar aquí» en las hojas del depósito, con el certificado de quien lo pide, por tandas.
+        Route::post('cts/sign-here',               [\App\Http\Controllers\CtsController::class, 'firmarAqui'])->middleware('throttle:120,1');
     });
 
     // ── Gratificaciones ──
     Route::middleware('permiso:/gratificaciones')->group(function () {
         Route::get('bonuses',                    [\App\Http\Controllers\GratificacionController::class, 'index']);
         Route::post('bonuses/deliver',           [\App\Http\Controllers\GratificacionController::class, 'entregar']);
+        Route::post('bonuses/sign-here',         [\App\Http\Controllers\GratificacionController::class, 'firmarAqui'])->middleware('throttle:120,1');
         Route::get('bonuses/{empleado}/history', [\App\Http\Controllers\GratificacionController::class, 'historial'])->whereUuid('empleado');
         Route::match(['get', 'post'], 'bonuses/zip/link', [\App\Http\Controllers\GratificacionController::class, 'enlaceZip']);
+        Route::get('bonuses/export',             [\App\Http\Controllers\GratificacionController::class, 'exportar']);
         Route::get('bonuses/{empleado}/sheet',   [\App\Http\Controllers\GratificacionController::class, 'hoja'])->whereUuid('empleado');
     });
 
@@ -358,6 +378,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
 
     // ── Roles y módulos: el sistema de permisos mismo ──
     Route::apiResource('roles', RolController::class)->only(['store', 'update', 'destroy'])->middleware('permiso:/roles');
+    Route::put('roles/{id}/modules/{modulo}', [RolController::class, 'cambiarModulo'])->middleware('permiso:/roles');
     Route::middleware('permiso:/modulos,/modulos-padre,/roles')->group(function () {
         Route::apiResource('module-groups', ModuloPadreController::class)->only(['index', 'show']);
         Route::apiResource('modules', ModuloController::class)->only(['index', 'show']);

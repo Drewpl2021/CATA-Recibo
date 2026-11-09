@@ -7,10 +7,10 @@ use App\Models\Configuracion;
 use App\Models\Documento;
 use App\Models\Notificacion;
 use App\Models\Planilla;
-use App\Support\FirmaDigitalDeBoletas;
-use App\Support\FirmaDigitalPdf;
-use App\Support\FirmadorPdf;
-use App\Support\LectorPdf;
+use App\Support\Firma\FirmaDigitalDeBoletas;
+use App\Support\Firma\FirmaDigitalPdf;
+use App\Support\Firma\FirmadorPdf;
+use App\Support\Pdf\LectorPdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
@@ -116,6 +116,9 @@ class FirmarDesdeElSistemaTest extends TestCase
         $this->firmarAqui($this->admin, 'otra-clave')->assertStatus(422);
         $this->assertSame('pendiente', $this->boleta(0)->firma_colegio);
 
+        // Las emitidas, antes de firmar: cada firmada las tiene que llevar intactas.
+        $emitidas = [Storage::disk('local')->get($this->boleta(0)->archivo), Storage::disk('local')->get($this->boleta(1)->archivo)];
+
         $this->firmarAqui($this->admin)
             ->assertOk()
             ->assertJsonPath('data.firmadas', 2)
@@ -129,7 +132,9 @@ class FirmarDesdeElSistemaTest extends TestCase
 
             // La boleta emitida queda intacta al principio, y la firma es válida y cubre todo.
             $firmado = Storage::disk('local')->get($boleta->archivo);
-            $this->assertStringStartsWith(Storage::disk('local')->get($boleta->archivo_sin_firma), $firmado);
+            $this->assertStringStartsWith($emitidas[$i], $firmado);
+            // Con todas las firmas, la copia sin firmar ya no se guarda.
+            $this->assertNull($boleta->archivo_sin_firma);
             $firmas = FirmaDigitalPdf::firmas($firmado);
             $this->assertCount(1, $firmas);
             $this->assertTrue($firmas[0]['valida']);
@@ -341,7 +346,7 @@ class FirmarDesdeElSistemaTest extends TestCase
             . ' /DecodeParms << /Columns 4 /Predictor 12 >> /Length ' . strlen($datos) . " >>\nstream\n{$datos}\nendstream\nendobj\n"
             . "startxref\n{$posXref}\n%%EOF\n";
 
-        $leido = \App\Support\CertificadoDigital::abrir(FirmadorPdfDePrueba::pfx('Isidoro', 'Rodriguez Mamani', '01234567', self::CLAVE), self::CLAVE);
+        $leido = \App\Support\Firma\CertificadoDigital::abrir(FirmadorPdfDePrueba::pfx('Isidoro', 'Rodriguez Mamani', '01234567', self::CLAVE), self::CLAVE);
         $firmado = FirmadorPdf::firmar($pdf, $leido['certificado'], $leido['llave'], $leido['cadena'], ['nombre' => 'ISIDORO']);
 
         $this->assertStringStartsWith($pdf, $firmado);

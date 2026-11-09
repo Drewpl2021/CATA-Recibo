@@ -19,7 +19,6 @@ import { DataTableComponent } from '../../../shared/components/data-table/data-t
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
-import { PistaDirective } from '../../../shared/directives/pista.directive';
 import { SelectorArchivoComponent } from '../../../shared/components/selector-archivo/selector-archivo.component';
 import { VisorDocumentoComponent } from '../../../shared/components/visor-documento/visor-documento.component';
 import { TIPO_DOCUMENTO_PROPIO } from '../../../shared/constants';
@@ -45,8 +44,7 @@ import { TIPO_DOCUMENTO_PROPIO } from '../../../shared/constants';
     FormModalComponent,
     SelectorArchivoComponent,
     VisorDocumentoComponent,
-    IconComponent,
-    PistaDirective
+    IconComponent
 ],
   templateUrl: './documentos-list.component.html',
 })

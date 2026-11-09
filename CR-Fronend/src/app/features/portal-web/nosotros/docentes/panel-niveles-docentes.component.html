@@ -28,7 +28,7 @@
     (editarFila)="editar($event)"
     (eliminarFila)="pedirEliminar($event)"
     (accionPersonalizada)="alAccionar($event)"
-  >
+    >
     <ng-template appCelda="nombre" let-fila>
       <div class="pw-celda-titulo">
         <span>
@@ -60,21 +60,25 @@
   [guardando]="guardando"
   (guardar)="guardar()"
   (cancelar)="cerrar()"
->
+  >
   <form [formGroup]="form" class="form-fields" novalidate>
     <div class="form-group">
       <label for="nivel-docente-nombre">Nombre *</label>
       <input id="nivel-docente-nombre" type="text" class="form-control" formControlName="nombre" maxlength="40"
         placeholder="Ej. Primaria" [class.is-invalid]="invalido()" />
-      <small class="form-error" *ngIf="invalido()">Obligatorio (máximo 40).</small>
-      <small class="form-ayuda" *ngIf="!invalido() && editando">Su dirección sigue siendo «?nivel={{ $any(editando).clave }}».</small>
-    </div>
-    <div class="form-group">
-      <label for="nivel-docente-estado">Estado</label>
-      <select id="nivel-docente-estado" class="form-control" formControlName="estado">
-        <option value="publicado">Publicado</option>
-        <option value="borrador">Borrador</option>
-      </select>
-    </div>
-  </form>
-</app-form-modal>
+        @if (invalido()) {
+          <small class="form-error">Obligatorio (máximo 40).</small>
+        }
+        @if (!invalido() && editando) {
+          <small class="form-ayuda">Su dirección sigue siendo «?nivel={{ $any(editando).clave }}».</small>
+        }
+      </div>
+      <div class="form-group">
+        <label for="nivel-docente-estado">Estado</label>
+        <select id="nivel-docente-estado" class="form-control" formControlName="estado">
+          <option value="publicado">Publicado</option>
+          <option value="borrador">Borrador</option>
+        </select>
+      </div>
+    </form>
+  </app-form-modal>

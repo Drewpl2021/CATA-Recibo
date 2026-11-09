@@ -1,4 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { SimpleChange } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { DataTableComponent } from './data-table.component';
 import { ColumnaTabla } from './data-table.models';
@@ -115,9 +116,10 @@ describe('DataTableComponent — el esqueleto solo en la carga de verdad', () =>
    * concepto a un grupo dibujaba el esqueleto encima de las filas que ya
    * estaban — un parpadeo raro, porque las filas viejas seguían ahí abajo
    * hasta que llegaba la respuesta. Ahora, con datos ya puestos, no hay
-   * esqueleto: la tabla solo se atenúa un poco.
+   * esqueleto: la tabla solo se atenúa un poco, y solo si la espera pasa de
+   * 300 ms (si el servidor contesta antes, ni parpadea).
    */
-  it('recargar con filas ya puestas: nada de esqueleto, solo se atenúa', () => {
+  it('recargar con filas ya puestas: nada de esqueleto, solo se atenúa', fakeAsync(() => {
     componente.datos = [{ nombre: 'Ana' }, { nombre: 'Karina' }];
     componente.paginacionServidor = true;
     // Al poner las entradas a mano, Angular no llama a ngOnChanges: se hace
@@ -126,12 +128,18 @@ describe('DataTableComponent — el esqueleto solo en la carga de verdad', () =>
     fixture.detectChanges();
 
     componente.cargando = true;
+    componente.ngOnChanges({ cargando: new SimpleChange(false, true, false) });
     fixture.detectChanges();
 
     expect(componente.filasEsqueleto.length).toBe(0);
     expect(componente.filaPagina.length).toBe(2);
+    // Antes de 300 ms no se atenúa: así no parpadea en cada clic.
+    expect(tabla().classList.contains('data-table--refrescando')).toBeFalse();
+
+    tick(300);
+    fixture.detectChanges();
     expect(tabla().classList.contains('data-table--refrescando')).toBeTrue();
-  });
+  }));
 
   it('cuando termina de cargar, se quita el atenuado', () => {
     componente.datos = [{ nombre: 'Ana' }];

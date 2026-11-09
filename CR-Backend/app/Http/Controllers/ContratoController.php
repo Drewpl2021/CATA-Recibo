@@ -18,7 +18,7 @@ class ContratoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Contrato::with('empleado.foto', 'documentos', 'tipoContrato');
+        $query = Contrato::with('empleado:id,dni,nombre,apellido', 'empleado.foto', 'documentos', 'tipoContrato');
 
         if ($request->filled('empleado_id')) {
             $query->where('empleado_id', $request->empleado_id);
@@ -91,14 +91,14 @@ class ContratoController extends Controller
 
         $this->ponerAlDiaLaFicha($request->empleado_id);
 
-        $contrato->load('empleado', 'documentos', 'tipoContrato');
+        $contrato->load('empleado:id,dni,nombre,apellido', 'documentos', 'tipoContrato');
 
         return response()->json(['success' => true, 'data' => $contrato], 201);
     }
 
     public function show(string $id)
     {
-        $contrato = Contrato::with('empleado', 'documentos', 'tipoContrato')->findOrFail($id);
+        $contrato = Contrato::with('empleado:id,dni,nombre,apellido', 'documentos', 'tipoContrato')->findOrFail($id);
         return response()->json(['success' => true, 'data' => $contrato]);
     }
 
@@ -118,7 +118,7 @@ class ContratoController extends Controller
         $contrato->update($datos);
         $this->ponerAlDiaLaFicha($contrato->empleado_id);
 
-        $contrato->load('empleado', 'documentos', 'tipoContrato');
+        $contrato->load('empleado:id,dni,nombre,apellido', 'documentos', 'tipoContrato');
 
         return response()->json(['success' => true, 'data' => $contrato]);
     }

@@ -14,7 +14,7 @@ class MiPlanillaController extends Controller
         // Sin ficha no hay planilla que enseñar, y eso no es un error de
         // permisos: es que esa cuenta no cobra por planilla. Se responde la
         // lista vacía en vez de un 403.
-        $query = Planilla::with('empleado')
+        $query = Planilla::with('empleado:id,dni,nombre,apellido')
             ->whereRaw($empleado_id ? '1 = 1' : '1 = 0')
             ->where('empleado_id', $empleado_id);
 
