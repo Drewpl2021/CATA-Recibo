@@ -31,4 +31,14 @@ return [
     | (RucDelColegioTest) comprueba el dígito.
     */
     'ruc' => env('INSTITUCION_RUC', '20156630731'),
+
+    /*
+    | Quien representa al colegio en la constancia de la hoja de CTS
+    | («representada por el Sr. … identificado con DNI …»). Va en el .env y
+    | no aquí, porque el repositorio es público. Si está vacío, la hoja lo
+    | toma del certificado digital con que firma el colegio; y si tampoco
+    | hay, la constancia no lo menciona. Ver CtsController::representante().
+    */
+    'representante'     => env('INSTITUCION_REPRESENTANTE'),
+    'representante_dni' => env('INSTITUCION_REPRESENTANTE_DNI'),
 ];

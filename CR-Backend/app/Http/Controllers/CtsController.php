@@ -668,7 +668,31 @@ class CtsController extends Controller
             'nombreAnio'       => ValorLegal::nombreDelAnio($l->anio),
             'firmaDigital'     => \App\Support\Firma\FirmaDigitalDeBoletas::activa(),
             'firmasRequeridas' => \App\Support\Firma\FirmaDigitalDeBoletas::requeridas(),
+            'representante'    => $this->representante(),
         ])->setPaper('a4', 'portrait');
+    }
+
+    /**
+     * Quien representa al colegio en la constancia: el del .env, o el del
+     * certificado con que firma el colegio (el más reciente que esté puesto).
+     *
+     * @return array{nombre: string, dni: ?string}|null
+     */
+    private function representante(): ?array
+    {
+        if ($nombre = config('institucion.representante')) {
+            return ['nombre' => $nombre, 'dni' => config('institucion.representante_dni')];
+        }
+        $certificado = \App\Models\CertificadoFirma::where('activo', true)->latest()->first();
+        if (! $certificado) {
+            return null;
+        }
+
+        // Llama.pe pega el RUC al nombre («… ISIDORO RUC:20…»): en la constancia sobra.
+        return [
+            'nombre' => trim((string) preg_replace('/\s*RUC\s*:?\s*\d{11}/i', '', $certificado->nombre)),
+            'dni'    => $certificado->dni,
+        ];
     }
 
     /**
