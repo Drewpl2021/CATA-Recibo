@@ -232,6 +232,14 @@
         }
       </article>
       <article class="indicador">
+        <span class="indicador__icono indicador__icono--dorado"><app-icon icono="corazon" [tamano]="20"></app-icon></span>
+        <div class="indicador__texto">
+          <h3 class="indicador__nombre">Diezmo del mes</h3>
+          <p class="indicador__valor">{{ enSoles(diezmo) }}</p>
+          <p class="indicador__nota">{{ diezmoPersonas ? 'Descontado a ' + diezmoPersonas + (diezmoPersonas === 1 ? ' trabajador' : ' trabajadores') : 'Sin diezmo este mes' }}</p>
+        </div>
+      </article>
+      <article class="indicador">
         <span class="indicador__icono" [class.indicador__icono--alerta]="porVencer > 0" [class.indicador__icono--bien]="!porVencer">
           <app-icon [icono]="porVencer ? 'warning' : 'calendar_check'" [tamano]="20"></app-icon>
         </span>

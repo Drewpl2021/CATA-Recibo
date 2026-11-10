@@ -55,6 +55,13 @@ class PanelDeControlTest extends TestCase
 
         $essalud = PaymentConcept::create(['nombre' => 'Aporte de prueba', 'tipo' => 'aportacion']);
         PayrollDetalle::create(['planilla_id' => $oct->id, 'payment_concept_id' => $essalud->id, 'monto_calculado' => 270]);
+        // El diezmo de octubre, solo a Rosa; el de setiembre no cuenta para octubre.
+        $diezmo = PaymentConcept::firstOrCreate(['nombre' => \App\Support\ConceptosDePago::DIEZMO], ['tipo' => 'descuento']);
+        PayrollDetalle::create(['planilla_id' => $oct->id, 'payment_concept_id' => $diezmo->id, 'monto_calculado' => 300]);
+        PayrollDetalle::create([
+            'planilla_id' => Planilla::where('empleado_id', $rosa->id)->where('mes', 9)->value('id'),
+            'payment_concept_id' => $diezmo->id, 'monto_calculado' => 250,
+        ]);
 
         Contrato::create([
             'empleado_id' => $luis->id, 'tipo_contrato_id' => $this->idTipoContrato('Plazo indeterminado'),
@@ -77,6 +84,9 @@ class PanelDeControlTest extends TestCase
         $this->assertEquals(4500, $d['resumen']['nominaDelMes']);
         $this->assertEquals(2500, $d['resumen']['nominaMesAnterior']);
         $this->assertEquals(270, $d['resumen']['aportesColegio']);
+        // El diezmo descontado este mes, y a cuántos.
+        $this->assertEquals(300, $d['resumen']['diezmoDelMes']);
+        $this->assertSame(1, $d['resumen']['diezmoPersonas']);
         // Las altas del mes que se mira.
         $this->assertSame(1, $d['resumen']['altasDelMes']);
 

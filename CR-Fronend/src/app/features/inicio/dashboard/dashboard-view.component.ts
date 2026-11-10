@@ -176,6 +176,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
   private animacion = 0;
   nominaAnterior = 0;
   aportes = 0;
+  diezmo = 0;
+  diezmoPersonas = 0;
   planillas = 0;
   activos = 0;
   altas = 0;
@@ -533,6 +535,8 @@ export class DashboardViewComponent implements OnInit, OnDestroy {
     // ── La banda ──
     this.nominaAnterior = r.nominaMesAnterior ?? 0;
     this.aportes = r.aportesColegio ?? 0;
+    this.diezmo = r.diezmoDelMes ?? 0;
+    this.diezmoPersonas = r.diezmoPersonas ?? 0;
     this.planillas = r.planillasDelMes;
     this.activos = r.empleadosActivos;
     this.altas = r.altasDelMes;

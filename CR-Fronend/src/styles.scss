@@ -2135,7 +2135,8 @@ td.celda-numero {
    filtros de Emisión y Planillas. */
 .indicadores {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Cinco: personal, pagado en el año, costo del mes, diezmo y contratos. */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 18px;
 }
 
@@ -2698,6 +2699,11 @@ td.celda-numero {
 .vence__fila--normal  .vence__cuando strong { color: var(--success-text); }
 
 /* ── Pantallas medianas y celular ── */
+/* Cinco tarjetas de cifras no caben bien en una laptop: van de tres en tres. */
+@media (max-width: 1500px) {
+  .indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 @media (max-width: 1280px) {
   .banda-mes {
     grid-template-columns: minmax(0, 1fr) auto;

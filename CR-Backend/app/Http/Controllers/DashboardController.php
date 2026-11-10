@@ -558,6 +558,15 @@ class DashboardController extends Controller
             ->where('pc.tipo', 'aportacion')
             ->sum('pd.monto_calculado');
 
+        // El diezmo que se le descontó al personal este mes, y a cuántos.
+        $diezmo = DB::table('payroll_detalles as pd')
+            ->join('payment_concepts as pc', 'pc.id', '=', 'pd.payment_concept_id')
+            ->whereIn('pd.planilla_id', (clone $planillasDelMes)->select('planilla.id'))
+            ->where('pc.nombre', \App\Support\ConceptosDePago::DIEZMO)
+            ->where('pd.monto_calculado', '>', 0)
+            ->selectRaw('COALESCE(SUM(pd.monto_calculado), 0) as total, COUNT(DISTINCT pd.planilla_id) as personas')
+            ->first();
+
         // Boletas emitidas: documentos de tipo boleta atados a una planilla
         // de este mes. Se cuenta contra las planillas, no contra el total de
         // empleados: a quien no se le armó planilla no se le puede emitir.
@@ -574,6 +583,8 @@ class DashboardController extends Controller
             'nominaDelMes'     => round($nomina, 2),
             'nominaMesAnterior' => round($nominaAnterior, 2),
             'aportesColegio'   => round($aportes, 2),
+            'diezmoDelMes'     => round((float) ($diezmo->total ?? 0), 2),
+            'diezmoPersonas'   => (int) ($diezmo->personas ?? 0),
             'planillasDelMes'  => $cuantasPlanillas,
             'boletasEmitidas'  => $boletas,
             'contratosPorVencer' => $porVencer,

@@ -22,6 +22,9 @@ export interface ResumenDashboard {
   nominaMesAnterior: number;
   /** Lo que pone el colegio encima del neto: EsSalud y demás aportes. */
   aportesColegio: number;
+  /** El diezmo descontado al personal este mes, y a cuántos. */
+  diezmoDelMes?: number;
+  diezmoPersonas?: number;
   planillasDelMes: number;
   boletasEmitidas: number;
   contratosPorVencer: number;
