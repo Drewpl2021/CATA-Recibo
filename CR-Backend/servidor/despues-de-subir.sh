@@ -48,6 +48,17 @@ done
 [ "$falta" -eq 0 ] || exit 1
 grep -qE '^PORTAL_URL_MEDIOS=https://' .env || { echo "ERROR: PORTAL_URL_MEDIOS tiene que empezar con https://."; exit 1; }
 grep -qE '^APP_URL=https://' .env || echo "AVISO: APP_URL no empieza con https://."
+# Con FRONTEND_URL se arman los enlaces de los correos (crear y restablecer la
+# contraseña, aviso de boleta). Sin la carpeta del sistema (/rrhh) llevan a la
+# página del colegio y salen «Parece que esta página no existe».
+app_url=$(grep -E '^APP_URL=' .env | head -1 | cut -d= -f2- | tr -d '"' | sed 's#/*$##')
+front_url=$(grep -E '^FRONTEND_URL=' .env | head -1 | cut -d= -f2- | tr -d '"' | sed 's#/*$##')
+if [ -z "$front_url" ]; then
+  echo "ERROR: falta FRONTEND_URL en el .env. Tiene que ser la dirección del sistema, como APP_URL (https://cata.edu.pe/rrhh)."
+  exit 1
+elif [ "$front_url" != "$app_url" ]; then
+  echo "AVISO: FRONTEND_URL ($front_url) no es igual a APP_URL ($app_url): los enlaces de los correos pueden no abrir."
+fi
 grep -qE '^APP_DEBUG=(false|0)' .env || echo "AVISO: APP_DEBUG no está en false: en producción mostraría datos internos ante un error."
 
 echo "== Carpetas y permisos"

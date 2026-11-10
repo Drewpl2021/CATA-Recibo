@@ -14,7 +14,12 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => array_values(array_filter(array_map('trim', explode(',', (string) env('FRONTEND_URL', 'http://localhost:4200'))))),
+    // Solo esquema y dominio: FRONTEND_URL lleva la carpeta del sistema
+    // (https://cata.edu.pe/rrhh) y un origen de navegador nunca la lleva.
+    'allowed_origins' => array_values(array_unique(array_filter(array_map(
+        fn ($u) => \App\Http\Middleware\CorsMiddleware::origenDe($u),
+        array_map('trim', explode(',', (string) env('FRONTEND_URL', 'http://localhost:4200')))
+    )))),
 
     'allowed_origins_patterns' => [],
 
