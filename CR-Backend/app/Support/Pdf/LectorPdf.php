@@ -102,6 +102,47 @@ final class LectorPdf
         return self::leerValor($this->pdf, $pos);
     }
 
+    /**
+     * Lo que dibuja una página: sus /Contents (uno o varios streams), ya
+     * descomprimidos y unidos. Vacío si no se pueden leer: quien lo pide
+     * sigue sin eso.
+     *
+     * @param  array<string, string>  $pagina  el diccionario de la página
+     */
+    public function contenidoDePagina(array $pagina): string
+    {
+        $texto = '';
+        try {
+            // «7 0 R» apunta al stream mismo, o a un arreglo de streams; o el arreglo va ahí.
+            $valor = trim($pagina['Contents'] ?? '');
+            $ref = $this->referencia($valor);
+            if ($ref && str_starts_with(trim($this->contenido($ref[0])), '[')) {
+                $valor = $this->contenido($ref[0]);
+            }
+            preg_match_all('/(\d+)\s+\d+\s+R/', $valor, $refs);
+            foreach ($refs[1] as $num) {
+                $texto .= $this->datosDeStream((int) $num) . "\n";
+            }
+        } catch (RuntimeException) {
+            return '';
+        }
+
+        return $texto;
+    }
+
+    /** Los datos de un stream suelto en el archivo, ya descomprimidos. */
+    private function datosDeStream(int $num): string
+    {
+        $entrada = $this->tabla[$num] ?? null;
+        if (($entrada[0] ?? null) !== 1 || ! preg_match('/\G\s*\d+\s+\d+\s+obj/', $this->pdf, $m, 0, $entrada[1])) {
+            throw new RuntimeException("El stream {$num} no está donde el PDF dice.");
+        }
+        $pos = $entrada[1] + strlen($m[0]);
+        $dic = self::partirDiccionario(self::leerValor($this->pdf, $pos));
+
+        return $this->decodificar($dic, $this->datosDelFlujo($dic, $pos));
+    }
+
     // ── Tablas de referencias ─────────────────────────────────────────
 
     private function cargarTablas(int $pos): void

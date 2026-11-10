@@ -271,6 +271,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
             ->middleware('throttle:10,1');
         Route::delete('my-signing-certificate', [\App\Http\Controllers\CertificadoDeFirmaController::class, 'quitar']);
         Route::post('payslips/{documento}/void', [\App\Http\Controllers\BoletasFirmadasController::class, 'anular'])->whereUuid('documento');
+        // Anular las de los marcados, de una vez (Emisión → barra de abajo).
+        Route::post('payslips/void',             [\App\Http\Controllers\BoletasFirmadasController::class, 'anularVarias']);
         Route::get('payslips/delivery-record',   [\App\Http\Controllers\BoletasFirmadasController::class, 'constancia']);
     });
     // La boleta de cualquier empleado: Boletas, Planillas y su expediente. El

@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ToastService } from '../../../core/services';
 import { HojaRenta5ta, MesRenta5ta, MetodoRenta5ta, Renta5taService } from '../../../core/services/planilla/renta5ta.service';
-import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
+import { anioDeLaDireccion, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { nombreMes } from '../../../shared/constants';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CifraCabecera, PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
@@ -126,7 +126,7 @@ export class Renta5taDetalleComponent implements OnInit {
 
   ngOnInit(): void {
     this.empleadoId = this.ruta.snapshot.paramMap.get('id') ?? '';
-    const anio = Number(this.ruta.snapshot.queryParamMap.get('anio'));
+    const anio = anioDeLaDireccion(this.ruta.snapshot.queryParamMap.get('anio'));
     if (anio) this.anio = anio;
     const mes = Number(this.ruta.snapshot.queryParamMap.get('mes'));
     if (mes >= 1 && mes <= 12) this.mesResaltado = mes;

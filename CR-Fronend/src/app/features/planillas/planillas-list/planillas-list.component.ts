@@ -32,7 +32,7 @@ import {
   PaymentConcept,
   AplicacionConceptoGrupo,
 } from '../../../core/models';
-import { diasHabilesDelMes, guardarArchivo, mensajeErrorApi } from '../../../core/utils';
+import { anioDeLaDireccion, diasHabilesDelMes, guardarArchivo, mensajeErrorApi, mesDeLaDireccion } from '../../../core/utils';
 import { MESES_OPCIONES, nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
@@ -265,8 +265,9 @@ export class PlanillasListComponent implements OnInit {
       // El mes viene de la pantalla anterior para no perder de vista dónde
       // estabas: si allá mirabas septiembre, acá también.
       const q = this.ruta.snapshot.queryParamMap;
-      this.filtroMes = q.get('mes') ? Number(q.get('mes')) : '';
-      this.filtroAnio = q.get('anio') ? Number(q.get('anio')) : '';
+      // Solo un mes y un año de verdad: lo demás que se escriba en la dirección se ignora.
+      this.filtroMes = mesDeLaDireccion(q.get('mes')) ?? '';
+      this.filtroAnio = anioDeLaDireccion(q.get('anio')) ?? '';
       this.cargar();
     } else if (this.corridaId) {
       this.cargarCorrida();

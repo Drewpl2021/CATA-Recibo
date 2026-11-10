@@ -105,14 +105,13 @@
         .firmas .linea { border-top: 1px solid #1F2B33; padding-top: 3px; margin: 0 22px; }
         .firma-digital { margin-top: 6px; font-size: 6.3px; color: #2E3B42; background: #EDF3F5; padding: 4px 6px; }
 
-        /* ── Firma digital del colegio (ReFirma) ──
-           Casillas vacías del mismo tamaño, abajo de la hoja: ahí cae el sello
-           visible que pone ReFirma. Se deja aire de sobra para que el sello no
-           tape nada aunque cambie un poco de tamaño. */
+        /* ── Firma digital del colegio ──
+           El lugar del sello, sin borde: «Firmar aquí» lo encuentra por su
+           fondo #FEFEFE (no se ve en blanco) y ahí dibuja la firma. Ver
+           FirmadorPdf::casillas(): si cambia este color, cambia allá también. */
         .firmas-digitales { margin-top: 26px; }
         .firmas-digitales td { width: 50%; padding: 0 10px; vertical-align: top; }
-        .casilla-firma { border: 1px dashed #8FA9B3; height: 78px; position: relative; }
-        .casilla-firma__guia { position: absolute; top: 30px; left: 0; right: 0; text-align: center; font-size: 6.4px; color: #A8B9BF; }
+        .casilla-firma { background: #FEFEFE; height: 78px; }
         .casilla-firma__pie { text-align: center; font-size: 7.4px; color: #2E3B42; margin-top: 3px; line-height: 1.35; }
         .nota-firma-digital { margin-top: 10px; font-size: 6.6px; color: #2E3B42; background: #EDF3F5; padding: 5px 7px; line-height: 1.45; }
     </style>
@@ -131,9 +130,19 @@
        de la planilla (la crea CalculaConceptosPlanilla), así que entra por
        $totalConceptosIngreso. Sumarla además dejaba la boleta diciendo más
        de lo que la planilla paga. */
+    /* La CTS depositada en su cuenta CTS (en mayo y noviembre): como en el
+       PLAME, figura como ingreso y sale el mismo monto como «Adelanto de
+       CTS», porque se depositó aparte. El neto no cambia. Si la planilla ya
+       trae su línea de CTS (por Excel), manda la planilla. */
+    $ctsDepositada = (float) ($ctsDepositada ?? 0);
+    if ($conceptosIngreso->contains(fn ($d) => $d->paymentConcept?->nombre === \App\Support\ConceptosDePago::CTS)) {
+        $ctsDepositada = 0.0;
+    }
+
     $totalIngresos = (float)$planilla->sueldo_base
         + $asignacionFamiliar
-        + $totalConceptosIngreso;
+        + $totalConceptosIngreso
+        + $ctsDepositada;
 
     $totalConceptosDescuento  = $conceptosDescuento->sum('monto_calculado');
     $totalDescuentos = $pension['total'] + $renta5ta + $totalConceptosDescuento;
@@ -141,7 +150,7 @@
     $totalConceptosAportacion = $conceptosAportacion->sum('monto_calculado');
     $totalAportes = $essalud + $totalConceptosAportacion;
 
-    $totalAdelantos = $conceptosAdelanto->sum('monto_calculado');
+    $totalAdelantos = $conceptosAdelanto->sum('monto_calculado') + $ctsDepositada;
 
     // Total Neto = Ingresos - Descuentos - Adelantos (los Aportes del empleador NO se restan,
     // son informativos — verificado contra la boleta física del colegio).
@@ -183,7 +192,7 @@
         ['Bonif. Extraord. Temporal - Ley 29351 y 30334', $montoDe($C::BONIF_EXTRAORDINARIA)],
         ['Otros Conceptos', $montoDe($C::OTROS_INGRESOS)],
         ['Bonificación', $montoDe('Bonificaciones')],
-        ['Compensación por Tiempo de Servicios', $montoDe('Compensación por Tiempo de Servicios')],
+        ['Compensación por Tiempo de Servicios', $montoDe('Compensación por Tiempo de Servicios') + $ctsDepositada],
     ];
     $filasDescuento = [
         ['ONP ' . $tasa($ley->onp) . '%', $pensionDe($C::ONP)],
@@ -205,6 +214,10 @@
         ['Adelanto de Sueldo', $montoDe('Adelanto de Sueldo')],
         ['Adelanto de Bonificación', $montoDe('Adelanto de Bonificaciones')],
     ];
+    // Solo cuando hubo depósito: si no, una fila más con «-» en todas las boletas.
+    if ($ctsDepositada > 0) {
+        $filasAdelanto[] = ['Adelanto de CTS (depositada en su cuenta CTS)', $ctsDepositada];
+    }
 
     // Los conceptos de la planilla que no tienen fila fija: van al final de su columna.
     $fijos = [
@@ -515,18 +528,17 @@
     @php $casillas = max(1, min(2, (int) ($firmasRequeridas ?? 1))); @endphp
     <table class="firmas-digitales">
         <tr>
-            {{-- Con una sola firma, la casilla va al centro: un hueco a cada lado. --}}
-            @if ($casillas === 1)<td style="width: 25%;"></td>@endif
+            {{-- Con una sola firma, la firma va a un costado (a la derecha). --}}
+            @if ($casillas === 1)<td></td>@endif
             @for ($i = 1; $i <= $casillas; $i++)
                 <td>
-                    <div class="casilla-firma"><div class="casilla-firma__guia">Firma digital</div></div>
+                    <div class="casilla-firma"></div>
                     <div class="casilla-firma__pie">
                         Firma digital del empleador{{ $casillas > 1 ? ' (' . $i . ' de ' . $casillas . ')' : '' }}<br>
                         Colegio Adventista Túpac Amaru
                     </div>
                 </td>
             @endfor
-            @if ($casillas === 1)<td style="width: 25%;"></td>@endif
         </tr>
     </table>
     <div class="nota-firma-digital">

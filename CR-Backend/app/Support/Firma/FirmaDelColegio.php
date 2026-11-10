@@ -225,6 +225,12 @@ final class FirmaDelColegio
                 'nombre' => $llaves['nombre'],
                 'motivo' => $motivo($actual),
                 'lugar'  => 'Juliaca, Perú',
+                // La firma se ve en su casilla, con el logo del colegio.
+                'sello'  => [
+                    'nombre' => $llaves['nombre'], 'dni' => $llaves['dni'], 'cargo' => $llaves['cargo'],
+                    'ruc' => $llaves['ruc'], 'organizacion' => $llaves['organizacion'],
+                    'emisor' => $llaves['emisor'], 'serie' => $llaves['serie'],
+                ],
             ]);
 
             $firmas = FirmaDigitalPdf::firmas($firmado);

@@ -15,8 +15,12 @@ use RuntimeException;
  *
  * Lo que se agrega al final:
  *   - el diccionario de firma (/Type /Sig) con su /ByteRange y su /Contents;
- *   - un campo de firma invisible en la primera página (Adobe solo reconoce
- *     una firma si está en un campo del formulario del PDF);
+ *   - un campo de firma en la primera página (Adobe solo reconoce una firma
+ *     si está en un campo del formulario del PDF). Con «sello», el campo va
+ *     sobre la casilla de firma que deja el sistema y se ve: el logo del
+ *     colegio y lo que dice el certificado (ver sello()). La
+ *     primera firma va en la primera casilla, la segunda en la segunda. Si
+ *     el PDF no tiene casilla libre, la firma va invisible, como antes;
  *   - el formulario del PDF (/AcroForm) y la página, con ese campo sumado;
  *   - su tabla de referencias y su trailer, apuntando a la anterior.
  *
@@ -37,11 +41,26 @@ final class FirmadorPdf
     private const HUECO = 24576;
 
     /**
+     * El fondo de la casilla de firma (#FEFEFE, no se ve sobre blanco) en
+     * boleta.blade.php y partials/firma-digital.blade.php, tal como lo
+     * escribe dompdf: así se encuentra la casilla en el PDF ya emitido.
+     */
+    private const FONDO_CASILLA = '0.996 0.996 0.996 rg';
+
+    /**
+     * El borde punteado (#8FA9B3) de la casilla en los PDF emitidos antes;
+     * se sigue buscando para poder firmarlos. También es el color de la raya
+     * que separa el logo del texto en el sello.
+     */
+    private const COLOR_CASILLA = '0.561 0.663 0.702 RG';
+
+    /**
      * @param  string                $pdf          el PDF tal como está
      * @param  string                $certificado  PEM de quien firma
      * @param  \OpenSSLAsymmetricKey $llave        su llave privada
      * @param  list<string>          $cadena       PEM de los certificados intermedios (van dentro de la firma)
-     * @param  array{nombre?: ?string, motivo?: ?string, lugar?: ?string, fecha?: ?\DateTimeInterface} $datos
+     * @param  array{nombre?: ?string, motivo?: ?string, lugar?: ?string, fecha?: ?\DateTimeInterface,
+     *               sello?: ?array{nombre: string, dni?: ?string, cargo?: ?string}} $datos  con «sello», la firma se ve en su casilla
      * @return string el PDF firmado
      */
     public static function firmar(string $pdf, string $certificado, #[\SensitiveParameter] $llave, array $cadena = [], array $datos = []): string
@@ -87,14 +106,28 @@ final class FirmadorPdf
         [$dicPagina['Annots']] = self::sumarAlArreglo($lector, $dicPagina['Annots'] ?? null, "{$numCampo} 0 R", $objetos);
         $objetos[$numPagina] = LectorPdf::armarDiccionario($dicPagina);
 
-        // ── El campo de firma (invisible) ──────────────────────────────
-        $nombreCampo = 'Firma' . ($existentes + 1) . '_' . substr(bin2hex(random_bytes(4)), 0, 8);
-        $objetos[$numCampo] = "<< /Type /Annot /Subtype /Widget /FT /Sig /T ({$nombreCampo}) /V {$numFirma} 0 R"
-            . " /F 132 /Rect [0 0 0 0] /P {$numPagina} 0 R >>";
-
-        // ── El diccionario de firma, con su hueco ──────────────────────
         $fecha = \DateTimeImmutable::createFromInterface($datos['fecha'] ?? new \DateTimeImmutable('now'))
             ->setTimezone(new \DateTimeZone(config('app.timezone', 'America/Lima')));
+
+        // ── El campo de firma: con su sello en la casilla, o invisible ─
+        $rect = '[0 0 0 0]';
+        $apariencia = '';
+        if (! empty($datos['sello'])) {
+            // Las firmas que ya tiene ocupan las primeras casillas.
+            $casilla = self::casillas($lector->contenidoDePagina($pagina[1]))[preg_match_all('/\/ByteRange\s*\[/', $pdf)] ?? null;
+            if ($casilla) {
+                [$x1, $y1, $x2, $y2] = $casilla;
+                $rect = sprintf('[%.3F %.3F %.3F %.3F]', $x1, $y1, $x2, $y2);
+                $numSello = $siguiente;
+                $objetos += self::sello($x2 - $x1, $y2 - $y1, $datos['sello'], $fecha, $datos['lugar'] ?? null, $siguiente);
+                $apariencia = " /AP << /N {$numSello} 0 R >>";
+            }
+        }
+        $nombreCampo = 'Firma' . ($existentes + 1) . '_' . substr(bin2hex(random_bytes(4)), 0, 8);
+        $objetos[$numCampo] = "<< /Type /Annot /Subtype /Widget /FT /Sig /T ({$nombreCampo}) /V {$numFirma} 0 R"
+            . " /F 132 /Rect {$rect}{$apariencia} /P {$numPagina} 0 R >>";
+
+        // ── El diccionario de firma, con su hueco ──────────────────────
         $zona = str_replace(':', "'", $fecha->format('P')) . "'";
         $marcador = '[0 ########## ########## ##########]';
         $objetos[$numFirma] = '<< /Type /Sig /Filter /Adobe.PPKLite /SubFilter /ETSI.CAdES.detached'
@@ -140,6 +173,185 @@ final class FirmadorPdf
         }
 
         return substr_replace($salida, strtoupper(str_pad(bin2hex($cms), self::HUECO * 2, '0')), $b + 1, self::HUECO * 2);
+    }
+
+    /**
+     * Las casillas de firma de la página, de izquierda a derecha, como
+     * [x1, y1, x2, y2]. La de ahora es un fondo #FEFEFE sin borde (dompdf lo
+     * escribe como un «re f»); las emitidas antes eran un borde punteado,
+     * que dompdf dibuja lado por lado: con la raya de arriba y la de abajo
+     * basta.
+     *
+     * @return list<array{0: float, 1: float, 2: float, 3: float}>
+     */
+    private static function casillas(string $contenido): array
+    {
+        $casillas = [];
+        preg_match_all(
+            '/' . preg_quote(self::FONDO_CASILLA, '/') . '\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+re\s+f\b/',
+            $contenido,
+            $fondos,
+            PREG_SET_ORDER
+        );
+        foreach ($fondos as [, $x, $y, $ancho, $alto]) {
+            if ((float) $ancho >= 100 && (float) $alto >= 24 && (float) $alto <= 160) {
+                $casillas[] = [(float) $x, (float) $y, (float) $x + (float) $ancho, (float) $y + (float) $alto];
+            }
+        }
+        if ($casillas) {
+            usort($casillas, fn ($a, $b) => $a[0] <=> $b[0]);
+
+            return $casillas;
+        }
+
+        preg_match_all(
+            '/' . preg_quote(self::COLOR_CASILLA, '/') . '\s+(?:\/\w+\s+gs\s+)?[\d.]+\s+w\s+\d+\s+J\s+\[[^\]]*\]\s+[\d.]+\s+d\s+'
+                . '([\d.]+)\s+([\d.]+)\s+m\s+([\d.]+)\s+([\d.]+)\s+l\s+S/',
+            $contenido,
+            $rayas,
+            PREG_SET_ORDER
+        );
+
+        $porAncho = [];
+        foreach ($rayas as [, $xa, $ya, $xb, $yb]) {
+            // (borde punteado: el de las emitidas antes)
+            if (abs((float) $ya - (float) $yb) > 0.01) {
+                continue; // un lado: no hace falta
+            }
+            [$izq, $der] = [min((float) $xa, (float) $xb), max((float) $xa, (float) $xb)];
+            $clave = round($izq) . ':' . round($der);
+            $porAncho[$clave]['x'] = [$izq, $der];
+            $porAncho[$clave]['y'][] = (float) $ya;
+        }
+
+        foreach ($porAncho as $raya) {
+            [$abajo, $arriba] = [min($raya['y']), max($raya['y'])];
+            // Una casilla de verdad: dos rayas, ni muy baja ni muy alta.
+            if (count($raya['y']) >= 2 && $arriba - $abajo >= 24 && $arriba - $abajo <= 160) {
+                $casillas[] = [$raya['x'][0], $abajo, $raya['x'][1], $arriba];
+            }
+        }
+        usort($casillas, fn ($a, $b) => $a[0] <=> $b[0]);
+
+        return $casillas;
+    }
+
+    /**
+     * El dibujo de la firma dentro de su casilla: el logo del colegio a la
+     * izquierda y, a la derecha, lo que dice el certificado: quién firmó, su
+     * cargo, DNI y RUC, la institución, la fecha, y quién emitió el
+     * certificado con su número de serie. Fuentes Helvetica del propio PDF
+     * (no hay que incrustar nada) y el logo en JPEG (public/logo-firma.jpg).
+     *
+     * @param  array{nombre: string, dni?: ?string, cargo?: ?string, ruc?: ?string, organizacion?: ?string, emisor?: ?string, serie?: ?string}  $sello
+     * @return array<int, string> los objetos nuevos; el primero es el dibujo
+     */
+    private static function sello(float $ancho, float $alto, array $sello, \DateTimeImmutable $fecha, ?string $lugar, int &$siguiente): array
+    {
+        $numDibujo = $siguiente++;
+        $numNormal = $siguiente++;
+        $numNegrita = $siguiente++;
+        $objetos = [
+            $numNormal  => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
+            $numNegrita => '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
+        ];
+
+        $margen = 4.0;
+        $dibujo = '';
+
+        $xTexto = $margen + 2;
+        $logo = public_path('logo-firma.jpg');
+        $datosLogo = is_file($logo) ? getimagesize($logo) : false;
+        if ($datosLogo) {
+            $numLogo = $siguiente++;
+            $jpg = (string) file_get_contents($logo);
+            $color = ($datosLogo['channels'] ?? 3) === 1 ? '/DeviceGray' : '/DeviceRGB';
+            $objetos[$numLogo] = "<< /Type /XObject /Subtype /Image /Width {$datosLogo[0]} /Height {$datosLogo[1]}"
+                . " /ColorSpace {$color} /BitsPerComponent 8 /Filter /DCTDecode /Length " . strlen($jpg) . " >>\nstream\n{$jpg}\nendstream";
+            $lado = min($alto - 2 * $margen, 46.0);
+            $dibujo .= sprintf("q %.3F 0 0 %.3F %.3F %.3F cm /Logo Do Q\n", $lado, $lado, $margen + 2, ($alto - $lado) / 2);
+            $xRaya = $margen + 2 + $lado + 5;
+            $dibujo .= sprintf("q %s 0.5 w %.3F %.3F m %.3F %.3F l S Q\n", self::COLOR_CASILLA, $xRaya, $margen + 2, $xRaya, $alto - $margen - 2);
+            $xTexto = $xRaya + 6;
+        }
+
+        // Algunas entidades pegan el RUC al nombre («… ISIDORO RUC:20…»): en el sello sobra.
+        $nombre = trim((string) preg_replace('/\s*RUC\s*:?\s*\d{11}/i', '', $sello['nombre']));
+        $gris = '0.400 0.467 0.502';
+        $oscuro = '0.122 0.169 0.200';
+        $lineas = [['F1', 5.6, $gris, 'Firmado digitalmente por:'], ['F2', 8.5, $oscuro, $nombre]];
+        if (! empty($sello['cargo'])) {
+            $lineas[] = ['F1', 5.6, $oscuro, mb_strtoupper($sello['cargo'])];
+        }
+        $documentos = implode(' · ', array_filter([
+            empty($sello['dni']) ? null : 'DNI ' . $sello['dni'],
+            empty($sello['ruc']) ? null : 'RUC ' . $sello['ruc'],
+        ]));
+        if ($documentos !== '') {
+            $lineas[] = ['F1', 5.6, $oscuro, $documentos];
+        }
+        if (! empty($sello['organizacion'])) {
+            $lineas[] = ['F1', 5.6, $oscuro, $sello['organizacion']];
+        }
+        $lineas[] = ['F1', 5.6, $oscuro, 'Fecha: ' . $fecha->format('d/m/Y H:i:s') . ($lugar ? " · {$lugar}" : '')];
+        // Con qué certificado: quien lo emitió y su número de serie, para buscarlo si hace falta.
+        $certificado = implode(' · ', array_filter([
+            empty($sello['emisor']) ? null : 'Certificado: ' . $sello['emisor'],
+            empty($sello['serie']) ? null : 'N° ' . strtoupper($sello['serie']),
+        ]));
+        if ($certificado !== '') {
+            $lineas[] = ['F1', 4.8, $gris, $certificado];
+        }
+
+        // Cada línea entra en el ancho que queda: si no, se achica la letra.
+        $disponible = $ancho - $xTexto - $margen;
+        foreach ($lineas as &$linea) {
+            $linea[1] = max(4.0, min($linea[1], $disponible / max(1.0, self::anchoHelvetica($linea[3], $linea[0] === 'F2'))));
+        }
+        unset($linea);
+
+        // Y todas juntas entran en el alto: si no, se achican parejo.
+        $total = array_sum(array_map(fn ($l) => $l[1] * 1.3, $lineas));
+        if ($total > $alto - 2 * $margen) {
+            $escala = ($alto - 2 * $margen) / $total;
+            $lineas = array_map(fn ($l) => [$l[0], $l[1] * $escala, $l[2], $l[3]], $lineas);
+            $total = $alto - 2 * $margen;
+        }
+        $y = ($alto + $total) / 2;
+        foreach ($lineas as [$fuente, $tamano, $color, $texto]) {
+            $y -= $tamano * 1.3;
+            $dibujo .= sprintf("BT /%s %.2F Tf %s rg %.3F %.3F Td (%s) Tj ET\n", $fuente, $tamano, $color, $xTexto, $y + $tamano * 0.25, self::textoWinAnsi($texto));
+        }
+
+        $recursos = "/Font << /F1 {$numNormal} 0 R /F2 {$numNegrita} 0 R >>" . (isset($numLogo) ? " /XObject << /Logo {$numLogo} 0 R >>" : '');
+        $objetos[$numDibujo] = sprintf('<< /Type /XObject /Subtype /Form /BBox [0 0 %.3F %.3F] /Resources << %s >> /Length %d >>', $ancho, $alto, $recursos, strlen($dibujo))
+            . "\nstream\n{$dibujo}\nendstream";
+        ksort($objetos);
+
+        return $objetos;
+    }
+
+    /** Cuánto mide un texto en Helvetica a 1 punto, más o menos (para que no se salga de la casilla). */
+    private static function anchoHelvetica(string $texto, bool $negrita): float
+    {
+        $ancho = 0.0;
+        foreach (mb_str_split($texto) as $c) {
+            $ancho += match (true) {
+                $c === ' ', str_contains("iljI.,:;·'|!", $c) => 0.278,
+                str_contains('MWmw', $c)                      => 0.89,
+                ctype_digit($c)                               => 0.556,
+                mb_strtolower($c) !== $c                      => 0.722,
+                default                                       => 0.556,
+            };
+        }
+
+        return $ancho * ($negrita ? 1.05 : 1.0);
+    }
+
+    /** Un texto para las fuentes estándar del PDF (WinAnsi), con tildes y eñes. */
+    private static function textoWinAnsi(string $texto): string
+    {
+        return addcslashes((string) mb_convert_encoding($texto, 'Windows-1252', 'UTF-8'), '\\()');
     }
 
     /** @return array{0: int, 1: array<string, string>} número y diccionario de la primera página. */

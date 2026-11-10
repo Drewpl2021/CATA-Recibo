@@ -113,6 +113,11 @@ class FirmaDeHojasTest extends TestCase
         $this->assertNull($hoja->archivo_sin_firma);
         $this->assertFalse(Storage::disk('local')->exists($rutaEmitido));
         $this->assertStringStartsWith($emitido, Storage::disk('local')->get($hoja->archivo));
+        // La firma se ve en la casilla del empleador, no invisible.
+        $this->assertMatchesRegularExpression('/\/FT \/Sig [^>]*?\/Rect \[[1-9][\d.]* [\d.\s]+\] \/AP/', Storage::disk('local')->get($hoja->archivo));
+        if ($ruta = getenv('GUARDAR_HOJA_FIRMADA')) {
+            file_put_contents($ruta, Storage::disk('local')->get($hoja->archivo));
+        }
 
         $this->assertContains('cts', $this->susDocumentos($usuario));
         $this->assertTrue(Notificacion::where('user_id', $usuario->id)->where('documento_id', $hoja->id)->exists());
@@ -204,6 +209,7 @@ class FirmaDeHojasTest extends TestCase
         $hoja->refresh();
         $this->assertSame('completa', $hoja->firma_colegio);
         $this->assertContains('gratificacion', $this->susDocumentos($usuario));
+        $this->assertMatchesRegularExpression('/\/FT \/Sig [^>]*?\/Rect \[[1-9][\d.]* [\d.\s]+\] \/AP/', Storage::disk('local')->get($hoja->archivo));
 
         // Entregarla otra vez no rehace la firmada.
         $firmado = Storage::disk('local')->get($hoja->archivo);

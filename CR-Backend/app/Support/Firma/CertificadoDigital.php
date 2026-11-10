@@ -26,7 +26,7 @@ final class CertificadoDigital
     /**
      * @return array{
      *     certificado: string, llave: \OpenSSLAsymmetricKey, cadena: list<string>,
-     *     nombre: string, dni: ?string, organizacion: ?string, ruc: ?string, emisor: ?string,
+     *     nombre: string, dni: ?string, cargo: ?string, organizacion: ?string, ruc: ?string, emisor: ?string,
      *     serie: string, huella: string, desde: ?\DateTimeImmutable, hasta: ?\DateTimeImmutable
      * }
      */
@@ -87,9 +87,11 @@ final class CertificadoDigital
         $organizacion = $uno($sujeto['O'] ?? null);
 
         // El RUC del colegio, si el certificado es de persona jurídica: va en
-        // organizationIdentifier («VATPE-20…») o dentro de algún campo.
+        // organizationIdentifier («VATPE-20…») o dentro de algún campo. Llama.pe
+        // lo pone en el serialNumber y en el CN: «RUC:20156630731 DNI:02408680».
         $ruc = null;
-        foreach ([$sujeto['organizationIdentifier'] ?? null, $sujeto['2.5.4.97'] ?? null, $organizacion, $sujeto['OU'] ?? null] as $donde) {
+        foreach ([$sujeto['organizationIdentifier'] ?? null, $sujeto['2.5.4.97'] ?? null, $organizacion, $sujeto['OU'] ?? null,
+            $sujeto['serialNumber'] ?? null, $sujeto['CN'] ?? null] as $donde) {
             if ($donde !== null && preg_match('/(?<!\d)((?:10|15|17|20)\d{9})(?!\d)/', $uno($donde), $m)) {
                 $ruc = $m[1];
                 break;
@@ -104,6 +106,8 @@ final class CertificadoDigital
             'cadena'       => array_values(array_filter((array) ($partes['extracerts'] ?? []))),
             'nombre'       => $persona['nombre'] ?? 'SIN NOMBRE',
             'dni'          => $persona['dni'],
+            // El cargo de quien firma, si el certificado lo trae (2.5.4.12 «title»): va en el sello visible.
+            'cargo'        => $uno($sujeto['title'] ?? $sujeto['2.5.4.12'] ?? null),
             'organizacion' => $organizacion,
             'ruc'          => $ruc,
             'emisor'       => $persona['emisor'],

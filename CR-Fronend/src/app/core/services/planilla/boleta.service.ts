@@ -122,6 +122,15 @@ export class BoletaService {
     return this.http.post<ApiResponse<unknown> & { message?: string }>(`${this.apiUrl}/payslips/${documentoId}/void`, {});
   }
 
+  /**
+   * Anula las boletas del mes de los marcados, de una vez. Las que el
+   * trabajador ya abrió (o que no van por firma digital) se quedan: vienen
+   * en `omitidas`, con el porqué.
+   */
+  anularVarias(mes: number, anio: number, ids: string[]): Observable<ApiResponse<AnulacionMasiva>> {
+    return this.http.post<ApiResponse<AnulacionMasiva>>(`${this.apiUrl}/payslips/void`, { mes, anio, ids });
+  }
+
   /** La constancia de entrega del mes, en Excel. */
   constanciaDeEntrega(mes: number, anio: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/payslips/delivery-record`, {
@@ -205,6 +214,15 @@ export interface ResultadoFirmarAqui {
   procesadas: number;
   /** Desde dónde sigue la próxima tanda; null si ya no queda ninguna. */
   siguiente: string | null;
+}
+
+/** Cómo terminó «Anular» con los marcados. */
+export interface AnulacionMasiva {
+  anuladas: number;
+  /** Marcados que no tenían boleta ese mes. */
+  sin_boleta: number;
+  /** Las que se quedaron, con el porqué. */
+  omitidas: { trabajador: string; motivo: string }[];
 }
 
 /** Lo que el servidor dice de un PDF firmado que se sube. */

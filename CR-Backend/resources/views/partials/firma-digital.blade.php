@@ -4,8 +4,9 @@
     Con firma digital del colegio: una o dos casillas para el sello del
     empleador, y al lado la conformidad del trabajador, que no firma sobre el
     PDF (lo invalidaría): la da con su contraseña en CATA-Recibo y queda
-    registrada allí. La firma del colegio va dentro del PDF; el sello visible
-    lo pone ReFirma si se firma con el DNIe.
+    registrada allí. La firma del colegio va dentro del PDF y su sello se
+    dibuja en la casilla del empleador, que no lleva borde: «Firmar aquí» la
+    encuentra por su fondo #FEFEFE (ver FirmadorPdf::casillas()).
 
     Sin firma digital: las dos rayas de siempre, para firmar en papel.
 
@@ -15,8 +16,7 @@
 <style>
     .pie-firmas { margin-top: 18px; }
     .pie-firmas td { vertical-align: top; padding: 0 8px; }
-    .pie-firmas .casilla { border: 1px dashed #8FA9B3; height: 64px; position: relative; }
-    .pie-firmas .casilla__guia { position: absolute; top: 26px; left: 0; right: 0; text-align: center; font-size: 6.4px; color: #A8B9BF; letter-spacing: .4px; text-transform: uppercase; }
+    .pie-firmas .casilla { background: #FEFEFE; height: 64px; }
     .pie-firmas .casilla--trabajador { border: 1px solid #DCE7EB; background: #F6F9FA; }
     .pie-firmas .casilla__texto { padding: 12px 10px 0; text-align: center; font-size: 7px; color: #4A5961; line-height: 1.45; }
     .pie-firmas .pie { text-align: center; font-size: 7.4px; color: #2E3B42; margin-top: 4px; line-height: 1.4; }
@@ -33,7 +33,7 @@
         <tr>
             @for ($i = 1; $i <= $casillas; $i++)
                 <td style="width: {{ $casillas === 1 ? 50 : 33 }}%;">
-                    <div class="casilla"><div class="casilla__guia">Firma digital</div></div>
+                    <div class="casilla"></div>
                     <div class="pie">
                         <strong>EL EMPLEADOR</strong>{{ $casillas > 1 ? ' (' . $i . ' de ' . $casillas . ')' : '' }}<br>
                         Colegio Adventista Túpac Amaru

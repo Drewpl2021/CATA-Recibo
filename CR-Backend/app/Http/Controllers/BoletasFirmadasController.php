@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Storage;
  *   POST /payslips/signed/sign-here «Firmar aquí»: firma las del mes con el
  *                                   certificado de quien lo pide (sin .zip)
  *   POST /payslips/{documento}/void anula una boleta para volver a emitirla
+ *   POST /payslips/void             anula las del mes de los marcados, de una vez
  *   GET  /payslips/delivery-record  la constancia de entrega del mes, en Excel
  *
  * Va de a un archivo por pedido a propósito: con 50 o 300 boletas no se
@@ -158,33 +159,85 @@ class BoletasFirmadasController extends Controller
     {
         $documento = Documento::with('planilla', 'empleado')->where('tipo', 'boleta')->findOrFail($id);
 
+        if ($motivo = self::porQueNoSeAnula($documento)) {
+            return response()->json(['success' => false, 'message' => $motivo], 422);
+        }
+        $numero = $documento->planilla?->numeroDeBoleta();
+        self::anularUna($documento);
+
+        return response()->json(['success' => true, 'message' => "Boleta {$numero} anulada: ya puedes corregir su planilla y volver a emitirla."]);
+    }
+
+    /**
+     * Anular las boletas del mes de los marcados, de una vez (la barra de
+     * abajo de Emisión). Con las mismas reglas que una por una: las que el
+     * trabajador ya abrió, o las que no van por firma digital, se quedan, y
+     * la respuesta dice cuáles y por qué.
+     */
+    public function anularVarias(Request $request)
+    {
+        $datos = $request->validate([
+            'mes'   => 'required|integer|min:1|max:12',
+            'anio'  => 'required|integer|min:2000',
+            'ids'   => 'required|array|min:1|max:1000',
+            'ids.*' => 'string|max:40',
+        ]);
+
+        $documentos = Documento::with('planilla', 'empleado')
+            ->where('tipo', 'boleta')
+            ->whereIn('empleado_id', $datos['ids'])
+            ->whereHas('planilla', fn ($q) => $q->where('mes', $datos['mes'])->where('anio', $datos['anio']))
+            ->get();
+
+        $anuladas = 0;
+        $omitidas = [];
+        foreach ($documentos as $documento) {
+            if ($motivo = self::porQueNoSeAnula($documento)) {
+                $omitidas[] = ['trabajador' => trim("{$documento->empleado?->apellido} {$documento->empleado?->nombre}"), 'motivo' => $motivo];
+                continue;
+            }
+            self::anularUna($documento);
+            $anuladas++;
+        }
+
+        return response()->json(['success' => true, 'data' => [
+            'anuladas'  => $anuladas,
+            // Marcados que no tenían boleta ese mes: nada que anular.
+            'sin_boleta' => count(array_unique($datos['ids'])) - $documentos->count(),
+            'omitidas'  => $omitidas,
+        ]]);
+    }
+
+    /** null si la boleta se puede anular; si no, el porqué, para la persona. */
+    private static function porQueNoSeAnula(Documento $documento): ?string
+    {
         if ($documento->firma_colegio === null) {
-            return response()->json(['success' => false, 'message' => 'Esta boleta no va por firma digital: se corrige desde Emisión, como siempre.'], 422);
+            return 'Esta boleta no va por firma digital: se corrige desde Emisión, como siempre.';
         }
         if ($documento->estado_firma !== 'pendiente') {
-            return response()->json([
-                'success' => false,
-                'message' => 'El trabajador ya abrió esta boleta o dio su conformidad: no se puede anular. Si hay un error, emite un ajuste en la planilla del mes siguiente.',
-            ], 422);
+            return 'El trabajador ya abrió esta boleta o dio su conformidad: no se puede anular. Si hay un error, emite un ajuste en la planilla del mes siguiente.';
         }
 
+        return null;
+    }
+
+    /** Borra la boleta, sus avisos y sus PDF (el emitido y el firmado), y lo deja en Auditoría. */
+    private static function anularUna(Documento $documento): void
+    {
         $nombre = trim("{$documento->empleado?->apellido} {$documento->empleado?->nombre}");
         $numero = $documento->planilla?->numeroDeBoleta();
-
         $archivos = array_filter([$documento->archivo, $documento->archivo_sin_firma]);
 
-        DB::transaction(function () use ($documento, $id, $numero, $nombre) {
+        DB::transaction(function () use ($documento, $numero, $nombre) {
             Notificacion::where('documento_id', $documento->id)->delete();
             $documento->delete();
-            Auditoria::registrar('borró', 'boleta', $id, "Anuló la boleta {$numero} de {$nombre} para volver a emitirla.");
+            Auditoria::registrar('borró', 'boleta', $documento->id, "Anuló la boleta {$numero} de {$nombre} para volver a emitirla.");
         });
 
         // Al final: un archivo borrado no vuelve si la base falla.
         foreach ($archivos as $archivo) {
             Storage::disk('local')->delete($archivo);
         }
-
-        return response()->json(['success' => true, 'message' => "Boleta {$numero} anulada: ya puedes corregir su planilla y volver a emitirla."]);
     }
 
     /**

@@ -82,6 +82,19 @@ class FirmarDesdeElSistemaTest extends TestCase
         ]);
     }
 
+    /**
+     * Los sellos visibles del PDF: el [x1, y1, x2, y2] de cada campo de firma
+     * que se dibuja (los invisibles van con /Rect [0 0 0 0] y sin /AP).
+     *
+     * @return list<list<float>>
+     */
+    private function sellos(string $pdf): array
+    {
+        preg_match_all('/\/FT \/Sig [^>]*?\/Rect \[([\d.\s]+)\] \/AP/', $pdf, $m);
+
+        return array_map(fn ($r) => array_map('floatval', preg_split('/\s+/', trim($r))), $m[1]);
+    }
+
     public function test_pone_su_certificado_y_firma_las_del_mes_de_una_vez(): void
     {
         $this->emitirTodas();
@@ -146,6 +159,14 @@ class FirmarDesdeElSistemaTest extends TestCase
             $catalogo = $lector->diccionario($lector->referencia($lector->trailer()['Root'])[0]);
             $this->assertArrayHasKey('AcroForm', $catalogo);
 
+            // La firma se ve: un sello en la casilla punteada, con el logo y quién firmó.
+            $sellos = $this->sellos($firmado);
+            $this->assertCount(1, $sellos);
+            $this->assertGreaterThan(100, $sellos[0][2] - $sellos[0][0]);
+            $this->assertStringContainsString('(ISIDORO RODRIGUEZ MAMANI) Tj', $firmado);
+            $this->assertStringContainsString('(DNI 01234567) Tj', $firmado);
+            $this->assertStringContainsString('/XObject << /Logo', $firmado);
+
             // Y le llegó al trabajador.
             $this->assertTrue(Notificacion::where('documento_id', $boleta->id)->exists());
 
@@ -186,6 +207,12 @@ class FirmarDesdeElSistemaTest extends TestCase
         $firmas = FirmaDigitalPdf::firmas(Storage::disk('local')->get($completa->archivo));
         $this->assertCount(2, $firmas);
         $this->assertTrue($firmas[0]['valida'] && $firmas[1]['valida'] && $firmas[1]['cubre_hasta_el_final']);
+        // ReFirma ya ocupó la primera casilla: el sello de «Firmar aquí» va en la segunda (la de la derecha).
+        $sellos = $this->sellos(Storage::disk('local')->get($completa->archivo));
+        $this->assertCount(1, $sellos);
+        $sellosDeLaOtra = $this->sellos(Storage::disk('local')->get($this->boleta(1)->archivo));
+        $this->assertCount(1, $sellosDeLaOtra);
+        $this->assertGreaterThan($sellosDeLaOtra[0][2], $sellos[0][0]);
 
         // La 1 tiene la del administrador: ahora RR.HH. la firma con ReFirma
         // sobre ESA y se sube por el .zip, como siempre.
@@ -200,6 +227,35 @@ class FirmarDesdeElSistemaTest extends TestCase
 
         // Firmar dos veces la misma persona no suma: ya no hay nada suyo por firmar.
         $this->firmarAqui($this->admin)->assertStatus(422);
+    }
+
+    public function test_anula_de_una_vez_las_de_los_marcados_menos_las_que_el_trabajador_ya_abrio(): void
+    {
+        $this->emitirTodas();
+        $abierta = $this->boleta(1);
+        $abierta->forceFill(['estado_firma' => 'visto'])->save();
+        $archivo = $this->boleta(0)->archivo;
+        $ids = [(string) $this->trabajadores[0][0]->id, (string) $this->trabajadores[1][0]->id, (string) $this->crearEmpleado()->id];
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/payslips/void', ['mes' => $this->mes, 'anio' => $this->anio, 'ids' => $ids])
+            ->assertOk()
+            ->assertJsonPath('data.anuladas', 1)
+            ->assertJsonPath('data.sin_boleta', 1)
+            ->assertJsonPath('data.omitidas.0.motivo', fn ($m) => str_contains($m, 'ya abrió'));
+
+        // La 0 se borró con su PDF; la que el trabajador ya vio se queda.
+        $this->assertFalse(Documento::where('planilla_id', $this->trabajadores[0][1]->id)->where('tipo', 'boleta')->exists());
+        Storage::disk('local')->assertMissing($archivo);
+        $this->assertTrue($abierta->fresh() !== null);
+
+        // Y se puede volver a emitir.
+        $this->emitirTodas();
+        $this->assertSame('pendiente', $this->boleta(0)->firma_colegio);
+
+        // Un trabajador no anula nada.
+        $this->actingAs($this->crearUsuario('empleado'), 'sanctum')
+            ->postJson('/api/payslips/void', ['mes' => $this->mes, 'anio' => $this->anio, 'ids' => $ids])->assertForbidden();
     }
 
     public function test_lo_que_no_deja_poner_ni_usar(): void

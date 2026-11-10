@@ -95,6 +95,12 @@ export function anioDeLaDireccion(valor: string | null): number | null {
   return Number.isInteger(anio) && anio >= 2000 && anio <= 2100 ? anio : null;
 }
 
+/** El mes de la dirección (?mes=11), si es del 1 al 12. Lo demás se ignora. */
+export function mesDeLaDireccion(valor: string | null): number | null {
+  const mes = Number(valor);
+  return Number.isInteger(mes) && mes >= 1 && mes <= 12 ? mes : null;
+}
+
 /**
  * Cuántos días de lunes a viernes tiene un mes: los que se le pagan a quien
  * trabaja el mes entero. Es la misma regla del backend

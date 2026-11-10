@@ -67,4 +67,20 @@ class CtsLiquidacion extends Model
     {
         return $this->estado === self::DEPOSITADA;
     }
+
+    /**
+     * Cuánto de CTS se le depositó para la boleta de ese mes: la de mayo
+     * lleva el depósito de mayo y la de noviembre el de noviembre. 0 si no
+     * es mes de CTS o todavía no se depositó.
+     */
+    public static function depositadaEnLaBoleta(string $empleadoId, int $mes, int $anio): float
+    {
+        $periodo = [5 => 'mayo', 11 => 'noviembre'][$mes] ?? null;
+        if ($periodo === null) {
+            return 0.0;
+        }
+
+        return (float) static::where('empleado_id', $empleadoId)->where('anio', $anio)->where('periodo', $periodo)
+            ->where('estado', self::DEPOSITADA)->sum('monto');
+    }
 }

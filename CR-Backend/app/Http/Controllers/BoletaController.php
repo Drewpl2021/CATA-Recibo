@@ -166,6 +166,8 @@ class BoletaController extends Controller
             'conceptosDescuento'  => $conceptosDescuento,
             'conceptosAportacion' => $conceptosAportacion,
             'conceptosAdelanto'   => $conceptosAdelanto,
+            // La CTS depositada, en mayo y noviembre (ver boleta.blade.php).
+            'ctsDepositada'      => \App\Models\CtsLiquidacion::depositadaEnLaBoleta((string) $empleado->id, (int) $mes, (int) $anio),
             'mes_nombre'         => $this->meses[$mes],
             'mes'                => $mes,
             'anio'               => $anio,

@@ -10,7 +10,7 @@ import { Empleado } from '../../../core/models';
 import { BoletaService } from '../../../core/services';
 import { PlanillaService } from '../../../core/services';
 import { PayrollDetalleService } from '../../../core/services';
-import { Planilla } from '../../../core/models';
+import { Documento, Planilla } from '../../../core/models';
 import { ToastService } from '../../../core/services';
 import { ConfirmService } from '../../../core/services';
 import { Observable, of, map, switchMap, forkJoin } from 'rxjs';
@@ -30,6 +30,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { SubirFirmadasComponent } from '../subir-firmadas/subir-firmadas.component';
 import { ResumenFirmaDigital } from '../../../core/services/planilla/boleta.service';
 import { FirmarAquiComponent, TandaDeFirma } from '../../../shared/components/firmar-aqui/firmar-aqui.component';
+import { VisorDocumentoComponent } from '../../../shared/components/visor-documento/visor-documento.component';
 
 export interface FormularioBoleta {
   remuneracionBasica: number | null;
@@ -66,7 +67,7 @@ import { CeldaTablaDirective } from '../../../shared/components/data-table/celda
 @Component({
   selector: 'app-emision-boleta-list',
   standalone: true,
-  imports: [CeldaTablaDirective, AvatarComponent, IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, SubirFirmadasComponent, FirmarAquiComponent, RouterLink, BarraSeleccionComponent],
+  imports: [CeldaTablaDirective, AvatarComponent, IconComponent, CommonModule, FormsModule, PistaDirective, AlCuerpoDirective, PageHeaderComponent, DataTableComponent, FiltrosComponent, FormModalComponent, SubirFirmadasComponent, FirmarAquiComponent, RouterLink, BarraSeleccionComponent, VisorDocumentoComponent],
   templateUrl: './emision-boleta-list.component.html',
   styleUrl: './emision-boleta-list.component.scss'
 })
@@ -182,6 +183,13 @@ export class EmisionBoletaListComponent implements OnInit {
 
   accionesFila: AccionPersonalizada<Empleado>[] = [
     {
+      // La boleta tal como está guardada: la emitida, o la firmada si ya se
+      // firmó. Abrirla desde aquí no la marca como vista: eso es solo cuando
+      // la abre el propio trabajador.
+      id: 'ver', titulo: 'Ver la boleta emitida (la firmada, si ya se firmó)', icono: 'eye', etiqueta: 'Ver',
+      visible: (e) => this.boletaDeEmpleado.has(e.id),
+    },
+    {
       id: 'editar', titulo: 'Revisar y editar los conceptos de su boleta', icono: 'edit', etiqueta: 'Editar',
       visible: (e) => !this.empleadosConBoletaEmitida.has(e.id),
     },
@@ -223,7 +231,26 @@ export class EmisionBoletaListComponent implements OnInit {
     return f === 'parcial' || f === 'completa';
   }
 
+  /** La boleta abierta en el visor; null si no hay ninguna. */
+  boletaAbierta: Documento | null = null;
+  personaBoletaAbierta = '';
+
+  verBoleta(e: Empleado): void {
+    const b = this.boletaDeEmpleado.get(e.id);
+    if (!b) return;
+    // Lo justo para el visor: cuál es, que es un PDF y de qué mes, para el nombre al bajarla.
+    this.personaBoletaAbierta = `${e.apellido} ${e.nombre}`.trim();
+    this.boletaAbierta = {
+      id: b.id, empleado_id: String(e.id), tipo: 'boleta', extension: 'pdf',
+      estado_firma: b.estado_firma, planilla: { mes: Number(this.mesGlobal), anio: Number(this.anioGlobal) },
+    } as Documento;
+  }
+
   alAccionar(evento: { accion: string; fila: Empleado }): void {
+    if (evento.accion === 'ver') {
+      this.verBoleta(evento.fila);
+      return;
+    }
     if (evento.accion === 'anular') {
       this.anularBoleta(evento.fila);
       return;
@@ -257,6 +284,12 @@ export class EmisionBoletaListComponent implements OnInit {
   marcandoTodos = false;
   emitiendoMarcados = false;
   bajandoMarcados = false;
+  anulandoMarcados = false;
+
+  /** Ocupada la barra: emitiendo, bajando o anulando. */
+  get barraOcupada(): boolean {
+    return this.emitiendoMarcados || this.bajandoMarcados || this.anulandoMarcados;
+  }
 
   get resumenMarcados(): string {
     return resumirMarcados(this.marcados.map((e) => `${e.nombre} ${e.apellido}`.trim()));
@@ -318,6 +351,50 @@ export class EmisionBoletaListComponent implements OnInit {
           error: (err) => {
             this.emitiendoMarcados = false;
             this.toastService.error('No se emitieron', mensajeErrorApi(err, 'Hubo un problema al emitir las boletas.'));
+          },
+        });
+      });
+  }
+
+  /**
+   * Anula las boletas del mes de los marcados, para corregirlas y volver a
+   * emitirlas. Las que el trabajador ya abrió se quedan (eso lo cuida el
+   * servidor) y el aviso dice cuántas.
+   */
+  anularMarcados(): void {
+    if (!this.marcados.length) return;
+    const cuantos = this.marcados.length;
+    const periodo = `${this.nombreMes(Number(this.mesGlobal))} ${this.anioGlobal}`;
+    this.confirmService
+      .confirmar({
+        titulo: 'Anular las boletas de los marcados',
+        mensaje: `Se borran las boletas de ${periodo} de los ${cuantos} marcado(s), con sus firmas y sus PDF. `
+          + 'Después las vuelves a emitir y se firman de nuevo. Las que el trabajador ya abrió no se tocan.',
+        aceptarTexto: 'Sí, anular',
+        variante: 'danger',
+      })
+      .then((aceptado) => {
+        if (!aceptado) return;
+        this.anulandoMarcados = true;
+        const ids = this.marcados.map((e) => String(e.id));
+        this.boletaService.anularVarias(Number(this.mesGlobal), Number(this.anioGlobal), ids).subscribe({
+          next: (res) => {
+            this.anulandoMarcados = false;
+            const r = res.data;
+            this.toastService.resultadoMasivo({
+              hechas: r.anuladas,
+              omitidas: r.omitidas.length,
+              exito: 'Boletas anuladas',
+              nada: 'No se anuló ninguna boleta',
+              cosas: 'boleta(s)',
+              motivo: 'el trabajador ya las abrió, o no van por firma digital',
+            });
+            this.soltarMarcados();
+            this.cargarEmpleados();
+          },
+          error: (err) => {
+            this.anulandoMarcados = false;
+            this.toastService.error('No se anularon', mensajeErrorApi(err, 'Hubo un problema al anular las boletas.'));
           },
         });
       });
@@ -689,7 +766,7 @@ export class EmisionBoletaListComponent implements OnInit {
     const q = this.ruta.snapshot.queryParamMap;
     const mes = Number(q.get('mes'));
     const anio = Number(q.get('anio'));
-    if (mes >= 1 && mes <= 12 && anio >= 2000) {
+    if (mes >= 1 && mes <= 12 && anio >= 2000 && anio <= 2100) {
       this.mesGlobal = mes;
       this.anioGlobal = anio;
       if (q.get('boleta') === 'sin') this.filtros = { planilla: 'con', boleta: 'sin' };
