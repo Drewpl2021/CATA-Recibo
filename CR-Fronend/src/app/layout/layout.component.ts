@@ -6,7 +6,7 @@ import { AuthService,
   NotificacionService,
 } from '../core/services';
 import { MisModulosService, PrimerosPasosService } from '../core/services';
-import { MiPerfil, ModuloPadre, Notificacion } from '../core/models';
+import { DatosEditablesDelPerfil, MiPerfil, ModuloPadre, Notificacion } from '../core/models';
 import { MisDocumentosService } from '../core/services';
 import { Documento } from '../core/models';
 import { ToastService } from '../core/services';
@@ -958,7 +958,68 @@ export class LayoutComponent implements OnInit {
     this.showUserMenu = !this.showUserMenu;
   }
 
-  openProfile(): void {
+  // ── Editar sus datos («Configuración») ──
+  /** Opciones de nivel de estudios, las mismas de la ficha de RR.HH. */
+  readonly nivelesDeEstudio = NIVEL_ESTUDIOS_OPCIONES;
+  editandoPerfil = false;
+  guardandoPerfil = false;
+  formPerfil: DatosEditablesDelPerfil = this.perfilVacio();
+
+  private perfilVacio(): DatosEditablesDelPerfil {
+    return {
+      telefono: null, direccion: null, contacto_emergencia_nombre: null, contacto_emergencia_telefono: null,
+      nivel_estudios: null, especialidad: null, institucion_estudios: null,
+    };
+  }
+
+  /** Copia su ficha al formulario: se edita la copia y la ficha cambia recién al guardar. */
+  empezarAEditarPerfil(): void {
+    const e = this.empleadoData;
+    if (!e) return;
+    this.formPerfil = {
+      telefono: e.telefono ?? null, direccion: e.direccion ?? null,
+      contacto_emergencia_nombre: e.contacto_emergencia_nombre ?? null,
+      contacto_emergencia_telefono: e.contacto_emergencia_telefono ?? null,
+      nivel_estudios: e.nivel_estudios ?? null, especialidad: e.especialidad ?? null,
+      institucion_estudios: e.institucion_estudios ?? null,
+    };
+    this.editandoPerfil = true;
+  }
+
+  cancelarEdicionPerfil(): void {
+    this.editandoPerfil = false;
+  }
+
+  guardarPerfil(): void {
+    if (this.guardandoPerfil) return;
+    this.guardandoPerfil = true;
+    // Vacío es «sin dato», no un texto en blanco.
+    const limpio = Object.fromEntries(
+      Object.entries(this.formPerfil).map(([k, v]) => [k, typeof v === 'string' ? (v.trim() || null) : v]),
+    ) as unknown as DatosEditablesDelPerfil;
+    this.empleadoService.actualizarMiPerfil(limpio).subscribe({
+      next: (res) => {
+        this.guardandoPerfil = false;
+        this.empleadoData = this.empleadoData ? { ...this.empleadoData, ...limpio } : this.empleadoData;
+        this.editandoPerfil = false;
+        this.toastService.success('Datos guardados', res.message ?? 'Tus datos se guardaron.');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.guardandoPerfil = false;
+        this.toastService.error('No se guardó', mensajeErrorApi(err, 'Revisa los datos e intenta de nuevo.'));
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** «Configuración»: el mismo perfil, abierto ya para editar sus datos. */
+  abrirConfiguracion(): void {
+    this.openProfile(true);
+  }
+
+  openProfile(editar = false): void {
+    this.editandoPerfil = false;
     setTimeout(() => {
       this.showProfileModal = true;
       if (this.showProfileModal) {
@@ -966,8 +1027,10 @@ export class LayoutComponent implements OnInit {
         this.showPasswordModal = false;
         this.showNotifications = false;
       }
+      // Si ya se tiene su ficha, se abre editando; si no, cuando llegue.
+      if (editar && this.empleadoData) this.empezarAEditarPerfil();
     }, 0);
-    
+
     // Su propio perfil, por la ruta del autoservicio. Antes se pedía a
     // employees/{id}, que es solo de RR.HH. y Administración: al trabajador
     // le contestaba 403 y el perfil se quedaba con un guion en cada dato,
@@ -981,6 +1044,7 @@ export class LayoutComponent implements OnInit {
           if (res.success) {
             this.empleadoData = res.data.empleado;
             this.cuentaData = res.data.cuenta;
+            if (editar && this.empleadoData) this.empezarAEditarPerfil();
             this.cdr.detectChanges();
           }
         },
@@ -993,6 +1057,7 @@ export class LayoutComponent implements OnInit {
 
   closeProfile(): void {
     this.showProfileModal = false;
+    this.editandoPerfil = false;
     this.cdr.detectChanges();
   }
 

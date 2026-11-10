@@ -107,6 +107,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     // RR.HH. porque cada quien mira LO SUYO: pedirla a employees/{id} le
     // daba 403 al trabajador y su perfil salía en blanco.
     Route::get('my-profile',              [MiPerfilController::class, 'ver']);
+    // Corregir sus datos de contacto y estudios (el correo y lo laboral, no).
+    Route::patch('my-profile',            [MiPerfilController::class, 'actualizar'])->middleware('throttle:20,1');
     // La guía de qué hacer primero, según su rol. El progreso se calcula
     // de los datos; lo único que se guarda es si ya se le abrió sola.
     Route::get('my-first-steps',          [PrimerosPasosController::class, 'ver']);

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { Empleado, EmpleadoPayload, MiPerfil } from '../../models';
+import { DatosEditablesDelPerfil, Empleado, EmpleadoPayload, MiPerfil } from '../../models';
 import { ApiResponse, END_POINTS, END_POINTS_ACCIONES, EntityDataService } from '../../utils';
 
 /** Lo que contesta el cambio de estado en grupo. */
@@ -71,6 +71,13 @@ export class EmpleadoService extends EntityDataService<Empleado> {
   miPerfil(): Observable<ApiResponse<MiPerfil>> {
     return this.http.get<ApiResponse<MiPerfil>>(
       `${environment.apiUrl}/${END_POINTS.autoservicio.miPerfil}`
+    );
+  }
+
+  /** Corrige sus datos de contacto y estudios (el correo y lo laboral no se tocan). */
+  actualizarMiPerfil(datos: DatosEditablesDelPerfil): Observable<ApiResponse<unknown> & { message?: string }> {
+    return this.http.patch<ApiResponse<unknown> & { message?: string }>(
+      `${environment.apiUrl}/${END_POINTS.autoservicio.miPerfil}`, datos
     );
   }
 

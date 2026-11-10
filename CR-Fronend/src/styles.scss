@@ -840,6 +840,32 @@ a.migas__paso:hover {
  * cinco y la columna de la izquierda deja de quedar coja. Cuando no caben
  * 230 px por columna se apilan solos, sin más reglas.
  */
+/* «Configuración»: sus datos editables, de dos en dos (uno bajo otro en el celular). */
+.perfil-editar__fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0 14px;
+}
+
+/* El correo institucional: se ve, no se toca. El candado va dentro del campo. */
+.perfil-editar__bloqueado {
+  position: relative;
+}
+
+.perfil-editar__bloqueado .form-control {
+  padding-right: 34px;
+  cursor: not-allowed;
+}
+
+.perfil-editar__bloqueado app-icon {
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
 .perfil-datos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));

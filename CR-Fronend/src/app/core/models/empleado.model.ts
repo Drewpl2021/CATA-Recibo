@@ -160,6 +160,17 @@ export interface PersonaPorDni {
  * Administración y RR.HH. nacen sin ficha (son para operar el sistema, no
  * personas en planilla), y aun así su perfil tiene qué enseñar.
  */
+/** Lo que cada quien puede corregir de su ficha desde «Configuración» (PATCH /my-profile). */
+export interface DatosEditablesDelPerfil {
+  telefono: string | null;
+  direccion: string | null;
+  contacto_emergencia_nombre: string | null;
+  contacto_emergencia_telefono: string | null;
+  nivel_estudios: string | null;
+  especialidad: string | null;
+  institucion_estudios: string | null;
+}
+
 export interface MiPerfil {
   /** Su ficha de trabajador, o null si la cuenta no está vinculada a una. */
   empleado: Empleado | null;

@@ -40,6 +40,7 @@ class MiPerfilController extends Controller
                 'id', 'dni', 'nombre', 'apellido', 'telefono', 'direccion',
                 'fecha_nacimiento', 'fecha_ingreso', 'tipo_contrato_id', 'estado',
                 'nivel_estudios', 'especialidad', 'institucion_estudios',
+                'contacto_emergencia_nombre', 'contacto_emergencia_telefono',
                 'area_id', 'cargo_id', 'sede_id',
             ])
                 ->with(['area:id,nombre', 'cargo:id,nombre', 'sede:id,nombre', 'tipoContrato:id,nombre'])
@@ -63,5 +64,45 @@ class MiPerfilController extends Controller
                 ],
             ],
         ]);
+    }
+
+    /**
+     * PATCH /my-profile — lo que cada quien puede corregir de su ficha: cómo
+     * ubicarlo (celular, dirección, contacto de emergencia) y sus estudios.
+     *
+     * Nada más: el DNI, el nombre, el área, el cargo, el contrato, el sueldo y
+     * las cuentas los lleva RR.HH.; y el correo es el institucional
+     * (@cata.edu.pe), que lo asigna el colegio. Lo que llegue de más se
+     * ignora: solo se toman estos campos. El id sale de la sesión, así que
+     * nadie corrige la ficha de otro. Los cambios quedan en Auditoría (la
+     * ficha es Auditable).
+     */
+    public function actualizar(Request $request)
+    {
+        $empleado = $request->user()->empleado_id ? Empleado::find($request->user()->empleado_id) : null;
+        if (! $empleado) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tu cuenta no tiene ficha de trabajador: no hay datos que editar.',
+            ], 422);
+        }
+
+        // Las mismas reglas con que RR.HH. llena la ficha (EmpleadoController).
+        $datos = $request->validate([
+            'telefono'                     => 'nullable|regex:/^[0-9]+$/|max:15',
+            'direccion'                    => 'nullable|string|max:255',
+            'contacto_emergencia_nombre'   => 'nullable|string|max:150',
+            'contacto_emergencia_telefono' => 'nullable|regex:/^[0-9]+$/|max:15',
+            'nivel_estudios'               => 'nullable|in:primaria,secundaria,tecnico,universitario,maestria,doctorado',
+            'especialidad'                 => 'nullable|string|max:150',
+            'institucion_estudios'         => 'nullable|string|max:150',
+        ], [
+            'telefono.regex'                     => 'El celular va solo con números.',
+            'contacto_emergencia_telefono.regex' => 'El celular del contacto va solo con números.',
+        ]);
+
+        $empleado->update($datos);
+
+        return response()->json(['success' => true, 'message' => 'Tus datos se guardaron.']);
     }
 }

@@ -215,8 +215,9 @@
                       <!-- El cargo va acá arriba y no repetido abajo: es la línea
                       que dice quién es, no un dato más de la lista. -->
                       <span style="color: var(--text-muted); font-size: 0.9rem;">{{ empleadoData?.cargo?.nombre || userRole }}</span>
-                      <!-- Los datos de su ficha de trabajador. -->
-                      @if (empleadoData) {
+                      <!-- Los datos de su ficha de trabajador. Lo laboral lo lleva RR.HH.;
+                      lo suyo (contacto y estudios) lo corrige aquí, desde «Configuración». -->
+                      @if (empleadoData && !editandoPerfil) {
                         <div class="perfil-datos" style="margin-top: 20px;">
                           <div class="perfil-dato">
                             <span class="perfil-dato__etiqueta">DNI</span>
@@ -243,14 +244,89 @@
                             <span class="perfil-dato__valor">{{ nivelDeEstudios }}</span>
                           </div>
                           <div class="perfil-dato">
-                            <span class="perfil-dato__etiqueta">Teléfono</span>
+                            <span class="perfil-dato__etiqueta">Celular</span>
                             <span class="perfil-dato__valor">{{ empleadoData.telefono || '-' }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Dirección</span>
+                            <span class="perfil-dato__valor">{{ empleadoData.direccion || '-' }}</span>
+                          </div>
+                          <div class="perfil-dato">
+                            <span class="perfil-dato__etiqueta">Contacto de emergencia</span>
+                            <span class="perfil-dato__valor">{{ empleadoData.contacto_emergencia_nombre ? empleadoData.contacto_emergencia_nombre + (empleadoData.contacto_emergencia_telefono ? ' · ' + empleadoData.contacto_emergencia_telefono : '') : '-' }}</span>
                           </div>
                           <div class="perfil-dato">
                             <span class="perfil-dato__etiqueta">Correo</span>
                             <span class="perfil-dato__valor">{{ userEmail }}</span>
                           </div>
                         </div>
+                        <button type="button" class="btn-primary" style="margin-top: 18px;" (click)="empezarAEditarPerfil()">
+                          <app-icon icono="edit" [tamano]="16"></app-icon>
+                          Editar mis datos
+                        </button>
+                      }
+                      @if (empleadoData && editandoPerfil) {
+                        <form class="perfil-editar" (ngSubmit)="guardarPerfil()" style="margin-top: 20px;">
+                          <!-- El correo es el institucional: lo asigna el colegio. -->
+                          <div class="form-group">
+                            <label for="perfilCorreo">Correo institucional</label>
+                            <div class="perfil-editar__bloqueado">
+                              <input id="perfilCorreo" type="email" class="form-control" [value]="userEmail" disabled />
+                              <app-icon icono="lock" [tamano]="16"></app-icon>
+                            </div>
+                            <small class="form-ayuda">Es tu correo del colegio. Si hay un error, pídele a Recursos Humanos que lo corrija.</small>
+                          </div>
+                          <div class="perfil-editar__fila">
+                            <div class="form-group">
+                              <label for="perfilCelular">Celular</label>
+                              <input id="perfilCelular" name="telefono" class="form-control" inputmode="numeric" maxlength="15"
+                                placeholder="Ej. 987654321" [(ngModel)]="formPerfil.telefono" />
+                            </div>
+                            <div class="form-group">
+                              <label for="perfilNivel">Nivel de estudios</label>
+                              <select id="perfilNivel" name="nivel_estudios" class="form-control" [(ngModel)]="formPerfil.nivel_estudios">
+                                <option [ngValue]="null">Sin indicar</option>
+                                @for (n of nivelesDeEstudio; track n.value) {
+                                  <option [ngValue]="n.value">{{ n.label }}</option>
+                                }
+                              </select>
+                            </div>
+                          </div>
+                          <div class="form-group">
+                            <label for="perfilDireccion">Dirección</label>
+                            <input id="perfilDireccion" name="direccion" class="form-control" maxlength="255"
+                              placeholder="Ej. Jr. Moquegua N° 852, Juliaca" [(ngModel)]="formPerfil.direccion" />
+                          </div>
+                          <div class="perfil-editar__fila">
+                            <div class="form-group">
+                              <label for="perfilEspecialidad">Especialidad</label>
+                              <input id="perfilEspecialidad" name="especialidad" class="form-control" maxlength="150"
+                                placeholder="Ej. Educación Primaria" [(ngModel)]="formPerfil.especialidad" />
+                            </div>
+                            <div class="form-group">
+                              <label for="perfilInstitucion">Dónde estudiaste</label>
+                              <input id="perfilInstitucion" name="institucion_estudios" class="form-control" maxlength="150"
+                                placeholder="Ej. UNA Puno" [(ngModel)]="formPerfil.institucion_estudios" />
+                            </div>
+                          </div>
+                          <div class="perfil-editar__fila">
+                            <div class="form-group">
+                              <label for="perfilContacto">Contacto de emergencia</label>
+                              <input id="perfilContacto" name="contacto_emergencia_nombre" class="form-control" maxlength="150"
+                                placeholder="Ej. María Quispe (madre)" [(ngModel)]="formPerfil.contacto_emergencia_nombre" />
+                            </div>
+                            <div class="form-group">
+                              <label for="perfilContactoCelular">Celular del contacto</label>
+                              <input id="perfilContactoCelular" name="contacto_emergencia_telefono" class="form-control" inputmode="numeric" maxlength="15"
+                                placeholder="Ej. 951000111" [(ngModel)]="formPerfil.contacto_emergencia_telefono" />
+                            </div>
+                          </div>
+                          <p class="form-ayuda">Tu DNI, área, cargo, contrato y cuentas los lleva Recursos Humanos.</p>
+                          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px;">
+                            <button type="button" class="btn-secondary" (click)="cancelarEdicionPerfil()" [disabled]="guardandoPerfil">Cancelar</button>
+                            <button type="submit" class="btn-primary" [disabled]="guardandoPerfil">{{ guardandoPerfil ? 'Guardando…' : 'Guardar' }}</button>
+                          </div>
+                        </form>
                       }
                       <!-- Las cuentas de Administración y de RR.HH. no tienen
                       ficha de trabajador: son para operar el sistema, no
@@ -361,7 +437,7 @@
                     <app-icon icono="lock" [tamano]="18"></app-icon>
                     Cambiar contraseña
                   </a>
-                  <a style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer;">
+                  <a (click)="abrirConfiguracion()" style="display: flex; align-items: center; gap: 12px; padding: 12px 0; color: var(--text-soft); text-decoration: none; cursor: pointer;">
                     <app-icon icono="settings" [tamano]="18"></app-icon>
                     Configuración
                   </a>
