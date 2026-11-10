@@ -89,7 +89,10 @@
     $hasta       = \Carbon\Carbon::parse($l->hasta);
     $mesCierre   = $meses[$hasta->month] . ' ' . $hasta->year;
     $gratiMes    = $l->periodo === 'mayo' ? 'diciembre ' . ($l->anio - 1) : 'julio ' . $l->anio;
-    $porMeses    = round($l->remuneracion_computable / 12 * $l->meses, 2);
+    // El monto sale de la remuneración sin redondear (ver MotorCts): las dos
+    // filas se reparten el monto para que siempre sumen lo depositado. Sin
+    // días, todo es de los meses (si no, salía «-0.01» por días).
+    $porMeses    = $l->dias > 0 ? round($l->remuneracion_computable / 12 * $l->meses, 2) : (float) $l->monto;
     $porDias     = round($l->monto - $porMeses, 2);
     $rc          = number_format($l->remuneracion_computable, 2);
     $cesado      = $empleado->estado === 'inactivo' && $empleado->fecha_cese;

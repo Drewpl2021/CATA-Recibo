@@ -82,6 +82,24 @@ class CtsModuloTest extends TestCase
         $this->assertEqualsWithDelta(3436, $r['remuneracion_computable'], 0.001);
     }
 
+    public function test_solo_se_redondea_el_monto_final_como_en_la_hoja_del_colegio(): void
+    {
+        // Caso real de noviembre 2026 (ARI VILCA): gratificación 1,980.53 → sexto 330.0883.
+        // Redondeando el sexto antes daba 1,527.80; la Caja depositó 1,527.79.
+        $e = $this->crearEmpleado(['sueldo_base' => 2725.5, 'fecha_ingreso' => '2020-03-01', 'tiene_hijos' => 0, 'bonificacion_cargo' => 0]);
+        Planilla::create(['empleado_id' => $e->id, 'mes' => 10, 'anio' => 2026, 'sueldo_base' => 2725.5, 'total' => 0]);
+        $julio = Planilla::create(['empleado_id' => $e->id, 'mes' => 7, 'anio' => 2026, 'sueldo_base' => 2725.5, 'total' => 0]);
+        $concepto = fn (string $nombre) => PaymentConcept::firstOrCreate(['nombre' => $nombre], ['tipo' => 'bonificacion'])->id;
+        PayrollDetalle::create(['planilla_id' => $julio->id, 'payment_concept_id' => $concepto(ConceptosDePago::GRATIFICACION), 'monto_calculado' => 1817]);
+        PayrollDetalle::create(['planilla_id' => $julio->id, 'payment_concept_id' => $concepto(ConceptosDePago::BONIF_EXTRAORDINARIA), 'monto_calculado' => 163.53]);
+
+        $r = (new MotorCts())->calcular($e, 2026, 'noviembre');
+
+        $this->assertEqualsWithDelta(330.09, $r['sexto_gratificacion'], 0.001, 'Se muestra redondeado');
+        $this->assertEqualsWithDelta(3055.59, $r['remuneracion_computable'], 0.001);
+        $this->assertSame(1527.79, $r['monto']);
+    }
+
     public function test_el_historial_trae_los_seis_meses_con_sus_marcas(): void
     {
         $e = $this->crearEmpleado(['sueldo_base' => 3000, 'fecha_ingreso' => '2026-06-10', 'tiene_hijos' => 0]);

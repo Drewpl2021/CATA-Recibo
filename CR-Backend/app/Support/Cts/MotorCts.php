@@ -134,9 +134,15 @@ class MotorCts
         ['sueldo' => $sueldo, 'asignacion' => $asignacion, 'cargo' => $cargo, 'fuente' => $fuenteRemuneracion]
             = $this->remuneracionAlCierre($empleado, (int) $hasta->month, (int) $hasta->year);
         ['monto' => $grati, 'fuente' => $fuente] = $this->gratificacionDelSemestre($empleado, $semestre['grati_mes'], $semestre['grati_anio']);
+        // Como la hoja del colegio: el sexto entra entero a la cuenta y solo
+        // se redondea el monto final. Redondear antes el sexto (330.0883 →
+        // 330.09) dejaba la CTS un céntimo arriba de lo que depositó la Caja
+        // en uno de cada siete (1,527.80 en vez de 1,527.79). El sexto y la
+        // remuneración computable se guardan redondeados solo para mostrarse.
+        $computableExacta = $sueldo + $asignacion + $cargo + $grati / 6;
         $sexto      = round($grati / 6, 2);
-        $computable = round($sueldo + $asignacion + $cargo + $sexto, 2);
-        $monto      = round($computable / 12 * $meses + $computable / 360 * $dias, 2);
+        $computable = round($computableExacta, 2);
+        $monto      = round($computableExacta / 12 * $meses + $computableExacta / 360 * $dias, 2);
 
         return [
             'aplica' => true, 'motivo' => null,
