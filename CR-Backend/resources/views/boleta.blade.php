@@ -112,6 +112,9 @@
         .firmas-digitales { margin-top: 26px; }
         .firmas-digitales td { width: 50%; padding: 0 10px; vertical-align: top; }
         .casilla-firma { background: #FEFEFE; height: 78px; }
+        /* El lugar del trabajador: en blanco, con la línea abajo para firmar
+           al imprimirla. Sin fondo: no es una casilla del sello. */
+        .firma-trabajador { height: 78px; border-bottom: 1px solid #1F2B33; margin: 0 18px; }
         .casilla-firma__pie { text-align: center; font-size: 7.4px; color: #2E3B42; margin-top: 3px; line-height: 1.35; }
         .nota-firma-digital { margin-top: 10px; font-size: 6.6px; color: #2E3B42; background: #EDF3F5; padding: 5px 7px; line-height: 1.45; }
     </style>
@@ -522,16 +525,15 @@
     </table>
 
     @if (!empty($firmaDigital))
-    {{-- ── Firma digital del colegio: una o dos casillas para el sello de ReFirma.
-         El trabajador no firma sobre el PDF (lo invalidaría): su conformidad
-         queda registrada en el sistema. ── --}}
+    {{-- ── A la izquierda, la firma digital del colegio (una o dos casillas
+         para el sello). A la derecha, el trabajador: el espacio en blanco y
+         la línea para que firme cuando se imprime. En el PDF no firma (lo
+         invalidaría): su conformidad queda registrada en el sistema. ── --}}
     @php $casillas = max(1, min(2, (int) ($firmasRequeridas ?? 1))); @endphp
     <table class="firmas-digitales">
         <tr>
-            {{-- Con una sola firma, la firma va a un costado (a la derecha). --}}
-            @if ($casillas === 1)<td></td>@endif
             @for ($i = 1; $i <= $casillas; $i++)
-                <td>
+                <td style="width: {{ $casillas === 1 ? 50 : 33 }}%;">
                     <div class="casilla-firma"></div>
                     <div class="casilla-firma__pie">
                         Firma digital del empleador{{ $casillas > 1 ? ' (' . $i . ' de ' . $casillas . ')' : '' }}<br>
@@ -539,6 +541,13 @@
                     </div>
                 </td>
             @endfor
+            <td style="width: {{ $casillas === 1 ? 50 : 34 }}%;">
+                <div class="firma-trabajador"></div>
+                <div class="casilla-firma__pie">
+                    Firma del trabajador<br>
+                    {{ $empleado->apellido }}, {{ $empleado->nombre }} · DNI {{ $empleado->dni }}
+                </div>
+            </td>
         </tr>
     </table>
     <div class="nota-firma-digital">

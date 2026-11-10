@@ -1,10 +1,11 @@
 {{--
     El pie de firmas de las hojas que emite el sistema (CTS, gratificación).
 
-    Con firma digital del colegio: una o dos casillas para el sello del
-    empleador, y al lado la conformidad del trabajador, que no firma sobre el
-    PDF (lo invalidaría): la da con su contraseña en CATA-Recibo y queda
-    registrada allí. La firma del colegio va dentro del PDF y su sello se
+    Con firma digital del colegio: a la izquierda, una o dos casillas para el
+    sello del empleador; a la derecha, el trabajador: un espacio en blanco con
+    la línea para firmar cuando se imprime, su nombre y DNI. En el PDF no
+    firma (lo invalidaría): su conformidad la da con su contraseña en
+    CATA-Recibo y queda registrada allí. La firma del colegio va dentro del PDF y su sello se
     dibuja en la casilla del empleador, que no lleva borde: «Firmar aquí» la
     encuentra por su fondo #FEFEFE (ver FirmadorPdf::casillas()).
 
@@ -17,8 +18,7 @@
     .pie-firmas { margin-top: 18px; }
     .pie-firmas td { vertical-align: top; padding: 0 8px; }
     .pie-firmas .casilla { background: #FEFEFE; height: 64px; }
-    .pie-firmas .casilla--trabajador { border: 1px solid #DCE7EB; background: #F6F9FA; }
-    .pie-firmas .casilla__texto { padding: 12px 10px 0; text-align: center; font-size: 7px; color: #4A5961; line-height: 1.45; }
+    .pie-firmas .firma-trabajador { height: 64px; border-bottom: 1px solid #1F2B33; margin: 0 16px; }
     .pie-firmas .pie { text-align: center; font-size: 7.4px; color: #2E3B42; margin-top: 4px; line-height: 1.4; }
     .pie-firmas .pie strong { font-size: 7.6px; }
     .nota-legal { margin-top: 10px; font-size: 6.6px; color: #2E3B42; background: #EDF3F5; padding: 5px 8px; line-height: 1.45; }
@@ -41,13 +41,7 @@
                 </td>
             @endfor
             <td style="width: {{ $casillas === 1 ? 50 : 34 }}%;">
-                <div class="casilla casilla--trabajador">
-                    <div class="casilla__texto">
-                        Conformidad registrada en CATA-Recibo<br>
-                        con la contraseña personal del trabajador,<br>
-                        con fecha, hora y código de verificación.
-                    </div>
-                </div>
+                <div class="firma-trabajador"></div>
                 <div class="pie">
                     <strong>EL TRABAJADOR</strong><br>
                     {{ $trabajador }} · DNI {{ $dni }}
