@@ -20,7 +20,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { BarraSeleccionComponent, resumirMarcados } from '../../../shared/components/barra-seleccion/barra-seleccion.component';
-import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
+import { AccionPersonalizada, ColumnaTabla, OPCIONES_FILAS_POR_PAGINA } from '../../../shared/components/data-table/data-table.models';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
@@ -84,7 +84,9 @@ export class EmisionBoletaListComponent implements OnInit {
   cargandoEmpleados = false;
 
   /** El corte y el buscador los hace el backend; acá solo se pinta. */
-  readonly TAMANO_PAGINA = 10;
+  /** Filas por página: se elige abajo, en la tabla, y se recuerda al volver. */
+  filasPorPagina = 10;
+  readonly OPCIONES_POR_PAGINA = OPCIONES_FILAS_POR_PAGINA;
   pagina = 0;
   busqueda = '';
   totalEmpleados = 0;
@@ -787,12 +789,12 @@ export class EmisionBoletaListComponent implements OnInit {
 
   cargarEmpleados(): void {
     // Para devolvérselo al volver (ver EstadoListadoService).
-    this.estadoListados.guardar('emision-boletas', { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, mesGlobal: this.mesGlobal, anioGlobal: this.anioGlobal });
+    this.estadoListados.guardar('emision-boletas', { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, mesGlobal: this.mesGlobal, anioGlobal: this.anioGlobal, filasPorPagina: this.filasPorPagina });
     this.cargandoEmpleados = true;
     this.empleadoService
       .getPagina({
         page: this.pagina,
-        size: this.TAMANO_PAGINA,
+        size: this.filasPorPagina,
         search: this.busqueda || undefined,
         // El mes que se está armando: los filtros de boleta y planilla son
         // de ESE periodo, no del trabajador.
@@ -819,6 +821,13 @@ export class EmisionBoletaListComponent implements OnInit {
 
   irAPagina(pagina: number): void {
     this.pagina = pagina;
+    this.cargarEmpleados();
+  }
+
+  /** Otro tamaño de página: vuelve a la primera. */
+  cambiarFilasPorPagina(filas: number): void {
+    this.filasPorPagina = filas;
+    this.pagina = 0;
     this.cargarEmpleados();
   }
 

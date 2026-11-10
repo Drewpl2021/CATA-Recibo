@@ -48,6 +48,22 @@ class ParametrosManipuladosTest extends TestCase
         }
     }
 
+    public function test_se_pueden_pedir_hasta_1000_filas_por_pagina_y_no_mas(): void
+    {
+        $admin = $this->crearUsuario('admin');
+        for ($i = 0; $i < 12; $i++) {
+            $this->crearEmpleado();
+        }
+        $paginas = fn (int $size) => $this->actingAs($admin, 'sanctum')
+            ->getJson("/api/employees?page=0&size={$size}")->assertOk()->json('data');
+
+        // «Filas por página»: 1000 trae todo en una sola página.
+        $this->assertSame(1, $paginas(1000)['totalPages']);
+        $this->assertSame(2, $paginas(10)['totalPages']);
+        // Pedir de más no tumba nada: se queda en el techo de 1000.
+        $this->assertSame(1, $paginas(1000000)['totalPages']);
+    }
+
     public function test_un_trabajador_no_entra_a_los_modulos_de_rrhh_escribiendo_la_direccion(): void
     {
         $trabajador = $this->crearUsuario('empleado');

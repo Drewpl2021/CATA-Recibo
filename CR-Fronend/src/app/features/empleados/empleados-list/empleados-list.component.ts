@@ -14,7 +14,7 @@ import { AreaService, CargoService, EmpleadoService, SedeService, TipoContratoSe
 import { Empleado } from '../../../core/models';
 import { guardarArchivo, mensajeErrorApi } from '../../../core/utils';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
-import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
+import { AccionPersonalizada, ColumnaTabla, OPCIONES_FILAS_POR_PAGINA } from '../../../shared/components/data-table/data-table.models';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
 import { OrdenComponent, OpcionOrden } from '../../../shared/components/orden/orden.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
@@ -59,7 +59,9 @@ export class EmpleadosListComponent implements OnInit {
   cargando = false;
 
   /** Filas por página; el backend corta y cuenta, acá solo se pinta. */
-  readonly TAMANO_PAGINA = 10;
+  /** Filas por página: se elige abajo, en la tabla, y se recuerda al volver. */
+  filasPorPagina = 10;
+  readonly OPCIONES_POR_PAGINA = OPCIONES_FILAS_POR_PAGINA;
   pagina = 0;
   busqueda = '';
   /** Cuántos hay en total, según el backend — no el largo de la página. */
@@ -513,6 +515,13 @@ export class EmpleadosListComponent implements OnInit {
     this.cargar();
   }
 
+  /** Otro tamaño de página: vuelve a la primera. */
+  cambiarFilasPorPagina(filas: number): void {
+    this.filasPorPagina = filas;
+    this.pagina = 0;
+    this.cargar();
+  }
+
   /** Búsqueda contra el backend; llega ya con el retardo aplicado. */
   buscar(termino: string): void {
     this.busqueda = termino;
@@ -522,12 +531,12 @@ export class EmpleadosListComponent implements OnInit {
 
   cargar(): void {
     // Para devolvérselo al volver (ver EstadoListadoService).
-    this.estadoListados.guardar('empleados', { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, orden: this.orden });
+    this.estadoListados.guardar('empleados', { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, orden: this.orden, filasPorPagina: this.filasPorPagina });
     this.cargando = true;
     this.empleadoService
       .getPagina({
         page: this.pagina,
-        size: this.TAMANO_PAGINA,
+        size: this.filasPorPagina,
         search: this.busqueda || undefined,
         orden: this.orden || undefined,
         ...this.filtros,

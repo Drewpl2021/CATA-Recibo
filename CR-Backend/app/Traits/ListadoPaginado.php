@@ -33,8 +33,12 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 trait ListadoPaginado
 {
-    /** Techo de filas por página: evita que un ?size=100000 tumbe el servidor. */
-    private const MAXIMO_POR_PAGINA = 200;
+    /**
+     * Techo de filas por página: evita que un ?size=100000 tumbe el servidor.
+     * 1000 es lo más que se puede elegir abajo en Boletas, Empleados y
+     * Planillas («Filas por página»), para ver un mes entero de una vez.
+     */
+    private const MAXIMO_POR_PAGINA = 1000;
 
     /**
      * Techo de «Marcar los N de todas las páginas» (?todos=1). Más que eso

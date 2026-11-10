@@ -4201,6 +4201,26 @@ textarea.form-control {
 .data-table-pagination-info {
   font-size: 13px;
   color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* «Filas por página»: al lado de cuántos se están viendo. */
+.data-table-pagination-tamano {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.data-table-pagination-tamano .form-control {
+  width: auto;
+  min-width: 76px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .data-table-pagination-btns {

@@ -184,9 +184,23 @@
           </table>
         </div>
 
-        @if (totalPaginas > 1) {
+        @if (mostrarPie) {
           <div class="data-table-pagination">
-            <span class="data-table-pagination-info">{{ mostrandoDesde }}–{{ mostrandoHasta }} de {{ totalRegistros }}</span>
+            <span class="data-table-pagination-info">
+              {{ mostrandoDesde }}–{{ mostrandoHasta }} de {{ totalRegistros }}
+              @if (opcionesPorPagina.length) {
+                <label class="data-table-pagination-tamano">
+                  Filas por página
+                  <select class="form-control" [ngModel]="filasPorPagina" (ngModelChange)="cambiarFilasPorPagina($event)"
+                    aria-label="Cuántas filas mostrar por página">
+                    @for (opcion of opcionesPorPagina; track opcion) {
+                      <option [ngValue]="opcion">{{ opcion }}</option>
+                    }
+                  </select>
+                </label>
+              }
+            </span>
+            @if (totalPaginas > 1) {
             <div class="data-table-pagination-btns">
               <button class="btn-secondary" [disabled]="paginaActual === 1" (click)="irAPagina(paginaActual - 1)">Anterior</button>
               <span class="data-table-pagination-current">
@@ -206,6 +220,7 @@
                 </span>
                 <button class="btn-secondary" [disabled]="paginaActual === totalPaginas" (click)="irAPagina(paginaActual + 1)">Siguiente</button>
               </div>
+            }
             </div>
           }
         </div>

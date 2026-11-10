@@ -184,6 +184,32 @@ export class DataTableComponent<T = any> implements AfterContentInit, OnChanges,
 
   /** El usuario pidió otra página (base 0). */
   @Output() cambioPagina = new EventEmitter<number>();
+
+  /**
+   * Cuántas filas se pueden pedir por página, abajo junto a la paginación
+   * (p. ej. [10, 25, 50, 100, 500, 1000]). Vacío: no hay selector.
+   */
+  @Input() opcionesPorPagina: number[] = [];
+  /** El usuario eligió otro tamaño de página: la pantalla recarga desde la primera. */
+  @Output() cambioFilasPorPagina = new EventEmitter<number>();
+
+  /** Abajo va la paginación si hay más de una página, o si se puede cambiar el tamaño. */
+  get mostrarPie(): boolean {
+    return this.totalPaginas > 1 || (this.opcionesPorPagina.length > 0 && this.totalRegistros > Math.min(...this.opcionesPorPagina));
+  }
+
+  cambiarFilasPorPagina(valor: number | string): void {
+    const filas = Number(valor);
+    if (!this.opcionesPorPagina.includes(filas) || filas === this.filasPorPagina) return;
+    if (this.paginacionServidor) {
+      // La pantalla pide la primera página con el tamaño nuevo y vuelve por @Input.
+      this.cambioFilasPorPagina.emit(filas);
+      return;
+    }
+    this.filasPorPagina = filas;
+    this.cambioFilasPorPagina.emit(filas);
+    this.establecerPaginaActual(1);
+  }
   /** El usuario escribió en el buscador; sale ya con el retardo aplicado. */
   @Output() cambioBusqueda = new EventEmitter<string>();
 

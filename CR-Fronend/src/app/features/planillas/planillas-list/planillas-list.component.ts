@@ -35,7 +35,7 @@ import {
 import { anioDeLaDireccion, diasHabilesDelMes, guardarArchivo, mensajeErrorApi, mesDeLaDireccion } from '../../../core/utils';
 import { MESES_OPCIONES, nombreMes } from '../../../shared/constants';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
-import { AccionPersonalizada, ColumnaTabla } from '../../../shared/components/data-table/data-table.models';
+import { AccionPersonalizada, ColumnaTabla, OPCIONES_FILAS_POR_PAGINA } from '../../../shared/components/data-table/data-table.models';
 import { FormModalComponent } from '../../../shared/components/form-modal/form-modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
@@ -117,7 +117,9 @@ export class PlanillasListComponent implements OnInit {
    * entraban los 13 de una vez y el paginador no llegaba a aparecer, así que
    * parecía que la paginación no funcionaba.
    */
-  readonly TAMANO_PAGINA = 10;
+  /** Filas por página: se elige abajo, en la tabla, y se recuerda al volver. */
+  filasPorPagina = 10;
+  readonly OPCIONES_POR_PAGINA = OPCIONES_FILAS_POR_PAGINA;
   pagina = 0;
   busqueda = '';
   /** Cuántas hay en total, según el backend — no el largo de la página. */
@@ -502,6 +504,13 @@ export class PlanillasListComponent implements OnInit {
     this.cargar();
   }
 
+  /** Otro tamaño de página: vuelve a la primera. */
+  cambiarFilasPorPagina(filas: number): void {
+    this.filasPorPagina = filas;
+    this.pagina = 0;
+    this.cargar();
+  }
+
   /** Búsqueda contra el backend; llega ya con el retardo aplicado. */
   buscar(termino: string): void {
     this.busqueda = termino;
@@ -511,12 +520,12 @@ export class PlanillasListComponent implements OnInit {
 
   cargar(): void {
     // Para devolvérselo al volver (ver EstadoListadoService).
-    this.estadoListados.guardar(this.claveMemoria, { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, filtroEmpleado: this.filtroEmpleado, orden: this.orden });
+    this.estadoListados.guardar(this.claveMemoria, { busqueda: this.busqueda, pagina: this.pagina, filtros: this.filtros, filtroEmpleado: this.filtroEmpleado, orden: this.orden, filasPorPagina: this.filasPorPagina });
     this.cargando = true;
     this.planillaService
       .listarPagina({
         page: this.pagina,
-        size: this.TAMANO_PAGINA,
+        size: this.filasPorPagina,
         search: this.busqueda || undefined,
         mes: this.filtroMes || undefined,
         anio: this.filtroAnio || undefined,

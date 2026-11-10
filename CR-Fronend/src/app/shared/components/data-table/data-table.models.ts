@@ -60,3 +60,9 @@ export interface AccionPersonalizada<T = any> {
   /** Devuelve false para ocultar el botón en esa fila concreta. */
   visible?: (fila: T) => boolean;
 }
+
+/**
+ * Cuántas filas se pueden pedir por página en los listados grandes
+ * (Boletas, Empleados, Planillas). El servidor acepta hasta 1000.
+ */
+export const OPCIONES_FILAS_POR_PAGINA = [10, 25, 50, 100, 500, 1000];
