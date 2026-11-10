@@ -61,13 +61,12 @@
         .tiempo strong { display: block; font-size: 11px; margin-top: 2px; }
         .tiempo span { display: block; font-size: 6.8px; font-weight: bold; text-transform: uppercase; color: #4A5961; }
 
-        .neto { margin-top: 10px; border: 1.5px solid #1F2B33; }
+        .neto { margin-top: 10px; background: #D3E3E8; }
         .neto td { padding: 8px 10px; }
         .neto .rotulo-neto { font-size: 10px; font-weight: bold; }
         .neto .monto { text-align: right; font-size: 14px; font-weight: bold; }
         .son { padding: 5px 10px; background: #EDF3F5; font-size: 8.2px; border-top: 1px solid #9FB6BF; }
 
-        .nota { font-size: 7px; color: #6B7A82; margin-top: 10px; line-height: 1.45; }
         .lugar-fecha { margin-top: 14px; text-align: right; font-size: 8.8px; }
     </style>
 </head>
@@ -88,7 +87,6 @@
 
     $hasta       = \Carbon\Carbon::parse($l->hasta);
     $mesCierre   = $meses[$hasta->month] . ' ' . $hasta->year;
-    $gratiMes    = $l->periodo === 'mayo' ? 'diciembre ' . ($l->anio - 1) : 'julio ' . $l->anio;
     // El monto sale de la remuneración sin redondear (ver MotorCts): las dos
     // filas se reparten el monto para que siempre sumen lo depositado. Sin
     // días, todo es de los meses (si no, salía «-0.01» por días).
@@ -174,20 +172,15 @@
             <td style="width: 12%;"><span>Días</span><strong>{{ $l->dias }}</strong></td>
         </tr>
     </table>
-    @if ($l->faltas > 0)
-        <p class="nota">Del periodo se descontaron {{ $l->faltas }} {{ $l->faltas === 1 ? 'día' : 'días' }} de inasistencia injustificada: solo se computan los días de trabajo efectivo.</p>
-    @endif
 
     {{-- ── Remuneración compensable ── --}}
     <div class="barra">Remuneración compensable</div>
     <table class="cuadro">
-        <tr><td style="width: 75%;">Remuneración <span class="detalle">({{ mb_strtolower($mesCierre) }})</span></td><td class="num" style="width: 25%;">S/ {{ $monto($l->sueldo) }}</td></tr>
+        <tr><td style="width: 75%;">Remuneración</td><td class="num" style="width: 25%;">S/ {{ $monto($l->sueldo) }}</td></tr>
         <tr><td>Bonificación por cargo</td><td class="num">S/ {{ $monto($l->bonificacion_cargo) }}</td></tr>
         <tr><td>Asignación familiar</td><td class="num">S/ {{ $monto($l->asignacion_familiar) }}</td></tr>
         <tr>
-            <td>
-                Un sexto de gratificación <span class="detalle">({{ $gratiMes }}, con su bonificación extraordinaria{{ $l->gratificacion > 0 ? ': S/ ' . number_format($l->gratificacion, 2) . ' ÷ 6' : '' }})</span>
-            </td>
+            <td>1/6 de gratificación</td>
             <td class="num">S/ {{ $monto($l->sexto_gratificacion) }}</td>
         </tr>
         <tr class="total"><td>Total remuneración compensable</td><td class="num">S/ {{ number_format($l->remuneracion_computable, 2) }}</td></tr>
@@ -213,14 +206,14 @@
         <tr>
             <td>Por los meses completos</td>
             <td class="num">{{ $rc }}</td>
-            <td class="centro">÷ 12 ×</td>
+            <td class="centro">/ 12 ×</td>
             <td class="centro">{{ $l->meses }} {{ $l->meses === 1 ? 'mes' : 'meses' }}</td>
             <td class="num">{{ $monto($porMeses) }}</td>
         </tr>
         <tr>
             <td>Por los días completos</td>
             <td class="num">{{ $rc }}</td>
-            <td class="centro">÷ 360 ×</td>
+            <td class="centro">/ 360 ×</td>
             <td class="centro">{{ $l->dias }} {{ $l->dias === 1 ? 'día' : 'días' }}</td>
             <td class="num">{{ $monto($porDias) }}</td>
         </tr>
@@ -234,10 +227,6 @@
         <tr><td colspan="2" class="son"><strong>SON:</strong> {{ \App\Support\Pdf\MontoEnLetras::soles($l->monto) }}</td></tr>
     </table>
 
-    <p class="nota">
-        La CTS no está afecta a aportes de pensiones, EsSalud ni al Impuesto a la Renta de 5ta categoría.
-        Cualquier observación a esta liquidación se presenta a la Oficina de Recursos Humanos.
-    </p>
     <p class="lugar-fecha">Juliaca, {{ $enLetra($fechaHoja) }}</p>
 
     @include('partials.firma-digital', [

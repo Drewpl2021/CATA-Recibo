@@ -52,13 +52,12 @@
         .tiempo strong small { font-size: 9px; font-weight: normal; color: #6B7A82; }
         .tiempo span { font-size: 7px; text-transform: uppercase; color: #4A5961; }
 
-        .neto { margin-top: 10px; border: 1.5px solid #1F2B33; }
+        .neto { margin-top: 10px; background: #D3E3E8; }
         .neto td { padding: 8px 10px; }
         .neto .rotulo-neto { font-size: 10px; font-weight: bold; }
         .neto .monto { text-align: right; font-size: 14px; font-weight: bold; }
         .son { padding: 5px 10px; background: #EDF3F5; font-size: 8.2px; border-top: 1px solid #9FB6BF; }
 
-        .nota { font-size: 7px; color: #6B7A82; margin-top: 10px; line-height: 1.45; }
         .lugar-fecha { margin-top: 12px; text-align: right; font-size: 8.8px; }
     </style>
 </head>
@@ -154,7 +153,7 @@
     <div class="barra">I. Remuneración computable</div>
     <table class="cuadro">
         <tr><th style="width: 75%;">Concepto</th><th class="num" style="width: 25%;">Importe S/</th></tr>
-        <tr><td>Remuneración básica <span class="detalle">(vigente en {{ $mesPago }})</span></td><td class="num">{{ $monto($c['sueldo']) }}</td></tr>
+        <tr><td>Remuneración básica</td><td class="num">{{ $monto($c['sueldo']) }}</td></tr>
         <tr><td>Asignación familiar</td><td class="num">{{ $monto($c['asignacion_familiar']) }}</td></tr>
         @if ($c['bonificacion_cargo'] > 0)
             <tr><td>Bonificación por cargo</td><td class="num">{{ $monto($c['bonificacion_cargo']) }}</td></tr>
@@ -170,9 +169,6 @@
             <td style="width: 50%;"><strong style="font-size: 10px;">{{ $fecha(max(\Carbon\Carbon::parse($e->fecha_ingreso), $semestre['desde'])) }} – {{ $fecha($finComputo) }}</strong><span>Periodo computado</span></td>
         </tr>
     </table>
-    @if ($c['meses'] < 6)
-        <p class="nota">Solo se computan los meses calendario completos trabajados en el semestre (art. 3 del D.S. N° 005-2002-TR).</p>
-    @endif
 
     {{-- ── III. Cálculo ── --}}
     <div class="barra">III. Cálculo de la gratificación</div>
@@ -180,7 +176,7 @@
         <tr><th style="width: 45%;">Concepto</th><th style="width: 30%;">Cálculo</th><th class="num" style="width: 25%;">Importe S/</th></tr>
         <tr>
             <td>{{ $c['trunca'] ? 'Gratificación trunca' : 'Gratificación' }}</td>
-            <td class="detalle">{{ $rc }} ÷ 6 × {{ $c['meses'] }} {{ $c['meses'] === 1 ? 'mes' : 'meses' }}</td>
+            <td class="detalle">{{ $rc }} / 6 × {{ $c['meses'] }} {{ $c['meses'] === 1 ? 'mes' : 'meses' }}</td>
             <td class="num">{{ number_format($c['gratificacion'], 2) }}</td>
         </tr>
         <tr>
@@ -198,11 +194,6 @@
         <tr><td colspan="2" class="son"><strong>SON:</strong> {{ \App\Support\Pdf\MontoEnLetras::soles($c['total']) }}</td></tr>
     </table>
 
-    <p class="nota">
-        La gratificación y la bonificación extraordinaria no están afectas a aportes de pensiones ni a EsSalud
-        (Ley N° 30334); sí forman parte de la renta de 5ta categoría. Figuran también en la boleta de {{ $mesPago }}.
-        Cualquier observación se presenta a la Oficina de Recursos Humanos.
-    </p>
 
     <p class="lugar-fecha">Juliaca, {{ $enLetra(now()) }}</p>
 
