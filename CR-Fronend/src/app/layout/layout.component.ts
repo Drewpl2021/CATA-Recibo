@@ -803,6 +803,11 @@ export class LayoutComponent implements OnInit {
    * al entrar por un enlace directo, la URL se conoce antes que los nombres
    * de los módulos, y sin esto la primera pantalla salía sin su grupo.
    */
+  /** El inicio de quien entró: el Panel de Control para RR.HH., Mis Boletas para el trabajador. */
+  get rutaDeInicio(): string {
+    return this.authService.rutaInicioSegunRol();
+  }
+
   private armarMigas(url: string): void {
     const partes = url.split('?')[0].split('#')[0].split('/').filter((p) => p && p !== 'inicio');
 
@@ -812,7 +817,9 @@ export class LayoutComponent implements OnInit {
       return;
     }
 
-    const migas: Miga[] = [{ etiqueta: 'Inicio', enlace: '/inicio/dashboard' }];
+    // «Inicio» lleva a SU inicio: al trabajador no se le muestra la ruta del
+    // Panel de Control (ni al pasar el mouse), que no es suyo.
+    const migas: Miga[] = [{ etiqueta: 'Inicio', enlace: this.rutaDeInicio }];
     const delMenu = this.modulosPadre
       .flatMap((padre) => padre.modulos.map((modulo) => ({ padre, modulo })))
       .find((x) => this.getRouterLink(x.modulo.ruta) === `/inicio/${partes[0]}`);

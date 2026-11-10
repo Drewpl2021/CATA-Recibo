@@ -23,7 +23,7 @@
       <app-icon class="buscador-personas__lupa" icono="search" [tamano]="16"></app-icon>
       <input #campoBusquedaPersonas type="text" class="form-control" [(ngModel)]="busqueda"
         (keydown.escape)="alPulsarEscapeEnBusqueda(campoBusquedaPersonas)"
-        placeholder="Busca por nombre, apellido o DNI..." aria-label="Buscar trabajador" />
+        placeholder="Busca por nombre, apellido o DNI…" aria-label="Buscar trabajador" />
       @if (busqueda) {
         <button type="button" class="buscador-personas__campo-clear" title="Borrar búsqueda"
           aria-label="Borrar búsqueda" (click)="limpiarBusquedaTexto(campoBusquedaPersonas)">

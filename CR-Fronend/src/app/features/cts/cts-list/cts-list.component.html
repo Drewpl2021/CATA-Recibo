@@ -280,7 +280,7 @@
       <div class="form-group">
         <label for="cuentaCts">N° de cuenta CTS</label>
         <input type="text" id="cuentaCts" class="form-control" [(ngModel)]="deposito.cuenta" maxlength="30"
-          inputmode="numeric" placeholder="Ingrese el número de la cuenta CTS" />
+          inputmode="numeric" placeholder="Número de la cuenta CTS" />
         @if (sinCuentaCts.length) {
           <small class="form-ayuda texto-aviso">Su ficha no tiene cuenta CTS: escribe la cuenta donde se hizo el depósito.</small>
         } @else {
@@ -318,7 +318,7 @@
     <div class="form-group">
       <label for="buscarFaltas">Buscar</label>
       <input type="search" id="buscarFaltas" class="form-control" [(ngModel)]="buscarFaltas" (ngModelChange)="filtrarFaltas()"
-        placeholder="Ingrese el nombre o el DNI" autocomplete="off" />
+        placeholder="Busca por nombre o DNI…" autocomplete="off" />
     </div>
     <div class="cts-cuadro__marco">
       <table class="cts-cuadro">
@@ -342,7 +342,7 @@
               </td>
               <td>
                 <input type="text" class="form-control" [(ngModel)]="f.observacion" maxlength="255"
-                  placeholder="Ingrese el sustento" [attr.aria-label]="'Sustento de ' + f.fila.nombre" />
+                  placeholder="Ej. Registro de asistencia de marzo" [attr.aria-label]="'Sustento de ' + f.fila.nombre" />
               </td>
             </tr>
           } @empty {
@@ -495,12 +495,12 @@
       <div class="form-group">
         <label for="faltasCts">Días no laborados</label>
         <input type="number" id="faltasCts" class="form-control" [(ngModel)]="faltas.dias" min="0" max="180" step="1"
-          inputmode="numeric" placeholder="Ingrese los días" [disabled]="d.estado_cts === 'depositada' || guardandoFaltas" />
+          inputmode="numeric" placeholder="Ej. 2" [disabled]="d.estado_cts === 'depositada' || guardandoFaltas" />
       </div>
       <div class="form-group">
         <label for="faltasObs">Sustento</label>
         <input type="text" id="faltasObs" class="form-control" [(ngModel)]="faltas.observacion" maxlength="255"
-          placeholder="Ingrese el sustento, como el registro de asistencia"
+          placeholder="Ej. Registro de asistencia de marzo"
           [disabled]="d.estado_cts === 'depositada' || guardandoFaltas" />
       </div>
       @if (d.estado_cts === 'depositada') {

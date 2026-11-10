@@ -50,7 +50,7 @@
       <div class="form-group">
         <label for="cuspp">CUSPP *</label>
         <input type="text" id="cuspp" class="form-control" formControlName="cuspp"
-          maxlength="12" placeholder="Ingrese los 12 caracteres del CUSPP"
+          maxlength="12" placeholder="12 letras y números"
           [class.is-invalid]="invalido('cuspp')" />
           @if (invalido('cuspp')) {
             <small class="form-error">Son 12 caracteres, entre letras y números.</small>
@@ -129,12 +129,12 @@
             <div class="form-group">
               <label for="numero_cuenta">Número de cuenta</label>
               <input type="text" id="numero_cuenta" class="form-control"
-                formControlName="numero_cuenta" placeholder="Ingrese la cuenta de abono del sueldo" />
+                formControlName="numero_cuenta" placeholder="Número de la cuenta del sueldo" />
               </div>
               <div class="form-group">
                 <label for="cci">CCI</label>
                 <input type="text" id="cci" class="form-control" formControlName="cci"
-                  inputmode="numeric" maxlength="20" placeholder="Ingrese los 20 dígitos del CCI"
+                  inputmode="numeric" maxlength="20" placeholder="20 dígitos"
                   [class.is-invalid]="invalido('cci')" />
                   @if (invalido('cci')) {
                     <small class="form-error">
@@ -162,7 +162,7 @@
                   <label for="cts_entidad_financiera">Entidad depositaria{{ form.get('cts_numero_cuenta')?.value ? ' *' : '' }}</label>
                   <input type="text" id="cts_entidad_financiera" class="form-control" list="lista-bancos-cts"
                     formControlName="cts_entidad_financiera" autocomplete="off" maxlength="100"
-                    placeholder="Elija la entidad o escríbala"
+                    placeholder="Elige la entidad o escríbela"
                     [class.is-invalid]="invalido('cts_entidad_financiera')" />
                   <datalist id="lista-bancos-cts">
                     @for (b of bancos; track $index) {
@@ -179,7 +179,7 @@
                   <label for="cts_numero_cuenta">N° de cuenta CTS</label>
                   <input type="text" id="cts_numero_cuenta" class="form-control" formControlName="cts_numero_cuenta"
                     inputmode="numeric" maxlength="30" autocomplete="off"
-                    placeholder="Ingrese el número de la cuenta CTS"
+                    placeholder="Número de la cuenta CTS"
                     [class.is-invalid]="invalido('cts_numero_cuenta')" />
                   @if (invalido('cts_numero_cuenta')) {
                     <small class="form-error">Solo números, con guiones si el banco la escribe así. Al menos 6 cifras.</small>

@@ -122,8 +122,8 @@ export class AjustesComponent implements OnInit {
     {
       titulo: 'ONP y EsSalud',
       campos: [
-        { clave: 'onp', etiqueta: 'ONP', unidad: '%', ayuda: 'Se le descuenta al trabajador.' },
-        { clave: 'essalud', etiqueta: 'EsSalud', unidad: '%', ayuda: 'Lo paga el colegio.' },
+        { clave: 'onp', etiqueta: 'ONP', unidad: '%' },
+        { clave: 'essalud', etiqueta: 'EsSalud', unidad: '%' },
       ],
     },
     {

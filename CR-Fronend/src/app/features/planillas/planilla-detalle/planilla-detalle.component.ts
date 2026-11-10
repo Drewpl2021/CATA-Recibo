@@ -185,10 +185,11 @@ export class PlanillaDetalleComponent implements OnInit {
      * EsSalud y el SCTR los paga el colegio ENCIMA del sueldo: no suman ni
      * restan al trabajador. Salían con "+" —porque solo descuento y adelanto
      * contaban como resta—, y un "+ S/ 239.08" al lado de sus ingresos se lee
-     * como si se le abonara. Se marca como lo que es.
+     * como si se le abonara. Va sin signo y sin nota: la planilla la revisa
+     * un contador, y la columna ya dice que es un aporte.
      */
     if (this.esAportacion(detalle)) {
-      return `S/ ${monto.toFixed(2)}${regla} · lo paga el colegio`;
+      return `S/ ${monto.toFixed(2)}${regla}`;
     }
 
     const signo = this.resta(detalle) ? '−' : '+';

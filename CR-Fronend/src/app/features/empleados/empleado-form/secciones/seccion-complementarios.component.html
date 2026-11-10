@@ -72,14 +72,14 @@
   <div class="form-group">
     <label for="contacto_emergencia_nombre">Nombre del contacto de emergencia</label>
     <input type="text" id="contacto_emergencia_nombre" class="form-control"
-      formControlName="contacto_emergencia_nombre" placeholder="Ingrese el nombre del contacto de emergencia" />
+      formControlName="contacto_emergencia_nombre" placeholder="Ej. María Quispe (madre)" />
   </div>
 
   <div class="form-group">
     <label for="contacto_emergencia_telefono">Teléfono del contacto de emergencia</label>
     <input type="tel" id="contacto_emergencia_telefono" class="form-control"
       formControlName="contacto_emergencia_telefono" inputmode="numeric" maxlength="15"
-      placeholder="Ingrese el celular del contacto" [class.is-invalid]="invalido('contacto_emergencia_telefono')" />
+      placeholder="Ej. 987 654 321" [class.is-invalid]="invalido('contacto_emergencia_telefono')" />
     @if (invalido('contacto_emergencia_telefono')) {
       <small class="form-error">
         Solo números, hasta 15 dígitos.

@@ -50,7 +50,7 @@
     <div class="form-group">
       <label for="direccion">Dirección</label>
       <input type="text" id="direccion" class="form-control" formControlName="direccion"
-        placeholder="Ingrese la dirección de la sede" [class.is-invalid]="invalido('direccion')" />
+        placeholder="Ej. Jr. Moquegua N° 852, Juliaca" [class.is-invalid]="invalido('direccion')" />
       @if (invalido('direccion')) {
         <small class="form-error">Máximo 255 caracteres.</small>
       }
@@ -60,7 +60,7 @@
       <div class="form-group">
         <label for="telefono">Teléfono</label>
         <input type="tel" id="telefono" class="form-control" formControlName="telefono"
-          placeholder="Ingrese el teléfono de la sede" [class.is-invalid]="invalido('telefono')" />
+          placeholder="Ej. 051 325096" [class.is-invalid]="invalido('telefono')" />
         @if (invalido('telefono')) {
           <small class="form-error">Máximo 15 caracteres.</small>
         }

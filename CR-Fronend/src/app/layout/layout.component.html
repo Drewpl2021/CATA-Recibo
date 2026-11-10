@@ -4,8 +4,8 @@
     <div class="sidebar-header">
       <!-- La marca CATA, sola y al centro (la misma imagen de la marca de
       agua, en blanco sobre el azul de la barra). -->
-      <a class="marca-lateral" routerLink="/inicio/dashboard"
-        appPista="Ir al Panel de Control" pistaLado="abajo" aria-label="CATA, Colegio Adventista Túpac Amaru: ir al Panel de Control">
+      <a class="marca-lateral" [routerLink]="rutaDeInicio"
+        appPista="Ir al inicio" pistaLado="abajo" aria-label="CATA, Colegio Adventista Túpac Amaru: ir al inicio">
         <img class="marca-lateral__cata" src="logo-cata.png" alt="CATA" />
       </a>
     </div>
@@ -95,7 +95,7 @@
         </button>
 
         <!-- En el celular las migas no caben: en su lugar va la marca, en sus colores. -->
-        <a class="marca-movil" routerLink="/inicio/dashboard" aria-label="CATA: ir al Panel de Control">
+        <a class="marca-movil" [routerLink]="rutaDeInicio" aria-label="CATA: ir al inicio">
           <img src="logo-cata.png" alt="CATA" />
         </a>
 

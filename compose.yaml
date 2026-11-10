@@ -144,6 +144,10 @@ services:
       # Dominio de correo de la institución. Vacío por defecto a propósito:
       # el código no lo lleva escrito dentro, lo pone cada despliegue.
       INSTITUCION_DOMINIO_CORREO: ${INSTITUCION_DOMINIO_CORREO:-}
+      # Quien representa al colegio en la hoja de CTS. Vacío: sale del
+      # certificado con que firma el colegio.
+      INSTITUCION_REPRESENTANTE: ${INSTITUCION_REPRESENTANTE:-}
+      INSTITUCION_REPRESENTANTE_DNI: ${INSTITUCION_REPRESENTANTE_DNI:-}
 
       # Búsqueda de personas por DNI al dar de alta a un trabajador. Es
       # opcional: sin RENSUN_DB_HOST y sin DECOLECTA_TOKEN, los datos se
