@@ -21,8 +21,8 @@ class EnlacesConCarpetaTest extends TestCase
         config(['app.frontend_url' => 'https://cata.edu.pe/rrhh/']);
         $token = str_repeat('a', 64);
 
-        $this->assertStringStartsWith('https://cata.edu.pe/rrhh/crear-contrasena?token=', (new AccesoAlSistema('Ana', 'ana@cata.edu.pe', $token))->enlace);
-        $this->assertStringStartsWith('https://cata.edu.pe/rrhh/restablecer-password?token=', (new RestablecerPassword('Ana', 'ana@cata.edu.pe', $token))->enlace);
+        $this->assertStringStartsWith('https://cata.edu.pe/rrhh/crear-contrasena#token=', (new AccesoAlSistema('Ana', 'ana@cata.edu.pe', $token))->enlace);
+        $this->assertStringStartsWith('https://cata.edu.pe/rrhh/restablecer-password#token=', (new RestablecerPassword('Ana', 'ana@cata.edu.pe', $token))->enlace);
         $this->assertSame('https://cata.edu.pe/rrhh/inicio/mis-boletas', (new HojaLista('Ana', 'hoja de CTS', 'noviembre 2026'))->enlace);
     }
 

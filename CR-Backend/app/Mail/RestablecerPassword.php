@@ -27,7 +27,10 @@ class RestablecerPassword extends Mailable implements ShouldQueue
         $this->nombre = $nombre;
 
         $base = rtrim(config('app.frontend_url'), '/');
-        $this->enlace = $base . '/restablecer-password?token=' . $token . '&email=' . urlencode($email);
+        // Después de «#», no de «?»: el navegador nunca manda esa parte al
+        // servidor, así que el token no queda en los registros del hosting.
+        // La pantalla además lo borra de la barra apenas lo lee.
+        $this->enlace = $base . '/restablecer-password#token=' . rawurlencode($token) . '&email=' . rawurlencode($email);
 
         $this->minutosValidez = (int) config('auth.passwords.users.expire', 60);
     }

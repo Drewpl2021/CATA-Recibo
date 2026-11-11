@@ -27,15 +27,15 @@ class CorreosTest extends TestCase
         config(['app.frontend_url' => 'https://cata.test']);
 
         $bienvenida = new AccesoAlSistema('Juan Zapana', 'juan@correo.test', 'TOKEN1');
-        $this->revisar($bienvenida->render(), 'Te damos la bienvenida a CATA-Recibo', 'https://cata.test/crear-contrasena?token=TOKEN1&email=juan%40correo.test');
+        $this->revisar($bienvenida->render(), 'Te damos la bienvenida a CATA-Recibo', 'https://cata.test/crear-contrasena#token=TOKEN1&email=juan%40correo.test');
         $this->assertSame('Tu acceso a CATA-Recibo — Colegio Adventista Túpac Amaru', $bienvenida->envelope()->subject);
 
         $restablecer = new AccesoAlSistema('Juan Zapana', 'juan@correo.test', 'TOKEN2', true);
-        $this->revisar($restablecer->render(), 'Crea una contraseña nueva', 'https://cata.test/crear-contrasena?token=TOKEN2');
+        $this->revisar($restablecer->render(), 'Crea una contraseña nueva', 'https://cata.test/crear-contrasena#token=TOKEN2');
         $this->assertStringContainsString('Recursos Humanos restableció', $restablecer->render());
 
         $this->revisar((new RestablecerPassword('Juan Zapana', 'juan@correo.test', 'TOKEN3'))->render(),
-            '¿Olvidaste tu contraseña?', 'https://cata.test/restablecer-password?token=TOKEN3');
+            '¿Olvidaste tu contraseña?', 'https://cata.test/restablecer-password#token=TOKEN3');
 
         $boleta = (new BoletaGenerada('Juan Zapana', 'Octubre', 2026, 'BOL-2026-0001'))->render();
         $this->revisar($boleta, 'Tu boleta de Octubre ya está lista', 'https://cata.test/inicio/mis-boletas');

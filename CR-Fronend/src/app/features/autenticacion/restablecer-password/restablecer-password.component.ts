@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services';
@@ -8,9 +9,15 @@ import { claveConLetrasYNumeros } from '../../../core/utils';
 /**
  * Donde aterriza el enlace del correo: poner la contraseña nueva.
  *
- * El token y el correo vienen en la URL. Si falta alguno, el enlace está roto
- * o alguien entró a mano; se dice y se manda a pedir uno nuevo, en vez de
- * enseñar un formulario que iba a fallar igual al enviarlo.
+ * El token y el correo vienen en el enlace, después de «#» (los correos
+ * viejos los traen después de «?» y también sirven). Apenas se leen se
+ * borran de la barra de direcciones: así no quedan en el historial del
+ * navegador ni salen en una captura de pantalla. Lo de después de «#» nunca
+ * llega al servidor, así que tampoco queda en sus registros.
+ *
+ * Si falta alguno, el enlace está roto o alguien entró a mano; se dice y se
+ * manda a pedir uno nuevo, en vez de enseñar un formulario que iba a fallar
+ * igual al enviarlo.
  */
 @Component({
   selector: 'app-restablecer-password',
@@ -24,6 +31,7 @@ export class RestablecerPasswordComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private ruta = inject(ActivatedRoute);
+  private location = inject(Location);
 
   token = '';
   email = '';
@@ -46,9 +54,16 @@ export class RestablecerPasswordComponent implements OnInit {
 
   ngOnInit(): void {
     this.invitacion = !!this.ruta.snapshot.data['invitacion'];
-    this.token = this.ruta.snapshot.queryParamMap.get('token') ?? '';
-    this.email = this.ruta.snapshot.queryParamMap.get('email') ?? '';
+    const enFragmento = new URLSearchParams(this.ruta.snapshot.fragment ?? '');
+    const enConsulta = this.ruta.snapshot.queryParamMap;
+    this.token = enFragmento.get('token') ?? enConsulta.get('token') ?? '';
+    this.email = enFragmento.get('email') ?? enConsulta.get('email') ?? '';
     this.enlaceValido = !!this.token && !!this.email;
+
+    // Fuera de la barra: queda solo la ruta (/crear-contrasena), sin el token.
+    if (this.token || this.email) {
+      this.location.replaceState(this.location.path(false).split(/[?#]/)[0]);
+    }
   }
 
   get passwordCorta(): boolean {
