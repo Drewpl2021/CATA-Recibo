@@ -62,7 +62,7 @@
       <div class="form-group">
         <label for="nombre">Nombres *</label>
         <input type="text" id="nombre" class="form-control" formControlName="nombre"
-          placeholder="Ej. Juan Carlos" [class.is-invalid]="invalido('nombre')" />
+          placeholder="Ingrese sus nombres completos" [class.is-invalid]="invalido('nombre')" />
           @if (invalido('nombre')) {
             <small class="form-error">{{ error('nombre') }}</small>
           }
@@ -71,7 +71,7 @@
         <div class="form-group">
           <label for="apellido">Apellidos *</label>
           <input type="text" id="apellido" class="form-control" formControlName="apellido"
-            placeholder="Ej. Quispe Mamani" [class.is-invalid]="invalido('apellido')" />
+            placeholder="Ingrese sus apellidos" [class.is-invalid]="invalido('apellido')" />
             @if (invalido('apellido')) {
               <small class="form-error">{{ error('apellido') }}</small>
             }
@@ -89,7 +89,7 @@
             <div class="form-group">
               <label for="telefono">Teléfono *</label>
               <input type="tel" id="telefono" class="form-control" formControlName="telefono"
-                inputmode="numeric" maxlength="15" placeholder="Ej. 987 654 321"
+                inputmode="numeric" maxlength="15" placeholder="Ingrese su número de celular"
                 [class.is-invalid]="invalido('telefono')" />
                 @if (invalido('telefono')) {
                   <small class="form-error">Solo números, hasta 15 dígitos.</small>

@@ -89,7 +89,7 @@
       <div class="form-group">
         <label for="docente-nombre">Nombre *</label>
         <input id="docente-nombre" type="text" class="form-control" formControlName="nombre" maxlength="80"
-          placeholder="Ej. Ana Pérez Quispe" [class.is-invalid]="invalido('nombre')" />
+          placeholder="Ingrese el nombre del docente" [class.is-invalid]="invalido('nombre')" />
           @if (invalido('nombre')) {
             <small class="form-error">Obligatorio (máximo 80).</small>
           }
