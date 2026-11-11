@@ -23,7 +23,7 @@ describe('rutas de /inicio', () => {
    * lo suyo (sus boletas, sus documentos, sus vacaciones), la ruta vacía
    * (que redirige, no carga nada) y el comodín (que también redirige).
    */
-  const SIN_RESTRICCION_DE_ROL = new Set(['', 'mis-boletas', 'mis-documentos', 'mis-vacaciones', '**']);
+  const SIN_RESTRICCION_DE_ROL = new Set(['', 'mis-boletas', 'mis-documentos', 'mis-vacaciones', 'mis-solicitudes', '**']);
 
   it('no se queda sin hijos por un cambio accidental en el archivo', () => {
     expect(hijos.length).toBeGreaterThan(20);

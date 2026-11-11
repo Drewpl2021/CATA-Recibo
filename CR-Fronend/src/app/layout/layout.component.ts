@@ -453,6 +453,7 @@ export class LayoutComponent implements OnInit {
   iconoAviso(aviso: Notificacion): string {
     if (aviso.tipo === 'contratos_vencidos') return 'user_off';
     if (aviso.tipo === 'constancia_pedida' || aviso.tipo === 'constancia_lista') return 'receipt_long';
+    if (aviso.tipo === 'solicitud_nueva' || aviso.tipo === 'solicitud_resuelta') return 'calendar_check';
     return aviso.tipo === 'planilla_pendiente' ? 'table_chart' : 'receipt';
   }
 
@@ -463,6 +464,8 @@ export class LayoutComponent implements OnInit {
     if (aviso.tipo === 'contratos_vencidos') return 'Ver empleados';
     if (aviso.tipo === 'constancia_pedida') return 'Ver constancias';
     if (aviso.tipo === 'constancia_lista') return 'Ver mis documentos';
+    if (aviso.tipo === 'solicitud_nueva') return 'Ver solicitudes';
+    if (aviso.tipo === 'solicitud_resuelta') return 'Ver mis solicitudes';
     return 'Ver boletas';
   }
 
@@ -508,6 +511,15 @@ export class LayoutComponent implements OnInit {
     }
     if (aviso.tipo === 'constancia_lista') {
       this.router.navigate(['/inicio/mis-documentos']);
+      return;
+    }
+    // Una solicitud: RR.HH. va a la bandeja (las pendientes); el trabajador, a las suyas.
+    if (aviso.tipo === 'solicitud_nueva') {
+      this.router.navigate(['/inicio/solicitudes'], { queryParams: { estado: 'pendiente' } });
+      return;
+    }
+    if (aviso.tipo === 'solicitud_resuelta') {
+      this.router.navigate(['/inicio/mis-solicitudes']);
       return;
     }
 

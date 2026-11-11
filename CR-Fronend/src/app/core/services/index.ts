@@ -20,6 +20,7 @@ export * from './planilla/planilla.service';
 export * from './planilla/payroll-detalle.service';
 export * from './planilla/documento.service';
 export * from './planilla/vacacion.service';
+export * from './planilla/solicitud.service';
 export * from './planilla/boleta.service';
 
 // Sistema

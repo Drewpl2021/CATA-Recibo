@@ -237,6 +237,11 @@ class VacacionController extends Controller
             // aprobarla entonces sería dar un descanso que ya no le toca.
             $this->rechazarSiNoTieneDerecho($vacacion->empleado_id, 'estado');
 
+            // Entre que se pidió y se aprueba pudo aprobarse una licencia en esas fechas.
+            if ($motivo = \App\Support\Solicitudes\Cruces::con($vacacion->empleado_id, Carbon::parse($vacacion->fecha_inicio), Carbon::parse($vacacion->fecha_fin), exceptoVacacion: $vacacion->id)) {
+                throw ValidationException::withMessages(['estado' => [$motivo]]);
+            }
+
             // Se revisa otra vez al aprobar: entre que se pidió y se resuelve
             // pueden haberse aprobado otras solicitudes del mismo trabajador.
             $saldo = $this->calcularSaldo(
@@ -410,11 +415,12 @@ class VacacionController extends Controller
      * Sin esto se podía pedir la misma semana dos veces y gastar el saldo por
      * duplicado sin que nadie lo notara hasta que el trabajador no apareciera.
      */
-    private function rechazarSiSeCruza(string $empleadoId, Carbon $inicio, Carbon $fin): void
+    private function rechazarSiSeCruza(string $empleadoId, Carbon $inicio, Carbon $fin, ?string $exceptoId = null): void
     {
         $cruce = Vacacion::where('empleado_id', $empleadoId)
             ->where('estado_registro', 'activo')
             ->whereIn('estado', ['pendiente', 'aprobado'])
+            ->when($exceptoId, fn ($q) => $q->where('id', '!=', $exceptoId))
             ->where('fecha_inicio', '<=', $fin->toDateString())
             ->where('fecha_fin', '>=', $inicio->toDateString())
             ->first();
@@ -427,6 +433,12 @@ class VacacionController extends Controller
                     Carbon::parse($cruce->fecha_fin)->format('d/m/Y') . '.',
                 ],
             ]);
+        }
+
+        // Tampoco con una licencia, un descanso médico o una falta justificada:
+        // un mismo día no puede ser de vacaciones y de licencia a la vez.
+        if ($motivo = \App\Support\Solicitudes\Cruces::con($empleadoId, $inicio, $fin, exceptoVacacion: $exceptoId)) {
+            throw ValidationException::withMessages(['fecha_inicio' => [$motivo]]);
         }
     }
 }

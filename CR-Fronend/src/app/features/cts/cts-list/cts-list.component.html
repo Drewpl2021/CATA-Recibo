@@ -184,6 +184,9 @@
     @if (f.faltas) {
       <div class="form-ayuda texto-aviso">Menos {{ f.faltas }} {{ f.faltas === 1 ? 'día no laborado' : 'días no laborados' }}</div>
     }
+    @if (f.dias_licencia) {
+      <div class="form-ayuda texto-aviso">Menos {{ f.dias_licencia }} de licencia (Solicitudes)</div>
+    }
   } @else {
     <span class="form-ayuda">{{ f.motivo }}</span>
   }
@@ -378,6 +381,9 @@
           {{ tiempo(d) }}
           @if (d.faltas) {
             <div class="form-ayuda">Ya restados {{ d.faltas }} {{ d.faltas === 1 ? 'día no laborado' : 'días no laborados' }}.</div>
+          }
+          @if (d.dias_licencia) {
+            <div class="form-ayuda">Y {{ d.dias_licencia }} de licencia sin goce o descanso médico pasado de 60 días (de Solicitudes).</div>
           }
         </dd>
       }

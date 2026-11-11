@@ -91,7 +91,7 @@ class MotorCts
             'desde' => null, 'hasta' => null,
             'sueldo' => 0.0, 'asignacion_familiar' => 0.0, 'bonificacion_cargo' => 0.0, 'remuneracion_fuente' => null,
             'gratificacion' => 0.0, 'gratificacion_fuente' => null, 'sexto_gratificacion' => 0.0,
-            'remuneracion_computable' => 0.0, 'meses' => 0, 'dias' => 0, 'faltas' => 0, 'monto' => 0.0,
+            'remuneracion_computable' => 0.0, 'meses' => 0, 'dias' => 0, 'faltas' => 0, 'dias_licencia' => 0, 'monto' => 0.0,
         ];
 
         $tipo = $empleado->tipoContratoVigente();
@@ -125,8 +125,16 @@ class MotorCts
         $faltas ??= (int) \App\Models\CtsInasistencia::where('empleado_id', $empleado->id)
             ->where('anio', $anio)->where('periodo', $periodo)->value('dias');
         $faltas = min(max(0, $faltas), $meses * 30 + $dias);
-        if ($faltas > 0) {
-            $restante = $meses * 30 + $dias - $faltas;
+        // Lo mismo con las licencias aprobadas que no cuentan como trabajadas:
+        // la sin goce y el descanso médico que pasa de 60 días en el año (ver
+        // Support/Solicitudes/DiasDeLicencia). Van aparte de las faltas porque
+        // esas las anota RR.HH. y estas salen solas de Solicitudes.
+        $licencia = min(
+            \App\Support\Solicitudes\DiasDeLicencia::paraCts((string) $empleado->id, $desde, $hasta),
+            $meses * 30 + $dias - $faltas,
+        );
+        if ($faltas + $licencia > 0) {
+            $restante = $meses * 30 + $dias - $faltas - $licencia;
             $meses = intdiv($restante, 30);
             $dias  = $restante % 30;
         }
@@ -150,7 +158,7 @@ class MotorCts
             'sueldo' => $sueldo, 'asignacion_familiar' => $asignacion, 'bonificacion_cargo' => $cargo,
             'remuneracion_fuente' => $fuenteRemuneracion,
             'gratificacion' => round($grati, 2), 'gratificacion_fuente' => $fuente, 'sexto_gratificacion' => $sexto,
-            'remuneracion_computable' => $computable, 'meses' => $meses, 'dias' => $dias, 'faltas' => $faltas, 'monto' => $monto,
+            'remuneracion_computable' => $computable, 'meses' => $meses, 'dias' => $dias, 'faltas' => $faltas, 'dias_licencia' => $licencia, 'monto' => $monto,
         ];
     }
 

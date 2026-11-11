@@ -62,6 +62,8 @@ class ModuloSeeder extends Seeder
             // Las solicitudes de todo el personal, para aprobar o rechazar.
             // El trabajador tiene la suya en Mi Espacio.
             ['padre' => $idBoletas, 'nombre' => 'Vacaciones', 'ruta' => '/vacaciones', 'icono' => 'beach', 'orden' => 6, 'roles' => [$admin, $rrhh]],
+            // Permisos, licencias, descansos médicos, faltas por justificar y cambios de cuenta.
+            ['padre' => $idBoletas, 'nombre' => 'Solicitudes', 'ruta' => '/solicitudes', 'icono' => 'calendar_check', 'orden' => 7, 'roles' => [$admin, $rrhh]],
 
             // Configuración — RRHH tiene los catálogos; Roles/Módulos siguen
             // siendo exclusivos de Admin (igual que el middleware rol: en routes/api.php).
@@ -84,6 +86,7 @@ class ModuloSeeder extends Seeder
             ['padre' => $idEspacio, 'nombre' => 'Mis Boletas',    'ruta' => '/mis-boletas',    'icono' => 'receipt_long',  'orden' => 1, 'roles' => [$admin, $rrhh, $empleado]],
             ['padre' => $idEspacio, 'nombre' => 'Mis Documentos', 'ruta' => '/mis-documentos', 'icono' => 'folder_shared', 'orden' => 2, 'roles' => [$admin, $rrhh, $empleado]],
             ['padre' => $idEspacio, 'nombre' => 'Mis Vacaciones', 'ruta' => '/mis-vacaciones', 'icono' => 'beach', 'orden' => 3, 'roles' => [$admin, $rrhh, $empleado]],
+            ['padre' => $idEspacio, 'nombre' => 'Mis Solicitudes', 'ruta' => '/mis-solicitudes', 'icono' => 'calendar_check', 'orden' => 4, 'roles' => [$admin, $rrhh, $empleado]],
 
             // Portal Web — solo admin: es quien abre la puerta 'editar-portal'.
             ['padre' => $idPortal, 'nombre' => 'Contenido del portal', 'ruta' => '/portal-web', 'icono' => 'layers', 'orden' => 1, 'roles' => [$admin]],

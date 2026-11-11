@@ -208,6 +208,17 @@ export const routes: Routes = [
         path: 'mis-vacaciones',
         loadComponent: () => import('./features/vacaciones/mis-vacaciones/mis-vacaciones.component').then(m => m.MisVacacionesComponent),
       },
+      // Permisos, licencias, descansos médicos, faltas por justificar y cambios de cuenta.
+      {
+        path: 'solicitudes',
+        canActivate: [permisoGuard('/solicitudes')],
+        loadComponent: () => import('./features/solicitudes/solicitudes-list/solicitudes-list.component').then(m => m.SolicitudesListComponent),
+      },
+      // Las de cada quien: el backend solo le devuelve las suyas.
+      {
+        path: 'mis-solicitudes',
+        loadComponent: () => import('./features/solicitudes/mis-solicitudes/mis-solicitudes.component').then(m => m.MisSolicitudesComponent),
+      },
       {
         path: 'contratos',
         canActivate: [permisoGuard('/contratos')],

@@ -53,6 +53,8 @@ export interface FilaCts {
   dias: number;
   /** Días de falta injustificada con que se calculó: ya restados de meses y días. */
   faltas: number;
+  /** Días de licencia sin goce y de descanso médico pasado de 60 en el año: salen de Solicitudes. */
+  dias_licencia?: number;
   monto: number;
   estado_cts: EstadoCts;
   /** Calculada, sin depositar, y ya no coincide con lo que daría hoy. */

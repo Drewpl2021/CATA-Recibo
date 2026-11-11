@@ -40,7 +40,7 @@ final class Permisos
     public const GESTION = '@gestion';
 
     /** Los módulos de «Mi Espacio»: los del propio trabajador, no dan acceso a lo de otros. */
-    private const PROPIOS = ['/mis-boletas', '/mis-documentos', '/mis-vacaciones'];
+    private const PROPIOS = ['/mis-boletas', '/mis-documentos', '/mis-vacaciones', '/mis-solicitudes'];
 
     /**
      * Los que no tienen que ver con el personal: quien solo edita la web del

@@ -1,0 +1,46 @@
+// Las opciones, como tarjetas (igual que en «Pedir una constancia»).
+.solicitud-tipos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.solicitud-goce {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.solicitud-tipo {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+
+  span {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  small {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 400;
+  }
+}
+
+.solicitud-tipo--activo {
+  border-color: var(--accent);
+  background: var(--surface-alt);
+}
+
+@media (max-width: 560px) {
+  .solicitud-goce {
+    grid-template-columns: 1fr;
+  }
+}

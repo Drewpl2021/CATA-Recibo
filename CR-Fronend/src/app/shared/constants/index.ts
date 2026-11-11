@@ -8,3 +8,4 @@ export * from './fechas.constants';
 export * from './roles.constants';
 export * from './paleta-graficos.constants';
 export * from './catalogo.constants';
+export * from './solicitud.constants';

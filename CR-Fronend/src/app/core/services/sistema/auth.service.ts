@@ -260,7 +260,7 @@ export class AuthService {
     if (!permisos) return this.puedeSegunRolAntiguo(modulos);
     if (permisos.es_superadmin || permisos.modulos.includes('*')) return true;
 
-    const noCuentan = ['/mis-boletas', '/mis-documentos', '/mis-vacaciones', '/portal-web'];
+    const noCuentan = ['/mis-boletas', '/mis-documentos', '/mis-vacaciones', '/mis-solicitudes', '/portal-web'];
     return modulos.some((m) =>
       m === '@gestion' ? permisos.modulos.some((r) => !noCuentan.includes(r)) : permisos.modulos.includes(m)
     );

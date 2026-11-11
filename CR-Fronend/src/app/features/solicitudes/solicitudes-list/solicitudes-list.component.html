@@ -1,0 +1,138 @@
+<app-page-header
+  icono="calendar_check"
+  titulo="Solicitudes del personal"
+  subtitulo="Permisos, licencias, descansos médicos, faltas por justificar y cambios de cuenta. Al revisar una ves qué cambia en la planilla y la CTS antes de aprobarla."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+></app-page-header>
+
+<app-data-table
+  entidad="la solicitud"
+  [columnas]="columnas"
+  [datos]="solicitudes"
+  [cargando]="cargando"
+  [camposBusqueda]="['empleado.nombre', 'empleado.dni', 'tipo_texto', 'motivo']"
+  [acciones]="[]"
+  [accionesPersonalizadas]="acciones"
+  (accionPersonalizada)="alAccionar($event)"
+  mensajeVacio="No hay solicitudes con ese filtro."
+  >
+  <app-filtros tableActions [campos]="camposFiltro" [(valores)]="filtros" (cambio)="cargar()"></app-filtros>
+  <ng-template appCelda="empleado.nombre" let-f>
+    <div class="celda-persona">
+      <app-avatar [nombre]="f.empleado?.nombre ?? ''"></app-avatar>
+      <span class="celda-persona__texto">{{ f.empleado?.nombre }}<small class="form-ayuda" style="display: block;">DNI {{ f.empleado?.dni }}</small></span>
+    </div>
+  </ng-template>
+</app-data-table>
+
+<p class="form-nota" style="margin-top: 16px;">
+  Lo aprobado llega solo a la planilla y a la CTS que todavía no están pagadas. Una planilla cerrada o una CTS ya
+  depositada no se tocan: al revisar la solicitud se te dice qué hacer en ese caso.
+</p>
+
+<!-- Revisar una solicitud -->
+<app-form-modal [visible]="!!abierta" (visibleChange)="$event ? null : cerrar()" (cancelar)="cerrar()"
+  titulo="Revisar la solicitud" ancho="680px" [ocultarBotonesPorDefecto]="true">
+  @if (abierta; as s) {
+    <div class="form-fields">
+      <dl class="ficha-datos" style="display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0;">
+        <dt>Trabajador</dt><dd style="margin: 0;"><strong>{{ s.empleado?.nombre }}</strong> · DNI {{ s.empleado?.dni }}@if (s.empleado?.cargo) { · {{ s.empleado?.cargo }}}</dd>
+        <dt>Solicitud</dt><dd style="margin: 0;">{{ s.tipo_texto }}</dd>
+        @if (s.tipo !== 'cambio_cuenta') {
+          <dt>Cuándo</dt><dd style="margin: 0;">{{ cuando(s) }}</dd>
+        }
+        @if (previa?.datos; as d) {
+          <dt>Cuenta nueva</dt>
+          <dd style="margin: 0;">
+            {{ d.destino === 'cts' ? 'CTS' : 'Sueldo' }} · {{ d.entidad }} · <strong>{{ d.numero }}</strong>
+            @if (d.cci) { · CCI {{ d.cci }} }
+          </dd>
+        }
+        <dt>Motivo</dt><dd style="margin: 0;">{{ s.motivo }}</dd>
+        <dt>Pedida</dt><dd style="margin: 0;">{{ s.pedida.slice(0, 10).split('-').reverse().join('/') }}</dd>
+        @if (s.estado !== 'pendiente') {
+          <dt>Estado</dt><dd style="margin: 0;">{{ s.estado }}@if (s.resuelto_por) { por {{ s.resuelto_por }}}@if (s.respuesta) { — {{ s.respuesta }}}</dd>
+        }
+      </dl>
+
+      @if (s.tiene_sustento) {
+        <div>
+          <button type="button" class="btn-secondary" (click)="verSustento()"
+            appPista="Baja el sustento que adjuntó el trabajador. Revísalo antes de aprobar.">
+            <app-icon icono="download" [tamano]="15"></app-icon>
+            Abrir el sustento
+          </button>
+          @if (previa?.sustento_visto) { <small class="form-ayuda" style="margin-left: 8px;">Ya se abrió.</small> }
+        </div>
+      }
+
+      @if (s.estado === 'pendiente' && (s.tipo === 'permiso' || s.tipo === 'licencia')) {
+        <div class="form-group">
+          <label for="goce_rrhh">Con o sin goce de haber</label>
+          <select id="goce_rrhh" class="form-control" [(ngModel)]="conGoce" (ngModelChange)="cargarPrevia()">
+            <option [ngValue]="true">Con goce: se paga</option>
+            <option [ngValue]="false">Sin goce: no se paga{{ s.tipo === 'licencia' ? ' ni cuenta para la CTS' : '' }}</option>
+          </select>
+          <small class="form-ayuda">El trabajador lo pidió {{ s.con_goce ? 'con goce' : 'sin goce' }}. Lo decides tú.</small>
+        </div>
+      }
+
+      @if (s.estado === 'pendiente') {
+        <div class="form-nota" role="status">
+          <strong>Al aprobarla:</strong>
+          @if (cargandoPrevia && !previa) {
+            Revisando…
+          } @else if (previa) {
+            <ul style="margin: 6px 0 0; padding-left: 18px;">
+              @for (a of previa.avisos; track $index) { <li>{{ a }}</li> }
+            </ul>
+          }
+        </div>
+
+        @for (f of previa?.faltas_cts ?? []; track f.anio + f.periodo) {
+          <label class="form-check" style="display: flex; gap: 8px; align-items: flex-start;">
+            <input type="checkbox" [(ngModel)]="restarFaltas" [disabled]="!f.se_puede" />
+            <span>
+              Restarla de sus días no laborados de la CTS de {{ f.periodo }} {{ f.anio }}: tiene {{ f.anotadas }} anotado(s),
+              se restan {{ f.a_restar }}.
+              @if (f.motivo) { <small class="form-ayuda" style="display: block;">{{ f.motivo }}</small> }
+            </span>
+          </label>
+        }
+      }
+
+      @if (s.estado === 'pendiente' || s.estado === 'aprobada') {
+        <div class="form-group">
+          <label for="respuesta_rrhh">{{ s.estado === 'aprobada' ? 'Motivo para anularla' : 'Respuesta al trabajador' }}</label>
+          <textarea id="respuesta_rrhh" class="form-control" rows="2" maxlength="500" [(ngModel)]="respuesta"
+            placeholder="Ingrese la respuesta para el trabajador"></textarea>
+          <small class="form-ayuda">
+            {{ s.estado === 'aprobada' ? 'Obligatorio. Le llega al trabajador.' : 'Obligatoria si la rechazas; opcional si la apruebas.' }}
+          </small>
+        </div>
+      }
+
+      @if (previa?.propia) {
+        <p class="form-nota form-nota--alerta">Es tu propia solicitud: la resuelve otra persona de Recursos Humanos.</p>
+      }
+    </div>
+  }
+
+  <div modalFooter class="asistente-pie">
+    <button type="button" class="btn-secondary" (click)="cerrar()">Cerrar</button>
+    @if (abierta?.estado === 'pendiente' && !previa?.propia) {
+      <button type="button" class="btn-secondary" (click)="rechazar()" [disabled]="enviando">Rechazar</button>
+      <button type="button" class="btn-primary" (click)="aprobar()"
+        [disabled]="enviando || !previa || (abierta?.tipo === 'cambio_cuenta' && !previa.sustento_visto)"
+        [appPista]="abierta?.tipo === 'cambio_cuenta' && !previa?.sustento_visto ? 'Primero abre el sustento: un cambio de cuenta no se aprueba sin revisarlo.' : 'Aprueba la solicitud y aplica lo que dice arriba.'">
+        <app-icon icono="check" [tamano]="15"></app-icon>
+        Aprobar
+      </button>
+    }
+    @if (abierta?.estado === 'aprobada' && !previa?.propia) {
+      <button type="button" class="btn-danger" (click)="anular()" [disabled]="enviando"
+        appPista="Deshace la aprobación en lo que todavía no está pagado.">Anular</button>
+    }
+  </div>
+</app-form-modal>

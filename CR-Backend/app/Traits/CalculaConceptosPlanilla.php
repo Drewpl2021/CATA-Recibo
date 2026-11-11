@@ -1175,6 +1175,7 @@ trait CalculaConceptosPlanilla
         return [
             'dias_trabajados'  => $dias['laborados'],
             'dias_vacaciones'  => $dias['vacaciones'],
+            'dias_sin_goce'    => $dias['sin_goce'],
             'fecha_cese'       => $contratoFinalizado?->fecha_fin,
             'categoria'        => $categoria,
             'rango_inicio'     => $dias['desde']->format('d/m/Y'),
@@ -1215,12 +1216,15 @@ trait CalculaConceptosPlanilla
 
         $delPeriodo = (int) $desde->diffInDays($hasta) + 1;
         $vacaciones = min($delPeriodo, $this->diasDeVacacionesEnElMes($empleado->id, $desde, $hasta));
+        // La licencia sin goce va aparte: ni laborados ni vacaciones.
+        $sinGoce = min($delPeriodo - $vacaciones, \App\Support\Solicitudes\DiasDeLicencia::calendarioSinGoce((string) $empleado->id, $desde, $hasta));
 
         return [
             'desde'      => $desde,
             'hasta'      => $hasta,
-            'laborados'  => $delPeriodo - $vacaciones,
+            'laborados'  => $delPeriodo - $vacaciones - $sinGoce,
             'vacaciones' => $vacaciones,
+            'sin_goce'   => $sinGoce,
         ];
     }
 
@@ -1283,6 +1287,7 @@ trait CalculaConceptosPlanilla
                 'dias_del_mes'         => $diasDelMes,
                 'dias_habiles_del_mes' => $diasHabilesDelMes,
                 'dias_pagados'         => 0,
+                'dias_sin_goce'        => 0,
                 'dias_vacaciones'      => 0,
                 'dias_trabajados'      => 0,
                 'proporcion'           => 0.0,
@@ -1296,7 +1301,13 @@ trait CalculaConceptosPlanilla
         $desde = ($ingreso && $ingreso->gt($inicioMes)) ? $ingreso : $inicioMes;
         // Hasta cuándo: su fecha de cese si cesó dentro del mes, o fin de mes.
         $hasta = ($cese && $cese->lt($finMes)) ? $cese : $finMes;
-        $diasPagados = $this->diasHabilesEntre($desde, $hasta);
+        $diasDelTramo = $this->diasHabilesEntre($desde, $hasta);
+
+        // La licencia sin goce aprobada no se paga: sus días hábiles salen de
+        // los pagados. No se cruza con vacaciones (se valida al pedirla), así
+        // que no se resta dos veces. Ver Support/Solicitudes/DiasDeLicencia.
+        $diasSinGoce = min($diasDelTramo, \App\Support\Solicitudes\DiasDeLicencia::habilesSinGoce((string) $empleado->id, $desde, $hasta));
+        $diasPagados = $diasDelTramo - $diasSinGoce;
 
         $diasVacaciones = $this->diasDeVacacionesEnElMes($empleado->id, $desde, $hasta);
 
@@ -1304,6 +1315,7 @@ trait CalculaConceptosPlanilla
             'dias_del_mes'         => $diasDelMes,
             'dias_habiles_del_mes' => $diasHabilesDelMes,
             'dias_pagados'         => $diasPagados,
+            'dias_sin_goce'        => $diasSinGoce,
             'dias_vacaciones'      => $diasVacaciones,
             'dias_trabajados'      => max(0, $diasPagados - $diasVacaciones),
             'proporcion'           => $diasHabilesDelMes > 0 ? round($diasPagados / $diasHabilesDelMes, 6) : 0.0,
@@ -1350,7 +1362,9 @@ trait CalculaConceptosPlanilla
     {
         $reparto = $this->repartoDeDiasDelMes($empleado, $mes, $anio);
 
-        if ($reparto['dias_pagados'] === 0) {
+        // Sin días en el mes es que no había ingresado (o ya cesó): no hay
+        // planilla. Un mes entero de licencia sin goce sí la tiene, en cero.
+        if ($reparto['dias_pagados'] === 0 && $reparto['dias_sin_goce'] === 0) {
             return null;
         }
 

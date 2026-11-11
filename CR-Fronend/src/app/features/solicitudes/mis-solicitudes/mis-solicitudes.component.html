@@ -1,0 +1,168 @@
+<app-page-header
+  icono="calendar_check"
+  titulo="Mis Solicitudes"
+  subtitulo="Permisos, licencias, descansos médicos, faltas por justificar y cambios de cuenta que le pides a Recursos Humanos."
+  [cifras]="cifras"
+  [cargandoCifras]="cargando"
+  >
+  @if (!sinEmpleado) {
+    <button headerActions type="button" class="btn-primary" (click)="abrir()">
+      <app-icon icono="plus" [tamano]="16"></app-icon>
+      Nueva solicitud
+    </button>
+  }
+</app-page-header>
+
+@if (sinEmpleado) {
+  <p class="form-nota form-nota--alerta">
+    Tu cuenta no está vinculada a ninguna ficha de trabajador, así que no puede hacer solicitudes. Pídele a Recursos
+    Humanos que la vincule.
+  </p>
+} @else {
+  <app-data-table
+    entidad="la solicitud"
+    [columnas]="columnas"
+    [datos]="solicitudes"
+    [cargando]="cargando"
+    [acciones]="[]"
+    [accionesPersonalizadas]="acciones"
+    (accionPersonalizada)="alAccionar($event)"
+    mensajeVacio="Todavía no has hecho ninguna solicitud."
+  ></app-data-table>
+
+  <p class="form-nota" style="margin-top: 16px;">
+    Puedes cancelar una solicitud mientras siga <strong>pendiente</strong>. Cuando Recursos Humanos responde, te llega
+    el aviso a la campanita. Las <strong>vacaciones</strong> se piden en Mis Vacaciones.
+  </p>
+}
+
+<app-form-modal [visible]="modal" (visibleChange)="$event ? null : cerrar()" (cancelar)="cerrar()" (guardar)="enviar()"
+  titulo="Nueva solicitud" [textoGuardar]="enviando ? 'Enviando…' : 'Enviar solicitud'" [guardando]="enviando" ancho="640px">
+  <div class="form-fields">
+    <div class="form-group">
+      <label>Qué necesitas</label>
+      <div class="solicitud-tipos" role="radiogroup" aria-label="Tipo de solicitud">
+        @for (t of tipos; track t.valor) {
+          <label class="solicitud-tipo" [class.solicitud-tipo--activo]="tipo === t.valor">
+            <input type="radio" name="tipoSolicitud" [value]="t.valor" [ngModel]="tipo" (ngModelChange)="elegirTipo($event)" />
+            <span><strong>{{ t.titulo }}</strong><small>{{ t.ayuda }}</small></span>
+          </label>
+        }
+      </div>
+    </div>
+
+    @if (tipo !== 'cambio_cuenta') {
+      <div class="form-row">
+        <div class="form-group">
+          <label for="sol_inicio">{{ tipo === 'permiso' ? 'Día' : 'Desde' }}</label>
+          <input id="sol_inicio" type="date" class="form-control" [(ngModel)]="fechaInicio"
+            [max]="tipo === 'justificar_falta' ? hoy : ''" [class.is-invalid]="errores['fecha_inicio']" />
+          @if (errores['fecha_inicio']) { <small class="form-error">{{ errores['fecha_inicio'] }}</small> }
+        </div>
+        @if (tipo === 'permiso') {
+          <div class="form-group">
+            <label for="sol_hora_inicio">De</label>
+            <input id="sol_hora_inicio" type="time" class="form-control" [(ngModel)]="horaInicio" [class.is-invalid]="errores['hora_inicio']" />
+            @if (errores['hora_inicio']) { <small class="form-error">{{ errores['hora_inicio'] }}</small> }
+          </div>
+          <div class="form-group">
+            <label for="sol_hora_fin">A</label>
+            <input id="sol_hora_fin" type="time" class="form-control" [(ngModel)]="horaFin" [class.is-invalid]="errores['hora_fin']" />
+            @if (errores['hora_fin']) { <small class="form-error">{{ errores['hora_fin'] }}</small> }
+          </div>
+        } @else {
+          <div class="form-group">
+            <label for="sol_fin">Hasta</label>
+            <input id="sol_fin" type="date" class="form-control" [(ngModel)]="fechaFin" [min]="fechaInicio"
+              [max]="tipo === 'justificar_falta' ? hoy : ''" [class.is-invalid]="errores['fecha_fin']" />
+            @if (errores['fecha_fin']) { <small class="form-error">{{ errores['fecha_fin'] }}</small> }
+            <small class="form-ayuda">Si es un solo día, déjalo vacío.</small>
+          </div>
+        }
+      </div>
+    }
+
+    @if (tipo === 'permiso' || tipo === 'licencia') {
+      <div class="form-group">
+        <label>¿Con goce de haber?</label>
+        <div class="solicitud-goce" role="radiogroup" aria-label="Goce de haber">
+          <label class="solicitud-tipo" [class.solicitud-tipo--activo]="conGoce === true">
+            <input type="radio" name="goce" [value]="true" [(ngModel)]="conGoce" />
+            <span><strong>Con goce</strong><small>Se te paga. Va con su sustento.</small></span>
+          </label>
+          <label class="solicitud-tipo" [class.solicitud-tipo--activo]="conGoce === false">
+            <input type="radio" name="goce" [value]="false" [(ngModel)]="conGoce" />
+            <span><strong>Sin goce</strong><small>{{ tipo === 'licencia' ? 'Esos días no se pagan ni cuentan para tu CTS.' : 'Esas horas se te pueden descontar.' }}</small></span>
+          </label>
+        </div>
+        @if (errores['con_goce']) { <small class="form-error">{{ errores['con_goce'] }}</small> }
+        <small class="form-ayuda">Lo propones tú; Recursos Humanos lo confirma al aprobar.</small>
+      </div>
+    }
+
+    @if (tipo === 'cambio_cuenta') {
+      <div class="form-group">
+        <label>Qué cuenta cambias</label>
+        <div class="solicitud-goce" role="radiogroup" aria-label="Cuenta">
+          <label class="solicitud-tipo" [class.solicitud-tipo--activo]="destino === 'cts'">
+            <input type="radio" name="destino" value="cts" [(ngModel)]="destino" />
+            <span><strong>Mi cuenta CTS</strong><small>Donde se deposita tu CTS en mayo y noviembre.</small></span>
+          </label>
+          <label class="solicitud-tipo" [class.solicitud-tipo--activo]="destino === 'sueldo'">
+            <input type="radio" name="destino" value="sueldo" [(ngModel)]="destino" />
+            <span><strong>Mi cuenta de sueldo</strong><small>Donde se te paga cada mes.</small></span>
+          </label>
+        </div>
+        @if (errores['destino']) { <small class="form-error">{{ errores['destino'] }}</small> }
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="sol_entidad">Banco o caja</label>
+          <input id="sol_entidad" type="text" class="form-control" [(ngModel)]="entidad" maxlength="100" autocomplete="off"
+            placeholder="Ingrese el nombre del banco o la caja" [class.is-invalid]="errores['entidad']" />
+          @if (errores['entidad']) { <small class="form-error">{{ errores['entidad'] }}</small> }
+        </div>
+        <div class="form-group">
+          <label for="sol_numero">Número de cuenta</label>
+          <input id="sol_numero" type="text" inputmode="numeric" class="form-control" [(ngModel)]="numero" maxlength="30"
+            autocomplete="off" placeholder="Ingrese el número de cuenta" [class.is-invalid]="errores['numero']" />
+          @if (errores['numero']) { <small class="form-error">{{ errores['numero'] }}</small> }
+        </div>
+      </div>
+      @if (destino === 'sueldo') {
+        <div class="form-group">
+          <label for="sol_cci">CCI (20 números)</label>
+          <input id="sol_cci" type="text" inputmode="numeric" class="form-control" [(ngModel)]="cci" maxlength="20"
+            autocomplete="off" placeholder="Ingrese el código de cuenta interbancario" [class.is-invalid]="errores['cci']" />
+          @if (errores['cci']) { <small class="form-error">{{ errores['cci'] }}</small> }
+        </div>
+      }
+    }
+
+    <div class="form-group">
+      <label for="sol_motivo">Motivo</label>
+      <textarea id="sol_motivo" class="form-control" rows="3" maxlength="500" [(ngModel)]="motivo"
+        placeholder="Ingrese el motivo de su solicitud" [class.is-invalid]="errores['motivo']"></textarea>
+      @if (errores['motivo']) { <small class="form-error">{{ errores['motivo'] }}</small> }
+    </div>
+
+    <div class="form-group">
+      <label>Sustento {{ sustentoObligatorio ? '' : '(opcional)' }}</label>
+      <app-selector-archivo [extensiones]="['pdf', 'jpg', 'jpeg', 'png']" [pesoMaximoMb]="5" [(archivos)]="sustento"
+        [ayuda]="ayudaSustento + ' PDF o foto, hasta 5 MB.'"></app-selector-archivo>
+      @if (errores['sustento']) { <small class="form-error">{{ errores['sustento'] }}</small> }
+    </div>
+
+    @if (tipo === 'cambio_cuenta') {
+      <div class="form-group">
+        <label for="sol_password">Tu contraseña</label>
+        <input id="sol_password" type="password" class="form-control" [(ngModel)]="password" autocomplete="current-password"
+          aria-describedby="ayuda_sol_password" [class.is-invalid]="errores['password']" />
+        @if (errores['password']) { <small class="form-error">{{ errores['password'] }}</small> }
+        <small class="form-ayuda" id="ayuda_sol_password">
+          Para confirmar que eres tú. Te llegará un correo avisando del pedido; si no fuiste tú, avisa a Recursos Humanos.
+        </small>
+      </div>
+    }
+  </div>
+</app-form-modal>

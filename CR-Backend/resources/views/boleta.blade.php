@@ -401,7 +401,12 @@
             </tr>
             <tr>
                 <td><div class="rotulo">Días laborados</div><div class="valor">{{ $cabecera['dias_trabajados'] }}</div></td>
-                <td><div class="rotulo">Días de vacaciones</div><div class="valor">{{ $cabecera['dias_vacaciones'] }}</div></td>
+                <td><div class="rotulo">Días de vacaciones</div><div class="valor">{{ $cabecera['dias_vacaciones'] }}</div>
+                    @if (($cabecera['dias_sin_goce'] ?? 0) > 0)
+                        {{-- Licencia sin goce aprobada: no se pagan. --}}
+                        <div class="rotulo" style="margin-top:4px;">Días de licencia sin goce</div><div class="valor">{{ $cabecera['dias_sin_goce'] }}</div>
+                    @endif
+                </td>
                 <td><div class="rotulo">Fecha de emisión</div><div class="valor">{{ now()->format('d/m/Y') }}</div></td>
             </tr>
         </table>

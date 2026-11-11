@@ -140,7 +140,7 @@ class CtsController extends Controller
                 $x['estado'] === 'activo' ? 'Activo' : 'Cesado', $fecha($x['fecha_ingreso']),
                 $aplica ? $x['sueldo'] : null, $aplica ? $x['asignacion_familiar'] : null, $aplica ? $x['bonificacion_cargo'] : null,
                 $aplica ? $x['sexto_gratificacion'] : null, $aplica ? $x['remuneracion_computable'] : null,
-                $aplica ? $x['meses'] : null, $aplica ? $x['dias'] : null, $aplica ? ($x['faltas'] ?: null) : null,
+                $aplica ? $x['meses'] : null, $aplica ? $x['dias'] : null, $aplica ? (((int) $x['faltas'] + (int) ($x['dias_licencia'] ?? 0)) ?: null) : null,
                 $aplica ? $x['monto'] : null,
                 $estados[$x['estado_cts']] ?? $x['estado_cts'], $fecha($x['fecha_deposito']),
                 $x['entidad_financiera'] ?: $x['entidad_ficha'], (string) ($x['numero_cuenta'] ?: $x['cuenta_ficha']),
@@ -411,7 +411,7 @@ class CtsController extends Controller
             'remuneracion_fuente' => $l->remuneracion_fuente,
             'gratificacion' => $l->gratificacion, 'gratificacion_fuente' => $l->gratificacion_fuente,
             'sexto_gratificacion' => $l->sexto_gratificacion, 'remuneracion_computable' => $l->remuneracion_computable,
-            'meses' => $l->meses, 'dias' => $l->dias, 'faltas' => (int) $l->faltas, 'monto' => $l->monto,
+            'meses' => $l->meses, 'dias' => $l->dias, 'faltas' => (int) $l->faltas, 'dias_licencia' => (int) $l->dias_licencia, 'monto' => $l->monto,
         ];
     }
 

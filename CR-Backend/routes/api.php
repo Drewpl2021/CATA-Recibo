@@ -130,6 +130,11 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     Route::post('my-documents/bundle', [MisDocumentosController::class, 'juntar'])->middleware('throttle:20,1');
     // Su constancia de trabajo o de haberes: se arma al momento y la firma el colegio.
     Route::post('my-documents/letters', [\App\Http\Controllers\ConstanciaController::class, 'pedir'])->middleware('throttle:10,1');
+    // Mis solicitudes: permisos, licencias, descansos médicos, faltas por justificar y cambio de cuenta.
+    Route::get('my-requests', [\App\Http\Controllers\SolicitudController::class, 'mias']);
+    Route::post('my-requests', [\App\Http\Controllers\SolicitudController::class, 'pedir'])->middleware('throttle:10,1');
+    Route::delete('my-requests/{solicitud}', [\App\Http\Controllers\SolicitudController::class, 'cancelar'])->whereUuid('solicitud');
+    Route::get('my-requests/{solicitud}/support', [\App\Http\Controllers\SolicitudController::class, 'miSustento'])->whereUuid('solicitud');
     Route::get('my-modules', [MisModulosController::class, 'index']);
     Route::put('change-password', [AuthController::class, 'cambiarPassword'])->middleware('throttle:clave');
     // Confirma la CLAVE de quien está en la sesión, sin cambiar nada. La usa
@@ -283,6 +288,16 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     // trabajador tiene la suya en my-payslips, que sí comprueba que sea suya.
     Route::get('payslips/{employee_id}/{month}/{year}', [BoletaController::class, 'generar'])
         ->middleware('permiso:/boletas,/planillas,/documentos');
+
+    // ── Solicitudes del personal: la bandeja de RR.HH. ──
+    Route::middleware('permiso:/solicitudes')->group(function () {
+        Route::get('requests', [\App\Http\Controllers\SolicitudController::class, 'index']);
+        Route::get('requests/{solicitud}/preview', [\App\Http\Controllers\SolicitudController::class, 'previa'])->whereUuid('solicitud');
+        Route::get('requests/{solicitud}/support', [\App\Http\Controllers\SolicitudController::class, 'sustento'])->whereUuid('solicitud');
+        Route::post('requests/{solicitud}/approve', [\App\Http\Controllers\SolicitudController::class, 'aprobar'])->whereUuid('solicitud');
+        Route::post('requests/{solicitud}/reject', [\App\Http\Controllers\SolicitudController::class, 'rechazar'])->whereUuid('solicitud');
+        Route::post('requests/{solicitud}/annul', [\App\Http\Controllers\SolicitudController::class, 'anular'])->whereUuid('solicitud');
+    });
 
     // ── Documentos: el expediente de cada trabajador ──
     Route::middleware('permiso:/documentos')->group(function () {
