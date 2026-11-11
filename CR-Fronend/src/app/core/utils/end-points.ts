@@ -117,6 +117,7 @@ export const END_POINTS_ACCIONES = {
   /** POST my-documents/resume — el trabajador sube su propio CV */
   subirMiHojaDeVida: 'my-documents/resume',
   juntarMisDocumentos: 'my-documents/bundle',
+  pedirConstancia: 'my-documents/letters',
 
 
   /** GET vacations/balance?empleado_id=&anio= */

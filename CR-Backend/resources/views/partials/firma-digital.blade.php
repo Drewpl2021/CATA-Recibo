@@ -12,6 +12,7 @@
     Sin firma digital: las dos rayas de siempre, para firmar en papel.
 
     Recibe: $firmaDigital, $firmasRequeridas, $trabajador (nombre), $dni.
+    Con $soloEmpleador (constancias) va solo la firma del colegio, al centro.
     Lo dibuja dompdf: solo tablas y colores literales.
 --}}
 <style>
@@ -27,7 +28,29 @@
     .firmas-papel .raya { border-top: 1px solid #1F2B33; padding-top: 4px; line-height: 1.4; }
 </style>
 
-@if (!empty($firmaDigital))
+@if (!empty($firmaDigital) && !empty($soloEmpleador))
+    {{-- Una constancia: solo la firma del colegio, al centro. --}}
+    @php $casillas = max(1, min(2, (int) ($firmasRequeridas ?? 1))); @endphp
+    <table class="pie-firmas">
+        <tr>
+            <td style="width: {{ $casillas === 1 ? 25 : 10 }}%;"></td>
+            @for ($i = 1; $i <= $casillas; $i++)
+                <td style="width: {{ $casillas === 1 ? 50 : 40 }}%;">
+                    <div class="casilla"></div>
+                    <div class="pie">
+                        <strong>EL EMPLEADOR</strong>{{ $casillas > 1 ? ' (' . $i . ' de ' . $casillas . ')' : '' }}<br>
+                        Colegio Adventista Túpac Amaru
+                    </div>
+                </td>
+            @endfor
+            <td style="width: {{ $casillas === 1 ? 25 : 10 }}%;"></td>
+        </tr>
+    </table>
+    <div class="nota-legal">
+        Documento firmado digitalmente por el empleador conforme a la Ley N° 27269, Ley de Firmas y Certificados Digitales,
+        y al D. Leg. N° 1310. Emitido desde el sistema CATA-Recibo.
+    </div>
+@elseif (!empty($firmaDigital))
     @php $casillas = max(1, min(2, (int) ($firmasRequeridas ?? 1))); @endphp
     <table class="pie-firmas">
         <tr>

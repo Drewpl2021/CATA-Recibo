@@ -3,7 +3,7 @@
   [ocultarBotonesPorDefecto]="true" (cancelar)="cerrar()">
   @if (!resultado && !firmando && certificado; as c) {
     <p class="firmar-aqui__resumen">
-      Vas a firmar <strong>{{ c.por_firmar }} {{ nombre(c.por_firmar) }} de {{ periodo }}</strong>
+      Vas a firmar <strong>{{ c.por_firmar }} {{ nombre(c.por_firmar) }}{{ periodo ? ' de ' + periodo : '' }}</strong>
       como <strong>{{ c.nombre }}</strong>@if (c.dni) { (DNI {{ c.dni }})}.
     </p>
     <p class="form-ayuda">

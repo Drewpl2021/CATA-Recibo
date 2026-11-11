@@ -452,6 +452,7 @@ export class LayoutComponent implements OnInit {
   /** El ícono del aviso: una boleta de papel, salvo el de RR.HH. que no tiene ninguna de por medio. */
   iconoAviso(aviso: Notificacion): string {
     if (aviso.tipo === 'contratos_vencidos') return 'user_off';
+    if (aviso.tipo === 'constancia_pedida' || aviso.tipo === 'constancia_lista') return 'receipt_long';
     return aviso.tipo === 'planilla_pendiente' ? 'table_chart' : 'receipt';
   }
 
@@ -460,6 +461,8 @@ export class LayoutComponent implements OnInit {
     if (this.documentoPendienteDe(aviso)) return 'Firmar';
     if (aviso.tipo === 'planilla_pendiente') return 'Ir a planillas';
     if (aviso.tipo === 'contratos_vencidos') return 'Ver empleados';
+    if (aviso.tipo === 'constancia_pedida') return 'Ver constancias';
+    if (aviso.tipo === 'constancia_lista') return 'Ver mis documentos';
     return 'Ver boletas';
   }
 
@@ -498,6 +501,16 @@ export class LayoutComponent implements OnInit {
 
     // "Pasaron a inactivo por contrato vencido": a la lista, para renovar
     // y reactivar a quien siga trabajando.
+    // Una constancia: RR.HH. va a firmarla; el trabajador, a descargarla.
+    if (aviso.tipo === 'constancia_pedida') {
+      this.router.navigateByUrl('/inicio/documentos?constancias=1');
+      return;
+    }
+    if (aviso.tipo === 'constancia_lista') {
+      this.router.navigate(['/inicio/mis-documentos']);
+      return;
+    }
+
     if (aviso.tipo === 'contratos_vencidos') {
       // Ya filtrada en los dados de baja: son a quienes se refiere el aviso.
       this.router.navigateByUrl('/inicio/empleados?filtro=de_baja');

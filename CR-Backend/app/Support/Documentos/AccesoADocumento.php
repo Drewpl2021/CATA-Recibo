@@ -63,6 +63,8 @@ final class AccesoADocumento
             'cts'           => 'Tu hoja de CTS',
             'gratificacion' => 'Tu hoja de gratificación',
             'certificado_5ta' => 'Tu certificado de retenciones de 5ta',
+            'constancia_trabajo' => 'Tu constancia de trabajo',
+            'constancia_haberes' => 'Tu constancia de haberes',
             default         => 'Este documento',
         };
 

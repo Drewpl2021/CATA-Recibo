@@ -342,8 +342,9 @@ final class FirmaDelColegio
      * @param  string  $queEs     «hoja de CTS», «hoja de gratificación», «certificado de retenciones de 5ta»
      * @param  string  $periodo   «noviembre 2026», «julio 2026», «2026»
      * @param  bool    $femenino  «lista / Revísala» o «listo / Revísalo»
+     * @param  bool    $conConformidad  false para lo que no la pide (las constancias): «descárgala en Mis Documentos»
      */
-    public static function avisarAlTrabajador(Documento $documento, string $queEs, string $periodo, bool $femenino = true): void
+    public static function avisarAlTrabajador(Documento $documento, string $queEs, string $periodo, bool $femenino = true, bool $conConformidad = true): void
     {
         $usuario = \App\Models\User::where('empleado_id', $documento->empleado_id)->first();
         if (! $usuario) {
@@ -352,11 +353,14 @@ final class FirmaDelColegio
 
         \App\Models\Notificacion::create([
             'user_id'      => $usuario->id,
-            'tipo'         => 'documento_disponible',
+            // La constancia lleva a Mis Documentos; lo demás, a Mis Boletas.
+            'tipo'         => $conConformidad ? 'documento_disponible' : 'constancia_lista',
             'titulo'       => "Tu {$queEs} de {$periodo} ya está " . ($femenino ? 'lista' : 'listo'),
-            'mensaje'      => $femenino
-                ? 'Ya está firmada por el colegio. Revísala en Mis Boletas y da tu conformidad con tu contraseña.'
-                : 'Ya está firmado por el colegio. Revísalo en Mis Boletas y da tu conformidad con tu contraseña.',
+            'mensaje'      => ! $conConformidad
+                ? 'Ya está firmada por el colegio. Descárgala en Mis Documentos.'
+                : ($femenino
+                    ? 'Ya está firmada por el colegio. Revísala en Mis Boletas y da tu conformidad con tu contraseña.'
+                    : 'Ya está firmado por el colegio. Revísalo en Mis Boletas y da tu conformidad con tu contraseña.'),
             'documento_id' => $documento->id,
         ]);
         $documento->registrarAviso($usuario->email);
@@ -364,7 +368,7 @@ final class FirmaDelColegio
         if ($usuario->email) {
             $empleado = $documento->empleado;
             \Illuminate\Support\Facades\Mail::to($usuario->email)->queue(new \App\Mail\HojaLista(
-                trim("{$empleado?->nombre} {$empleado?->apellido}"), $queEs, $periodo, $femenino
+                trim("{$empleado?->nombre} {$empleado?->apellido}"), $queEs, $periodo, $femenino, $conConformidad
             ));
         }
     }

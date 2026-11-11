@@ -5,6 +5,11 @@
   [cifras]="cifras"
   [cargandoCifras]="cargando"
   >
+  <button headerActions type="button" class="btn-secondary" (click)="modalConstancia = true"
+    appPista="Tu constancia de trabajo o de haberes, para un préstamo o un trámite. Se arma al momento y la firma el colegio.">
+    <app-icon icono="receipt_long" [tamano]="16"></app-icon>
+    Pedir constancia
+  </button>
   <button headerActions type="button" class="btn-primary" (click)="abrirSubirCv()">
     <app-icon icono="upload" [tamano]="16"></app-icon>
     Subir un documento
@@ -105,3 +110,6 @@
     (documentoChange)="alCerrarVisor($event)"
     [puedeDescargar]="docAbierto ? puedeDescargar(docAbierto) : true"
   ></app-visor-documento>
+
+<!-- Su constancia de trabajo o de haberes. -->
+<app-pedir-constancia [(visible)]="modalConstancia" (pedida)="cargar()"></app-pedir-constancia>

@@ -82,6 +82,17 @@ export class MisDocumentosService {
     });
   }
 
+  /**
+   * Pide su constancia de trabajo o de haberes: se arma al momento y queda
+   * esperando la firma del colegio. Si ya pidió la misma, devuelve esa.
+   */
+  pedirConstancia(tipo: 'constancia_trabajo' | 'constancia_haberes', meses: number | null, dirigidoA: string | null): Observable<ApiResponse<{ id: string; nueva: boolean; message: string }>> {
+    return this.http.post<ApiResponse<{ id: string; nueva: boolean; message: string }>>(
+      `${this.apiUrl}/${END_POINTS_ACCIONES.pedirConstancia}`,
+      { tipo, ...(meses ? { meses } : {}), ...(dirigidoA ? { dirigido_a: dirigidoA } : {}) }
+    );
+  }
+
   firmar(id: string, password: string): Observable<ApiResponse<Documento> & { message?: string }> {
     return this.http
       .post<ApiResponse<Documento> & { message?: string }>(

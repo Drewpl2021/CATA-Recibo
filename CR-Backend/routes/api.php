@@ -128,6 +128,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
     Route::post('my-documents/resume', [MisDocumentosController::class, 'subirHojaDeVida']);
     // Varias de sus boletas y hojas juntas, en .zip o en un solo PDF.
     Route::post('my-documents/bundle', [MisDocumentosController::class, 'juntar'])->middleware('throttle:20,1');
+    // Su constancia de trabajo o de haberes: se arma al momento y la firma el colegio.
+    Route::post('my-documents/letters', [\App\Http\Controllers\ConstanciaController::class, 'pedir'])->middleware('throttle:10,1');
     Route::get('my-modules', [MisModulosController::class, 'index']);
     Route::put('change-password', [AuthController::class, 'cambiarPassword'])->middleware('throttle:clave');
     // Confirma la CLAVE de quien está en la sesión, sin cambiar nada. La usa
@@ -284,6 +286,10 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
 
     // ── Documentos: el expediente de cada trabajador ──
     Route::middleware('permiso:/documentos')->group(function () {
+        // Las constancias que pidió el personal y esperan la firma del colegio.
+        Route::get('letters/pending',             [\App\Http\Controllers\ConstanciaController::class, 'pendientes']);
+        Route::post('letters/sign-here',          [\App\Http\Controllers\ConstanciaController::class, 'firmarAqui'])->middleware('throttle:120,1');
+        Route::delete('letters/{documento}',      [\App\Http\Controllers\ConstanciaController::class, 'anular'])->whereUuid('documento');
         Route::get('employee-files',              [\App\Http\Controllers\ExpedienteController::class, 'index']);
         Route::get('employee-files/{employeeId}', [\App\Http\Controllers\ExpedienteController::class, 'show']);
         // Boletas y contratos de antes del sistema, en lote.

@@ -7,7 +7,11 @@
     <p style="margin:0 0 12px;">Hola, <strong>{{ $nombreEmpleado }}</strong>:</p>
     <p style="margin:0 0 16px;">
         Tu {{ $queEs }} ya está en tu cuenta de CATA-Recibo, con la firma digital del colegio.
-        {{ $femenino ? 'La' : 'Lo' }} encuentras en <strong>Mis Boletas</strong>, debajo de tus boletas.
+        @if ($conConformidad)
+            {{ $femenino ? 'La' : 'Lo' }} encuentras en <strong>Mis Boletas</strong>, debajo de tus boletas.
+        @else
+            La encuentras en <strong>Mis Documentos</strong>, lista para descargar.
+        @endif
     </p>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
@@ -24,10 +28,14 @@
         </tr>
     </table>
 
-    @include('emails._boton', ['texto' => $femenino ? 'Ver mi hoja' : 'Ver mi certificado'])
+    @include('emails._boton', ['texto' => ! $conConformidad ? 'Ver mi constancia' : ($femenino ? 'Ver mi hoja' : 'Ver mi certificado')])
 
     <p style="margin:0 0 12px;">
-        {{ $femenino ? 'Revísala' : 'Revísalo' }} y, si todo está bien, <strong>da tu conformidad</strong> con tu contraseña. Si algo no cuadra,
-        avísale a Recursos Humanos.
+        @if ($conConformidad)
+            {{ $femenino ? 'Revísala' : 'Revísalo' }} y, si todo está bien, <strong>da tu conformidad</strong> con tu contraseña. Si algo no cuadra,
+            avísale a Recursos Humanos.
+        @else
+            Va con la firma digital del colegio: puedes presentarla tal cual. Si algo no cuadra, avísale a Recursos Humanos.
+        @endif
     </p>
 @endsection

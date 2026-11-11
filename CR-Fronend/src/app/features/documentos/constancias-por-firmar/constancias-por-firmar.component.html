@@ -1,0 +1,65 @@
+<!-- Las constancias que pidió el personal y esperan la firma del colegio. -->
+<app-form-modal [visible]="visible" (visibleChange)="$event ? null : cerrar()" (cancelar)="cerrar()"
+  titulo="Constancias por firmar" ancho="720px" [ocultarBotonesPorDefecto]="true">
+  <div class="form-fields">
+    <p class="form-ayuda">
+      Las constancias de trabajo y de haberes que pidió el personal desde Mis Documentos. Ya están armadas con sus datos y
+      sus planillas: revísalas y fírmalas. Al firmarlas, a cada uno le llega el aviso para descargarla.
+    </p>
+
+    @if (firma; as f) {
+      <div class="certificados-acciones" style="display: flex; flex-wrap: wrap; gap: 8px;">
+        @if (f.mi_certificado; as c) {
+          <button type="button" [class]="puedeFirmar ? 'btn-primary' : 'btn-secondary'" (click)="modalFirmar = true"
+            [disabled]="!puedeFirmar" [appPista]="pistaFirmar">
+            <app-icon icono="signature" [tamano]="16"></app-icon>
+            Firmar aquí{{ c.por_firmar ? ' (' + c.por_firmar + ')' : '' }}
+          </button>
+        } @else {
+          <a class="btn-secondary" routerLink="/inicio/ajustes" [queryParams]="{ seccion: 'boletas' }" (click)="cerrar()"
+            appPista="Abre Ajustes → Boletas para poner tu certificado digital (.pfx o .p12). Con él firmas las constancias desde aquí.">
+            <app-icon icono="signature" [tamano]="16"></app-icon>
+            Poner mi certificado
+          </a>
+        }
+      </div>
+    }
+
+    @if (cargando && !filas.length) {
+      <p class="form-ayuda">Cargando…</p>
+    } @else if (!filas.length) {
+      <p class="form-nota">No hay constancias por firmar.</p>
+    } @else {
+      <ul class="juntar-lista" style="list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 10px;">
+        @for (f of filas; track f.id) {
+          <li style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border);">
+            <span>
+              <strong>{{ f.nombre }}</strong> · {{ f.tipo_texto }}
+              <span class="form-ayuda" style="display: block;">DNI {{ f.dni }} · pedida el {{ f.pedida | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </span>
+            <span style="display: flex; gap: 6px;">
+              <button type="button" class="btn-secondary" (click)="ver(f)" appPista="Baja la constancia para revisarla antes de firmar.">
+                <app-icon icono="download" [tamano]="15"></app-icon>
+                Ver
+              </button>
+              <button type="button" class="btn-secondary" (click)="anular(f)" appPista="Borra esta constancia si no corresponde. La persona puede volver a pedirla.">
+                <app-icon icono="close" [tamano]="15"></app-icon>
+                Anular
+              </button>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div modalFooter class="asistente-pie">
+    <button type="button" class="btn-primary" (click)="cerrar()">Cerrar</button>
+  </div>
+</app-form-modal>
+
+@if (firma) {
+  <app-firmar-aqui [(visible)]="modalFirmar" [certificado]="firma.mi_certificado" [requeridas]="firma.requeridas"
+    singular="constancia" plural="constancias" periodo="" [tanda]="firmarTanda" (terminado)="cargar()">
+  </app-firmar-aqui>
+}

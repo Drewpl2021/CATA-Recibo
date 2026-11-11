@@ -17,7 +17,7 @@ class HojaLista extends Mailable
 {
     use Queueable, SerializesModels;
 
-    /** Adonde lleva el botón: Mis Boletas, donde están sus hojas. */
+    /** Adonde lleva el botón: Mis Boletas (sus hojas) o Mis Documentos (sus constancias). */
     public string $enlace;
 
     /**
@@ -30,8 +30,10 @@ class HojaLista extends Mailable
         public string $periodo,
         /** «hoja» (lista, Revísala) o «certificado» (listo, Revísalo). */
         public bool $femenino = true,
+        /** false: una constancia, que no pide conformidad y está en Mis Documentos. */
+        public bool $conConformidad = true,
     ) {
-        $this->enlace = rtrim((string) config('app.frontend_url'), '/') . '/inicio/mis-boletas';
+        $this->enlace = rtrim((string) config('app.frontend_url'), '/') . ($conConformidad ? '/inicio/mis-boletas' : '/inicio/mis-documentos');
     }
 
     public function envelope(): Envelope

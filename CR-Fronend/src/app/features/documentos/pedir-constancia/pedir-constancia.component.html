@@ -1,0 +1,42 @@
+<!-- Pedir una constancia: se arma al momento y la firma el colegio. -->
+<app-form-modal [visible]="visible" (visibleChange)="$event ? null : cerrar()" (cancelar)="cerrar()" (guardar)="pedir()"
+  titulo="Pedir una constancia" [textoGuardar]="enviando ? 'Pidiendo…' : 'Pedir constancia'" [guardando]="enviando" ancho="560px">
+  <div class="form-fields">
+    <p class="form-ayuda">
+      Se arma al momento con tus datos y tus planillas. Recursos Humanos la firma digitalmente y te avisamos por la
+      campanita y por correo; la descargas aquí, en Mis Documentos.
+    </p>
+
+    <div class="form-group">
+      <label>Qué constancia necesitas</label>
+      <div class="constancia-tipos" role="radiogroup" aria-label="Tipo de constancia">
+        <label class="constancia-tipo" [class.constancia-tipo--activo]="tipo === 'constancia_trabajo'">
+          <input type="radio" name="tipoConstancia" value="constancia_trabajo" [(ngModel)]="tipo" />
+          <span><strong>Constancia de trabajo</strong><small>Que trabajas en el colegio, desde cuándo y en qué cargo. Si ya cesaste, sale tu certificado de trabajo.</small></span>
+        </label>
+        <label class="constancia-tipo" [class.constancia-tipo--activo]="tipo === 'constancia_haberes'">
+          <input type="radio" name="tipoConstancia" value="constancia_haberes" [(ngModel)]="tipo" />
+          <span><strong>Constancia de haberes</strong><small>Lo que cobraste en tus últimos meses pagados. La piden los bancos y las cooperativas.</small></span>
+        </label>
+      </div>
+    </div>
+
+    @if (tipo === 'constancia_haberes') {
+      <div class="form-group">
+        <label for="mesesConstancia">Meses que incluye</label>
+        <select id="mesesConstancia" class="form-control" [(ngModel)]="meses">
+          @for (m of opcionesMeses; track m) {
+            <option [ngValue]="m">Los últimos {{ m }} meses pagados</option>
+          }
+        </select>
+      </div>
+    }
+
+    <div class="form-group">
+      <label for="dirigidoA">A quién va dirigida <span class="form-ayuda">(opcional)</span></label>
+      <input id="dirigidoA" type="text" class="form-control" [(ngModel)]="dirigidoA" maxlength="120" autocomplete="off"
+        placeholder="Ingrese el nombre de la entidad" aria-describedby="ayudaDirigido" />
+      <small class="form-ayuda" id="ayudaDirigido">Si lo dejas vacío, va «A quien corresponda».</small>
+    </div>
+  </div>
+</app-form-modal>

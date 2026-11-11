@@ -43,16 +43,20 @@ interface ChipExpediente {
 import { FiltrosComponent } from '../../../shared/components/filtros/filtros.component';
 import { OrdenComponent, OpcionOrden } from '../../../shared/components/orden/orden.component';
 import { CampoFiltro, ValoresFiltro } from '../../../shared/components/filtros/filtros.models';
+import { ConstanciasPorFirmarComponent } from '../constancias-por-firmar/constancias-por-firmar.component';
+import { DocumentoService } from '../../../core/services/planilla/documento.service';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
 @Component({
   selector: 'app-expedientes-list',
   standalone: true,
-  imports: [FiltrosComponent, OrdenComponent, CommonModule, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, IconComponent, AvatarComponent],
+  imports: [FiltrosComponent, OrdenComponent, CommonModule, PageHeaderComponent, DataTableComponent, CeldaTablaDirective, IconComponent, AvatarComponent, ConstanciasPorFirmarComponent, PistaDirective],
   templateUrl: './expedientes-list.component.html',
 })
 export class ExpedientesListComponent implements OnInit {
   private estadoListados = inject(EstadoListadoService);
 
   private expedientes = inject(ExpedienteService);
+  private documentos = inject(DocumentoService);
   private toast = inject(ToastService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
@@ -119,7 +123,17 @@ export class ExpedientesListComponent implements OnInit {
     this.router.navigate(['/inicio/documentos/subir-anteriores']);
   }
 
+  /** Las constancias que pidió el personal y esperan la firma del colegio. */
+  modalConstancias = false;
+  constanciasPorFirmar = 0;
+
   ngOnInit(): void {
+    // El número del botón; el aviso de la campanita llega con ?constancias=1.
+    this.documentos.constanciasPorFirmar().subscribe({
+      next: (res) => { if (res.success) this.constanciasPorFirmar = res.data.filas.length; },
+      error: () => { /* el botón queda sin número */ },
+    });
+    if (this.route.snapshot.queryParamMap.get('constancias')) this.modalConstancias = true;
     const recordado = this.estadoListados.leer<Record<string, unknown>>('expedientes');
     if (recordado) Object.assign(this, recordado);
     // Llega ya filtrada desde el panel de control ("boletas sin firmar").

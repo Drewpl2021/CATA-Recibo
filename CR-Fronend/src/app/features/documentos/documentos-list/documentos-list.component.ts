@@ -22,6 +22,8 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { SelectorArchivoComponent } from '../../../shared/components/selector-archivo/selector-archivo.component';
 import { VisorDocumentoComponent } from '../../../shared/components/visor-documento/visor-documento.component';
 import { TIPO_DOCUMENTO_PROPIO } from '../../../shared/constants';
+import { PistaDirective } from '../../../shared/directives/pista.directive';
+import { PedirConstanciaComponent } from '../pedir-constancia/pedir-constancia.component';
 
 /**
  * Mis Documentos: lo que el trabajador tiene a su nombre.
@@ -44,12 +46,16 @@ import { TIPO_DOCUMENTO_PROPIO } from '../../../shared/constants';
     FormModalComponent,
     SelectorArchivoComponent,
     VisorDocumentoComponent,
-    IconComponent
+    IconComponent,
+    PistaDirective,
+    PedirConstanciaComponent,
 ],
   templateUrl: './documentos-list.component.html',
 })
 export class DocumentosListComponent implements OnInit {
   private misDocumentosService = inject(MisDocumentosService);
+  /** «Pedir constancia» (de trabajo o de haberes). */
+  modalConstancia = false;
   private documentoService = inject(DocumentoService);
   private toastService = inject(ToastService);
   private authService = inject(AuthService);

@@ -3,6 +3,11 @@
   titulo="Documentos del personal"
   subtitulo="El expediente de cada trabajador: su hoja de vida, sus contratos y sus boletas."
   >
+  <button headerActions type="button" [class]="constanciasPorFirmar ? 'btn-primary' : 'btn-secondary'" (click)="modalConstancias = true"
+    appPista="Las constancias de trabajo y de haberes que pidió el personal desde Mis Documentos: revísalas y fírmalas.">
+    <app-icon icono="signature" [tamano]="16"></app-icon>
+    Constancias por firmar{{ constanciasPorFirmar ? ' (' + constanciasPorFirmar + ')' : '' }}
+  </button>
   <button headerActions type="button" class="btn-primary" (click)="subirAnteriores()">
     <app-icon icono="upload" [tamano]="16"></app-icon>
     Subir boletas y contratos anteriores
@@ -73,3 +78,6 @@
   </span>
 </ng-template>
 </app-data-table>
+
+<!-- Las constancias que pidió el personal. -->
+<app-constancias-por-firmar [(visible)]="modalConstancias" (cambio)="constanciasPorFirmar = $event"></app-constancias-por-firmar>

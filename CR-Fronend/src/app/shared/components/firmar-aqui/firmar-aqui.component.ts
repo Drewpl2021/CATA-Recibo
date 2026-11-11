@@ -111,8 +111,8 @@ export class FirmarAquiComponent {
       this.toast.success(
         `${suma.firmadas} ${this.nombre(suma.firmadas)} ${this.femenino ? 'firmada' : 'firmado'}${suma.firmadas === 1 ? '' : 's'}`,
         suma.a_medias
-          ? `De ${this.periodo}: ${suma.entregadas} ya le llegaron al trabajador y ${suma.a_medias} esperan la otra firma.`
-          : `De ${this.periodo}: ya le llegaron a cada trabajador.`,
+          ? `${this.periodo ? 'De ' + this.periodo + ': ' : ''}${suma.entregadas} ya le llegaron al trabajador y ${suma.a_medias} esperan la otra firma.`
+          : `${this.periodo ? 'De ' + this.periodo + ': y' : 'Y'}a le llegaron a cada trabajador.`,
       );
     };
 

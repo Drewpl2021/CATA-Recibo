@@ -3,7 +3,19 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Documento, DocumentoPayload } from '../../models';
 import { ApiResponse, END_POINTS, END_POINTS_ACCIONES, EntityDataService } from '../../utils';
+import { ResultadoFirmarAqui, ResumenDeFirma } from './boleta.service';
 import { environment } from '../../../../environments/environment';
+
+/** Una constancia que pidió el personal y espera la firma del colegio. */
+export interface ConstanciaPorFirmar {
+  id: string;
+  tipo: 'constancia_trabajo' | 'constancia_haberes';
+  tipo_texto: string;
+  dni: string | null;
+  nombre: string;
+  pedida: string | null;
+  firma: 'pendiente' | 'parcial' | 'completa' | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class DocumentoService extends EntityDataService<Documento> {
@@ -62,5 +74,20 @@ export class DocumentoService extends EntityDataService<Documento> {
     return this.http.get(`${environment.apiUrl}/${END_POINTS_ACCIONES.descargarDocumento(documentoId)}`, {
       responseType: 'blob',
     });
+  }
+
+  // ── Las constancias que pidió el personal (RR.HH.) ──
+
+  constanciasPorFirmar(): Observable<ApiResponse<{ filas: ConstanciaPorFirmar[]; firma: ResumenDeFirma }>> {
+    return this.http.get<ApiResponse<{ filas: ConstanciaPorFirmar[]; firma: ResumenDeFirma }>>(`${environment.apiUrl}/letters/pending`);
+  }
+
+  /** «Firmar aquí»: una tanda de las constancias que esperan la firma de quien pide. La clave no se guarda. */
+  firmarConstancias(clave: string, desde: string | null = null, limite = 25): Observable<ApiResponse<ResultadoFirmarAqui>> {
+    return this.http.post<ApiResponse<ResultadoFirmarAqui>>(`${environment.apiUrl}/letters/sign-here`, { clave, desde, limite });
+  }
+
+  anularConstancia(id: string): Observable<ApiResponse<unknown> & { message?: string }> {
+    return this.http.delete<ApiResponse<unknown> & { message?: string }>(`${environment.apiUrl}/letters/${id}`);
   }
 }

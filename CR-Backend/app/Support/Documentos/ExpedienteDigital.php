@@ -37,9 +37,19 @@ final class ExpedienteDigital
     /** Lo que puede subir el trabajador desde Mis Documentos. */
     public const PERSONALES = [self::HOJA_DE_VIDA, self::FOTO, self::DNI, self::CERTIFICADO, self::OTRO];
 
+    /**
+     * Las constancias que el trabajador pide desde Mis Documentos (ver
+     * App\Support\Documentos\Constancias): las firma el colegio y listo, sin
+     * su conformidad.
+     */
+    public const CONSTANCIA_TRABAJO = 'constancia_trabajo';
+    public const CONSTANCIA_HABERES = 'constancia_haberes';
+    public const CONSTANCIAS = [self::CONSTANCIA_TRABAJO, self::CONSTANCIA_HABERES];
+
     /** Todo lo que acepta el expediente, incluido lo que emite el colegio. */
     public const TIPOS = [
         'boleta', 'contrato', 'cts', 'gratificacion', 'certificado_5ta', 'vacaciones_truncas', 'comprobante_transferencia',
+        self::CONSTANCIA_TRABAJO, self::CONSTANCIA_HABERES,
         self::HOJA_DE_VIDA, self::FOTO, self::DNI, self::CERTIFICADO, self::OTRO,
     ];
 
@@ -50,6 +60,8 @@ final class ExpedienteDigital
         'cts'                       => 'CTS',
         'gratificacion'             => 'Gratificación',
         'certificado_5ta'           => 'Certificado de retenciones de 5ta',
+        self::CONSTANCIA_TRABAJO    => 'Constancia de trabajo',
+        self::CONSTANCIA_HABERES    => 'Constancia de haberes',
         'vacaciones_truncas'        => 'Vacaciones truncas',
         'comprobante_transferencia' => 'Comprobante de transferencia',
         self::HOJA_DE_VIDA          => 'Hoja de vida',
@@ -87,6 +99,7 @@ final class ExpedienteDigital
     public const SIN_FIRMA = [
         self::HOJA_DE_VIDA, self::FOTO, self::DNI, self::CERTIFICADO, self::OTRO,
         self::BOLETA_ANTERIOR, self::CONTRATO_ANTERIOR,
+        self::CONSTANCIA_TRABAJO, self::CONSTANCIA_HABERES,
     ];
 
     /**
@@ -106,6 +119,9 @@ final class ExpedienteDigital
     {
         if (in_array($tipo, self::PERSONALES, true)) {
             return 'Es un documento tuyo, no algo que el colegio te entregue: no se firma.';
+        }
+        if (in_array($tipo, self::CONSTANCIAS, true)) {
+            return 'Las constancias no necesitan tu conformidad: ya van firmadas por el colegio.';
         }
 
         return 'Es un archivo anterior al sistema, guardado como copia: no se firma.';
