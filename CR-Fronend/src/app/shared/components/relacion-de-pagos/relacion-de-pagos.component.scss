@@ -1,0 +1,40 @@
+// Las dos opciones, como tarjetas (igual que en «Pedir una constancia»).
+.relacion-formatos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.relacion-formato {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+
+  span {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  small {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 400;
+  }
+}
+
+.relacion-formato--activo {
+  border-color: var(--accent);
+  background: var(--surface-alt);
+}
+
+@media (max-width: 560px) {
+  .relacion-formatos {
+    grid-template-columns: 1fr;
+  }
+}

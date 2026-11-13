@@ -67,13 +67,14 @@ import {
  */
 import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 import { CeldaTablaDirective } from '../../../shared/components/data-table/celda-tabla.directive';
+import { RelacionDePagosComponent } from '../../../shared/components/relacion-de-pagos/relacion-de-pagos.component';
 @Component({
   selector: 'app-planillas-list',
   standalone: true,
   imports: [CeldaTablaDirective, AvatarComponent, IconComponent, 
     CommonModule, FormsModule, ReactiveFormsModule,
     PageHeaderComponent, DataTableComponent, FormModalComponent, SelectorEmpleadosComponent,
-    FiltrosComponent, OrdenComponent, BarraSeleccionComponent, PistaDirective,
+    FiltrosComponent, OrdenComponent, BarraSeleccionComponent, PistaDirective, RelacionDePagosComponent,
   ],
   templateUrl: './planillas-list.component.html',
 })
@@ -1184,6 +1185,19 @@ export class PlanillasListComponent implements OnInit {
   // ────────── Reporte completo de la planilla ──────────
 
   exportando = false;
+
+  /** «Relación de abonos»: a quién, a qué cuenta y cuánto, con los mismos filtros. */
+  modalRelacion = false;
+  readonly bajarRelacion = (formato: 'pdf' | 'xlsx') => this.planillaService.relacionDeAbonos({
+    search: this.busqueda || undefined,
+    mes: this.filtroMes || undefined,
+    anio: this.filtroAnio || undefined,
+    empleado_id: this.filtroEmpleado || undefined,
+    periodo_id: this.filtroPeriodo || undefined,
+    corrida_id: this.corridaId || undefined,
+    sin_corrida: this.modoSinAgrupar || undefined,
+    ...this.filtros,
+  }, formato);
 
   /**
    * Baja la planilla entera en Excel: una fila por trabajador, con su ficha,

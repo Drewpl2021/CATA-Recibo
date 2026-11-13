@@ -105,13 +105,14 @@ export const TEXTO_FIRMA: Record<Exclude<FirmaColegio, null>, string> = {
   parcial: 'Hoja con una firma de dos',
   completa: 'Hoja firmada y entregada',
 };
+import { RelacionDePagosComponent } from '../../../shared/components/relacion-de-pagos/relacion-de-pagos.component';
 @Component({
   selector: 'app-cts-list',
   standalone: true,
   imports: [AvatarComponent, 
     PistaDirective, CommonModule, FormsModule, IconComponent, PageHeaderComponent, DataTableComponent, CeldaTablaDirective,
     FiltrosComponent, OrdenComponent, FormModalComponent, PanelLateralComponent, BarraSeleccionComponent,
-    FirmarAquiComponent, RouterLink,
+    FirmarAquiComponent, RouterLink, RelacionDePagosComponent,
   ],
   templateUrl: './cts-list.component.html',
 })
@@ -526,6 +527,10 @@ export class CtsListComponent implements OnInit {
 
   bajandoZip = false;
   exportando = false;
+
+  /** «Relación de depósitos»: a qué cuenta CTS va la de cada uno. */
+  modalRelacion = false;
+  readonly bajarRelacion = (formato: 'pdf' | 'xlsx') => this.servicio.relacionDeDepositos(this.datos!.anio, this.datos!.periodo, formato);
 
   /** Lo que se ve en la tabla: los filtros, la situación y la búsqueda. */
   private filasQueSeVen(): FilaCts[] {

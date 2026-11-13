@@ -145,4 +145,16 @@ export class PlanillaService extends EntityDataService<Planilla> {
     }
     return this.http.get(url, { params: this.construirParams(filtros), responseType: 'blob' });
   }
+
+  /**
+   * La relación de abonos de los sueldos (a quién, a qué cuenta y cuánto):
+   * PDF para firmar o Excel para Tesorería. Con los mismos filtros que el
+   * reporte; el servidor pide un mes o una planilla con nombre.
+   */
+  relacionDeAbonos(filtros: Parameters<PlanillaService['exportar']>[0], formato: 'pdf' | 'xlsx'): Observable<Blob> {
+    return this.http.get(`${environment.apiUrl}/payrolls/payment-report`, {
+      params: this.construirParams({ ...filtros, formato }),
+      responseType: 'blob',
+    });
+  }
 }

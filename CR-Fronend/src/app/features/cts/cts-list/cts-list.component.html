@@ -10,12 +10,20 @@
     <app-icon icono="download" [tamano]="16"></app-icon>
     {{ bajandoZip ? 'Preparando…' : 'Descargar hojas (.zip)' }}
   </button>
+  <button headerActions type="button" class="btn-secondary" (click)="modalRelacion = true" [disabled]="!datos"
+    appPista="A qué entidad y cuenta CTS va el depósito de cada uno, con el total: PDF para firmar o Excel para Tesorería.">
+    <app-icon icono="bank" [tamano]="16"></app-icon>
+    Relación de depósitos
+  </button>
   <button headerActions type="button" class="btn-exportar" (click)="exportar()" [disabled]="exportando || !datos"
     appPista="La lista como se ve (con los filtros y la búsqueda): remuneración computable, tiempo, CTS, depósito, cuenta y su hoja.">
     <app-icon icono="excel" [tamano]="16"></app-icon>
     {{ exportando ? 'Generando…' : 'Descargar Excel' }}
   </button>
 </app-page-header>
+
+<app-relacion-de-pagos [(visible)]="modalRelacion" titulo="Relación de depósitos de CTS"
+  [periodo]="datos ? datos.periodo + ' ' + datos.anio : ''" [descargar]="bajarRelacion"></app-relacion-de-pagos>
 
 <!-- ── Qué depósito se está trabajando ── -->
 <section class="cts-deposito">

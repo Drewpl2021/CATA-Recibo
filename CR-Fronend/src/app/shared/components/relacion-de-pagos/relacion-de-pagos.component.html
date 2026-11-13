@@ -1,0 +1,20 @@
+<!-- Relación de pagos: elegir PDF (para firmar) o Excel (para Tesorería). -->
+<app-form-modal [visible]="visible" (visibleChange)="$event ? null : cerrar()" (cancelar)="cerrar()" (guardar)="bajar()"
+  [titulo]="titulo" [textoGuardar]="bajando ? 'Armando…' : 'Descargar'" [guardando]="bajando" ancho="560px">
+  <div class="form-fields">
+    <p class="form-ayuda">
+      A quién, a qué cuenta y cuánto, agrupado por banco o caja, con el total en letras. Aparte salen quienes no van por
+      abono (sin cuenta, en efectivo, en cero) y lo que conviene revisar antes de pagar, como una cuenta repetida.
+    </p>
+    <div class="relacion-formatos" role="radiogroup" aria-label="Formato">
+      <label class="relacion-formato" [class.relacion-formato--activo]="formato === 'pdf'">
+        <input type="radio" name="formatoRelacion" value="pdf" [(ngModel)]="formato" />
+        <span><strong>PDF</strong><small>Para imprimir y firmar: Recursos Humanos, Contabilidad y Administración.</small></span>
+      </label>
+      <label class="relacion-formato" [class.relacion-formato--activo]="formato === 'xlsx'">
+        <input type="radio" name="formatoRelacion" value="xlsx" [(ngModel)]="formato" />
+        <span><strong>Excel</strong><small>Para Tesorería: cuentas como texto y montos listos para sumar.</small></span>
+      </label>
+    </div>
+  </div>
+</app-form-modal>

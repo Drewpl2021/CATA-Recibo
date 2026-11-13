@@ -103,6 +103,62 @@ class CtsController extends Controller
     }
 
     /**
+     * GET /cts/deposit-report — la relación de depósitos de CTS del semestre:
+     * a qué entidad y cuenta CTS va la de cada uno (nunca a la del sueldo),
+     * con lo que no se deposita (el cesado cobra con su liquidación, quien no
+     * tiene cuenta CTS) y lo que hay que revisar. En PDF o en Excel.
+     */
+    public function relacionDeDepositos(Request $request)
+    {
+        $datos = $request->validate([
+            'anio'    => 'required|integer|min:2000|max:2100',
+            'periodo' => ['required', Rule::in(MotorCts::PERIODOS)],
+            'formato' => 'nullable|in:pdf,xlsx',
+        ]);
+        $anio = (int) $datos['anio'];
+        $periodo = $datos['periodo'];
+
+        $liquidaciones = CtsLiquidacion::with('empleado')->where('anio', $anio)->where('periodo', $periodo)->get()
+            ->filter(fn (CtsLiquidacion $l) => $l->empleado);
+        if ($liquidaciones->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Todavía no hay CTS calculadas de ese semestre: calcúlalas primero.'], 422);
+        }
+
+        $r = \App\Support\Pagos\RelacionDePagos::armar($liquidaciones->map(fn (CtsLiquidacion $l) => [
+            'dni'     => $l->empleado->dni,
+            'nombre'  => trim($l->empleado->apellido . ' ' . $l->empleado->nombre),
+            'entidad' => $l->entidad_financiera ?: $l->empleado->cts_entidad_financiera,
+            'cuenta'  => $l->numero_cuenta ?: $l->empleado->cts_numero_cuenta,
+            'monto'   => (float) $l->monto,
+            'cesado'  => $l->empleado->estado === 'inactivo',
+        ])->values()->all(), esCts: true);
+
+        $depositadas = $liquidaciones->filter->depositada()->count();
+        $semestre = ucfirst($periodo) . ' ' . $anio;
+        $info = [
+            'titulo'    => 'RELACIÓN DE DEPÓSITOS DE CTS',
+            'subtitulo' => "Depósito de {$semestre} · {$r['personas']} trabajador(es)"
+                . ($depositadas ? " · {$depositadas} ya registrada(s) como depositada(s)" : ''),
+            'borrador'  => null,
+            'r'         => $r,
+            'conCci'    => false,
+            'quien'     => $request->user()?->name,
+        ];
+        $archivo = "Relación de depósitos CTS - {$semestre}";
+
+        Auditoria::registrar('descargó', 'cts', null, "Descargó la relación de depósitos de CTS de {$semestre} ({$r['personas']} trabajadores, S/ " . number_format($r['total_abonar'], 2) . ' por depósito).');
+
+        if (($datos['formato'] ?? null) === 'xlsx') {
+            $libro = new \App\Support\Listados\LibroExcel();
+            \App\Support\Pagos\RelacionDePagos::hojas($libro, $r, false);
+
+            return $libro->descargar($archivo . '.xlsx');
+        }
+
+        return Pdf::loadView('relacion-de-pagos', $info)->setPaper('a4', 'portrait')->download($archivo . '.pdf');
+    }
+
+    /**
      * GET /cts/export — la lista del depósito en Excel, con los mismos filtros
      * que la pantalla (situación, sede, área, cargo y búsqueda): la
      * remuneración computable desglosada, el tiempo, la CTS, el depósito con

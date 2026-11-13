@@ -28,12 +28,20 @@
 
     <!-- El reporte completo: lo que se ve en pantalla, con una columna por
     concepto. Dentro de una planilla baja solo la suya. -->
+    <button class="btn-secondary" (click)="modalRelacion = true"
+      appPista="A quién, a qué cuenta y cuánto se paga, por banco o caja: PDF para firmar o Excel para Tesorería.">
+      <app-icon icono="bank" [tamano]="16"></app-icon>
+      Relación de abonos
+    </button>
     <button class="btn-exportar" (click)="exportar()" [disabled]="exportando">
       <app-icon icono="excel" [tamano]="16"></app-icon>
       {{ exportando ? 'Generando…' : 'Descargar reporte' }}
     </button>
   </div>
 </app-page-header>
+
+<app-relacion-de-pagos [(visible)]="modalRelacion" titulo="Relación de abonos de remuneraciones"
+  [periodo]="etiquetaPeriodo" [descargar]="bajarRelacion"></app-relacion-de-pagos>
 
 <!-- Una planilla cerrada se mira, no se toca. -->
 @if (estaCerrada) {

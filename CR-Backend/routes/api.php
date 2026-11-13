@@ -230,6 +230,8 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         // La planilla completa en Excel. Va ANTES del apiResource: si no,
         // "exportar" entraría por show({id}).
         Route::get('payrolls/export',  [PlanillaController::class, 'exportar']);
+        // La relación de abonos (a quién, a qué cuenta y cuánto): PDF para firmar o Excel para Tesorería.
+        Route::match(['get', 'post'], 'payrolls/payment-report', [PlanillaController::class, 'relacionDeAbonos']);
         Route::post('payrolls/export', [PlanillaController::class, 'exportar']);
         // La Renta de 5ta del mes sin guardar nada, para la vista previa.
         Route::get('payrolls/renta-5ta', [PlanillaController::class, 'rentaQuinta']);
@@ -350,6 +352,7 @@ Route::middleware(['auth:sanctum', 'sesion', 'clave_nueva', 'terminos'])->group(
         Route::delete('cts/{liquidacion}/deposit', [\App\Http\Controllers\CtsController::class, 'anularDeposito'])->whereUuid('liquidacion');
         Route::match(['get', 'post'], 'cts/zip/link', [\App\Http\Controllers\CtsController::class, 'enlaceZip']);
         Route::get('cts/export',                   [\App\Http\Controllers\CtsController::class, 'exportar']);
+        Route::get('cts/deposit-report',           [\App\Http\Controllers\CtsController::class, 'relacionDeDepositos']);
         Route::get('cts/{liquidacion}/sheet',      [\App\Http\Controllers\CtsController::class, 'hoja'])->whereUuid('liquidacion');
         Route::get('cts/{empleado}/history',       [\App\Http\Controllers\CtsController::class, 'historial'])->whereUuid('empleado');
         Route::put('cts/absences',                 [\App\Http\Controllers\CtsController::class, 'registrarFaltas']);

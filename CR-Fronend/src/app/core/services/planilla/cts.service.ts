@@ -200,6 +200,11 @@ export class CtsService {
     return this.http.get(`${this.url}/export`, { params: { anio: String(anio), periodo, ...filtros }, responseType: 'blob' });
   }
 
+  /** La relación de depósitos del semestre (a la cuenta CTS de cada uno): PDF para firmar o Excel. */
+  relacionDeDepositos(anio: number, periodo: PeriodoCts, formato: 'pdf' | 'xlsx'): Observable<Blob> {
+    return this.http.get(`${this.url}/deposit-report`, { params: { anio: String(anio), periodo, formato }, responseType: 'blob' });
+  }
+
   bajarHojasEnZip(anio: number, periodo: PeriodoCts, ids?: string[]): Observable<number> {
     return this.http
       .post<ApiResponse<{ url: string; cantidad: number }>>(`${this.url}/zip/link`, { anio, periodo, ...(ids?.length ? { ids } : {}) })

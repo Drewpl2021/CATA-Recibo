@@ -313,6 +313,69 @@ class PlanillaController extends Controller
         return $libro->descargar($this->nombreDelArchivo($request, $planillas->first()));
     }
 
+    /**
+     * GET /payrolls/payment-report — la relación de abonos de los sueldos:
+     * a quién, a qué cuenta y cuánto, por banco o caja, con lo que no va por
+     * abono y lo que hay que revisar antes de pagar. En PDF (para firmar) o
+     * en Excel (para Tesorería). Con los mismos filtros que la pantalla.
+     *
+     * Pide un mes o una planilla con nombre: mezclar meses daría un total
+     * que no se paga nunca de una vez.
+     */
+    public function relacionDeAbonos(Request $request)
+    {
+        $request->validate(['formato' => 'nullable|in:pdf,xlsx']);
+        if (! $request->filled('corrida_id') && ! ($request->filled('mes') && $request->filled('anio'))) {
+            return response()->json(['success' => false, 'message' => 'Elige el mes (o entra a una planilla) para armar la relación de abonos.'], 422);
+        }
+
+        $query = $this->consultaFiltrada($request, ['empleado', 'corrida']);
+        $this->aplicarBusqueda($request, $query, ['empleado.nombre', 'empleado.apellido', 'empleado.dni']);
+        $this->aplicarMarcados($request, $query, 'planilla.id');
+        $planillas = $query->get()->filter(fn ($p) => $p->empleado);
+
+        if ($planillas->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No hay planillas con ese filtro.'], 422);
+        }
+
+        $r = \App\Support\Pagos\RelacionDePagos::armar($planillas->map(fn ($p) => [
+            'dni'        => $p->empleado->dni,
+            'nombre'     => trim($p->empleado->apellido . ' ' . $p->empleado->nombre),
+            'forma_pago' => $p->empleado->forma_pago,
+            'entidad'    => $p->empleado->entidad_financiera,
+            'cuenta'     => $p->empleado->numero_cuenta,
+            'cci'        => $p->empleado->cci,
+            'monto'      => (float) $p->total,
+        ])->values()->all());
+
+        $corridas = $planillas->pluck('corrida')->filter()->unique('id');
+        $meses = $planillas->map(fn ($p) => \App\Support\Meses::nombre((int) $p->mes) . ' ' . $p->anio)->unique()->implode(', ');
+        $nombre = $corridas->count() === 1 ? $corridas->first()->nombre . ' · ' : '';
+        $abiertas = $planillas->contains(fn ($p) => ! $p->corrida?->estaCerrada());
+        $datos = [
+            'titulo'    => 'RELACIÓN DE ABONOS DE REMUNERACIONES',
+            'subtitulo' => $nombre . $meses . ' · ' . $r['personas'] . ' trabajador(es)',
+            'borrador'  => $abiertas ? 'Hay planillas que todavía no están cerradas: los montos pueden cambiar. Ciérralas antes de pagar.' : null,
+            'r'         => $r,
+            'conCci'    => $r['con_cci'],
+            'quien'     => $request->user()?->name,
+        ];
+        $archivo = 'Relación de abonos - ' . $nombre . $meses;
+
+        \App\Models\Auditoria::registrar('descargó', 'planilla', null, "Descargó la relación de abonos de {$nombre}{$meses} ({$r['personas']} trabajadores, S/ " . number_format($r['total_abonar'], 2) . ' por abono).');
+
+        if ($request->input('formato') === 'xlsx') {
+            $libro = new LibroExcel();
+            \App\Support\Pagos\RelacionDePagos::hojas($libro, $r, $r['con_cci']);
+            $this->hojaDeFiltros($libro, $this->filtrosDelReporte($request), $request->user()?->name);
+
+            return $libro->descargar($this->nombreExcelSeguro($archivo));
+        }
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('relacion-de-pagos', $datos)->setPaper('a4', 'portrait')
+            ->download(trim((string) preg_replace('/[^\p{L}\p{N} \-]+/u', '', $archivo)) . '.pdf');
+    }
+
     /** "Planilla TIC - Septiembre 2026.xlsx", o el mes suelto. */
     /**
      * Los filtros de la pantalla, escritos como los lee una persona: con el
