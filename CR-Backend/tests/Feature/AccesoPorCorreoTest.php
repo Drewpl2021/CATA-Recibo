@@ -54,7 +54,8 @@ class AccesoPorCorreoTest extends TestCase
             if ($m->email !== $correo) {
                 return false;
             }
-            parse_str(parse_url($m->enlace, PHP_URL_QUERY), $q);
+            // El token va después de «#»: el navegador no lo manda al servidor.
+            parse_str((string) parse_url($m->enlace, PHP_URL_FRAGMENT), $q);
             $token = $q['token'];
 
             return true;
